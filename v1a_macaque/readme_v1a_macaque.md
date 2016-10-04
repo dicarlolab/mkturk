@@ -54,22 +54,22 @@ Here is a more thorough description of all the parameters used in mkturk_v1 that
 **SampleGridIndex** positions within grid locations determined by XGridCenter & YGridCenter.  Typically, use 3 x 3 grid with sample centered at position 4 and test choices on either side at positions 1 & 7  
 **TestGridIndex** Position of test choices.  Is a vector of Nway positions.  Typically, on a 3x3 grid, test choices are position on either side of the sample at indices 1 & 7.  
 **SampleFolder** number of the folder where sample images were drawn.  
-	0=prototype images (labels)  
-	1=var6 test images with no position variation and no backgrounds  
-	2=var6 test images with no backgrounds  
-	3=var6 test images on backgrounds  
-	4=prototypes (labels) for imagenet MURI pilot set  
-	5=imagenet MURI pilot set  
-	6=var6 train images with no position variation and no backgrounds  
-	7=var6 train images with no backgrounds  
-	8=var6 train images on backgrounds  
-	9=hvm10 prototype images (labels)  
-	10=hvm10 x 100 var6 train images on backgrounds  
-	11=hvm10 x 90 var0 (20),var3 (30),var6 (40) test images on backgrounds  
-	12=prototype images for CoCo
-	13=coco train set (80 images per label)
-	14=coco test set (40 images per label)
-	15=hybrid coco/hvm train set (40 coco/40 hvm images per label)
+- 0=prototype images (labels)  
+- 1=var6 test images with no position variation and no backgrounds  
+- 2=var6 test images with no backgrounds  
+- 3=var6 test images on backgrounds  
+- 4=prototypes (labels) for imagenet MURI pilot set  
+- 5=imagenet MURI pilot set  
+- 6=var6 train images with no position variation and no backgrounds  
+- 7=var6 train images with no backgrounds  
+- 8=var6 train images on backgrounds  
+- 9=hvm10 prototype images (labels)  
+- 10=hvm10 x 100 var6 train images on backgrounds  
+- 11=hvm10 x 90 var0 (20),var3 (30),var6 (40) test images on backgrounds  
+- 12=prototype images for CoCo
+- 13=coco train set (80 images per label)
+- 14=coco test set (40 images per label)
+- 15=hybrid coco/hvm train set (40 coco/40 hvm images per label)
 		
 **TestFolder** same convention as SampleFolder but for test choices.  Typically, prototypes (labels,tokens) folder is used for test choices.  
 
