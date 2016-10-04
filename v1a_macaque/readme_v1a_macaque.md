@@ -50,6 +50,8 @@ MonkeyTurk Variables
 **Tablet** nexus9 samsung10
 **Pump** 1=adafruit peristaltic 2=submersible centrifugal tcs 3=diaphragm pump tcs 4=piezoelectric 3mL takasago 5=newer diaphragm pumps tcs 6=piezoelectric 7mL takasago
 
+
+
 **Objs** list of possible object choices (i.e. 0,1,2,3,4,5,6,7 for first eight objects)
 **Nway** 2,4,or 8 way typically used
 **SampleGridIndex** positions within grid locations determined by XGridCenter & YGridCenter.  Typically, use 3 x 3 grid with sample centered at position 4 and test choices on either side at positions 1 & 7
