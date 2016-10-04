@@ -43,7 +43,6 @@ Here is a more thorough description of all the parameters used in mkturk_v1:
 MonkeyTurk Variables
 
 **Weight** kilograms
-
 **Species** human, macaque, marmoset
 **Homecage** 0=in lab 1=in homecage
 **Separated** 0=with conspecific 1=conspecific separated
