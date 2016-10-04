@@ -93,6 +93,9 @@ MonkeyTurk Variables
 **ImageSequence ImageSequenceTimes** the sequence and timing of frames (canvases) displayed during the sample/test phase of the task
 **PostSequence PostSequenceTimes** the sequence and timing of frames (canvases) displayed during the reward/punish phase of the task
 
+
+
+
 **PixelRatio** the device pixel ratio (typically PixelRatio=2 for retina displays which means 2x2 pixels of the image are mapped to 1 onscreen pixel or a 256x256 images only takes up 128x128 workspace pixels)
 **BackingStoreRatio** how the canvas backingstore was scaled
 **CanvasScale** the scale of the canvas to the workspace (typically CanvasScale=2 for retina displays)
@@ -114,4 +117,8 @@ XGridCenter YGridCenter center locations in pixels of display items (fixation,sa
 **ResponseXYT** the xy coordinates in pixels and time in microseconds of subject touching a choice on test screen
 **BatteryLDT** whenever the battery changes level, record in BatteryLDT the current battery level remaining, the expected time to discharge, and the time update was performed
 **NReward** the number of rewards given at the end of the trial; usually 1x reward unless subject got many trials in a row correct in which case may get bonus reward according to NConsecutiveHitsforBonus
-dkfjskldf \n
+dkfjskldkl
+
+
+ksdajf
+
