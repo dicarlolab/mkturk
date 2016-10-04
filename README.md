@@ -1,2 +1,2 @@
 # mkturk
-Wireless touchscreen behavioral training and testing
+Wireless touchscreen behavioral training
