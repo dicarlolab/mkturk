@@ -1,6 +1,6 @@
 Original mkturk code. This runs DMS task and is the working version as of 10.04.2016.
 
-Images are grouped into folders. A task would simply choose the folder for drawing sample images and the folder for drawing test images in a DMS. Here is an example parameter file:
+Images are grouped into folders. A task would simply choose the folder for drawing sample images and the folder (**ImageFolderSample** & **ImageFolderTest**) for drawing test images in a DMS. Here is an example parameter file:
 
 ```javascript
 [{"Weight":0.39,
