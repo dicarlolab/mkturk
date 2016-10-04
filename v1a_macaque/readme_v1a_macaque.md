@@ -66,6 +66,11 @@ Here is a more thorough description of all the parameters used in mkturk_v1 that
 	9=hvm10 prototype images (labels)  
 	10=hvm10 x 100 var6 train images on backgrounds  
 	11=hvm10 x 90 var0 (20),var3 (30),var6 (40) test images on backgrounds  
+	12=prototype images for CoCo
+	13=coco train set (80 images per label)
+	14=coco test set (40 images per label)
+	15=hybrid coco/hvm train set (40 coco/40 hvm images per label)
+		
 **TestFolder** same convention as SampleFolder but for test choices.  Typically, prototypes (labels,tokens) folder is used for test choices.  
 
 **RewardStage** 0=reward for fixation (no match to sample phase of task; this setting is used when training the subject to simply touch the screen) 1=reward for selecting appropriate test image  
