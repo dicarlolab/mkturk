@@ -38,7 +38,7 @@ Images are grouped into folders. A task would simply choose the folder for drawi
 }]
 ```
 
-Here is a more thorough description of all the parameters used in mkturk_v1:
+Here is a more thorough description of all the parameters used in mkturk_v1 that you'll see in the task file and output data file :
 
 MonkeyTurk Variables
 
