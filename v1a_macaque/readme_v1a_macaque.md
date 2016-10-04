@@ -114,3 +114,4 @@ XGridCenter YGridCenter center locations in pixels of display items (fixation,sa
 **ResponseXYT** the xy coordinates in pixels and time in microseconds of subject touching a choice on test screen
 **BatteryLDT** whenever the battery changes level, record in BatteryLDT the current battery level remaining, the expected time to discharge, and the time update was performed
 **NReward** the number of rewards given at the end of the trial; usually 1x reward unless subject got many trials in a row correct in which case may get bonus reward according to NConsecutiveHitsforBonus
+dkfjskldf \n
