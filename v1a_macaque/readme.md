@@ -1,4 +1,4 @@
-Original mkturk code. This runs DMS task and is the working version as of 10.04.2016.
+Original mkturk code. This runs DMS task and is the working version as of 10.04.2016 on Chrome browswer with Javascript Harmony enabled.
 
 See https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mturk/public/index.html
 
