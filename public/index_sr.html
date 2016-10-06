@@ -678,22 +678,6 @@ if (typeof(trial.nreward.length) != 'undefined'){
 			renderCanvas(canvas.test,[trial.sample[trial.current]],true,trial.samplegrid);
 		}
 
-		//** SR
-		// use objectgrid instead of testgrid for positioning choices
-		if (trial.objectgrid.length == trial.objectlist.length){
-			for (var i=0; i<=trial.test[trial.current].length-1; i++){
-				// Determine which object/grid image belongs to
-				var currobj = imagesTest.obj[trial.test[trial.current][i]]
-				var currind = []
-				for (var j=0; j<=trial.objectlist.length-1; j++){
-					if (trial.objectlist[j]==currobj){
-						currind = j
-					}
-				}
-				trial.testgrid[i] = trial.objectgrid[currind]
-			}
-		}
-		//** SR end
 
 		boundingBoxesTest = renderCanvas(canvas.test,trial.test[trial.current],false,trial.testgrid);
 		canvas.buffered = 1;
