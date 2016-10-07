@@ -111,6 +111,7 @@
 			trial["nway"] = file.data[0].Nway;
 			trial["samplegrid"] = file.data[0].SampleGridIndex;
 			trial["testgrid"] = file.data[0].TestGridIndex;
+			trial["objectgrid"] = file.data[0].ObjectGridIndex;
 			trial["rewardStage"] = file.data[0].RewardStage
 			trial["rewardper1000"] = file.data[0].RewardPer1000Trials;
 			// trial.reward = file.data[0].RewardDuration;
@@ -1356,6 +1357,35 @@ function getImageList(images,foldernum){
 				cnt=cnt+1;
 			} //for j exemplars
 		} //for i objects
+	}
+
+	// Abstract colors
+	if (foldernum == 16){
+		perobj = 1; // i.e. how many images are there per label 
+
+		var cnt=0;
+		for (var i in trial.objectlist){
+			for (var j=0; j<=perobj-1; j++){
+				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
+				potentialImages.obj[cnt]=trial.objectlist[i];
+				cnt=cnt+1;
+			} //for j exemplars
+		} //for i objects
+	}
+	
+	// White button response images
+	if (foldernum == 17){
+		perobj = 1; 
+
+		var cnt=0;
+		for (var i in trial.objectlist){
+			for (var j=0; j<=perobj-1; j++){
+				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
+				potentialImages.obj[cnt]=trial.objectlist[i];
+				cnt=cnt+1;
+			} //for j exemplars
+		} //for i objects
+
 	}
 
 
