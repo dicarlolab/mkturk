@@ -189,6 +189,7 @@
 				trial["nway"] = paramfile.data[0].Nway;
 				trial["samplegrid"] = paramfile.data[0].SampleGridIndex;
 				trial["testgrid"] = paramfile.data[0].TestGridIndex;
+				trial["objectgrid"] = paramfile.data[0].ObjectGridIndex; 
 				trial["rewardStage"] = paramfile.data[0].RewardStage;
 				trial["rewardper1000"] = paramfile.data[0].RewardPer1000Trials;
 				trial["punish"] = paramfile.data[0].PunishTimeOut;
@@ -231,6 +232,7 @@
 	    	    	Nway: trial.nway,
 	    	    	SampleGridIndex: trial.samplegrid,
 	    	    	TestGridIndex: trial.testgrid,
+	    	    	ObjectGridIndex: trial.objectgrid, 
 	    	    	RewardStage: trial.rewardStage,
 	    	    	RewardPer1000Trials: trial.rewardper1000,
 	    	    	PunishTimeOut: trial.punish,
@@ -373,6 +375,7 @@ function takephoto(currtrial,currstage){
     	    	Nway: trial.nway,
     	    	SampleGridIndex: trial.samplegrid,
     	    	TestGridIndex: trial.testgrid,
+    	    	ObjectGridIndex: trial.objectgrid, 
     	    	ImageFolderSample: trial.imageFolderSample,
     	    	ImageFolderTest: trial.imageFolderTest,
     	    	RewardStage: trial.rewardStage,
@@ -621,6 +624,25 @@ function updateHeadsUpDisplay(){
 		if (trial.keepSampleON==1){
 			renderCanvas(canvas.test,[trial.sample[trial.current]],true,trial.samplegrid);
 		}
+
+		//** SR
+		// use objectgrid instead of testgrid for positioning choices
+		if (trial.objectgrid.length == trial.objectlist.length){
+			for (var i=0; i<=trial.test[trial.current].length-1; i++){
+				// Determine which object/grid image belongs to
+				var currobj = imagesTest.obj[trial.test[trial.current][i]]
+				var currind = []
+				for (var j=0; j<=trial.objectlist.length-1; j++){
+					if (trial.objectlist[j]==currobj){
+						currind = j // index of object currently being looked at
+					}
+				}
+				trial.testgrid[i] = trial.objectgrid[currind] // test locations are set by objectgrid
+			}
+		}
+		//** SR end
+
+
 		boundingBoxesTest = renderCanvas(canvas.test,trial.test[trial.current],false,trial.testgrid);
 		canvas.buffered = 1;
 	}
