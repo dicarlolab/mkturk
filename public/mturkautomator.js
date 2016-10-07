@@ -51,7 +51,7 @@ function updateTask3(writestr){
 		sampleON: 200,
 		samplegrid: 4,
 		keepSampleON: 0,
-		imageFolderSample: 3,
+		imageFolderSample: 8,
 		sampleScale: 1,
 		testScale: 1,
 		objgroup: 0,
@@ -91,25 +91,25 @@ function updateTask3(writestr){
 	}
 
 	// [0] touch
-	trainingstages.rewardStage[0]=0; trainingstages.fixationradius[0]=120;  trainingstages.sampleScale[0]=2; trainingstages.testScale[0]=2; //var1//touch
+	trainingstages.rewardStage[0]=0; trainingstages.fixationradius[0]=120;  trainingstages.sampleScale[0]=1.5; trainingstages.testScale[0]=1.5; //var1//touch
 
 	// [1] moving touch
-	trainingstages.rewardStage[1]=0; trainingstages.fixationradius[1]=120; trainingstages.fixationmove[1]=3000;  trainingstages.sampleScale[1]=2; trainingstages.testScale[1]=2; //var1//moving touch
+	trainingstages.rewardStage[1]=0; trainingstages.fixationradius[1]=120; trainingstages.fixationmove[1]=3000;  trainingstages.sampleScale[1]=1.5; trainingstages.testScale[1]=1.5; //var1//moving touch
 
 	// [2] match
-	trainingstages.keepSampleON[2]=1; trainingstages.imageFolderSample[2]=0; trainingstages.fixationradius[2]=120; trainingstages.sampleScale[2]=2; trainingstages.testScale[2]=2; trainingstages.samplegrid[2]=3; //match
+	trainingstages.keepSampleON[2]=1; trainingstages.imageFolderSample[2]=0; trainingstages.fixationradius[2]=120; trainingstages.sampleScale[2]=2; trainingstages.testScale[2]=2; trainingstages.samplegrid[2]=4; //match
 
 	// [3] delayed match
 	trainingstages.sampleON[3] = 500; trainingstages.imageFolderSample[3]=0; trainingstages.fixationradius[3]=120; trainingstages.sampleScale[3]=2; trainingstages.testScale[3]=2;//delayed match
 
 	// [4] var1
-	trainingstages.sampleON[4] = 500; trainingstages.imageFolderSample[4]=1; trainingstages.fixationradius[4]=120; trainingstages.sampleScale[4]=2; trainingstages.testScale[4]=2; //var1
+	trainingstages.sampleON[4] = 500; trainingstages.imageFolderSample[4]=6; trainingstages.fixationradius[4]=120; trainingstages.sampleScale[4]=2; trainingstages.testScale[4]=2; //var1
 
 	// [5] var2
-	trainingstages.imageFolderSample[5]=2; trainingstages.fixationradius[5]=120; trainingstages.sampleScale[5]=2; trainingstages.testScale[5]=2; //var2
+	trainingstages.imageFolderSample[5]=7; trainingstages.fixationradius[5]=120; trainingstages.sampleScale[5]=2; trainingstages.testScale[5]=2; //var2
 
 	// [6] var3
-	trainingstages.imageFolderSample[6]=3; trainingstages.fixationradius[6]=120; trainingstages.sampleScale[6]=2; trainingstages.testScale[6]=2; //var3
+	trainingstages.imageFolderSample[6]=8; trainingstages.fixationradius[6]=120; trainingstages.sampleScale[6]=2; trainingstages.testScale[6]=2; //var3
 
 	// [7] small size
 	trainingstages.objgroup[7]=0; //small size
@@ -429,24 +429,23 @@ var updatingreward=0;
 	}
 
 	if (updatingstage==1 || updatingreward==1){
-		// trial.need2loadParameters=1;
-		trial.need2writeParameters=1;
+		trial.need2loadParameters=1;
 	}
 	else{
-//		// trial.need2loadParameters=0;
+		trial.need2loadParameters=0;
 		return
 	}
 
 	if (updatingstage==0){
-		// trial.need2loadImages=0;
+		trial.need2loadImages=0;
 	}
 	else if (updatingstage==1){
 		if (trial.objgroup != trainingstages.objgroup[trainingstages.current] || trial.imageFolderSample != trainingstages.imageFolderSample[trainingstages.current]){
 			trial.objgroup = trainingstages.objgroup[trainingstages.current];
-			// trial.need2loadImages = 1;
+			trial.need2loadImages = 1;
 		}
 		else{
-//			// trial.need2loadImages = 0;
+			trial.need2loadImages = 0;
 		}
 	}
 
@@ -609,24 +608,23 @@ var updatingreward=0;
 	}
 
 	if (updatingstage==1 || updatingreward==1){
-		// trial.need2loadParameters=1;
-		trial.need2writeParameters=1;
+		trial.need2loadParameters=1;
 	}
 	else{
-//		// trial.need2loadParameters=0;
+		trial.need2loadParameters=0;
 		return
 	}
 
 	if (updatingstage==0){
-		// trial.need2loadImages=0;
+		trial.need2loadImages=0;
 	}
 	else if (updatingstage==1){
 		if (trial.objgroup != trainingstages.objgroup[trainingstages.current] || trial.imageFolderSample != trainingstages.imageFolderSample[trainingstages.current]){
 			trial.objgroup = trainingstages.objgroup[trainingstages.current];
-			// trial.need2loadImages = 1;
+			trial.need2loadImages = 1;
 		}
 		else{
-//			// trial.need2loadImages = 0;
+			trial.need2loadImages = 0;
 		}
 	}
 

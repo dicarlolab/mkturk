@@ -1,7 +1,7 @@
 <!doctype html>
 
 <head>
-<meta name="mobile-web-app-capable" content="yes"> <!-- full screen https://developer.chrome.com/multidevice/56android/installtohomescreen -->
+<meta name="mobile-web-app-capable" content="yes"> <!-- full screen https://developer.chrome.com/multidevice/android/installtohomescreen -->
 
 <meta name="viewport" content="width=device-width, user-scalable=no"> <!-- do not allow window rescaling.  To avoid window rescaling in portrait mode, added with=device-width from http://stackoverflow.com/questions/22771523/ipad-w-retina-safari-reported-dimensions-in-landscape-make-no-sense -->
 
@@ -14,9 +14,6 @@
 
 
 //TO DO:
-// status bar with Monkey name, stage #, and other parameters
-// force stage for automator
-// master task x image list
 // webRTC
 //		http://www.html5rocks.com/en/tutorials/webrtc/basics/
 //		http://www.html5rocks.com/en/tutorials/webrtc/datachannels/
@@ -24,8 +21,8 @@
 //		http://peerjs.com/
 // movies+concurrent sound
 
-// ---reward scheduling
-// ---online parameter modification
+// ----reward scheduling
+// ----online parameter modification
 // multiple subjects (gui)
 // closed-loop interaction (gui)
 // ----training (algorithm)
@@ -37,7 +34,7 @@
 // ----vitals: task time, total trials, %correct, estimated juice, battery life
 
 // DROPBOX STUFF
-	var client = new Dropbox.Client({key: "l0utiu5l0eavf19"}); // Dropbox.client help: http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/Client.html
+	var client = new Dropbox.Client({key: "mdzikawxzejgjlf"}); // Dropbox.client help: http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/Client.html
 	var showError = function(error){console.log(error.status)};
 
 	// Dropbox: authenticate
@@ -190,8 +187,6 @@
 				env["pump"] = paramfile.data[0].Pump;
 				trial["objectlist"] = paramfile.data[0].TestedObjects;
 				trial["nway"] = paramfile.data[0].Nway;
-				trial["fixationgridindex"] = paramfile.data[0].FixationGridIndex;
-				trial["fixationusessample"] = paramfile.data[0].FixationUsesSample;
 				trial["samplegrid"] = paramfile.data[0].SampleGridIndex;
 				trial["testgrid"] = paramfile.data[0].TestGridIndex;
 				trial["rewardStage"] = paramfile.data[0].RewardStage;
@@ -234,7 +229,6 @@
 	    	    	Pump: env.pump,
 	    	    	TestedObjects: trial.objectlist,
 	    	    	Nway: trial.nway,
-	    	    	FixationUsesSample: trial.fixationusessample,
 	    	    	SampleGridIndex: trial.samplegrid,
 	    	    	TestGridIndex: trial.testgrid,
 	    	    	RewardStage: trial.rewardStage,
@@ -377,7 +371,6 @@ function takephoto(currtrial,currstage){
     	    	Pump: env.pump,
     	    	TestedObjects: trial.objectlist,
     	    	Nway: trial.nway,
-    	    	FixationUsesSample: trial.fixationusessample,
     	    	SampleGridIndex: trial.samplegrid,
     	    	TestGridIndex: trial.testgrid,
     	    	ImageFolderSample: trial.imageFolderSample,
@@ -414,9 +407,6 @@ function takephoto(currtrial,currstage){
     	    	WindowHeight: windowHeight,
     	    	XGridCenter: xgridcent,
     	    	YGridCenter: ygridcent,
-    	    	HeadsUpFraction: canvas.headsupfraction,
-    	    	CanvasOffsetLeft: canvas.offsetleft,
-    	    	CanvasOffsetTop: canvas.offsettop,
 
     	    	SampleScale: imagesSample.scale,
     	    	TestScale: imagesTest.scale,
@@ -473,7 +463,6 @@ function takephoto(currtrial,currstage){
 
 		canvasobj.width=window.innerWidth;
 		canvasobj.height=Math.round(window.innerHeight*canvas.headsupfraction);
-		canvasobj.style.margin="0 auto";
 		canvas.offsettop = canvasobj.height;
 
 		if (canvas.headsupfraction == 0){
@@ -499,8 +488,8 @@ function takephoto(currtrial,currstage){
 		// center in page
 		canvasobj.style.top=canvas.offsettop + "px";
 		canvasobj.style.left=canvas.offsetleft + "px";
-		canvasobj.width=windowWidth-canvas.offsetleft;
-		canvasobj.height=windowHeight-canvas.offsettop;
+		canvasobj.width=windowWidth;
+		canvasobj.height=windowHeight;
 		canvasobj.style.margin="0 auto";
 
 		canvasobj.style.display="block"; //visible
@@ -531,8 +520,8 @@ function takephoto(currtrial,currstage){
 			canvasobj.width = oldWidth * canvasScale;
 			canvasobj.height = oldHeight * canvasScale;
 
-			canvasobj.style.width = windowWidth - canvas.offsetleft + "px";
-			canvasobj.style.height = windowHeight -canvas.offsettop + "px";
+			canvasobj.style.width = windowWidth + "px";
+			canvasobj.style.height = windowHeight + "px";
 			canvasobj.style.margin="0 auto";
 
 			context.scale(canvasScale,canvasScale);
@@ -564,15 +553,8 @@ function updateHeadsUpDisplay(){
 		task2 = trial.sampleON + "ms, " + trial.nway + "-way, " + trial.objectlist.length + "-obj";
 	}
 
-	if (trial.displayoutofbounds == 1){
-		displayout = 'WARNING: Images presented outside canvas'		
-	}
-	else{
-		displayout='';
-	}
 
-
-	textobj.innerHTML = trial.subjid + ": <font color=green><b>" + pctcorrect + "%</b></font> " + "(" + ncorrect + " of " + trial.response.length +")" + "<br>" + "Estimated Reward: <font color=green><b>" + Math.round(trial.rewardper1000*ncorrect/1000) + "mL</b></font> (" + Math.round(trial.rewardper1000) + " per 1000)" + "<br> " + "<br>" + " Stage " + trial.currentstage + ": " + task1 + "<br>" + task2 + "<br>" + "<font color=red><b>" + displayout + "</b></font>"
+	textobj.innerHTML = trial.subjid + ": <font color=green><b>" + pctcorrect + "%</b></font> " + "(" + ncorrect + " of " + trial.response.length +")" + "<br>" + "Estimated Reward: <font color=green><b>" + Math.round(trial.rewardper1000*ncorrect/1000) + "mL</b></font> (" + Math.round(trial.rewardper1000) + " per 1000)" + "<br> " + "<br>" + " Stage " + trial.currentstage + ": " + task1 + "<br>" + task2;
 }
 
 // IMAGE DISPLAY
@@ -582,15 +564,6 @@ function updateHeadsUpDisplay(){
 		function renderCanvas(idxcv,idxim,usesample,grid){
 			var canvasobj=document.getElementById("canvas"+idxcv);
 			var context=canvasobj.getContext('2d');
-
-			// gray out the canvas
-			if (usesample==true){
-				context.fillStyle="#7F7F7F";
-				context.fillRect(0,0,canvasobj.width,canvasobj.height);
-
-				context.fillStyle="black";
-				context.fillRect(0,0,canvasobj.width,100);
-			}
 
 			var indpos
 			indpos=grid;
@@ -606,10 +579,10 @@ function updateHeadsUpDisplay(){
 
 					context.drawImage(imagesSamplePack[imagesSample.packpointer[idxim[i]]],imagesSample.pixLR[idxim[i]][0],0,imagesSample.wd,imagesSample.ht,xleft[i],ytop[i],imagesSample.wd*imagesSample.scale/canvasScale,imagesSample.ht*imagesSample.scale/canvasScale);
 
-					xbound=[xleft[i], xleft[i]+imagesSample.wd*imagesSample.scale/canvasScale];
-					ybound=[ytop[i], ytop[i]+imagesSample.ht*imagesSample.scale/canvasScale];
+					xbound[i]=[xleft[i], xleft[i]+imagesSample.wd*imagesSample.scale/canvasScale];
+					ybound[i]=[ytop[i], ytop[i]+imagesSample.ht*imagesSample.scale/canvasScale];
 				}
-				else if (usesample==false && parseInt(i) == trial.correctItem[trial.current]){
+				else if (usesample==false){
 					xleft[i] = xgridcent[indpos[i]] - 0.5*imagesTest.wd*imagesTest.scale/canvasScale;
 					ytop[i] = ygridcent[indpos[i]] - 0.5*imagesTest.ht*imagesTest.scale/canvasScale;
 
@@ -618,31 +591,18 @@ function updateHeadsUpDisplay(){
 					xbound[i]=[xleft[i], xleft[i]+imagesTest.wd*imagesTest.scale/canvasScale];
 					ybound[i]=[ytop[i], ytop[i]+imagesTest.ht*imagesTest.scale/canvasScale];
 				}
-				else if (usesample==false && parseInt(i) != trial.correctItem[trial.current]){
-					xleft[i] = xgridcent[indpos[i]] - 0.5*imagesTest.wd*imagesTest.scale*(1-trial.hidetestdistractors)/canvasScale;
-					ytop[i] = ygridcent[indpos[i]] - 0.5*imagesTest.ht*imagesTest.scale*(1-trial.hidetestdistractors)/canvasScale;
 
-					context.drawImage(imagesTestPack[imagesTest.packpointer[idxim[i]]],imagesTest.pixLR[idxim[i]][0],0,imagesTest.wd,imagesTest.ht,xleft[i],ytop[i],imagesTest.wd*imagesTest.scale*(1-trial.hidetestdistractors)/canvasScale,imagesTest.ht*imagesTest.scale*(1-trial.hidetestdistractors)/canvasScale);
+				if (grid.length > 1 && trial.hidetestdistractors==1 && parseInt(i) != trial.correctItem[trial.current]){
+					context.fillStyle="#7F7F7F";
+					context.fillRect(xleft[i],ytop[i],imagesTest.wd*imagesTest.scale/canvasScale,imagesTest.ht*imagesTest.scale/canvasScale);
 
-					xbound[i]=[xleft[i], xleft[i]+imagesTest.wd*imagesTest.scale*(1-trial.hidetestdistractors)/canvasScale];
-					ybound[i]=[ytop[i], ytop[i]+imagesTest.ht*imagesTest.scale*(1-trial.hidetestdistractors)/canvasScale];
-				}
-
-				// if (grid.length > 1 && trial.hidetestdistractors==1 && parseInt(i) != trial.correctItem[trial.current]){
-				// 	context.fillStyle="#7F7F7F";
-				// 	context.fillRect(xleft[i],ytop[i],imagesTest.wd*imagesTest.scale/canvasScale,imagesTest.ht*imagesTest.scale/canvasScale);
-
-				// 	xbound[i]=[xleft[i], xleft[i]+imagesTest.wd*imagesTest.scale/canvasScale];
-				// 	ybound[i]=[ytop[i], ytop[i]+imagesTest.ht*imagesTest.scale/canvasScale];
-				// } //gray out distractors
-
-				if (usesample == false){
-					if (xbound[i][0] < 0 || ybound[i][0] < 0
-						|| xbound[i][1] > canvasobj.width/canvasScale || ybound[i][1] > canvasobj.height/canvasScale)
-					{
-						trial.displayoutofbounds=1
-					}
-				}
+					xbound[i]=[xleft[i], xleft[i]+imagesTest.wd*imagesTest.scale/canvasScale];
+					ybound[i]=[ytop[i], ytop[i]+imagesTest.ht*imagesTest.scale/canvasScale];
+				} //gray out distractors
+				xbound[i][0]=xbound[i][0]+canvas.offsetleft;
+				xbound[i][1]=xbound[i][1]+canvas.offsetleft;
+				ybound[i][0]=ybound[i][0]+canvas.offsettop;
+				ybound[i][1]=ybound[i][1]+canvas.offsettop;
 			};
 
 			// bounding boxes of images on canvas
@@ -655,12 +615,7 @@ function updateHeadsUpDisplay(){
 		//buffer (sample & test canvases)
 
 		//sample
-		if (trial.fixationusessample == 0){
-			renderCanvas(canvas.sample,[trial.sample[trial.current]],true,trial.samplegrid);
-		}
-		else if (trial.fixationusessample == 1){
-			boundingBoxFixation = renderCanvas(canvas.sample,[trial.sample[trial.current]],true,trial.samplegrid);
-		}
+		renderCanvas(canvas.sample,[trial.sample[trial.current]],true,trial.samplegrid);
 		
 		//test
 		if (trial.keepSampleON==1){
@@ -728,17 +683,15 @@ function updateHeadsUpDisplay(){
 		context.fillRect(0,0,canvasobj.width,canvasobj.height);
 
 		context.fillStyle="black";
-		context.fillRect(0,0,canvasobj.width,100);
+		context.fillRect(0,0,canvasobj.width,60);
 	}
 
 	function renderReward(){
 		var canvasobj=document.getElementById("canvas"+canvas.reward);
 		var context=canvasobj.getContext('2d');
-		context.clearRect(0,0,canvasobj.width,canvasobj.height);
-		context.fillStyle="white";
-		context.fillRect(hgridcent-200,vgridcent-200,400,400);
+		context.fillStyle="green";
+		context.fillRect(xgridcent[4]-200,ygridcent[4]-200,400,400);
 
-		// bar across top for photodiode
 		if (env.species == 'marmoset'){
 			context.fillStyle="black";
 			context.fillRect(0,0,canvasobj.width,100);
@@ -748,29 +701,25 @@ function updateHeadsUpDisplay(){
 	function renderPhotoReward(){
 		var canvasobj=document.getElementById("canvas"+canvas.photoreward);
 		var context=canvasobj.getContext('2d');
-		context.clearRect(0,0,canvasobj.width,canvasobj.height);
-		context.fillStyle="white";
-		context.fillRect(hgridcent-200,vgridcent-200,400,400);
+		context.fillStyle="green";
+		context.fillRect(xgridcent[4]-200,ygridcent[4]-200,400,400);
 
-		// bar across top for photodiode
 		if (env.species == 'marmoset'){
 			context.fillStyle="white";
 			context.fillRect(0,0,canvasobj.width,100);
 		}
-
 	}
 
 
 	function renderPunish(){
 		var canvasobj=document.getElementById("canvas"+canvas.punish);
 		var context=canvasobj.getContext('2d');
-		context.clearRect(0,0,canvasobj.width,canvasobj.height);
+		context.rect(xgridcent[4]-200,ygridcent[4]-200,400,400);
 		context.fillStyle="black";
-		context.fillRect(hgridcent-200,vgridcent-200,400,400);
+		context.fill();
 
-		// bar across the top
 		context.fillStyle="black";
-		context.fillRect(0,0,canvasobj.width,100);
+		context.fillRect(0,0,canvasobj.width,60);
 	}
 
 	function renderTouchFixation(){
@@ -785,7 +734,7 @@ function updateHeadsUpDisplay(){
 		context.beginPath();
 		context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
 
-		if (env.species == "macaque"){
+		if (env.species == "macaque" || env.species == "human"){
 			context.fillStyle="white";
 		}
 		else if (env.species == "marmoset"){
@@ -793,8 +742,8 @@ function updateHeadsUpDisplay(){
 		}
 
 		context.fill();
-		boundingBoxFixation.x = [xcent-rad, xcent+rad];
-		boundingBoxFixation.y = [ycent-rad, ycent+rad];
+		boundingBoxFixation.x = [xcent-rad+canvas.offsetleft, xcent+rad+canvas.offsetleft];
+		boundingBoxFixation.y = [ycent-rad+canvas.offsettop, ycent+rad+canvas.offsettop];
 
 		// //add eye fixation
 		// context.fillStyle="red";
@@ -805,15 +754,14 @@ function updateHeadsUpDisplay(){
 		// context.fillRect(xgridcent[trial.fixationgrid[trial.current]]+rad/2-6,xgridcent[trial.fixationgrid[trial.current]]-rad/2-6,12,12);
 
 		context.fillStyle="black";
-		context.fillRect(0,0,canvasobj.width,100);
+		context.fillRect(0,0,canvasobj.width,40);
 	}
 
 	function renderEyeFixation(){
 		var canvasobj=document.getElementById("canvas"+canvas.eyefix);
 		var context=canvasobj.getContext('2d');
-		context.clearRect(0,0,canvasobj.width,canvasobj.height);
 		context.fillStyle="red";
-		context.fillRect(hgridcent-6,vgridcent-6,12,12);
+		context.fillRect(xgridcent[4]-6,ygridcent[4]-6,12,12);
 	}
 
 // IMAGE DISPLAY (end)
@@ -860,23 +808,23 @@ function updateHeadsUpDisplay(){
 		p = new Promise(function(resolve,reject){
 			resolveFunc = resolve;
 			errFunc = reject;
-		}).then(); //function(resolveval){console.log('Fixation Promise resolved' + resolveval)});
+		}).then(function(resolveval){console.log('Fixation Promise resolved' + resolveval)});
 
 		function *waitforclickGenerator(){
 			var imclicked =[-1];
 			while (true){
 				imclicked = yield imclicked;
-				console.log('MOVED GENERATOR forward ' + trial.waitingforFixation)
+				console.log('moved generator forward')
 				resolveFunc(imclicked);
 			}
 		}
 
-		// trial.waitingforFixation = 1;
+		trial.waitingforFixation = 1;
 		waitforClick = waitforclickGenerator(); // start async function
 		waitforClick.next(); //move out of default state
 
 		//Start timer
-		movefixationTimer = setTimeout(function(){trial.brokeFixation=1; clearTimeout(fixationTimer); waitforClick.next(1); },trial.fixationinterval);
+		movefixationTimer = setTimeout(function(){trial.waitingforFixation=1; trial.brokeFixation=1; clearTimeout(fixationTimer); waitforClick.next(1); },trial.fixationinterval);
 
 		return p;
 	}
@@ -945,7 +893,7 @@ function updateHeadsUpDisplay(){
 			else if (env.pump==4){
 				oscillator.type='square'; //Square wave
 				oscillator.frequency.value=0.1; //frequency in hertz				
-			} //piezoelectric 3ml/min (takasago)
+			} //piezoelectric (takasago)
 			else if (env.pump==5){
 				oscillator.type='square';
 				oscillator.frequency.value=0.1;
@@ -960,7 +908,7 @@ function updateHeadsUpDisplay(){
 			// //var gainNode = audiocontext.createGainNode(); //Create boost pedal
 			// //gainNode.gain.value=0.3; //set boost pedal to 30% volume
 			oscillator.connect(gainNode);
-			// gainNode.connect(audiocontext.destination); //Connect boost pedal to output
+			// //gainNode.connect(audiocontext.destination); //Connect boost pedal to output
 
 			// // oscillator.onended=function(){
 			// // 	console.log('done with reward pulse');
@@ -1010,14 +958,14 @@ function updateHeadsUpDisplay(){
 			}
 		}
 
-		if (trial.waitingforFixation > 0){
+		if (trial.waitingforFixation == 1){
 			//determine if clicked on fixation dot
 			if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
 				 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
 				trial.brokeFixation = 0;
 				trial.xytfixation[trial.current]=[x,y,Math.round(performance.now())];
 				//Start timer
-				fixationTimer = setTimeout(function(){ trial.waitingforFixation=trial.waitingforFixation-1;clearTimeout(movefixationTimer); waitforClick.next(1);},trial.fixationdur);
+				fixationTimer = setTimeout(function(){ trial.waitingforFixation=0;clearTimeout(movefixationTimer); waitforClick.next(1);},trial.fixationdur);
 			} //if clicked fixation
 			else{
 			}
@@ -1030,7 +978,7 @@ function updateHeadsUpDisplay(){
 					y >= boundingBoxesTest.y[q][0] && y <= boundingBoxesTest.y[q][1]){
 					trial.response[trial.current]=q;
 					trial.xytresponse[trial.current]=[x,y,Math.round(performance.now())];
-					waitforClick.next(1);
+					waitforClick.next(q);
 					return
 				}
 			}
@@ -1038,7 +986,7 @@ function updateHeadsUpDisplay(){
 	}
 
 	function mousemove_listener(event){
-		if (trial.waitingforFixation>0 && trial.brokeFixation==0){
+		if (trial.waitingforFixation==1 && trial.brokeFixation==0){
 			var x = event.clientX
 			var y = event.clientY
 
@@ -1055,7 +1003,7 @@ function updateHeadsUpDisplay(){
 	}
 
 	function mouseup_listener(event){
-		if (trial.waitingforFixation>0 && trial.brokeFixation == 0){
+		if (trial.waitingforFixation==1 && trial.brokeFixation == 0){
 			// broke touch with fixation dot too early, cancel fixation timers
 			trial.brokeFixation = 1;
 			clearTimeout(fixationTimer);
@@ -1069,11 +1017,10 @@ function updateHeadsUpDisplay(){
 			return
 		};
 
-		var x = event.targetTouches[0].pageX - canvas.offsetleft
-		var y = event.targetTouches[0].pageY - canvas.offsettop
-		console.log(x + ',' + y + ',' + trial.waitingforFixation)
+		var x = event.targetTouches[0].pageX;
+		var y = event.targetTouches[0].pageY;
 
-		if (y < 0){
+		if (y < canvas.offsettop){
 			//clicked on headsup display
 			if (videoobj.style.zIndex != 100){
 				if (trial.takephoto == 0){
@@ -1089,17 +1036,14 @@ function updateHeadsUpDisplay(){
 			}
 		}
 
-		console.log('TOUCHED SCREEN, waitingforfixation=' + trial.waitingforFixation + ' waitingforresponse=' + trial.waitingforResponse)
-		if (trial.waitingforFixation > 0 & fixationcleared == 1){
+		if (trial.waitingforFixation == 1){
 			//determine if clicked on fixation dot
 			if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
 				 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
 				trial.brokeFixation = 0;
 				trial.xytfixation[trial.current]=[x,y,Math.round(performance.now())];
 				//Start timer
-				console.log('acquired fixation, started timer' + trial.fixationdur)
-				fixationTimer = setTimeout(function(){console.log('started fixation timer');trial.waitingforFixation=trial.waitingforFixation-1;clearTimeout(movefixationTimer); waitforClick.next(1);},trial.fixationdur);
-				console.log('WAITING FOR FIXATION=' + trial.waitingforFixation + ' & TOUCHED FIXATION')
+				fixationTimer = setTimeout(function(){console.log('started fixation timer');trial.waitingforFixation=0;clearTimeout(movefixationTimer); waitforClick.next(1);},trial.fixationdur);
 			} //if clicked fixation
 			else{
 				if (trial.rewardStage == 0){
@@ -1115,14 +1059,13 @@ function updateHeadsUpDisplay(){
 		}
 
 		if (trial.waitingforResponse == 1){
-				console.log('WAITING FOR RESPONSE, WAITINGFORFIXATION=' + trial.waitingforFixation + ' & TOUCHED SCREEN')
 			//determine if clicked in test box
 			for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
 				if (x >= boundingBoxesTest.x[q][0] && x <= boundingBoxesTest.x[q][1] &&
 					y >= boundingBoxesTest.y[q][0] && y <= boundingBoxesTest.y[q][1]){
 					trial.response[trial.current]=q;
 					trial.xytresponse[trial.current]=[x,y,Math.round(performance.now())];
-					waitforClick.next(1);
+					waitforClick.next(q);
 					return
 				}
 			}
@@ -1130,9 +1073,9 @@ function updateHeadsUpDisplay(){
 	}
 
 	function touchmove_listener(event){
-		if (trial.waitingforFixation>0 && trial.brokeFixation==0){
-			var x = event.targetTouches[0].pageX - canvas.offsetleft
-			var y = event.targetTouches[0].pageY - canvas.offsettop
+		if (trial.waitingforFixation==1 && trial.brokeFixation==0){
+			var x = event.targetTouches[0].pageX;
+			var y = event.targetTouches[0].pageY;
 
 			if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
 				 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
@@ -1145,24 +1088,23 @@ function updateHeadsUpDisplay(){
 				clearTimeout(fixationTimer);
 			}
 		}
-		else if (trial.waitingforFixation>0 && trial.brokeFixation==1){
+		else if (trial.waitingforFixation==1 && trial.brokeFixation==1){
 			//check if moved back into fixation
-			var x = event.targetTouches[0].pageX - canvas.offsetleft
-			var y = event.targetTouches[0].pageY - canvas.offsettop
+			var x = event.targetTouches[0].pageX;
+			var y = event.targetTouches[0].pageY;
 
 			if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
 				 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
 
 				//gained fixation
-			console.log('regained fixation by moving back in before timer expired')
 				trial.brokeFixation = 0;
 				touchstart_listener(event);
 			}
 		}
 		//Allows dragging into response box
 		if (trial.waitingforResponse == 1){
-			var x = event.targetTouches[0].pageX - canvas.offsetleft
-			var y = event.targetTouches[0].pageY - canvas.offsettop
+			var x = event.targetTouches[0].pageX;
+			var y = event.targetTouches[0].pageY;
 
 			//determine if moved into a test box
 			for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
@@ -1170,7 +1112,7 @@ function updateHeadsUpDisplay(){
 					y >= boundingBoxesTest.y[q][0] && y <= boundingBoxesTest.y[q][1]){
 					trial.response[trial.current]=q;
 					trial.xytresponse[trial.current]=[x,y,Math.round(performance.now())];
-					waitforClick.next(1);
+					waitforClick.next(q);
 					return
 				}
 			}
@@ -1178,7 +1120,7 @@ function updateHeadsUpDisplay(){
 	}
 
 	function touchend_listener(event){
-		if (trial.waitingforFixation>0 && trial.brokeFixation == 0 && trial.fixationdur > 0){
+		if (trial.waitingforFixation==1 && trial.brokeFixation == 0){
 			// broke touch with fixation dot too early, cancel fixation timers
 			trial.brokeFixation = 1;
 			console.log('was fixating but lifted finger');
@@ -1320,9 +1262,9 @@ function getImageList(images,foldernum){
 		packserial: [],
 	}
 
-	var perobj=1; //folder 0 or 4
+	var perobj=1; //folder 0 or 4 or 12
 	var perobjvec=[];
-	if (foldernum == 1 || foldernum == 2 || foldernum == 3 || foldernum == 6 || foldernum == 7 || foldernum == 8 || foldernum == 10 || foldernum == 11){
+	if (foldernum == 1 || foldernum == 2 || foldernum == 3 || foldernum == 6 || foldernum == 7 || foldernum == 8 || foldernum == 10 || foldernum == 11 || foldernum == 13 || foldernum == 14 || foldernum == 15){
 		perobj=100;
 	}
 	else if (foldernum == 5){
@@ -1335,7 +1277,7 @@ function getImageList(images,foldernum){
 		}
 	}
 
-	if (foldernum == 0 || foldernum == 1 || foldernum == 2 || foldernum == 3 || foldernum == 6 || foldernum == 7 || foldernum == 8 || foldernum == 9 || foldernum == 10){
+	if (foldernum == 0 || foldernum == 1 || foldernum == 2 || foldernum == 3 || foldernum == 6 || foldernum == 7 || foldernum == 8 || foldernum == 9 || foldernum == 10 || foldernum == 12){
 		var cnt=0;
 		for (var i in trial.objectlist){
 			for (var j=0; j<=perobj-1; j++){
@@ -1357,6 +1299,43 @@ function getImageList(images,foldernum){
 			} //for j exemplars
 		} //for i objects
 	}
+
+	//only 80 images in coco train set
+	if (foldernum == 13){
+		var cnt=0;
+		for (var i in trial.objectlist){
+			for (var j=0; j<=perobj-1-20; j++){
+				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
+				potentialImages.obj[cnt]=trial.objectlist[i];
+				cnt=cnt+1;
+			} //for j exemplars
+		} //for i objects
+	}
+
+	//only 40 images in coco test set
+	if (foldernum == 14){
+		var cnt=0;
+		for (var i in trial.objectlist){
+			for (var j=0; j<=perobj-1-60; j++){
+				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
+				potentialImages.obj[cnt]=trial.objectlist[i];
+				cnt=cnt+1;
+			} //for j exemplars
+		} //for i objects
+	}
+
+	//only 80 images in coco,objectome train set
+	if (foldernum == 15){
+		var cnt=0;
+		for (var i in trial.objectlist){
+			for (var j=0; j<=perobj-1-20; j++){
+				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
+				potentialImages.obj[cnt]=trial.objectlist[i];
+				cnt=cnt+1;
+			} //for j exemplars
+		} //for i objects
+	}
+
 
 	if (foldernum == 4){
 		var cnt=0;
@@ -1487,7 +1466,7 @@ function setReward(){
 
 // VARIABLES begin
 // Variables (general)
-	var subjectlist = ["Test","Mieke","Scipio","Manto","Picasso","Nano","Setta","Magneto","Zico"];
+	var subjectlist = ["Test","Kailyn","Oleo","Crypto","Mieke","Scipio","Manto","Picasso","Nano","Setta","Magneto","Zico"];
 	var subjectdialog = document.getElementById("subjid_dialog");
 	var subjectlistobj = document.getElementById("subjid_list");
 	//populate list
@@ -1519,10 +1498,10 @@ function setReward(){
 		punish: 7,
 		front: 0,
 		sequenceblank: [0,0],
-		tsequenceblank: [0,50],
+		tsequenceblank: [0,100],
 		sequencepre: [0,3],
 		tsequencepre: [0,300],
-		sequence: [0,1,0,2], //0=gray 1=sample 2=test 3=fix 4=reward 5=punish
+		sequence: [0,1,0,2], //0=gray 1=sample 2=test 3=touchfix 4=reward 5=punish
 		tsequence: [0,100,100+100,100+100+100], //timing between frames
 		sequencepost: [0,5,6],
 		tsequencepost: [0,25,600],
@@ -1573,9 +1552,6 @@ function setReward(){
 	var ygrid=[];
 	var xgridcent=[];
 	var ygridcent=[];
-	var hgridcent=[];
-	var vgridcent=[];
-	var gridcentidx=[];
 	var curridx = null;
 	var battery = {
 		current: 0,
@@ -1597,7 +1573,6 @@ function setReward(){
 		correct: [],
 		current: 0,
 	}
-	var fixationcleared = 0
 // VARIABLES end
 
 // Screen, Video, & Audio initialization begin
@@ -1671,13 +1646,6 @@ for (trial.current=0; trial.current<10000; trial.current++){
 if (trial.need2loadParameters == 1){
 	yield readParametersfromDropbox();
 	console.log(trial.objectlist)
-
-	if (trial.fixationusessample == 0){
-		canvas.sequencepre=[0,3]
-	}
-	else if (trial.fixationusessample == 1){
-		canvas.sequencepre=[0,1]
-	}
 	canvas.tsequence = [0,100,100+trial.sampleON,100+trial.sampleON+trial.sampleOFF]; //timing between frames
 	imagesSample.folder = "MonkeyTurk/obj25/imagepacks" + trial.imageFolderSample + "/imp";
 	imagesTest.folder = "MonkeyTurk/obj25/imagepacks" + trial.imageFolderTest + "/imp";
@@ -1686,13 +1654,13 @@ if (trial.need2loadParameters == 1){
 	setReward(); canvas.tsequencepost[2] = canvas.tsequencepost[1]+trial.reward*1000;
 
 if (trial.fixationmove==0){
-	trial.fixationinterval = 8000;
+	trial.fixationinterval = 3000;
 }
 else {
 	trial.fixationinterval=trial.fixationmove;
 }
 
-if (env.species == "macaque"){
+if (env.species == "macaque" || env.species == "human"){
 	canvas.headsupfraction=0;
 }
 else if (env.species == "marmoset"){
@@ -1720,6 +1688,7 @@ else if (env.species == "marmoset"){
 
 //reset trial tracking variables
 var d = new Date;
+var currdate = d
 var datestr = d.toISOString();
 trial.filename = datestr.slice(0,datestr.indexOf(".")) + "_" + trial.subjid + ".txt";
 trial.current=0;
@@ -1735,7 +1704,6 @@ trial.response=[];
 trial.correctItem=[];
 trial.sampleblockidx=0;
 trial.stickyresponse=0;
-trial.displayoutofbounds=0;
 
 trial.consecutivehits=0;
 trial.nreward=[];
@@ -1784,21 +1752,17 @@ if (trial.need2loadImages == 1){
 
 	// MAKE THE IMAGE DISPLAY GRID (3x3)
 	var cnt=0;
-	var fixationgridsize = 5
-	for (var i=1; i<=fixationgridsize; i++){
-		for (var j=1; j<=fixationgridsize; j++){
+	for (var i=1; i<=3; i++){
+		for (var j=1; j<=3; j++){
 			xgrid[cnt]=i - 1/2;
 			ygrid[cnt]=j - 1/2;
 			cnt++;
 		}
 	}
-	gridcentidx=Math.ceil(fixationgridsize*fixationgridsize/2)-1
 
 	//center x & y grid within canvas
-	var dx = (document.body.clientWidth - canvas.offsetleft)*devicePixelRatio/2/canvasScale - (fixationgridsize/2)*imagesSample.wd*imagesSample.scale/canvasScale;
-	var dy = (document.body.clientHeight - canvas.offsettop)*devicePixelRatio/2/canvasScale - (fixationgridsize/2)*imagesSample.ht*imagesSample.scale/canvasScale;
-	hgridcent = (document.body.clientWidth - canvas.offsetleft)*devicePixelRatio/2/canvasScale
-	vgridcent = (document.body.clientHeight - canvas.offsettop)*devicePixelRatio/2/canvasScale
+	var dx = (document.body.clientWidth - canvas.offsetleft)*devicePixelRatio/2/canvasScale - xgrid[4]*imagesSample.wd*imagesSample.scale/canvasScale;
+	var dy = (document.body.clientHeight - canvas.offsettop)*devicePixelRatio/2/canvasScale - ygrid[4]*imagesSample.ht*imagesSample.scale/canvasScale;
 	for (var i=0; i<=xgrid.length-1; i++){
 		xgridcent[i]=xgrid[i]*imagesSample.wd*imagesSample.scale/canvasScale + dx;
 		ygridcent[i]=ygrid[i]*imagesSample.ht*imagesSample.scale/canvasScale + dy;
@@ -1822,35 +1786,20 @@ renderBlank();
 			} //keep same sample
 			trial.sampleblockidx++;
 
-			// choose one object
-			// trial.sample[trial.current] = imagesSample.serial.length-1
-			// trial.sample[trial.current] = 0 //wrench
-			// trial.sample[trial.current] = 1 //rhino
-			// trial.sample[trial.current] = 3 //camel
-			trial.sample[trial.current] = 16 //head
-
-			//Correction procedure
-			if (trial.current > 0 && trial.response[trial.current-1] != trial.correctItem[trial.current-1]){
-				trial.sample[trial.current]=trial.sample[trial.current-1]
-				trial.test[trial.current]=trial.test[trial.current-1]
-				trial.correctItem[trial.current]=trial.correctItem[trial.current-1]
-				trial.sampleblockidx--
-			}
-			else {
-				//CHOOSE TEST
-				funcreturn=getTest(trial.nway);
-				if (trial.stickyresponse >= trial.nstickyresponse){
-					while (funcreturn.correctItem == trial.response[trial.current-1]){
-						funcreturn=getTest(trial.nway);
-					} //redraw so that correct item is on opposite side of sticky response
-				}
-				trial.test[trial.current]=funcreturn.testArray;
-				trial.correctItem[trial.current]=funcreturn.correctItem;
-			}
-
 			if (trial.sampleblockidx > trial.sampleblocksize-1){
 				trial.sampleblockidx = 0;
 			} //reset
+
+
+			//CHOOSE TEST
+			funcreturn=getTest(trial.nway);
+			if (trial.stickyresponse >= trial.nstickyresponse){
+				while (funcreturn.correctItem == trial.response[trial.current-1]){
+					funcreturn=getTest(trial.nway);
+				} //redraw so that correct item is on opposite side of sticky response
+			}
+			trial.test[trial.current]=funcreturn.testArray;
+			trial.correctItem[trial.current]=funcreturn.correctItem;
 
 			//GET IMAGE SERIALS
 			trial.sampleserial[trial.current]=imagesSample.serial[trial.sample[trial.current]];
@@ -1859,11 +1808,10 @@ renderBlank();
 				testserial[q]=imagesTest.serial[trial.test[trial.current][q]];
 			}
 			trial.testserial[trial.current]=testserial;
-
-	// CHOOSE FIXATION, SAMPLE, TEST (end)
+	// CHOOSE SAMPLE, TEST (end)
 
 canvas.buffered=0;
-if (trial.fixationdur == -1){
+if (trial.fixationdur <= 0){
 	bufferTrialImages()
 
 	trial.waitingforFixation=0
@@ -1871,22 +1819,23 @@ if (trial.fixationdur == -1){
 	trial.tstart[trial.current]=Math.round(performance.now());
 	trial.xytfixation[trial.current]=[-1,-1,trial.tstart[trial.current]];
 }
-else if (trial.fixationdur < -1){
-	trial.waitingforFixation = -trial.fixationdur
-}
 else if (trial.fixationdur > 0){
 	trial.waitingforFixation=1;
 }
-while (trial.waitingforFixation > 0){
-	fixationcleared=0
+while (trial.waitingforFixation==1){
 
 	// CHOOSE FIXATION, SAMPLE, TEST
-	//CHOOSE FIXATION
-	if (trial.fixationmove > 0){//Choose grid point
-		trial.fixationgrid[trial.current]=Math.floor((xgrid.length)*Math.random())
-	}
+			//CHOOSE FIXATION
+	if (trial.fixationmove > 0){
+		trial.fixationgrid[trial.current]=Math.floor((xgrid.length)*Math.random()); //Choose grid point
+			}
 	else if (trial.fixationmove == 0){
-		trial.fixationgrid[trial.current]=trial.fixationgridindex;
+		if (env.species == "macaque" || env.species == "human"){
+			trial.fixationgrid[trial.current]=5;
+		}
+		else if (env.species == "marmoset"){
+			trial.fixationgrid[trial.current]=5;
+		}
 	}
 
 	//FIXATION
@@ -1894,41 +1843,30 @@ while (trial.waitingforFixation > 0){
 	if (trial.takephoto==1){
 	// takephoto(trial.current,trial.stage); //before fixation
 	}
-	
-	//buffer fixation, sample & test
-	renderTouchFixation();
+			//buffer fixation, sample & test
+			renderTouchFixation();
 
-	if (canvas.buffered == 0){
-		bufferTrialImages();
-	}
+			if (canvas.buffered == 0){
+				bufferTrialImages();
+			}
 
-	if (trial.fixationusessample == 1 && trial.waitinforFixation){
-		while (canvas.buffered == 0){
-			//wait since need sample to display as fixation
-		}
-	}
-
-	//fixation
-	trial.tstart[trial.current]=Math.round(performance.now());
-	frame.shown=[];
-	for (var q in canvas.sequencepre){frame.shown[q]=0}; frame.current=0;
-	if (env.species == 'marmoset'){
-		playSound(0);
-	}
-	var t0=performance.now()
-	yield displayTrial(canvas.sequencepre,canvas.tsequencepre);
-	var t1=performance.now()
-	console.log('TIME TO SHOW FIXATION IMAGE = ' + (t1-t0) + ' ms')
+			//fixation
+			trial.tstart[trial.current]=Math.round(performance.now());
+			frame.shown=[];
+			for (var q in canvas.sequencepre){frame.shown[q]=0}; frame.current=0;
+			if (env.species == 'marmoset'){
+				playSound(0);
+			}
+			yield displayTrial(canvas.sequencepre,canvas.tsequencepre);
 audiocontext.suspend()
-fixationcleared=1
-	yield fixationPromise();
-console.log('fixationpromise resolved, READY TO LEAVE WHILE LOOP' + trial.waitingforFixation)
-	for (var q in canvas.sequenceblank){frame.shown[q]=0}; frame.current=0;
-	if (trial.waitingforFixation>0){
-		yield displayTrial(canvas.sequenceblank,canvas.tsequenceblank);
-	}
+			yield fixationPromise();
+
+
+			for (var q in canvas.sequenceblank){frame.shown[q]=0}; frame.current=0;
+			if (trial.waitingforFixation==1){
+				yield displayTrial(canvas.sequenceblank,canvas.tsequenceblank);
+			}
 } //while waiting for fixation
-console.log('EXITED WHILE LOOP')
 
 trial.stage=1;
 		// sample & test
@@ -1949,7 +1887,7 @@ takephoto(trial.current,trial.stage); //after fixation
 }
 
 trial.stage=2;
-		// Determine reward || punish
+		// reward || punish
 		frame.shown=[];
 		for (var q in canvas.sequencepost){frame.shown[q]=0}; frame.current=0;
 		if (trial.rewardStage === 0){
@@ -2035,7 +1973,6 @@ trial.stage=2;
 		// Deliver reward or punish
 		frame.shown=[];
 		for (var q in canvas.sequencepost){frame.shown[q]=0}; frame.current=0;
-			// trial.nreward[trial.current]=100
 		if (canvas.sequencepost[1]==canvas.photoreward && env.species == 'marmoset'){
 			for (var q = 0; q <= trial.nreward[trial.current]-1; q++){
 				frame.shown=[];
@@ -2044,7 +1981,7 @@ trial.stage=2;
 				yield displayTrial(canvas.sequencepost,canvas.tsequencepost);
 			}
 		} // play reward sound
-		if (canvas.sequencepost[1]==canvas.photoreward && env.species == 'macaque'){
+		if (canvas.sequencepost[1]==canvas.photoreward && (env.species == 'macaque' || env.species == "human")){
 			for (var q = 0; q <= trial.nreward[trial.current]-1; q++){
 				frame.shown=[];
 				for (var q2 in canvas.sequencepost){frame.shown[q2]=0}; frame.current=0;
@@ -2132,6 +2069,13 @@ if (trial.takephoto==1){
 // Asynchronously check if parameter file was changed by experimenter
 checkParameterFileStatus()
 
+	// check if new day
+	var newdate = new Date;
+	if ( (new Date).getDate() != currdate.getDate())
+	{
+		trial.need2loadParameters = 1
+	}
+	
 	}
 	console.log('end of generator for loop');
 }) //spawn
@@ -2159,7 +2103,6 @@ As of 2014.12.01, generators are not supported in safari and not in iOS (even Ch
 
 // In case you're wondering why you can't use the devicePixelRatio to determine the backing store size, the answer is that they aren't guaranteed to match. Despite presenting the same devicePixelRatio value, Chrome and Safari 6 can and do have entirely different approaches for the backing store size (and therefore the webkitBackingStorePixelRatio) on HiDPI devices. The net result is that we can't rely on devicePixelRatio to know how the browser is going to scale images that are written into the canvas.  http://www.html5rocks.com/en/tutorials/canvas/hidpi/
 
-// https://blog.domenic.me/youre-missing-the-point-of-promises/
 
 -->
 <!-- ************ /COMMENT SECTION ************ -->
