@@ -146,6 +146,11 @@
 				trialhistory.trainingstage[trialhistory.current]=funcreturn;
 			}
 
+			else if (trial.automator == "SR"){
+				funcreturn = updateSRTask("readtaskstageonly"); //read task stage only
+				trialhistory.trainingstage[trialhistory.current]=funcreturn;
+			}
+
 			if (typeof(trial.automator) == "undefined" || trial.automator == 0 || trial.automator != trial.currentAutomator){
 			}
 			else {
@@ -2074,6 +2079,11 @@ if (trial.takephoto==1){
 				trialhistory.trainingstage[trialhistory.current] = funcreturn;
 				trial["currentstage"]=trialhistory.trainingstage[trialhistory.current];
 			}
+			else if (trial.automator == "SR"){
+				funcreturn = updateSRTask("readtaskstageonly");
+				trialhistory.trainingstage[trialhistory.current] = funcreturn;
+				trial["currentstage"]=trialhistory.trainingstage[trialhistory.current];
+			}
 		}
 		if (trial.rewardStage==0 & trial.brokeFixation==0){
 			trialhistory.correct[trialhistory.current]=1;
@@ -2110,6 +2120,9 @@ if (trial.takephoto==1){
 	}
 	else if (trial.automator==3){
 		updateTask3("writeifneeded");
+	}
+	else if (trial.automator=="SR"){
+		updateSRTask("writeifneeded");
 	}
 
 	if (trial.need2writeParameters == 1){
