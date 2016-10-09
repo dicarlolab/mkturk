@@ -29,19 +29,290 @@
 //	(10)
 // NEW OBJECTS
 
-// TASK STRUCTURE (OLD)
-// (1) Touch
-// (2) Match,var0
-// (3) Distractors,var0
-// (4) Delay,var0,500
-// TASK DIFFICULTY
-// (5) var1,400
-// (6) var2,300
-// (7) var3,200
-// NEW OBJECTS
-// (8) 4-way,200
-// (9,10,11) 8-way x 3, 200
-// (12) RDM: 24-way, 100
+
+function updateSRTask(writestr){
+	//imagefoldersample
+	//objectlist
+
+
+	var default_objectgrid = [2, 8, 4, 6] 
+	function get_obj_grid(n){
+		// Returns first n elements of default_objectgrid
+		return default_objectgrid.slice(0, n)
+	}
+
+	// Define training phases
+	function touch(mintrials){
+		var vals = {
+		stagename: 'touch',  // todo: log stagename as a meta field for each trial
+		rewardStage: 0,
+		fixationmove: 0, 
+		fixationradius: 120,
+		sampleON: 200, 
+		keepSampleON: 0, 
+		samplegrid: 4, 
+		objectgrid: [2, 8], 
+		imageFolderSample: 17, 
+		nway: 1, 
+		sampleScale: 1.5,
+		testScale: 1.5,
+		objectlist: [0, 1], 
+		minpctcorrect: 75, 
+		mintrials: mintrials,
+		}
+		return vals
+	}
+
+	function movingtouch(mintrials){
+		var vals = {stagename: 'movingtouch', 
+		rewardStage: 0,
+		fixationmove: 3000, // 
+		fixationradius: 120,
+		sampleON: 200, // ms - how long does the sample image stay on
+		keepSampleON: 0, // Bool - keep it on forever?
+		samplegrid: 4, // index of sample in a 3x3, down-right indexed grid starting at 1
+		objectgrid: [2, 8], // array of indices for the response images of each object (indexed in same order as param "TestedObjects")
+		imageFolderSample: 17, // reference to folder from where to get sample (stimulus) images
+		nway: 1, 
+		sampleScale: 1.5,
+		testScale: 1.5,
+		objectlist: [0, 1], 
+		minpctcorrect: 75, // purely internal for state transition, it seems
+		mintrials: mintrials,
+		}
+		return vals 
+	}
+
+	function spatialSR(mintrials, nway = 1, objlist = [0, 1]){
+		var vals = {
+		stagename: 'spatialSR'+nway.toString()+'ways', 
+		rewardStage: 0,
+		fixationmove: 3000, // 
+		fixationradius: 120,
+		sampleON: 200, // ms - how long does the sample image stay on
+		keepSampleON: 1, // Bool - keep it on forever?
+		samplegrid: 4, // index of sample in a 3x3, down-right indexed grid starting at 1
+		objectgrid: get_obj_grid(objlist.length), // array of indices for the response images of each object (indexed in same order as param "TestedObjects")
+		imageFolderSample: 17, // reference to folder from where to get sample (stimulus) images
+		nway: nway, 
+		sampleScale: 2,
+		testScale: 2,
+		objectlist: objlist, 
+		minpctcorrect: 75, // purely internal for state transition, it seems
+		mintrials: mintrials,
+		}
+		return vals
+	}
+
+	function delaySR(mintrials, nway = 2, objlist = [0,1]){
+		var vals = {
+		stagename: 'delaySR_2way'+nway.toString()+'ways', 
+		rewardStage: 0,
+		fixationmove: 3000, 
+		fixationradius: 120,
+		sampleON: 500, 
+		keepSampleON: 0, 
+		samplegrid: 4, 
+		objectgrid: get_obj_grid(objlist.length), 
+		imageFolderSample: 17, 
+		nway: nway, 
+		sampleScale: 2,
+		testScale: 2,
+		objectlist: objlist, 
+		minpctcorrect: 80, // purely internal for state transition, it seems
+		mintrials: mintrials,
+		}
+		return vals
+	}
+
+
+	
+/* todo: 
+	// [7] Introduce 3D shape stimuli (pose variation). 
+
+	// [8] Introduce var3 position variation. 
+
+	// [9] Introduce var6 position variation. 
+
+	// [10] Add backgrounds. 
+*/
+
+	//// Define sequence of stages
+	var training_sequence = [touch(5), 
+							 movingtouch(5), 
+							 spatialSR(5, nway = 1, objlist = [0, 1]), 
+							 spatialSR(5, nway = 2, objlist = [0, 1]), 
+							 spatialSR(5, nway = 2, objlist = [2, 3]), 
+							 spatialSR(5, nway = 2, objlist = [4, 5]), 
+							 delaySR(5, nway = 2, objlist = [4, 5]), 
+							 delaySR(5, nway = 2, objlist = [1, 3]),
+							 delaySR(5, nway = 2, objlist = [2, 4]),
+							 delaySR(5, nway = 3, objlist = [0, 1, 2]), 
+							 delaySR(5, nway = 3, objlist = [2, 3, 1]), 
+							 delaySR(5, nway = 3, objlist = [5, 2, 3]), 
+							 delaySR(5, nway = 3, objlist = [4, 0, 2]), 
+							 delaySR(5, nway = 4, objlist = [0, 1, 2, 3]), 
+							 delaySR(5, nway = 4, objlist = [4, 5, 0, 2]), 
+							 delaySR(5, nway = 4, objlist = [3, 2, 1, 4]), 
+							 delaySR(5, nway = 4, objlist = [2, 3, 4, 5]), 
+							 delaySR(5, nway = 4, objlist = [5, 0, 3, 2])]
+
+
+	var trainingstages = {
+		rewardStage: [],
+		fixationmove: [],
+		fixationradius: [],
+		sampleON: [],
+		keepSampleON: [],
+		samplegrid: [],
+		objectgrid: [],
+		imageFolderSample: [],
+		nway: [], 
+		sampleScale: [],
+		testScale: [],
+		objectlist: [],
+		minpctcorrect: [],
+		mintrials: [],
+	}
+	
+	for (var i=0; i<=training_sequence.length-1; i++){
+		trainingstages.rewardStage[i]=training_sequence[i].rewardStage
+		trainingstages.fixationmove[i]=training_sequence[i].fixationmove
+		trainingstages.fixationradius[i]=training_sequence[i].fixationradius
+		trainingstages.sampleON[i]=training_sequence[i].sampleON
+		trainingstages.samplegrid[i]=training_sequence[i].samplegrid
+		trainingstages.objectgrid[i]=training_sequence[i].objectgrid
+		trainingstages.keepSampleON[i]=training_sequence[i].keepSampleON
+		trainingstages.nway[i]=training_sequence[i].nway
+		trainingstages.imageFolderSample[i]=training_sequence[i].imageFolderSample
+		trainingstages.sampleScale[i]=training_sequence[i].sampleScale
+		trainingstages.testScale[i]=training_sequence[i].testScale
+		trainingstages.objectlist[i]=training_sequence[i].objgroup
+		trainingstages.minpctcorrect[i]=training_sequence[i].minpctcorrect
+		trainingstages.mintrials[i]=training_sequence[i].mintrials
+	}
+
+
+//DETERMINE TASK STAGE
+	//determine current training stage
+	for (var i = 0; i<=trainingstages.sampleON.length-1; i++){
+		if (trainingstages.rewardStage[i] == trial.rewardStage && 
+			trainingstages.fixationmove[i] == trial.fixationmove && 
+			trainingstages.fixationradius[i] == trial.fixationradius && 
+			trainingstages.sampleON[i] == trial.sampleON && 
+			trainingstages.samplegrid[i] == trial.samplegrid && 
+			trainingstages.keepSampleON[i] == trial.keepSampleON && 
+			trainingstages.imageFolderSample[i] == trial.imageFolderSample && 
+			trainingstages.sampleScale[i] == trial.sampleScale && 
+			trainingstages.testScale[i] == trial.testScale && 
+			trainingstages.objectlist[i] == trial.objectlist {
+			trainingstages.current = i;
+		}
+	}
+
+	// "RewardStage":1,
+	// "FixationMove":0,
+	// "FixationRadius":60,
+	// "SampleON":200,
+	// "SampleGridIndex":[4],
+	// "KeepSampleON":0,
+	// "ImageFolderSample":1,
+	// "SampleScale":2,
+	// "TestScale":2,
+	// "TestedObjects":[7,8],
+
+
+	// [{"Weight":5.6
+	// "Species":"macaque"
+	// "Homecage":1
+	// "Separated":1
+	// "Liquid":1,
+	// "Tablet":"samsung10",
+	// "Pump":3,
+	// "Nway":2,
+	// "TestGridIndex":[1,7],
+	// "RewardPer1000Trials":90,
+	// "PunishTimeOut":3000,
+	// "FixationDuration":30,
+	// "SampleOFF":100,
+	// "HideTestDistractors":0,
+	// "SampleBlockSize":0,
+	// "NStickyResponse":5,
+	// "ImageFolderTest":0,
+	// "Automator":0}]
+
+	if (writestr == "readtaskstageonly"){
+		return trainingstages.current;		
+	}
+
+//COMPUTE PERFORMANCE
+	var startingindex = -1;
+	for (var i = 0; i < trialhistory.trainingstage.length; i++){
+		if (typeof(trialhistory.trainingstage[i]) == "undefined"){
+		}
+		else if (trialhistory.trainingstage[i] == trainingstages.current && startingindex == -1){
+			startingindex = i;
+		}
+		else if (trialhistory.trainingstage[i] != trainingstages.current){
+			startingindex = -1; //reset starting index, not a continuous block
+		}
+	}
+
+	var ntrial=0;
+	var ncorrect=0;
+	var pctcorrect
+	if (startingindex == -1){
+		pctcorrect = 0;
+	}
+	else{
+		//take running average
+		var ncompleted = trialhistory.correct.length - startingindex;
+		if (ncompleted > trainingstages.mintrials[trainingstages.current]){
+			startingindex = trialhistory.correct.length - trainingstages.mintrials[trainingstages.current];
+		}
+		for (var i=startingindex; i<=trialhistory.correct.length-1; i++)
+		{
+			if (trialhistory.correct[i]==1){ncorrect++;}
+			ntrial++;
+		}
+		pctcorrect = 100 * ncorrect/ntrial;
+	}
+
+
+	//Determine if updating stage and/or reward
+	var updatingstage=0;
+
+	if (pctcorrect >= trainingstages.minpctcorrect[trainingstages.current] && 
+		ntrial >= trainingstages.mintrials[trainingstages.current] && 
+		trainingstages.current < trainingstages.sampleON.length-1){
+		updatingstage=1;
+		trainingstages.current++;
+	}
+
+	if (updatingstage==1){
+		// trial.need2loadParameters=1;
+		trial.need2writeParameters=1;
+	}
+	else{
+//		// trial.need2loadParameters=0;
+		return
+	}
+
+
+//update training stage
+	trial.rewardStage = trainingstages.rewardStage[trainingstages.current]
+	trial.fixationmove = trainingstages.fixationmove[trainingstages.current]
+	trial.fixationradius = trainingstages.fixationradius[trainingstages.current]
+	trial.sampleON = trainingstages.sampleON[trainingstages.current]
+	trial.samplegrid = [trainingstages.samplegrid[trainingstages.current]]
+	trial.keepSampleON = trainingstages.keepSampleON[trainingstages.current]
+	trial.imageFolderSample = trainingstages.imageFolderSample[trainingstages.current]
+	trial.sampleScale = trainingstages.sampleScale[trainingstages.current]
+	trial.testScale = trainingstages.testScale[trainingstages.current]
+	trial.objectlist = trainingstages.objectlist[trainingstages.current] //todo
+
+}
+
 
 function updateTask3(writestr){
 	var defaultValues = {
