@@ -33,7 +33,7 @@
 // ----subject list
 // ----vitals: task time, total trials, %correct, estimated juice, battery life
 
-// DROPBOX STUFF
+//================== DROPBOX STUFF ==================//
 	var client = new Dropbox.Client({key: "mdzikawxzejgjlf"}); // Dropbox.client help: http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/Client.html
 	var showError = function(error){console.log(error.status)};
 
@@ -467,9 +467,11 @@ function takephoto(currtrial,currstage){
 			}
 		})
 	}
-// DROPBOX STUFF (end)
+//================== DROPBOX STUFF (end) ==================//
 
-// CANVAS SETUP
+
+
+//================== CANVAS SETUP ==================//
 	// Sync: Setup heads-up display canvas
 	function setupCanvasHeadsUp(){
 		canvasobj=document.getElementById("canvasheadsup");
@@ -540,7 +542,8 @@ function takephoto(currtrial,currstage){
 			context.scale(canvasScale,canvasScale);
 		} //if
 	} //scaleCanvasforHiDPI
-// CANVAS SETUP (end)
+//================== CANVAS SETUP (end) ==================//
+
 
 
 function updateHeadsUpDisplay(){
@@ -570,7 +573,7 @@ function updateHeadsUpDisplay(){
 	textobj.innerHTML = trial.subjid + ": <font color=green><b>" + pctcorrect + "%</b></font> " + "(" + ncorrect + " of " + trial.response.length +")" + "<br>" + "Estimated Reward: <font color=green><b>" + Math.round(trial.rewardper1000*ncorrect/1000) + "mL</b></font> (" + Math.round(trial.rewardper1000) + " per 1000)" + "<br> " + "<br>" + " Stage " + trial.currentAutomatorStage + ": " + task1 + "<br>" + task2;
 }
 
-// IMAGE DISPLAY
+//================== IMAGE RENDERING ==================//
 	// Sync: buffer trial images
 	function bufferTrialImages(){
 		// (pre)render canvas (synchronous)
@@ -806,13 +809,11 @@ function updateHeadsUpDisplay(){
 		context.fillStyle="red";
 		context.fillRect(xgridcent[4]-6,ygridcent[4]-6,12,12);
 	}
-
-// IMAGE DISPLAY (end)
-
+//================== IMAGE RENDERING (end) ==================//
 
 
-// STATES
 
+//================== PROMISE STATES ==================//
 	// Promise: Select Subject
 	function subjidPromise(){
 		var resolveFunc
@@ -971,11 +972,11 @@ function updateHeadsUpDisplay(){
 			setTimeout(function(){resolve(1);},trial.punish); //milliseconds
 		}).then();
 	}
-// STATES (end)
+//================== PROMISE STATES (end) ==================//
 
 
 
-// MOUSE & TOUCH EVENTS
+//================== MOUSE & TOUCH EVENTS ==================//
 	function mousedown_listener(event){
 		if(typeof event === 'undefined'){
 			console.log('no click, loading images, initializing response promise');
@@ -1170,12 +1171,11 @@ function updateHeadsUpDisplay(){
 			clearTimeout(fixationTimer);
 		}
 	}
-// MOUSE & TOUCH EVENTS (end)
+//================== MOUSE & TOUCH EVENTS (end) ==================//
 
 
 
-// HELPER FUNCTIONS
-
+//================== UTILITIES ==================//
 	//Define spawn function to make generator work with Promises (from: https://gist.github.com/jakearchibald/31b89cba627924972ad6)
 	function spawn(generatorFunc) {
 	  function continuer(verb, arg) {
@@ -1215,64 +1215,6 @@ function updateHeadsUpDisplay(){
 	    return array
 	}
 
-	function getTest(nway){
-		//draw category then draw images from that category
-		// randomly choose an image with that category (could also do a prototype)
-
-		// Generate cat list from sample images
-		var objectlist=[];
-		for (var i=0; i<=imagesSample.serial.length-1; i++){
-			if (objectlist.indexOf(imagesSample.obj[i]) == -1 && imagesSample.obj[i] != imagesSample.obj[trial.sample[trial.current]]){
-				objectlist[objectlist.length]=imagesSample.obj[i]; //add category
-			}//if
-		}//for
-
-		// Shuffle wrt categories
-		if (objectlist.length > 1){
-			shuffleArray(objectlist);
-		}
-
-		//Take the first nway-1 categories
-		var testArrayObj=[];
-		for (var i=0; i<=nway-2; i++){
-			testArrayObj[i]=objectlist[i];
-		}
-
-		//Insert sample object at end position
-		testArrayObj[nway-1]=imagesSample.obj[trial.sample[trial.current]];
-
-		// Shuffle wrt array position
-		var shuffleind=[];
-		shuffleind[0]=nway;
-		shuffleArray(shuffleind);
-		var testArrayObj_shuffleItems=[];
-		var correctItem = shuffleind[shuffleind.length-1];
-		for (var i=0; i<=nway-1; i++){
-			testArrayObj_shuffleItems[shuffleind[i]] = testArrayObj[i];
-		}
-
-		// Shuffle wrt images in a category
-		var testArray=[];
-		objshuffled = testArrayObj_shuffleItems;
-		for (var i=0; i<=nway-1; i++){
-			// Generate image list
-			var imlist=[];
-			for (var j=0; j<=imagesTest.serial.length-1; j++){
-				if (imagesTest.obj[j] == objshuffled[i]){
-					imlist[imlist.length]=j;
-				}
-			}
-			if (imlist.length > 1){
-				shuffleArray(imlist);
-			}
-			testArray[i]=imlist[0];
-		}
-
-		return {
-				correctItem: correctItem,
-				testArray: testArray
-			};
-	}
 
 	// convert base64 to buffer array (from: http://stackoverflow.com.80bola.com/questions/27524283/save-image-to-dropbox-with-data-from-canvas?rq=1)
 	function _base64ToArrayBuffer(base64){
@@ -1287,6 +1229,8 @@ function updateHeadsUpDisplay(){
 		}
 		return bytes.buffer;
 	}
+//================== UTILITIES (end) ==================//
+
 
 function getImageList(images,foldernum){
 	images.serial = [];
@@ -1469,6 +1413,66 @@ function getImageList(images,foldernum){
 		};
 }
 
+	function getTest(nway){
+		//draw category then draw images from that category
+		// randomly choose an image with that category (could also do a prototype)
+
+		// Generate cat list from sample images
+		var objectlist=[];
+		for (var i=0; i<=imagesSample.serial.length-1; i++){
+			if (objectlist.indexOf(imagesSample.obj[i]) == -1 && imagesSample.obj[i] != imagesSample.obj[trial.sample[trial.current]]){
+				objectlist[objectlist.length]=imagesSample.obj[i]; //add category
+			}//if
+		}//for
+
+		// Shuffle wrt categories
+		if (objectlist.length > 1){
+			shuffleArray(objectlist);
+		}
+
+		//Take the first nway-1 categories
+		var testArrayObj=[];
+		for (var i=0; i<=nway-2; i++){
+			testArrayObj[i]=objectlist[i];
+		}
+
+		//Insert sample object at end position
+		testArrayObj[nway-1]=imagesSample.obj[trial.sample[trial.current]];
+
+		// Shuffle wrt array position
+		var shuffleind=[];
+		shuffleind[0]=nway;
+		shuffleArray(shuffleind);
+		var testArrayObj_shuffleItems=[];
+		var correctItem = shuffleind[shuffleind.length-1];
+		for (var i=0; i<=nway-1; i++){
+			testArrayObj_shuffleItems[shuffleind[i]] = testArrayObj[i];
+		}
+
+		// Shuffle wrt images in a category
+		var testArray=[];
+		objshuffled = testArrayObj_shuffleItems;
+		for (var i=0; i<=nway-1; i++){
+			// Generate image list
+			var imlist=[];
+			for (var j=0; j<=imagesTest.serial.length-1; j++){
+				if (imagesTest.obj[j] == objshuffled[i]){
+					imlist[imlist.length]=j;
+				}
+			}
+			if (imlist.length > 1){
+				shuffleArray(imlist);
+			}
+			testArray[i]=imlist[0];
+		}
+
+		return {
+				correctItem: correctItem,
+				testArray: testArray
+			};
+	}
+
+
 function setReward(){
 	var m = 0;
 	var b = 0;
@@ -1500,9 +1504,6 @@ function setReward(){
 	} //piezoelectric 7mL/min (takasago)
 	trial.reward = (trial.rewardper1000 - b)/m/1000;
 }
-
-	
-// HELPER FUNCTIONS (end)
 
 </script>
 </head>
@@ -1536,7 +1537,7 @@ function setReward(){
 
 <script>
 
-// VARIABLES begin
+//================== INITIALIZE VARIABLES ==================//
 // Variables (general)
 	var subjectlist = ["Test","Kailyn","Oleo","Crypto","Mieke","Scipio","Manto","Picasso","Nano","Setta","Magneto","Zico"];
 	var subjectdialog = document.getElementById("subjid_dialog");
@@ -1645,9 +1646,9 @@ function setReward(){
 		correct: [],
 		current: 0,
 	}
-// VARIABLES end
+//================== INITIALIZE VARIABLES (end) ==================//
 
-// Screen, Video, & Audio initialization begin
+//================== Initialize Screen/Audio/Video ==================//
 	// Prevent window scrolling and bounce back effect
 	document.body.addEventListener('touchmove',function(event){
 		event.preventDefault();
@@ -1685,9 +1686,9 @@ function setReward(){
 			battery.current++;
 		})
 	});
-// Screen, Video, & Audio initialization end
+//================== Initialize Screen/Audio/Video (end) ==================//
 
-//Generator DMS task
+//================== DMS TASK (synchronous FOR loop using GENERATOR) ==================//
 spawn(function* (){
 
 	// GET PARAMFILE NAME
@@ -1715,6 +1716,7 @@ spawn(function* (){
 
 for (trial.current=0; trial.current<10000; trial.current++){
 
+//============ PARAMETER LOADING ============//
 if (trial.need2loadParameters == 1){
 	yield readParametersfromDropbox();
 	console.log(trial.objectlist)
@@ -1725,19 +1727,19 @@ if (trial.need2loadParameters == 1){
 	imagesTest.scale = trial.testScale;
 	setReward(); canvas.tsequencepost[2] = canvas.tsequencepost[1]+trial.reward*1000;
 
-if (trial.fixationmove==0){
-	trial.fixationinterval = 3000;
-}
-else {
-	trial.fixationinterval=trial.fixationmove;
-}
+	if (trial.fixationmove==0){
+		trial.fixationinterval = 3000;
+	}
+	else {
+		trial.fixationinterval=trial.fixationmove;
+	}
 
-if (env.species == "macaque" || env.species == "human"){
-	canvas.headsupfraction=0;
-}
-else if (env.species == "marmoset"){
-	canvas.headsupfraction=1/3-0.06;
-}
+	if (env.species == "macaque" || env.species == "human"){
+		canvas.headsupfraction=0;
+	}
+	else if (env.species == "marmoset"){
+		canvas.headsupfraction=1/3-0.06;
+	}
 
 	setupCanvasHeadsUp()
 	windowWidth = window.innerWidth; // get true window dimensions at last moment
@@ -1758,38 +1760,39 @@ else if (env.species == "marmoset"){
 		scaleCanvasforHiDPI(canvas.test);
 	}
 
-//reset trial tracking variables
-var d = new Date;
-var currdate = d
-var datestr = d.toISOString();
-trial.filename = datestr.slice(0,datestr.indexOf(".")) + "_" + trial.subjid + ".txt";
-trial.current=0;
-trial.fixationgrid=[];
-trial.sample=[];
-trial.test=[];
-trial.sampleserial=[];
-trial.testserial=[];
-trial.tstart=[]
-trial.xytfixation=[];
-trial.xytresponse=[];
-trial.response=[];
-trial.correctItem=[];
-trial.sampleblockidx=0;
-trial.stickyresponse=0;
+	//reset trial tracking variables
+	var d = new Date;
+	var currdate = d
+	var datestr = d.toISOString();
+	trial.filename = datestr.slice(0,datestr.indexOf(".")) + "_" + trial.subjid + ".txt";
+	trial.current=0;
+	trial.fixationgrid=[];
+	trial.sample=[];
+	trial.test=[];
+	trial.sampleserial=[];
+	trial.testserial=[];
+	trial.tstart=[]
+	trial.xytfixation=[];
+	trial.xytresponse=[];
+	trial.response=[];
+	trial.correctItem=[];
+	trial.sampleblockidx=0;
+	trial.stickyresponse=0;
 
-trial.consecutivehits=0;
-trial.nreward=[];
+	trial.consecutivehits=0;
+	trial.nreward=[];
 
-trial.need2loadParameters = 0;
+	trial.need2loadParameters = 0;
 
-renderEyeFixation();
-renderReward();
-renderPhotoReward();
-renderPunish();
-renderBlank();
-}
+	renderEyeFixation();
+	renderReward();
+	renderPhotoReward();
+	renderPunish();
+	renderBlank();
+} //============ PARAMETER LOADING (end) ============//
 
 
+//============ IMAGE LOADING ============//
 if (trial.need2loadImages == 1){
 	// SELECT IMAGES
 		funcreturn = getImageList(imagesSample,trial.imageFolderSample);
@@ -1840,48 +1843,49 @@ if (trial.need2loadImages == 1){
 		ygridcent[i]=ygrid[i]*imagesSample.ht*imagesSample.scale/canvasScale + dy;
 	}
 	// MAKE THE IMAGE DISPLAY GRID (end)
-// renderBlank();
-renderEyeFixation();
-renderReward();
-renderPhotoReward();
-renderPunish();
-renderBlank();
+	// renderBlank();
+	renderEyeFixation();
+	renderReward();
+	renderPhotoReward();
+	renderPunish();
+	renderBlank();
 	trial.need2loadImages = 0;
-}
+} //============ IMAGE LOADING (end) ============//
 
-			// CHOOSE SAMPLE
-			if (trial.sampleblockidx == 0){
-				trial.sample[trial.current] = Math.floor((imagesSample.serial.length)*Math.random());
-			} //randomly choose sample
-			else if (trial.sampleblockidx <= trial.sampleblocksize-1){
-				trial.sample[trial.current] = trial.sample[trial.current-1];
-			} //keep same sample
-			trial.sampleblockidx++;
+//============ CHOOSE SAMPLE & TEST ============//
+	if (trial.sampleblockidx == 0){
+		trial.sample[trial.current] = Math.floor((imagesSample.serial.length)*Math.random());
+	} //randomly choose sample
+	else if (trial.sampleblockidx <= trial.sampleblocksize-1){
+		trial.sample[trial.current] = trial.sample[trial.current-1];
+	} //keep same sample
+	trial.sampleblockidx++;
 
-			if (trial.sampleblockidx > trial.sampleblocksize-1){
-				trial.sampleblockidx = 0;
-			} //reset
+	if (trial.sampleblockidx > trial.sampleblocksize-1){
+		trial.sampleblockidx = 0;
+	} //reset
 
 
-			//CHOOSE TEST
+	//CHOOSE TEST
+	funcreturn=getTest(trial.nway);
+	if (trial.stickyresponse >= trial.nstickyresponse){
+		while (funcreturn.correctItem == trial.response[trial.current-1]){
 			funcreturn=getTest(trial.nway);
-			if (trial.stickyresponse >= trial.nstickyresponse){
-				while (funcreturn.correctItem == trial.response[trial.current-1]){
-					funcreturn=getTest(trial.nway);
-				} //redraw so that correct item is on opposite side of sticky response
-			}
-			trial.test[trial.current]=funcreturn.testArray;
-			trial.correctItem[trial.current]=funcreturn.correctItem;
+		} //redraw so that correct item is on opposite side of sticky response
+	}
+	trial.test[trial.current]=funcreturn.testArray;
+	trial.correctItem[trial.current]=funcreturn.correctItem;
 
-			//GET IMAGE SERIALS
-			trial.sampleserial[trial.current]=imagesSample.serial[trial.sample[trial.current]];
-			var testserial=[];
-			for (var q in trial.test[trial.current]){
-				testserial[q]=imagesTest.serial[trial.test[trial.current][q]];
-			}
-			trial.testserial[trial.current]=testserial;
-	// CHOOSE SAMPLE, TEST (end)
+	//GET IMAGE SERIALS
+	trial.sampleserial[trial.current]=imagesSample.serial[trial.sample[trial.current]];
+	var testserial=[];
+	for (var q in trial.test[trial.current]){
+		testserial[q]=imagesTest.serial[trial.test[trial.current][q]];
+	}
+	trial.testserial[trial.current]=testserial;
+//============ CHOOSE SAMPLE & TEST (end) ============//
 
+//============ FIXATION SCREEN ============//
 canvas.buffered=0;
 if (trial.fixationdur <= 0){
 	bufferTrialImages()
@@ -1915,99 +1919,104 @@ while (trial.waitingforFixation==1){
 	if (trial.takephoto==1){
 	// takephoto(trial.current,trial.stage); //before fixation
 	}
-			//buffer fixation, sample & test
-			renderTouchFixation();
+	//buffer fixation, sample & test
+	renderTouchFixation();
 
-			if (canvas.buffered == 0){
-				bufferTrialImages();
-			}
+	if (canvas.buffered == 0){
+		bufferTrialImages();
+	}
 
-			//fixation
-			trial.tstart[trial.current]=Math.round(performance.now());
-			frame.shown=[];
-			for (var q in canvas.sequencepre){frame.shown[q]=0}; frame.current=0;
-			if (env.species == 'marmoset'){
-				playSound(0);
-			}
-			yield displayTrial(canvas.sequencepre,canvas.tsequencepre);
-audiocontext.suspend()
-			yield fixationPromise();
+	//fixation
+	trial.tstart[trial.current]=Math.round(performance.now());
+	frame.shown=[];
+	for (var q in canvas.sequencepre){frame.shown[q]=0}; frame.current=0;
+	if (env.species == 'marmoset'){
+		playSound(0);
+	}
+	yield displayTrial(canvas.sequencepre,canvas.tsequencepre);
+	audiocontext.suspend()
+	yield fixationPromise();
 
 
-			for (var q in canvas.sequenceblank){frame.shown[q]=0}; frame.current=0;
-			if (trial.waitingforFixation==1){
-				yield displayTrial(canvas.sequenceblank,canvas.tsequenceblank);
-			}
+	for (var q in canvas.sequenceblank){frame.shown[q]=0}; frame.current=0;
+	if (trial.waitingforFixation==1){
+		yield displayTrial(canvas.sequenceblank,canvas.tsequenceblank);
+	}
 } //while waiting for fixation
+//============ FIXATION SCREEN (end) ============//
 
-trial.stage=1;
-		// sample & test
-		if (trial.rewardStage === 1){
-			frame.shown=[];
-			while (canvas.buffered == 0){
-				//wait
-			}
-			for (var q in canvas.sequence){frame.shown[q]=0}; frame.current=0;
-			yield displayTrial(canvas.sequence,canvas.tsequence);
-audiocontext.suspend()
-			yield responsePromise();
-			trial.waitingforResponse=0;
+
+	//============ SAMPLE & TEST SCREEN ============//
+	trial.stage=1;
+	// sample & test
+	if (trial.rewardStage === 1){
+	frame.shown=[];
+	while (canvas.buffered == 0){
+		//wait
+	}
+	for (var q in canvas.sequence){frame.shown[q]=0}; frame.current=0;
+	yield displayTrial(canvas.sequence,canvas.tsequence);
+	audiocontext.suspend()
+	yield responsePromise();
+	trial.waitingforResponse=0;
+	}
+	//============ SAMPLE & TEST SCREEN (end) ============//
+
+	if (trial.takephoto==1){
+	takephoto(trial.current,trial.stage); //after fixation
+	}
+
+	//============ REWARD/PUNISH ============//
+	trial.stage=2;
+			// reward || punish
+	frame.shown=[];
+	for (var q in canvas.sequencepost){frame.shown[q]=0}; frame.current=0;
+	if (trial.rewardStage === 0){
+		if (trial.brokeFixation == 0){
+			trial.response[trial.current] = trial.correctItem[trial.current];
+			canvas.sequencepost[1]=canvas.photoreward;
+			canvas.sequencepost[2]=canvas.reward;
+			canvas.tsequencepost[2] = canvas.tsequencepost[1]+trial.reward*1000;
+			console.log('touched fixation - reward')
 		}
+		else if (trial.brokeFixation == 1){
+			trial.response[trial.current] = -1;
+			canvas.sequencepost[1]=canvas.punish;
+			canvas.sequencepost[2]=canvas.punish;
+			canvas.tsequencepost[2] = trial.punish;
+			console.log('Touched outside fixation - punish')
+		}
+	} //reward fixation
+	else if (trial.rewardStage === 1){
+		if (trial.response[trial.current] == trial.correctItem[trial.current]){
+			canvas.sequencepost[1]=canvas.photoreward;
+			canvas.sequencepost[2]=canvas.reward;
+			canvas.tsequencepost[2] = canvas.tsequencepost[1]+trial.reward*1000;
 
-if (trial.takephoto==1){
-takephoto(trial.current,trial.stage); //after fixation
-}
+	// var dt = 17;
+	// canvas.tsequencepost=[100,100+1*dt,100+2*dt,100+3*dt,100+4*dt,100+5*dt,100+6*dt,100+7*dt,100+8*dt,100+9*dt,100+10*dt,100+11*dt,100+12*dt,100+13*dt,100+14*dt,100+15*dt,100+16*dt,100+17*dt,100+18*dt,100+19*dt,100+20*dt];
+	// canvas.sequencepost=[0,4,0,4,0,4,0,4,0,4,0,4,0,4,0,4,0,4,0,4,0];
 
-trial.stage=2;
-		// reward || punish
-		frame.shown=[];
-		for (var q in canvas.sequencepost){frame.shown[q]=0}; frame.current=0;
-		if (trial.rewardStage === 0){
-			if (trial.brokeFixation == 0){
-				trial.response[trial.current] = trial.correctItem[trial.current];
-				canvas.sequencepost[1]=canvas.photoreward;
-				canvas.sequencepost[2]=canvas.reward;
-				canvas.tsequencepost[2] = canvas.tsequencepost[1]+trial.reward*1000;
-				console.log('touched fixation - reward')
+			console.log('correct')
+
+
+		} //reward
+		else {
+			canvas.sequencepost[1]=canvas.punish;
+			canvas.sequencepost[2]=canvas.punish;
+			canvas.tsequencepost[2] = trial.punish;
+			console.log('WRONG!')
+		}//punish
+
+		if (trial.current>0){
+			if (trial.response[trial.current]==trial.response[trial.current-1]){
+				trial.stickyresponse++;
 			}
-			else if (trial.brokeFixation == 1){
-				trial.response[trial.current] = -1;
-				canvas.sequencepost[1]=canvas.punish;
-				canvas.sequencepost[2]=canvas.punish;
-				canvas.tsequencepost[2] = trial.punish;
-				console.log('Touched outside fixation - punish')
-			}
-		} //reward fixation
-		else if (trial.rewardStage === 1){
-			if (trial.response[trial.current] == trial.correctItem[trial.current]){
-				canvas.sequencepost[1]=canvas.photoreward;
-				canvas.sequencepost[2]=canvas.reward;
-				canvas.tsequencepost[2] = canvas.tsequencepost[1]+trial.reward*1000;
-
-// var dt = 17;
-// canvas.tsequencepost=[100,100+1*dt,100+2*dt,100+3*dt,100+4*dt,100+5*dt,100+6*dt,100+7*dt,100+8*dt,100+9*dt,100+10*dt,100+11*dt,100+12*dt,100+13*dt,100+14*dt,100+15*dt,100+16*dt,100+17*dt,100+18*dt,100+19*dt,100+20*dt];
-// canvas.sequencepost=[0,4,0,4,0,4,0,4,0,4,0,4,0,4,0,4,0,4,0,4,0];
-
-				console.log('correct')
-
-
-			} //reward
 			else {
-				canvas.sequencepost[1]=canvas.punish;
-				canvas.sequencepost[2]=canvas.punish;
-				canvas.tsequencepost[2] = trial.punish;
-				console.log('WRONG!')
-			}//punish
-
-			if (trial.current>0){
-				if (trial.response[trial.current]==trial.response[trial.current-1]){
-					trial.stickyresponse++;
-				}
-				else {
-					trial.stickyresponse=0;
-				}
-			}//stuck responding to same side
-		} //reward DMS
+				trial.stickyresponse=0;
+			}
+		}//stuck responding to same side
+	} //reward DMS
 
 	//Calculate number of rewards to give
 	if (trial.response[trial.current] == trial.correctItem[trial.current] && 
@@ -2038,41 +2047,43 @@ trial.stage=2;
 
 	console.log('nhits ' + trial.consecutivehits + '  nreward ' + trial.nreward[trial.current])
 
-// if (trial.takephoto==1){
-// 	takephoto(trial.current,trial.stage); //before reward delivery
-// }
+	// if (trial.takephoto==1){
+	// 	takephoto(trial.current,trial.stage); //before reward delivery
+	// }
 
-		// Deliver reward or punish
-		frame.shown=[];
-		for (var q in canvas.sequencepost){frame.shown[q]=0}; frame.current=0;
-		if (canvas.sequencepost[1]==canvas.photoreward && env.species == 'marmoset'){
-			for (var q = 0; q <= trial.nreward[trial.current]-1; q++){
-				frame.shown=[];
-				for (var q2 in canvas.sequencepost){frame.shown[q2]=0}; frame.current=0;
-				playSound(2);
-				yield displayTrial(canvas.sequencepost,canvas.tsequencepost);
-			}
-		} // play reward sound
-		if (canvas.sequencepost[1]==canvas.photoreward && (env.species == 'macaque' || env.species == "human")){
-			for (var q = 0; q <= trial.nreward[trial.current]-1; q++){
-				frame.shown=[];
-				for (var q2 in canvas.sequencepost){frame.shown[q2]=0}; frame.current=0;
-				yield displayTrial(canvas.sequencepost,canvas.tsequencepost);
-				yield dispenseReward();
-			}
-		} // play pump sound
-		if (canvas.sequencepost[1]==canvas.punish){
-			if (env.species == 'marmoset'){
-				playSound(3);
-			}
+	// Deliver reward or punish
+	frame.shown=[];
+	for (var q in canvas.sequencepost){frame.shown[q]=0}; frame.current=0;
+	if (canvas.sequencepost[1]==canvas.photoreward && env.species == 'marmoset'){
+		for (var q = 0; q <= trial.nreward[trial.current]-1; q++){
+			frame.shown=[];
+			for (var q2 in canvas.sequencepost){frame.shown[q2]=0}; frame.current=0;
+			playSound(2);
 			yield displayTrial(canvas.sequencepost,canvas.tsequencepost);
-			yield dispensePunish();
 		}
+	} // play reward sound
+	if (canvas.sequencepost[1]==canvas.photoreward && (env.species == 'macaque' || env.species == "human")){
+		for (var q = 0; q <= trial.nreward[trial.current]-1; q++){
+			frame.shown=[];
+			for (var q2 in canvas.sequencepost){frame.shown[q2]=0}; frame.current=0;
+			yield displayTrial(canvas.sequencepost,canvas.tsequencepost);
+			yield dispenseReward();
+		}
+	} // play pump sound
+	if (canvas.sequencepost[1]==canvas.punish){
+		if (env.species == 'marmoset'){
+			playSound(3);
+		}
+		yield displayTrial(canvas.sequencepost,canvas.tsequencepost);
+		yield dispensePunish();
+	}
+//============ REWARD/PUNISH (end) ============//
 
-trial.stage=3;
-if (trial.takephoto==1){
-	takephoto(trial.current,trial.stage); //after reward or punish
-}
+
+	trial.stage=3;
+	if (trial.takephoto==1){
+		takephoto(trial.current,trial.stage); //after reward or punish
+	}
 
 		//update the running trial history
 		if (trial.current == 0){
