@@ -86,8 +86,8 @@ function updateSRTask(writestr){
 	function spatialSR(mintrials, nway = 1, objlist = [0, 1]){
 		var vals = {
 		stagename: 'spatialSR'+nway.toString()+'ways', 
-		rewardStage: 0,
-		fixationmove: 3000, // 
+		rewardStage: 1,
+		fixationmove: 0, // 
 		fixationradius: 120,
 		sampleON: 200, // ms - how long does the sample image stay on
 		keepSampleON: 1, // Bool - keep it on forever?
@@ -107,8 +107,8 @@ function updateSRTask(writestr){
 	function delaySR(mintrials, nway = 2, objlist = [0,1]){
 		var vals = {
 		stagename: 'delaySR_2way'+nway.toString()+'ways', 
-		rewardStage: 0,
-		fixationmove: 3000, 
+		rewardStage: 1,
+		fixationmove: 0, 
 		fixationradius: 120,
 		sampleON: 500, 
 		keepSampleON: 0, 
@@ -187,7 +187,7 @@ function updateSRTask(writestr){
 		trainingstages.imageFolderSample[i]=training_sequence[i].imageFolderSample
 		trainingstages.sampleScale[i]=training_sequence[i].sampleScale
 		trainingstages.testScale[i]=training_sequence[i].testScale
-		trainingstages.objectlist[i]=training_sequence[i].objgroup
+		trainingstages.objectlist[i]=training_sequence[i].objectlist
 		trainingstages.minpctcorrect[i]=training_sequence[i].minpctcorrect
 		trainingstages.mintrials[i]=training_sequence[i].mintrials
 	}
@@ -205,7 +205,7 @@ function updateSRTask(writestr){
 			trainingstages.imageFolderSample[i] == trial.imageFolderSample && 
 			trainingstages.sampleScale[i] == trial.sampleScale && 
 			trainingstages.testScale[i] == trial.testScale && 
-			trainingstages.objectlist[i] == trial.objectlist {
+			trainingstages.objectlist[i].toString() == trial.objectlist.toString()){
 			trainingstages.current = i;
 		}
 	}
