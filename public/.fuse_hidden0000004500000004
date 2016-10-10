@@ -111,7 +111,6 @@
 			trial["nway"] = file.data[0].Nway;
 			trial["samplegrid"] = file.data[0].SampleGridIndex;
 			trial["testgrid"] = file.data[0].TestGridIndex;
-			trial["objectgrid"] = file.data[0].ObjectGridIndex;
 			trial["rewardStage"] = file.data[0].RewardStage
 			trial["rewardper1000"] = file.data[0].RewardPer1000Trials;
 			// trial.reward = file.data[0].RewardDuration;
@@ -143,11 +142,6 @@
 			}
 			else if (trial.automator == 3){
 				funcreturn = updateTask3("readtaskstageonly"); //read task stage only
-				trialhistory.trainingstage[trialhistory.current]=funcreturn;
-			}
-
-			else if (trial.automator == "SR"){
-				funcreturn = updateSRTask("readtaskstageonly"); //read task stage only
 				trialhistory.trainingstage[trialhistory.current]=funcreturn;
 			}
 
@@ -572,7 +566,6 @@ function updateHeadsUpDisplay(){
 		// (pre)render canvas (synchronous)
 		function renderCanvas(idxcv,idxim,usesample,grid){
 			var canvasobj=document.getElementById("canvas"+idxcv);
-
 			var context=canvasobj.getContext('2d');
 
 			var indpos
@@ -625,19 +618,9 @@ function updateHeadsUpDisplay(){
 		//buffer (sample & test canvases)
 
 		//sample
-		var canvasobj=document.getElementById("canvas"+canvas.sample); // Gray out before buffering sample
-		var context=canvasobj.getContext('2d');
-		context.fillStyle="#7F7F7F";
-		context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
-
 		renderCanvas(canvas.sample,[trial.sample[trial.current]],true,trial.samplegrid);
 		
 		//test
-		var canvasobj=document.getElementById("canvas"+canvas.test); // Gray out before buffering test
-		var context=canvasobj.getContext('2d');
-		context.fillStyle="#7F7F7F";
-		context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
-
 		if (trial.keepSampleON==1){
 			renderCanvas(canvas.test,[trial.sample[trial.current]],true,trial.samplegrid);
 		}
@@ -1375,35 +1358,6 @@ function getImageList(images,foldernum){
 		} //for i objects
 	}
 
-	// Abstract colors
-	if (foldernum == 16){
-		perobj = 1; // i.e. how many images are there per label 
-
-		var cnt=0;
-		for (var i in trial.objectlist){
-			for (var j=0; j<=perobj-1; j++){
-				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
-				potentialImages.obj[cnt]=trial.objectlist[i];
-				cnt=cnt+1;
-			} //for j exemplars
-		} //for i objects
-	}
-	
-	// White button response images
-	if (foldernum == 17){
-		perobj = 1; 
-
-		var cnt=0;
-		for (var i in trial.objectlist){
-			for (var j=0; j<=perobj-1; j++){
-				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
-				potentialImages.obj[cnt]=trial.objectlist[i];
-				cnt=cnt+1;
-			} //for j exemplars
-		} //for i objects
-
-	}
-
 
 	if (foldernum == 4){
 		var cnt=0;
@@ -2090,11 +2044,6 @@ if (trial.takephoto==1){
 				trialhistory.trainingstage[trialhistory.current] = funcreturn;
 				trial["currentstage"]=trialhistory.trainingstage[trialhistory.current];
 			}
-			else if (trial.automator == "SR"){
-				funcreturn = updateSRTask("readtaskstageonly");
-				trialhistory.trainingstage[trialhistory.current] = funcreturn;
-				trial["currentstage"]=trialhistory.trainingstage[trialhistory.current];
-			}
 		}
 		if (trial.rewardStage==0 & trial.brokeFixation==0){
 			trialhistory.correct[trialhistory.current]=1;
@@ -2131,9 +2080,6 @@ if (trial.takephoto==1){
 	}
 	else if (trial.automator==3){
 		updateTask3("writeifneeded");
-	}
-	else if (trial.automator=="SR"){
-		updateSRTask("writeifneeded");
 	}
 
 	if (trial.need2writeParameters == 1){
