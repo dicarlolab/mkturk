@@ -216,9 +216,9 @@ function updateSRTask(writestr){
 */
 
 	// Rather than implicitly inferring current training stage based on the state of params.txt, 
-	// get current stage by looking at a new variable "currentTrainingStage", specified in params file. 
+	// get current stage by looking at a new variable "currentAutomatorStage", specified in params file. 
 	// Based on that parameter, update the rest of the params.txt file if there are discrepancies.
-	trainingstages.current = trial.currentTrainingStage; 
+	trainingstages.current = trial.currentAutomatorStage; 
 
 	trial.need2writeParameters=1; 
 
@@ -228,7 +228,7 @@ function updateSRTask(writestr){
 		trainingstages.fixationradius[i] == trial.fixationradius && 
 		trainingstages.sampleON[i] == trial.sampleON && 
 		trainingstages.samplegrid[i] == trial.samplegrid && 
-		trainingstages.objectgrid[i] == trial.objectgrid && 
+		trainingstages.objectgrid[i].toString() == trial.objectgrid.toString() && 
 		trainingstages.keepSampleON[i] == trial.keepSampleON && 
 		trainingstages.nway[i] == trial.nway && 
 		trainingstages.imageFolderSample[i] == trial.imageFolderSample && 
@@ -337,25 +337,27 @@ function updateSRTask(writestr){
 	if (updatingstage==1){
 		// trial.need2loadParameters=1;
 		trial.need2writeParameters=1;
+
+		trial.currentAutomatorStage = trainingstages.current
+		//update training stage
+		trial.rewardStage = trainingstages.rewardStage[trainingstages.current]
+		trial.fixationmove = trainingstages.fixationmove[trainingstages.current]
+		trial.fixationradius = trainingstages.fixationradius[trainingstages.current]
+		trial.sampleON = trainingstages.sampleON[trainingstages.current]
+		trial.samplegrid = [trainingstages.samplegrid[trainingstages.current]] // why is this in brackets?
+		trial.objectgrid = trainingstages.objectgrid[trainingstages.current]
+		trial.keepSampleON = trainingstages.keepSampleON[trainingstages.current]
+		trial.nway = trainingstages.nway[trainingstages.current]
+		trial.imageFolderSample = trainingstages.imageFolderSample[trainingstages.current]
+		trial.sampleScale = trainingstages.sampleScale[trainingstages.current]
+		trial.testScale = trainingstages.testScale[trainingstages.current]
+		trial.objectlist = trainingstages.objectlist[trainingstages.current] //todo
+
 	}
 	else{
 //		// trial.need2loadParameters=0;
 		return
 	}
-
-
-//update training stage
-	trial.rewardStage = trainingstages.rewardStage[trainingstages.current]
-	trial.fixationmove = trainingstages.fixationmove[trainingstages.current]
-	trial.fixationradius = trainingstages.fixationradius[trainingstages.current]
-	trial.sampleON = trainingstages.sampleON[trainingstages.current]
-	trial.samplegrid = [trainingstages.samplegrid[trainingstages.current]]
-	trial.keepSampleON = trainingstages.keepSampleON[trainingstages.current]
-	trial.imageFolderSample = trainingstages.imageFolderSample[trainingstages.current]
-	trial.sampleScale = trainingstages.sampleScale[trainingstages.current]
-	trial.testScale = trainingstages.testScale[trainingstages.current]
-	trial.objectlist = trainingstages.objectlist[trainingstages.current] //todo
-
 }
 
 

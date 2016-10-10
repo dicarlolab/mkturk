@@ -130,7 +130,7 @@
 			trial["sampleScale"] = file.data[0].SampleScale;
 			trial["testScale"] = file.data[0].TestScale;			
 			trial["automator"] = file.data[0].Automator;
-			trial["currentTrainingStage"] = file.data[0].CurrentTrainingStage;
+			trial["currentAutomatorStage"] = file.data[0].CurrentAutomatorStage;
 
 			if (typeof(trial.automator) == "undefined" || trial.automator == 0 || trial.automator != trial.currentAutomator){
 			}
@@ -217,7 +217,7 @@
 				trial["sampleScale"] = paramfile.data[0].SampleScale;
 				trial["testScale"] = paramfile.data[0].TestScale;
 				trial["automator"] = paramfile.data[0].Automator;
-				trial["currentTrainingStage"] = paramfile.data[0].CurrentTrainingStage;
+				trial["currentAutomatorStage"] = paramfile.data[0].CurrentAutomatorStage;
 				trial["params"] = paramfile.name;
 				resolve(1);
 			})
@@ -261,7 +261,7 @@
 	    	    	SampleScale: trial.sampleScale,
 	    	    	TestScale: trial.testScale,
 	    	    	Automator: trial.automator,
-	    	    	CurrentTrainingStage: trial.currentTrainingStage, 
+	    	    	CurrentAutomatorStage: trial.currentAutomatorStage, 
 	    	    	// RewardDuration: trial.reward,
 	    	    });
 	    	    datastr = JSON.stringify(dataobj);
@@ -404,7 +404,7 @@ function takephoto(currtrial,currstage){
     	    	NConsecutiveHitsforBonus: trial.nconsecutivehitsforbonus,
     	    	NRewardMax: trial.nrewardmax,
     	    	Automator: trial.automator,
-    	    	CurrentTrainingStage: trial.currentTrainingStage,
+    	    	CurrentAutomatorStage: trial.currentAutomatorStage,
     	    	Params: trial.params,
 
     	    	PreSequence: canvas.sequencepre,
@@ -567,7 +567,7 @@ function updateHeadsUpDisplay(){
 	}
 
 
-	textobj.innerHTML = trial.subjid + ": <font color=green><b>" + pctcorrect + "%</b></font> " + "(" + ncorrect + " of " + trial.response.length +")" + "<br>" + "Estimated Reward: <font color=green><b>" + Math.round(trial.rewardper1000*ncorrect/1000) + "mL</b></font> (" + Math.round(trial.rewardper1000) + " per 1000)" + "<br> " + "<br>" + " Stage " + trial.currentstage + ": " + task1 + "<br>" + task2;
+	textobj.innerHTML = trial.subjid + ": <font color=green><b>" + pctcorrect + "%</b></font> " + "(" + ncorrect + " of " + trial.response.length +")" + "<br>" + "Estimated Reward: <font color=green><b>" + Math.round(trial.rewardper1000*ncorrect/1000) + "mL</b></font> (" + Math.round(trial.rewardper1000) + " per 1000)" + "<br> " + "<br>" + " Stage " + trial.currentAutomatorStage + ": " + task1 + "<br>" + task2;
 }
 
 // IMAGE DISPLAY
@@ -2082,22 +2082,22 @@ if (trial.takephoto==1){
 			else if (trial.automator == 1){
 				funcreturn = updateTask1("readtaskstageonly");
 				trialhistory.trainingstage[trialhistory.current] = funcreturn;
-				trial["currentstage"]=trialhistory.trainingstage[trialhistory.current];
+				trial["currentAutomatorStage"]=trialhistory.trainingstage[trialhistory.current];
 			}
 			else if (trial.automator == 2){
 				funcreturn = updateTask2("readtaskstageonly");
 				trialhistory.trainingstage[trialhistory.current] = funcreturn;
-				trial["currentstage"]=trialhistory.trainingstage[trialhistory.current];
+				trial["currentAutomatorStage"]=trialhistory.trainingstage[trialhistory.current];
 			}
 			else if (trial.automator == 3){
 				funcreturn = updateTask3("readtaskstageonly");
 				trialhistory.trainingstage[trialhistory.current] = funcreturn;
-				trial["currentstage"]=trialhistory.trainingstage[trialhistory.current];
+				trial["currentAutomatorStage"]=trialhistory.trainingstage[trialhistory.current];
 			}
 			else if (trial.automator == "SR"){
 				funcreturn = updateSRTask("readtaskstageonly");
 				trialhistory.trainingstage[trialhistory.current] = funcreturn;
-				trial["currentstage"]=trialhistory.trainingstage[trialhistory.current];
+				trial["currentAutomatorStage"]=trialhistory.trainingstage[trialhistory.current];
 			}
 		}
 		if (trial.rewardStage==0 & trial.brokeFixation==0){
@@ -2125,35 +2125,49 @@ if (trial.takephoto==1){
 
 
 // Check if automator needs to update task
-	if (trial.automator==0){
-	}
-	else if (trial.automator==1){
-		updateTask1("writeifneeded");
-	}
-	else if (trial.automator==2){
-		updateTask2("writeifneeded");
-	}
-	else if (trial.automator==3){
-		updateTask3("writeifneeded");
-	}
-	else if (trial.automator=="SR"){
-		updateSRTask("writeifneeded");
-	}
-
-	if (trial.need2writeParameters == 1){
-		console.log("updating task parameters (new stage or reward)");
+	if (trial.automator != 0 && trial.current == 0 && trial.need2writeParameters == 1){
+		//Started outside of an automator state
+		console.log("updating task parameters to match automator default state");
 		yield writeParameterstoDropbox();
 		trial.need2writeParameters = 0;
+		trial.need2loadParameters = 1;
+		trial.need2loadImages = 1;
 	}
-
-// Asynchronously check if parameter file was changed by experimenter
-checkParameterFileStatus()
+	else if (trial.automator != 0){
+		//Check if subject met criteria to move to next stage
+		if (trial.automator==1){
+			updateTask1("writeifneeded");
+		}
+		else if (trial.automator==2){
+			updateTask2("writeifneeded");
+		}
+		else if (trial.automator==3){
+			updateTask3("writeifneeded");
+		}
+		else if (trial.automator=="SR"){
+			updateSRTask("writeifneeded");
+		}
+		if (trial.need2writeParameters == 1){
+			//Moved to next automator stage
+			console.log("updating task parameters (new stage or reward)");
+			yield writeParameterstoDropbox();
+			trial.need2writeParameters = 0;
+			trial.need2loadParameters = 1;
+			trial.need2loadImages = 1;
+		}
+	}
 
 	// check if new day
 	var newdate = new Date;
 	if ( (new Date).getDate() != currdate.getDate())
 	{
 		trial.need2loadParameters = 1
+	}
+
+
+	if (trial.need2loadParameters == 0){
+		// Asynchronously check if parameter file was changed by experimenter
+		checkParameterFileStatus()
 	}
 	
 	}
