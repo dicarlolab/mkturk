@@ -130,6 +130,7 @@
 			trial["sampleScale"] = file.data[0].SampleScale;
 			trial["testScale"] = file.data[0].TestScale;			
 			trial["automator"] = file.data[0].Automator;
+			trial["currentTrainingStage"] = file.data[0].CurrentTrainingStage;
 
 			if (typeof(trial.automator) == "undefined" || trial.automator == 0 || trial.automator != trial.currentAutomator){
 			}
@@ -216,6 +217,7 @@
 				trial["sampleScale"] = paramfile.data[0].SampleScale;
 				trial["testScale"] = paramfile.data[0].TestScale;
 				trial["automator"] = paramfile.data[0].Automator;
+				trial["currentTrainingStage"] = paramfile.data[0].CurrentTrainingStage;
 				trial["params"] = paramfile.name;
 				resolve(1);
 			})
@@ -259,6 +261,7 @@
 	    	    	SampleScale: trial.sampleScale,
 	    	    	TestScale: trial.testScale,
 	    	    	Automator: trial.automator,
+	    	    	CurrentTrainingStage: trial.currentTrainingStage, 
 	    	    	// RewardDuration: trial.reward,
 	    	    });
 	    	    datastr = JSON.stringify(dataobj);
@@ -401,6 +404,7 @@ function takephoto(currtrial,currstage){
     	    	NConsecutiveHitsforBonus: trial.nconsecutivehitsforbonus,
     	    	NRewardMax: trial.nrewardmax,
     	    	Automator: trial.automator,
+    	    	CurrentTrainingStage: trial.currentTrainingStage,
     	    	Params: trial.params,
 
     	    	PreSequence: canvas.sequencepre,

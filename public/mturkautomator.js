@@ -34,7 +34,6 @@ function updateSRTask(writestr){
 	//imagefoldersample
 	//objectlist
 
-
 	var default_objectgrid = [2, 8, 4, 6] 
 	function get_obj_grid(n){
 		// Returns first n elements of default_objectgrid
@@ -83,7 +82,7 @@ function updateSRTask(writestr){
 		return vals 
 	}
 
-	function spatialSR(mintrials, nway = 1, objlist = [0, 1]){
+	function spatialSR(mintrials, nway = 1, objectlist = [0, 1]){
 		var vals = {
 		stagename: 'spatialSR'+nway.toString()+'ways', 
 		rewardStage: 1,
@@ -92,19 +91,19 @@ function updateSRTask(writestr){
 		sampleON: 200, // ms - how long does the sample image stay on
 		keepSampleON: 1, // Bool - keep it on forever?
 		samplegrid: 4, // index of sample in a 3x3, down-right indexed grid starting at 1
-		objectgrid: get_obj_grid(objlist.length), // array of indices for the response images of each object (indexed in same order as param "TestedObjects")
+		objectgrid: get_obj_grid(objectlist.length), // array of indices for the response images of each object (indexed in same order as param "TestedObjects")
 		imageFolderSample: 17, // reference to folder from where to get sample (stimulus) images
 		nway: nway, 
 		sampleScale: 2,
 		testScale: 2,
-		objectlist: objlist, 
+		objectlist: objectlist, 
 		minpctcorrect: 75, // purely internal for state transition, it seems
 		mintrials: mintrials,
 		}
 		return vals
 	}
 
-	function delaySR(mintrials, nway = 2, objlist = [0,1]){
+	function delaySR(mintrials, nway = 2, objectlist = [0,1]){
 		var vals = {
 		stagename: 'delaySR_2way'+nway.toString()+'ways', 
 		rewardStage: 1,
@@ -113,12 +112,12 @@ function updateSRTask(writestr){
 		sampleON: 500, 
 		keepSampleON: 0, 
 		samplegrid: 4, 
-		objectgrid: get_obj_grid(objlist.length), 
+		objectgrid: get_obj_grid(objectlist.length), 
 		imageFolderSample: 17, 
 		nway: nway, 
 		sampleScale: 2,
 		testScale: 2,
-		objectlist: objlist, 
+		objectlist: objectlist, 
 		minpctcorrect: 80, // purely internal for state transition, it seems
 		mintrials: mintrials,
 		}
@@ -138,24 +137,24 @@ function updateSRTask(writestr){
 */
 
 	//// Define sequence of stages
-	var training_sequence = [touch(5), 
+	var phase_sequence = [touch(5), 
 							 movingtouch(5), 
-							 spatialSR(5, nway = 1, objlist = [0, 1]), 
-							 spatialSR(5, nway = 2, objlist = [0, 1]), 
-							 spatialSR(5, nway = 2, objlist = [2, 3]), 
-							 spatialSR(5, nway = 2, objlist = [4, 5]), 
-							 delaySR(5, nway = 2, objlist = [4, 5]), 
-							 delaySR(5, nway = 2, objlist = [1, 3]),
-							 delaySR(5, nway = 2, objlist = [2, 4]),
-							 delaySR(5, nway = 3, objlist = [0, 1, 2]), 
-							 delaySR(5, nway = 3, objlist = [2, 3, 1]), 
-							 delaySR(5, nway = 3, objlist = [5, 2, 3]), 
-							 delaySR(5, nway = 3, objlist = [4, 0, 2]), 
-							 delaySR(5, nway = 4, objlist = [0, 1, 2, 3]), 
-							 delaySR(5, nway = 4, objlist = [4, 5, 0, 2]), 
-							 delaySR(5, nway = 4, objlist = [3, 2, 1, 4]), 
-							 delaySR(5, nway = 4, objlist = [2, 3, 4, 5]), 
-							 delaySR(5, nway = 4, objlist = [5, 0, 3, 2])]
+							 spatialSR(5, nway = 1, objectlist = [0, 1]), 
+							 spatialSR(5, nway = 2, objectlist = [0, 1]), 
+							 spatialSR(5, nway = 2, objectlist = [2, 3]), 
+							 spatialSR(5, nway = 2, objectlist = [4, 5]), 
+							 delaySR(5, nway = 2, objectlist = [4, 5]), 
+							 delaySR(5, nway = 2, objectlist = [1, 3]),
+							 delaySR(5, nway = 2, objectlist = [2, 4]),
+							 delaySR(5, nway = 3, objectlist = [0, 1, 2]), 
+							 delaySR(5, nway = 3, objectlist = [2, 3, 1]), 
+							 delaySR(5, nway = 3, objectlist = [5, 2, 3]), 
+							 delaySR(5, nway = 3, objectlist = [4, 0, 2]), 
+							 delaySR(5, nway = 4, objectlist = [0, 1, 2, 3]), 
+							 delaySR(5, nway = 4, objectlist = [4, 5, 0, 2]), 
+							 delaySR(5, nway = 4, objectlist = [3, 2, 1, 4]), 
+							 delaySR(5, nway = 4, objectlist = [2, 3, 4, 5]), 
+							 delaySR(5, nway = 4, objectlist = [5, 0, 3, 2])]
 
 
 	var trainingstages = {
@@ -175,24 +174,24 @@ function updateSRTask(writestr){
 		mintrials: [],
 	}
 	
-	for (var i=0; i<=training_sequence.length-1; i++){
-		trainingstages.rewardStage[i]=training_sequence[i].rewardStage
-		trainingstages.fixationmove[i]=training_sequence[i].fixationmove
-		trainingstages.fixationradius[i]=training_sequence[i].fixationradius
-		trainingstages.sampleON[i]=training_sequence[i].sampleON
-		trainingstages.samplegrid[i]=training_sequence[i].samplegrid
-		trainingstages.objectgrid[i]=training_sequence[i].objectgrid
-		trainingstages.keepSampleON[i]=training_sequence[i].keepSampleON
-		trainingstages.nway[i]=training_sequence[i].nway
-		trainingstages.imageFolderSample[i]=training_sequence[i].imageFolderSample
-		trainingstages.sampleScale[i]=training_sequence[i].sampleScale
-		trainingstages.testScale[i]=training_sequence[i].testScale
-		trainingstages.objectlist[i]=training_sequence[i].objectlist
-		trainingstages.minpctcorrect[i]=training_sequence[i].minpctcorrect
-		trainingstages.mintrials[i]=training_sequence[i].mintrials
+	for (var i=0; i<=phase_sequence.length-1; i++){
+		trainingstages.rewardStage[i]=phase_sequence[i].rewardStage
+		trainingstages.fixationmove[i]=phase_sequence[i].fixationmove
+		trainingstages.fixationradius[i]=phase_sequence[i].fixationradius
+		trainingstages.sampleON[i]=phase_sequence[i].sampleON
+		trainingstages.samplegrid[i]=phase_sequence[i].samplegrid
+		trainingstages.objectgrid[i]=phase_sequence[i].objectgrid
+		trainingstages.keepSampleON[i]=phase_sequence[i].keepSampleON
+		trainingstages.nway[i]=phase_sequence[i].nway
+		trainingstages.imageFolderSample[i]=phase_sequence[i].imageFolderSample
+		trainingstages.sampleScale[i]=phase_sequence[i].sampleScale
+		trainingstages.testScale[i]=phase_sequence[i].testScale
+		trainingstages.objectlist[i]=phase_sequence[i].objectlist
+		trainingstages.minpctcorrect[i]=phase_sequence[i].minpctcorrect
+		trainingstages.mintrials[i]=phase_sequence[i].mintrials
 	}
 
-
+/*
 //DETERMINE TASK STAGE
 	//determine current training stage
 	for (var i = 0; i<=trainingstages.sampleON.length-1; i++){
@@ -205,10 +204,56 @@ function updateSRTask(writestr){
 			trainingstages.imageFolderSample[i] == trial.imageFolderSample && 
 			trainingstages.sampleScale[i] == trial.sampleScale && 
 			trainingstages.testScale[i] == trial.testScale && 
+<<<<<<< Updated upstream
 			trainingstages.objectlist[i].toString() == trial.objectlist.toString()){
+=======
+			trainingstages.objectlist[i] == trial.objectlist){
+>>>>>>> Stashed changes
 			trainingstages.current = i;
 		}
 	}
+
+*/
+
+	// Rather than implicitly inferring current training stage based on the state of params.txt, 
+	// get current stage by looking at a new variable "currentTrainingStage", specified in params file. 
+	// Based on that parameter, update the rest of the params.txt file if there are discrepancies.
+	trainingstages.current = trial.currentTrainingStage; 
+
+	trial.need2writeParameters=1; 
+
+	var i = trainingstages.current
+	if (trainingstages.rewardStage[i] == trial.rewardStage && 
+		trainingstages.fixationmove[i] == trial.fixationmove && 
+		trainingstages.fixationradius[i] == trial.fixationradius && 
+		trainingstages.sampleON[i] == trial.sampleON && 
+		trainingstages.samplegrid[i] == trial.samplegrid && 
+		trainingstages.objectgrid[i] == trial.objectgrid && 
+		trainingstages.keepSampleON[i] == trial.keepSampleON && 
+		trainingstages.nway[i] == trial.nway && 
+		trainingstages.imageFolderSample[i] == trial.imageFolderSample && 
+		trainingstages.sampleScale[i] == trial.sampleScale && 
+		trainingstages.testScale[i] == trial.testScale && 
+		trainingstages.objectlist[i].toString() == trial.objectlist.toString())
+		{
+			trial.need2writeParameters=0;
+	}
+	else{
+		trial.rewardStage = trainingstages.rewardStage[i]
+		trial.fixationmove = trainingstages.fixationmove[i]
+		trial.fixationradius = trainingstages.fixationradius[i]
+		trial.sampleON = trainingstages.sampleON[i]
+		trial.samplegrid = [trainingstages.samplegrid[i]] // why is this in brackets?
+		trial.objectgrid = trainingstages.objectgrid[i]
+		trial.keepSampleON = trainingstages.keepSampleON[i]
+		trial.nway = trainingstages.nway[i]
+		trial.imageFolderSample = trainingstages.imageFolderSample[i]
+		trial.sampleScale = trainingstages.sampleScale[i]
+		trial.testScale = trainingstages.testScale[i]
+		trial.objectlist = trainingstages.objectlist[i] //todo
+	}
+
+
 
 	// "RewardStage":1,
 	// "FixationMove":0,
@@ -312,6 +357,11 @@ function updateSRTask(writestr){
 	trial.objectlist = trainingstages.objectlist[trainingstages.current] //todo
 
 }
+
+
+
+
+
 
 
 function updateTask3(writestr){
