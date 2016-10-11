@@ -34,7 +34,7 @@ function updateSRTask(writestr){
 	//imagefoldersample
 	//objectlist
 
-	var default_objectgrid = [2, 8, 4, 6] 
+	var default_objectgrid = [2, 8, 0, 6] 
 	function get_obj_grid(n){
 		// Returns first n elements of default_objectgrid
 		return default_objectgrid.slice(0, n)
@@ -95,7 +95,7 @@ function updateSRTask(writestr){
 		samplegrid: 4, // index of sample in a 3x3, down-right indexed grid starting at 1
 		objectgrid: get_obj_grid(objectlist.length), // array of indices for the response images of each object (indexed in same order as param "TestedObjects")
 		imageFolderSample: 17, // reference to folder from where to get sample (stimulus) images
-		nway: nway, 
+		nway: objectlist.length, 
 		sampleScale: 2,
 		testScale: 2,
 		objectlist: objectlist, 
@@ -248,7 +248,7 @@ function updateSRTask(writestr){
 	// Based on that parameter, update the rest of the params.txt file if there are discrepancies.
 	trainingstages.current = trial.currentAutomatorStage; 
 
-	trial.need2writeParameters=1; 
+	// trial.need2writeParameters=0; 
 
 	var i = trainingstages.current
 	if (trainingstages.rewardStage[i] == trial.rewardStage && 
@@ -367,6 +367,7 @@ function updateSRTask(writestr){
 	if (updatingstage==1){
 		// trial.need2loadParameters=1;
 		trial.need2writeParameters=1;
+		trial.automatorstagechange=1
 
 		trial.currentAutomatorStage = trainingstages.current
 		//update training stage
