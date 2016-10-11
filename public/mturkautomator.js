@@ -58,6 +58,7 @@ function updateSRTask(writestr){
 		objectlist: [0, 1], 
 		minpctcorrect: 75, 
 		mintrials: mintrials,
+		hidetestdistractors:0, 
 		}
 		return vals
 	}
@@ -78,8 +79,31 @@ function updateSRTask(writestr){
 		objectlist: [0, 1], 
 		minpctcorrect: 75, // purely internal for state transition, it seems
 		mintrials: mintrials,
+		hidetestdistractors:0, 
 		}
 		return vals 
+	}
+
+	function nodistractorSR(mintrials, objectlist = [0, 1]){
+		var vals = {
+		stagename: 'nodistractorSR', 
+		rewardStage: 1,
+		fixationmove: 0, // 
+		fixationradius: 120,
+		sampleON: 200, // ms - how long does the sample image stay on
+		keepSampleON: 1, // Bool - keep it on forever?
+		samplegrid: 4, // index of sample in a 3x3, down-right indexed grid starting at 1
+		objectgrid: get_obj_grid(objectlist.length), // array of indices for the response images of each object (indexed in same order as param "TestedObjects")
+		imageFolderSample: 17, // reference to folder from where to get sample (stimulus) images
+		nway: nway, 
+		sampleScale: 2,
+		testScale: 2,
+		objectlist: objectlist, 
+		minpctcorrect: 75, // purely internal for state transition, it seems
+		mintrials: mintrials,
+		hidetestdistractors: 1
+		}
+		return vals
 	}
 
 	function spatialSR(mintrials, nway = 1, objectlist = [0, 1]){
@@ -99,6 +123,7 @@ function updateSRTask(writestr){
 		objectlist: objectlist, 
 		minpctcorrect: 75, // purely internal for state transition, it seems
 		mintrials: mintrials,
+		hidetestdistractors:0, 
 		}
 		return vals
 	}
@@ -120,6 +145,7 @@ function updateSRTask(writestr){
 		objectlist: objectlist, 
 		minpctcorrect: 80, // purely internal for state transition, it seems
 		mintrials: mintrials,
+		hidetestdistractors:0, 
 		}
 		return vals
 	}
@@ -139,7 +165,7 @@ function updateSRTask(writestr){
 	//// Define sequence of stages
 	var phase_sequence = [touch(5), 
 							 movingtouch(5), 
-							 spatialSR(5, nway = 1, objectlist = [0, 1]), 
+							 nodistractorSR(5, objectlist = [0, 1]), 
 							 spatialSR(5, nway = 2, objectlist = [0, 1]), 
 							 spatialSR(5, nway = 2, objectlist = [2, 3]), 
 							 spatialSR(5, nway = 2, objectlist = [4, 5]), 
@@ -172,6 +198,7 @@ function updateSRTask(writestr){
 		objectlist: [],
 		minpctcorrect: [],
 		mintrials: [],
+		hidetestdistractors: [],
 	}
 	
 	for (var i=0; i<=phase_sequence.length-1; i++){
@@ -189,6 +216,7 @@ function updateSRTask(writestr){
 		trainingstages.objectlist[i]=phase_sequence[i].objectlist
 		trainingstages.minpctcorrect[i]=phase_sequence[i].minpctcorrect
 		trainingstages.mintrials[i]=phase_sequence[i].mintrials
+		trainingstages.hidetestdistractors[i]=phase_sequence[i].hidetestdistractors
 	}
 
 /*
@@ -234,6 +262,7 @@ function updateSRTask(writestr){
 		trainingstages.imageFolderSample[i] == trial.imageFolderSample && 
 		trainingstages.sampleScale[i] == trial.sampleScale && 
 		trainingstages.testScale[i] == trial.testScale && 
+		trainingstages.hidetestdistractors[i] == trial.hidetestdistractors && 
 		trainingstages.objectlist[i].toString() == trial.objectlist.toString())
 		{
 			trial.need2writeParameters=0;
@@ -250,6 +279,7 @@ function updateSRTask(writestr){
 		trial.imageFolderSample = trainingstages.imageFolderSample[i]
 		trial.sampleScale = trainingstages.sampleScale[i]
 		trial.testScale = trainingstages.testScale[i]
+		trial.hidetestdistractors = trainingstages.hidetestdistractors[i] 
 		trial.objectlist = trainingstages.objectlist[i] //todo
 	}
 
@@ -351,6 +381,7 @@ function updateSRTask(writestr){
 		trial.imageFolderSample = trainingstages.imageFolderSample[trainingstages.current]
 		trial.sampleScale = trainingstages.sampleScale[trainingstages.current]
 		trial.testScale = trainingstages.testScale[trainingstages.current]
+		trial.hidetestdistractors = trainingstages.hidetestdistractors[trainingstages.current] 
 		trial.objectlist = trainingstages.objectlist[trainingstages.current] //todo
 
 	}
