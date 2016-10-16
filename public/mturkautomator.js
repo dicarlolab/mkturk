@@ -164,23 +164,23 @@ function updateSRTask(writestr){
 
 	//// Define sequence of stages
 	var phase_sequence = [touch(5), 
-							 movingtouch(5), 
-							 nodistractorSR(5, objectlist = [0, 1]), 
-							 spatialSR(5, nway = 2, objectlist = [0, 1]), 
-							 spatialSR(5, nway = 2, objectlist = [2, 3]), 
-							 spatialSR(5, nway = 2, objectlist = [4, 5]), 
-							 delaySR(5, nway = 2, objectlist = [4, 5]), 
-							 delaySR(5, nway = 2, objectlist = [1, 3]),
-							 delaySR(5, nway = 2, objectlist = [2, 4]),
-							 delaySR(5, nway = 3, objectlist = [0, 1, 2]), 
-							 delaySR(5, nway = 3, objectlist = [2, 3, 1]), 
-							 delaySR(5, nway = 3, objectlist = [5, 2, 3]), 
-							 delaySR(5, nway = 3, objectlist = [4, 0, 2]), 
-							 delaySR(5, nway = 4, objectlist = [0, 1, 2, 3]), 
-							 delaySR(5, nway = 4, objectlist = [4, 5, 0, 2]), 
-							 delaySR(5, nway = 4, objectlist = [3, 2, 1, 4]), 
-							 delaySR(5, nway = 4, objectlist = [2, 3, 4, 5]), 
-							 delaySR(5, nway = 4, objectlist = [5, 0, 3, 2])]
+							 movingtouch(500), 
+							 nodistractorSR(500, objectlist = [0, 1]), 
+							 spatialSR(1000, nway = 2, objectlist = [0, 1]), 
+							 spatialSR(1000, nway = 2, objectlist = [2, 3]), 
+							 spatialSR(1000, nway = 2, objectlist = [4, 5]), 
+							 delaySR(1000, nway = 2, objectlist = [4, 5]), 
+							 delaySR(1000, nway = 2, objectlist = [1, 3]),
+							 delaySR(1000, nway = 2, objectlist = [2, 4]),
+							 delaySR(1000, nway = 3, objectlist = [0, 1, 2]), 
+							 delaySR(1000, nway = 3, objectlist = [2, 3, 1]), 
+							 delaySR(1000, nway = 3, objectlist = [5, 2, 3]), 
+							 delaySR(1000, nway = 3, objectlist = [4, 0, 2]), 
+							 delaySR(2000, nway = 4, objectlist = [0, 1, 2, 3]), 
+							 delaySR(2000, nway = 4, objectlist = [4, 5, 0, 2]), 
+							 delaySR(2000, nway = 4, objectlist = [3, 2, 1, 4]), 
+							 delaySR(2000, nway = 4, objectlist = [2, 3, 4, 5]), 
+							 delaySR(2000, nway = 4, objectlist = [5, 0, 3, 2])]
 
 
 	var trainingstages = {
