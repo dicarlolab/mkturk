@@ -270,6 +270,7 @@
 						return showError(error); //Something went wrong
 					}
 					console.log("success: file size " + filestat.size);
+					trial.need2writeParameters = 0;
 					resolve(1);
 				})
 			}).then();
@@ -1706,6 +1707,7 @@ spawn(function* (){
 		yield readPerformanceHistoryfromDropbox(ndatafiles2read - i - 1);
 	}
 
+	trial.automatorstagechange = 0
 	trial.need2loadParameters = 1;
 	trial.need2loadImages = 1;
 	trial.need2writeParameters = 0;
@@ -1717,8 +1719,15 @@ spawn(function* (){
 for (trial.current=0; trial.current<10000; trial.current++){
 
 //============ PARAMETER LOADING ============//
+if (trial.automatorstagechange == 1){
+	trial.need2loadParameters=1
+	trial.need2loadImages=1
+}
+
 if (trial.need2loadParameters == 1){
-	yield readParametersfromDropbox();
+	if (trial.automatorstagechange==0){
+		yield readParametersfromDropbox();
+	}
 	console.log(trial.objectlist)
 	canvas.tsequence = [0,100,100+trial.sampleON,100+trial.sampleON+trial.sampleOFF]; //timing between frames
 	imagesSample.folder = "MonkeyTurk/obj25/imagepacks" + trial.imageFolderSample + "/imp";
@@ -1851,6 +1860,8 @@ if (trial.need2loadImages == 1){
 	renderBlank();
 	trial.need2loadImages = 0;
 } //============ IMAGE LOADING (end) ============//
+
+trial.automatorstagechange=0
 
 //============ CHOOSE SAMPLE & TEST ============//
 	if (trial.sampleblockidx == 0){
@@ -2132,17 +2143,14 @@ while (trial.waitingforFixation==1){
 		writeDatatoDropbox(); //async - no need to wait for data to write
 		updateHeadsUpDisplay(); // async
 
-		console.log('end of generator iteration' + trial.current);
+		console.log('end of generator iteration' + trial.current);			
 
 
 // Check if automator needs to update task
 	if (trial.automator != 0 && trial.current == 0 && trial.need2writeParameters == 1){
 		//Started outside of an automator state
 		console.log("updating task parameters to match automator default state");
-		yield writeParameterstoDropbox();
-		trial.need2writeParameters = 0;
-		trial.need2loadParameters = 1;
-		trial.need2loadImages = 1;
+		writeParameterstoDropbox();
 	}
 	else if (trial.automator != 0){
 		//Check if subject met criteria to move to next stage
@@ -2161,10 +2169,7 @@ while (trial.waitingforFixation==1){
 		if (trial.need2writeParameters == 1){
 			//Moved to next automator stage
 			console.log("updating task parameters (new stage or reward)");
-			yield writeParameterstoDropbox();
-			trial.need2writeParameters = 0;
-			trial.need2loadParameters = 1;
-			trial.need2loadImages = 1;
+			writeParameterstoDropbox(); // async updating of parameter file, automated task flow continues even if parameter file gets updated later
 		}
 	}
 
@@ -2180,7 +2185,7 @@ while (trial.waitingforFixation==1){
 		// Asynchronously check if parameter file was changed by experimenter
 		checkParameterFileStatus()
 	}
-	
+
 	}
 	console.log('end of generator for loop');
 }) //spawn
