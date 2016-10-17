@@ -53,8 +53,8 @@ function updateSRTask(writestr){
 		objectgrid: [2, 8], 
 		imageFolderSample: 17, 
 		nway: 1, 
-		sampleScale: 1.5,
-		testScale: 1.5,
+		sampleScale: 0.75,
+		testScale: 0.75,
 		objectlist: [0, 1], 
 		minpctcorrect: 80, 
 		mintrials: mintrials,
@@ -74,8 +74,8 @@ function updateSRTask(writestr){
 		objectgrid: [2, 8], // array of indices for the response images of each object (indexed in same order as param "TestedObjects")
 		imageFolderSample: 17, // reference to folder from where to get sample (stimulus) images
 		nway: 1, 
-		sampleScale: 1.5,
-		testScale: 1.5,
+		sampleScale: 0.75,
+		testScale: 0.75,
 		objectlist: [0, 1], 
 		minpctcorrect: 80, // purely internal for state transition, it seems
 		mintrials: mintrials,
@@ -96,8 +96,8 @@ function updateSRTask(writestr){
 		objectgrid: get_obj_grid(objectlist.length), // array of indices for the response images of each object (indexed in same order as param "TestedObjects")
 		imageFolderSample: 17, // reference to folder from where to get sample (stimulus) images
 		nway: objectlist.length, 
-		sampleScale: 2,
-		testScale: 2,
+		sampleScale: 0.625,
+		testScale: 0.625,
 		objectlist: objectlist, 
 		minpctcorrect: 75, // purely internal for state transition, it seems
 		mintrials: mintrials,
@@ -118,8 +118,8 @@ function updateSRTask(writestr){
 		objectgrid: get_obj_grid(objectlist.length), // array of indices for the response images of each object (indexed in same order as param "TestedObjects")
 		imageFolderSample: 17, // reference to folder from where to get sample (stimulus) images
 		nway: nway, 
-		sampleScale: 2,
-		testScale: 2,
+		sampleScale: 0.625,
+		testScale: 0.625,
 		objectlist: objectlist, 
 		minpctcorrect: 75, // purely internal for state transition, it seems
 		mintrials: mintrials,
@@ -140,8 +140,8 @@ function updateSRTask(writestr){
 		objectgrid: get_obj_grid(objectlist.length), 
 		imageFolderSample: 17, 
 		nway: nway, 
-		sampleScale: 2,
-		testScale: 2,
+		sampleScale: 0.625,
+		testScale: 0.625,
 		objectlist: objectlist, 
 		minpctcorrect: 80, // purely internal for state transition, it seems
 		mintrials: mintrials,
@@ -159,25 +159,27 @@ function updateSRTask(writestr){
 	// [10] Add backgrounds. 
 */
 
+var ntrials=2000
+
 	//// Define sequence of stages
-	var phase_sequence = [touch(2000), 
-							 movingtouch(2000), 
-							 nodistractorSR(2000, objectlist = [0, 1]), 
-							 spatialSR(2000, nway = 2, objectlist = [0, 1]), 
-							 spatialSR(2000, nway = 2, objectlist = [2, 5]), 
-							 spatialSR(1000, nway = 2, objectlist = [4, 5]), 
-							 delaySR(2000, nway = 2, objectlist = [4, 5]), 
-							 delaySR(2000, nway = 2, objectlist = [1, 3]),
-							 delaySR(2000, nway = 2, objectlist = [2, 4]),
-							 delaySR(2000, nway = 3, objectlist = [0, 1, 3]), 
-							 delaySR(2000, nway = 3, objectlist = [5, 3, 4]), 
-							 delaySR(2000, nway = 3, objectlist = [5, 2, 1]), 
-							 delaySR(2000, nway = 3, objectlist = [4, 0, 6]), 
-							 delaySR(2000, nway = 4, objectlist = [0, 7, 2, 3]), 
-							 delaySR(2000, nway = 4, objectlist = [4, 5, 0, 2]), 
-							 delaySR(2000, nway = 4, objectlist = [3, 6, 7, 4]), 
-							 delaySR(2000, nway = 4, objectlist = [2, 3, 4, 5]), 
-							 delaySR(2000, nway = 4, objectlist = [5, 0, 3, 2])]
+	var phase_sequence = [touch(ntrials), 
+							 movingtouch(ntrials), 
+							 nodistractorSR(ntrials, objectlist = [0, 1]), 
+							 spatialSR(ntrials, nway = 2, objectlist = [0, 1]), 
+							 spatialSR(ntrials, nway = 2, objectlist = [2, 5]), 
+							 spatialSR(ntrials, nway = 2, objectlist = [4, 5]), 
+							 delaySR(ntrials, nway = 2, objectlist = [4, 5]), 
+							 delaySR(ntrials, nway = 2, objectlist = [1, 3]),
+							 delaySR(ntrials, nway = 2, objectlist = [2, 4]),
+							 delaySR(ntrials, nway = 3, objectlist = [0, 1, 3]), 
+							 delaySR(ntrials, nway = 3, objectlist = [5, 3, 4]), 
+							 delaySR(ntrials, nway = 3, objectlist = [5, 2, 1]), 
+							 delaySR(ntrials, nway = 3, objectlist = [4, 0, 6]), 
+							 delaySR(ntrials, nway = 4, objectlist = [0, 7, 2, 3]), 
+							 delaySR(ntrials, nway = 4, objectlist = [4, 5, 0, 2]), 
+							 delaySR(ntrials, nway = 4, objectlist = [3, 6, 7, 4]), 
+							 delaySR(ntrials, nway = 4, objectlist = [2, 3, 4, 5]), 
+							 delaySR(ntrials, nway = 4, objectlist = [5, 0, 3, 2])]
 
 
 	var trainingstages = {
@@ -282,8 +284,6 @@ function updateSRTask(writestr){
 		trial.testScale = trainingstages.testScale[i]
 		trial.hidetestdistractors = trainingstages.hidetestdistractors[i] 
 		trial.objectlist = trainingstages.objectlist[i] //todo
-		trial.need2writeParameters = 1
-		trial.automatorstagechange = 1
 	}
 
 

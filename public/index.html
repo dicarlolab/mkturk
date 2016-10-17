@@ -1717,7 +1717,7 @@ spawn(function* (){
 	yield Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
 
 for (trial.current=0; trial.current<10000; trial.current++){
-console.log('1' + trial.testgrid)
+
 //============ PARAMETER LOADING ============//
 if (trial.automatorstagechange == 1){
 	trial.need2loadParameters=1
@@ -1803,7 +1803,6 @@ if (trial.need2loadParameters == 1){
 	renderPhotoReward();
 	renderPunish();
 	renderBlank();
-console.log('2' + trial.testgrid)
 } //============ PARAMETER LOADING (end) ============//
 
 
@@ -1827,10 +1826,10 @@ if (trial.need2loadImages == 1){
 
 		// pixel locations of image within pack
 		// imagesSample.wd = imagesSamplePack[0].width/imagesSample.packsz;
-		imagesSample.wd = 256;
+		imagesSample.wd = 512;
 		imagesSample.ht = imagesSamplePack[0].height;
 		// imagesTest.wd = imagesTestPack[0].width/imagesTest.packsz;
-		imagesTest.wd = 256;
+		imagesTest.wd = 512;
 		imagesTest.ht = imagesTestPack[0].height;
 		for (i = 0; i<= imagesSample.serial.length-1; i++){
 			imagesSample.pixLR[i] = [imagesSample.packpos[i] * imagesSample.wd, (imagesSample.packpos[i]+1) * imagesSample.wd - 1];
@@ -1866,7 +1865,6 @@ if (trial.need2loadImages == 1){
 	renderBlank();
 	trial.need2loadImages = 0;
 } //============ IMAGE LOADING (end) ============//
-console.log('3' + trial.testgrid)
 trial.automatorstagechange=0
 
 //============ CHOOSE SAMPLE & TEST ============//
@@ -1938,12 +1936,10 @@ while (trial.waitingforFixation==1){
 	}
 	//buffer fixation, sample & test
 	renderTouchFixation();
-console.log('4' + trial.testgrid)
 
 	if (canvas.buffered == 0){
 		bufferTrialImages();
 	}
-console.log('4a ' + trial.testgrid)
 
 	//fixation
 	trial.tstart[trial.current]=Math.round(performance.now());
@@ -1955,8 +1951,6 @@ console.log('4a ' + trial.testgrid)
 	yield displayTrial(canvas.sequencepre,canvas.tsequencepre);
 	audiocontext.suspend()
 	yield fixationPromise();
-console.log('4b ' + trial.testgrid)
-
 
 
 	for (var q in canvas.sequenceblank){frame.shown[q]=0}; frame.current=0;
@@ -1964,11 +1958,8 @@ console.log('4b ' + trial.testgrid)
 		yield displayTrial(canvas.sequenceblank,canvas.tsequenceblank);
 	}
 
-console.log('4c ' + trial.testgrid)
-
 } //while waiting for fixation
 //============ FIXATION SCREEN (end) ============//
-console.log('5' + trial.testgrid)
 
 	//============ SAMPLE & TEST SCREEN ============//
 	trial.stage=1;
@@ -1989,7 +1980,7 @@ console.log('5' + trial.testgrid)
 	if (trial.takephoto==1){
 	takephoto(trial.current,trial.stage); //after fixation
 	}
-console.log('6' + trial.testgrid)
+
 	//============ REWARD/PUNISH ============//
 	trial.stage=2;
 			// reward || punish
@@ -2041,7 +2032,7 @@ console.log('6' + trial.testgrid)
 			}
 		}//stuck responding to same side
 	} //reward DMS
-console.log('7' + trial.testgrid)
+
 	//Calculate number of rewards to give
 	if (trial.response[trial.current] == trial.correctItem[trial.current] && 
 		(trial.current==0 || 
@@ -2103,7 +2094,6 @@ console.log('7' + trial.testgrid)
 	}
 //============ REWARD/PUNISH (end) ============//
 
-console.log('8' + trial.testgrid)
 	trial.stage=3;
 	if (trial.takephoto==1){
 		takephoto(trial.current,trial.stage); //after reward or punish
@@ -2157,7 +2147,6 @@ console.log('8' + trial.testgrid)
 		updateHeadsUpDisplay(); // async
 
 		console.log('end of generator iteration' + trial.current);			
-console.log('9' + trial.testgrid)
 
 // Check if automator needs to update task
 	if (trial.automator != 0 && trial.current == 0 && trial.need2writeParameters == 1){
@@ -2185,7 +2174,7 @@ console.log('9' + trial.testgrid)
 			writeParameterstoDropbox(); // async updating of parameter file, automated task flow continues even if parameter file gets updated later
 		}
 	}
-console.log('10' + trial.testgrid)
+
 	// check if new day
 	var newdate = new Date;
 	if ( (new Date).getDate() != currdate.getDate())
