@@ -53,10 +53,10 @@ function updateSRTask(writestr){
 		objectgrid: [2, 8], 
 		imageFolderSample: 17, 
 		nway: 1, 
-		sampleScale: 1.5,
-		testScale: 1.5,
+		sampleScale: 1,
+		testScale: 1,
 		objectlist: [0, 1], 
-		minpctcorrect: 75, 
+		minpctcorrect: 80, 
 		mintrials: mintrials,
 		hidetestdistractors:0, 
 		}
@@ -74,10 +74,10 @@ function updateSRTask(writestr){
 		objectgrid: [2, 8], // array of indices for the response images of each object (indexed in same order as param "TestedObjects")
 		imageFolderSample: 17, // reference to folder from where to get sample (stimulus) images
 		nway: 1, 
-		sampleScale: 1.5,
-		testScale: 1.5,
+		sampleScale: 1,
+		testScale: 1,
 		objectlist: [0, 1], 
-		minpctcorrect: 75, // purely internal for state transition, it seems
+		minpctcorrect: 80, // purely internal for state transition, it seems
 		mintrials: mintrials,
 		hidetestdistractors:0, 
 		}
@@ -96,8 +96,8 @@ function updateSRTask(writestr){
 		objectgrid: get_obj_grid(objectlist.length), // array of indices for the response images of each object (indexed in same order as param "TestedObjects")
 		imageFolderSample: 17, // reference to folder from where to get sample (stimulus) images
 		nway: objectlist.length, 
-		sampleScale: 2,
-		testScale: 2,
+		sampleScale: 1,
+		testScale: 1,
 		objectlist: objectlist, 
 		minpctcorrect: 75, // purely internal for state transition, it seems
 		mintrials: mintrials,
@@ -118,8 +118,8 @@ function updateSRTask(writestr){
 		objectgrid: get_obj_grid(objectlist.length), // array of indices for the response images of each object (indexed in same order as param "TestedObjects")
 		imageFolderSample: 17, // reference to folder from where to get sample (stimulus) images
 		nway: nway, 
-		sampleScale: 2,
-		testScale: 2,
+		sampleScale: 1,
+		testScale: 1,
 		objectlist: objectlist, 
 		minpctcorrect: 75, // purely internal for state transition, it seems
 		mintrials: mintrials,
@@ -140,8 +140,8 @@ function updateSRTask(writestr){
 		objectgrid: get_obj_grid(objectlist.length), 
 		imageFolderSample: 17, 
 		nway: nway, 
-		sampleScale: 2,
-		testScale: 2,
+		sampleScale: 1,
+		testScale: 1,
 		objectlist: objectlist, 
 		minpctcorrect: 80, // purely internal for state transition, it seems
 		mintrials: mintrials,
@@ -167,18 +167,18 @@ function updateSRTask(writestr){
 							 movingtouch(500), 
 							 nodistractorSR(500, objectlist = [0, 1]), 
 							 spatialSR(1000, nway = 2, objectlist = [0, 1]), 
-							 spatialSR(1000, nway = 2, objectlist = [2, 3]), 
+							 spatialSR(1000, nway = 2, objectlist = [2, 5]), 
 							 spatialSR(1000, nway = 2, objectlist = [4, 5]), 
 							 delaySR(1000, nway = 2, objectlist = [4, 5]), 
 							 delaySR(1000, nway = 2, objectlist = [1, 3]),
 							 delaySR(1000, nway = 2, objectlist = [2, 4]),
-							 delaySR(1000, nway = 3, objectlist = [0, 1, 2]), 
-							 delaySR(1000, nway = 3, objectlist = [2, 3, 1]), 
-							 delaySR(1000, nway = 3, objectlist = [5, 2, 3]), 
-							 delaySR(1000, nway = 3, objectlist = [4, 0, 2]), 
-							 delaySR(2000, nway = 4, objectlist = [0, 1, 2, 3]), 
+							 delaySR(1000, nway = 3, objectlist = [0, 1, 3]), 
+							 delaySR(1000, nway = 3, objectlist = [5, 3, 4]), 
+							 delaySR(1000, nway = 3, objectlist = [5, 2, 1]), 
+							 delaySR(1000, nway = 3, objectlist = [4, 0, 6]), 
+							 delaySR(2000, nway = 4, objectlist = [0, 7, 2, 3]), 
 							 delaySR(2000, nway = 4, objectlist = [4, 5, 0, 2]), 
-							 delaySR(2000, nway = 4, objectlist = [3, 2, 1, 4]), 
+							 delaySR(2000, nway = 4, objectlist = [3, 6, 7, 4]), 
 							 delaySR(2000, nway = 4, objectlist = [2, 3, 4, 5]), 
 							 delaySR(2000, nway = 4, objectlist = [5, 0, 3, 2])]
 
