@@ -154,11 +154,8 @@ function updateSRTask(writestr){
 	
 /* todo: 
 	// [7] Introduce 3D shape stimuli (pose variation). 
-
 	// [8] Introduce var3 position variation. 
-
 	// [9] Introduce var6 position variation. 
-
 	// [10] Add backgrounds. 
 */
 
@@ -240,7 +237,6 @@ function updateSRTask(writestr){
 			trainingstages.current = i;
 		}
 	}
-
 */
 
 	// Rather than implicitly inferring current training stage based on the state of params.txt, 
@@ -265,9 +261,14 @@ function updateSRTask(writestr){
 		trainingstages.hidetestdistractors[i] == trial.hidetestdistractors && 
 		trainingstages.objectlist[i].toString() == trial.objectlist.toString())
 		{
-			trial.need2writeParameters=0;
+			//do nothing
 	}
 	else{
+		// Loaded up with wrong images & parameters, need to update parameters & reload images
+		trial.need2writeParameters=1;
+		trial.automatorstagechange=1
+
+
 		trial.rewardStage = trainingstages.rewardStage[i]
 		trial.fixationmove = trainingstages.fixationmove[i]
 		trial.fixationradius = trainingstages.fixationradius[i]
@@ -281,6 +282,8 @@ function updateSRTask(writestr){
 		trial.testScale = trainingstages.testScale[i]
 		trial.hidetestdistractors = trainingstages.hidetestdistractors[i] 
 		trial.objectlist = trainingstages.objectlist[i] //todo
+		trial.need2writeParameters = 1
+		trial.automatorstagechange = 1
 	}
 
 
