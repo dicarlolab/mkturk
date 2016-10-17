@@ -53,8 +53,8 @@ function updateSRTask(writestr){
 		objectgrid: [2, 8], 
 		imageFolderSample: 17, 
 		nway: 1, 
-		sampleScale: 1,
-		testScale: 1,
+		sampleScale: 1.5,
+		testScale: 1.5,
 		objectlist: [0, 1], 
 		minpctcorrect: 80, 
 		mintrials: mintrials,
@@ -74,8 +74,8 @@ function updateSRTask(writestr){
 		objectgrid: [2, 8], // array of indices for the response images of each object (indexed in same order as param "TestedObjects")
 		imageFolderSample: 17, // reference to folder from where to get sample (stimulus) images
 		nway: 1, 
-		sampleScale: 1,
-		testScale: 1,
+		sampleScale: 1.5,
+		testScale: 1.5,
 		objectlist: [0, 1], 
 		minpctcorrect: 80, // purely internal for state transition, it seems
 		mintrials: mintrials,
@@ -96,8 +96,8 @@ function updateSRTask(writestr){
 		objectgrid: get_obj_grid(objectlist.length), // array of indices for the response images of each object (indexed in same order as param "TestedObjects")
 		imageFolderSample: 17, // reference to folder from where to get sample (stimulus) images
 		nway: objectlist.length, 
-		sampleScale: 1,
-		testScale: 1,
+		sampleScale: 2,
+		testScale: 2,
 		objectlist: objectlist, 
 		minpctcorrect: 75, // purely internal for state transition, it seems
 		mintrials: mintrials,
@@ -118,8 +118,8 @@ function updateSRTask(writestr){
 		objectgrid: get_obj_grid(objectlist.length), // array of indices for the response images of each object (indexed in same order as param "TestedObjects")
 		imageFolderSample: 17, // reference to folder from where to get sample (stimulus) images
 		nway: nway, 
-		sampleScale: 1,
-		testScale: 1,
+		sampleScale: 2,
+		testScale: 2,
 		objectlist: objectlist, 
 		minpctcorrect: 75, // purely internal for state transition, it seems
 		mintrials: mintrials,
@@ -140,8 +140,8 @@ function updateSRTask(writestr){
 		objectgrid: get_obj_grid(objectlist.length), 
 		imageFolderSample: 17, 
 		nway: nway, 
-		sampleScale: 1,
-		testScale: 1,
+		sampleScale: 2,
+		testScale: 2,
 		objectlist: objectlist, 
 		minpctcorrect: 80, // purely internal for state transition, it seems
 		mintrials: mintrials,
