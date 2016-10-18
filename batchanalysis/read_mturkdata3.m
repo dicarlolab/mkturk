@@ -374,6 +374,12 @@ for i=startfile:length(datafiles)
 		alldata.automator(filecnt) = dataobj.Automator;
 	end
 	
+	alldata.currentautomatorstage(filecnt)=1;
+	if isfield(dataobj,'CurrentAutomatorStage')
+		alldata.currentautomatorstage(filecnt) = dataobj.CurrentAutomatorStage;
+	end
+	
+	
 	alldata.paramsfile{filecnt}=nan;
 	if isfield(dataobj,'Params')
 		alldata.paramsfile{filecnt} = dataobj.Params;
@@ -554,6 +560,19 @@ for i=startfile:length(datafiles)
 		end
 	end
 
+	alldata.samplepixels(filecnt)=[256 256];
+	if isfield(dataobj,'SamplePixels')
+		for q=1:length(dataobj.SamplePixels)
+			alldata.samplepixels{filecnt}(q) = dataobj.SamplePixels{q};
+		end
+	end
+
+	alldata.testpixels(filecnt)=[256 256];
+	if isfield(dataobj,'TestPixels')
+		for q=1:length(dataobj.TestPixels)
+			alldata.testpixels{filecnt}(q) = dataobj.TestPixels{q};
+		end
+	end	
 	
 	alldata.samplescale(filecnt)=nan;
 	if isfield(dataobj,'SampleScale')
@@ -622,6 +641,13 @@ for i=startfile:length(datafiles)
 			alldata.fixationgridindex{filecnt}(q,1)=dataobj.FixationGridIndex{q};
 		end
 		
+		alldata.objectgridindex{filecnt}=[];
+		if isfield(dataobj,'ObjectGridIndex')
+			for q=1:length(dataobj.ObjectGridIndex)
+				alldata.objectgridindex{filecnt}(q) = dataobj.ObjectGridIndex{q};
+			end %for q
+		end
+
 		alldata.sample{filecnt}(q,1)=nan;
 		if isfield(dataobj,'Sample')
 			alldata.sample{filecnt}(q,1)=dataobj.Sample{q};
@@ -950,23 +976,46 @@ for n=1:ntrialtotal(end,1)
 		g=g+1; %go to 1-indexed
 	end
 	mtdata(s).samplexy(ns(s),1:2)=[alldata.xgridcenter{f}(g) wh-alldata.ygridcenter{f}(g)]*pix2inch;
-	mtdata(s).samplewd(ns(s))=alldata.samplescale(f)*(256/alldata.pixelratio(f))*pix2inch;
+	mtdata(s).samplewd(ns(s))=alldata.samplescale(f)*(alldata.samplepixels{f}(1)/alldata.pixelratio(f))*pix2inch;
 	
 	% sample onset time
 	sampleframe=find(alldata.imagesequence{f}==1);
 	mtdata(s).sampledt(ns(s))=mtdata(s).fixationtouchdt(ns(s)) + sum(alldata.imagesequencetimes{f}(1:sampleframe-1));
 	
-	% test location
-	g=alldata.testgridindex{f};
-	if isnan(g(1)) || length(alldata.xgridcenter{f})==1
-		g=1;
-	else
-		g=g+1; %go to 1-indexed
+	%--------- test location (if not SR task) ------------%
+	if isempty(alldata.objectgridindex{f}) ||...
+			length(alldata.objectgridindex{f}) ~= length(alldata.objs{f})
+		g=alldata.testgridindex{f};
+		if isnan(g(1)) || length(alldata.xgridcenter{f})==1
+			g=1;
+		else
+			g=g+1; %go to 1-indexed
+		end
+		for q=1:length(g)
+			mtdata(s).testxy(ns(s),(2*q-1):2*q)=[alldata.xgridcenter{f}(g(q)) wh-alldata.ygridcenter{f}(g(q))]*pix2inch;
+		end
+		mtdata(s).testwd(ns(s))=alldata.testscale(f)*(alldata.testpixels{f}(1)/alldata.pixelratio(f))*pix2inch;
+		
+		%--------- test location (if SR task) ------------%
+	elseif length(alldata.objectgridindex{f}) == length(alldata.objs{f})
+		go=alldata.objectgridindex{f};
+		if isnan(go(1)) || length(alldata.xgridcenter{f})==1
+			go=1;
+		else
+			go=go+1; %go to 1-indexed
+		end
+		
+		mtdata(s).testlabel(ns(s),q)=nan;
+		
+		
+		for q=1:length(mtdata(s).testlabel(ns(s),:))
+			currentlabel = mtdata(s).testlabel(ns(s),q);
+			ind = find(alldata.objs{f}==currentlabel);
+			mtdata(s).testxy(ns(s),(2*q-1):2*q)=[alldata.xgridcenter{f}(go(ind)) wh-alldata.ygridcenter{f}(go(ind))]*pix2inch;
+		end
+		mtdata(s).testwd(ns(s))=alldata.testscale(f)*(alldata.testpixels{f}(1)/alldata.pixelratio(f))*pix2inch;
 	end
-	for q=1:length(g)
-		mtdata(s).testxy(ns(s),(2*q-1):2*q)=[alldata.xgridcenter{f}(g(q)) wh-alldata.ygridcenter{f}(g(q))]*pix2inch;
-	end
-	mtdata(s).testwd(ns(s))=alldata.testscale(f)*(256/alldata.pixelratio(f))*pix2inch;
+	
 	
 	% test onset time
 	testframe=find(alldata.imagesequence{f}==2);
@@ -985,245 +1034,6 @@ for n=1:ntrialtotal(end,1)
 	end %if
 end %for n total trials
 save([savedir 'mtdata' num2str(mtdatafilenum) '.mat'],'mtdata');
-%_____________________________________________________
-%______________________________________________________
-%______________________________________________________
-%______________________________________________________
-	
-% 	clear ntrialspersubj
-% for s=1:length(alldata.subjlist)
-% 	ntrialspersubj{s}=[0 0];
-% end
-% 
-% 
-% for f=1:length(alldata.filename)
-% 	ntrialspersubj{alldata.subjid(f)}=...
-% 		[ntrialspersubj{alldata.subjid(f)};
-% 		 ntrialspersubj{alldata.subjid(f)}(end,1) + length(alldata.tstart{f}), f];
-% end %for f files
-% 	
-% 
-% 	
-% 	
-% 	
-% end %for n trials
-% 
-% for f=1:size(ntrialtotal)
-% 	currtrialtotal=ntrialtotal(f,1);
-% 	currsubj=ntrialtotal(f,2);
-% 	currfile=ntrialtotal(f,3);
-% 	ntrials=ntrialtotal(f,4);
-% 
-% 	curr_mtdatafile=ceil(currtrialtotal/NTRIAL_PER_FILE);
-% 
-% 	% check if an mtdatafile exists
-% 	for q=1:length(mtdatafiles)
-% 		if strcmp(mtdatafiles(q).name,['mtdata' num2str(curr_mtdatafile) '.mat'])
-% 			load([savedir mtdatafiles(q).name]);
-%  			last_saved_filetrial=mtdata.lastfiletrial;
-% 		end
-% 	end %for q
-% 		
-% 	
-% 	% if file available, start from the last trial of mtdata
-% 	
-% 	% if file not available, preallocate a new mtdata
-% 	
-% 	
-% 	
-% 	% go forward NTRIALS_PER_FILE before preallocating and having a new
-% 	% start ind
-% 	
-% 	
-% end %for f files
-% 
-% 
-% 
-% % create subject and trials nums for each NTRIALS_PER_FILE
-% n_mtdatafiles=ceil(ntrialstotal(end,1)/NTRIALS_PER_FILE);
-% for i=1:length(n_mtdatafiles)
-% 	for s=1:length(alldata.subjlist)
-% 		ind=find(ntrialstotal(:,1)>=(NTRIALS_PER_FILE*(i-1)+1) &&...
-% 				ntrialstotal(:,1)<=NTRIALS_PER_FILE*i &&...
-% 				ntrialstotal(:,2)==s);
-% 		
-% 	end %for s subjects
-% end
-% 
-% clear ntrialspersubj
-% for s=1:length(alldata.subjlist)
-% 	ntrialspersubj{s}=[0 0];
-% end
-% 
-% 
-% for f=1:length(alldata.filename)
-% 	ntrialspersubj{alldata.subjid(f)}=...
-% 		[ntrialspersubj{alldata.subjid(f)};
-% 		 ntrialspersubj{alldata.subjid(f)}(end,1) + length(alldata.tstart{f}), f];
-% end %for f files
-% 
-% 
-% temp=preallocate(subjlist,ntrialspersubj)
-% 
-% 
-% % Pre-allocate mtdata and start filling from last time
-% load([savedir 'mtdata.mat']);
-% for s=1:length(mtdata)
-% 	ntrials_processed=size(mtdata(s).filetrial,1);
-% 	ind=find(ntrialpersubj{s}<ntrials_processed); %start with the previous file in case trials were added in the meantime
-% 	if ~isempty(ind)
-% 		fileindstart(s)=ind(end);
-% 	else
-% 		fileindstart(s)=1;
-% 	end
-% end %for s subjects
-% 
-% 
-% 
-% % each trial is indexed by the filename and the trial# within that file
-% % store:
-% % nobj nway keepsampleon distractors
-% % samplefolder sample sample_label sampleON sampleOFF
-% % testfolder test test_label correct response
-% % xytwfix xytwsample xytwtest
-% % xydtfix xydtresponse
-% 
-% mtdata.filename=alldata.filename;
-% clear mtdata
-% for s=1:length(alldata.subjlist)
-% 	nstart=1;
-% 	for f=1:length(mtdata.filename)
-% 		if alldata.subjid(f)~=s
-% 			continue
-% 		end
-% 	
-% 		ntrials=length(alldata.tstart{f});
-% 		cnt=0;
-% 		for n=nstart:(nstart+ntrials-1)
-% 			% index each trial by file & trial#
-% 			cnt=cnt+1;
-% 			mtdata(s).filename{n}=alldata.filename{f};
-% 			mtdata(s).filetrial(n,1:2)=[f,cnt];
-% 			
-% 			%---- task params: nobj, nway, keepsampleon,
-% 			%hidetestdistractors, reward, punish
-% 			mtdata(s).nobj(n)=length(alldata.objs{f});
-% 			mtdata(s).nway(n)=alldata.nway(f);
-% 			mtdata(s).keepsampleon(n)=alldata.keepsampleon(f);
-% 			mtdata(s).hidetestdistractors(n)=alldata.hidetestdistractors(f);
-% 			mtdata(s).rewardper1000(n)=alldata.rewardper1000(f);
-% 			mtdata(s).punishtimeout(n)=alldata.punishtimeout(f);
-% 			
-% 			%---- sample images: samplefolder sample sample_label sampleON sampleOFF
-% 			mtdata(s).samplefolder(n)=alldata.samplefolder(f);
-% 			mtdata(s).sample(n)=alldata.sample{f}(cnt);
-% 			if mtdata(s).samplefolder(n)==0
-% 				mtdata(s).samplelabel(n)=mtdata(s).sample(n);
-% 			elseif mtdata(s).samplefolder(n)==1 ||...
-% 					mtdata(s).samplefolder(n)==2 ||...
-% 					mtdata(s).samplefolder(n)==3 ||...
-% 					mtdata(s).samplefolder(n)==6 ||...	
-% 					mtdata(s).samplefolder(n)==7 ||...
-% 					mtdata(s).samplefolder(n)==8
-% 				mtdata(s).samplelabel(n)=floor(mtdata(s).sample(n)/100);
-% 			else
-% 				mtdata(s).samplelabel(n)=nan;
-% 			end
-% 			
-% 			mtdata(s).sampleon(n)=alldata.sampleon(f);
-% 			mtdata(s).sampleoff(n)=alldata.sampleoff(f);
-% 			
-% 			%---- test images: testfolder test test_label
-% 			mtdata(s).testfolder(n)=alldata.testfolder(f);
-% 			mtdata(s).test(n,1:mtdata(s).nway(n))=alldata.test{f}(cnt,:);
-% 			for q=1:mtdata(s).nway(n)
-% 				if mtdata(s).testfolder(n)==0
-% 					mtdata(s).testlabel(n,q)=mtdata(s).test(n,q);
-% 				elseif mtdata(s).testfolder(n)==1 ||...
-% 						mtdata(s).testfolder(n)==2 ||...
-% 						mtdata(s).testfolder(n)==3 ||...
-% 						mtdata(s).testfolder(n)==6 ||...	
-% 						mtdata(s).testfolder(n)==7 ||...
-% 						mtdata(s).testfolder(n)==8
-% 					mtdata(s).testlabel(n,q)=floor(mtdata(s).test(n,q)/100);
-% 				else
-% 					mtdata(s).testlabel(n,q)=nan;
-% 				end
-% 			end %for q test choices
-% 			
-% 			%---- choice: correctitem, response, correct
-% 			mtdata(s).correctitem(n)=alldata.correctitem{f}(cnt);
-% 			mtdata(s).response(n)=alldata.response{f}(cnt);
-% 			mtdata(s).correct(n)=(mtdata(s).correctitem(n)==mtdata(s).response(n));
-% 					
-% 			%---- Time & locations of objects & touches on screen in milliseconds & inches:
-% 			%---- xytwfix xytwsample xytwtest xydtfix xydtresponse
-% 			pix2inch=0.90/128;
-% 			ww=alldata.windowwidth(f);
-% 			wh=alldata.windowheight(f);
-% 			mtdata(s).windowsize(n,1:2)=[ww wh];
-% 
-% 			% fixation location
-% 			g=alldata.fixationgridindex{f}(cnt);
-% 			if isnan(g) || g<0
-% 				g=1;
-% 			else
-% 				g=g+1; %go to 1-indexed
-% 			end
-% 			d=2*alldata.fixationradius(f);
-% 			
-% 			mtdata(s).fixationxy(n,1:2)=[alldata.xgridcenter{f}(g) alldata.ygridcenter{f}(g)]*pix2inch;
-% 			mtdata(s).fixationwd(n)=d*pix2inch;
-% 			
-% 			% fixation onset time
-% 			mtdata(s).fixationt(n)=alldata.tstart{f}(cnt)/1000;
-% 			
-% 			% subject fixation time & location
-% 			mtdata(s).fixationtouchdt(n)=alldata.fixationxyt{f}(cnt,3)/1000 - mtdata(s).fixationt(n);
-% 			mtdata(s).fixationtouchxy(n,1:2)=alldata.fixationxyt{f}(cnt,1:2)*pix2inch;
-% 			
-% 			% sample location
-% 			g=alldata.samplegridindex(f);
-% 			if isnan(g) || length(alldata.xgridcenter{f}==1)
-% 				g=1;
-% 			else
-% 				g=g+1; %go to 1-indexed
-% 			end
-% 			mtdata(s).samplexy(n,1:2)=[alldata.xgridcenter{f}(g) alldata.ygridcenter{f}(g)]*pix2inch;
-% 			mtdata(s).samplewd(n)=alldata.samplescale(f)*(256/alldata.pixelratio(f))*pix2inch;
-% 			
-% 			% sample onset time
-% 			sampleframe=find(alldata.imagesequence{f}==1);
-% 			mtdata(s).sampledt(n)=mtdata(s).fixationtouchdt(n) + sum(alldata.imagesequencetimes{f}(1:sampleframe-1));
-% 			
-% 			% test location
-% 			g=alldata.testgridindex{f};
-% 			if isnan(g) || length(alldata.xgridcenter{f}==1)
-% 				g=1;
-% 			else
-% 				g=g+1; %go to 1-indexed
-% 			end
-% 			for q=1:length(g)
-% 				mtdata(s).testxy(n,(2*q-1):2*q)=[alldata.xgridcenter{f}(g) alldata.ygridcenter{f}(g)]*pix2inch;
-% 			end
-% 			mtdata(s).testwd(n)=alldata.testscale(f)*(256/alldata.pixelratio(f))*pix2inch;
-% 			
-% 			% test onset time
-% 			testframe=find(alldata.imagesequence{f}==2);
-% 			mtdata(s).testdt(n)=mtdata(s).fixationtouchdt(n) + sum(alldata.imagesequencetimes{f}(1:testframe-1));
-% 			
-% 			% subject response time & location
-% 			mtdata(s).responsetouchdt(n)=alldata.responsexyt{f}(cnt,3)/1000 - mtdata(s).fixationt(n);
-% 			mtdata(s).responsetouchxy(n,1:2)=alldata.responsexyt{f}(cnt,1:2)*pix2inch;
-% 			
-% 			nstart=nstart+ntrials;
-% 		end %for n trials
-% 		disp(['Completed subject: ' alldata.subjlist{s} ' file: ' num2str(f)]);
-% 		save([savedir 'mtdata.mat'],'mtdata');
-% 	end %for f files
-% 	disp(['DONE subject ' alldata.subjlist{s}]);
-% end %for s subjects
-% 
 
 
 %%
@@ -1268,6 +1078,8 @@ for s=1:length(ntrialpersubj)
 	temp(s).testdt=zeros(n,1);
 	temp(s).responsetouchdt=zeros(n,1);
 	temp(s).responsetouchxy=zeros(n,2);
+	temp(s).automator{n}=[];
+	temp(s).currentautomatorstage=zeros(n,1);
 end
 
 
@@ -1321,4 +1133,8 @@ for s=1:length(ntrialpersubj)
 	mtdata(s).testdt(indadd,1)=zeros(nadd,1);
 	mtdata(s).responsetouchdt(indadd,1)=zeros(nadd,1);
 	mtdata(s).responsetouchxy(indadd,1:2)=zeros(nadd,2);
+	for q=1:nadd
+		mtdata(s).automator{indadd(q)}=[];
+	end
+	mtdata(s).currentautomatorstage(indadd,1:2)=zeros(nadd,2);
 end
