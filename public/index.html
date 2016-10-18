@@ -474,7 +474,9 @@ function takephoto(currtrial,currstage){
     	    	XGridCenter: xgridcent,
     	    	YGridCenter: ygridcent,
 
-    	    	SampleScale: imagesSample.scale,
+	    	    SamplePixels: [imagesSample.wd, imagesSample.ht],
+	    	    TestPixels: [imagesTest.wd, imagesTest.ht],	    	    	
+				SampleScale: imagesSample.scale,
     	    	TestScale: imagesTest.scale,
     	    	SampleImageDir: imagesSample.folder,
     	    	TestImageDir: imagesTest.folder,
