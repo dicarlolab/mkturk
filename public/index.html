@@ -302,6 +302,8 @@
 		}).then();
 	}
 
+
+
 	// Promise: load image from Dropbox
 	function loadTestImagefromDropbox(src,idx) {
 		return new Promise(function(resolve,reject){
@@ -326,6 +328,56 @@
 			});
 		}).then();
 	}
+
+	// Promise: load image from Dropbox
+	function loadOriginalSampleImagefromDropbox(src) {
+		return new Promise(function(resolve,reject){
+			imagesSampleOriginal[src] = new Image();
+			client.makeUrl(imagesSample.folderOriginal + src + ".png",{download: 1},function(error,url){
+				if (error){
+					return showError(error); //Something went wrong.
+				}
+				imagesSampleOriginal[src].src=url.url;
+				imagesSampleOriginal[src].onload = function(){
+					console.log('loaded original sampleimage' + (src));
+
+				renderBlank();
+				var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
+				var visible_ctxt = blank_canvasobj.getContext('2d');
+				visible_ctxt.textBaseline = "hanging";
+				visible_ctxt.fillStyle = "white";
+				visible_ctxt.font = "20px Verdana";
+				visible_ctxt.fillText('Loaded original sampleimage ' + (src),20.5,20.5);
+				resolve(src)
+				}
+			});
+		}).then();
+	}
+
+	function loadOriginalTestImagefromDropbox(src) {
+		return new Promise(function(resolve,reject){
+			imagesTestOriginal[src] = new Image();
+			client.makeUrl(imagesTest.folderOriginal + src + ".png",{download: 1},function(error,url){
+				if (error){
+					return showError(error); //Something went wrong.
+				}
+				imagesTestOriginal[src].src=url.url;
+				imagesTestOriginal[src].onload = function(){
+					console.log('loaded original testimage' + (src));
+
+				renderBlank();
+				var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
+				var visible_ctxt = blank_canvasobj.getContext('2d');
+				visible_ctxt.textBaseline = "hanging";
+				visible_ctxt.fillStyle = "white";
+				visible_ctxt.font = "20px Verdana";
+				visible_ctxt.fillText('Loaded original testimage ' + (src),20.5,20.5);
+				resolve(src)
+				}
+			});
+		}).then();
+	}
+
 
 	function loadSoundfromDropbox(src,idx){
 		return new Promise(function(resolve,reject){
@@ -1607,6 +1659,14 @@ function setReward(){
 		pixLR: [],
 		scale: 1,
 	}; //filenames will be placed in imagesProto[idx].src
+
+	var imagesSampleOriginal = {
+		folder: "MonkeyTurk/obj25/imagepacks/im",
+	}
+	var imagesTestOriginal = {
+		folder: "MonkeyTurk/obj25/imagepacks/im",
+	}
+
 	var imagesSamplePack
 	var imagesTestPack
 	var frame = {
@@ -1730,6 +1790,8 @@ if (trial.need2loadParameters == 1){
 	}
 	console.log(trial.objectlist)
 	canvas.tsequence = [0,100,100+trial.sampleON,100+trial.sampleON+trial.sampleOFF]; //timing between frames
+	imagesSample.folderOriginal = "MonkeyTurk/obj25/imagepacks" + trial.imageFolderSample + "/im";
+	imagesTest.folderOriginal = "MonkeyTurk/obj25/imagepacks" + trial.imageFolderTest + "/im";
 	imagesSample.folder = "MonkeyTurk/obj25/imagepacks" + trial.imageFolderSample + "/imp";
 	imagesTest.folder = "MonkeyTurk/obj25/imagepacks" + trial.imageFolderTest + "/imp";
 	imagesSample.scale = trial.sampleScale;
@@ -1825,12 +1887,13 @@ if (trial.need2loadImages == 1){
 		yield Promise.all(imageTestpromises); //simultaneously evaluate array of image load promises
 
 		// pixel locations of image within pack
-		// imagesSample.wd = imagesSamplePack[0].width/imagesSample.packsz;
-		imagesSample.wd = 512;
-		imagesSample.ht = imagesSamplePack[0].height;
-		// imagesTest.wd = imagesTestPack[0].width/imagesTest.packsz;
-		imagesTest.wd = 512;
-		imagesTest.ht = imagesTestPack[0].height;
+		yield loadOriginalSampleImagefromDropbox(0)
+		yield loadOriginalTestImagefromDropbox(0)
+		imagesSample.wd = imagesSampleOriginal[0].width
+		imagesSample.ht = imagesSampleOriginal[0].height
+		imagesTest.wd = imagesTestOriginal[0].width
+		imagesTest.ht = imagesTestOriginal[0].height
+
 		for (i = 0; i<= imagesSample.serial.length-1; i++){
 			imagesSample.pixLR[i] = [imagesSample.packpos[i] * imagesSample.wd, (imagesSample.packpos[i]+1) * imagesSample.wd - 1];
 		}
@@ -2149,12 +2212,7 @@ while (trial.waitingforFixation==1){
 		console.log('end of generator iteration' + trial.current);			
 
 // Check if automator needs to update task
-	if (trial.automator != 0 && trial.current == 0 && trial.need2writeParameters == 1){
-		//Started outside of an automator state
-		console.log("updating task parameters to match automator default state");
-		writeParameterstoDropbox();
-	}
-	else if (trial.automator != 0){
+	if (trial.automator != 0){
 		//Check if subject met criteria to move to next stage
 		if (trial.automator==1){
 			updateTask1("writeifneeded");
