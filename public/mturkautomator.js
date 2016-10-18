@@ -84,7 +84,8 @@ function updateSRTask(writestr){
 		return vals 
 	}
 
-	function nodistractorSR(mintrials, objectlist = [0, 1]){
+	function nodistractorSR(mintrials, objectlist){
+			// } = [0, 1]){
 		var vals = {
 		stagename: 'nodistractorSR', 
 		rewardStage: 1,
@@ -106,7 +107,8 @@ function updateSRTask(writestr){
 		return vals
 	}
 
-	function spatialSR(mintrials, nway = 1, objectlist = [0, 1]){
+	function spatialSR(mintrials, nway, objectlist){
+		// nway = 1, objectlist = [0, 1]){
 		var vals = {
 		stagename: 'spatialSR'+nway.toString()+'ways', 
 		rewardStage: 1,
@@ -128,7 +130,8 @@ function updateSRTask(writestr){
 		return vals
 	}
 
-	function delaySR(mintrials, nway = 2, objectlist = [0,1]){
+	function delaySR(mintrials,nway,objectlist){
+	// nway = 2, objectlist = [0,1]){
 		var vals = {
 		stagename: 'delaySR_2way'+nway.toString()+'ways', 
 		rewardStage: 1,
@@ -159,21 +162,21 @@ function updateSRTask(writestr){
 	// [10] Add backgrounds. 
 */
 
-var ntrials=5
+var ntrials=2000
 
 	//// Define sequence of stages
-	var phase_sequence = [touch(ntrials), 
-							 movingtouch(ntrials), 
-							 nodistractorSR(ntrials, objectlist = [0, 3]), 
-							 spatialSR(ntrials, nway = 2, objectlist = [0, 3]), 
-							 spatialSR(ntrials, nway = 3, objectlist = [0, 3, 7]), 
-							 spatialSR(ntrials, nway = 4, objectlist = [0, 3, 7, 5]), 
-							 delaySR(ntrials, nway = 4, objectlist = [0, 3, 7, 5]),
-							 nodistractorSR(ntrials, objectlist = [1, 2]), 
-							 spatialSR(ntrials, nway = 2, objectlist = [1, 2]), 
-							 spatialSR(ntrials, nway = 3, objectlist = [1, 2, 4]), 
-							 spatialSR(ntrials, nway = 4, objectlist = [1, 2, 4, 6]), 
-							 delaySR(ntrials, nway = 4, objectlist = [1, 2, 4, 6]),
+	var phase_sequence = [touch(100), 
+							 movingtouch(400), 
+							 nodistractorSR(ntrials, [0, 3]), 
+							 spatialSR(ntrials, 2, [0, 3]), 
+							 spatialSR(ntrials, 3, [0, 3, 7]), 
+							 spatialSR(ntrials, 4, [0, 3, 7, 5]), 
+							 delaySR(ntrials, 4, [0, 3, 7, 5]),
+							 nodistractorSR(ntrials, [1, 2]), 
+							 spatialSR(ntrials, 2, [1, 2]), 
+							 spatialSR(ntrials, 3, [1, 2, 4]), 
+							 spatialSR(ntrials, 4, [1, 2, 4, 6]), 
+							 delaySR(ntrials, 4, [1, 2, 4, 6]),
 							 ]
 
 
