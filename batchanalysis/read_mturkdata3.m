@@ -1025,6 +1025,9 @@ for n=1:ntrialtotal(end,1)
 	mtdata(s).responsetouchdt(ns(s))=alldata.responsexyt{f}(nf,3) - mtdata(s).fixationt(ns(s));
 	mtdata(s).responsetouchxy(ns(s),1:2)=([alldata.responsexyt{f}(nf,1) wh-alldata.responsexyt{f}(nf,2)])*pix2inch;
 	
+	mtdata(s).automator{ns(s)} = alldata.automator{f};
+	mtdata(s).currentautomatorstate(ns(s)) = alldata.currentautomatorstage(f);
+	
 	if n/100 == round(n/100)
 		disp(['trial=' num2str(n)]);
 	end
