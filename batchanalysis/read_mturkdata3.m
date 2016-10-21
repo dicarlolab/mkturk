@@ -1,4 +1,4 @@
-function read_mturkdata2
+function read_mturkdata3
 % Read monkeyturk parameters & data from dropbox and store in *.mat file
 % 2015.11.26 - ei
 
@@ -248,6 +248,10 @@ for i=startfile:length(datafiles)
 		alldata.samplefoldername{filecnt}='testset_coco';
 	elseif alldata.samplefolder(filecnt)==15
 		alldata.samplefoldername{filecnt}='trainset_cocohvm';
+	elseif alldata.samplefolder(filecnt)==16
+		alldata.samplefoldername{filecnt}='responsebuttons_sr';
+	elseif alldata.samplefolder(filecnt)==17
+		alldata.samplefoldername{filecnt}='trainshapes_sr';
 	end
 		
 	if alldata.testfolder(filecnt)==0
@@ -282,6 +286,10 @@ for i=startfile:length(datafiles)
 		alldata.testfoldername{filecnt}='testset_coco';
 	elseif alldata.testfolder(filecnt)==15
 		alldata.testfoldername{filecnt}='trainset_cocohvm';
+	elseif alldata.testfolder(filecnt)==16
+		alldata.testfoldername{filecnt}='responsebuttons_sr';
+	elseif alldata.testfolder(filecnt)==17
+		alldata.testfoldername{filecnt}='trainshapes_sr';
 	end
 	
 	if isfield(dataobj,'RewardStage')
@@ -369,9 +377,9 @@ for i=startfile:length(datafiles)
 		alldata.nrewardmax(filecnt) = dataobj.NRewardMax;
 	end
 
-	alldata.automator(filecnt)=0;
+	alldata.automator{filecnt}=0;
 	if isfield(dataobj,'Automator')
-		alldata.automator(filecnt) = dataobj.Automator;
+		alldata.automator{filecnt} = dataobj.Automator;
 	end
 	
 	alldata.currentautomatorstage(filecnt)=1;
@@ -518,6 +526,14 @@ for i=startfile:length(datafiles)
 		alldata.windowheight(filecnt) = dataobj.WindowHeight;
 	end
 	
+	alldata.objectgridindex{filecnt}=[];
+	if isfield(dataobj,'ObjectGridIndex')
+		for q=1:length(dataobj.ObjectGridIndex)
+			alldata.objectgridindex{filecnt}(q) = dataobj.ObjectGridIndex{q};
+		end %for q
+	end
+	
+	
 	alldata.xgridcenter{filecnt}=nan;
 	if isfield(dataobj,'XGridCenter')
 		for q=1:length(dataobj.XGridCenter)
@@ -560,17 +576,17 @@ for i=startfile:length(datafiles)
 		end
 	end
 
-	alldata.samplepixels(filecnt)=[256 256];
+	alldata.samplepixels(filecnt,1:2)=[256 256];
 	if isfield(dataobj,'SamplePixels')
 		for q=1:length(dataobj.SamplePixels)
-			alldata.samplepixels{filecnt}(q) = dataobj.SamplePixels{q};
+			alldata.samplepixels(filecnt,q) = dataobj.SamplePixels{q};
 		end
 	end
 
-	alldata.testpixels(filecnt)=[256 256];
+	alldata.testpixels(filecnt,1:2)=[256 256];
 	if isfield(dataobj,'TestPixels')
 		for q=1:length(dataobj.TestPixels)
-			alldata.testpixels{filecnt}(q) = dataobj.TestPixels{q};
+			alldata.testpixels(filecnt,q) = dataobj.TestPixels{q};
 		end
 	end	
 	
@@ -641,13 +657,6 @@ for i=startfile:length(datafiles)
 			alldata.fixationgridindex{filecnt}(q,1)=dataobj.FixationGridIndex{q};
 		end
 		
-		alldata.objectgridindex{filecnt}=[];
-		if isfield(dataobj,'ObjectGridIndex')
-			for q=1:length(dataobj.ObjectGridIndex)
-				alldata.objectgridindex{filecnt}(q) = dataobj.ObjectGridIndex{q};
-			end %for q
-		end
-
 		alldata.sample{filecnt}(q,1)=nan;
 		if isfield(dataobj,'Sample')
 			alldata.sample{filecnt}(q,1)=dataobj.Sample{q};
@@ -766,7 +775,7 @@ load([savedir 'alldata.mat']);
 %---- Determine number of cumulative trials across raw data files
 clear ntrialtotal
 ntrialtotal=[0,0,0,0,0,0];
-for f=1:length(alldata.filename)
+for f=1:length(alldata.filename)-1
 	% 1=trial# 2=subject# 3=file# 4=start_trial 5=end_trial 6=filetrials 
 	ntrialtotal=[ntrialtotal; 
 		ntrialtotal(end,1)+length(alldata.tstart{f}),alldata.subjid(f),f,1,length(alldata.tstart{f})*ones(1,2)];
@@ -889,7 +898,8 @@ for n=1:ntrialtotal(end,1)
 	%---- sample images: samplefolder sample sample_label sampleON sampleOFF
 	mtdata(s).samplefolder(ns(s))=alldata.samplefolder(f);
 	mtdata(s).sample(ns(s))=alldata.sample{f}(nf);
-	if mtdata(s).samplefolder(ns(s))==0 || mtdata(s).samplefolder(ns(s))==9 || mtdata(s).samplefolder(ns(s))==12
+	if mtdata(s).samplefolder(ns(s))==0 || mtdata(s).samplefolder(ns(s))==9 ||...
+			mtdata(s).samplefolder(ns(s))==12 || mtdata(s).samplefolder(ns(s))==16
 		mtdata(s).samplelabel(ns(s))=mtdata(s).sample(ns(s));
 	elseif mtdata(s).samplefolder(ns(s))==1 ||...
 			mtdata(s).samplefolder(ns(s))==2 ||...
@@ -903,6 +913,12 @@ for n=1:ntrialtotal(end,1)
 			mtdata(s).samplefolder(ns(s))==14 ||...
 			mtdata(s).samplefolder(ns(s))==15
         mtdata(s).samplelabel(ns(s))=floor(mtdata(s).sample(ns(s))/100);
+	elseif mtdata(s).samplefolder(ns(s))==17
+		if mtdata(s).sample(ns(s))<=7 %0-7
+			mtdata(s).samplelabel(ns(s))=mtdata(s).sample(ns(s));
+		elseif mtdata(s).sample(ns(s))>=8
+			mtdata(s).samplelabel(ns(s))=floor((mtdata(s).sample(ns(s))-8)/100);
+		end
 	else
 		mtdata(s).samplelabel(ns(s))=nan;
 	end
@@ -914,7 +930,8 @@ for n=1:ntrialtotal(end,1)
 	mtdata(s).testfolder(ns(s))=alldata.testfolder(f);
 	mtdata(s).test(ns(s),1:mtdata(s).nway(ns(s)))=alldata.test{f}(nf,:);
 	for q=1:mtdata(s).nway(ns(s))
-		if mtdata(s).testfolder(ns(s))==0 || mtdata(s).testfolder(ns(s))==9 || mtdata(s).testfolder(ns(s))==12
+		if mtdata(s).testfolder(ns(s))==0 || mtdata(s).testfolder(ns(s))==9 ||...
+				mtdata(s).testfolder(ns(s))==12 || mtdata(s).testfolder(ns(s))==16
 			mtdata(s).testlabel(ns(s),q)=mtdata(s).test(ns(s),q);
 		elseif mtdata(s).testfolder(ns(s))==1 ||...
 				mtdata(s).testfolder(ns(s))==2 ||...
@@ -928,9 +945,15 @@ for n=1:ntrialtotal(end,1)
 				mtdata(s).testfolder(ns(s))==14 ||...
 				mtdata(s).testfolder(ns(s))==15
 			mtdata(s).testlabel(ns(s),q)=floor(mtdata(s).test(ns(s),q)/100);
-		else
-			mtdata(s).testlabel(ns(s),q)=nan;
+	elseif mtdata(s).testfolder(ns(s))==17
+		if mtdata(s).test(ns(s),q)<=7 %0-7
+			mtdata(s).testlabel(ns(s),q)=mtdata(s).test(ns(s),q);
+		elseif mtdata(s).test(ns(s),q)>=8
+			mtdata(s).testlabel(ns(s),q)=floor((mtdata(s).test(ns(s),q)-8)/100);
 		end
+	else
+			mtdata(s).testlabel(ns(s),q)=nan;
+		end %if
 	end %for q test choices
 	
 	%---- choice: correctitem, response, correct
@@ -976,7 +999,7 @@ for n=1:ntrialtotal(end,1)
 		g=g+1; %go to 1-indexed
 	end
 	mtdata(s).samplexy(ns(s),1:2)=[alldata.xgridcenter{f}(g) wh-alldata.ygridcenter{f}(g)]*pix2inch;
-	mtdata(s).samplewd(ns(s))=alldata.samplescale(f)*(alldata.samplepixels{f}(1)/alldata.pixelratio(f))*pix2inch;
+	mtdata(s).samplewd(ns(s))=alldata.samplescale(f)*(alldata.samplepixels(f,1)/alldata.pixelratio(f))*pix2inch;
 	
 	% sample onset time
 	sampleframe=find(alldata.imagesequence{f}==1);
@@ -994,7 +1017,7 @@ for n=1:ntrialtotal(end,1)
 		for q=1:length(g)
 			mtdata(s).testxy(ns(s),(2*q-1):2*q)=[alldata.xgridcenter{f}(g(q)) wh-alldata.ygridcenter{f}(g(q))]*pix2inch;
 		end
-		mtdata(s).testwd(ns(s))=alldata.testscale(f)*(alldata.testpixels{f}(1)/alldata.pixelratio(f))*pix2inch;
+		mtdata(s).testwd(ns(s))=alldata.testscale(f)*(alldata.testpixels(f,1)/alldata.pixelratio(f))*pix2inch;
 		
 		%--------- test location (if SR task) ------------%
 	elseif length(alldata.objectgridindex{f}) == length(alldata.objs{f})
@@ -1003,17 +1026,14 @@ for n=1:ntrialtotal(end,1)
 			go=1;
 		else
 			go=go+1; %go to 1-indexed
-		end
-		
-		mtdata(s).testlabel(ns(s),q)=nan;
-		
+		end		
 		
 		for q=1:length(mtdata(s).testlabel(ns(s),:))
 			currentlabel = mtdata(s).testlabel(ns(s),q);
 			ind = find(alldata.objs{f}==currentlabel);
 			mtdata(s).testxy(ns(s),(2*q-1):2*q)=[alldata.xgridcenter{f}(go(ind)) wh-alldata.ygridcenter{f}(go(ind))]*pix2inch;
 		end
-		mtdata(s).testwd(ns(s))=alldata.testscale(f)*(alldata.testpixels{f}(1)/alldata.pixelratio(f))*pix2inch;
+		mtdata(s).testwd(ns(s))=alldata.testscale(f)*(alldata.testpixels(f,1)/alldata.pixelratio(f))*pix2inch;
 	end
 	
 	
@@ -1081,7 +1101,9 @@ for s=1:length(ntrialpersubj)
 	temp(s).testdt=zeros(n,1);
 	temp(s).responsetouchdt=zeros(n,1);
 	temp(s).responsetouchxy=zeros(n,2);
+	if n>0
 	temp(s).automator{n}=[];
+	end
 	temp(s).currentautomatorstage=zeros(n,1);
 end
 
@@ -1136,8 +1158,10 @@ for s=1:length(ntrialpersubj)
 	mtdata(s).testdt(indadd,1)=zeros(nadd,1);
 	mtdata(s).responsetouchdt(indadd,1)=zeros(nadd,1);
 	mtdata(s).responsetouchxy(indadd,1:2)=zeros(nadd,2);
+	if nadd>0
 	for q=1:nadd
 		mtdata(s).automator{indadd(q)}=[];
+	end
 	end
 	mtdata(s).currentautomatorstage(indadd,1:2)=zeros(nadd,2);
 end
