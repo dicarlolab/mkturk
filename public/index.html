@@ -1378,34 +1378,85 @@ function getImageList(images,foldernum){
 		} //for i objects
 	}
 
-	// Abstract colors
+	// White button response images
 	if (foldernum == 16){
 		perobj = 1; // i.e. how many images are there per label 
 
 		var cnt=0;
 		for (var i in trial.objectlist){
 			for (var j=0; j<=perobj-1; j++){
-				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
+				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j; 
 				potentialImages.obj[cnt]=trial.objectlist[i];
 				cnt=cnt+1;
 			} //for j exemplars
 		} //for i objects
 	}
 	
-	// White button response images
+	// Black superformula shapes, discfaded with plain bg 
 	if (foldernum == 17){
 		perobj = 1; 
 
 		var cnt=0;
-		for (var i in trial.objectlist){
+
+		// Initially added objects 
+		for (var i in trial.objectlist){ 
 			for (var j=0; j<=perobj-1; j++){
 				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
 				potentialImages.obj[cnt]=trial.objectlist[i];
 				cnt=cnt+1;
 			} //for j exemplars
 		} //for i objects
-
 	}
+
+	// Black superformula shapes with position / rotation variation, discfaded with plain bg 10/21/2016
+	if (foldernum == 18)
+
+		perobj = 100; 
+
+		var cnt=0;
+
+		for (var i in trial.objectlist){ 
+			for (var j=0; j<=perobj-1; j++){
+				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
+				potentialImages.obj[cnt]=trial.objectlist[i];
+				cnt=cnt+1;
+			} //for j exemplars
+		} //for i objects
+	}
+
+	// Mutator response buttons, 12 total created on 10/21/2016
+	if (foldernum == 19)
+
+		perobj = 1; 
+
+		var cnt=0;
+
+		for (var i in trial.objectlist){ 
+			for (var j=0; j<=perobj-1; j++){
+				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
+				potentialImages.obj[cnt]=trial.objectlist[i];
+				cnt=cnt+1;
+			} //for j exemplars
+		} //for i objects
+	}
+
+	// Mutator objects with position / rotation variation, discfaded with plain bg; 12 objects * 100 images created 10/21/2016
+	if (foldernum == 20)
+
+		perobj = 100; 
+
+		var cnt=0;
+
+		for (var i in trial.objectlist){ 
+			for (var j=0; j<=perobj-1; j++){
+				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
+				potentialImages.obj[cnt]=trial.objectlist[i];
+				cnt=cnt+1;
+			} //for j exemplars
+		} //for i objects
+	}
+
+
 
 
 	if (foldernum == 4){
