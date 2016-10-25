@@ -9,6 +9,7 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.10.2/dropbox.min.js"></script>
 
 <script src="mkturkautomator.js" type="text/javascript"></script>
+<script src="mkturkble.js" type="text/javascript"></script>
 
 <script>
 
@@ -32,6 +33,23 @@
 // ----battery status & timer
 // ----subject list
 // ----vitals: task time, total trials, %correct, estimated juice, battery life
+
+//================== LOAD STATUS DISPLAY ==================//
+function writeTextonBlankCanvas(textstr,x,y){
+	var blank_canvasobj=document.getElementById("canvas"+canvas.blank)
+	var visible_ctxt = blank_canvasobj.getContext('2d')
+	visible_ctxt.textBaseline = "hanging"
+	visible_ctxt.fillStyle = "white"
+	visible_ctxt.font = "18px Verdana"
+	visible_ctxt.fillText(textstr,x,y)
+}
+
+function updateStatusText(){
+	var textobj = document.getElementById("headsuptext");
+	textobj.innerHTML = ble.statustext
+	// updateHeadsUpDisplay()
+}
+//================== STATUS DISPLAY (end) ==================//
 
 //================== DROPBOX STUFF ==================//
 	var client = new Dropbox.Client({key: "mdzikawxzejgjlf"}); // Dropbox.client help: http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/Client.html
@@ -570,7 +588,8 @@ function takephoto(currtrial,currstage){
 		canvasobj.addEventListener('mousemove',mousemove_listener,false);
 		canvasobj.addEventListener('mouseup',mouseup_listener,false);
 		canvasobj.addEventListener('touchstart',touchstart_listener,false);
-		canvasobj.addEventListener('touchmove',touchmove_listener,false);
+		// canvasobj.addEventListener('touchmove',touchmove_listener,false);
+		canvasobj.addEventListener('touchmove',touchmove_listener,{passive: true}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
 		canvasobj.addEventListener('touchend',touchend_listener,false);
 
 		// store canvas size
@@ -624,8 +643,12 @@ function updateHeadsUpDisplay(){
 		task2 = trial.sampleON + "ms, " + trial.nway + "-way, " + trial.objectlist.length + "-obj";
 	}
 
-
-	textobj.innerHTML = trial.subjid + ": <font color=green><b>" + pctcorrect + "%</b></font> " + "(" + ncorrect + " of " + trial.response.length +")" + "<br>" + "Estimated Reward: <font color=green><b>" + Math.round(trial.rewardper1000*ncorrect/1000) + "mL</b></font> (" + Math.round(trial.rewardper1000) + " per 1000)" + "<br> " + "<br>" + " Stage " + trial.currentAutomatorStage + ": " + task1 + "<br>" + task2;
+	if (canvas.headsupfraction > 0){
+		textobj.innerHTML = trial.subjid + ": <font color=green><b>" + pctcorrect + "%</b></font> " + "(" + ncorrect + " of " + trial.response.length +")" + "<br>" + "Estimated Reward: <font color=green><b>" + Math.round(trial.rewardper1000*ncorrect/1000) + "mL</b></font> (" + Math.round(trial.rewardper1000) + " per 1000)" + "<br> " + "<br>" + " Stage " + trial.currentAutomatorStage + ": " + task1 + "<br>" + task2 + "<br>" + "<br>" + "<br>" + "<font color=red><b>" + "<font color=blue><b>" + ble.statustext + "<br></font>";
+	}
+	else if (canvas.headsupfraction == 0){
+		textobj.innerHTML = ble.statustext
+	}
 }
 
 //================== IMAGE RENDERING ==================//
@@ -1618,6 +1641,8 @@ function setReward(){
 <body bgcolor=#7F7F7F>
 
 <div id="canvasdiv" style="position:relative; width:100vw; height:100vh">
+	<button name="connectble" style="visibility:hidden">Connect to Bluetooth</button>
+	<button name="noble" style="visibility:hidden; position: relative; top: 50px">No Bluetooth</button>
 	<p id="headsuptext" style="z-index:99; position: absolute; left: 1px; top: 1px; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"></p>
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:98; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvas0" width="0" height="0" src="" style="z-index:99; position: absolute; left: 0px; top: 0px;"> </canvas>
@@ -1762,6 +1787,20 @@ function setReward(){
 	}
 //================== INITIALIZE VARIABLES (end) ==================//
 
+// BLE button callbacks
+document.querySelector("button[name=connectble]").addEventListener(
+	'touchend',findBLEDevice,false)
+
+document.querySelector("button[name=connectble]").addEventListener(
+	'mouseup',findBLEDevice,false)
+
+document.querySelector("button[name=noble]").addEventListener(
+	'touchend',skipBLEDevice,false)
+
+document.querySelector("button[name=noble]").addEventListener(
+	'mouseup',skipBLEDevice,false)
+
+
 //================== Initialize Screen/Audio/Video ==================//
 	// Prevent window scrolling and bounce back effect
 	document.body.addEventListener('touchmove',function(event){
@@ -1809,6 +1848,15 @@ spawn(function* (){
 	subjectdialog.showModal();
 	yield subjidPromise();
 
+	// CONNECT TO BLE
+	document.querySelector("button[name=connectble]").style.display = "block"
+	document.querySelector("button[name=connectble]").style.visibility = "visible"
+	document.querySelector("button[name=noble]").style.display = "block"
+	document.querySelector("button[name=noble]").style.visibility = "visible"
+	yield connectBLEButtonPromise()
+	document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+	document.querySelector("button[name=noble]").style.display = "none"
+
 	yield getFileListDropbox();
 	if (datafiles.length < ndatafiles2read){
 		ndatafiles2read = datafiles.length;
@@ -1828,6 +1876,9 @@ spawn(function* (){
 	//Load sounds
 	soundpromises = sounds.serial.map(loadSoundfromDropbox); //create array of sound load Promises
 	yield Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
+
+	ble.statustext=""
+	updateStatusText()
 
 for (trial.current=0; trial.current<10000; trial.current++){
 
@@ -1940,8 +1991,11 @@ if (trial.need2loadImages == 1){
 		yield Promise.all(imageTestpromises); //simultaneously evaluate array of image load promises
 
 		// pixel locations of image within pack
-		yield loadOriginalSampleImagefromDropbox(0)
-		yield loadOriginalTestImagefromDropbox(0)
+		imageOriginalPromises = [
+			loadOriginalSampleImagefromDropbox(0),
+			loadOriginalTestImagefromDropbox(0)
+			]
+		yield Promise.all(imageOriginalPromises)
 		imagesSample.wd = imagesSampleOriginal[0].width
 		imagesSample.ht = imagesSampleOriginal[0].height
 		imagesTest.wd = imagesTestOriginal[0].width
@@ -2190,15 +2244,29 @@ while (trial.waitingforFixation==1){
 			frame.shown=[];
 			for (var q2 in canvas.sequencepost){frame.shown[q2]=0}; frame.current=0;
 			playSound(2);
-			yield displayTrial(canvas.sequencepost,canvas.tsequencepost);
+			var p1 = displayTrial(canvas.sequencepost,canvas.tsequencepost)
+			if (ble.connected == false){
+				yield Promise.all([p1])
+			}
+			else if (ble.connected == true){
+				var p2 = writepumpdurationtoBLE(Math.round(trial.reward*1000))
+				yield Promise.all([p1, p2])
+			}
 		}
 	} // play reward sound
 	if (canvas.sequencepost[1]==canvas.photoreward && (env.species == 'macaque' || env.species == "human")){
 		for (var q = 0; q <= trial.nreward[trial.current]-1; q++){
 			frame.shown=[];
 			for (var q2 in canvas.sequencepost){frame.shown[q2]=0}; frame.current=0;
-			yield displayTrial(canvas.sequencepost,canvas.tsequencepost);
-			yield dispenseReward();
+			var p1 = displayTrial(canvas.sequencepost,canvas.tsequencepost)
+			var p2 = dispenseReward()
+			if (ble.connected == false){
+				yield Promise.all([p1, p2])
+			}
+			else if (ble.connected == true){
+				var p3 = writepumpdurationtoBLE(Math.round(trial.reward*1000))
+				yield Promise.all([p1, p2, p3])
+			}
 		}
 	} // play pump sound
 	if (canvas.sequencepost[1]==canvas.punish){
