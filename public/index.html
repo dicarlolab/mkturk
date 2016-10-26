@@ -669,8 +669,8 @@ function updateHeadsUpDisplay(){
 			var ybound=[];
 			for (var i in idxim){
 				if (usesample==true){
-					xleft[i] = xgridcent[indpos[i]] - 0.5*imagesSample.wd*imagesSample.scale/canvasScale;
-					ytop[i] = ygridcent[indpos[i]] - 0.5*imagesSample.ht*imagesSample.scale/canvasScale;
+					xleft[i] = Math.round(xgridcent[indpos[i]] - 0.5*imagesSample.wd*imagesSample.scale/canvasScale);
+					ytop[i] = Math.round(ygridcent[indpos[i]] - 0.5*imagesSample.ht*imagesSample.scale/canvasScale);
 
 					context.drawImage(imagesSamplePack[imagesSample.packpointer[idxim[i]]],imagesSample.pixLR[idxim[i]][0],0,imagesSample.wd,imagesSample.ht,xleft[i],ytop[i],imagesSample.wd*imagesSample.scale/canvasScale,imagesSample.ht*imagesSample.scale/canvasScale);
 
@@ -678,8 +678,8 @@ function updateHeadsUpDisplay(){
 					ybound[i]=[ytop[i], ytop[i]+imagesSample.ht*imagesSample.scale/canvasScale];
 				}
 				else if (usesample==false){
-					xleft[i] = xgridcent[indpos[i]] - 0.5*imagesTest.wd*imagesTest.scale/canvasScale;
-					ytop[i] = ygridcent[indpos[i]] - 0.5*imagesTest.ht*imagesTest.scale/canvasScale;
+					xleft[i] = Math.round(xgridcent[indpos[i]] - 0.5*imagesTest.wd*imagesTest.scale/canvasScale);
+					ytop[i] = Math.round(ygridcent[indpos[i]] - 0.5*imagesTest.ht*imagesTest.scale/canvasScale);
 
 					context.drawImage(imagesTestPack[imagesTest.packpointer[idxim[i]]],imagesTest.pixLR[idxim[i]][0],0,imagesTest.wd,imagesTest.ht,xleft[i],ytop[i],imagesTest.wd*imagesTest.scale/canvasScale,imagesTest.ht*imagesTest.scale/canvasScale);
 
@@ -2023,8 +2023,8 @@ if (trial.need2loadImages == 1){
 	var dx = (document.body.clientWidth - canvas.offsetleft)*devicePixelRatio/2/canvasScale - xgrid[4]*imagesSample.wd*imagesSample.scale/canvasScale;
 	var dy = (document.body.clientHeight - canvas.offsettop)*devicePixelRatio/2/canvasScale - ygrid[4]*imagesSample.ht*imagesSample.scale/canvasScale;
 	for (var i=0; i<=xgrid.length-1; i++){
-		xgridcent[i]=xgrid[i]*imagesSample.wd*imagesSample.scale/canvasScale + dx;
-		ygridcent[i]=ygrid[i]*imagesSample.ht*imagesSample.scale/canvasScale + dy;
+		xgridcent[i]=Math.round(xgrid[i]*imagesSample.wd*imagesSample.scale/canvasScale + dx);
+		ygridcent[i]=Math.round(ygrid[i]*imagesSample.ht*imagesSample.scale/canvasScale + dy);
 	}
 	// MAKE THE IMAGE DISPLAY GRID (end)
 	// renderBlank();
