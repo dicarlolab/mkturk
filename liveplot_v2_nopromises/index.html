@@ -4,7 +4,7 @@
     <title id="page_title">liveplot_nightly</title>
 
 <script src="//cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.10.2/dropbox.min.js"></script>
-<script type="text/javascript" src="https://www.google.com/jsapi"></script> <!--Load the AJAX API-->
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 
 <style type='text/css'>
 	.small-font{
@@ -17,189 +17,49 @@
 
 <script type="text/javascript">
 
+
 // 2016.02.09 - added coco10
 // 2015.12.23 - added hvm10
+
 //TODO:
-// time of last update
+// ----scalable trial axis
+// ----cumulative trials
+// reaction time
 // fixation & response touches with target locations
 // ----add cell color formatting --> https://developers.google.com/chart/interactive/docs/reference#colorformatter
 // ----make usable on iphone
 
-	// Dropbox stuff
-	var client = new Dropbox.Client({key: "var4g7ue5w4h5tf"}); // Dropbox.client help: http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/Client.html
-	var showError = function(error){console.log(error.status)};
-
-	// Dropbox: authenticate
-	client.authenticate(function(error,client){
-		if (error){
-			return showError(error);
-		}
-		console.log('success: client authenticated');
-	});
-
-	// Dropbox: Show client info
-	client.getAccountInfo(function(error, accountInfo) {
-	  if (error) {
-	    return showError(error);  // Something went wrong.
-	  }
-	  console.log("Hello, Dropbox User " + accountInfo.name + "!");
-	});
-
-	//polyfill for array.prototype.fill
-	if (!Array.prototype.fill) {
-	  Array.prototype.fill = function(value) {
-	    if (this == null) {
-	      throw new TypeError('this is null or not defined');
-	    }
-	    var O = Object(this);
-	    var len = O.length >>> 0;
-	    var start = arguments[1];
-	    var relativeStart = start >> 0;
-	    var k = relativeStart < 0 ?
-	      Math.max(len + relativeStart, 0) :
-	      Math.min(relativeStart, len);
-	    var end = arguments[2];
-	    var relativeEnd = end === undefined ?
-	      len : end >> 0;
-	    var final = relativeEnd < 0 ?
-	      Math.max(len + relativeEnd, 0) :
-	      Math.min(relativeEnd, len);
-	    while (k < final) {
-	      O[k] = value;
-	      k++;
-	    }
-	    return O;
-	  };
-	}
 
 // Flow: 
 // loadGoogleCharts --> getFileListDropbox
 // checkFileStatus -- wait 1 second -- if new data -->
-// readDatafromDropbox --> initializeChartData --> updatePlots 
+// readDatafromDropbox --> initializeChartData --> updatePlots
 
-	// Asynchronous: Live plotting using google charts
-	function loadGoogleCharts(){
-		// Load the Visualization API and the piechart package.
-		google.load('visualization', '1.2', {'packages':['corechart', 'bar','table']});
-		google.setOnLoadCallback(function(){
-			dataPerformance = new google.visualization.DataTable();
-			dataPerformance.addColumn('number','trial#');
-			dataPerformance.addColumn('number','subjectperformance');
-			dataConfusion = new google.visualization.DataTable();
-
-			dataConfusion.addColumn('string','blo');
-			for (var i=0; i<=catlist.length-1; i++){
-				dataConfusion.addColumn('number',objlabels[catlist[i]]);			
-			} //sample labels
-
-			for (var i=0; i<=catlist.length-1; i++){
-				var row =[objlabels[catlist[i]]];
-				for (var j=0; j<=catlist.length-1; j++){
-					row[j+1]=0;
-				}
-				dataConfusion.addRow(row);
-			} //test labels
-
-			liveline = new google.visualization.LineChart(document.getElementById('line_div'));
-			livebar = new google.visualization.ColumnChart(document.getElementById('bar_div'));
-			livetable = new google.visualization.Table(document.getElementById('table_div'));
-
-			// data formatters
-			formatterDigits = new google.visualization.NumberFormat({fractionDigits: 2})
-			formatterColor = new google.visualization.ColorFormat();
-
-			var colormapJet=['#00008F','#00009F','#0000AF','#0000BF','#0000CF','#0000DF','#0000EF','#0000FF','#0010FF','#0020FF','#0030FF','#0040FF','#0050FF','#0060FF','#0070FF','#0080FF','#008FFF','#009FFF','#00AFFF','#00BFFF','#00CFFF','#00DFFF','#00EFFF','#00FFFF','#10FFEF','#20FFDF','#30FFCF','#40FFBF','#50FFAF','#60FF9F','#70FF8F','#80FF80','#8FFF70','#9FFF60','#AFFF50','#BFFF40','#CFFF30','#DFFF20','#EFFF10','#FFFF00','#FFEF00','#FFDF00','#FFCF00','#FFBF00','#FFAF00','#FF9F00','#FF8F00','#FF8000','#FF7000','#FF6000','#FF5000','#FF4000','#FF3000','#FF2000','#FF1000','#FF0000','#EF0000','#DF0000','#CF0000','#BF0000','#AF0000','#9F0000','#8F0000','#800000'];
-
-			dx=1/(colormapJet.length-1);
-			for (var i=0; i<=colormapJet.length-1; i++){
-				formatterColor.addRange(i*dx,(i+1)*dx,'gray',colormapJet[i])
-			}
-
-			getFileListDropbox();
-		})
-	}
-
-	// Asynchronous: Get file list from dropbox diretory
-	function getFileListDropbox() {
-		client.readdir(file.dir,function(error,string,filestat,filestat_array){
-			if (error){
-				return showError(error); //Something went wrong
-			}
-			console.log("success: read directory ");
-
-			var menuobj = document.getElementById("file_list");
-			for (var q=filestat_array.length-1; q>=0; q--){
-				if (filestat_array[q].isFile == true && filestat_array[q].name != ".directory"){
-					file.list[q] = filestat_array[q].name;
-
-					// add menu option
-					var opt = document.createElement('option');
-					opt.value = q;
-					opt.innerHTML = file.list[q];
-					menuobj.appendChild(opt);
-				}
-			}
-
-			file.name=file.dir + file.list[file.list.length-1];
-			file.filehasChanged=true
-			readDatafromDropbox();
-		})
-	}
-
-	//Asynchronous: Read data from selected file in dropbox
-	function readDatafromDropbox() {
-		client.readFile(file.name,function(error,string,filestat,httpinfo){
-			if (error){
-				return showError(error); //Something went wrong
-			}
-			console.log("success: read file size " + filestat.size);
-			file.data=JSON.parse(string);
-			file.ver=filestat.versionTag;
-			file.date=filestat.modifiedAt;
-			console.log(file.data);
-
-			if (file.data[0].ImageFolderSample==4 | file.data[0].ImageFolderSample==5){
-				objlabels = objlabelsMURI;
-				cat = catMURI;
-				catlist = catlistMURI;
-			}
-			else if (file.data[0].ImageFolderSample==9 | file.data[0].ImageFolderSample==10 | file.data[0].ImageFolderSample==11){
-				objlabels = objlabelsHVM;
-				cat = catHVM;
-				catlist = catlistHVM;
-			}
-			else if (file.data[0].ImageFolderSample==12 | file.data[0].ImageFolderSample==13 | file.data[0].ImageFolderSample==14 | file.data[0].ImageFolderSample==15){
-				objlabels = objlabelsCOCO;
-				cat = catCOCO;
-				catlist = catlistCOCO;
-			}			
-			else {
-				objlabels = objlabelsOBJ;
-				cat = catOBJ;
-				catlist = catlistOBJ;
-			}
-
-			if (file.filehasChanged==true){
-				initializeChartData()
-			}
-			else if (file.datahasChanged==true){
-				updatePlots()
-			}
-		})
-	}
+// SECTIONS:
+//================== DROPBOX STUFF ==================//
+//================== DATA HANDLING ==================//
+//================== PLOTTING ==================//
+//================== UTILS ==================//
 
 
-	// Synchronous: Initialize chart data matrices
-	function initializeChartData(){
-		dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
-		dataPerformance.removeColumns(0,dataPerformance.getNumberOfColumns());
-		dataConfusion.removeRows(0,dataConfusion.getNumberOfRows());
-		dataConfusion.removeColumns(0,dataConfusion.getNumberOfColumns());
+// Asynchronous: Live plotting using google charts
+function loadGoogleCharts(){
+	// Load the Visualization API and the piechart package.
+	google.charts.load('current', {'packages':['corechart', 'bar','table','controls']});
+	google.charts.setOnLoadCallback(function(){
 
-		dataPerformance.addColumn('number','trial#');
-		dataPerformance.addColumn('number','subjectperformance');
-			
-		dataConfusion.addColumn('string','sample');
+		dataPerformance = new google.visualization.DataTable()
+		dataPerformance.addColumn('number','currentTrial')
+		dataPerformance.addColumn('number','currentPerformance')
+
+		dataCumulative = new google.visualization.DataTable()
+		dataCumulative.addColumn('datetime','time')
+		dataCumulative.addColumn('number','cumulativeTrials')
+		dataCumulative.addColumn('number','cumulativePerformance')
+
+		dataConfusion = new google.visualization.DataTable();
+
+		dataConfusion.addColumn('string','blo');
 		for (var i=0; i<=catlist.length-1; i++){
 			dataConfusion.addColumn('number',objlabels[catlist[i]]);			
 		} //sample labels
@@ -212,315 +72,653 @@
 			dataConfusion.addRow(row);
 		} //test labels
 
-		file.filehasChanged=false
-		updatePlots()
+		// Create a dashboard.
+        dashboard1 = new google.visualization.Dashboard(
+            document.getElementById('dashboard1_div'));
+
+		// Initialize plotting elements
+		// See for chartrange example: https://google-developers.appspot.com/chart/interactive/docs/gallery/controls_5cece98b344aa0b1575282db7d34d5f4.frame
+		livesliderTrial = new google.visualization.ControlWrapper({
+			'controlType': 'ChartRangeFilter',
+			'containerId': 'filtertrial_div',
+			'options':{
+				'filterColumnLabel': 'currentTrial',
+				'ui': {
+		          'chartType': 'LineChart',
+		          'chartOptions': {
+		          	'smooth': 20,
+		            'hAxis': {'baselineColor': 'none', 'title': 'Trial#'},
+		            'vAxis': {'title': '%',viewWindow: {min:0,max:1.0}},
+		            'width': 800,
+		            'height': 50,
+		            'animation': {'duration': 1000,'easing':'out'}
+		          }, //chart options
+		          'chartView': {
+		            'columns': [0, 1]
+		          },
+		          'minRangeSize': 2
+				} //ui
+      		},//options
+	      'state': {'range': {'start': 0, 'end': 100}}
+       	}) //wrapper
+
+		liveline = new google.visualization.ChartWrapper({
+			'chartType': 'LineChart',
+			'containerId': 'line_div'
+		})
+
+        dashboard2 = new google.visualization.Dashboard(
+            document.getElementById('dashboard2_div'));
+
+		livesliderTime = new google.visualization.ControlWrapper({
+			'controlType': 'ChartRangeFilter',
+			'containerId': 'filtertime_div',
+			'options':{
+				'filterColumnLabel': 'time',
+				'ui': {
+		          'chartType': 'LineChart',
+		          'chartOptions': {
+		            'hAxis': {'baselineColor': 'none', 'title': 'Time'},
+		            'vAxis': {'title': '#'},
+		            'width': 800,
+		            'height': 50,
+		            'animation': {'duration': 1000,'easing':'out'}
+		          }, //chart options
+		          'chartView': {
+		            'columns': [0, 1]
+		          },
+				} //ui
+      		},//options
+	      'state': {'range': {'start': 0, 'end': 100}}
+       	}) //wrapper
+
+		livearea = new google.visualization.ChartWrapper({
+			'chartType': 'AreaChart',
+			'containerId': 'area_div'
+		})
+
+		livebar = new google.visualization.ColumnChart(document.getElementById('bar_div'));
+		livetable = new google.visualization.Table(document.getElementById('table_div'));
+
+        // Establish dependencies, declaring that the sliders drive 'liveline' & 'livearea',
+        // so that data will only display for entries that are let through
+        // given the chosen slider range.
+        dashboard1.bind(livesliderTrial, liveline)
+        dashboard2.bind(livesliderTime, livearea)
+
+
+		// data formatters
+		formatterDate = new google.visualization.DateFormat({pattern: 'h aa'})
+		formatterDigits = new google.visualization.NumberFormat({fractionDigits: 2})
+		formatterColor = new google.visualization.ColorFormat();
+
+		var colormapJet=['#00008F','#00009F','#0000AF','#0000BF','#0000CF','#0000DF','#0000EF','#0000FF','#0010FF','#0020FF','#0030FF','#0040FF','#0050FF','#0060FF','#0070FF','#0080FF','#008FFF','#009FFF','#00AFFF','#00BFFF','#00CFFF','#00DFFF','#00EFFF','#00FFFF','#10FFEF','#20FFDF','#30FFCF','#40FFBF','#50FFAF','#60FF9F','#70FF8F','#80FF80','#8FFF70','#9FFF60','#AFFF50','#BFFF40','#CFFF30','#DFFF20','#EFFF10','#FFFF00','#FFEF00','#FFDF00','#FFCF00','#FFBF00','#FFAF00','#FF9F00','#FF8F00','#FF8000','#FF7000','#FF6000','#FF5000','#FF4000','#FF3000','#FF2000','#FF1000','#FF0000','#EF0000','#DF0000','#CF0000','#BF0000','#AF0000','#9F0000','#8F0000','#800000'];
+
+		dx=1/(colormapJet.length-1);
+		for (var i=0; i<=colormapJet.length-1; i++){
+			formatterColor.addRange(i*dx,(i+1)*dx,'gray',colormapJet[i])
+		}
+
+		getFileListDropbox();
+	})
+}
+
+//================== DROPBOX STUFF ==================//
+var client = new Dropbox.Client({key: "var4g7ue5w4h5tf"}); // Dropbox.client help: http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/Client.html
+var showError = function(error){console.log(error.status)};
+
+// Dropbox: authenticate
+client.authenticate(function(error,client){
+	if (error){
+		return showError(error);
 	}
+	console.log('success: client authenticated');
+});
+
+// Dropbox: Show client info
+client.getAccountInfo(function(error, accountInfo) {
+  if (error) {
+    return showError(error);  // Something went wrong.
+  }
+  console.log("Hello, Dropbox User " + accountInfo.name + "!");
+});
+
+//polyfill for array.prototype.fill
+if (!Array.prototype.fill) {
+  Array.prototype.fill = function(value) {
+    if (this == null) {
+      throw new TypeError('this is null or not defined');
+    }
+    var O = Object(this);
+    var len = O.length >>> 0;
+    var start = arguments[1];
+    var relativeStart = start >> 0;
+    var k = relativeStart < 0 ?
+      Math.max(len + relativeStart, 0) :
+      Math.min(relativeStart, len);
+    var end = arguments[2];
+    var relativeEnd = end === undefined ?
+      len : end >> 0;
+    var final = relativeEnd < 0 ?
+      Math.max(len + relativeEnd, 0) :
+      Math.min(relativeEnd, len);
+    while (k < final) {
+      O[k] = value;
+      k++;
+    }
+    return O;
+  };
+}
+
+// Asynchronous: Get file list from dropbox diretory
+function getFileListDropbox() {
+	client.readdir(file.dir,function(error,string,filestat,filestat_array){
+		if (error){
+			return showError(error); //Something went wrong
+		}
+		console.log("success: read directory ");
+
+		var menuobj = document.getElementById("file_list");
+		for (var q=filestat_array.length-1; q>=0; q--){
+			if (filestat_array[q].isFile == true && filestat_array[q].name != ".directory"){
+				file.list[q] = filestat_array[q].name;
+
+				// add menu option
+				var opt = document.createElement('option');
+				opt.value = q;
+				opt.innerHTML = file.list[q];
+				menuobj.appendChild(opt);
+			}
+		}
+
+		file.name=file.dir + file.list[file.list.length-1];
+		file.filehasChanged=true
+		readDatafromDropbox();
+	})
+}
+
+// Asynchronous: Check for file updates
+function checkFileStatus(){
+	client.stat(file.name,function(error,filestat){
+		if (error){
+			return showError(error); //Something went wrong
+		}
+		if (file.ver != filestat.versionTag){
+			file.ver=filestat.versionTag;
+			file.datahasChanged=true;
+			console.log('file was updated ver=' + file.ver);
+		}
+		else {
+			file.datahasChanged=false;
+		}
+
+		if (file.filehasChanged == true || file.datahasChanged == true){
+			readDatafromDropbox()
+		}
+		else {
+			setTimeout(function(){checkFileStatus()},1000)
+		}
+	})
+}
+
+//Asynchronous: Read data from selected file in dropbox
+function readDatafromDropbox() {
+	client.readFile(file.name,function(error,string,filestat,httpinfo){
+		if (error){
+			return showError(error); //Something went wrong
+		}
+		console.log("success: read file size " + filestat.size);
+		file.data=JSON.parse(string);
+		file.ver=filestat.versionTag;
+		file.date=filestat.modifiedAt;
+
+
+		//Parse date
+		var ind1 = file.name.indexOf("/")
+		var ind2 = file.name.indexOf('_')
+		var datestr = file.name.substring(ind1+1,ind2)
+		file.dateCreated = new Date(datestr)
+
+		if (file.data[0].ImageFolderSample==4 | file.data[0].ImageFolderSample==5){
+			objlabels = objlabelsMURI;
+			cat = catMURI;
+			catlist = catlistMURI;
+		}
+		else if (file.data[0].ImageFolderSample==9 | file.data[0].ImageFolderSample==10 | file.data[0].ImageFolderSample==11){
+			objlabels = objlabelsHVM;
+			cat = catHVM;
+			catlist = catlistHVM;
+		}
+		else if (file.data[0].ImageFolderSample==12 | file.data[0].ImageFolderSample==13 | file.data[0].ImageFolderSample==14 | file.data[0].ImageFolderSample==15){
+			objlabels = objlabelsCOCO;
+			cat = catCOCO;
+			catlist = catlistCOCO;
+		}			
+		else {
+			objlabels = objlabelsOBJ;
+			cat = catOBJ;
+			catlist = catlistOBJ;
+		}
+
+		if (file.filehasChanged==true){
+			initializeChartData()
+		}
+		else if (file.datahasChanged==true){
+			updatePlots()
+		}
+	})
+}
+//================== DROPBOX STUFF (end) ==================//
+
+
+//================== DATA HANDLING ==================//
+// Synchronous: Initialize chart data matrices
+function initializeChartData(){
+	dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
+	dataPerformance.removeColumns(0,dataPerformance.getNumberOfColumns());
+	dataCumulative.removeRows(0,dataCumulative.getNumberOfRows());
+	dataCumulative.removeColumns(0,dataCumulative.getNumberOfColumns());
+	dataConfusion.removeRows(0,dataConfusion.getNumberOfRows());
+	dataConfusion.removeColumns(0,dataConfusion.getNumberOfColumns());
+
+	dataPerformance.addColumn('number','currentTrial')
+	dataPerformance.addColumn('number','currentPerformance')
+	dataCumulative.addColumn('datetime','time') //0
+	dataCumulative.addColumn('number','cumulativeTrials') //1
+	dataCumulative.addColumn('number','cumulativePerformance') //2
+		
+	dataConfusion.addColumn('string','sample');
+	for (var i=0; i<=catlist.length-1; i++){
+		dataConfusion.addColumn('number',objlabels[catlist[i]]);			
+	} //sample labels
+
+	for (var i=0; i<=catlist.length-1; i++){
+		var row =[objlabels[catlist[i]]];
+		for (var j=0; j<=catlist.length-1; j++){
+			row[j+1]=0;
+		}
+		dataConfusion.addRow(row);
+	} //test labels
+
+	updatePlots()
+	file.filehasChanged=false
+}
 
 // Synchronous
+function toTask(){
+	task.rewardstage = 1;
+	if (typeof(file.data[0].RewardStage) != "undefined"){
+		task.rewardstage = file.data[0].RewardStage;
+	}
+	task.varsample = 3;
+	if (typeof(file.data[0].UsePrototypeforSample) != "undefined"){
+		if (file.data[0].UsePrototypeforSample == true){				
+			task.varsample = 0;
+		}
+	}
+	if (typeof(file.data[0].ImageFolderSample) != "undefined"){
+		task.varsample = file.data[0].ImageFolderSample;
+	}
+	task.sampleon = file.data[0].SampleON;
+	task.delay = file.data[0].SampleOFF;
+	if (typeof(file.data[0].KeepSampleON) != "undefined"){
+		if (file.data[0].KeepSampleON == 1){
+			task.delay = -1; //Sample left on
+		}
+	}
+
+	task.nway = file.data[0].Nway;
+	task.nobj = file.data[0].TestedObjects.length;
+
+	task.rewardper1000 = 0;
+	if (typeof(file.data[0].RewardPer1000Trials) != "undefined"){
+		task.rewardper1000 = Math.round(file.data[0].RewardPer1000Trials);
+	}
+}
+
+// Synchronous
+function toVitals(){
+	vitals.subject = file.data[0].Subject;
+	vitals.trials = file.data[0].Response.length;
+	vitals.time = Math.round(Math.round(file.data[0].StartTime[vitals.trials-1] - file.data[0].StartTime[0])/60000); //convert msec to minutes
+
+	if (typeof(file.data[0].BatteryLDT) != "undefined"){
+		vitals.batteryleft = Math.round(file.data[0].BatteryLDT[file.data[0].BatteryLDT.length-1][0]*100);
+		vitals.batteryused = Math.round(file.data[0].BatteryLDT[0][0]*100 - vitals.batteryleft);
+	}
+	else {
+		vitals.batteryleft = null;
+		vitals.batteryused = null;
+	}
+	var ncorrect = 0;
+	for (var i=0; i<=file.data[0].CorrectItem.length-1; i++){
+  		if (file.data[0].CorrectItem[i] == file.data[0].Response[i]){ // | file.data[0].RewardStage==0){
+  			ncorrect++;
+  		}
+	}
+	vitals.pctcorrect = Math.round(100 * ncorrect / file.data[0].Response.length);
+
+	vitals.rewardestimate = 0;
+	if (typeof(file.data[0].RewardPer1000Trials) != "undefined"){
+		vitals.rewardestimate = Math.round(file.data[0].RewardPer1000Trials * ncorrect / 1000);
+	}
+}
+
+// Synchronous
+function toPerformanceData(){
+	dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
+	dataCumulative.removeRows(0,dataCumulative.getNumberOfRows());
+
+	//Create the data table
+  	var xdata = []
+  	var ydata = []
+  	var ntotal = []
+  	var ncorrect = []
+  	var tcurrent = []
+  	for (var i=0; i<=file.data[0].CorrectItem.length-1; i++){
+  		if (file.data[0].CorrectItem[i] == file.data[0].Response[i]){ // | file.data[0].RewardStage==0){
+  			ydata[i]=1;
+  		}
+  		else {
+  			ydata[i]=0;
+  		}
+  		xdata[i]=i;
+
+  		//Cumulative trials & correct trials
+  		ntotal[i]=xdata.length
+  		if (i>0){ ncorrect[i]=ncorrect[i-1]+ydata[i] }
+  		else if (i==0) { ncorrect[i] = ydata[i] }
+  	}
+  	ydata = smooth(ydata,lineOptions.smooth);
+
+  	for (var i=0; i<=ydata.length-1; i++){
+	  	dataPerformance.addRows([[xdata[i], ydata[i]]])
+
+  		var dt = file.data[0].FixationXYT[i][2] //in milliseconds
+  		var t = new Date(file.dateCreated)
+  		t.setTime(t.getTime() + dt)
+	  	dataCumulative.addRows([[new Date(t),ntotal[i],ncorrect[i]]])
+  	}
+  	formatterDate.format(dataCumulative,0)
+}
+
+// Synchronous
+function toConfusionData(){
+
+// SAMPLE
+	if(typeof file.data[0].ImageFolderSample === 'undefined'){
+		for (var i=0; i<=cat.length-1; i++){
+			catSample[i]=cat[i];
+		}
+	}
+	else{
+		if (file.data[0].ImageFolderSample === 0 || file.data[0].ImageFolderSample === 4 || file.data[0].ImageFolderSample ===9 || file.data[0].ImageFolderSample === 12){
+			for (var i=0; i<=catlist.length-1; i++){
+				catSample[i]=Math.floor(i/1);
+			}
+		}
+		else if (file.data[0].ImageFolderSample > 0){
+			for (var i=0; i<=cat.length-1; i++){
+				catSample[i]=cat[i];
+			}
+		}
+	}
+
+
+
+// TEST
+	if(typeof file.data[0].ImageFolderTest === 'undefined'){
+		for (var i=0; i<=cat.length-1; i++){
+			catTest[i]=cat[i];
+		}
+	}
+	else{
+		if (file.data[0].ImageFolderTest === 0 || file.data[0].ImageFolderTest === 4 || file.data[0].ImageFolderTest === 9 || file.data[0].ImageFolderTest === 12){
+			for (var i=0; i<=catlist.length-1; i++){
+				catTest[i]=Math.floor(i/1);
+			}
+		}
+		else if (file.data[0].ImageFolderTest > 0){
+			for (var i=0; i<=cat.length-1; i++){
+				catTest[i]=cat[i];
+			}
+		}
+	}
+
+
+	//Create bar chart groupings
+	// dataConfusion.removeRows(0,dataConfusion.getNumberOfRows());
+
+	//Initialize confusion matrix
+	var pctConfusion=new Array(catlist.length);
+	var nConfusion=new Array(catlist.length);
+	var cntConfusion=new Array(catlist.length);
+	for (var i=0; i<=catlist.length-1; i++){
+		pctConfusion[i]=new Array(catlist.length);
+		nConfusion[i]=new Array(catlist.length);
+		cntConfusion[i]=new Array(catlist.length);
+		pctConfusion[i].fill(0);
+		nConfusion[i].fill(0);
+		cntConfusion[i].fill(0);
+	}
+
+	//Fill confusion matrix
+	var samplecatidx;
+	var testcatidx;
+	for (var i=0; i<=file.data[0].Sample.length-1; i++){
+		samplecatidx = catlist.indexOf(catSample[file.data[0].Sample[i]]);
+
+		for (var j=0; j<=file.data[0].Test[i].length-1; j++){
+			testcatidx = catlist.indexOf(catTest[file.data[0].Test[i][j]]);
+
+			cntConfusion[samplecatidx][testcatidx]++;
+
+			// if that test item was chosen
+			if (file.data[0].RewardStage==1 & file.data[0].Response[i] == j){
+				nConfusion[samplecatidx][testcatidx]++;
+			}
+
+			pctConfusion[samplecatidx][testcatidx]=nConfusion[samplecatidx][testcatidx]/cntConfusion[samplecatidx][testcatidx];
+		} //for j test
+	} //for i trials
+
+	for (var i=0; i<=catlist.length-1; i++){
+		for (var j=0; j<=catlist.length-1; j++){
+			dataConfusion.setValue(i,j+1,pctConfusion[i][j]);
+		} //for j test
+	} //for i sample
+} //function toConfusionData
+//================== DATA HANDLING (end) ==================//
+
+
+//================== PLOTTING ==================//
+// Synchronous
 function updatePlots() {
-	file.datahasChanged=false
 	toVitals();
 	toTask();
 	toPerformanceData();
 	toConfusionData();
 	addVitalsText();
 	addTaskText();
-	drawLine();
+
+	drawLine() //current
+	drawArea() //cumulative
 	drawBar();
 	drawTable();
-
+	file.datahasChanged=false
 	checkFileStatus();
-}	
+}
 
-	// Asynchronous: Check for file updates
-	function checkFileStatus(){
-		client.stat(file.name,function(error,filestat){
-			if (error){
-				return showError(error); //Something went wrong
-			}
-			if (file.ver != filestat.versionTag){
-				file.ver=filestat.versionTag;
-				file.datahasChanged=true;
-				console.log('file was updated ver=' + file.ver);
-			}
-			else {
-				file.datahasChanged=false;
-			}
+// Synchronous
+function addVitalsText(){
+	// vitalstextobj.innerHTML = "<b>" + vitals.pctcorrect + "%</b> " + "(" + vitals.trials + "tr, " + vitals.rewardestimate + "mL, " + vitals.time + "min)<br>" + "battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)";
+	lineOptions.title = vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.trials + ", " + vitals.rewardestimate + "mL, " + vitals.time + "min)     " + "Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)";
+	titleobj.innerHTML = vitals.subject;
+}
 
-			if (file.filehasChanged == true || file.datahasChanged == true){
-				readDatafromDropbox()
-			}
-			else {
-				setTimeout(function(){checkFileStatus()},1000)
-			}
-		})
+// Synchronous
+function addTaskText(){
+	var rewardedfor = "";
+	if (task.rewardstage == 0){
+		rewardedfor = "fixation";
+	}
+	else if (task.rewardstage == 1){
+		rewardedfor = "Match";
 	}
 
-	function filelist_listener(event){
-		console.log("new file");
-		file.name=file.dir + file.list[this.value];
-		file.filehasChanged=true;
-	}
+	tasktextobj.innerHTML = "Rewarded for <b>" + rewardedfor + "</b> (" + task.rewardper1000 + "mL/1000)" + "<br>Sample var <b>" + task.varsample + "</b>, " + task.sampleon + "ms" + "<br>Delay " + task.delay + "ms" + "<br>" + task.nway + "-way" + ", " + task.nobj + "-obj";
+}
 
-	// Synchronous
-	function toTask(){
-		task.rewardstage = 1;
-		if (typeof(file.data[0].RewardStage) != "undefined"){
-			task.rewardstage = file.data[0].RewardStage;
-		}
-		task.varsample = 3;
-		if (typeof(file.data[0].UsePrototypeforSample) != "undefined"){
-			if (file.data[0].UsePrototypeforSample == true){				
-				task.varsample = 0;
-			}
-		}
-		if (typeof(file.data[0].ImageFolderSample) != "undefined"){
-			task.varsample = file.data[0].ImageFolderSample;
-		}
-		task.sampleon = file.data[0].SampleON;
-		task.delay = file.data[0].SampleOFF;
-		if (typeof(file.data[0].KeepSampleON) != "undefined"){
-			if (file.data[0].KeepSampleON == 1){
-				task.delay = -1; //Sample left on
-			}
-		}
+//Synchronous
+function drawLine(){
+	var nrows = dataPerformance.getNumberOfRows()
+	var sliderstate = livesliderTrial.getState()
 
-		task.nway = file.data[0].Nway;
-		task.nobj = file.data[0].TestedObjects.length;
-
-		task.rewardper1000 = 0;
-		if (typeof(file.data[0].RewardPer1000Trials) != "undefined"){
-			task.rewardper1000 = Math.round(file.data[0].RewardPer1000Trials);
-		}
-	}
-
-	// Synchronous
-	function toVitals(){
-		vitals.subject = file.data[0].Subject;
-		vitals.trials = file.data[0].Response.length;
-		vitals.time = Math.round(Math.round(file.data[0].StartTime[vitals.trials-1] - file.data[0].StartTime[0])/60000); //convert msec to minutes
-
-		if (typeof(file.data[0].BatteryLDT) != "undefined"){
-			vitals.batteryleft = Math.round(file.data[0].BatteryLDT[file.data[0].BatteryLDT.length-1][0]*100);
-			vitals.batteryused = Math.round(file.data[0].BatteryLDT[0][0]*100 - vitals.batteryleft);
+	//updating slider
+	if (file.datahasChanged == true && file.filehasChanged == false){
+		if (nrows <= 100){
+			// expand window size automatically up to 100
+			sliderstate.range.start = 0
+			sliderstate.range.end = nrows
 		}
 		else {
-			vitals.batteryleft = null;
-			vitals.batteryused = null;
+			//shift slider over
+			dtrials = nrows - ntrials
+			sliderstate.range.start = sliderstate.range.start + dtrials
+			sliderstate.range.end = sliderstate.range.end + dtrials
 		}
-		var ncorrect = 0;
-		for (var i=0; i<=file.data[0].CorrectItem.length-1; i++){
-	  		if (file.data[0].CorrectItem[i] == file.data[0].Response[i]){ // | file.data[0].RewardStage==0){
-	  			ncorrect++;
-	  		}
-		}
-		vitals.pctcorrect = Math.round(100 * ncorrect / file.data[0].Response.length);
-
-		vitals.rewardestimate = 0;
-		if (typeof(file.data[0].RewardPer1000Trials) != "undefined"){
-			vitals.rewardestimate = Math.round(file.data[0].RewardPer1000Trials * ncorrect / 1000);
+	}
+	else if (file.filehasChanged == true){
+		//shift slider to end
+		// dslider = sliderstate.highValue - sliderstate.lowValue
+		dslider = 100
+		sliderstate.range.start = nrows - dslider
+		sliderstate.range.end = nrows
+		if (sliderstate.range.start < 0){
+			sliderstate.range.start = 0
 		}
 	}
 
-	// Synchronous
-	function toPerformanceData(){
-		dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
+	liveline.setOptions(lineOptions)
 
-		//Create the data table
-	  	var xdata = [];
-	  	var ydata = [];
-	  	for (var i=0; i<=file.data[0].CorrectItem.length-1; i++){
-	  		if (file.data[0].CorrectItem[i] == file.data[0].Response[i]){ // | file.data[0].RewardStage==0){
-	  			ydata[i]=1;
-	  		}
-	  		else {
-	  			ydata[i]=0;
-	  		}
-	  		xdata[i]=i;
-	  	}
-	  	ydata = smooth(ydata,lineOptions.smooth);
+ 	//move slider which will drive replotting
+	livesliderTrial.setState({'range': {'start': sliderstate.range.start,'end': sliderstate.range.end}})
+	dashboard1.draw(dataPerformance)
+	ntrials = nrows //new trial range
+}
 
-	  	for (var i=0; i<=ydata.length-1; i++){
-		  	dataPerformance.addRows([[xdata[i], ydata[i]]]);
-	  	}
-	}
+//Synchronous
+function drawArea(){
+	var sliderstate = livesliderTime.getState()
 
-	// Synchronous
-	function toConfusionData(){
+	var tmin = new Date(dataCumulative.getColumnRange(0).min)
+	var tmax = new Date(dataCumulative.getColumnRange(0).max)
 
-// SAMPLE
-		if(typeof file.data[0].ImageFolderSample === 'undefined'){
-			for (var i=0; i<=cat.length-1; i++){
-				catSample[i]=cat[i];
-			}
-		}
-		else{
-			if (file.data[0].ImageFolderSample === 0 || file.data[0].ImageFolderSample === 4 || file.data[0].ImageFolderSample ===9 || file.data[0].ImageFolderSample === 12){
-				for (var i=0; i<=catlist.length-1; i++){
-					catSample[i]=Math.floor(i/1);
-				}
-			}
-			else if (file.data[0].ImageFolderSample > 0){
-				for (var i=0; i<=cat.length-1; i++){
-					catSample[i]=cat[i];
-				}
-			}
-		}
+	var trange = tmax.getTime() - tmin.getTime()
+	var onehr = 60*60*1000
 
-
-
-// TEST
-		if(typeof file.data[0].ImageFolderTest === 'undefined'){
-			for (var i=0; i<=cat.length-1; i++){
-				catTest[i]=cat[i];
-			}
-		}
-		else{
-			if (file.data[0].ImageFolderTest === 0 || file.data[0].ImageFolderTest === 4 || file.data[0].ImageFolderTest === 9 || file.data[0].ImageFolderTest === 12){
-				for (var i=0; i<=catlist.length-1; i++){
-					catTest[i]=Math.floor(i/1);
-				}
-			}
-			else if (file.data[0].ImageFolderTest > 0){
-				for (var i=0; i<=cat.length-1; i++){
-					catTest[i]=cat[i];
-				}
-			}
-		}
-
-
-		//Create bar chart groupings
-		// dataConfusion.removeRows(0,dataConfusion.getNumberOfRows());
-
-		//Initialize confusion matrix
-		var pctConfusion=new Array(catlist.length);
-		var nConfusion=new Array(catlist.length);
-		var cntConfusion=new Array(catlist.length);
-		for (var i=0; i<=catlist.length-1; i++){
-			pctConfusion[i]=new Array(catlist.length);
-			nConfusion[i]=new Array(catlist.length);
-			cntConfusion[i]=new Array(catlist.length);
-			pctConfusion[i].fill(0);
-			nConfusion[i].fill(0);
-			cntConfusion[i].fill(0);
-		}
-
-		//Fill confusion matrix
-		var samplecatidx;
-		var testcatidx;
-		for (var i=0; i<=file.data[0].Sample.length-1; i++){
-			samplecatidx = catlist.indexOf(catSample[file.data[0].Sample[i]]);
-
-			for (var j=0; j<=file.data[0].Test[i].length-1; j++){
-				testcatidx = catlist.indexOf(catTest[file.data[0].Test[i][j]]);
-
-				cntConfusion[samplecatidx][testcatidx]++;
-
-				// if that test item was chosen
-				if (file.data[0].RewardStage==1 & file.data[0].Response[i] == j){
-					nConfusion[samplecatidx][testcatidx]++;
-				}
-
-				pctConfusion[samplecatidx][testcatidx]=nConfusion[samplecatidx][testcatidx]/cntConfusion[samplecatidx][testcatidx];
-			} //for j test
-		} //for i trials
-
-		for (var i=0; i<=catlist.length-1; i++){
-			for (var j=0; j<=catlist.length-1; j++){
-				dataConfusion.setValue(i,j+1,pctConfusion[i][j]);
-			} //for j test
-		} //for i sample
-	} //function toConfusionData
-
-	// Synchronous
-	function addVitalsText(){
-		// vitalstextobj.innerHTML = "<b>" + vitals.pctcorrect + "%</b> " + "(" + vitals.trials + "tr, " + vitals.rewardestimate + "mL, " + vitals.time + "min)<br>" + "battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)";
-		lineOptions.title = vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.trials + ", " + vitals.rewardestimate + "mL, " + vitals.time + "min)     " + "Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)";
-		titleobj.innerHTML = vitals.subject;
-	}
-
-	// Synchronous
-	function addTaskText(){
-		var rewardedfor = "";
-		if (task.rewardstage == 0){
-			rewardedfor = "fixation";
-		}
-		else if (task.rewardstage == 1){
-			rewardedfor = "Match";
-		}
-
-		tasktextobj.innerHTML = "Rewarded for <b>" + rewardedfor + "</b> (" + task.rewardper1000 + "mL/1000)" + "<br>Sample var <b>" + task.varsample + "</b>, " + task.sampleon + "ms" + "<br>Delay " + task.delay + "ms" + "<br>" + task.nway + "-way" + ", " + task.nobj + "-obj";
-	}
-
-	// Synchronous
-	function drawLine(){
-		// Shift view window if necessary
-		var currViewSize = lineOptions.hAxis.viewWindow.max - lineOptions.hAxis.viewWindow.min + 1;
-		var nrows = dataPerformance.getNumberOfRows();
-
-		if (nrows >= currViewSize){
-		 	lineOptions.hAxis.viewWindow.min = nrows-currViewSize;
-			lineOptions.hAxis.viewWindow.max = nrows-1;
+	//updating slider
+	if (file.datahasChanged == true && file.filehasChanged == false){
+		if (trange < onehr){
+			// expand window size automatically up to 100
+			sliderstate.range.start = tmin
+			sliderstate.range.end = tmax
 		}
 		else {
-		 	lineOptions.hAxis.viewWindow.min = 0;
-			lineOptions.hAxis.viewWindow.max = currViewSize -1;
+			//shift slider over
+			var dt = tmax.getTime() - tlast.getTime()
+			sliderstate.range.start.setTime(sliderstate.range.start.getTime() + dt)
+			sliderstate.range.end.setTime(sliderstate.range.end.getTime() + dt)
 		}
-	    liveline.draw(dataPerformance,lineOptions);
 	}
-
-	// Synchronous
-	function drawBar(){
-		livebar.draw(dataConfusion,barOptions);
-	}
-
-	// Synchronous
-	function drawTable(){
-		// format data
-		for (var i=1; i<=dataConfusion.getNumberOfColumns()-1; i++){
-			formatterDigits.format(dataConfusion,i)
-			formatterColor.format(dataConfusion,i)
+	else if (file.filehasChanged == true){
+		//shift slider to end
+		sliderstate.range.start = new Date(tmax.getTime() - onehr)
+		sliderstate.range.end = tmax
+		if (sliderstate.range.start.getTime() < tmin.getTime()){
+			sliderstate.range.start = new Date(tmin.getTime())
 		}
+	}
+	tlast = new Date(dataCumulative.getColumnRange(0).max)
 
-		// // View the tested objects only
-		// dataConfusionView = new google.visualization.DataView(dataConfusion)
+ 	//move slider which will drive replotting
+	livesliderTime.setState({'range': {'start': sliderstate.range.start,'end': sliderstate.range.end}})
+	livearea.setOptions(areaOptions)
+	dashboard2.draw(dataCumulative)
+}
 
-		// var objkeep=[0]
-		// for (var i=0; i<=file.data[0].TestedObjects.length-1; i++){
-		// 	objkeep[i+1]=file.data[0].TestedObjects[i]+1
-		// }
-		// dataConfusionView.setColumns(objkeep) // Show some columns directly from the underlying data
-		// dataConfusionView.setRows(file.data[0].TestedObjects)
 
-		livetable.draw(dataConfusionView,tableOptions)
-		livetable.draw(dataConfusion,tableOptions)
+// Synchronous
+function drawBar(){
+	livebar.draw(dataConfusion,barOptions);
+}
+
+// Synchronous
+function drawTable(){
+	// format data
+	for (var i=1; i<=dataConfusion.getNumberOfColumns()-1; i++){
+		formatterDigits.format(dataConfusion,i)
+		formatterColor.format(dataConfusion,i)
 	}
 
-	// Synchronous
-	function smooth(data,n){
-		var smoothed_data=[];
-		for (var i=0; i<=data.length-1; i++){
-			if (i<n-1){
-				smoothed_data[i]=data[i];
-			}
-			else{
-				var sub = data.slice(i-n+1,i+1);
-				smoothed_data[i] = sub.reduce(function(a,b){return a + b;}) / n;
-			}
+	// // View the tested objects only
+	// dataConfusionView = new google.visualization.DataView(dataConfusion)
+
+	// var objkeep=[0]
+	// for (var i=0; i<=file.data[0].TestedObjects.length-1; i++){
+	// 	objkeep[i+1]=file.data[0].TestedObjects[i]+1
+	// }
+	// dataConfusionView.setColumns(objkeep) // Show some columns directly from the underlying data
+	// dataConfusionView.setRows(file.data[0].TestedObjects)
+
+	livetable.draw(dataConfusionView,tableOptions)
+	livetable.draw(dataConfusion,tableOptions)
+}
+//================== PLOTTING (end) ==================//
+
+
+//================== UTILS ==================//
+// Synchronous
+function smooth(data,n){
+	var smoothed_data=[];
+	for (var i=0; i<=data.length-1; i++){
+		if (i<n-1){
+			smoothed_data[i]=data[i];
 		}
-		return smoothed_data;
+		else{
+			var sub = data.slice(i-n+1,i+1);
+			smoothed_data[i] = sub.reduce(function(a,b){return a + b;}) / n;
+		}
 	}
+	return smoothed_data;
+}
+
+function filelist_listener(event){
+	console.log("new file");
+	file.name=file.dir + file.list[this.value];
+	file.filehasChanged=true;
+}
+//================== UTILS (end) ==================//
+
 </script>
 </head>
 
 
 <body>
   <h1>liveplot_nightly</h1>
-
-  <select id="file_list"></select>  <!--Pull down menu that will hold file list-->
-  <div id="line_div"></div>  <!--Div that will hold the line chart-->
-  <div id="bar_div"></div>  <!--Div that will hold the bar chart-->
-  <div id="table_div"></div>  <!--Div that will hold the table chart-->
+  <div id="filelist_div">
+	  <select id="file_list"></select> <!--Pull down menu that will hold file list-->
+	</div>
+  <div id="dashboard1_div">
+  	<div id="line_div"></div> <!--Div that will hold the line chart-->
+  	<div id="filtertrial_div"></div>
+  </div>
+  <div id="dashboard2_div">
+  	<div id="area_div"></div> <!--Div that will hold the area chart-->
+  	<div id="filtertime_div"></div>
+  </div>
+  <div id="bar_div"></div> <!--Div that will hold the bar chart-->
+  <div id="table_div"></div> <!--Div that will hold the table chart-->
   <p id="task_text"></p>
 
 <script type="text/javascript">
@@ -531,6 +729,7 @@ var file={
 			data: null,
 			ver: null,
 			date: null,
+			dateCreated: null,
 			datahasChanged: false,
 			filehasChanged: false,
 		};
@@ -603,28 +802,59 @@ for (var i=0; i<=catCOCO.length-1; i++){
 }//for
 //_____________ LABELS (end)
 
+var sliderOptions={
+	minValue: 0,
+	maxValue: 100
+}
+
 var lineOptions={
 	smooth: 5,
-  	width: 800,
+  	width: 900,
   	height: 400,
-	hAxis: {title: 'Trial#', viewWindow: {min:0,max:100}},
+	hAxis: {title: 'Trial#'},
 	vAxis: {title: 'Correct (%)', viewWindow: {min:0,max:1.0}},
 	title: 'Subject 1',
 	animation: {
-		duration: 1000,
-		easing: 'out',
+		duration: 500,
+		easing: 'linear',
+		startup: true,
 	},
-};
+	legend: {
+		position: 'none',
+	}
+}
+	// hAxis: {title: 'Trial#', viewWindow: {min:0,max:100}},
+
+var areaOptions={
+  	width: 900,
+  	height: 400,
+  	areaOpacity: 0.5,
+	hAxis: {title: 'Time (h)'},
+	vAxis: {title: 'Trial count'},
+	animation: {
+		duration: 500,
+		easing: 'linear',
+		startup: true,
+	},
+	legend: {
+		position: 'none',
+	},
+	// series: {
+	// 	0: {color: '#0000FF'},
+	// 	1: {color: '#00FF00'},
+	// }
+}
 
 var barOptions={
-	width: 800,
-	height: 400,
+	width: 900,
+	height: 300,
 	vAxis: {title: 'Fraction',viewWindow: {min:0,max:1.0}},
 	title: 'Confusions (object-level)',
 	subtitle: 'Subject 1',
 	animation: {
 		duration: 1000,
-		easing: 'out',
+		easing: 'linear',
+		startup: true,
 	},
 };
 
@@ -635,7 +865,7 @@ var cssClassNames={ //https://developers.google.com/chart/interactive/docs/examp
 var tableOptions={
 	allowHtml: true,
 	showRowNumber: true,
-	width: 800,
+	width: 900,
 	height: 400,
 	alternatingRowStyle: false,
 	frozenColumns: 1,
@@ -663,6 +893,7 @@ var task={
 }
 
 var dataPerformance=null;
+var dataCumulative=null;
 var dataConfusion=null;
 var dataConfusionView=null;
 var liveline=null;
@@ -670,6 +901,8 @@ var livebar=null;
 var livetable=null;
 var formatterDigits=null;
 var formatterColor=null;
+
+var trialrange=[0,0]
 
 loadGoogleCharts();
 
