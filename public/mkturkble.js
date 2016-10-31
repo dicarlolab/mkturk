@@ -275,7 +275,6 @@ function writepumpdurationtoBLE(num){
     .catch(error =>{
       var textstr = 'Could not write pump duration to ble device'
       console.log(textstr)
-      consol.log('BLE reward delivery failed')
       ble.statustext = ble.statustext + "<br>" + textstr
       updateStatusText()
     })

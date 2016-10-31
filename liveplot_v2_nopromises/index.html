@@ -552,7 +552,8 @@ function updatePlots() {
 // Synchronous
 function addVitalsText(){
 	// vitalstextobj.innerHTML = "<b>" + vitals.pctcorrect + "%</b> " + "(" + vitals.trials + "tr, " + vitals.rewardestimate + "mL, " + vitals.time + "min)<br>" + "battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)";
-	lineOptions.title = vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.trials + ", " + vitals.rewardestimate + "mL, " + vitals.time + "min)     " + "Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)";
+	if (file.date.getHours)
+	lineOptions.title = vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.trials + ", " + vitals.rewardestimate + "mL, " + vitals.time + "min)     " + "Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  Last Trial:" + file.date.toLocaleTimeString('en-US')
 	titleobj.innerHTML = vitals.subject;
 }
 
