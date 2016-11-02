@@ -5,6 +5,7 @@
 
 <script src="//cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.10.2/dropbox.min.js"></script>
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script src="liveplot_googlecharts.js" type="text/javascript"></script>
 
 <style type='text/css'>
 	.small-font{
@@ -16,20 +17,6 @@
 </style>
 
 <script type="text/javascript">
-
-
-// 2016.02.09 - added coco10
-// 2015.12.23 - added hvm10
-
-//TODO:
-// ----scalable trial axis
-// ----cumulative trials
-// reaction time
-// fixation & response touches with target locations
-// ----add cell color formatting --> https://developers.google.com/chart/interactive/docs/reference#colorformatter
-// ----make usable on iphone
-
-
 // Flow: 
 // loadGoogleCharts --> getFileListDropbox
 // checkFileStatus -- wait 1 second -- if new data -->
@@ -81,25 +68,8 @@ function loadGoogleCharts(){
 		livesliderTrial = new google.visualization.ControlWrapper({
 			'controlType': 'ChartRangeFilter',
 			'containerId': 'filtertrial_div',
-			'options':{
-				'filterColumnLabel': 'currentTrial',
-				'ui': {
-		          'chartType': 'LineChart',
-		          'chartOptions': {
-		          	'smooth': 20,
-		            'hAxis': {'baselineColor': 'none', 'title': 'Trial#'},
-		            'vAxis': {'title': '%',viewWindow: {min:0,max:1.0}},
-		            'width': 800,
-		            'height': 50,
-		            'animation': {'duration': 1000,'easing':'out'}
-		          }, //chart options
-		          'chartView': {
-		            'columns': [0, 1]
-		          },
-		          'minRangeSize': 2
-				} //ui
-      		},//options
-	      'state': {'range': {'start': 0, 'end': 100}}
+			'options': livesliderTrialOptions,
+			'state': {'range': {'start': 0, 'end': 100}}
        	}) //wrapper
 
 		liveline = new google.visualization.ChartWrapper({
@@ -113,23 +83,8 @@ function loadGoogleCharts(){
 		livesliderTime = new google.visualization.ControlWrapper({
 			'controlType': 'ChartRangeFilter',
 			'containerId': 'filtertime_div',
-			'options':{
-				'filterColumnLabel': 'time',
-				'ui': {
-		          'chartType': 'LineChart',
-		          'chartOptions': {
-		            'hAxis': {'baselineColor': 'none', 'title': 'Time'},
-		            'vAxis': {'title': '#'},
-		            'width': 800,
-		            'height': 50,
-		            'animation': {'duration': 1000,'easing':'out'}
-		          }, //chart options
-		          'chartView': {
-		            'columns': [0, 1]
-		          },
-				} //ui
-      		},//options
-	      'state': {'range': {'start': 0, 'end': 100}}
+			'options': livesliderTimeOptions,
+			'state': {'range': {'start': 0, 'end': 100}}
        	}) //wrapper
 
 		livearea = new google.visualization.ChartWrapper({
@@ -137,23 +92,21 @@ function loadGoogleCharts(){
 			'containerId': 'area_div'
 		})
 
-		livebar = new google.visualization.ColumnChart(document.getElementById('bar_div'));
-		livetable = new google.visualization.Table(document.getElementById('table_div'));
-
         // Establish dependencies, declaring that the sliders drive 'liveline' & 'livearea',
         // so that data will only display for entries that are let through
         // given the chosen slider range.
         dashboard1.bind(livesliderTrial, liveline)
         dashboard2.bind(livesliderTime, livearea)
 
+		livebar = new google.visualization.ColumnChart(document.getElementById('bar_div'));
+		livetable = new google.visualization.Table(document.getElementById('table_div'));
 
 		// data formatters
 		formatterDate = new google.visualization.DateFormat({pattern: 'h aa'})
 		formatterDigits = new google.visualization.NumberFormat({fractionDigits: 2})
 		formatterColor = new google.visualization.ColorFormat();
 
-		var colormapJet=['#00008F','#00009F','#0000AF','#0000BF','#0000CF','#0000DF','#0000EF','#0000FF','#0010FF','#0020FF','#0030FF','#0040FF','#0050FF','#0060FF','#0070FF','#0080FF','#008FFF','#009FFF','#00AFFF','#00BFFF','#00CFFF','#00DFFF','#00EFFF','#00FFFF','#10FFEF','#20FFDF','#30FFCF','#40FFBF','#50FFAF','#60FF9F','#70FF8F','#80FF80','#8FFF70','#9FFF60','#AFFF50','#BFFF40','#CFFF30','#DFFF20','#EFFF10','#FFFF00','#FFEF00','#FFDF00','#FFCF00','#FFBF00','#FFAF00','#FF9F00','#FF8F00','#FF8000','#FF7000','#FF6000','#FF5000','#FF4000','#FF3000','#FF2000','#FF1000','#FF0000','#EF0000','#DF0000','#CF0000','#BF0000','#AF0000','#9F0000','#8F0000','#800000'];
-
+		// cell color formatting --> https://developers.google.com/chart/interactive/docs/reference#colorformatter
 		dx=1/(colormapJet.length-1);
 		for (var i=0; i<=colormapJet.length-1; i++){
 			formatterColor.addRange(i*dx,(i+1)*dx,'gray',colormapJet[i])
@@ -182,33 +135,6 @@ client.getAccountInfo(function(error, accountInfo) {
   }
   console.log("Hello, Dropbox User " + accountInfo.name + "!");
 });
-
-//polyfill for array.prototype.fill
-if (!Array.prototype.fill) {
-  Array.prototype.fill = function(value) {
-    if (this == null) {
-      throw new TypeError('this is null or not defined');
-    }
-    var O = Object(this);
-    var len = O.length >>> 0;
-    var start = arguments[1];
-    var relativeStart = start >> 0;
-    var k = relativeStart < 0 ?
-      Math.max(len + relativeStart, 0) :
-      Math.min(relativeStart, len);
-    var end = arguments[2];
-    var relativeEnd = end === undefined ?
-      len : end >> 0;
-    var final = relativeEnd < 0 ?
-      Math.max(len + relativeEnd, 0) :
-      Math.min(relativeEnd, len);
-    while (k < final) {
-      O[k] = value;
-      k++;
-    }
-    return O;
-  };
-}
 
 // Asynchronous: Get file list from dropbox diretory
 function getFileListDropbox() {
@@ -551,7 +477,6 @@ function updatePlots() {
 
 // Synchronous
 function addVitalsText(){
-	// vitalstextobj.innerHTML = "<b>" + vitals.pctcorrect + "%</b> " + "(" + vitals.trials + "tr, " + vitals.rewardestimate + "mL, " + vitals.time + "min)<br>" + "battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)";
 	if (file.date.getHours)
 	lineOptions.title = vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.trials + ", " + vitals.rewardestimate + "mL, " + vitals.time + "min)     " + "Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  Last Trial:" + file.date.toLocaleTimeString('en-US')
 	titleobj.innerHTML = vitals.subject;
@@ -591,7 +516,6 @@ function drawLine(){
 	}
 	else if (file.filehasChanged == true){
 		//shift slider to end
-		// dslider = sliderstate.highValue - sliderstate.lowValue
 		dslider = 100
 		sliderstate.range.start = nrows - dslider
 		sliderstate.range.end = nrows
@@ -662,16 +586,6 @@ function drawTable(){
 		formatterColor.format(dataConfusion,i)
 	}
 
-	// // View the tested objects only
-	// dataConfusionView = new google.visualization.DataView(dataConfusion)
-
-	// var objkeep=[0]
-	// for (var i=0; i<=file.data[0].TestedObjects.length-1; i++){
-	// 	objkeep[i+1]=file.data[0].TestedObjects[i]+1
-	// }
-	// dataConfusionView.setColumns(objkeep) // Show some columns directly from the underlying data
-	// dataConfusionView.setRows(file.data[0].TestedObjects)
-
 	livetable.draw(dataConfusionView,tableOptions)
 	livetable.draw(dataConfusion,tableOptions)
 }
@@ -698,6 +612,33 @@ function filelist_listener(event){
 	console.log("new file");
 	file.name=file.dir + file.list[this.value];
 	file.filehasChanged=true;
+}
+
+//polyfill for array.prototype.fill
+if (!Array.prototype.fill) {
+  Array.prototype.fill = function(value) {
+    if (this == null) {
+      throw new TypeError('this is null or not defined');
+    }
+    var O = Object(this);
+    var len = O.length >>> 0;
+    var start = arguments[1];
+    var relativeStart = start >> 0;
+    var k = relativeStart < 0 ?
+      Math.max(len + relativeStart, 0) :
+      Math.min(relativeStart, len);
+    var end = arguments[2];
+    var relativeEnd = end === undefined ?
+      len : end >> 0;
+    var final = relativeEnd < 0 ?
+      Math.max(len + relativeEnd, 0) :
+      Math.min(relativeEnd, len);
+    while (k < final) {
+      O[k] = value;
+      k++;
+    }
+    return O;
+  };
 }
 //================== UTILS (end) ==================//
 
@@ -802,76 +743,6 @@ for (var i=0; i<=catCOCO.length-1; i++){
 	}//if
 }//for
 //_____________ LABELS (end)
-
-var sliderOptions={
-	minValue: 0,
-	maxValue: 100
-}
-
-var lineOptions={
-	smooth: 5,
-  	width: 900,
-  	height: 400,
-	hAxis: {title: 'Trial#'},
-	vAxis: {title: 'Correct (%)', viewWindow: {min:0,max:1.0}},
-	title: 'Subject 1',
-	animation: {
-		duration: 500,
-		easing: 'linear',
-		startup: true,
-	},
-	legend: {
-		position: 'none',
-	}
-}
-	// hAxis: {title: 'Trial#', viewWindow: {min:0,max:100}},
-
-var areaOptions={
-  	width: 900,
-  	height: 400,
-  	areaOpacity: 0.5,
-	hAxis: {title: 'Time (h)'},
-	vAxis: {title: 'Trial count'},
-	animation: {
-		duration: 500,
-		easing: 'linear',
-		startup: true,
-	},
-	legend: {
-		position: 'none',
-	},
-	// series: {
-	// 	0: {color: '#0000FF'},
-	// 	1: {color: '#00FF00'},
-	// }
-}
-
-var barOptions={
-	width: 900,
-	height: 300,
-	vAxis: {title: 'Fraction',viewWindow: {min:0,max:1.0}},
-	title: 'Confusions (object-level)',
-	subtitle: 'Subject 1',
-	animation: {
-		duration: 1000,
-		easing: 'linear',
-		startup: true,
-	},
-};
-
-var cssClassNames={ //https://developers.google.com/chart/interactive/docs/examples#custom_table_example
-	'headerRow': 'small-font',
-	'tableRow': 'small-font',
-}
-var tableOptions={
-	allowHtml: true,
-	showRowNumber: true,
-	width: 900,
-	height: 400,
-	alternatingRowStyle: false,
-	frozenColumns: 1,
-	cssClassNames: cssClassNames,
-}
 
 var vitals={
 	subject: null,
