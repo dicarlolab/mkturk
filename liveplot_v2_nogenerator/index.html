@@ -3,7 +3,9 @@
 <head>
     <title id="page_title">liveplot_nightly</title>
 
-<script src="//cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.10.2/dropbox.min.js"></script>
+<script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+<script src="utils.js"></script>
+
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script src="liveplot_googlecharts.js" type="text/javascript"></script>
 
@@ -23,12 +25,13 @@
 // readDatafromDropbox --> initializeChartData --> updatePlots
 
 // SECTIONS:
+//================== GOOGLE CHARTS LOADING ==================//
 //================== DROPBOX STUFF ==================//
 //================== DATA HANDLING ==================//
 //================== PLOTTING ==================//
 //================== UTILS ==================//
 
-
+//================== GOOGLE CHARTS LOADING ==================//
 // Asynchronous: Live plotting using google charts
 function loadGoogleCharts(){
 	// Load the Visualization API and the piechart package.
@@ -112,127 +115,136 @@ function loadGoogleCharts(){
 			formatterColor.addRange(i*dx,(i+1)*dx,'gray',colormapJet[i])
 		}
 
-		getFileListDropbox();
+		getFileListDropbox2();
 	})
 }
+//================== GOOGLE CHARTS LOADING (end) ==================//
 
 //================== DROPBOX STUFF ==================//
-var client = new Dropbox.Client({key: "var4g7ue5w4h5tf"}); // Dropbox.client help: http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/Client.html
-var showError = function(error){console.log(error.status)};
+var DBX_CLIENT_ID = "8mspoy956tdhfy9"
+var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/test_apiv2/public/index.html"
 
-// Dropbox: authenticate
-client.authenticate(function(error,client){
-	if (error){
-		return showError(error);
-	}
-	console.log('success: client authenticated');
-});
+//return whether user was redirected here after authenticating
+function isAuthenticated(){
+	return !!getAccessTokenFromUrl()
+}
 
-// Dropbox: Show client info
-client.getAccountInfo(function(error, accountInfo) {
-  if (error) {
-    return showError(error);  // Something went wrong.
-  }
-  console.log("Hello, Dropbox User " + accountInfo.name + "!");
-});
+//parse access token from url if in urls hash
+function getAccessTokenFromUrl(){
+	return utils.parseQueryString(window.location.hash).access_token
+}
 
-// Asynchronous: Get file list from dropbox diretory
-function getFileListDropbox() {
-	client.readdir(file.dir,function(error,string,filestat,filestat_array){
-		if (error){
-			return showError(error); //Something went wrong
-		}
+// Asynchronous: Get file list from dropbox directory
+function getFileListDropbox2(){
+	dbx.filesListFolder({path: file.dir}).then(function(response){
 		console.log("success: read directory ");
 
+//FilesFileMetadata: tag/name/id/rev/size/...
+//   http://dropbox.github.io/dropbox-sdk-js/global.html#FilesFileMetadata
 		var menuobj = document.getElementById("file_list");
-		for (var q=filestat_array.length-1; q>=0; q--){
-			if (filestat_array[q].isFile == true && filestat_array[q].name != ".directory"){
-				file.list[q] = filestat_array[q].name;
+		for (var q = response.entries.length-1; q>=0; q--){
+			if (response.entries[q][".tag"] == "file"){
+				file.list[q] = response.entries[q].name
+				file.pathlist[q] = response.entries[q].path_display
 
-				// add menu option
-				var opt = document.createElement('option');
-				opt.value = q;
-				opt.innerHTML = file.list[q];
-				menuobj.appendChild(opt);
+				//add to menu as option
+				var opt = document.createElement('option')
+				opt.value = q
+				opt.innerHTML = file.list[q]
+				menuobj.appendChild(opt)
 			}
 		}
-
-		file.name=file.dir + file.list[file.list.length-1];
-		file.filehasChanged=true
-		readDatafromDropbox();
+		// file.name = file.dir + file.list[file.list.length-1]
+		file.name = file.pathlist[file.pathlist.length-1]
+		file.filehasChanged = true
+		readDatafromDropbox2()
 	})
+	.catch(function(error){
+		console.error(error)
+	})
+	return false
 }
 
 // Asynchronous: Check for file updates
-function checkFileStatus(){
-	client.stat(file.name,function(error,filestat){
-		if (error){
-			return showError(error); //Something went wrong
+function checkFileStatus2(){
+	dbx.filesGetMetadata({path: file.name}).then(function(filemeta){
+		if (file.rev != filemeta.rev){
+			file.rev = filemeta.rev
+			file.datahasChanged = true
+			console.log('file was updated rev=' + file.rev)
 		}
-		if (file.ver != filestat.versionTag){
-			file.ver=filestat.versionTag;
-			file.datahasChanged=true;
-			console.log('file was updated ver=' + file.ver);
-		}
-		else {
-			file.datahasChanged=false;
+		else{
+			file.datahasChanged=false
 		}
 
 		if (file.filehasChanged == true || file.datahasChanged == true){
-			readDatafromDropbox()
+			readDatafromDropbox2()
 		}
 		else {
-			setTimeout(function(){checkFileStatus()},1000)
+			setTimeout(function(){checkFileStatus2()},1000)
 		}
 	})
+	.catch(function(error){
+		console.error(error)
+	})
+	return false
 }
 
 //Asynchronous: Read data from selected file in dropbox
-function readDatafromDropbox() {
-	client.readFile(file.name,function(error,string,filestat,httpinfo){
-		if (error){
-			return showError(error); //Something went wrong
-		}
-		console.log("success: read file size " + filestat.size);
-		file.data=JSON.parse(string);
-		file.ver=filestat.versionTag;
-		file.date=filestat.modifiedAt;
+function readDatafromDropbox2(){
+	dbx.filesDownload({path: file.name}).then(function(data){
+		console.log("success: loaded file size " + data.size);
 
+		file.rev = data.rev
+		file.date = new Date(data.client_modified)
 
 		//Parse date
-		var ind1 = file.name.indexOf("/")
+		var ind1 = file.name.indexOf("/2")
 		var ind2 = file.name.indexOf('_')
 		var datestr = file.name.substring(ind1+1,ind2)
 		file.dateCreated = new Date(datestr)
 
-		if (file.data[0].ImageFolderSample==4 | file.data[0].ImageFolderSample==5){
-			objlabels = objlabelsMURI;
-			cat = catMURI;
-			catlist = catlistMURI;
+		var reader = new FileReader()
+		reader.onload = function(e){
+			file.data=JSON.parse(reader.result)
+			parseImageInfo()
 		}
-		else if (file.data[0].ImageFolderSample==9 | file.data[0].ImageFolderSample==10 | file.data[0].ImageFolderSample==11){
-			objlabels = objlabelsHVM;
-			cat = catHVM;
-			catlist = catlistHVM;
-		}
-		else if (file.data[0].ImageFolderSample==12 | file.data[0].ImageFolderSample==13 | file.data[0].ImageFolderSample==14 | file.data[0].ImageFolderSample==15){
-			objlabels = objlabelsCOCO;
-			cat = catCOCO;
-			catlist = catlistCOCO;
-		}			
-		else {
-			objlabels = objlabelsOBJ;
-			cat = catOBJ;
-			catlist = catlistOBJ;
-		}
-
-		if (file.filehasChanged==true){
-			initializeChartData()
-		}
-		else if (file.datahasChanged==true){
-			updatePlots()
-		}
+		reader.readAsText(data.fileBlob)
 	})
+	.catch(function(error){
+		console.error(error)
+	})
+	return false
+}
+
+function parseImageInfo(){
+	if (file.data[0].ImageFolderSample==4 | file.data[0].ImageFolderSample==5){
+		objlabels = objlabelsMURI;
+		cat = catMURI;
+		catlist = catlistMURI;
+	}
+	else if (file.data[0].ImageFolderSample==9 | file.data[0].ImageFolderSample==10 | file.data[0].ImageFolderSample==11){
+		objlabels = objlabelsHVM;
+		cat = catHVM;
+		catlist = catlistHVM;
+	}
+	else if (file.data[0].ImageFolderSample==12 | file.data[0].ImageFolderSample==13 | file.data[0].ImageFolderSample==14 | file.data[0].ImageFolderSample==15){
+		objlabels = objlabelsCOCO;
+		cat = catCOCO;
+		catlist = catlistCOCO;
+	}			
+	else {
+		objlabels = objlabelsOBJ;
+		cat = catOBJ;
+		catlist = catlistOBJ;
+	}
+
+	if (file.filehasChanged==true){
+		initializeChartData()
+	}
+	else if (file.datahasChanged==true){
+		updatePlots()
+	}
 }
 //================== DROPBOX STUFF (end) ==================//
 
@@ -472,12 +484,11 @@ function updatePlots() {
 	drawBar();
 	drawTable();
 	file.datahasChanged=false
-	checkFileStatus();
+	checkFileStatus2();
 }
 
 // Synchronous
 function addVitalsText(){
-	if (file.date.getHours)
 	lineOptions.title = vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.trials + ", " + vitals.rewardestimate + "mL, " + vitals.time + "min)     " + "Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  Last Trial:" + file.date.toLocaleTimeString('en-US')
 	titleobj.innerHTML = vitals.subject;
 }
@@ -665,9 +676,10 @@ if (!Array.prototype.fill) {
 
 <script type="text/javascript">
 var file={
-			dir: "MonkeyTurk/",
+			dir: "/MonkeyTurk/",
 			list: [],
-			name: "MonkeyTurk/data.txt",
+			pathlist: [],
+			name: "/MonkeyTurk/data.txt",
 			data: null,
 			ver: null,
 			date: null,
@@ -776,8 +788,16 @@ var formatterColor=null;
 
 var trialrange=[0,0]
 
-loadGoogleCharts();
-
+if (isAuthenticated()){
+	//Create an instance of Dropbox with the access token
+	var dbx = new Dropbox({accessToken: getAccessTokenFromUrl()})
+	loadGoogleCharts();
+}
+else {
+	var dbx = new Dropbox({clientId: DBX_CLIENT_ID});
+	var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
+	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
+}
 </script>
 </body>
 </html>
