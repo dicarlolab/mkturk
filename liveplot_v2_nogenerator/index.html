@@ -196,7 +196,7 @@ function readDatafromDropbox2(){
 		console.log("success: loaded file size " + data.size);
 
 		file.rev = data.rev
-		file.date = new Date(data.client_modified)
+		file.dateSaved = new Date(data.client_modified)
 
 		//Parse date
 		var ind1 = file.name.indexOf("/2")
@@ -369,12 +369,22 @@ function toPerformanceData(){
   	}
   	ydata = smooth(ydata,lineOptions.smooth);
 
+//Referencing to time file was last written & time of last trial rather than to file start.
+//Done because file can be changed on the fly which changes file start relative to performance.now()
+if (typeof file.data[0].ResponseXYT === 'undefined' || 
+	file.data[0].ResponseXYT.length < 1){
+	var tend = file.data[0].FixationXYT[file.data[0].FixationXYT.length-1][2]
+}
+else {
+	var tend = file.data[0].ResponseXYT[file.data[0].ResponseXYT.length-1][2]
+}
+
   	for (var i=0; i<=ydata.length-1; i++){
 	  	dataPerformance.addRows([[xdata[i], ydata[i]]])
 
-  		var dt = file.data[0].FixationXYT[i][2] //in milliseconds
-  		var t = new Date(file.dateCreated)
-  		t.setTime(t.getTime() + dt)
+  		var tfix = file.data[0].FixationXYT[i][2] //in milliseconds
+  		var t = new Date(file.dateSaved)
+  		t.setTime(t.getTime() - (tend - tfix))
 	  	dataCumulative.addRows([[new Date(t),ntotal[i],ncorrect[i]]])
   	}
   	formatterDate.format(dataCumulative,0)
@@ -489,7 +499,7 @@ function updatePlots() {
 
 // Synchronous
 function addVitalsText(){
-	lineOptions.title = vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.trials + ", " + vitals.rewardestimate + "mL, " + vitals.time + "min)     " + "Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  Last Trial:" + file.date.toLocaleTimeString('en-US')
+	lineOptions.title = vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.trials + ", " + vitals.rewardestimate + "mL, " + vitals.time + "min)     " + "Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  Last Trial:" + file.dateSaved.toLocaleTimeString('en-US')
 	titleobj.innerHTML = vitals.subject;
 }
 
