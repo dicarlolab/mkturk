@@ -5,34 +5,14 @@
 
 <meta name="viewport" content="width=device-width, user-scalable=no"> <!-- do not allow window rescaling.  To avoid window rescaling in portrait mode, added with=device-width from http://stackoverflow.com/questions/22771523/ipad-w-retina-safari-reported-dimensions-in-landscape-make-no-sense -->
 
+<script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+<script src="utils.js"></script>
 
-<script src="//cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.10.2/dropbox.min.js"></script>
-
+<script src="mkturkdropbox.js" type="text/javascript"></script>
 <script src="mkturkautomator.js" type="text/javascript"></script>
 <script src="mkturkble.js" type="text/javascript"></script>
 
 <script>
-
-
-//TO DO:
-// webRTC
-//		http://www.html5rocks.com/en/tutorials/webrtc/basics/
-//		http://www.html5rocks.com/en/tutorials/webrtc/datachannels/
-//		https://shanetully.com/2014/09/a-dead-simple-webrtc-example/
-//		http://peerjs.com/
-// movies+concurrent sound
-
-// ----reward scheduling
-// ----online parameter modification
-// multiple subjects (gui)
-// closed-loop interaction (gui)
-// ----training (algorithm)
-// ----webcam or snapshots (in the future when it becomes available on chrome, use mediarecoder: https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder)
-// ----package images for loading
-// ----photosensor bar
-// ----battery status & timer
-// ----subject list
-// ----vitals: task time, total trials, %correct, estimated juice, battery life
 
 //================== LOAD STATUS DISPLAY ==================//
 function writeTextonBlankCanvas(textstr,x,y){
@@ -50,498 +30,6 @@ function updateStatusText(){
 	// updateHeadsUpDisplay()
 }
 //================== STATUS DISPLAY (end) ==================//
-
-//================== DROPBOX STUFF ==================//
-	var client = new Dropbox.Client({key: "mdzikawxzejgjlf"}); // Dropbox.client help: http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/Client.html
-	var showError = function(error){console.log(error.status)};
-
-	// Dropbox: authenticate
-	client.authenticate(function(error,client){
-		if (error){
-			return showError(error);
-		}
-		console.log('success: client authenticated');
-	});
-
-	// Dropbox: Show client info
-	client.getAccountInfo(function(error, accountInfo) {
-	  if (error) {
-	    return showError(error);  // Something went wrong.
-	  }
-	  console.log("Hello, Dropbox User " + accountInfo.name + "!");
-	});
-
-
-	//Get file list from dropbox diretory
-	function getFileListDropbox() {
-		return new Promise(function(resolve,reject){
-	        client.readdir(trial.datadir,function(error,string,filestat,filestat_array){
-				if (error){
-					return showError(error); //Something went wrong
-				}
-				console.log("success: read directory ");
-
-				var q2=0;
-				for (var q = 0; q <= filestat_array.length-1; q++){
-					if (filestat_array[q].isFile == true && filestat_array[q].name.indexOf(trial.subjid) != -1){
-						datafiles[q2] = [filestat_array[q].name,filestat_array[q].modifiedAt.toISOString()];
-						q2++;
-					}
-				}
-
-				datafiles.sort(function (a,b){
-					if (a > b){
-						return -1;
-					}
-					if (a < b){
-						return 1;
-					}
-					return 0;
-				}); //sort in descending order
-
-				resolve(1);
-			})
-		}).then();
-	}
-
-	function readPerformanceHistoryfromDropbox(filenum){
-		return new Promise(function(resolve,reject){
-	        client.readFile(trial.datadir + datafiles[filenum][0],function(error,string,filestat,httpinfo){
-				if (error){
-					return showError(error); //Something went wrong
-				}
-				console.log("success: read file size " + filestat.size);
-				var file ={data: JSON.parse(string)};
-
-			if (typeof(file.data[0].Weight) != "undefined"){
-				env["weight"] = file.data[0].Weight;
-			}
-			else{
-				env["weight"] = 10;
-			}
-			env["species"] = file.data[0].Species;
-			env["homecage"] = file.data[0].Homecage;
-			env["separated"] = file.data[0].Separated;
-			env["liquid"] = file.data[0].Liquid;
-			env["tablet"] = file.data[0].Tablet;
-			env["pump"] = file.data[0].Pump;
-			trial["objectlist"] = file.data[0].TestedObjects;
-			trial["nway"] = file.data[0].Nway;
-			trial["samplegrid"] = file.data[0].SampleGridIndex;
-			trial["testgrid"] = file.data[0].TestGridIndex;
-			trial["objectgrid"] = file.data[0].ObjectGridIndex;
-			trial["rewardStage"] = file.data[0].RewardStage
-			trial["rewardper1000"] = file.data[0].RewardPer1000Trials;
-			// trial.reward = file.data[0].RewardDuration;
-			trial["punish"] = file.data[0].PunishTimeOut;
-			trial["fixationdur"] = file.data[0].FixationDuration;
-			trial["fixationradius"] = file.data[0].FixationRadius;
-			trial["fixationmove"] = file.data[0].FixationMove;
-			trial["sampleON"] = file.data[0].SampleON;
-			trial["sampleOFF"] = file.data[0].SampleOFF;
-			trial["keepSampleON"] = file.data[0].KeepSampleON;
-			trial["hidetestdistractors"] = file.data[0].HideTestDistractors;
-			trial["sampleblocksize"] = file.data[0].SampleBlockSize;
-			trial["nstickyresponse"] = file.data[0].NStickyResponse;
-			trial["imageFolderSample"] = file.data[0].ImageFolderSample;
-			trial["imageFolderTest"] = file.data[0].ImageFolderTest;
-			trial["sampleScale"] = file.data[0].SampleScale;
-			trial["testScale"] = file.data[0].TestScale;			
-			trial["automator"] = file.data[0].Automator;
-			trial["currentAutomatorStage"] = file.data[0].CurrentAutomatorStage;
-
-			if (typeof(trial.automator) == "undefined" || trial.automator == 0 || trial.automator != trial.currentAutomator){
-			}
-			else if (trial.automator == 1){
-				funcreturn = updateTask1("readtaskstageonly"); //read task stage only
-				trialhistory.trainingstage[trialhistory.current]=funcreturn;
-			}
-			else if (trial.automator == 2){
-				funcreturn = updateTask2("readtaskstageonly"); //read task stage only
-				trialhistory.trainingstage[trialhistory.current]=funcreturn;
-			}
-			else if (trial.automator == 3){
-				funcreturn = updateTask3("readtaskstageonly"); //read task stage only
-				trialhistory.trainingstage[trialhistory.current]=funcreturn;
-			}
-
-			else if (trial.automator == "SR"){
-				funcreturn = updateSRTask("readtaskstageonly"); //read task stage only
-				trialhistory.trainingstage[trialhistory.current]=funcreturn;
-			}
-
-			if (typeof(trial.automator) == "undefined" || trial.automator == 0 || trial.automator != trial.currentAutomator){
-			}
-			else {
-			  	for (var i=0; i<=file.data[0].CorrectItem.length-1; i++){
-			  		if (file.data[0].CorrectItem[i] == file.data[0].Response[i]){
-			  			trialhistory.correct[trialhistory.current]=1;
-			  		}
-			  		else {
-			  			trialhistory.correct[trialhistory.current]=0;
-			  		}
-			  		trialhistory.current++;
-			  	}
-			}
-			resolve(1);
-			})
-		}).then();
-	}
-
-	//Read parameter file in dropbox
-	function readParametersfromDropbox() {
-		return new Promise(function(resolve,reject){
-	        client.readFile(paramfile.name,function(error,string,filestat,httpinfo){
-				if (error){
-					console.log("no parameter file found for subject " + trial.subjid);
-					resolve(1);
-					return showError(error); //Something went wrong
-				}
-				console.log("success: read parameter file size " + filestat.size);
-				paramfile.data=JSON.parse(string);
-				paramfile.ver=filestat.versionTag;
-				paramfile.date=filestat.modifiedAt;
-
-				// Set parameters
-				env["weight"] = paramfile.data[0].Weight;
-				env["species"] = paramfile.data[0].Species;
-				env["homecage"] = paramfile.data[0].Homecage;
-				env["separated"] = paramfile.data[0].Separated;
-				env["liquid"] = paramfile.data[0].Liquid;
-				env["tablet"] = paramfile.data[0].Tablet;
-				env["pump"] = paramfile.data[0].Pump;
-				trial["objectlist"] = paramfile.data[0].TestedObjects;
-				trial["nway"] = paramfile.data[0].Nway;
-				trial["samplegrid"] = paramfile.data[0].SampleGridIndex;
-				trial["testgrid"] = paramfile.data[0].TestGridIndex;
-				trial["objectgrid"] = paramfile.data[0].ObjectGridIndex; 
-				trial["rewardStage"] = paramfile.data[0].RewardStage;
-				trial["rewardper1000"] = paramfile.data[0].RewardPer1000Trials;
-				trial["punish"] = paramfile.data[0].PunishTimeOut;
-				trial["fixationdur"] = paramfile.data[0].FixationDuration;
-				trial["fixationradius"] = paramfile.data[0].FixationRadius;
-				trial["fixationmove"] = paramfile.data[0].FixationMove;
-				trial["sampleON"] = paramfile.data[0].SampleON;
-				trial["sampleOFF"] = paramfile.data[0].SampleOFF;
-				trial["keepSampleON"] = paramfile.data[0].KeepSampleON;
-				trial["hidetestdistractors"] = paramfile.data[0].HideTestDistractors;
-				trial["sampleblocksize"] = paramfile.data[0].SampleBlockSize;
-				trial["nstickyresponse"] = paramfile.data[0].NStickyResponse;
-				trial["consecutivehitsITI"] = paramfile.data[0].ConsecutiveHitsITI;
-				trial["nconsecutivehitsforbonus"] = paramfile.data[0].NConsecutiveHitsforBonus;
-				trial["nrewardmax"] = paramfile.data[0].NRewardMax;
-				trial["imageFolderSample"] = paramfile.data[0].ImageFolderSample;
-				trial["imageFolderTest"] = paramfile.data[0].ImageFolderTest;
-				trial["sampleScale"] = paramfile.data[0].SampleScale;
-				trial["testScale"] = paramfile.data[0].TestScale;
-				trial["automator"] = paramfile.data[0].Automator;
-				trial["currentAutomatorStage"] = paramfile.data[0].CurrentAutomatorStage;
-				trial["params"] = paramfile.name;
-				resolve(1);
-			})
-		}).then();
-	}
-
-	//Write parameter file to dropbox
-	function writeParameterstoDropbox() {
-			return new Promise(function(resolve,reject){
-		        var dataobj = [], datastr;
-	    	    dataobj.push({
-	    	    	Weight: env.weight,
-	    	    	Species: env.species,
-	    	    	Homecage: env.homecage,
-	    	    	Separated: env.separated,
-	    	    	Liquid: env.liquid,
-	    	    	Tablet: env.tablet,
-	    	    	Pump: env.pump,
-	    	    	TestedObjects: trial.objectlist,
-	    	    	Nway: trial.nway,
-	    	    	SampleGridIndex: trial.samplegrid,
-	    	    	TestGridIndex: trial.testgrid,
-	    	    	ObjectGridIndex: trial.objectgrid, 
-	    	    	RewardStage: trial.rewardStage,
-	    	    	RewardPer1000Trials: trial.rewardper1000,
-	    	    	PunishTimeOut: trial.punish,
-	    	    	FixationDuration: trial.fixationdur,
-	    	    	FixationRadius: trial.fixationradius,
-	    	    	FixationMove: trial.fixationmove,
-	    	    	SampleON: trial.sampleON,
-	    	    	SampleOFF: trial.sampleOFF,
-	    	    	KeepSampleON: trial.keepSampleON,
-	    	    	HideTestDistractors: trial.hidetestdistractors,
-	    	    	SampleBlockSize: trial.sampleblocksize,
-	    	    	NStickyResponse: trial.nstickyresponse,
-					ConsecutiveHitsITI: trial.consecutivehitsITI,
-					NConsecutiveHitsforBonus: trial.nconsecutivehitsforbonus,
-					NRewardMax: trial.nrewardmax,	    	    	
-	    	    	ImageFolderSample: trial.imageFolderSample,
-	    	    	ImageFolderTest: trial.imageFolderTest,
-	    	    	SampleScale: trial.sampleScale,
-	    	    	TestScale: trial.testScale,
-	    	    	Automator: trial.automator,
-	    	    	CurrentAutomatorStage: trial.currentAutomatorStage, 
-	    	    	// RewardDuration: trial.reward,
-	    	    });
-	    	    datastr = JSON.stringify(dataobj);
-				client.writeFile(trial.params,datastr,function(error,filestat){
-					if (error){
-						return showError(error); //Something went wrong
-					}
-					console.log("success: file size " + filestat.size);
-					trial.need2writeParameters = 0;
-					resolve(1);
-				})
-			}).then();
-		}
-
-
-	// Promise: load image from Dropbox
-	function loadSampleImagefromDropbox(src,idx) {
-		return new Promise(function(resolve,reject){
-			imagesSamplePack[curridx+idx] = new Image();
-			client.makeUrl(imagesSample.folder + src + ".png",{download: 1},function(error,url){
-				if (error){
-					return showError(error); //Something went wrong.
-				}
-				imagesSamplePack[curridx+idx].src=url.url;
-				imagesSamplePack[curridx+idx].onload = function(){
-					console.log('loaded image' + (curridx+idx));
-
-				renderBlank();
-				var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
-				var visible_ctxt = blank_canvasobj.getContext('2d');
-				visible_ctxt.textBaseline = "hanging";
-				visible_ctxt.fillStyle = "white";
-				visible_ctxt.font = "20px Verdana";
-				visible_ctxt.fillText('Loaded image ' + (curridx+idx),20.5,20.5);
-				resolve(curridx+idx)
-				}
-			});
-		}).then();
-	}
-
-
-
-	// Promise: load image from Dropbox
-	function loadTestImagefromDropbox(src,idx) {
-		return new Promise(function(resolve,reject){
-			imagesTestPack[curridx+idx] = new Image();
-			client.makeUrl(imagesTest.folder + src + ".png",{download: 1},function(error,url){
-				if (error){
-					return showError(error); //Something went wrong.
-				}
-				imagesTestPack[curridx+idx].src=url.url;
-				imagesTestPack[curridx+idx].onload = function(){
-					console.log('loaded image' + (curridx+idx));
-
-				renderBlank();
-				var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
-				var visible_ctxt = blank_canvasobj.getContext('2d');
-				visible_ctxt.textBaseline = "hanging";
-				visible_ctxt.fillStyle = "white";
-				visible_ctxt.font = "20px Verdana";
-				visible_ctxt.fillText('Loaded image ' + (curridx+idx),125.5,20.5);
-				resolve(curridx+idx)
-				}
-			});
-		}).then();
-	}
-
-	// Promise: load image from Dropbox
-	function loadOriginalSampleImagefromDropbox(src) {
-		return new Promise(function(resolve,reject){
-			imagesSampleOriginal[src] = new Image();
-			client.makeUrl(imagesSample.folderOriginal + src + ".png",{download: 1},function(error,url){
-				if (error){
-					return showError(error); //Something went wrong.
-				}
-				imagesSampleOriginal[src].src=url.url;
-				imagesSampleOriginal[src].onload = function(){
-					console.log('loaded original sampleimage' + (src));
-
-				renderBlank();
-				var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
-				var visible_ctxt = blank_canvasobj.getContext('2d');
-				visible_ctxt.textBaseline = "hanging";
-				visible_ctxt.fillStyle = "white";
-				visible_ctxt.font = "20px Verdana";
-				visible_ctxt.fillText('Loaded original sampleimage ' + (src),20.5,20.5);
-				resolve(src)
-				}
-			});
-		}).then();
-	}
-
-	function loadOriginalTestImagefromDropbox(src) {
-		return new Promise(function(resolve,reject){
-			imagesTestOriginal[src] = new Image();
-			client.makeUrl(imagesTest.folderOriginal + src + ".png",{download: 1},function(error,url){
-				if (error){
-					return showError(error); //Something went wrong.
-				}
-				imagesTestOriginal[src].src=url.url;
-				imagesTestOriginal[src].onload = function(){
-					console.log('loaded original testimage' + (src));
-
-				renderBlank();
-				var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
-				var visible_ctxt = blank_canvasobj.getContext('2d');
-				visible_ctxt.textBaseline = "hanging";
-				visible_ctxt.fillStyle = "white";
-				visible_ctxt.font = "20px Verdana";
-				visible_ctxt.fillText('Loaded original testimage ' + (src),20.5,20.5);
-				resolve(src)
-				}
-			});
-		}).then();
-	}
-
-
-	function loadSoundfromDropbox(src,idx){
-		return new Promise(function(resolve,reject){
-			client.makeUrl(sounds.folder + src + ".wav",{download: 1},function(error,url){
-				if (error){
-					return showError(error); //Something went wrong
-				}
-				var request = new XMLHttpRequest();
-				request.open('GET',url.url,'true');
-				request.responseType = 'arraybuffer';
-
-				//Decode asychnronously
-				request.onload = function(){
-					audiocontext.decodeAudioData(request.response,function(buffer){
-						sounds.buffer[idx] = buffer;
-						resolve(idx);
-					}, function(){console.log('audio load error')})
-				}
-				request.send();
-			})
-		}).then();
-	}
-
-// asynchronous image capture
-function takephoto(currtrial,currstage){
-	canvascaptureobj=document.getElementById('canvascapture');
-
-	canvascaptureobj.setAttribute('width',videoobj.clientWidth);
-	canvascaptureobj.setAttribute('height',videoobj.clientHeight);
-
-	var context = canvascaptureobj.getContext('2d');
-	context.drawImage(videoobj,0,0,videoobj.clientWidth,videoobj.clientHeight);
-
-	var data = canvascaptureobj.toDataURL('image/png');
-    var imageBufferArray = _base64ToArrayBuffer(data);
-	client.writeFile("/MonkeyTurk/imagecapture/" + trial.subjid + "/imcapture" + currtrial + "_" + currstage + ".png",imageBufferArray,function(error,filestat){
-		if (error){
-			return showError(error); //Something went wrong
-		}
-		console.log("success: file size " + filestat.size);
-	});
-}
-
-	function writeDatatoDropbox() {
-		return new Promise(function(resolve,reject){
-	        var dataobj = [], datastr;
-    	    dataobj.push({
-    	    	Subject: trial.subjid,
-    	    	Weight: env.weight,
-    	    	Species: env.species,
-    	    	Homecage: env.homecage,
-    	    	Separated: env.separated,
-    	    	Liquid: env.liquid,
-    	    	Tablet: env.tablet,
-    	    	Pump: env.pump,
-    	    	TestedObjects: trial.objectlist,
-    	    	Nway: trial.nway,
-    	    	SampleGridIndex: trial.samplegrid,
-    	    	TestGridIndex: trial.testgrid,
-    	    	ObjectGridIndex: trial.objectgrid, 
-    	    	ImageFolderSample: trial.imageFolderSample,
-    	    	ImageFolderTest: trial.imageFolderTest,
-    	    	RewardStage: trial.rewardStage,
-    	    	RewardPer1000Trials: trial.rewardper1000,
-    	    	RewardDuration: trial.reward,
-    	    	PunishTimeOut: trial.punish,
-    	    	FixationDuration: trial.fixationdur,
-    	    	FixationRadius: trial.fixationradius,
-    	    	FixationMove: trial.fixationmove,
-    	    	SampleON: trial.sampleON,
-    	    	SampleOFF: trial.sampleOFF,
-    	    	KeepSampleON: trial.keepSampleON,
-    	    	HideTestDistractors: trial.hidetestdistractors,
-    	    	SampleBlockSize: trial.sampleblocksize,
-    	    	NStickyResponse: trial.nstickyresponse,
-    	    	ConsecutiveHitsITI: trial.consecutivehitsITI,
-    	    	NConsecutiveHitsforBonus: trial.nconsecutivehitsforbonus,
-    	    	NRewardMax: trial.nrewardmax,
-    	    	Automator: trial.automator,
-    	    	CurrentAutomatorStage: trial.currentAutomatorStage,
-    	    	Params: trial.params,
-
-    	    	PreSequence: canvas.sequencepre,
-    	    	PreSequenceTimes: canvas.tsequencepre,
-    	    	ImageSequence: canvas.sequence,
-    	    	ImageSequenceTimes: canvas.tsequence,
-    	    	PostSequence: canvas.sequencepost,
-    	    	PostSequenceTimes: canvas.tsequencepost,
-    	    	PixelRatio: devicePixelRatio,
-    	    	BackingStoreRatio: backingStoreRatio,
-    	    	CanvasScale: canvasScale,
-    	    	WindowWidth: windowWidth,
-    	    	WindowHeight: windowHeight,
-    	    	XGridCenter: xgridcent,
-    	    	YGridCenter: ygridcent,
-
-    	    	SamplePixels: [imagesSample.wd, imagesSample.ht],
-	    	    TestPixels: [imagesTest.wd, imagesTest.ht],
-	    	    SampleScale: imagesSample.scale,
-    	    	TestScale: imagesTest.scale,
-    	    	SampleImageDir: imagesSample.folder,
-    	    	TestImageDir: imagesTest.folder,
-    	    	AllSampleSerials: imagesSample.serial,
-    	    	AllTestSerials: imagesTest.serial,
-
-    	    	FixationGridIndex: trial.fixationgrid,
-    	    	Sample: trial.sampleserial,
-    	    	Test: trial.testserial,
-    	    	Response: trial.response,
-    	    	CorrectItem: trial.correctItem,
-    	    	StartTime: trial.tstart,
-    	    	FixationXYT: trial.xytfixation,
-    	    	ResponseXYT: trial.xytresponse,
-    	    	BatteryLDT: battery.ldt,
-    	    	NReward: trial.nreward,
-    	    });
-    	    datastr = JSON.stringify(dataobj);
-			client.writeFile(trial.datadir + trial.filename,datastr,function(error,filestat){
-				if (error){
-					return showError(error); //Something went wrong
-				}
-				console.log("success: file size " + filestat.size);
-				resolve(1);
-			})
-		}).then();
-	}
-
-	// Asynchronous: Check for parmater file update
-	function checkParameterFileStatus(){
-		client.stat(paramfile.name,function(error,filestat){
-			if (error){
-				return showError(error); //Something went wrong
-			}
-			if (paramfile.ver != filestat.versionTag){
-				paramfile.ver=filestat.versionTag;
-				paramfile.date=filestat.modifiedAt;
-
-				trial.need2loadParameters=1;
-				trial.need2loadImages=1;
-
-				console.log('parameter file was updated ver=' + paramfile.ver);
-			}
-		})
-	}
-//================== DROPBOX STUFF (end) ==================//
-
 
 
 //================== CANVAS SETUP ==================//
@@ -1639,11 +1127,12 @@ function setReward(){
 
 <!-- ************* BODY *************** -->
 <body bgcolor=#7F7F7F>
-
 <div id="canvasdiv" style="position:relative; width:100vw; height:100vh">
-	<button name="connectble" style="visibility:hidden">Connect to Bluetooth</button>
-	<button name="noble" style="visibility:hidden; position: relative; top: 50px">No Bluetooth</button>
+	<button name="connectble" style="visibility:hidden; position: absolute; top: 45%; left: 50%; height: 25px; width: 200px; border-radius: 20px">Connect to Bluetooth</button>
+	<button name="noble" style="visibility:hidden; position: absolute; top: 55%; left: 50%; height: 25px; width: 100p; border-radius: 20px">No Bluetooth</button>
+
 	<p id="headsuptext" style="z-index:99; position: absolute; left: 1px; top: 1px; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"></p>
+
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:98; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvas0" width="0" height="0" src="" style="z-index:99; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvas1" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
@@ -1668,6 +1157,19 @@ function setReward(){
 
 <script>
 
+
+//================== AUTHENTICATE ==================//
+if (isAuthenticated()){
+	//Create an instance of Dropbox with the access token
+	var dbx = new Dropbox({accessToken: getAccessTokenFromUrl()})
+}
+else {
+	var dbx = new Dropbox({clientId: DBX_CLIENT_ID});
+	var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
+	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
+}
+//================== AUTHENTICATE (end) ==================//
+
 //================== INITIALIZE VARIABLES ==================//
 // Variables (general)
 	var subjectlist = ["Test","Kailyn","Oleo","Crypto","Mieke","Scipio","Manto","Picasso","Nano","Setta","Magneto","Zico"];
@@ -1683,7 +1185,7 @@ function setReward(){
 	}
 	subjectlistobj.addEventListener("change",subjectlist_listener,false);
 	var paramfile={
-		dir: "MonkeyTurk/parameterfiles/",
+		dir: "/MonkeyTurk/parameterfiles/",
 		name: null,
 		data: null,
 		ver: null,
@@ -1716,7 +1218,7 @@ function setReward(){
 		offsettop: 0,
 	};
 	var imagesSample = {
-		folder: "MonkeyTurk/obj25/imagepacks/imp",
+		folder: "/MonkeyTurk/obj25/imagepacks/imp",
 		packsz: 10,
 		serial: [],
 		obj: [],
@@ -1727,7 +1229,7 @@ function setReward(){
 		scale: 1,
 	}; //filenames will be placed in images[idx].src
 	var imagesTest = {
-		folder: "MonkeyTurk/obj25/imagepacks/imp",
+		folder: "/MonkeyTurk/obj25/imagepacks/imp",
 		packsz: 10,
 		serial: [],
 		obj: [],
@@ -1739,10 +1241,10 @@ function setReward(){
 	}; //filenames will be placed in imagesProto[idx].src
 
 	var imagesSampleOriginal = {
-		folder: "MonkeyTurk/obj25/imagepacks/im",
+		folder: "/MonkeyTurk/obj25/imagepacks/im",
 	}
 	var imagesTestOriginal = {
-		folder: "MonkeyTurk/obj25/imagepacks/im",
+		folder: "/MonkeyTurk/obj25/imagepacks/im",
 	}
 
 	var imagesSamplePack
@@ -1752,7 +1254,7 @@ function setReward(){
 		shown: [],
 	}
 	var sounds = {
-		folder: "MonkeyTurk/sounds/au",
+		folder: "/MonkeyTurk/sounds/au",
 		serial: [0,1,2,3,4],
 		buffer: [],
 	}
@@ -1776,7 +1278,7 @@ function setReward(){
 	var env = {};
 	var trial = {
 		subjid: "Test",
-		datadir: "MonkeyTurk/",
+		datadir: "/MonkeyTurk/",
 		automator: 0, //0=no automation 1=obj25 2=MURI
 		takephoto: 0,
 	};
@@ -1827,7 +1329,10 @@ document.querySelector("button[name=noble]").addEventListener(
 	videoobj.addEventListener('mousedown',mousedown_listener,false);
 	videoobj.addEventListener('touchstart',touchstart_listener,false);
 	navigator.getMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
-	navigator.getMedia({video: true, audio: false},function(stream){videoobj.src=window.URL.createObjectURL(stream)},function(err){console.log('problem starting video stream')});
+	navigator.getMedia({video: true, audio: false},function(stream){
+		videoobj.src=window.URL.createObjectURL(stream);
+		videoobj.style.visibility = "hidden";
+	},function(err){console.log('problem starting video stream')});
 
 	//Monitor Battery - from: http://www.w3.org/TR/battery-status/
 	navigator.getBattery().then(function(batteryobj){
@@ -1844,28 +1349,29 @@ document.querySelector("button[name=noble]").addEventListener(
 //================== DMS TASK (synchronous FOR loop using GENERATOR) ==================//
 spawn(function* (){
 
-	// GET PARAMFILE NAME
-	subjectdialog.showModal();
-	yield subjidPromise();
-
 	// CONNECT TO BLE
 	document.querySelector("button[name=connectble]").style.display = "block"
 	document.querySelector("button[name=connectble]").style.visibility = "visible"
 	document.querySelector("button[name=noble]").style.display = "block"
 	document.querySelector("button[name=noble]").style.visibility = "visible"
+
 	yield connectBLEButtonPromise()
 	document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	document.querySelector("button[name=noble]").style.display = "none"
 
-	yield getFileListDropbox();
+	// GET PARAMFILE NAME
+	subjectdialog.showModal();
+	yield subjidPromise();
+
+	yield getFileListDropbox2();
 	if (datafiles.length < ndatafiles2read){
 		ndatafiles2read = datafiles.length;
 	}
 	paramfile.name = paramfile.dir + trial.subjid + "_params.txt";
-	yield readParametersfromDropbox();
+	yield readParametersfromDropbox2();
 	trial.currentAutomator = trial.automator;
 	for (i=0; i <= ndatafiles2read - 1; i++){
-		yield readPerformanceHistoryfromDropbox(ndatafiles2read - i - 1);
+		yield readPerformanceHistoryfromDropbox2(ndatafiles2read - i - 1);
 	}
 
 	trial.automatorstagechange = 0
@@ -1874,7 +1380,7 @@ spawn(function* (){
 	trial.need2writeParameters = 0;
 
 	//Load sounds
-	soundpromises = sounds.serial.map(loadSoundfromDropbox); //create array of sound load Promises
+	soundpromises = sounds.serial.map(loadSoundfromDropbox2); //create array of sound load Promises
 	yield Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
 
 	ble.statustext=""
@@ -1890,14 +1396,14 @@ if (trial.automatorstagechange == 1){
 
 if (trial.need2loadParameters == 1){
 	if (trial.automatorstagechange==0){
-		yield readParametersfromDropbox();
+		yield readParametersfromDropbox2();
 	}
 	console.log(trial.objectlist)
 	canvas.tsequence = [0,100,100+trial.sampleON,100+trial.sampleON+trial.sampleOFF]; //timing between frames
-	imagesSample.folderOriginal = "MonkeyTurk/obj25/imagepacks" + trial.imageFolderSample + "/im";
-	imagesTest.folderOriginal = "MonkeyTurk/obj25/imagepacks" + trial.imageFolderTest + "/im";
-	imagesSample.folder = "MonkeyTurk/obj25/imagepacks" + trial.imageFolderSample + "/imp";
-	imagesTest.folder = "MonkeyTurk/obj25/imagepacks" + trial.imageFolderTest + "/imp";
+	imagesSample.folderOriginal = "/MonkeyTurk/obj25/imagepacks" + trial.imageFolderSample + "/im";
+	imagesTest.folderOriginal = "/MonkeyTurk/obj25/imagepacks" + trial.imageFolderTest + "/im";
+	imagesSample.folder = "/MonkeyTurk/obj25/imagepacks" + trial.imageFolderSample + "/imp";
+	imagesTest.folder = "/MonkeyTurk/obj25/imagepacks" + trial.imageFolderTest + "/imp";
 	imagesSample.scale = trial.sampleScale;
 	imagesTest.scale = trial.testScale;
 	setReward(); canvas.tsequencepost[2] = canvas.tsequencepost[1]+trial.reward*1000;
@@ -1931,6 +1437,7 @@ if (trial.need2loadParameters == 1){
 		videoobj.remove();
 	}
 	if (trial.takephoto == 1){
+		videoobj.visibility="visible"
 		videoobj.play();
 	}
 
@@ -1985,15 +1492,15 @@ if (trial.need2loadImages == 1){
 	// SELECT IMAGES (end)
 
 	// LOAD IMAGES
-		imageSamplepromises = imagesSamplePack.packserial.map(loadSampleImagefromDropbox); //create array of image load Promises
+		imageSamplepromises = imagesSamplePack.packserial.map(loadSampleImagefromDropbox2); //create array of image load Promises
 		yield Promise.all(imageSamplepromises); //simultaneously evaluate array of image load promises
-		imageTestpromises = imagesTestPack.packserial.map(loadTestImagefromDropbox); //create array of image load Promises
+		imageTestpromises = imagesTestPack.packserial.map(loadTestImagefromDropbox2); //create array of image load Promises
 		yield Promise.all(imageTestpromises); //simultaneously evaluate array of image load promises
 
 		// pixel locations of image within pack
 		imageOriginalPromises = [
-			loadOriginalSampleImagefromDropbox(0),
-			loadOriginalTestImagefromDropbox(0)
+			loadOriginalSampleImagefromDropbox2(0),
+			loadOriginalTestImagefromDropbox2(0)
 			]
 		yield Promise.all(imageOriginalPromises)
 		imagesSample.wd = imagesSampleOriginal[0].width
@@ -2102,7 +1609,7 @@ while (trial.waitingforFixation==1){
 	//FIXATION
 	trial.stage=0;
 	if (trial.takephoto==1){
-	// takephoto(trial.current,trial.stage); //before fixation
+	// takephoto2(trial.current,trial.stage); //before fixation
 	}
 	//buffer fixation, sample & test
 	renderTouchFixation();
@@ -2148,7 +1655,7 @@ while (trial.waitingforFixation==1){
 	//============ SAMPLE & TEST SCREEN (end) ============//
 
 	if (trial.takephoto==1){
-	takephoto(trial.current,trial.stage); //after fixation
+	takephoto2(trial.current,trial.stage); //after fixation
 	}
 
 	//============ REWARD/PUNISH ============//
@@ -2233,7 +1740,7 @@ while (trial.waitingforFixation==1){
 	console.log('nhits ' + trial.consecutivehits + '  nreward ' + trial.nreward[trial.current])
 
 	// if (trial.takephoto==1){
-	// 	takephoto(trial.current,trial.stage); //before reward delivery
+	// 	takephoto2(trial.current,trial.stage); //before reward delivery
 	// }
 
 	// Deliver reward or punish
@@ -2280,7 +1787,7 @@ while (trial.waitingforFixation==1){
 
 	trial.stage=3;
 	if (trial.takephoto==1){
-		takephoto(trial.current,trial.stage); //after reward or punish
+		takephoto2(trial.current,trial.stage); //after reward or punish
 	}
 
 		//update the running trial history
@@ -2327,7 +1834,7 @@ while (trial.waitingforFixation==1){
 		console.log('ready to write data')
 
 		//save data
-		writeDatatoDropbox(); //async - no need to wait for data to write
+		writeDatatoDropbox2(); //async - no need to wait for data to write
 		updateHeadsUpDisplay(); // async
 
 		console.log('end of generator iteration' + trial.current);			
@@ -2350,7 +1857,7 @@ while (trial.waitingforFixation==1){
 		if (trial.need2writeParameters == 1){
 			//Moved to next automator stage
 			console.log("updating task parameters (new stage or reward)");
-			writeParameterstoDropbox(); // async updating of parameter file, automated task flow continues even if parameter file gets updated later
+			writeParameterstoDropbox2(); // async updating of parameter file, automated task flow continues even if parameter file gets updated later
 		}
 	}
 
@@ -2364,7 +1871,7 @@ while (trial.waitingforFixation==1){
 
 	if (trial.need2loadParameters == 0){
 		// Asynchronously check if parameter file was changed by experimenter
-		checkParameterFileStatus()
+		checkParameterFileStatus2()
 	}
 
 	}
