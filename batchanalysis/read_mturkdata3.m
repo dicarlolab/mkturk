@@ -35,6 +35,7 @@ for i=startfile:length(datafiles)
 	filecnt=filecnt+1;
 	
 	alldata.filename{filecnt}=datafiles(i).name;
+	alldata.date_lastsaved(filecnt,:)=datevec(datafiles(i).date);
 	
 	%Extract date & time
 	str=alldata.filename{filecnt};
@@ -252,6 +253,12 @@ for i=startfile:length(datafiles)
 		alldata.samplefoldername{filecnt}='responsebuttons_sr';
 	elseif alldata.samplefolder(filecnt)==17
 		alldata.samplefoldername{filecnt}='trainshapes_sr';
+	elseif alldata.samplefolder(filecnt)==18
+		alldata.samplefoldername{filecnt}='superformula_pos_rot';
+	elseif alldata.samplefolder(filecnt)==19
+		alldata.samplefoldername{filecnt}='responsebuttons_sr';
+	elseif alldata.samplefolder(filecnt)==20
+		alldata.samplefoldername{filecnt}='mutator_pos_rot';
 	end
 		
 	if alldata.testfolder(filecnt)==0
@@ -290,6 +297,12 @@ for i=startfile:length(datafiles)
 		alldata.testfoldername{filecnt}='responsebuttons_sr';
 	elseif alldata.testfolder(filecnt)==17
 		alldata.testfoldername{filecnt}='trainshapes_sr';
+	elseif alldata.testfolder(filecnt)==18
+		alldata.testfoldername{filecnt}='superformula_pos_rot';
+	elseif alldata.testfolder(filecnt)==19
+		alldata.testfoldername{filecnt}='responsebuttons_sr';
+	elseif alldata.testfolder(filecnt)==20
+		alldata.testfoldername{filecnt}='mutator_pos_rot';
 	end
 	
 	if isfield(dataobj,'RewardStage')
@@ -553,7 +566,7 @@ for i=startfile:length(datafiles)
 		alldata.headsupfraction(filecnt)=dataobj.HeadsUpFraction;
 	else %prior to 2015.12.16
 		if strcmp(alldata.species{filecnt},'marmoset')
-			alldata.heasupfraction(filecnt)=0.2733333333333333;
+			alldata.headsupfraction(filecnt)=0.2733333333333333;
 		end
 	end
 
@@ -880,7 +893,14 @@ for n=1:ntrialtotal(end,1)
 
 	mtdata(1).lastfile=f;
 	mtdata(s).filename{ns(s)}=alldata.filename{f};
-	mtdata(s).date(ns(s),1:6)=alldata.date(f,:);
+	mtdata(s).datecreated(ns(s),1:6)=alldata.date(f,:);
+	mtdata(s).datesaved(ns(s),1:6)=alldata.date_lastsaved(f,:);
+
+	%reference trial date/time to end of file
+	tstart = alldata.tstart{f};
+	mtdata(s).datetrial(ns(s),:) = datevec(datetime(alldata.date_lastsaved(f,:)) -...
+		seconds((max(tstart)-alldata.tstart{f}(nf))/1000));
+	
 	mtdata(s).day(ns(s))=ceil(etime(alldata.date(f,:),[2012 1 1 0 0 0])/(24*3600)); %day of trial
 	mtdata(s).filetrial(ns(s),1:4)=[f,nf,ns(s),n]; %1=file 2=trial within file 3=trial within subject 4=trial within dataset
 	
@@ -899,7 +919,8 @@ for n=1:ntrialtotal(end,1)
 	mtdata(s).samplefolder(ns(s))=alldata.samplefolder(f);
 	mtdata(s).sample(ns(s))=alldata.sample{f}(nf);
 	if mtdata(s).samplefolder(ns(s))==0 || mtdata(s).samplefolder(ns(s))==9 ||...
-			mtdata(s).samplefolder(ns(s))==12 || mtdata(s).samplefolder(ns(s))==16
+			mtdata(s).samplefolder(ns(s))==12 || mtdata(s).samplefolder(ns(s))==16 ||...
+			mtdata(s).samplefolder(ns(s))==17 || mtdata(s).samplefolder(ns(s))==19
 		mtdata(s).samplelabel(ns(s))=mtdata(s).sample(ns(s));
 	elseif mtdata(s).samplefolder(ns(s))==1 ||...
 			mtdata(s).samplefolder(ns(s))==2 ||...
@@ -911,14 +932,10 @@ for n=1:ntrialtotal(end,1)
 			mtdata(s).samplefolder(ns(s))==11 ||...
 			mtdata(s).samplefolder(ns(s))==13 ||...
 			mtdata(s).samplefolder(ns(s))==14 ||...
-			mtdata(s).samplefolder(ns(s))==15
+			mtdata(s).samplefolder(ns(s))==15 ||...
+			mtdata(s).samplefolder(ns(s))==18 ||...
+			mtdata(s).samplefolder(ns(s))==20
         mtdata(s).samplelabel(ns(s))=floor(mtdata(s).sample(ns(s))/100);
-	elseif mtdata(s).samplefolder(ns(s))==17
-		if mtdata(s).sample(ns(s))<=7 %0-7
-			mtdata(s).samplelabel(ns(s))=mtdata(s).sample(ns(s));
-		elseif mtdata(s).sample(ns(s))>=8
-			mtdata(s).samplelabel(ns(s))=floor((mtdata(s).sample(ns(s))-8)/100);
-		end
 	else
 		mtdata(s).samplelabel(ns(s))=nan;
 	end
@@ -931,7 +948,8 @@ for n=1:ntrialtotal(end,1)
 	mtdata(s).test(ns(s),1:mtdata(s).nway(ns(s)))=alldata.test{f}(nf,:);
 	for q=1:mtdata(s).nway(ns(s))
 		if mtdata(s).testfolder(ns(s))==0 || mtdata(s).testfolder(ns(s))==9 ||...
-				mtdata(s).testfolder(ns(s))==12 || mtdata(s).testfolder(ns(s))==16
+				mtdata(s).testfolder(ns(s))==12 || mtdata(s).testfolder(ns(s))==16 ||...
+			mtdata(s).testfolder(ns(s))==17 || mtdata(s).testfolder(ns(s))==19
 			mtdata(s).testlabel(ns(s),q)=mtdata(s).test(ns(s),q);
 		elseif mtdata(s).testfolder(ns(s))==1 ||...
 				mtdata(s).testfolder(ns(s))==2 ||...
@@ -943,14 +961,10 @@ for n=1:ntrialtotal(end,1)
 				mtdata(s).testfolder(ns(s))==11 ||...
 				mtdata(s).testfolder(ns(s))==13 ||...
 				mtdata(s).testfolder(ns(s))==14 ||...
-				mtdata(s).testfolder(ns(s))==15
+				mtdata(s).testfolder(ns(s))==15 ||...
+				mtdata(s).testfolder(ns(s))==18 ||...
+				mtdata(s).testfolder(ns(s))==20
 			mtdata(s).testlabel(ns(s),q)=floor(mtdata(s).test(ns(s),q)/100);
-	elseif mtdata(s).testfolder(ns(s))==17
-		if mtdata(s).test(ns(s),q)<=7 %0-7
-			mtdata(s).testlabel(ns(s),q)=mtdata(s).test(ns(s),q);
-		elseif mtdata(s).test(ns(s),q)>=8
-			mtdata(s).testlabel(ns(s),q)=floor((mtdata(s).test(ns(s),q)-8)/100);
-		end
 	else
 			mtdata(s).testlabel(ns(s),q)=nan;
 		end %if
@@ -1027,8 +1041,7 @@ for n=1:ntrialtotal(end,1)
 		else
 			go=go+1; %go to 1-indexed
 		end		
-		
-		for q=1:length(mtdata(s).testlabel(ns(s),:))
+		for q=1:length(mtdata(s).nway(ns(s)))
 			currentlabel = mtdata(s).testlabel(ns(s),q);
 			ind = find(alldata.objs{f}==currentlabel);
 			mtdata(s).testxy(ns(s),(2*q-1):2*q)=[alldata.xgridcenter{f}(go(ind)) wh-alldata.ygridcenter{f}(go(ind))]*pix2inch;
@@ -1065,7 +1078,9 @@ function temp=preallocate(ntrialpersubj)
 % Pre-allocate
 for s=1:length(ntrialpersubj)
 	n=ntrialpersubj(s);
-	temp(s).date=zeros(n,6);
+	temp(s).datecreated=zeros(n,6);
+	temp(s).datesaved=zeros(n,6);
+	temp(s).datetrial=zeros(n,6);
 	temp(s).day=zeros(n,1);
 	temp(s).filetrial=zeros(n,4);
 	temp(s).nobj=zeros(n,1);
@@ -1122,7 +1137,9 @@ for s=1:length(ntrialpersubj)
 	end
 	indadd=n1+1:n2;
 	
-	mtdata(s).date(indadd,:)=zeros(nadd,6);
+	mtdata(s).datecreated(indadd,:)=zeros(nadd,6);
+	mtdata(s).datesaved(indadd,:)=zeros(nadd,6);
+	mtdata(s).datetrial(indadd,:)=zeros(nadd,6);
 	mtdata(s).day(indadd,1)=zeros(nadd,1);
 	mtdata(s).filetrial(indadd,:)=zeros(nadd,4);
 	mtdata(s).nobj(indadd,1)=zeros(nadd,1);
