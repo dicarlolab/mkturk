@@ -66,7 +66,8 @@ function checkParameterFileStatus2(){
 
 //================== LOAD JSON ==================//
 function readParametersfromDropbox2(){
-	return dbx.filesDownload({path: paramfile.name}).then(function(data){
+	return new Promise(function(resolve,reject){
+		dbx.filesDownload({path: paramfile.name}).then(function(data){
 		console.log("success: read parameter file size" + data.size)
 
 		paramfile.rev = data.rev
@@ -111,16 +112,19 @@ function readParametersfromDropbox2(){
 			trial["automator"] = paramfile.data[0].Automator;
 			trial["currentAutomatorStage"] = paramfile.data[0].CurrentAutomatorStage;
 			trial["params"] = paramfile.name;
+			resolve(1)
 		}
 		reader.readAsText(data.fileBlob)
 	})
 	.catch(function(error){
 		console.error(error)
 	})
+	})
 }
 
 function readPerformanceHistoryfromDropbox2(filenum){
-	return dbx.filesDownload({path: trial.datadir + datafiles[filenum]}).then(function(data){
+	return new Promise(function(resolve,reject){
+		dbx.filesDownload({path: trial.datadir + datafiles[filenum]}).then(function(data){
 		console.log("success: read data file size " + data.size)
 
 		var reader = new FileReader()
@@ -197,11 +201,13 @@ function readPerformanceHistoryfromDropbox2(filenum){
 			  		trialhistory.current++;
 			  	}
 			}
-		}
+			resolve(1)
+		} //reader.onload
 		reader.readAsText(data.fileBlob)
 	})
 	.catch(function(error){
 		console.error(error)
+	})
 	})
 }
 //================== LOAD JSON (end) ==================//

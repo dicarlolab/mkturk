@@ -5,12 +5,15 @@
 
 <meta name="viewport" content="width=device-width, user-scalable=no"> <!-- do not allow window rescaling.  To avoid window rescaling in portrait mode, added with=device-width from http://stackoverflow.com/questions/22771523/ipad-w-retina-safari-reported-dimensions-in-landscape-make-no-sense -->
 
+<link rel="manifest" href="mkturkmanifest.json">
+<link rel="icon" href="mkturklogo48.png">
+
 <script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
 <script src="utils.js"></script>
 
-<script src="mkturkdropbox.js" type="text/javascript"></script>
+<!-- <script src="mkturkdropbox.js" type="text/javascript"></script>
 <script src="mkturkautomator.js" type="text/javascript"></script>
-<script src="mkturkble.js" type="text/javascript"></script>
+<script src="mkturkble.js" type="text/javascript"></script> -->
 
 <script>
 
@@ -1157,22 +1160,9 @@ function setReward(){
 
 <script>
 
-
-//================== AUTHENTICATE ==================//
-if (isAuthenticated()){
-	//Create an instance of Dropbox with the access token
-	var dbx = new Dropbox({accessToken: getAccessTokenFromUrl()})
-}
-else {
-	var dbx = new Dropbox({clientId: DBX_CLIENT_ID});
-	var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
-	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
-}
-//================== AUTHENTICATE (end) ==================//
-
 //================== INITIALIZE VARIABLES ==================//
 // Variables (general)
-	var subjectlist = ["Test","Kailyn","Oleo","Crypto","Mieke","Scipio","Manto","Picasso","Nano","Setta","Magneto","Zico"];
+	var subjectlist = ["sfn2016","Test","Kailyn","Oleo","Crypto","Mieke","Scipio","Manto","Picasso","Nano","Setta","Magneto","Zico"];
 	var subjectdialog = document.getElementById("subjid_dialog");
 	var subjectlistobj = document.getElementById("subjid_list");
 	//populate list
@@ -1288,6 +1278,26 @@ else {
 		current: 0,
 	}
 //================== INITIALIZE VARIABLES (end) ==================//
+</script>
+
+<!-- Include external scripts once global variables are declared -->
+<script src="mkturkdropbox.js" type="text/javascript"></script>
+<script src="mkturkautomator.js" type="text/javascript"></script>
+<script src="mkturkble.js" type="text/javascript"></script>
+
+<script>
+//================== AUTHENTICATE ==================//
+if (isAuthenticated()){
+	//Create an instance of Dropbox with the access token
+	var dbx = new Dropbox({accessToken: getAccessTokenFromUrl()})
+}
+else {
+	var dbx = new Dropbox({clientId: DBX_CLIENT_ID});
+	var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
+	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
+}
+//================== AUTHENTICATE (end) ==================//
+
 
 // BLE button callbacks
 document.querySelector("button[name=connectble]").addEventListener(
