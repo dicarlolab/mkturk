@@ -413,6 +413,41 @@ function updateHeadsUpDisplay(){
 		return
 	}
 
+	// Promise: Edit Parameters Text
+	function editParamsPromise(){
+		var resolveFunc
+		var errFunc
+		p = new Promise(function(resolve,reject){
+			resolveFunc = resolve;
+			errFunc = reject;
+		}).then(function(resolveval){console.log('User is done editing params')});
+
+		function *waitforclickGenerator(){
+			var imclicked =[-1];
+			while (true){
+				imclicked = yield imclicked;
+				resolveFunc(imclicked);
+			}
+		}
+
+		waitforClick = waitforclickGenerator(); // start async function
+		waitforClick.next(); //move out of default state
+		return p;
+	}
+
+	function doneEditing_listener(event){
+		console.log("Done editing params")
+		waitforClick.next(1);
+		return
+	}
+
+	function doneTesting_listener(event){
+		console.log("User is done testing. Start saving data");
+		trial.savedata=1
+		trial.purge=1
+		document.querySelector("button[name=doneTesting]").style.display = "none"
+		return
+	}
 
 	// Promise: fixation
 	function fixationPromise(){
@@ -745,27 +780,6 @@ function updateHeadsUpDisplay(){
 
 
 //================== UTILITIES ==================//
-	//Define spawn function to make generator work with Promises (from: https://gist.github.com/jakearchibald/31b89cba627924972ad6)
-	function spawn(generatorFunc) {
-	  function continuer(verb, arg) {
-	    var result;
-	    try {
-	      result = generator[verb](arg);
-	    } catch (err) {
-	      return Promise.reject(err);
-	    }
-	    if (result.done) {
-	      return result.value;
-	    } else {
-	      return Promise.resolve(result.value).then(onFulfilled, onRejected);
-	    }
-	  }
-	  var generator = generatorFunc();
-	  var onFulfilled = continuer.bind(continuer, "next");
-	  var onRejected = continuer.bind(continuer, "throw");
-	  return onFulfilled();
-	}
-
 	/* Randomize array element order in-place.  Using Fisher-Yates shuffle algorithm. http://bost.ocks.org/mike/shuffle/ */
 	// To test your shuffling algorithm: go to http://bost.ocks.org/mike/shuffle/compare.html
 	function shuffleArray(array){
@@ -1132,9 +1146,13 @@ function setReward(){
 <body bgcolor=#7F7F7F>
 <div id="canvasdiv" style="position:relative; width:100vw; height:100vh">
 	<button name="connectble" style="visibility:hidden; position: absolute; top: 45%; left: 50%; height: 25px; width: 200px; border-radius: 20px">Connect to Bluetooth</button>
-	<button name="noble" style="visibility:hidden; position: absolute; top: 55%; left: 50%; height: 25px; width: 100p; border-radius: 20px">No Bluetooth</button>
+	<button name="noble" style="visibility:hidden; position: absolute; top: 55%; left: 50%; height: 25px; width: 100px; border-radius: 20px">No Bluetooth</button>
 
-	<p id="headsuptext" style="z-index:99; position: absolute; left: 1px; top: 1px; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"></p>
+	<p id="headsuptext" style="z-index:99; position: absolute; left: 1px; top: 1px; height: 40%; width: 60%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"></p>
+
+	<button name="doneEditing" style="visibility:hidden; position: absolute; top: 45%; left: 70%; height: 25px; width: 100px; border-radius: 20px">Done Editing</button>
+
+	<button name="doneTesting" style="visibility:hidden; position: absolute; top: 55%; left: 70%; height: 50px; width: 125px; border-radius: 20px; z-index:101">Done Testing</button>
 
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:98; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvas0" width="0" height="0" src="" style="z-index:99; position: absolute; left: 0px; top: 0px;"> </canvas>
@@ -1177,6 +1195,7 @@ function setReward(){
 	var paramfile={
 		dir: "/MonkeyTurk/parameterfiles/",
 		name: null,
+		text: null,
 		data: null,
 		ver: null,
 		date: null,
@@ -1299,7 +1318,7 @@ else {
 //================== AUTHENTICATE (end) ==================//
 
 
-// BLE button callbacks
+// Button callbacks
 document.querySelector("button[name=connectble]").addEventListener(
 	'touchend',findBLEDevice,false)
 
@@ -1311,6 +1330,22 @@ document.querySelector("button[name=noble]").addEventListener(
 
 document.querySelector("button[name=noble]").addEventListener(
 	'mouseup',skipBLEDevice,false)
+
+document.querySelector("button[name=doneEditing]").addEventListener(
+	'touchend',doneEditing_listener,false)
+
+document.querySelector("button[name=doneEditing]").addEventListener(
+	'mouseup',doneEditing_listener,false)
+
+document.querySelector("button[name=doneTesting]").addEventListener(
+	'touchend',doneTesting_listener,false)
+
+document.querySelector("button[name=doneTesting]").addEventListener(
+	'mouseup',doneTesting_listener,false)
+
+var textobj = document.getElementById("headsuptext")
+textobj.addEventListener('touchend',function(){trial.need2writeParameters = 1},false)
+textobj.addEventListener('mouseup',function(){trial.need2writeParameters = 1},false)
 
 
 //================== Initialize Screen/Audio/Video ==================//
@@ -1356,42 +1391,68 @@ document.querySelector("button[name=noble]").addEventListener(
 	});
 //================== Initialize Screen/Audio/Video (end) ==================//
 
-//================== DMS TASK (synchronous FOR loop using GENERATOR) ==================//
-spawn(function* (){
 
-	// CONNECT TO BLE
+//================== DMS TASK (synchronous FOR loop using GENERATOR) ==================//
+// issues for top-level code using async: https://github.com/tc39/ecmascript-asyncawait/issues/9
+(async function(){
+	//================== CONNECT TO BLE ==================//
 	document.querySelector("button[name=connectble]").style.display = "block"
 	document.querySelector("button[name=connectble]").style.visibility = "visible"
 	document.querySelector("button[name=noble]").style.display = "block"
 	document.querySelector("button[name=noble]").style.visibility = "visible"
 
-	yield connectBLEButtonPromise()
+	await connectBLEButtonPromise()
 	document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	document.querySelector("button[name=noble]").style.display = "none"
 
 	// GET PARAMFILE NAME
 	subjectdialog.showModal();
-	yield subjidPromise();
+	await subjidPromise();	
 
-	yield getFileListDropbox2();
+	await getFileListDropbox2();
 	if (datafiles.length < ndatafiles2read){
 		ndatafiles2read = datafiles.length;
 	}
 	paramfile.name = paramfile.dir + trial.subjid + "_params.txt";
-	yield readParametersfromDropbox2();
+	await readParametersfromDropbox2();
+
+	//================== USER CAN EDIT PARAMS ==================//
+	// ALLOW USER TO EDIT PARAMETERS BEFORE STARTING TASK (enter weight, change reward, etc)
+	ble.statustext = paramfile.text
+	updateStatusText()
+	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
+	document.querySelector("button[name=doneEditing]").style.display = "block"
+	document.querySelector("button[name=doneEditing]").style.visibility = "visible"
+	
+	await editParamsPromise()
+	document.querySelector("button[name=doneEditing]").style.display = "none"
+
+	if (trial.need2writeParameters == 1){
+		paramfile.text = document.getElementById("headsuptext").innerHTML //get the new params
+		await writeParameterTexttoDropbox2() //write the new params
+	}
+	//================== USER CAN EDIT PARAMS (end) ==================//
+
+	// show testing button
+	trial.savedata = 0
+	document.querySelector("button[name=doneTesting]").style.display = "block"
+	document.querySelector("button[name=doneTesting]").style.visibility = "visible"
+
+	// Read performance history
 	trial.currentAutomator = trial.automator;
 	for (i=0; i <= ndatafiles2read - 1; i++){
-		yield readPerformanceHistoryfromDropbox2(ndatafiles2read - i - 1);
+		await readPerformanceHistoryfromDropbox2(ndatafiles2read - i - 1);
 	}
 
 	trial.automatorstagechange = 0
 	trial.need2loadParameters = 1;
+	trial.purge = 1
 	trial.need2loadImages = 1;
 	trial.need2writeParameters = 0;
 
 	//Load sounds
 	soundpromises = sounds.serial.map(loadSoundfromDropbox2); //create array of sound load Promises
-	yield Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
+	await Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
 
 	ble.statustext=""
 	updateStatusText()
@@ -1406,7 +1467,7 @@ if (trial.automatorstagechange == 1){
 
 if (trial.need2loadParameters == 1){
 	if (trial.automatorstagechange==0){
-		yield readParametersfromDropbox2();
+		await readParametersfromDropbox2();
 	}
 	console.log(trial.objectlist)
 	canvas.tsequence = [0,100,100+trial.sampleON,100+trial.sampleON+trial.sampleOFF]; //timing between frames
@@ -1457,6 +1518,17 @@ if (trial.need2loadParameters == 1){
 		scaleCanvasforHiDPI(canvas.test);
 	}
 
+	renderEyeFixation();
+	renderReward();
+	renderPhotoReward();
+	renderPunish();
+	renderBlank();
+	trial.need2loadParameters = 0;
+	trial.purge = 1
+} //============ PARAMETER LOADING (end) ============//
+
+// Purge trial tracking variables & initialize data file
+if (trial.purge == 1){
 	//reset trial tracking variables
 	var d = new Date;
 	var currdate = d
@@ -1478,15 +1550,8 @@ if (trial.need2loadParameters == 1){
 
 	trial.consecutivehits=0;
 	trial.nreward=[];
-
-	trial.need2loadParameters = 0;
-
-	renderEyeFixation();
-	renderReward();
-	renderPhotoReward();
-	renderPunish();
-	renderBlank();
-} //============ PARAMETER LOADING (end) ============//
+	trial.purge = 0
+}
 
 
 //============ IMAGE LOADING ============//
@@ -1503,16 +1568,16 @@ if (trial.need2loadImages == 1){
 
 	// LOAD IMAGES
 		imageSamplepromises = imagesSamplePack.packserial.map(loadSampleImagefromDropbox2); //create array of image load Promises
-		yield Promise.all(imageSamplepromises); //simultaneously evaluate array of image load promises
+		await Promise.all(imageSamplepromises); //simultaneously evaluate array of image load promises
 		imageTestpromises = imagesTestPack.packserial.map(loadTestImagefromDropbox2); //create array of image load Promises
-		yield Promise.all(imageTestpromises); //simultaneously evaluate array of image load promises
+		await Promise.all(imageTestpromises); //simultaneously evaluate array of image load promises
 
 		// pixel locations of image within pack
 		imageOriginalPromises = [
 			loadOriginalSampleImagefromDropbox2(0),
 			loadOriginalTestImagefromDropbox2(0)
 			]
-		yield Promise.all(imageOriginalPromises)
+		await Promise.all(imageOriginalPromises)
 		imagesSample.wd = imagesSampleOriginal[0].width
 		imagesSample.ht = imagesSampleOriginal[0].height
 		imagesTest.wd = imagesTestOriginal[0].width
@@ -1635,14 +1700,14 @@ while (trial.waitingforFixation==1){
 	if (env.species == 'marmoset'){
 		playSound(0);
 	}
-	yield displayTrial(canvas.sequencepre,canvas.tsequencepre);
+	await displayTrial(canvas.sequencepre,canvas.tsequencepre);
 	audiocontext.suspend()
-	yield fixationPromise();
+	await fixationPromise();
 
 
 	for (var q in canvas.sequenceblank){frame.shown[q]=0}; frame.current=0;
 	if (trial.waitingforFixation==1){
-		yield displayTrial(canvas.sequenceblank,canvas.tsequenceblank);
+		await displayTrial(canvas.sequenceblank,canvas.tsequenceblank);
 	}
 
 } //while waiting for fixation
@@ -1657,9 +1722,9 @@ while (trial.waitingforFixation==1){
 		//wait
 	}
 	for (var q in canvas.sequence){frame.shown[q]=0}; frame.current=0;
-	yield displayTrial(canvas.sequence,canvas.tsequence);
+	await displayTrial(canvas.sequence,canvas.tsequence);
 	audiocontext.suspend()
-	yield responsePromise();
+	await responsePromise();
 	trial.waitingforResponse=0;
 	}
 	//============ SAMPLE & TEST SCREEN (end) ============//
@@ -1763,11 +1828,11 @@ while (trial.waitingforFixation==1){
 			playSound(2);
 			var p1 = displayTrial(canvas.sequencepost,canvas.tsequencepost)
 			if (ble.connected == false){
-				yield Promise.all([p1])
+				await Promise.all([p1])
 			}
 			else if (ble.connected == true){
 				var p2 = writepumpdurationtoBLE(Math.round(trial.reward*1000))
-				yield Promise.all([p1, p2])
+				await Promise.all([p1, p2])
 			}
 		}
 	} // play reward sound
@@ -1778,11 +1843,11 @@ while (trial.waitingforFixation==1){
 			var p1 = displayTrial(canvas.sequencepost,canvas.tsequencepost)
 			var p2 = dispenseReward()
 			if (ble.connected == false){
-				yield Promise.all([p1, p2])
+				await Promise.all([p1, p2])
 			}
 			else if (ble.connected == true){
 				var p3 = writepumpdurationtoBLE(Math.round(trial.reward*1000))
-				yield Promise.all([p1, p2, p3])
+				await Promise.all([p1, p2, p3])
 			}
 		}
 	} // play pump sound
@@ -1790,8 +1855,8 @@ while (trial.waitingforFixation==1){
 		if (env.species == 'marmoset'){
 			playSound(3);
 		}
-		yield displayTrial(canvas.sequencepost,canvas.tsequencepost);
-		yield dispensePunish();
+		await displayTrial(canvas.sequencepost,canvas.tsequencepost);
+		await dispensePunish();
 	}
 //============ REWARD/PUNISH (end) ============//
 
@@ -1844,7 +1909,9 @@ while (trial.waitingforFixation==1){
 		console.log('ready to write data')
 
 		//save data
-		writeDatatoDropbox2(); //async - no need to wait for data to write
+		if (trial.savedata == 1){
+			writeDatatoDropbox2(); //async - no need to wait for data to write			
+		}
 		updateHeadsUpDisplay(); // async
 
 		console.log('end of generator iteration' + trial.current);			
@@ -1886,7 +1953,8 @@ while (trial.waitingforFixation==1){
 
 	}
 	console.log('end of generator for loop');
-}) //spawn
+})(); //async
+// }) //spawn
 
 </script>
 </body>

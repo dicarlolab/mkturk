@@ -268,7 +268,6 @@ var ntrials=2000
 		trial.need2writeParameters=1;
 		trial.automatorstagechange=1
 
-
 		trial.rewardStage = trainingstages.rewardStage[i]
 		trial.fixationmove = trainingstages.fixationmove[i]
 		trial.fixationradius = trainingstages.fixationradius[i]

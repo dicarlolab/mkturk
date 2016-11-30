@@ -13,8 +13,9 @@ function getAccessTokenFromUrl(){
 
 //================== LIST FILES ==================//
 // Asynchronous: Get file list from dropbox directory
-function getFileListDropbox2(){
-	return dbx.filesListFolder({path: trial.datadir}).then(function(response){
+async function getFileListDropbox2(){
+	try{
+	response = await dbx.filesListFolder({path: trial.datadir})
 		console.log("success: read directory ")
 
 		var q2=0;
@@ -34,18 +35,19 @@ function getFileListDropbox2(){
 			}
 			return 0;
 		}); //sort in descending order
-	})
-	.catch(function(error){
+	}
+	catch (error) {
 		console.error(error)
-	})
+	}
 }
 //================== LIST FILES (end) ==================//
 
 
 //================== CHECK FILE REV ==================//
 // Asynchronous: Check for parmater file update
-function checkParameterFileStatus2(){
-	dbx.filesGetMetadata({path: paramfile.name}).then(function(filemeta){
+async function checkParameterFileStatus2(){
+	try{
+	filemeta = await dbx.filesGetMetadata({path: paramfile.name})
 		if (paramfile.rev != filemeta.rev){
 			paramfile.rev = filemeta.rev
 			paramfile.date = new Date(filemeta.client_modified)
@@ -55,10 +57,10 @@ function checkParameterFileStatus2(){
 
 			console.log('parameter file was updated rev=' + paramfile.rev)
 		}
-	})
-	.catch(function(error){
+	}
+	catch(error) {
 		console.error(error)
-	})
+	}
 	return false
 }
 //================== CHECK FILE REV (end)==================//
@@ -75,6 +77,7 @@ function readParametersfromDropbox2(){
 
 		var reader = new FileReader()
 		reader.onload = function(e){
+			paramfile.text = reader.result
 			paramfile.data = JSON.parse(reader.result)
 
 			// Set parameters
@@ -343,8 +346,8 @@ function loadOriginalTestImagefromDropbox2(src){
 
 
 //================== WRITE JSON ==================//
-function writeDatatoDropbox2() {
-	return new Promise(function(resolve,reject){
+async function writeDatatoDropbox2() {
+	try{
         var dataobj = [], datastr;
 	    dataobj.push({
 	    	Subject: trial.subjid,
@@ -418,22 +421,36 @@ function writeDatatoDropbox2() {
 	    });
 	    datastr = JSON.stringify(dataobj);
 
-		dbx.filesUpload({path: trial.datadir + trial.filename, contents: datastr,
-			mode: {[".tag"]: "overwrite"} }).then(function(response){
-			console.log("successful data file upload size " + response.size)
-			resolve(1)
-		})
-		.catch(function(error){
-			console.error(error)
-		})
-	})
+	response = await dbx.filesUpload({
+		path: trial.datadir + trial.filename,
+		contents: datastr,
+		mode: {[".tag"]: "overwrite"} })
+		console.log("successful data file upload size " + response.size)
+	}
+	catch(error){
+		console.error(error)
+	}
 }
 
+async function writeParameterTexttoDropbox2(){
+	try{
+	    datastr = paramfile.text
 
+	response = await dbx.filesUpload({
+		path: trial.params,
+		contents: datastr,
+		mode: {[".tag"]: "overwrite"} })
+			console.log("successful paramater file upload size " + response.size)
+			trial.need2writeParameters = 0;
+	}
+	catch (error){
+		console.error(error)
+	}
+}
 
 //Write parameter file to dropbox
-function writeParameterstoDropbox2() {
-	return new Promise(function(resolve,reject){
+async function writeParameterstoDropbox2() {
+	try{
         var dataobj = [], datastr;
 	    dataobj.push({
 	    	Weight: env.weight,
@@ -473,16 +490,16 @@ function writeParameterstoDropbox2() {
 	    });
 	    datastr = JSON.stringify(dataobj);
 
-		dbx.filesUpload({path: trial.params, contents: datastr,
-			mode: {[".tag"]: "overwrite"} }).then(function(response){
+	response = await dbx.filesUpload({
+		path: trial.params,
+		contents: datastr,
+		mode: {[".tag"]: "overwrite"} })
 			console.log("successful paramater file upload size " + response.size)
 			trial.need2writeParameters = 0;
-			resolve(1)
-		})
-		.catch(function(error){
-			console.error(error)
-		})
-	})
+	}
+	catch (error){
+		console.error(error)
+	}
 }
 //================== WRITE JSON (end) ==================//
 
@@ -500,18 +517,19 @@ function takephoto2(currtrial,currstage){
 	var context = canvascaptureobj.getContext('2d');
 	context.drawImage(videoobj,0,0,videoobj.clientWidth,videoobj.clientHeight);
 
-	canvascaptureobj.toBlob(function(blob){
+	canvascaptureobj.toBlob(async function(blob){
 		// var reader = new FileReader()
 		// reader.onload = function(e){
-			dbx.filesUpload({
+		try{
+		response = await dbx.filesUpload({
 				path: "/MonkeyTurk/imagecapture/" + trial.subjid + "/imcapture" + currtrial + "_" + currstage + ".png",
-				contents: blob, mode: {[".tag"]: "overwrite"} }).then(function(response){
-					console.log("successful image upload size " + response.size)
-				})
-				.catch(function(error){
-					console.error(error)
-				})
-		// }
+				contents: blob,
+				mode: {[".tag"]: "overwrite"} })
+			console.log("successful image upload size " + response.size)
+		}
+		catch(error){
+			console.error(error)
+		}
 		// reader.readAsArrayBuffer(blob)
 	},'image/png')
 }
