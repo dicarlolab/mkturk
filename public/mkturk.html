@@ -441,6 +441,11 @@ function updateHeadsUpDisplay(){
 		return
 	}
 
+	function headsuptext_listener(event){
+		trial.need2writeParameters = 1
+		return
+	}
+
 	function doneTesting_listener(event){
 		console.log("User is done testing. Start saving data");
 		trial.savedata=1
@@ -1344,8 +1349,8 @@ document.querySelector("button[name=doneTesting]").addEventListener(
 	'mouseup',doneTesting_listener,false)
 
 var textobj = document.getElementById("headsuptext")
-textobj.addEventListener('touchend',function(){trial.need2writeParameters = 1},false)
-textobj.addEventListener('mouseup',function(){trial.need2writeParameters = 1},false)
+textobj.addEventListener('touchend',headsuptext_listener,false)
+textobj.addEventListener('mouseup',headsuptext_listener,false)
 
 
 //================== Initialize Screen/Audio/Video ==================//
@@ -1426,6 +1431,10 @@ textobj.addEventListener('mouseup',function(){trial.need2writeParameters = 1},fa
 	
 	await editParamsPromise()
 	document.querySelector("button[name=doneEditing]").style.display = "none"
+	var textobj = document.getElementById("headsuptext")
+	textobj.removeEventListener('touchend',headsuptext_listener)
+	textobj.removeEventListener('mouseup',headsuptext_listener)
+	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",false)
 
 	if (trial.need2writeParameters == 1){
 		paramfile.text = document.getElementById("headsuptext").innerHTML //get the new params
@@ -1909,7 +1918,7 @@ while (trial.waitingforFixation==1){
 		console.log('ready to write data')
 
 		//save data
-		if (trial.savedata == 1){
+		if (trial.savedata == 1 && trial.purge == 0){ //wait for next purge before saving
 			writeDatatoDropbox2(); //async - no need to wait for data to write			
 		}
 		updateHeadsUpDisplay(); // async
