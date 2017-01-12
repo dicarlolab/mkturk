@@ -1,5 +1,5 @@
-var DBX_CLIENT_ID = "2m9hmv7q45kwren"
-var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/mkturk.html"
+var DBX_CLIENT_ID = "c704p4lo4g3op39"
+var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/tnra0lpcs5uvy54/debugging_mkturk/public/mkturk.html"
 
 //return whether user was redirected here after authenticating
 function isAuthenticated(){
@@ -115,6 +115,38 @@ function readParametersfromDropbox2(){
 			trial["automator"] = paramfile.data[0].Automator;
 			trial["currentAutomatorStage"] = paramfile.data[0].CurrentAutomatorStage;
 			trial["params"] = paramfile.name;
+			trial["automatorFilePath"] = paramfile.data[0].AutomatorFilePath
+			resolve(1)
+		}
+		reader.readAsText(data.fileBlob)
+	})
+	.catch(function(error){
+		console.error(error)
+	})
+	})
+}
+
+function readAutomatorFilefromDropbox2(){
+	return new Promise(function(resolve,reject){
+		dbx.filesDownload({path: trial.automatorFilePath}).then(function(data){
+		console.log("success: read AutomatorFile of size " + data.size)
+
+		var reader = new FileReader()
+		reader.onload = function(e){
+			var data = JSON.parse(reader.result)
+
+			// Set parameters
+			//var minpctcorrect_sequence = []
+			//var mintrials_sequence = []
+			//var sample_foldernum_sequence = []
+			//var objectlist_sequence = []
+
+			minpctcorrect_sequence = data[0].PercentCorrectCriterion;
+			mintrials_sequence = data[0].MinimumTrialsCriterion;
+			sample_foldernum_sequence = data[0].FolderNumSequence;
+			objectlist_sequence = data[0].ObjectListSequence;
+			number_automator_stages = objectlist_sequence.length; 
+
 			resolve(1)
 		}
 		reader.readAsText(data.fileBlob)
@@ -170,6 +202,7 @@ function readPerformanceHistoryfromDropbox2(filenum){
 			trial["testScale"] = file.data[0].TestScale;			
 			trial["automator"] = file.data[0].Automator;
 			trial["currentAutomatorStage"] = file.data[0].CurrentAutomatorStage;
+			trial["automatorFilePath"] = paramfile.data[0].AutomatorFilePath
 
 			if (typeof(trial.automator) == "undefined" || trial.automator == 0 || trial.automator != trial.currentAutomator){
 			}
@@ -187,11 +220,12 @@ function readPerformanceHistoryfromDropbox2(filenum){
 			}
 
 			else if (trial.automator == "SR"){
-				funcreturn = updateSRTask("readtaskstageonly"); //read task stage only
-				trialhistory.trainingstage[trialhistory.current]=funcreturn;
+				trialhistory.trainingstage[trialhistory.current]=trial.currentAutomatorStage;
+				trialhistory.automator_filepath[trialhistory.current] = trial.automatorFilePath; 
 			}
 
 			if (typeof(trial.automator) == "undefined" || trial.automator == 0 || trial.automator != trial.currentAutomator){
+				// do nothing 
 			}
 			else {
 			  	for (var i=0; i<=file.data[0].CorrectItem.length-1; i++){
@@ -201,10 +235,15 @@ function readPerformanceHistoryfromDropbox2(filenum){
 			  		else {
 			  			trialhistory.correct[trialhistory.current]=0;
 			  		}
+			  		trialhistory.automator_filepath[trialhistory.current] = file.data[0].AutomatorFilePath
+
 			  		trialhistory.current++;
 			  	}
 			}
 			resolve(1)
+
+
+
 		} //reader.onload
 		reader.readAsText(data.fileBlob)
 	})
@@ -249,7 +288,7 @@ function loadSampleImagefromDropbox2(src,idx){
 			imagesSamplePack[curridx+idx].src = window.URL.createObjectURL(data.fileBlob)
 
 			imagesSamplePack[curridx+idx].onload = function(){
-				console.log('loaded image' + (curridx+idx));
+				//console.log('loaded image' + (curridx+idx));
 
 				renderBlank();
 				var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
@@ -274,7 +313,7 @@ function loadTestImagefromDropbox2(src,idx){
 			imagesTestPack[curridx+idx].src = window.URL.createObjectURL(data.fileBlob)
 
 			imagesTestPack[curridx+idx].onload = function(){
-				console.log('loaded image' + (curridx+idx));
+				//console.log('loaded image' + (curridx+idx));
 
 				renderBlank();
 				var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
@@ -383,6 +422,7 @@ async function writeDatatoDropbox2() {
 	    	NRewardMax: trial.nrewardmax,
 	    	Automator: trial.automator,
 	    	CurrentAutomatorStage: trial.currentAutomatorStage,
+	    	AutomatorFilePath: trial.automatorFilePath,
 	    	Params: trial.params,
 
 	    	PreSequence: canvas.sequencepre,
@@ -430,6 +470,7 @@ async function writeDatatoDropbox2() {
 	catch(error){
 		console.error(error)
 	}
+
 }
 
 async function writeParameterTexttoDropbox2(){
@@ -444,6 +485,19 @@ async function writeParameterTexttoDropbox2(){
 			trial.need2writeParameters = 0;
 	}
 	catch (error){
+		console.error(error)
+	}
+
+	try{
+	filemeta = await dbx.filesGetMetadata({path: paramfile.name})
+		if (paramfile.rev != filemeta.rev){
+			paramfile.rev = filemeta.rev
+			paramfile.date = new Date(filemeta.client_modified)
+
+			console.log('parameter file was updated rev=' + paramfile.rev)
+		}
+	}
+	catch(error) {
 		console.error(error)
 	}
 }
@@ -486,6 +540,7 @@ async function writeParameterstoDropbox2() {
 	    	TestScale: trial.testScale,
 	    	Automator: trial.automator,
 	    	CurrentAutomatorStage: trial.currentAutomatorStage, 
+	    	AutomatorFilePath: trial.automatorFilePath
 	    	// RewardDuration: trial.reward,
 	    });
 	    datastr = JSON.stringify(dataobj);
@@ -498,6 +553,19 @@ async function writeParameterstoDropbox2() {
 			trial.need2writeParameters = 0;
 	}
 	catch (error){
+		console.error(error)
+	}
+
+	try{
+	filemeta = await dbx.filesGetMetadata({path: paramfile.name})
+		if (paramfile.rev != filemeta.rev){
+			paramfile.rev = filemeta.rev
+			paramfile.date = new Date(filemeta.client_modified)
+
+			console.log('parameter file was updated rev=' + paramfile.rev)
+		}
+	}
+	catch(error) {
 		console.error(error)
 	}
 }
