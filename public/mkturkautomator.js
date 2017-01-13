@@ -1,34 +1,17 @@
-//Behavior automation
-
-//reward calculated as a function of body weight, calibrated to maximum for 3000 trials
-//reward doubles at the start of each new stage
-//move to next stage once hit 75% for last 500 trials
-
-//read parameters & current performance from last data file
-//write a new parameter file
-//continue with task html
-
-
-// starttask - zero variables, dialog box, look for data file/update paramfile, otw load paramfile, load images
-// updatetask - if above 75%, update paramfile, zero tracking variables, load paramfile, if needed load images
-
-
-// TASK STRUCTURE (NEW)
-// LARGE SIZE
-// 	(1) Touch
-//	(2) Touch moving
-// 	(3) 2 touch (no sample)
-//	(4) Match -- Spatially dissociated sample (stays on)
-// 	(5) Delayed match -- Temporally dissociated sample (500 ms)
-// TASK DIFFICULTY
-//	(6) 200ms
-//	(7) var1 (no pos)
-//	(8) var2
-//	(9) var3 (background)
-// SMALL SIZE
-//	(10)
-// NEW OBJECTS
-
+//Behavior automation - transition between 
+//reward calculated as a function of body weight, calibrated to maximum for 3000 trials		
+//reward doubles at the start of each new stage		
+//move to next stage once hit 75% for last 500 trials		
+		
+//read parameters & current performance from last data file		
+ //write a new parameter file		
+ //continue with task html		
+ 		
+ 		
+ // starttask - zero variables, dialog box, look for data file/update paramfile, otw load paramfile, load images		
+ // updatetask - if above 75%, update paramfile, zero tracking variables, load paramfile, if needed load images		
+ 		
+ 
 
 function updateSRTask(writestr){
 	//imagefoldersample
@@ -153,17 +136,33 @@ function updateSRTask(writestr){
 		return vals
 	}
 
+	function stageSR(minpctcorrect, mintrials, sample_foldernum, objectlist){
+	// assumes nway = 2
+	// C = criterion performance [0, 100]
+		var nway = objectlist.length
+		var vals = {
+		stagename: 'SR'+nway.toString()+'ways', 
+		rewardStage: 1,
+		fixationmove: 0, 
+		fixationradius: 60,
+		sampleON: 100, 
+		keepSampleON: 0, 
+		samplegrid: 4, 
+		objectgrid: get_obj_grid(objectlist.length), 
+		imageFolderSample: sample_foldernum, 
+		nway: nway, 
+		sampleScale: 0.6262, // for 8degrees visual angle; 8inches viewing distance; 512x512 image; 287.51 dpi (samsung galaxy 10.5). 
+		testScale: 0.55,
+		objectlist: objectlist, 
+		minpctcorrect: minpctcorrect, 
+		mintrials: mintrials,
+		hidetestdistractors:0, 
+		}
+		return vals
+	}
 
-	
-/* todo: 
-	// [7] Introduce 3D shape stimuli (pose variation). 
-	// [8] Introduce var3 position variation. 
-	// [9] Introduce var6 position variation. 
-	// [10] Add backgrounds. 
-*/
 
-var ntrials=2000
-
+	var ntrials=500
 	//// Define sequence of stages
 	var phase_sequence = [touch(100), 
 							 movingtouch(400), 
@@ -178,6 +177,19 @@ var ntrials=2000
 							 spatialSR(ntrials, 4, [1, 2, 4, 6]), 
 							 delaySR(ntrials, 4, [1, 2, 4, 6]),
 							 ]
+
+	 
+
+	 var phase_sequence = []
+	 for (var phase_i = 0; phase_i<number_automator_stages; phase_i++){
+
+	 	// Input arguments: minpctcorrect, mintrials, sample_foldernum, objectlist
+	 	phase_sequence.push(stageSR(
+	 		minpctcorrect_sequence[phase_i], 
+	 		mintrials_sequence[phase_i], 
+	 		sample_foldernum_sequence[phase_i], 
+	 		objectlist_sequence[phase_i]));
+	 }
 
 
 	var trainingstages = {
@@ -216,35 +228,11 @@ var ntrials=2000
 		trainingstages.hidetestdistractors[i]=phase_sequence[i].hidetestdistractors
 	}
 
-/*
-//DETERMINE TASK STAGE
-	//determine current training stage
-	for (var i = 0; i<=trainingstages.sampleON.length-1; i++){
-		if (trainingstages.rewardStage[i] == trial.rewardStage && 
-			trainingstages.fixationmove[i] == trial.fixationmove && 
-			trainingstages.fixationradius[i] == trial.fixationradius && 
-			trainingstages.sampleON[i] == trial.sampleON && 
-			trainingstages.samplegrid[i] == trial.samplegrid && 
-			trainingstages.keepSampleON[i] == trial.keepSampleON && 
-			trainingstages.imageFolderSample[i] == trial.imageFolderSample && 
-			trainingstages.sampleScale[i] == trial.sampleScale && 
-			trainingstages.testScale[i] == trial.testScale && 
-<<<<<<< Updated upstream
-			trainingstages.objectlist[i].toString() == trial.objectlist.toString()){
-=======
-			trainingstages.objectlist[i] == trial.objectlist){
->>>>>>> Stashed changes
-			trainingstages.current = i;
-		}
-	}
-*/
 
 	// Rather than implicitly inferring current training stage based on the state of params.txt, 
 	// get current stage by looking at a new variable "currentAutomatorStage", specified in params file. 
 	// Based on that parameter, update the rest of the params.txt file if there are discrepancies.
 	trainingstages.current = trial.currentAutomatorStage; 
-
-	// trial.need2writeParameters=0; 
 
 	var i = trainingstages.current
 	if (trainingstages.rewardStage[i] == trial.rewardStage && 
@@ -262,9 +250,10 @@ var ntrials=2000
 		trainingstages.objectlist[i].toString() == trial.objectlist.toString())
 		{
 			//do nothing
-	}
+		}
+
 	else{
-		// Loaded up with wrong images & parameters, need to update parameters & reload images
+		// Current state of trial.[stuff] is incorrect; update parameters & reload images.
 		trial.need2writeParameters=1;
 		trial.automatorstagechange=1
 
@@ -281,40 +270,9 @@ var ntrials=2000
 		trial.testScale = trainingstages.testScale[i]
 		trial.hidetestdistractors = trainingstages.hidetestdistractors[i] 
 		trial.objectlist = trainingstages.objectlist[i] //todo
+		console.log('Automator updated trial.[stuff] because of discrepancy between automator and params.')
 	}
 
-
-
-	// "RewardStage":1,
-	// "FixationMove":0,
-	// "FixationRadius":60,
-	// "SampleON":200,
-	// "SampleGridIndex":[4],
-	// "KeepSampleON":0,
-	// "ImageFolderSample":1,
-	// "SampleScale":2,
-	// "TestScale":2,
-	// "TestedObjects":[7,8],
-
-
-	// [{"Weight":5.6
-	// "Species":"macaque"
-	// "Homecage":1
-	// "Separated":1
-	// "Liquid":1,
-	// "Tablet":"samsung10",
-	// "Pump":3,
-	// "Nway":2,
-	// "TestGridIndex":[1,7],
-	// "RewardPer1000Trials":90,
-	// "PunishTimeOut":3000,
-	// "FixationDuration":30,
-	// "SampleOFF":100,
-	// "HideTestDistractors":0,
-	// "SampleBlockSize":0,
-	// "NStickyResponse":5,
-	// "ImageFolderTest":0,
-	// "Automator":0}]
 
 	if (writestr == "readtaskstageonly"){
 		return trainingstages.current;		
@@ -324,14 +282,22 @@ var ntrials=2000
 	var startingindex = -1;
 	for (var i = 0; i < trialhistory.trainingstage.length; i++){
 		if (typeof(trialhistory.trainingstage[i]) == "undefined"){
+			// Do nothing 
 		}
-		else if (trialhistory.trainingstage[i] == trainingstages.current && startingindex == -1){
+		else if (
+				trialhistory.trainingstage[i] == trainingstages.current 
+				&& startingindex == -1 
+				&& trialhistory.automator_filepath[i] == trial.automatorFilePath){ 
 			startingindex = i;
 		}
-		else if (trialhistory.trainingstage[i] != trainingstages.current){
-			startingindex = -1; //reset starting index, not a continuous block
+		else if (trialhistory.trainingstage[i] != trainingstages.current){ 
+			startingindex = -1; 
+		}
+		else if (trialhistory.automator_filepath[i] != trial.automatorFilePath){ 
+			startingindex = -1; 
 		}
 	}
+	trialhistory.startingindex=startingindex
 
 	var ntrial=0;
 	var ncorrect=0;
@@ -339,8 +305,7 @@ var ntrials=2000
 	if (startingindex == -1){
 		pctcorrect = 0;
 	}
-	else{
-		//take running average
+	else{ //take running average
 		var ncompleted = trialhistory.correct.length - startingindex;
 		if (ncompleted > trainingstages.mintrials[trainingstages.current]){
 			startingindex = trialhistory.correct.length - trainingstages.mintrials[trainingstages.current];
@@ -353,6 +318,7 @@ var ntrials=2000
 		pctcorrect = 100 * ncorrect/ntrial;
 	}
 
+	trialhistory.pctcorrect = pctcorrect
 
 	//Determine if updating stage and/or reward
 	var updatingstage=0;
@@ -365,6 +331,7 @@ var ntrials=2000
 	}
 
 	if (updatingstage==1){
+
 		// trial.need2loadParameters=1;
 		trial.need2writeParameters=1;
 		trial.automatorstagechange=1
@@ -384,18 +351,13 @@ var ntrials=2000
 		trial.testScale = trainingstages.testScale[trainingstages.current]
 		trial.hidetestdistractors = trainingstages.hidetestdistractors[trainingstages.current] 
 		trial.objectlist = trainingstages.objectlist[trainingstages.current] //todo
-
+		console.log('Automator updated trial.[stuff] because of stage change')
 	}
 	else{
 //		// trial.need2loadParameters=0;
 		return
 	}
 }
-
-
-
-
-
 
 
 function updateTask3(writestr){
@@ -1012,3 +974,6 @@ var updatingreward=0;
 		trial.objectlist = [0,3,5,14,34,37,39,48,24,26,30,31,53,57,60,61];
 	}
 }
+
+
+

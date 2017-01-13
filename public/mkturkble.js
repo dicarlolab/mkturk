@@ -49,24 +49,24 @@ var ble = {
 
 //==================== CONNECT BLE ====================//
 function connectBLEButtonPromise(){
-	var resolveFunc
-	var errFunc
-	p = new Promise(function(resolve,reject){
-		resolveFunc = resolve;
-		errFunc = reject;
-	}).then(function(resolveval){console.log('User clicked ' + resolveval)});
+  var resolveFunc
+  var errFunc
+  p = new Promise(function(resolve,reject){
+    resolveFunc = resolve;
+    errFunc = reject;
+  }).then(function(resolveval){console.log('User clicked ' + resolveval)});
 
-	function *waitforclickGenerator(){
-		var buttonclicked =[-1];
-		while (true){
-			buttonclicked = yield buttonclicked;
-			resolveFunc(buttonclicked);
-		}
-	}
+  function *waitforclickGenerator(){
+    var buttonclicked =[-1];
+    while (true){
+      buttonclicked = yield buttonclicked;
+      resolveFunc(buttonclicked);
+    }
+  }
 
-	waitforClick = waitforclickGenerator(); // start async function
-	waitforClick.next(); //move out of default state
-	return p;
+  waitforClick = waitforclickGenerator(); // start async function
+  waitforClick.next(); //move out of default state
+  return p;
 }
 
 function skipBLEDevice(event){
@@ -273,32 +273,32 @@ function pingBLE(){
 }
 
 function onPumpNotificationFromBLE(event){
-	ble.tnotify_pump=performance.now()
-	var textstr = 'BLE read notification << ' +
+  ble.tnotify_pump=performance.now()
+  var textstr = 'BLE read notification << ' +
           Math.round(ble.tnotify_pump - ble.twrite_pumpduration) + 'ms'
-	console.log(textstr)
-	ble.statustext = ble.statustext + "  <---->  " + textstr
-	updateHeadsUpDisplay()
-	// updateStatusText()
-	// writeTextonBlankCanvas(textstr,400,20.5)
+  console.log(textstr)
+  ble.statustext = ble.statustext + "  <---->  " + textstr
+  updateHeadsUpDisplay()
+  // updateStatusText()
+  // writeTextonBlankCanvas(textstr,400,20.5)
 
-	let value = event.target.value
-	value = value.buffer ? value : new DataView(value)
-	let a = []
-	for (var i = 0; i < value.byteLength; i++){
+  let value = event.target.value
+  value = value.buffer ? value : new DataView(value)
+  let a = []
+  for (var i = 0; i < value.byteLength; i++){
       a.push('0x' + ('00' + value.getUint8(i).toString(16)).slice(-2));
     }
     console.log('Received ble notification value << ' + a.join(' '))
 }
 
 function onRFIDNotificationFromBLE(event){
-	var t0 = ble.tnotify_rfid
-	ble.tnotify_rfid = performance.now()
+  var t0 = ble.tnotify_rfid
+  ble.tnotify_rfid = performance.now()
 
-	let value = event.target.value
-	value = value.buffer ? value : new DataView(value)
-	let a = []
-	for (var i = 0; i < value.byteLength; i++){
+  let value = event.target.value
+  value = value.buffer ? value : new DataView(value)
+  let a = []
+  for (var i = 0; i < value.byteLength; i++){
       a.push('0x' + ('00' + value.getUint8(i).toString(16)).slice(-2));
     }
     console.log('Received ble notification value << ' + a.join(' '))
@@ -312,10 +312,10 @@ function onRFIDNotificationFromBLE(event){
 
 //============== UTILITIES ==============//
 function toBytesInt16(num){
-	arr = new ArrayBuffer(2) //2 bytes
-	view = new DataView(arr)
-	view.setUint16(0,num); //arg1: byteOffset arg3: false || undefined -> bigEndian
-	arr = new Uint8Array([view.getUint8(1), view.getUint8(0)])
-	return arr
+  arr = new ArrayBuffer(2) //2 bytes
+  view = new DataView(arr)
+  view.setUint16(0,num); //arg1: byteOffset arg3: false || undefined -> bigEndian
+  arr = new Uint8Array([view.getUint8(1), view.getUint8(0)])
+  return arr
 }
 //============== UTILITIES (end) ==============//

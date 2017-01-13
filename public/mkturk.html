@@ -16,7 +16,6 @@
 <script src="mkturkble.js" type="text/javascript"></script> -->
 
 <script>
-
 //================== LOAD STATUS DISPLAY ==================//
 function writeTextonBlankCanvas(textstr,x,y){
 	var blank_canvasobj=document.getElementById("canvas"+canvas.blank)
@@ -26,53 +25,42 @@ function writeTextonBlankCanvas(textstr,x,y){
 	visible_ctxt.font = "18px Verdana"
 	visible_ctxt.fillText(textstr,x,y)
 }
-
 function updateStatusText(){
 	var textobj = document.getElementById("headsuptext");
 	textobj.innerHTML = ble.statustext
 	// updateHeadsUpDisplay()
 }
 //================== STATUS DISPLAY (end) ==================//
-
-
 //================== CANVAS SETUP ==================//
 	// Sync: Setup heads-up display canvas
 	function setupCanvasHeadsUp(){
 		canvasobj=document.getElementById("canvasheadsup");
-
 		canvasobj.width=window.innerWidth;
 		canvasobj.height=Math.round(window.innerHeight*canvas.headsupfraction);
 		canvas.offsettop = canvasobj.height;
-
 		if (canvas.headsupfraction == 0){
 			canvasobj.style.display="none";
 		}
 		else{
 			canvasobj.style.display="block";
 		}
-
 		var context=canvasobj.getContext('2d');
 		context.fillStyle="#202020";
 		context.fillRect(0,0,canvasobj.width,canvasobj.height);
-
 		canvasobj.addEventListener('mousedown',mousedown_listener,false);
 		canvasobj.addEventListener('touchstart',touchstart_listener,false);
 	}
-
 	// Sync: Setup canvas
 	function setupCanvas(id){
 		str="canvas" + id;
 		canvasobj=document.getElementById(str);
-
 		// center in page
 		canvasobj.style.top=canvas.offsettop + "px";
 		canvasobj.style.left=canvas.offsetleft + "px";
 		canvasobj.width=windowWidth;
 		canvasobj.height=windowHeight;
 		canvasobj.style.margin="0 auto";
-
 		canvasobj.style.display="block"; //visible
-
 		// assign listeners
 		// handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
 		canvasobj.addEventListener('mousedown',mousedown_listener,false);
@@ -82,11 +70,9 @@ function updateStatusText(){
 		// canvasobj.addEventListener('touchmove',touchmove_listener,false);
 		canvasobj.addEventListener('touchmove',touchmove_listener,{passive: true}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
 		canvasobj.addEventListener('touchend',touchend_listener,false);
-
 		// store canvas size
 		canvasSize=[canvasobj.width, canvasobj.height];
 	} //setupCanvas
-
 	// Sync: Adjust canvas for the device pixel ratio & browser backing store size
 	// from http://www.html5rocks.com/en/tutorials/canvas/hidpi/#disqus_thread
 	function scaleCanvasforHiDPI(id){
@@ -96,24 +82,17 @@ function updateStatusText(){
 			context=canvasobj.getContext("2d");
 			var oldWidth = canvasobj.width;
 			var oldHeight = canvasobj.height;
-
 			canvasobj.width = oldWidth * canvasScale;
 			canvasobj.height = oldHeight * canvasScale;
-
 			canvasobj.style.width = windowWidth + "px";
 			canvasobj.style.height = windowHeight + "px";
 			canvasobj.style.margin="0 auto";
-
 			context.scale(canvasScale,canvasScale);
 		} //if
 	} //scaleCanvasforHiDPI
 //================== CANVAS SETUP (end) ==================//
-
-
-
 function updateHeadsUpDisplay(){
 	var textobj = document.getElementById("headsuptext");
-
 	// Overall performance
 	var ncorrect = 0;
 	for (var i=0; i<=trial.correctItem.length-1; i++){
@@ -122,7 +101,6 @@ function updateHeadsUpDisplay(){
   		}
 	}
 	var pctcorrect = Math.round(100 * ncorrect / trial.response.length);
-
 	// Task type
 	var task1 = "";
 	var task2 = "";
@@ -133,7 +111,6 @@ function updateHeadsUpDisplay(){
 		task1 = "Match to Sample var" + trial.imageFolderSample;
 		task2 = trial.sampleON + "ms, " + trial.nway + "-way, " + trial.objectlist.length + "-obj";
 	}
-
 	if (canvas.headsupfraction > 0){
 		textobj.innerHTML = trial.subjid + ": <font color=green><b>" + pctcorrect + "%</b></font> " + "(" + ncorrect + " of " + trial.response.length +")" + "<br>" + "Estimated Reward: <font color=green><b>" + Math.round(trial.rewardper1000*ncorrect/1000) + "mL</b></font> (" + Math.round(trial.rewardper1000) + " per 1000)" + "<br> " + "<br>" + " Stage " + trial.currentAutomatorStage + ": " + task1 + "<br>" + task2 + "<br>" + "<br>" + "<br>" + "<font color=red><b>" + "<font color=blue><b>" + ble.statustext + "<br></font>";
 	}
@@ -141,19 +118,15 @@ function updateHeadsUpDisplay(){
 		textobj.innerHTML = ble.statustext
 	}
 }
-
 //================== IMAGE RENDERING ==================//
 	// Sync: buffer trial images
 	function bufferTrialImages(){
 		// (pre)render canvas (synchronous)
 		function renderCanvas(idxcv,idxim,usesample,grid){
 			var canvasobj=document.getElementById("canvas"+idxcv);
-
 			var context=canvasobj.getContext('2d');
-
 			var indpos
 			indpos=grid;
-
 			var xleft=[];
 			var ytop=[];
 			var xbound=[];
@@ -162,26 +135,20 @@ function updateHeadsUpDisplay(){
 				if (usesample==true){
 					xleft[i] = Math.round(xgridcent[indpos[i]] - 0.5*imagesSample.wd*imagesSample.scale/canvasScale);
 					ytop[i] = Math.round(ygridcent[indpos[i]] - 0.5*imagesSample.ht*imagesSample.scale/canvasScale);
-
 					context.drawImage(imagesSamplePack[imagesSample.packpointer[idxim[i]]],imagesSample.pixLR[idxim[i]][0],0,imagesSample.wd,imagesSample.ht,xleft[i],ytop[i],imagesSample.wd*imagesSample.scale/canvasScale,imagesSample.ht*imagesSample.scale/canvasScale);
-
 					xbound[i]=[xleft[i], xleft[i]+imagesSample.wd*imagesSample.scale/canvasScale];
 					ybound[i]=[ytop[i], ytop[i]+imagesSample.ht*imagesSample.scale/canvasScale];
 				}
 				else if (usesample==false){
 					xleft[i] = Math.round(xgridcent[indpos[i]] - 0.5*imagesTest.wd*imagesTest.scale/canvasScale);
 					ytop[i] = Math.round(ygridcent[indpos[i]] - 0.5*imagesTest.ht*imagesTest.scale/canvasScale);
-
 					context.drawImage(imagesTestPack[imagesTest.packpointer[idxim[i]]],imagesTest.pixLR[idxim[i]][0],0,imagesTest.wd,imagesTest.ht,xleft[i],ytop[i],imagesTest.wd*imagesTest.scale/canvasScale,imagesTest.ht*imagesTest.scale/canvasScale);
-
 					xbound[i]=[xleft[i], xleft[i]+imagesTest.wd*imagesTest.scale/canvasScale];
 					ybound[i]=[ytop[i], ytop[i]+imagesTest.ht*imagesTest.scale/canvasScale];
 				}
-
 				if (grid.length > 1 && trial.hidetestdistractors==1 && parseInt(i) != trial.correctItem[trial.current]){
 					context.fillStyle="#7F7F7F";
 					context.fillRect(xleft[i],ytop[i],imagesTest.wd*imagesTest.scale/canvasScale,imagesTest.ht*imagesTest.scale/canvasScale);
-
 					xbound[i]=[xleft[i], xleft[i]+imagesTest.wd*imagesTest.scale/canvasScale];
 					ybound[i]=[ytop[i], ytop[i]+imagesTest.ht*imagesTest.scale/canvasScale];
 				} //gray out distractors
@@ -190,22 +157,18 @@ function updateHeadsUpDisplay(){
 				ybound[i][0]=ybound[i][0]+canvas.offsettop;
 				ybound[i][1]=ybound[i][1]+canvas.offsettop;
 			};
-
 			// bounding boxes of images on canvas
 			return {
 				x: xbound,
 				y: ybound
 			};
 		}
-
 		//buffer (sample & test canvases)
-
 		//sample
 		var canvasobj=document.getElementById("canvas"+canvas.sample); // Gray out before buffering sample
 		var context=canvasobj.getContext('2d');
 		context.fillStyle="#7F7F7F";
 		context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
-
 		renderCanvas(canvas.sample,[trial.sample[trial.current]],true,trial.samplegrid);
 		
 		//test
@@ -213,11 +176,9 @@ function updateHeadsUpDisplay(){
 		var context=canvasobj.getContext('2d');
 		context.fillStyle="#7F7F7F";
 		context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
-
 		if (trial.keepSampleON==1){
 			renderCanvas(canvas.test,[trial.sample[trial.current]],true,trial.samplegrid);
 		}
-
 		//** SR
 		// use objectgrid instead of testgrid for positioning choices
 		if (trial.objectgrid.length == trial.objectlist.length){
@@ -234,12 +195,9 @@ function updateHeadsUpDisplay(){
 			}
 		}
 		//** SR end
-
-
 		boundingBoxesTest = renderCanvas(canvas.test,trial.test[trial.current],false,trial.testgrid);
 		canvas.buffered = 1;
 	}
-
 	// Promise: display trial images
 	function displayTrial(sequence,tsequence){
 		var resolveFunc
@@ -250,20 +208,17 @@ function updateHeadsUpDisplay(){
 		}).then(function(){
 			//console.log('displayed images')
 		});
-
 		var start = null;
 		function updateCanvas(timestamp){
 			if (!start) start = timestamp;
 			if (timestamp - start > tsequence[frame.current]){
 				//console.log('displaying frame' + currframe + ' ' + timestamp);
-
 				// Move canvas in front
 				var prev_canvasobj=document.getElementById("canvas"+canvas.front);
 				var curr_canvasobj=document.getElementById("canvas"+sequence[frame.current]);
 				if (canvas.front != canvas.blank){
 					prev_canvasobj.style.zIndex="0";
 				} // move back
-
 				if (sequence[frame.current] != canvas.blank){
 					curr_canvasobj.style.zIndex="100";
 					canvas.front = sequence[frame.current];
@@ -275,7 +230,6 @@ function updateHeadsUpDisplay(){
 				frame.shown[frame.current]=1;
 				frame.current++;
 			}; // if show new frame
-
 			// continue if not all frames shown
 			if (frame.shown[frame.shown.length-1] != 1){
 				window.requestAnimationFrame(updateCanvas);
@@ -284,94 +238,74 @@ function updateHeadsUpDisplay(){
 				resolveFunc(1);
 			}
 		}
-
 		//requestAnimationFrame advantages: goes on next screen refresh and syncs to browsers refresh rate on separate clock (not js clock)
 		window.requestAnimationFrame(updateCanvas); // kick off async work
 		return p
 	} //displayTrial
-
 	function renderBlank(){
 		var canvasobj=document.getElementById("canvas"+canvas.blank);
 		var context=canvasobj.getContext('2d');
-
 		context.fillStyle="#7F7F7F";
 		context.fillRect(0,0,canvasobj.width,canvasobj.height);
-
 		context.fillStyle="black";
 		context.fillRect(0,0,canvasobj.width,60);
 	}
-
 	function renderReward(){
 		var canvasobj=document.getElementById("canvas"+canvas.reward);
 		var context=canvasobj.getContext('2d');
 		context.fillStyle="green";
 		context.fillRect(xgridcent[4]-200,ygridcent[4]-200,400,400);
-
 		if (env.species == 'marmoset'){
 			context.fillStyle="black";
 			context.fillRect(0,0,canvasobj.width,100);
 		}
 	}
-
 	function renderPhotoReward(){
 		var canvasobj=document.getElementById("canvas"+canvas.photoreward);
 		var context=canvasobj.getContext('2d');
 		context.fillStyle="green";
 		context.fillRect(xgridcent[4]-200,ygridcent[4]-200,400,400);
-
 		if (env.species == 'marmoset'){
 			context.fillStyle="white";
 			context.fillRect(0,0,canvasobj.width,100);
 		}
 	}
-
-
 	function renderPunish(){
 		var canvasobj=document.getElementById("canvas"+canvas.punish);
 		var context=canvasobj.getContext('2d');
 		context.rect(xgridcent[4]-200,ygridcent[4]-200,400,400);
 		context.fillStyle="black";
 		context.fill();
-
 		context.fillStyle="black";
 		context.fillRect(0,0,canvasobj.width,60);
 	}
-
 	function renderTouchFixation(){
 		var canvasobj=document.getElementById("canvas"+canvas.touchfix);
 		var context=canvasobj.getContext('2d');
 		context.clearRect(0,0,canvasobj.width,canvasobj.height);
-
 		var rad = trial.fixationradius;
 		var xcent = xgridcent[trial.fixationgrid[trial.current]];
 		var ycent = ygridcent[trial.fixationgrid[trial.current]];
-
 		context.beginPath();
 		context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
-
 		if (env.species == "macaque" || env.species == "human"){
 			context.fillStyle="white";
 		}
 		else if (env.species == "marmoset"){
 			context.fillStyle="blue";
 		}
-
 		context.fill();
 		boundingBoxFixation.x = [xcent-rad+canvas.offsetleft, xcent+rad+canvas.offsetleft];
 		boundingBoxFixation.y = [ycent-rad+canvas.offsettop, ycent+rad+canvas.offsettop];
-
 		// //add eye fixation
 		// context.fillStyle="red";
 		// context.fillRect(xgridcent[4]-6,ygridcent[4]-6,12,12);
-
 		// // add red dot in center
 		// context.fillStyle="red";
 		// context.fillRect(xgridcent[trial.fixationgrid[trial.current]]+rad/2-6,xgridcent[trial.fixationgrid[trial.current]]-rad/2-6,12,12);
-
 		context.fillStyle="black";
 		context.fillRect(0,0,canvasobj.width,40);
 	}
-
 	function renderEyeFixation(){
 		var canvasobj=document.getElementById("canvas"+canvas.eyefix);
 		var context=canvasobj.getContext('2d');
@@ -379,9 +313,6 @@ function updateHeadsUpDisplay(){
 		context.fillRect(xgridcent[4]-6,ygridcent[4]-6,12,12);
 	}
 //================== IMAGE RENDERING (end) ==================//
-
-
-
 //================== PROMISE STATES ==================//
 	// Promise: Select Subject
 	function subjidPromise(){
@@ -391,7 +322,6 @@ function updateHeadsUpDisplay(){
 			resolveFunc = resolve;
 			errFunc = reject;
 		}).then(function(resolveval){console.log('User selected ' + resolveval)});
-
 		function *waitforclickGenerator(){
 			var imclicked =[-1];
 			while (true){
@@ -399,12 +329,10 @@ function updateHeadsUpDisplay(){
 				resolveFunc(imclicked);
 			}
 		}
-
 		waitforClick = waitforclickGenerator(); // start async function
 		waitforClick.next(); //move out of default state
 		return p;
 	}
-
 	function subjectlist_listener(event){
 		console.log("subject selected");
 		trial.subjid = subjectlist[this.value];
@@ -412,7 +340,6 @@ function updateHeadsUpDisplay(){
 		waitforClick.next(1);
 		return
 	}
-
 	// Promise: Edit Parameters Text
 	function editParamsPromise(){
 		var resolveFunc
@@ -421,7 +348,6 @@ function updateHeadsUpDisplay(){
 			resolveFunc = resolve;
 			errFunc = reject;
 		}).then(function(resolveval){console.log('User is done editing params')});
-
 		function *waitforclickGenerator(){
 			var imclicked =[-1];
 			while (true){
@@ -429,23 +355,19 @@ function updateHeadsUpDisplay(){
 				resolveFunc(imclicked);
 			}
 		}
-
 		waitforClick = waitforclickGenerator(); // start async function
 		waitforClick.next(); //move out of default state
 		return p;
 	}
-
 	function doneEditing_listener(event){
 		console.log("Done editing params")
 		waitforClick.next(1);
 		return
 	}
-
 	function headsuptext_listener(event){
 		trial.need2writeParameters = 1
 		return
 	}
-
 	function doneTesting_listener(event){
 		console.log("User is done testing. Start saving data");
 		trial.savedata=1
@@ -453,7 +375,6 @@ function updateHeadsUpDisplay(){
 		document.querySelector("button[name=doneTesting]").style.display = "none"
 		return
 	}
-
 	// Promise: fixation
 	function fixationPromise(){
 		var resolveFunc
@@ -461,8 +382,9 @@ function updateHeadsUpDisplay(){
 		p = new Promise(function(resolve,reject){
 			resolveFunc = resolve;
 			errFunc = reject;
-		}).then(function(resolveval){console.log('Fixation Promise resolved' + resolveval)});
-
+		}).then(function(resolveval){
+			//console.log('Fixation Promise resolved' + resolveval)
+		});
 		function *waitforclickGenerator(){
 			var imclicked =[-1];
 			while (true){
@@ -471,17 +393,13 @@ function updateHeadsUpDisplay(){
 				resolveFunc(imclicked);
 			}
 		}
-
 		trial.waitingforFixation = 1;
 		waitforClick = waitforclickGenerator(); // start async function
 		waitforClick.next(); //move out of default state
-
 		//Start timer
 		movefixationTimer = setTimeout(function(){trial.waitingforFixation=1; trial.brokeFixation=1; clearTimeout(fixationTimer); waitforClick.next(1); },trial.fixationinterval);
-
 		return p;
 	}
-
 	// Promise: response
 	function responsePromise(){
 		var resolveFunc
@@ -490,7 +408,6 @@ function updateHeadsUpDisplay(){
 			resolveFunc = resolve;
 			errFunc = reject;
 		}).then(function(resolveval){console.log('User clicked ' + resolveval)});
-
 		function *waitforclickGenerator(){
 			var imclicked =[-1];
 			while (true){
@@ -498,13 +415,11 @@ function updateHeadsUpDisplay(){
 				resolveFunc(imclicked);
 			}
 		}
-
 		trial.waitingforResponse = 1;
 		waitforClick = waitforclickGenerator(); // start async function
 		waitforClick.next(); //move out of default state
 		return p;
 	}
-
 	//Asynch: play sound
 	function playSound(idx){
 		audiocontext.resume()
@@ -516,21 +431,17 @@ function updateHeadsUpDisplay(){
 		else if (idx==2 | idx==3){
 			gainNode.gain.value=0.05; //set boost pedal to 5% volume
 		}
-
 		source.connect(gainNode);
 		// gainNode.connect(audiocontext.destination); //Connect boost pedal to output
 		// source.connect(audiocontext.destination);       // connect the source to the context's destination (the speakers)
-
 		source.start(0);                        // play the source now
 	}
-
 	// Promise: dispense reward (through audio control)
 	function dispenseReward(){
 		return new Promise(function(resolve,reject){
 			audiocontext.resume()
 			var oscillator = audiocontext.createOscillator();
 			gainNode.gain.value=1;
-
 			if (env.pump == 1){
 				oscillator.type='square'; //Square wave
 				oscillator.frequency.value=25; //frequency in hertz				
@@ -555,26 +466,23 @@ function updateHeadsUpDisplay(){
 				oscillator.type='square'; //Square wave
 				oscillator.frequency.value=0.1; //frequency in hertz				
 			} //piezoelectric 7ml/min (takasago)
-
 			// oscillator.connect(audiocontext.destination); //Connect sound to output
-
 			// //var gainNode = audiocontext.createGainNode(); //Create boost pedal
 			// //gainNode.gain.value=0.3; //set boost pedal to 30% volume
 			oscillator.connect(gainNode);
 			// //gainNode.connect(audiocontext.destination); //Connect boost pedal to output
-
 			// // oscillator.onended=function(){
 			// // 	console.log('done with reward pulse');
 			// // 	resolve(1);
 			// // }
-
 			var currentTime=audiocontext.currentTime;
+
+
 			oscillator.start(currentTime);
 			oscillator.stop(currentTime + trial.reward);
 			setTimeout(function(){console.log('sound done'); resolve(1);},trial.reward*1000);
 		}).then();
 	}
-
 	// Promise: punish time-out
 	function dispensePunish(){
 		return new Promise(function(resolve,reject){
@@ -582,19 +490,14 @@ function updateHeadsUpDisplay(){
 		}).then();
 	}
 //================== PROMISE STATES (end) ==================//
-
-
-
 //================== MOUSE & TOUCH EVENTS ==================//
 	function mousedown_listener(event){
 		if(typeof event === 'undefined'){
 			console.log('no click, loading images, initializing response promise');
 			return
 		};
-
 		var x = event.clientX
 		var y = event.clientY
-
 		if (y < canvas.offsettop){
 			//clicked on headsup display
 			if (videoobj.style.zIndex != 100){
@@ -610,7 +513,6 @@ function updateHeadsUpDisplay(){
 				videoobj.style.zIndex = 0;
 			}
 		}
-
 		if (trial.waitingforFixation == 1){
 			//determine if clicked on fixation dot
 			if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
@@ -623,7 +525,6 @@ function updateHeadsUpDisplay(){
 			else{
 			}
 		}
-
 		if (trial.waitingforResponse == 1){
 			//determine if clicked in test box
 			for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
@@ -637,12 +538,10 @@ function updateHeadsUpDisplay(){
 			}
 		}
 	}
-
 	function mousemove_listener(event){
 		if (trial.waitingforFixation==1 && trial.brokeFixation==0){
 			var x = event.clientX
 			var y = event.clientY
-
 			if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
 				 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
 				//holding fixation
@@ -654,7 +553,6 @@ function updateHeadsUpDisplay(){
 			}
 		}
 	}
-
 	function mouseup_listener(event){
 		if (trial.waitingforFixation==1 && trial.brokeFixation == 0){
 			// broke touch with fixation dot too early, cancel fixation timers
@@ -662,17 +560,14 @@ function updateHeadsUpDisplay(){
 			clearTimeout(fixationTimer);
 		}
 	}
-
 	function touchstart_listener(event){
 		event.preventDefault(); //prevents additional downstream call of click listener
 		if(typeof event === 'undefined'){
 			console.log('no click, loading images, initializing responsepromise');
 			return
 		};
-
 		var x = event.targetTouches[0].pageX;
 		var y = event.targetTouches[0].pageY;
-
 		if (y < canvas.offsettop){
 			//clicked on headsup display
 			if (videoobj.style.zIndex != 100){
@@ -688,7 +583,6 @@ function updateHeadsUpDisplay(){
 				videoobj.style.zIndex = 0;
 			}
 		}
-
 		if (trial.waitingforFixation == 1){
 			//determine if clicked on fixation dot
 			if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
@@ -710,7 +604,6 @@ function updateHeadsUpDisplay(){
 				} //advance to punish for clicking outside fixation
 			}
 		}
-
 		if (trial.waitingforResponse == 1){
 			//determine if clicked in test box
 			for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
@@ -724,12 +617,10 @@ function updateHeadsUpDisplay(){
 			}
 		}
 	}
-
 	function touchmove_listener(event){
 		if (trial.waitingforFixation==1 && trial.brokeFixation==0){
 			var x = event.targetTouches[0].pageX;
 			var y = event.targetTouches[0].pageY;
-
 			if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
 				 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
 				//holding fixation
@@ -745,10 +636,8 @@ function updateHeadsUpDisplay(){
 			//check if moved back into fixation
 			var x = event.targetTouches[0].pageX;
 			var y = event.targetTouches[0].pageY;
-
 			if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
 				 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
-
 				//gained fixation
 				trial.brokeFixation = 0;
 				touchstart_listener(event);
@@ -758,7 +647,6 @@ function updateHeadsUpDisplay(){
 		if (trial.waitingforResponse == 1){
 			var x = event.targetTouches[0].pageX;
 			var y = event.targetTouches[0].pageY;
-
 			//determine if moved into a test box
 			for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
 				if (x >= boundingBoxesTest.x[q][0] && x <= boundingBoxesTest.x[q][1] &&
@@ -771,7 +659,6 @@ function updateHeadsUpDisplay(){
 			}
 		}
 	}
-
 	function touchend_listener(event){
 		if (trial.waitingforFixation==1 && trial.brokeFixation == 0){
 			// broke touch with fixation dot too early, cancel fixation timers
@@ -781,9 +668,6 @@ function updateHeadsUpDisplay(){
 		}
 	}
 //================== MOUSE & TOUCH EVENTS (end) ==================//
-
-
-
 //================== UTILITIES ==================//
 	/* Randomize array element order in-place.  Using Fisher-Yates shuffle algorithm. http://bost.ocks.org/mike/shuffle/ */
 	// To test your shuffling algorithm: go to http://bost.ocks.org/mike/shuffle/compare.html
@@ -793,7 +677,6 @@ function updateHeadsUpDisplay(){
 			var len=array[0];
 			for (var i = 0; i<=len-1; i++){array[i]=i;}
 		}
-
 	    for (var i = array.length - 1; i > 0; i--) {
 	        var j = Math.floor(Math.random() * (i + 1));
 	        var temp = array[i];
@@ -802,8 +685,6 @@ function updateHeadsUpDisplay(){
 	    }
 	    return array
 	}
-
-
 	// convert base64 to buffer array (from: http://stackoverflow.com.80bola.com/questions/27524283/save-image-to-dropbox-with-data-from-canvas?rq=1)
 	function _base64ToArrayBuffer(base64){
 		base64 = base64.split('data:image/png;base64,').join('');
@@ -811,7 +692,6 @@ function updateHeadsUpDisplay(){
 		len = binary_string.length,
 		bytes = new Uint8Array( len ),
 		i;
-
 		for (i = 0; i < len; i++){
 			bytes[i] = binary_string.charCodeAt(i);
 		}
@@ -819,243 +699,9 @@ function updateHeadsUpDisplay(){
 	}
 //================== UTILITIES (end) ==================//
 
-
-function getImageList(images,foldernum){
-	images.serial = [];
-	images.obj = [];
-	images.packpointer = [];
-	images.packserial = [];
-	images.packpos = [];
-	images.pixLR = [];
-
-	var potentialImages = {
-		serial: [],
-		obj: [],
-	}
-
-	var imagesPack = {
-		packserial: [],
-	}
-
-	var perobj=1; //folder 0 or 4 or 12
-	var perobjvec=[];
-	if (foldernum == 1 || foldernum == 2 || foldernum == 3 || foldernum == 6 || foldernum == 7 || foldernum == 8 || foldernum == 10 || foldernum == 11 || foldernum == 13 || foldernum == 14 || foldernum == 15){
-		perobj=100;
-	}
-	else if (foldernum == 5){
-		perobjvec=[12,8,10,12,6,12,8,10,12,12,8,10,6,14,6,6,12,10,8,6,6,8,6,8,12,6,12,6,8,6,10,12,6,6,12,8,10,12,6,12,8,10,12,12,8,10,6,14,6,6,12,10,8,32,24,6,8,12,8,6,10,12];
-		var objstart=[0];
-		var objend=[perobjvec[0]-1];
-		for (var i=1; i<=perobjvec.length-1; i++){
-			objstart[i]=objend[i-1]+1;
-			objend[i]=objstart[i]+perobjvec[i]-1;
-		}
-	}
-
-	if (foldernum == 0 || foldernum == 1 || foldernum == 2 || foldernum == 3 || foldernum == 6 || foldernum == 7 || foldernum == 8 || foldernum == 9 || foldernum == 10 || foldernum == 12){
-		var cnt=0;
-		for (var i in trial.objectlist){
-			for (var j=0; j<=perobj-1; j++){
-				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
-				potentialImages.obj[cnt]=trial.objectlist[i];
-				cnt=cnt+1;
-			} //for j exemplars
-		} //for i objects
-	}
-
-	//only 90 images in hvm10 test set
-	if (foldernum == 11){
-		var cnt=0;
-		for (var i in trial.objectlist){
-			for (var j=0; j<=perobj-1-10; j++){
-				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
-				potentialImages.obj[cnt]=trial.objectlist[i];
-				cnt=cnt+1;
-			} //for j exemplars
-		} //for i objects
-	}
-
-	//only 80 images in coco train set
-	if (foldernum == 13){
-		var cnt=0;
-		for (var i in trial.objectlist){
-			for (var j=0; j<=perobj-1-20; j++){
-				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
-				potentialImages.obj[cnt]=trial.objectlist[i];
-				cnt=cnt+1;
-			} //for j exemplars
-		} //for i objects
-	}
-
-	//only 40 images in coco test set
-	if (foldernum == 14){
-		var cnt=0;
-		for (var i in trial.objectlist){
-			for (var j=0; j<=perobj-1-60; j++){
-				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
-				potentialImages.obj[cnt]=trial.objectlist[i];
-				cnt=cnt+1;
-			} //for j exemplars
-		} //for i objects
-	}
-
-	//only 80 images in coco,objectome train set
-	if (foldernum == 15){
-		var cnt=0;
-		for (var i in trial.objectlist){
-			for (var j=0; j<=perobj-1-20; j++){
-				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
-				potentialImages.obj[cnt]=trial.objectlist[i];
-				cnt=cnt+1;
-			} //for j exemplars
-		} //for i objects
-	}
-
-	// White button response images
-	if (foldernum == 16){
-		perobj = 1; // i.e. how many images are there per label 
-
-		var cnt=0;
-		for (var i in trial.objectlist){
-			for (var j=0; j<=perobj-1; j++){
-				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j; 
-				potentialImages.obj[cnt]=trial.objectlist[i];
-				cnt=cnt+1;
-			} //for j exemplars
-		} //for i objects
-	}
-	
-	// Black superformula shapes, discfaded with plain bg 
-	if (foldernum == 17){
-		perobj = 1; 
-
-		var cnt=0;
-
-		// Initially added objects 
-		for (var i in trial.objectlist){ 
-			for (var j=0; j<=perobj-1; j++){
-				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
-				potentialImages.obj[cnt]=trial.objectlist[i];
-				cnt=cnt+1;
-			} //for j exemplars
-		} //for i objects
-	}
-
-	// Black superformula shapes with position / rotation variation, discfaded with plain bg 10/21/2016
-	if (foldernum == 18){
-
-		perobj = 100; 
-
-		var cnt=0;
-
-		for (var i in trial.objectlist){ 
-			for (var j=0; j<=perobj-1; j++){
-				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
-				potentialImages.obj[cnt]=trial.objectlist[i];
-				cnt=cnt+1;
-			} //for j exemplars
-		} //for i objects
-	}
-
-	// Mutator response buttons, 12 total created on 10/21/2016
-	if (foldernum == 19){
-
-		perobj = 1; 
-
-		var cnt=0;
-
-		for (var i in trial.objectlist){ 
-			for (var j=0; j<=perobj-1; j++){
-				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
-				potentialImages.obj[cnt]=trial.objectlist[i];
-				cnt=cnt+1;
-			} //for j exemplars
-		} //for i objects
-	}
-
-	// Mutator objects with position / rotation variation, discfaded with plain bg; 12 objects * 100 images created 10/21/2016
-	if (foldernum == 20){
-
-		perobj = 100; 
-
-		var cnt=0;
-
-		for (var i in trial.objectlist){ 
-			for (var j=0; j<=perobj-1; j++){
-				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
-				potentialImages.obj[cnt]=trial.objectlist[i];
-				cnt=cnt+1;
-			} //for j exemplars
-		} //for i objects
-	}
-
-
-
-
-	if (foldernum == 4){
-		var cnt=0;
-		for (var i in trial.objectlist){
-			for (var j=0; j<=perobj-1; j++){
-				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
-				potentialImages.obj[cnt]=trial.objectlist[i];
-				cnt=cnt+1;
-			} //for j exemplars
-		} //for i objects
-	}
-
-	if (foldernum == 5){
-		var cnt=0;
-		for (var i in trial.objectlist){
-			for (var j=0; j<=perobjvec[trial.objectlist[i]]-1; j++){
-				potentialImages.serial[cnt]=objstart[trial.objectlist[i]]+j;
-				potentialImages.obj[cnt]=trial.objectlist[i];
-				cnt=cnt+1;
-			}
-		}
-	}
-
-	// Get images
-	var cnt=0;
-	for (var q=0; q<=potentialImages.serial.length-1; q++){
-		images.serial[cnt]=potentialImages.serial[q];
-		images.packserial[cnt]=images.packsz*Math.floor(potentialImages.serial[q]/images.packsz);
-		images.packpos[cnt] = potentialImages.serial[q] - images.packserial[cnt];
-		images.obj[cnt]=potentialImages.obj[q];
-		cnt=cnt+1;
-	}
-
-	// Get packs, assign images to packs
-	var isnewpack=1;
-	var packcnt = 0;
-	for (var q=0; q<=images.serial.length-1; q++){
-		isnewpack = 1;
-		for (var q2=0; q2<=imagesPack.packserial.length-1; q2++){
-			if (images.packserial[q] == imagesPack.packserial[q2]){
-				isnewpack=0;
-			}
-		}
-
-		if (isnewpack==1){
-			imagesPack.packserial[packcnt] = images.packserial[q];			
-			for (var q2=0; q2<=images.serial.length-1; q2++){
-				if (images.packserial[q2] == images.packserial[q]){
-					images.packpointer[q2] = packcnt;
-				}
-			}
-			packcnt = packcnt+1;
-		}
-	}
-
-	return {
-			images: images,
-			imagesPack: imagesPack
-		};
-}
-
 	function getTest(nway){
 		//draw category then draw images from that category
 		// randomly choose an image with that category (could also do a prototype)
-
 		// Generate cat list from sample images
 		var objectlist=[];
 		for (var i=0; i<=imagesSample.serial.length-1; i++){
@@ -1063,21 +709,17 @@ function getImageList(images,foldernum){
 				objectlist[objectlist.length]=imagesSample.obj[i]; //add category
 			}//if
 		}//for
-
 		// Shuffle wrt categories
 		if (objectlist.length > 1){
 			shuffleArray(objectlist);
 		}
-
 		//Take the first nway-1 categories
 		var testArrayObj=[];
 		for (var i=0; i<=nway-2; i++){
 			testArrayObj[i]=objectlist[i];
 		}
-
 		//Insert sample object at end position
 		testArrayObj[nway-1]=imagesSample.obj[trial.sample[trial.current]];
-
 		// Shuffle wrt array position
 		var shuffleind=[];
 		shuffleind[0]=nway;
@@ -1087,7 +729,6 @@ function getImageList(images,foldernum){
 		for (var i=0; i<=nway-1; i++){
 			testArrayObj_shuffleItems[shuffleind[i]] = testArrayObj[i];
 		}
-
 		// Shuffle wrt images in a category
 		var testArray=[];
 		objshuffled = testArrayObj_shuffleItems;
@@ -1104,14 +745,11 @@ function getImageList(images,foldernum){
 			}
 			testArray[i]=imlist[0];
 		}
-
 		return {
 				correctItem: correctItem,
 				testArray: testArray
 			};
 	}
-
-
 function setReward(){
 	var m = 0;
 	var b = 0;
@@ -1143,7 +781,6 @@ function setReward(){
 	} //piezoelectric 7mL/min (takasago)
 	trial.reward = (trial.rewardper1000 - b)/m/1000;
 }
-
 </script>
 </head>
 
@@ -1182,7 +819,6 @@ function setReward(){
 </dialog>
 
 <script>
-
 //================== INITIALIZE VARIABLES ==================//
 // Variables (general)
 	var subjectlist = ["sfn2016","Test","Kailyn","Oleo","Crypto","Mieke","Scipio","Manto","Picasso","Nano","Setta","Magneto","Zico"];
@@ -1226,7 +862,6 @@ function setReward(){
 		sequencepost: [0,5,6],
 		tsequencepost: [0,25,600],
 		buffered: 0,
-
 		headsupfraction: 1/3,
 		offsetleft: 0,
 		offsettop: 0,
@@ -1253,14 +888,12 @@ function setReward(){
 		pixLR: [],
 		scale: 1,
 	}; //filenames will be placed in imagesProto[idx].src
-
 	var imagesSampleOriginal = {
 		folder: "/MonkeyTurk/obj25/imagepacks/im",
 	}
 	var imagesTestOriginal = {
 		folder: "/MonkeyTurk/obj25/imagepacks/im",
 	}
-
 	var imagesSamplePack
 	var imagesTestPack
 	var frame = {
@@ -1287,7 +920,6 @@ function setReward(){
 	}
 	var datafiles=[];
 	var ndatafiles2read=5;
-
 // Variables (updatable through parameter file)
 	var env = {};
 	var trial = {
@@ -1298,8 +930,11 @@ function setReward(){
 	};
 	var trialhistory={
 		trainingstage: [],
+		automator_filepath: [], 
 		correct: [],
 		current: 0,
+		startingindex:-1,
+		pctcorrect:-1, 
 	}
 //================== INITIALIZE VARIABLES (end) ==================//
 </script>
@@ -1308,6 +943,7 @@ function setReward(){
 <script src="mkturkdropbox.js" type="text/javascript"></script>
 <script src="mkturkautomator.js" type="text/javascript"></script>
 <script src="mkturkble.js" type="text/javascript"></script>
+<script src="mkturkfoldernums.js" type="text/javascript"></script>
 
 <script>
 //================== AUTHENTICATE ==================//
@@ -1321,49 +957,35 @@ else {
 	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
 }
 //================== AUTHENTICATE (end) ==================//
-
-
 // Button callbacks
 document.querySelector("button[name=connectble]").addEventListener(
 	'touchend',findBLEDevice,false)
-
 document.querySelector("button[name=connectble]").addEventListener(
 	'mouseup',findBLEDevice,false)
-
 document.querySelector("button[name=noble]").addEventListener(
 	'touchend',skipBLEDevice,false)
-
 document.querySelector("button[name=noble]").addEventListener(
 	'mouseup',skipBLEDevice,false)
-
 document.querySelector("button[name=doneEditing]").addEventListener(
 	'touchend',doneEditing_listener,false)
-
 document.querySelector("button[name=doneEditing]").addEventListener(
 	'mouseup',doneEditing_listener,false)
-
 document.querySelector("button[name=doneTesting]").addEventListener(
 	'touchend',doneTesting_listener,false)
-
 document.querySelector("button[name=doneTesting]").addEventListener(
 	'mouseup',doneTesting_listener,false)
-
 var textobj = document.getElementById("headsuptext")
 textobj.addEventListener('touchend',headsuptext_listener,false)
 textobj.addEventListener('mouseup',headsuptext_listener,false)
-
-
 //================== Initialize Screen/Audio/Video ==================//
 	// Prevent window scrolling and bounce back effect
 	document.body.addEventListener('touchmove',function(event){
 		event.preventDefault();
 	}, false);
-
 	//Audio pulses for reward
 	var audiocontext = new (window.AudioContext || window.webkitAudioContext)();
 	var gainNode = audiocontext.createGain()
 	gainNode.connect(audiocontext.destination)
-
 	var devicePixelRatio = window.devicePixelRatio || 1;
 	var visiblecanvasobj = document.getElementById("canvas" + canvas.front);
 	var visiblecontext = visiblecanvasobj.getContext("2d");
@@ -1382,21 +1004,19 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	navigator.getMedia({video: true, audio: false},function(stream){
 		videoobj.src=window.URL.createObjectURL(stream);
 		videoobj.style.visibility = "hidden";
-	},function(err){console.log('problem starting video stream')});
-
+	},function(err){
+		console.log('Problem starting video stream.')
+	});
 	//Monitor Battery - from: http://www.w3.org/TR/battery-status/
 	navigator.getBattery().then(function(batteryobj){
 		battery.ldt[battery.current]=[batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())];
 		battery.current++;
-
 		batteryobj.addEventListener('levelchange',function(){
 			battery.ldt[battery.current]=[batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())];
 			battery.current++;
 		})
 	});
 //================== Initialize Screen/Audio/Video (end) ==================//
-
-
 //================== DMS TASK (synchronous FOR loop using GENERATOR) ==================//
 // issues for top-level code using async: https://github.com/tc39/ecmascript-asyncawait/issues/9
 (async function(){
@@ -1405,21 +1025,19 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	document.querySelector("button[name=connectble]").style.visibility = "visible"
 	document.querySelector("button[name=noble]").style.display = "block"
 	document.querySelector("button[name=noble]").style.visibility = "visible"
-
 	await connectBLEButtonPromise()
 	document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	document.querySelector("button[name=noble]").style.display = "none"
-
 	// GET PARAMFILE NAME
 	subjectdialog.showModal();
 	await subjidPromise();	
-
 	await getFileListDropbox2();
 	if (datafiles.length < ndatafiles2read){
 		ndatafiles2read = datafiles.length;
 	}
 	paramfile.name = paramfile.dir + trial.subjid + "_params.txt";
 	await readParametersfromDropbox2();
+
 
 	//================== USER CAN EDIT PARAMS ==================//
 	// ALLOW USER TO EDIT PARAMETERS BEFORE STARTING TASK (enter weight, change reward, etc)
@@ -1435,50 +1053,67 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	textobj.removeEventListener('touchend',headsuptext_listener)
 	textobj.removeEventListener('mouseup',headsuptext_listener)
 	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",false)
-
 	if (trial.need2writeParameters == 1){
 		paramfile.text = document.getElementById("headsuptext").innerHTML //get the new params
 		await writeParameterTexttoDropbox2() //write the new params
+		await readParametersfromDropbox2(); // then read them 
 	}
-	//================== USER CAN EDIT PARAMS (end) ==================//
 
+	// Initialize SR automator
+	if (trial.automator == "SR"){
+
+		// Automator sequence settings: 
+		var minpctcorrect_sequence;
+		var mintrials_sequence;
+		var sample_foldernum_sequence;
+		var objectlist_sequence;
+		var number_automator_stages; 
+
+		await readAutomatorFilefromDropbox2() // Load automator settings. 
+		updateSRTask() // Set trial.[stuff] based on automator's current stage.
+		await writeParameterstoDropbox2() // Write trial.[stuff] automator to disk (to params file)
+		await readParametersfromDropbox2(); // Then, just to be safe, read them from disk. 
+	}
+
+	//================== (end) USER CAN EDIT PARAMS ==================//
 	// show testing button
 	trial.savedata = 0
 	document.querySelector("button[name=doneTesting]").style.display = "block"
 	document.querySelector("button[name=doneTesting]").style.visibility = "visible"
-
 	// Read performance history
 	trial.currentAutomator = trial.automator;
 	for (i=0; i <= ndatafiles2read - 1; i++){
 		await readPerformanceHistoryfromDropbox2(ndatafiles2read - i - 1);
 	}
-
 	trial.automatorstagechange = 0
 	trial.need2loadParameters = 1;
 	trial.purge = 1
 	trial.need2loadImages = 1;
 	trial.need2writeParameters = 0;
-
 	//Load sounds
 	soundpromises = sounds.serial.map(loadSoundfromDropbox2); //create array of sound load Promises
 	await Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
-
 	ble.statustext=""
 	updateStatusText()
 
-for (trial.current=0; trial.current<10000; trial.current++){
 
+// =========================================================================================================== // 
+// ============ MAIN LOOP ==================================================================================== // 
+// =========================================================================================================== // 
+
+for (trial.current=0; trial.current<10000; trial.current++){
 //============ PARAMETER LOADING ============//
 if (trial.automatorstagechange == 1){
 	trial.need2loadParameters=1
 	trial.need2loadImages=1
 }
-
 if (trial.need2loadParameters == 1){
 	if (trial.automatorstagechange==0){
+		
 		await readParametersfromDropbox2();
+		
 	}
-	console.log(trial.objectlist)
+	console.log("Objects:"+trial.objectlist)
 	canvas.tsequence = [0,100,100+trial.sampleON,100+trial.sampleON+trial.sampleOFF]; //timing between frames
 	imagesSample.folderOriginal = "/MonkeyTurk/obj25/imagepacks" + trial.imageFolderSample + "/im";
 	imagesTest.folderOriginal = "/MonkeyTurk/obj25/imagepacks" + trial.imageFolderTest + "/im";
@@ -1487,26 +1122,22 @@ if (trial.need2loadParameters == 1){
 	imagesSample.scale = trial.sampleScale;
 	imagesTest.scale = trial.testScale;
 	setReward(); canvas.tsequencepost[2] = canvas.tsequencepost[1]+trial.reward*1000;
-
 	if (trial.objectgrid.length == trial.objectlist.length){
 		//use object grid
 		trial.testgrid = trial.testgrid.slice(0,trial.objectgrid.length)
 	}
-
 	if (trial.fixationmove==0){
 		trial.fixationinterval = 3000;
 	}
 	else {
 		trial.fixationinterval=trial.fixationmove;
 	}
-
 	if (env.species == "macaque" || env.species == "human"){
 		canvas.headsupfraction=0;
 	}
 	else if (env.species == "marmoset"){
 		canvas.headsupfraction=1/3-0.06;
 	}
-
 	setupCanvasHeadsUp()
 	windowWidth = window.innerWidth; // get true window dimensions at last moment
 	windowHeight = window.innerHeight;
@@ -1520,13 +1151,11 @@ if (trial.need2loadParameters == 1){
 		videoobj.visibility="visible"
 		videoobj.play();
 	}
-
 	for (i = 0; i <= canvas.punish; i++) {setupCanvas(i);}
 	if (devicePixelRatio !== 1){
 		scaleCanvasforHiDPI(canvas.sample);
 		scaleCanvasforHiDPI(canvas.test);
 	}
-
 	renderEyeFixation();
 	renderReward();
 	renderPhotoReward();
@@ -1535,7 +1164,6 @@ if (trial.need2loadParameters == 1){
 	trial.need2loadParameters = 0;
 	trial.purge = 1
 } //============ PARAMETER LOADING (end) ============//
-
 // Purge trial tracking variables & initialize data file
 if (trial.purge == 1){
 	//reset trial tracking variables
@@ -1556,31 +1184,25 @@ if (trial.purge == 1){
 	trial.correctItem=[];
 	trial.sampleblockidx=0;
 	trial.stickyresponse=0;
-
 	trial.consecutivehits=0;
 	trial.nreward=[];
 	trial.purge = 0
 }
-
-
 //============ IMAGE LOADING ============//
 if (trial.need2loadImages == 1){
 	// SELECT IMAGES
 		funcreturn = getImageList(imagesSample,trial.imageFolderSample);
 		imagesSample = funcreturn.images;
 		imagesSamplePack = funcreturn.imagesPack;
-
 		funcreturn = getImageList(imagesTest,trial.imageFolderTest);
 		imagesTest = funcreturn.images;
 		imagesTestPack = funcreturn.imagesPack;
 	// SELECT IMAGES (end)
-
 	// LOAD IMAGES
 		imageSamplepromises = imagesSamplePack.packserial.map(loadSampleImagefromDropbox2); //create array of image load Promises
 		await Promise.all(imageSamplepromises); //simultaneously evaluate array of image load promises
 		imageTestpromises = imagesTestPack.packserial.map(loadTestImagefromDropbox2); //create array of image load Promises
 		await Promise.all(imageTestpromises); //simultaneously evaluate array of image load promises
-
 		// pixel locations of image within pack
 		imageOriginalPromises = [
 			loadOriginalSampleImagefromDropbox2(0),
@@ -1591,7 +1213,6 @@ if (trial.need2loadImages == 1){
 		imagesSample.ht = imagesSampleOriginal[0].height
 		imagesTest.wd = imagesTestOriginal[0].width
 		imagesTest.ht = imagesTestOriginal[0].height
-
 		for (i = 0; i<= imagesSample.serial.length-1; i++){
 			imagesSample.pixLR[i] = [imagesSample.packpos[i] * imagesSample.wd, (imagesSample.packpos[i]+1) * imagesSample.wd - 1];
 		}
@@ -1599,7 +1220,6 @@ if (trial.need2loadImages == 1){
 			imagesTest.pixLR[i] = [imagesTest.packpos[i] * imagesTest.wd, (imagesTest.packpos[i]+1) * imagesTest.wd - 1];
 		}
 	// LOAD IMAGES (end)
-
 	// MAKE THE IMAGE DISPLAY GRID (3x3)
 	var cnt=0;
 	for (var i=1; i<=3; i++){
@@ -1609,7 +1229,6 @@ if (trial.need2loadImages == 1){
 			cnt++;
 		}
 	}
-
 	//center x & y grid within canvas
 	var dx = (document.body.clientWidth - canvas.offsetleft)*devicePixelRatio/2/canvasScale - xgrid[4]*imagesSample.wd*imagesSample.scale/canvasScale;
 	var dy = (document.body.clientHeight - canvas.offsettop)*devicePixelRatio/2/canvasScale - ygrid[4]*imagesSample.ht*imagesSample.scale/canvasScale;
@@ -1625,9 +1244,9 @@ if (trial.need2loadImages == 1){
 	renderPunish();
 	renderBlank();
 	trial.need2loadImages = 0;
-} //============ IMAGE LOADING (end) ============//
+} 
+//============ (end) IMAGE LOADING  ============//
 trial.automatorstagechange=0
-
 //============ CHOOSE SAMPLE & TEST ============//
 	if (trial.sampleblockidx == 0){
 		trial.sample[trial.current] = Math.floor((imagesSample.serial.length)*Math.random());
@@ -1636,12 +1255,9 @@ trial.automatorstagechange=0
 		trial.sample[trial.current] = trial.sample[trial.current-1];
 	} //keep same sample
 	trial.sampleblockidx++;
-
 	if (trial.sampleblockidx > trial.sampleblocksize-1){
 		trial.sampleblockidx = 0;
 	} //reset
-
-
 	//CHOOSE TEST
 	funcreturn=getTest(trial.nway);
 	if (trial.stickyresponse >= trial.nstickyresponse){
@@ -1651,7 +1267,6 @@ trial.automatorstagechange=0
 	}
 	trial.test[trial.current]=funcreturn.testArray;
 	trial.correctItem[trial.current]=funcreturn.correctItem;
-
 	//GET IMAGE SERIALS
 	trial.sampleserial[trial.current]=imagesSample.serial[trial.sample[trial.current]];
 	var testserial=[];
@@ -1660,12 +1275,10 @@ trial.automatorstagechange=0
 	}
 	trial.testserial[trial.current]=testserial;
 //============ CHOOSE SAMPLE & TEST (end) ============//
-
 //============ FIXATION SCREEN ============//
 canvas.buffered=0;
 if (trial.fixationdur <= 0){
 	bufferTrialImages()
-
 	trial.waitingforFixation=0
 	trial.fixationgrid[trial.current]=-1;
 	trial.tstart[trial.current]=Math.round(performance.now());
@@ -1675,7 +1288,6 @@ else if (trial.fixationdur > 0){
 	trial.waitingforFixation=1;
 }
 while (trial.waitingforFixation==1){
-
 	// CHOOSE FIXATION, SAMPLE, TEST
 			//CHOOSE FIXATION
 	if (trial.fixationmove > 0){
@@ -1689,7 +1301,6 @@ while (trial.waitingforFixation==1){
 			trial.fixationgrid[trial.current]=5;
 		}
 	}
-
 	//FIXATION
 	trial.stage=0;
 	if (trial.takephoto==1){
@@ -1697,11 +1308,9 @@ while (trial.waitingforFixation==1){
 	}
 	//buffer fixation, sample & test
 	renderTouchFixation();
-
 	if (canvas.buffered == 0){
 		bufferTrialImages();
 	}
-
 	//fixation
 	trial.tstart[trial.current]=Math.round(performance.now());
 	frame.shown=[];
@@ -1712,16 +1321,12 @@ while (trial.waitingforFixation==1){
 	await displayTrial(canvas.sequencepre,canvas.tsequencepre);
 	audiocontext.suspend()
 	await fixationPromise();
-
-
 	for (var q in canvas.sequenceblank){frame.shown[q]=0}; frame.current=0;
 	if (trial.waitingforFixation==1){
 		await displayTrial(canvas.sequenceblank,canvas.tsequenceblank);
 	}
-
 } //while waiting for fixation
 //============ FIXATION SCREEN (end) ============//
-
 	//============ SAMPLE & TEST SCREEN ============//
 	trial.stage=1;
 	// sample & test
@@ -1737,11 +1342,9 @@ while (trial.waitingforFixation==1){
 	trial.waitingforResponse=0;
 	}
 	//============ SAMPLE & TEST SCREEN (end) ============//
-
 	if (trial.takephoto==1){
 	takephoto2(trial.current,trial.stage); //after fixation
 	}
-
 	//============ REWARD/PUNISH ============//
 	trial.stage=2;
 			// reward || punish
@@ -1768,14 +1371,10 @@ while (trial.waitingforFixation==1){
 			canvas.sequencepost[1]=canvas.photoreward;
 			canvas.sequencepost[2]=canvas.reward;
 			canvas.tsequencepost[2] = canvas.tsequencepost[1]+trial.reward*1000;
-
 	// var dt = 17;
 	// canvas.tsequencepost=[100,100+1*dt,100+2*dt,100+3*dt,100+4*dt,100+5*dt,100+6*dt,100+7*dt,100+8*dt,100+9*dt,100+10*dt,100+11*dt,100+12*dt,100+13*dt,100+14*dt,100+15*dt,100+16*dt,100+17*dt,100+18*dt,100+19*dt,100+20*dt];
 	// canvas.sequencepost=[0,4,0,4,0,4,0,4,0,4,0,4,0,4,0,4,0,4,0,4,0];
-
 			console.log('correct')
-
-
 		} //reward
 		else {
 			canvas.sequencepost[1]=canvas.punish;
@@ -1783,7 +1382,6 @@ while (trial.waitingforFixation==1){
 			canvas.tsequencepost[2] = trial.punish;
 			console.log('WRONG!')
 		}//punish
-
 		if (trial.current>0){
 			if (trial.response[trial.current]==trial.response[trial.current-1]){
 				trial.stickyresponse++;
@@ -1793,7 +1391,6 @@ while (trial.waitingforFixation==1){
 			}
 		}//stuck responding to same side
 	} //reward DMS
-
 	//Calculate number of rewards to give
 	if (trial.response[trial.current] == trial.correctItem[trial.current] && 
 		(trial.current==0 || 
@@ -1803,9 +1400,7 @@ while (trial.waitingforFixation==1){
 			trial.xytresponse[trial.current][2] - trial.xytresponse[trial.current-1][2] < trial.consecutivehitsITI))){
 			
 			trial.consecutivehits++
-
 			trial.nreward[trial.current] = 1 + Math.floor(trial.consecutivehits / trial.nconsecutivehitsforbonus)
-
 		if (trial.nreward[trial.current] > trial.nrewardmax){
 			trial.nreward[trial.current] = trial.nrewardmax
 		}
@@ -1820,13 +1415,10 @@ while (trial.waitingforFixation==1){
 			trial.nreward[trial.current] = 0;
 		}	
 	}
-
 	console.log('nhits ' + trial.consecutivehits + '  nreward ' + trial.nreward[trial.current])
-
 	// if (trial.takephoto==1){
 	// 	takephoto2(trial.current,trial.stage); //before reward delivery
 	// }
-
 	// Deliver reward or punish
 	frame.shown=[];
 	for (var q in canvas.sequencepost){frame.shown[q]=0}; frame.current=0;
@@ -1834,7 +1426,7 @@ while (trial.waitingforFixation==1){
 		for (var q = 0; q <= trial.nreward[trial.current]-1; q++){
 			frame.shown=[];
 			for (var q2 in canvas.sequencepost){frame.shown[q2]=0}; frame.current=0;
-			playSound(2);
+			playSound(2); 
 			var p1 = displayTrial(canvas.sequencepost,canvas.tsequencepost)
 			if (ble.connected == false){
 				await Promise.all([p1])
@@ -1844,11 +1436,12 @@ while (trial.waitingforFixation==1){
 				await Promise.all([p1, p2])
 			}
 		}
-	} // play reward sound
+	} 
 	if (canvas.sequencepost[1]==canvas.photoreward && (env.species == 'macaque' || env.species == "human")){
 		for (var q = 0; q <= trial.nreward[trial.current]-1; q++){
 			frame.shown=[];
 			for (var q2 in canvas.sequencepost){frame.shown[q2]=0}; frame.current=0;
+			playSound(2);
 			var p1 = displayTrial(canvas.sequencepost,canvas.tsequencepost)
 			var p2 = dispenseReward()
 			if (ble.connected == false){
@@ -1868,45 +1461,22 @@ while (trial.waitingforFixation==1){
 		await dispensePunish();
 	}
 //============ REWARD/PUNISH (end) ============//
-
 	trial.stage=3;
 	if (trial.takephoto==1){
 		takephoto2(trial.current,trial.stage); //after reward or punish
 	}
+		
+	if (trial.automator != 0){	
+		trialhistory.trainingstage[trialhistory.current] = trial.currentAutomatorStage;
+		trialhistory.automator_filepath[trialhistory.current] = trial.automatorFilePath
+		trial["currentAutomatorStage"]=trialhistory.trainingstage[trialhistory.current];
 
-		//update the running trial history
-		if (trial.current == 0){
-
-			if (trial.automator == 0){
-			}
-			else if (trial.automator == 1){
-				funcreturn = updateTask1("readtaskstageonly");
-				trialhistory.trainingstage[trialhistory.current] = funcreturn;
-				trial["currentAutomatorStage"]=trialhistory.trainingstage[trialhistory.current];
-			}
-			else if (trial.automator == 2){
-				funcreturn = updateTask2("readtaskstageonly");
-				trialhistory.trainingstage[trialhistory.current] = funcreturn;
-				trial["currentAutomatorStage"]=trialhistory.trainingstage[trialhistory.current];
-			}
-			else if (trial.automator == 3){
-				funcreturn = updateTask3("readtaskstageonly");
-				trialhistory.trainingstage[trialhistory.current] = funcreturn;
-				trial["currentAutomatorStage"]=trialhistory.trainingstage[trialhistory.current];
-			}
-			else if (trial.automator == "SR"){
-				funcreturn = updateSRTask("readtaskstageonly");
-				trialhistory.trainingstage[trialhistory.current] = funcreturn;
-				trial["currentAutomatorStage"]=trialhistory.trainingstage[trialhistory.current];
-			}
-		}
 		if (trial.rewardStage==0 & trial.brokeFixation==0){
-			trialhistory.correct[trialhistory.current]=1;
+		trialhistory.correct[trialhistory.current]=1;
 		}
 		else if (trial.rewardStage==0 & trial.brokeFixation==1){
 			trialhistory.correct[trialhistory.current]=0;
 		}
-
 		if (trial.rewardStage==1 & trial.response[trial.current] == trial.correctItem[trial.current]){
 				trialhistory.correct[trialhistory.current]=1;
 		}
@@ -1914,17 +1484,16 @@ while (trial.waitingforFixation==1){
 			trialhistory.correct[trialhistory.current]=0;
 		}
 		trialhistory.current++;
+	}
 
+		
 		console.log('ready to write data')
-
 		//save data
 		if (trial.savedata == 1 && trial.purge == 0){ //wait for next purge before saving
 			writeDatatoDropbox2(); //async - no need to wait for data to write			
 		}
 		updateHeadsUpDisplay(); // async
-
 		console.log('end of generator iteration' + trial.current);			
-
 // Check if automator needs to update task
 	if (trial.automator != 0){
 		//Check if subject met criteria to move to next stage
@@ -1946,49 +1515,35 @@ while (trial.waitingforFixation==1){
 			writeParameterstoDropbox2(); // async updating of parameter file, automated task flow continues even if parameter file gets updated later
 		}
 	}
-
 	// check if new day
 	var newdate = new Date;
 	if ( (new Date).getDate() != currdate.getDate())
 	{
 		trial.need2loadParameters = 1
 	}
-
-
 	if (trial.need2loadParameters == 0){
 		// Asynchronously check if parameter file was changed by experimenter
 		checkParameterFileStatus2()
 	}
-
 	}
 	console.log('end of generator for loop');
 })(); //async
 // }) //spawn
-
 </script>
 </body>
 
 <!-- ************ COMMENT SECTION ************ -->
 <!-- This code uses generators & promises from ESM6 harmony to implement a state machine.  This is experimental and only supported on modern browsers (see http://caniuse.com/#feat=promises for full support).
-
 The reasons for using this approach are twofold:
-
 (1) Solving the inversion of control with the old way of using async callbacks in javascript (http://blog.getify.com/promises-part-2/)
 (2) readability of the code (http://davidwalsh.name/async-generators)
-
 ->(1) makes exception handling much easier
 ->(2) makes the code easier to edit in the future:
 		"The main strength of generators is that they provide a single-threaded, synchronous-looking code style, while allowing you to hide the asynchronicity away as an implementation detail. This lets us express in a very natural way what the flow of our program's steps/statements is without simultaneously having to navigate asynchronous syntax and gotchas."
-
 As of 2014.12.01, generators are not supported in safari and not in iOS (even Chrome for iOS is limited to apple webkit).  Could transpile but better to use a native Chrome environment (i.e. android tablet).
-
-
 // Load audio webkit, see http://middleearmedia.com/controlling-web-audio-api-oscillators/
 // var audiocontext = new webkitAudioContext(); // Create audio container with webkit prefix
-
 // In case you're wondering why you can't use the devicePixelRatio to determine the backing store size, the answer is that they aren't guaranteed to match. Despite presenting the same devicePixelRatio value, Chrome and Safari 6 can and do have entirely different approaches for the backing store size (and therefore the webkitBackingStorePixelRatio) on HiDPI devices. The net result is that we can't rely on devicePixelRatio to know how the browser is going to scale images that are written into the canvas.  http://www.html5rocks.com/en/tutorials/canvas/hidpi/
-
-
 -->
 <!-- ************ /COMMENT SECTION ************ -->
 
