@@ -476,8 +476,10 @@ function updateHeadsUpDisplay(){
 			// // 	resolve(1);
 			// // }
 			var currentTime=audiocontext.currentTime;
-			//oscillator.start(currentTime);
-			//oscillator.stop(currentTime + trial.reward);
+
+
+			oscillator.start(currentTime);
+			oscillator.stop(currentTime + trial.reward);
 			setTimeout(function(){console.log('sound done'); resolve(1);},trial.reward*1000);
 		}).then();
 	}
@@ -819,7 +821,7 @@ function setReward(){
 <script>
 //================== INITIALIZE VARIABLES ==================//
 // Variables (general)
-	var subjectlist = ["Test","Crypto"];
+	var subjectlist = ["sfn2016","Test","Kailyn","Oleo","Crypto","Mieke","Scipio","Manto","Picasso","Nano","Setta","Magneto","Zico"];
 	var subjectdialog = document.getElementById("subjid_dialog");
 	var subjectlistobj = document.getElementById("subjid_list");
 	//populate list
@@ -1003,7 +1005,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 		videoobj.src=window.URL.createObjectURL(stream);
 		videoobj.style.visibility = "hidden";
 	},function(err){
-		//console.log('problem starting video stream')
+		console.log('Problem starting video stream.')
 	});
 	//Monitor Battery - from: http://www.w3.org/TR/battery-status/
 	navigator.getBattery().then(function(batteryobj){
@@ -1057,21 +1059,20 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 		await readParametersfromDropbox2(); // then read them 
 	}
 
-	// Initialize automator
+	// Initialize SR automator
 	if (trial.automator == "SR"){
+
+		// Automator sequence settings: 
 		var minpctcorrect_sequence;
 		var mintrials_sequence;
 		var sample_foldernum_sequence;
 		var objectlist_sequence;
-		var number_automator_stages; // length of sequence 
+		var number_automator_stages; 
 
-		console.log('Trial imagefoldersample before is:'+trial.imageFolderSample)
-		await readAutomatorFilefromDropbox2()
-		updateSRTask("force_update")
-		console.log('Trial imagefoldersample is now:'+trial.imageFolderSample)
-		await writeParameterstoDropbox2() //write the new params
-		await readParametersfromDropbox2(); // then read them 
-		console.log('Trial imagefoldersample is now after loading:'+trial.imageFolderSample)
+		await readAutomatorFilefromDropbox2() // Load automator settings. 
+		updateSRTask() // Set trial.[stuff] based on automator's current stage.
+		await writeParameterstoDropbox2() // Write trial.[stuff] automator to disk (to params file)
+		await readParametersfromDropbox2(); // Then, just to be safe, read them from disk. 
 	}
 
 	//================== (end) USER CAN EDIT PARAMS ==================//
@@ -1425,7 +1426,7 @@ while (trial.waitingforFixation==1){
 		for (var q = 0; q <= trial.nreward[trial.current]-1; q++){
 			frame.shown=[];
 			for (var q2 in canvas.sequencepost){frame.shown[q2]=0}; frame.current=0;
-			playSound(2);
+			playSound(2); 
 			var p1 = displayTrial(canvas.sequencepost,canvas.tsequencepost)
 			if (ble.connected == false){
 				await Promise.all([p1])
@@ -1435,7 +1436,7 @@ while (trial.waitingforFixation==1){
 				await Promise.all([p1, p2])
 			}
 		}
-	} // play reward sound
+	} 
 	if (canvas.sequencepost[1]==canvas.photoreward && (env.species == 'macaque' || env.species == "human")){
 		for (var q = 0; q <= trial.nreward[trial.current]-1; q++){
 			frame.shown=[];
@@ -1465,7 +1466,7 @@ while (trial.waitingforFixation==1){
 		takephoto2(trial.current,trial.stage); //after reward or punish
 	}
 		
-	if (trial.automator == "SR"){	
+	if (trial.automator != 0){	
 		trialhistory.trainingstage[trialhistory.current] = trial.currentAutomatorStage;
 		trialhistory.automator_filepath[trialhistory.current] = trial.automatorFilePath
 		trial["currentAutomatorStage"]=trialhistory.trainingstage[trialhistory.current];

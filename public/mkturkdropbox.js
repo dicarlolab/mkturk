@@ -288,7 +288,7 @@ function loadSampleImagefromDropbox2(src,idx){
 			imagesSamplePack[curridx+idx].src = window.URL.createObjectURL(data.fileBlob)
 
 			imagesSamplePack[curridx+idx].onload = function(){
-				//console.log('loaded image' + (curridx+idx));
+				console.log('loaded image' + (curridx+idx));
 
 				renderBlank();
 				var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
@@ -313,7 +313,7 @@ function loadTestImagefromDropbox2(src,idx){
 			imagesTestPack[curridx+idx].src = window.URL.createObjectURL(data.fileBlob)
 
 			imagesTestPack[curridx+idx].onload = function(){
-				//console.log('loaded image' + (curridx+idx));
+				console.log('loaded image' + (curridx+idx));
 
 				renderBlank();
 				var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
@@ -601,4 +601,4 @@ function takephoto2(currtrial,currstage){
 		// reader.readAsArrayBuffer(blob)
 	},'image/png')
 }
-//================== WRITE IMAGE (end) ==================//
+//================== (end) WRITE IMAGE  ==================//
