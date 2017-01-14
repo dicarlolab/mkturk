@@ -263,6 +263,45 @@ function getImageList(images,foldernum){
 		} //for i objects
 	}
 
+	// varB bg Batch0 objects, 16 objects * 200 images created 1/12/2017
+	if (foldernum == 29){
+		perobj = 200; 
+		var cnt=0;
+		for (var i in trial.objectlist){ 
+			for (var j=0; j<=perobj-1; j++){
+				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
+				potentialImages.obj[cnt]=trial.objectlist[i];
+				cnt=cnt+1;
+			} //for j exemplars
+		} //for i objects
+	}
+	
+	// holdout varB bg Batch0 objects, 16 objects * 200 images created 1/12/2017
+	if (foldernum == 30){
+		perobj = 200; 
+		var cnt=0;
+		for (var i in trial.objectlist){ 
+			for (var j=0; j<=perobj-1; j++){
+				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
+				potentialImages.obj[cnt]=trial.objectlist[i];
+				cnt=cnt+1;
+			} //for j exemplars
+		} //for i objects
+	}
+
+	// holdout 2, varB bg Batch0 objects, 16 objects * 200 images created 1/12/2017
+	if (foldernum == 31){
+		perobj = 200; 
+		var cnt=0;
+		for (var i in trial.objectlist){ 
+			for (var j=0; j<=perobj-1; j++){
+				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
+				potentialImages.obj[cnt]=trial.objectlist[i];
+				cnt=cnt+1;
+			} //for j exemplars
+		} //for i objects
+	}
+
 	if (foldernum == 4){
 		var cnt=0;
 		for (var i in trial.objectlist){
