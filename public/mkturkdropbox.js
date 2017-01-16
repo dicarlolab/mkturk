@@ -1,5 +1,14 @@
-var DBX_CLIENT_ID = "c704p4lo4g3op39"
-var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/tnra0lpcs5uvy54/debugging_mkturk/public/mkturk.html"
+// Mkturk
+var DBX_CLIENT_ID = "2m9hmv7q45kwren"
+var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/mkturk.html"
+
+// E. Issa Nightly
+var DBX_CLIENT_ID = "3rd6bco8cdmcadz"
+var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/nightly/public/mkturk.html"
+
+// // M. Lee Nightly
+// var DBX_CLIENT_ID = "c704p4lo4g3op39"
+// var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/tnra0lpcs5uvy54/debugging_mkturk/public/mkturk.html"
 
 //return whether user was redirected here after authenticating
 function isAuthenticated(){
@@ -90,14 +99,17 @@ function readParametersfromDropbox2(){
 			env["pump"] = paramfile.data[0].Pump;
 			trial["objectlist"] = paramfile.data[0].TestedObjects;
 			trial["nway"] = paramfile.data[0].Nway;
+			trial["ngridpoints"] = paramfile.data[0].NGridPoints;
+			trial["gridscale"] = paramfile.data[0].GridScale;
+			trial["fixationgridindex"] = paramfile.data[0].FixationGridIndex;
 			trial["samplegrid"] = paramfile.data[0].SampleGridIndex;
 			trial["testgrid"] = paramfile.data[0].TestGridIndex;
 			trial["objectgrid"] = paramfile.data[0].ObjectGridIndex; 
 			trial["rewardStage"] = paramfile.data[0].RewardStage;
 			trial["rewardper1000"] = paramfile.data[0].RewardPer1000Trials;
 			trial["punish"] = paramfile.data[0].PunishTimeOut;
+			trial["fixedratio"] = paramfile.data[0].FixedRatio;
 			trial["fixationdur"] = paramfile.data[0].FixationDuration;
-			trial["fixationradius"] = paramfile.data[0].FixationRadius;
 			trial["fixationmove"] = paramfile.data[0].FixationMove;
 			trial["sampleON"] = paramfile.data[0].SampleON;
 			trial["sampleOFF"] = paramfile.data[0].SampleOFF;
@@ -108,8 +120,10 @@ function readParametersfromDropbox2(){
 			trial["consecutivehitsITI"] = paramfile.data[0].ConsecutiveHitsITI;
 			trial["nconsecutivehitsforbonus"] = paramfile.data[0].NConsecutiveHitsforBonus;
 			trial["nrewardmax"] = paramfile.data[0].NRewardMax;
+			trial["fixationusessample"] = paramfile.data[0].FixationUsesSample;
 			trial["imageFolderSample"] = paramfile.data[0].ImageFolderSample;
 			trial["imageFolderTest"] = paramfile.data[0].ImageFolderTest;
+			trial["fixationScale"] = paramfile.data[0].FixationScale;
 			trial["sampleScale"] = paramfile.data[0].SampleScale;
 			trial["testScale"] = paramfile.data[0].TestScale;
 			trial["automator"] = paramfile.data[0].Automator;
@@ -134,12 +148,6 @@ function readAutomatorFilefromDropbox2(){
 		var reader = new FileReader()
 		reader.onload = function(e){
 			var data = JSON.parse(reader.result)
-
-			// Set parameters
-			//var minpctcorrect_sequence = []
-			//var mintrials_sequence = []
-			//var sample_foldernum_sequence = []
-			//var objectlist_sequence = []
 
 			minpctcorrect_sequence = data[0].PercentCorrectCriterion;
 			mintrials_sequence = data[0].MinimumTrialsCriterion;
@@ -402,6 +410,7 @@ async function writeDatatoDropbox2() {
 	    	SampleGridIndex: trial.samplegrid,
 	    	TestGridIndex: trial.testgrid,
 	    	ObjectGridIndex: trial.objectgrid, 
+	    	FixationUsesSample: trial.fixationusessample,
 	    	ImageFolderSample: trial.imageFolderSample,
 	    	ImageFolderTest: trial.imageFolderTest,
 	    	RewardStage: trial.rewardStage,
@@ -409,6 +418,7 @@ async function writeDatatoDropbox2() {
 	    	RewardDuration: trial.reward,
 	    	PunishTimeOut: trial.punish,
 	    	FixationDuration: trial.fixationdur,
+	    	FixedRatio: trial.fixedratio,
 	    	FixationRadius: trial.fixationradius,
 	    	FixationMove: trial.fixationmove,
 	    	SampleON: trial.sampleON,
@@ -455,6 +465,7 @@ async function writeDatatoDropbox2() {
 	    	CorrectItem: trial.correctItem,
 	    	StartTime: trial.tstart,
 	    	FixationXYT: trial.xytfixation,
+	    	AllFixationXYT: trial.allxytfixation,
 	    	ResponseXYT: trial.xytresponse,
 	    	BatteryLDT: battery.ldt,
 	    	NReward: trial.nreward,
@@ -516,6 +527,9 @@ async function writeParameterstoDropbox2() {
 	    	Pump: env.pump,
 	    	TestedObjects: trial.objectlist,
 	    	Nway: trial.nway,
+	    	NGridPoints: trial.ngridpoints,
+	    	GridScale: trial.gridscale,
+	    	FixationGridIndex: trial.fixationgridindex,
 	    	SampleGridIndex: trial.samplegrid,
 	    	TestGridIndex: trial.testgrid,
 	    	ObjectGridIndex: trial.objectgrid, 
@@ -523,7 +537,7 @@ async function writeParameterstoDropbox2() {
 	    	RewardPer1000Trials: trial.rewardper1000,
 	    	PunishTimeOut: trial.punish,
 	    	FixationDuration: trial.fixationdur,
-	    	FixationRadius: trial.fixationradius,
+	    	FixedRatio: trial.fixedratio,
 	    	FixationMove: trial.fixationmove,
 	    	SampleON: trial.sampleON,
 	    	SampleOFF: trial.sampleOFF,
@@ -533,15 +547,16 @@ async function writeParameterstoDropbox2() {
 	    	NStickyResponse: trial.nstickyresponse,
 			ConsecutiveHitsITI: trial.consecutivehitsITI,
 			NConsecutiveHitsforBonus: trial.nconsecutivehitsforbonus,
-			NRewardMax: trial.nrewardmax,	    	    	
+			NRewardMax: trial.nrewardmax,
+			FixationUsesSample: trial.fixationusessample,
 	    	ImageFolderSample: trial.imageFolderSample,
 	    	ImageFolderTest: trial.imageFolderTest,
+	    	FixationScale: trial.fixationScale,
 	    	SampleScale: trial.sampleScale,
 	    	TestScale: trial.testScale,
 	    	Automator: trial.automator,
 	    	CurrentAutomatorStage: trial.currentAutomatorStage, 
 	    	AutomatorFilePath: trial.automatorFilePath
-	    	// RewardDuration: trial.reward,
 	    });
 	    datastr = JSON.stringify(dataobj);
 
