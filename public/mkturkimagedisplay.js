@@ -124,7 +124,7 @@ function bufferTrialImages(){
 		context.fillStyle="#7F7F7F";
 		context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
 
-		boundingBoxesFixation = renderCanvas(canvas.touchfix,[trial.sample[trial.current]],true,trial.fixationgrid[trial.current],trial.fixationScale);
+		boundingBoxesFixation = renderCanvas(canvas.touchfix,[trial.sample[trial.current]],true,[trial.fixationgrid[trial.current]],trial.fixationScale);
 	}
 
 	//Sample Canvas
@@ -133,7 +133,7 @@ function bufferTrialImages(){
 	context.fillStyle="#7F7F7F";
 	context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
 
-	renderCanvas(canvas.sample,[trial.sample[trial.current]],true,trial.samplegrid,trial.sampleScale);
+	renderCanvas(canvas.sample,[trial.sample[trial.current]],true,[trial.samplegrid],trial.sampleScale);
 	
 	//Test Canvas
 	var canvasobj=document.getElementById("canvas"+canvas.test); // Gray out before buffering test
@@ -142,7 +142,7 @@ function bufferTrialImages(){
 	context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
 
 	if (trial.keepSampleON==1){
-		renderCanvas(canvas.test,[trial.sample[trial.current]],true,trial.samplegrid,trial.sampleScale);
+		renderCanvas(canvas.test,[trial.sample[trial.current]],true,[trial.samplegrid],trial.sampleScale);
 	}
 
 	//** SR
@@ -264,7 +264,7 @@ function renderReward(){
 	var context=canvasobj.getContext('2d');
 	context.fillStyle="green";
 	context.fillRect(xgridcent[4]-200,ygridcent[4]-200,400,400);
-	if (env.species == 'marmoset'){
+	if (trial.species == 'marmoset'){
 		context.fillStyle="black";
 		context.fillRect(0,0,canvasobj.width,100);
 	}
@@ -274,7 +274,7 @@ function renderPhotoReward(){
 	var context=canvasobj.getContext('2d');
 	context.fillStyle="green";
 	context.fillRect(xgridcent[4]-200,ygridcent[4]-200,400,400);
-	if (env.species == 'marmoset'){
+	if (trial.species == 'marmoset'){
 		context.fillStyle="white";
 		context.fillRect(0,0,canvasobj.width,100);
 	}
@@ -300,10 +300,10 @@ function renderTouchFixation(){
 	context.beginPath();
 	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
 
-	if (env.species == "macaque" || env.species == "human"){
+	if (trial.species == "macaque" || trial.species == "human"){
 		context.fillStyle="white";
 	}
-	else if (env.species == "marmoset"){
+	else if (trial.species == "marmoset"){
 		context.fillStyle="blue";
 	}
 

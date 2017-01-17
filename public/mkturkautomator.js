@@ -1,3 +1,6 @@
+// ***NOTE****
+// Add list of automator controlled params to mkturkparams.js
+
 //============== UPDATESRTASK ============== UPDATESRTASK ============== UPDATESRTASK ============ //
 function updateSRTask(writestr){
 
@@ -10,10 +13,10 @@ function updateSRTask(writestr){
 //============== 1-DEFINE TRAINING PHASES ================//
 	function touch(mintrials){
 		var vals = {
-		stagename: 'touch',  // todo: log stagename as a meta field for each trial
+		currentAutomatorStageName: 'touch',  // todo: log stagename as a meta field for each trial
 		rewardStage: 0,
 		fixationmove: 0, 
-		fixationradius: 120,
+		fixationScale: 1,
 		sampleON: 200, 
 		keepSampleON: 0, 
 		samplegrid: 4, 
@@ -31,10 +34,10 @@ function updateSRTask(writestr){
 	}
 
 	function movingtouch(mintrials){
-		var vals = {stagename: 'movingtouch', 
+		var vals = {currentAutomatorStageName: 'movingtouch', 
 		rewardStage: 0,
 		fixationmove: 3000, // 
-		fixationradius: 120,
+		fixationScale: 1,
 		sampleON: 200, // ms - how long does the sample image stay on
 		keepSampleON: 0, // Bool - keep it on forever?
 		samplegrid: 4, // index of sample in a 3x3, down-right indexed grid starting at 1
@@ -54,10 +57,10 @@ function updateSRTask(writestr){
 	function nodistractorSR(mintrials, objectlist){
 			// } = [0, 1]){
 		var vals = {
-		stagename: 'nodistractorSR', 
+		currentAutomatorStageName: 'nodistractorSR', 
 		rewardStage: 1,
 		fixationmove: 0, // 
-		fixationradius: 120,
+		fixationScale: 1,
 		sampleON: 200, // ms - how long does the sample image stay on
 		keepSampleON: 1, // Bool - keep it on forever?
 		samplegrid: 4, // index of sample in a 3x3, down-right indexed grid starting at 1
@@ -77,10 +80,10 @@ function updateSRTask(writestr){
 	function spatialSR(mintrials, nway, objectlist){
 		// nway = 1, objectlist = [0, 1]){
 		var vals = {
-		stagename: 'spatialSR'+nway.toString()+'ways', 
+		currentAutomatorStageName: 'spatialSR'+nway.toString()+'ways', 
 		rewardStage: 1,
 		fixationmove: 0, // 
-		fixationradius: 120,
+		fixationScale: 1,
 		sampleON: 200, // ms - how long does the sample image stay on
 		keepSampleON: 1, // Bool - keep it on forever?
 		samplegrid: 4, // index of sample in a 3x3, down-right indexed grid starting at 1
@@ -100,10 +103,10 @@ function updateSRTask(writestr){
 	function delaySR(mintrials,nway,objectlist){
 	// nway = 2, objectlist = [0,1]){
 		var vals = {
-		stagename: 'delaySR_2way'+nway.toString()+'ways', 
+		currentAutomatorStageName: 'delaySR_2way'+nway.toString()+'ways', 
 		rewardStage: 1,
 		fixationmove: 0, 
-		fixationradius: 120,
+		fixationScale: 1,
 		sampleON: 500, 
 		keepSampleON: 0, 
 		samplegrid: 4, 
@@ -125,10 +128,10 @@ function updateSRTask(writestr){
 	// C = criterion performance [0, 100]
 		var nway = objectlist.length
 		var vals = {
-		stagename: 'SR'+nway.toString()+'ways', 
+		currentAutomatorStageName: 'SR'+nway.toString()+'ways', 
 		rewardStage: 1,
 		fixationmove: 0, 
-		fixationradius: 60,
+		fixationScale: 0.5,
 		sampleON: 100, 
 		keepSampleON: 0, 
 		samplegrid: 4, 
@@ -177,10 +180,10 @@ function updateSRTask(writestr){
 
 
 	var trainingstages = {
-		stagename: [],
+		currentAutomatorStageName: [],
 		rewardStage: [],
 		fixationmove: [],
-		fixationradius: [],
+		fixationScale: [],
 		sampleON: [],
 		keepSampleON: [],
 		samplegrid: [],
@@ -196,22 +199,12 @@ function updateSRTask(writestr){
 	}
 	
 	for (var i=0; i<=phase_sequence.length-1; i++){
-		trainingstages.stagename[i]=trainingstages[i].stagename
-		trainingstages.rewardStage[i]=phase_sequence[i].rewardStage
-		trainingstages.fixationmove[i]=phase_sequence[i].fixationmove
-		trainingstages.fixationradius[i]=phase_sequence[i].fixationradius
-		trainingstages.sampleON[i]=phase_sequence[i].sampleON
-		trainingstages.samplegrid[i]=phase_sequence[i].samplegrid
-		trainingstages.objectgrid[i]=phase_sequence[i].objectgrid
-		trainingstages.keepSampleON[i]=phase_sequence[i].keepSampleON
-		trainingstages.nway[i]=phase_sequence[i].nway
-		trainingstages.imageFolderSample[i]=phase_sequence[i].imageFolderSample
-		trainingstages.sampleScale[i]=phase_sequence[i].sampleScale
-		trainingstages.testScale[i]=phase_sequence[i].testScale
-		trainingstages.objectlist[i]=phase_sequence[i].objectlist
+		for (var p=0; p<=SRautomatorparams.length-1; p++){
+			trainingstages[SRautomatorparams[p]][i] = 
+				phase_sequence[i][ORautomatorparams[p]]
+		}
 		trainingstages.minpctcorrect[i]=phase_sequence[i].minpctcorrect
 		trainingstages.mintrials[i]=phase_sequence[i].mintrials
-		trainingstages.hidetestdistractors[i]=phase_sequence[i].hidetestdistractors
 	}
 //============== 1-DEFINE TRAINING PHASES (end) ================//
 
@@ -222,44 +215,26 @@ function updateSRTask(writestr){
 	trainingstages.current = trial.currentAutomatorStage; 
 
 	var i = trainingstages.current
-	if (trainingstages.rewardStage[i] == trial.rewardStage && 
-		trainingstages.fixationmove[i] == trial.fixationmove && 
-		trainingstages.fixationradius[i] == trial.fixationradius && 
-		trainingstages.sampleON[i] == trial.sampleON && 
-		trainingstages.samplegrid[i] == trial.samplegrid && 
-		trainingstages.objectgrid[i].toString() == trial.objectgrid.toString() && 
-		trainingstages.keepSampleON[i] == trial.keepSampleON && 
-		trainingstages.nway[i] == trial.nway && 
-		trainingstages.imageFolderSample[i] == trial.imageFolderSample && 
-		trainingstages.sampleScale[i] == trial.sampleScale && 
-		trainingstages.testScale[i] == trial.testScale && 
-		trainingstages.hidetestdistractors[i] == trial.hidetestdistractors && 
-		trainingstages.objectlist[i].toString() == trial.objectlist.toString())
-		{
-			//do nothing
-		}
-
-	else{
-		// Current state of trial.[stuff] is incorrect; update parameters & reload images.
-		trial.need2writeParameters=1;
-		trial.automatorstagechange=1
-
-		trial.rewardStage = trainingstages.rewardStage[i]
-		trial.fixationmove = trainingstages.fixationmove[i]
-		trial.fixationradius = trainingstages.fixationradius[i]
-		trial.sampleON = trainingstages.sampleON[i]
-		trial.samplegrid = [trainingstages.samplegrid[i]] // why is this in brackets?
-		trial.objectgrid = trainingstages.objectgrid[i]
-		trial.keepSampleON = trainingstages.keepSampleON[i]
-		trial.nway = trainingstages.nway[i]
-		trial.imageFolderSample = trainingstages.imageFolderSample[i]
-		trial.sampleScale = trainingstages.sampleScale[i]
-		trial.testScale = trainingstages.testScale[i]
-		trial.hidetestdistractors = trainingstages.hidetestdistractors[i] 
-		trial.objectlist = trainingstages.objectlist[i] //todo
-		console.log('Automator updated trial.[stuff] because of discrepancy between automator and params.')
+	var samestage = true
+	for (p=0; p<SRautomatorparams.length - 1; p++){
+		if ( trainingstages[SRautomatorparams[p]][i].toString() != 
+			  trial[SRautomatorparams[p]].toString() )
+			samestage = false
 	}
 
+	if (samestage == true){
+			//do nothing
+			trial.currentAutomatorStageName = trainingstages.currentAutomatorStageName[trainingstages.current]
+	}
+	else{
+		// Current state of trial.[stuff] is incorrect; update parameters & reload images.
+		trial.need2writeParameters=1
+		trial.automatorstagechange=1
+		for (p=0; p<=ORautomatorparams.length-1; p++){
+			trial[ORautomatorparams[p]] = trainingstages[ORautomatorparams[p]][i]
+		}
+		console.log('Automator updated trial.[stuff] because of discrepancy between automator and params.')
+	}
 
 	if (writestr == "readtaskstageonly"){
 		return trainingstages.current;		
@@ -305,7 +280,7 @@ function updateSRTask(writestr){
 		}
 		pctcorrect = 100 * ncorrect/ntrial;
 	}
-	trialhistory.trainingstagename = trainingstages.stagename[trainingstages.current]
+	trialhistory.trainingstagename = trainingstages.currentAutomatorStageName[trainingstages.current]
 	trialhistory.pctcorrect = pctcorrect
 	trialhistory.startingindex = startingindex
 	trialhistory.ntrials_running = ntrial
@@ -331,24 +306,16 @@ function updateSRTask(writestr){
 		trial.automatorstagechange=1
 
 		trial.currentAutomatorStage = trainingstages.current
+		trial.currentAutomatorStageName = trainingstages.currentAutomatorStageName[trainingstages.current]
+
 		//update training stage
-		trial.rewardStage = trainingstages.rewardStage[trainingstages.current]
-		trial.fixationmove = trainingstages.fixationmove[trainingstages.current]
-		trial.fixationradius = trainingstages.fixationradius[trainingstages.current]
-		trial.sampleON = trainingstages.sampleON[trainingstages.current]
-		trial.samplegrid = [trainingstages.samplegrid[trainingstages.current]] // why is this in brackets?
-		trial.objectgrid = trainingstages.objectgrid[trainingstages.current]
-		trial.keepSampleON = trainingstages.keepSampleON[trainingstages.current]
-		trial.nway = trainingstages.nway[trainingstages.current]
-		trial.imageFolderSample = trainingstages.imageFolderSample[trainingstages.current]
-		trial.sampleScale = trainingstages.sampleScale[trainingstages.current]
-		trial.testScale = trainingstages.testScale[trainingstages.current]
-		trial.hidetestdistractors = trainingstages.hidetestdistractors[trainingstages.current] 
-		trial.objectlist = trainingstages.objectlist[trainingstages.current] //todo
+		for (p=0; p<=SRautomatorparams.length-1; p++){
+			trial[SRautomatorparams[p]] = trainingstages[SRautomatorparams[p]][trainingstages.current]
+		}
 		console.log('Automator updated trial.[stuff] because of stage change')
 
 		//update trial history
-		trialhistory.trainingstagename = trainingstages.stagename[trainingstages.current]
+		trialhistory.trainingstagename = trainingstages.currentAutomatorStageName[trainingstages.current]
 		trialhistory.pctcorrect = 0
 		trialhistory.startingindex = -1
 		trialhistory.ntrials_running = 0
@@ -380,12 +347,12 @@ function updateORTask(writestr){
 //============== 1-TRAINING PHASES ================//
 	function touch(mintrials){
 		var vals = {
-		stagename: 'touch',  // todo: log stagename as a meta field for each trial
+		currentAutomatorStageName: 'touch',  // todo: log stagename as a meta field for each trial
 		rewardStage: 0,
 		fixationmove: 0, 
 		fixationScale: 2,
 		fixationusessample: 0,
-		fixedratio: 1,
+		nfixations: 1,
 		ngridpoints: 3,
 		gridscale: 2,
 		sampleON: 200, 
@@ -407,12 +374,12 @@ function updateORTask(writestr){
 
 	function movingtouch(mintrials){
 		var vals = {
-		stagename: 'movingtouch', 
+		currentAutomatorStageName: 'movingtouch', 
 		rewardStage: 0,
 		fixationmove: 3000, //fixation dot changes location every 3 seconds
 		fixationScale: 1.5,
 		fixationusessample: 0,
-		fixedratio: 1,
+		nfixations: 1,
 		ngridpoints: 3,
 		gridscale: 1.5,
 		sampleON: 200, 
@@ -434,12 +401,12 @@ function updateORTask(writestr){
 
 	function frtouch(mintrials){
 		var vals = {
-		stagename: 'frtouch', 
+		currentAutomatorStageName: 'frtouch', 
 		rewardStage: 0,
 		fixationmove: 0,
 		fixationScale: 1,
 		fixationusessample: 1,
-		fixedratio: 5,
+		nfixations: 5,
 		ngridpoints: 3,
 		gridscale: 1,
 		sampleON: 200, 
@@ -461,12 +428,12 @@ function updateORTask(writestr){
 
 	function spatialmatch(mintrials){
 		var vals = {
-		stagename: 'spatialmatch', 
+		currentAutomatorStageName: 'spatialmatch', 
 		rewardStage: 1,
 		fixationmove: 0,
 		fixationScale: 1,
 		fixationusessample: 1,
-		fixedratio: 5,
+		nfixations: 5,
 		ngridpoints: 3,
 		gridscale: 1,
 		sampleON: 200, 
@@ -488,12 +455,12 @@ function updateORTask(writestr){
 
 	function delayedmatch(mintrials){
 		var vals = {
-		stagename: 'delayedmatch', 
+		currentAutomatorStageName: 'delayedmatch', 
 		rewardStage: 1,
 		fixationmove: 0,
 		fixationScale: 1,
 		fixationusessample: 1,
-		fixedratio: 5,
+		nfixations: 5,
 		ngridpoints: 3,
 		gridscale: 1,
 		sampleON: 200, 
@@ -515,12 +482,12 @@ function updateORTask(writestr){
 
 	function var1match_set1(mintrials){
 		var vals = {
-		stagename: 'var1match_set1', 
+		currentAutomatorStageName: 'var1match_set1', 
 		rewardStage: 1,
 		fixationmove: 0,
 		fixationScale: 1,
 		fixationusessample: 0,
-		fixedratio: 1,
+		nfixations: 1,
 		ngridpoints: 3,
 		gridscale: 1,
 		sampleON: 500, 
@@ -542,12 +509,12 @@ function updateORTask(writestr){
 
 	function var2match_set1(mintrials){
 		var vals = {
-		stagename: 'var2match_set1', 
+		currentAutomatorStageName: 'var2match_set1', 
 		rewardStage: 1,
 		fixationmove: 0,
 		fixationScale: 1,
 		fixationusessample: 0,
-		fixedratio: 1,
+		nfixations: 1,
 		ngridpoints: 3,
 		gridscale: 1,
 		sampleON: 200, 
@@ -569,12 +536,12 @@ function updateORTask(writestr){
 
 	function var3match_set1(mintrials){
 		var vals = {
-		stagename: 'var3match_set1', 
+		currentAutomatorStageName: 'var3match_set1', 
 		rewardStage: 1,
 		fixationmove: 0,
 		fixationScale: 1,
 		fixationusessample: 0,
-		fixedratio: 1,
+		nfixations: 1,
 		ngridpoints: 3,
 		gridscale: 1,
 		sampleON: 200, 
@@ -597,12 +564,12 @@ function updateORTask(writestr){
 
 	function var3match_set2(mintrials){
 		var vals = {
-		stagename: 'var3match_set2', 
+		currentAutomatorStageName: 'var3match_set2', 
 		rewardStage: 1,
 		fixationmove: 0,
 		fixationScale: 1,
 		fixationusessample: 0,
-		fixedratio: 1,
+		nfixations: 1,
 		ngridpoints: 3,
 		gridscale: 1,
 		sampleON: 200, 
@@ -624,12 +591,12 @@ function updateORTask(writestr){
 
 	function var3match_set3(mintrials){
 		var vals = {
-		stagename: 'var3match_set3', 
+		currentAutomatorStageName: 'var3match_set3', 
 		rewardStage: 1,
 		fixationmove: 0,
 		fixationScale: 1,
 		fixationusessample: 0,
-		fixedratio: 1,
+		nfixations: 1,
 		ngridpoints: 3,
 		gridscale: 1,
 		sampleON: 200, 
@@ -651,12 +618,12 @@ function updateORTask(writestr){
 
 	function var3match_obj24(mintrials){
 		var vals = {
-		stagename: 'var3match_obj24', 
+		currentAutomatorStageName: 'var3match_obj24', 
 		rewardStage: 1,
 		fixationmove: 0,
 		fixationScale: 1,
 		fixationusessample: 0,
-		fixedratio: 1,
+		nfixations: 1,
 		ngridpoints: 3,
 		gridscale: 1,
 		sampleON: 200, 
@@ -693,13 +660,14 @@ function updateORTask(writestr){
 			]
 
 	var trainingstages = {
-		stagename: [],
+		currentAutomatorStageName: [],
 		rewardStage: [],
 		fixationmove: [],
 		fixationScale: [],
-		fixedratio: [],
+		nfixations: [],
 		sampleON: [],
 		keepSampleON: [],
+		ngridpoints: [],
 		gridscale: [],
 		fixationgridindex: [], 
 		samplegrid: [],
@@ -716,26 +684,12 @@ function updateORTask(writestr){
 	}
 	
 	for (var i=0; i<=phase_sequence.length-1; i++){
-		trainingstages.stagename[i]=phase_sequence[i].stagename
-		trainingstages.rewardStage[i]=phase_sequence[i].rewardStage
-		trainingstages.fixationmove[i]=phase_sequence[i].fixationmove
-		trainingstages.fixationScale[i]=phase_sequence[i].fixationScale
-		trainingstages.fixedratio[i]=phase_sequence[i].fixedratio
-		trainingstages.sampleON[i]=phase_sequence[i].sampleON
-		trainingstages.gridscale[i]=phase_sequence[i].gridscale
-		trainingstages.fixationgridindex[i]=phase_sequence[i].fixationgridindex
-		trainingstages.samplegrid[i]=phase_sequence[i].samplegrid
-		trainingstages.objectgrid[i]=phase_sequence[i].objectgrid
-		trainingstages.fixationusessample[i]=phase_sequence[i].fixationusessample
-		trainingstages.keepSampleON[i]=phase_sequence[i].keepSampleON
-		trainingstages.nway[i]=phase_sequence[i].nway
-		trainingstages.imageFolderSample[i]=phase_sequence[i].imageFolderSample
-		trainingstages.sampleScale[i]=phase_sequence[i].sampleScale
-		trainingstages.testScale[i]=phase_sequence[i].testScale
-		trainingstages.objectlist[i]=phase_sequence[i].objectlist
+		for (var p=0; p<=ORautomatorparams.length-1; p++){
+			trainingstages[ORautomatorparams[p]][i] = 
+				phase_sequence[i][ORautomatorparams[p]]
+		}
 		trainingstages.minpctcorrect[i]=phase_sequence[i].minpctcorrect
 		trainingstages.mintrials[i]=phase_sequence[i].mintrials
-		trainingstages.hidetestdistractors[i]=phase_sequence[i].hidetestdistractors
 	}
 //============== 1-TRAINING PHASES (end) ================//
 
@@ -746,57 +700,31 @@ function updateORTask(writestr){
 	trainingstages.current = trial.currentAutomatorStage; 
 
 	var i = trainingstages.current
-	if (trainingstages.rewardStage[i] == trial.rewardStage && 
-		trainingstages.fixationmove[i] == trial.fixationmove && 
-		trainingstages.fixationScale[i] == trial.fixationScale && 
-		trainingstages.fixedratio[i] == trial.fixedratio &&
-		trainingstages.sampleON[i] == trial.sampleON && 
-		trainingstages.gridscale[i] == trial.gridscale && 
-		trainingstages.fixationgridindex[i] == trial.fixationgridindex && 
-		trainingstages.samplegrid[i] == trial.samplegrid && 
-		trainingstages.objectgrid[i].toString() == trial.objectgrid.toString() &&
-		trainingstages.fixationusessample[i] == trial.fixationusessample &&  
-		trainingstages.keepSampleON[i] == trial.keepSampleON && 
-		trainingstages.nway[i] == trial.nway && 
-		trainingstages.imageFolderSample[i] == trial.imageFolderSample && 
-		trainingstages.sampleScale[i] == trial.sampleScale && 
-		trainingstages.testScale[i] == trial.testScale && 
-		trainingstages.hidetestdistractors[i] == trial.hidetestdistractors && 
-		trainingstages.objectlist[i].toString() == trial.objectlist.toString())
-		{
-			//do nothing
-		}
+	var samestage = true
+	for (p=0; p<ORautomatorparams.length - 1; p++){
+		if ( trainingstages[ORautomatorparams[p]][i].toString() != 
+			  trial[ORautomatorparams[p]].toString() )
+			samestage = false
+	}
 
+	if (samestage == true){
+			//do nothing
+			trial.currentAutomatorStageName = trainingstages.currentAutomatorStageName[trainingstages.current]
+	}
 	else{
 		// Current state of trial.[stuff] is incorrect; update parameters & reload images.
 		trial.need2writeParameters=1;
 		trial.automatorstagechange=1
-
-		trial.rewardStage = trainingstages.rewardStage[i]
-		trial.fixationmove = trainingstages.fixationmove[i]
-		trial.fixationScale = trainingstages.fixationScale[i]
-		trial.fixedratio = trainingstages.fixedratio[i]
-		trial.sampleON = trainingstages.sampleON[i]
-		trial.gridscale = trainingstages.gridscale[i]
-		trial.fixationgridindex = [trainingstages.fixationgridindex[i]] // why is this in brackets?
-		trial.samplegrid = [trainingstages.samplegrid[i]] // why is this in brackets?
-		trial.objectgrid = trainingstages.objectgrid[i]
-		trial.fixationusessample = trainingstages.fixationusessample[i]
-		trial.keepSampleON = trainingstages.keepSampleON[i]
-		trial.nway = trainingstages.nway[i]
-		trial.imageFolderSample = trainingstages.imageFolderSample[i]
-		trial.sampleScale = trainingstages.sampleScale[i]
-		trial.testScale = trainingstages.testScale[i]
-		trial.hidetestdistractors = trainingstages.hidetestdistractors[i] 
-		trial.objectlist = trainingstages.objectlist[i] //todo
+		for (p=0; p<=ORautomatorparams.length-1; p++){
+			trial[ORautomatorparams[p]] = trainingstages[ORautomatorparams[p]][i]
+		}
 		console.log('Automator updated trial.[stuff] because of discrepancy between automator and params.')
-	}
+	} // if samestage
 
 	if (writestr == "readtaskstageonly"){
 		return trainingstages.current;
 	}
 //============== 2-CHECK CURRENT STAGE (end) ================//
-
 
 //============== 3-COMPUTE PERFORMANCE ================//
 	var startingindex = -1;
@@ -822,22 +750,23 @@ function updateORTask(writestr){
 	var ntrial=0;
 	var ncorrect=0;
 	var pctcorrect
+	var startingindexrunning = startingindex
 	if (startingindex == -1){
 		pctcorrect = 0;
 	}
 	else{ //take running average
 		var ncompleted = trialhistory.correct.length - startingindex;
 		if (ncompleted > trainingstages.mintrials[trainingstages.current]){
-			startingindex = trialhistory.correct.length - trainingstages.mintrials[trainingstages.current];
+			startingindexrunning = trialhistory.correct.length - trainingstages.mintrials[trainingstages.current];
 		}
-		for (var i=startingindex; i<=trialhistory.correct.length-1; i++)
+		for (var i=startingindexrunning; i<=trialhistory.correct.length-1; i++)
 		{
 			if (trialhistory.correct[i]==1){ncorrect++;}
 			ntrial++;
 		}
 		pctcorrect = 100 * ncorrect/ntrial;
 	}
-	trialhistory.trainingstagename = trainingstages.stagename[trainingstages.current]
+	trialhistory.trainingstagename = trainingstages.currentAutomatorStageName[trainingstages.current]
 	trialhistory.pctcorrect = pctcorrect
 	trialhistory.startingindex = startingindex
 	trialhistory.ntrials_running = ntrial
@@ -862,28 +791,16 @@ function updateORTask(writestr){
 		trial.automatorstagechange=1
 
 		trial.currentAutomatorStage = trainingstages.current
+		trial.currentAutomatorStageName = trainingstages.currentAutomatorStageName[trainingstages.current]
 		//update training stage
-		trial.rewardStage = trainingstages.rewardStage[trainingstages.current]
-		trial.fixationmove = trainingstages.fixationmove[trainingstages.current]
-		trial.fixationScale = trainingstages.fixationScale[trainingstages.current]
-		trial.fixedratio = trainingstages.fixedratio[trainingstages.current]
-		trial.sampleON = trainingstages.sampleON[trainingstages.current]
-		trial.gridscale = trainingstages.gridscale[trainingstages.current]
-		trial.fixationgridindex = [trainingstages.fixationgridindex[trainingstages.current]] // why is this in brackets?
-		trial.samplegrid = [trainingstages.samplegrid[trainingstages.current]] // why is this in brackets?
-		trial.objectgrid = trainingstages.objectgrid[trainingstages.current]
-		trial.fixationusessample = trainingstages.fixationusessample[trainingstages.current]
-		trial.keepSampleON = trainingstages.keepSampleON[trainingstages.current]
-		trial.nway = trainingstages.nway[trainingstages.current]
-		trial.imageFolderSample = trainingstages.imageFolderSample[trainingstages.current]
-		trial.sampleScale = trainingstages.sampleScale[trainingstages.current]
-		trial.testScale = trainingstages.testScale[trainingstages.current]
-		trial.hidetestdistractors = trainingstages.hidetestdistractors[trainingstages.current] 
-		trial.objectlist = trainingstages.objectlist[trainingstages.current] //todo
+
+		for (p=0; p<=ORautomatorparams.length-1; p++){
+			trial[ORautomatorparams[p]] = trainingstages[ORautomatorparams[p]][trainingstages.current]
+		}
 		console.log('Automator updated trial.[stuff] because of stage change')
 
 		//update trial history
-		trialhistory.trainingstagename = trainingstages.stagename[trainingstages.current]
+		trialhistory.trainingstagename = trainingstages.currentAutomatorStageName[trainingstages.current]
 		trialhistory.pctcorrect = 0
 		trialhistory.startingindex = -1
 		trialhistory.ntrials_running = 0

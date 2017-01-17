@@ -121,8 +121,14 @@ function loadGoogleCharts(){
 //================== GOOGLE CHARTS LOADING (end) ==================//
 
 //================== DROPBOX STUFF ==================//
-var DBX_CLIENT_ID = "8mspoy956tdhfy9"
-var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/test_apiv2/public/index.html"
+// Mkturk
+var DBX_CLIENT_ID = "2m9hmv7q45kwren"
+var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/liveplot.html"
+
+// E. Issa Nightly
+var DBX_CLIENT_ID = "3rd6bco8cdmcadz"
+var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/nightly/public/liveplot.html"
+
 
 //return whether user was redirected here after authenticating
 function isAuthenticated(){
@@ -206,7 +212,14 @@ function readDatafromDropbox2(){
 
 		var reader = new FileReader()
 		reader.onload = function(e){
-			file.data=JSON.parse(reader.result)
+			var datajson
+			datajson = JSON.parse(reader.result)
+			if (Array.isArray(datajson)){
+				file.data = datajson[0]
+			}
+			else{
+				file.data = datajson
+			}
 			parseImageInfo()
 		}
 		reader.readAsText(data.fileBlob)
@@ -218,17 +231,17 @@ function readDatafromDropbox2(){
 }
 
 function parseImageInfo(){
-	if (file.data[0].ImageFolderSample==4 | file.data[0].ImageFolderSample==5){
+	if (file.data.ImageFolderSample==4 | file.data.ImageFolderSample==5){
 		objlabels = objlabelsMURI;
 		cat = catMURI;
 		catlist = catlistMURI;
 	}
-	else if (file.data[0].ImageFolderSample==9 | file.data[0].ImageFolderSample==10 | file.data[0].ImageFolderSample==11){
+	else if (file.data.ImageFolderSample==9 | file.data.ImageFolderSample==10 | file.data.ImageFolderSample==11){
 		objlabels = objlabelsHVM;
 		cat = catHVM;
 		catlist = catlistHVM;
 	}
-	else if (file.data[0].ImageFolderSample==12 | file.data[0].ImageFolderSample==13 | file.data[0].ImageFolderSample==14 | file.data[0].ImageFolderSample==15){
+	else if (file.data.ImageFolderSample==12 | file.data.ImageFolderSample==13 | file.data.ImageFolderSample==14 | file.data.ImageFolderSample==15){
 		objlabels = objlabelsCOCO;
 		cat = catCOCO;
 		catlist = catlistCOCO;
@@ -285,60 +298,93 @@ function initializeChartData(){
 // Synchronous
 function toTask(){
 	task.rewardstage = 1;
-	if (typeof(file.data[0].RewardStage) != "undefined"){
-		task.rewardstage = file.data[0].RewardStage;
+	if (typeof(file.data.RewardStage) != "undefined"){
+		task.rewardstage = file.data.RewardStage;
 	}
 	task.varsample = 3;
-	if (typeof(file.data[0].UsePrototypeforSample) != "undefined"){
-		if (file.data[0].UsePrototypeforSample == true){				
-			task.varsample = 0;
+	if (typeof(file.data.UsePrototypeforSample) != "undefined"){
+		if (file.data.UsePrototypeforSample == true){				
+			task.imagefoldersample = 0;
 		}
 	}
-	if (typeof(file.data[0].ImageFolderSample) != "undefined"){
-		task.varsample = file.data[0].ImageFolderSample;
+	if (typeof(file.data.ImageFolderSample) != "undefined"){
+		task.imagefoldersample = file.data.ImageFolderSample;
 	}
-	task.sampleon = file.data[0].SampleON;
-	task.delay = file.data[0].SampleOFF;
-	if (typeof(file.data[0].KeepSampleON) != "undefined"){
-		if (file.data[0].KeepSampleON == 1){
-			task.delay = -1; //Sample left on
+	if (typeof(file.data.ImageFolderTest) != "undefined"){
+		task.imagefoldertest = file.data.ImageFolderTest;
+	}
+
+	task.sampleon = file.data.SampleON;
+	task.sampleoff = file.data.SampleOFF
+	if (typeof(file.data.KeepSampleON) != "undefined"){
+		if (file.data.KeepSampleON == 1){
+			task.sampleoff = -1; //Sample left on
 		}
 	}
 
-	task.nway = file.data[0].Nway;
-	task.nobj = file.data[0].TestedObjects.length;
+	task.nway = file.data.Nway;
+	task.nobj = file.data.TestedObjects.length;
+	task.objectlist = file.data.TestedObjects
 
 	task.rewardper1000 = 0;
-	if (typeof(file.data[0].RewardPer1000Trials) != "undefined"){
-		task.rewardper1000 = Math.round(file.data[0].RewardPer1000Trials);
+	if (typeof(file.data.RewardPer1000Trials) != "undefined"){
+		task.rewardper1000 = Math.round(file.data.RewardPer1000Trials);
 	}
 }
 
 // Synchronous
 function toVitals(){
-	vitals.subject = file.data[0].Subject;
-	vitals.trials = file.data[0].Response.length;
-	vitals.time = Math.round(Math.round(file.data[0].StartTime[vitals.trials-1] - file.data[0].StartTime[0])/60000); //convert msec to minutes
+	vitals.subject = file.data.Subject;
+	vitals.trials = file.data.Response.length;
+	vitals.time = Math.round(Math.round(file.data.StartTime[vitals.trials-1] - file.data.StartTime[0])/60000); //convert msec to minutes
 
-	if (typeof(file.data[0].BatteryLDT) != "undefined"){
-		vitals.batteryleft = Math.round(file.data[0].BatteryLDT[file.data[0].BatteryLDT.length-1][0]*100);
-		vitals.batteryused = Math.round(file.data[0].BatteryLDT[0][0]*100 - vitals.batteryleft);
+vitals["automator"]
+	if (typeof(file.data.Automator) != "undefined"){
+		vitals.automator = file.data.Automator
+	}
+	else {
+		vitals.automator = null
+	}
+
+	if (typeof(file.data.CurrentAutomatorStage) != "undefined"){
+		vitals.currentautomatorstage = file.data.CurrentAutomatorStage
+	}
+	else {
+		vitals.currentautomatorstage = null
+	}
+
+	if (typeof(file.data.CurrentAutomatorStageName) != "undefined"){
+		vitals.currentautomatorstagename = file.data.CurrentAutomatorStageName
+	}
+	else {
+		vitals.currentautomatorstagename = null
+	}
+
+	if (typeof(file.data.BatteryLDT) != "undefined"){
+		vitals.batteryleft = Math.round(file.data.BatteryLDT[file.data.BatteryLDT.length-1][0]*100);
+		vitals.batteryused = Math.round(file.data.BatteryLDT[0][0]*100 - vitals.batteryleft);
 	}
 	else {
 		vitals.batteryleft = null;
 		vitals.batteryused = null;
 	}
 	var ncorrect = 0;
-	for (var i=0; i<=file.data[0].CorrectItem.length-1; i++){
-  		if (file.data[0].CorrectItem[i] == file.data[0].Response[i]){ // | file.data[0].RewardStage==0){
+	for (var i=0; i<=file.data.CorrectItem.length-1; i++){
+  		if (file.data.CorrectItem[i] == file.data.Response[i]){ // | file.data.RewardStage==0){
   			ncorrect++;
   		}
 	}
-	vitals.pctcorrect = Math.round(100 * ncorrect / file.data[0].Response.length);
+	vitals.pctcorrect = Math.round(100 * ncorrect / file.data.Response.length);
+
+	if (typeof(file.data.NReward) != "undefined"){
+		vitals.nrewards = file.data.NReward.reduce(function(a, b) {
+  			return a + b;
+		}, 0);
+	}
 
 	vitals.rewardestimate = 0;
-	if (typeof(file.data[0].RewardPer1000Trials) != "undefined"){
-		vitals.rewardestimate = Math.round(file.data[0].RewardPer1000Trials * ncorrect / 1000);
+	if (typeof(file.data.RewardPer1000Trials) != "undefined"){
+		vitals.rewardestimate = Math.round(file.data.RewardPer1000Trials * vitals.nrewards / 1000);
 	}
 }
 
@@ -353,8 +399,8 @@ function toPerformanceData(){
   	var ntotal = []
   	var ncorrect = []
   	var tcurrent = []
-  	for (var i=0; i<=file.data[0].CorrectItem.length-1; i++){
-  		if (file.data[0].CorrectItem[i] == file.data[0].Response[i]){ // | file.data[0].RewardStage==0){
+  	for (var i=0; i<=file.data.CorrectItem.length-1; i++){
+  		if (file.data.CorrectItem[i] == file.data.Response[i]){ // | file.data.RewardStage==0){
   			ydata[i]=1;
   		}
   		else {
@@ -371,18 +417,18 @@ function toPerformanceData(){
 
 //Referencing to time file was last written & time of last trial rather than to file start.
 //Done because file can be changed on the fly which changes file start relative to performance.now()
-if (typeof file.data[0].ResponseXYT === 'undefined' || 
-	file.data[0].ResponseXYT.length < 1){
-	var tend = file.data[0].FixationXYT[file.data[0].FixationXYT.length-1][2]
+if (typeof file.data.ResponseXYT === 'undefined' || 
+	file.data.ResponseXYT.length < 1){
+	var tend = file.data.FixationXYT[file.data.FixationXYT.length-1][2]
 }
 else {
-	var tend = file.data[0].ResponseXYT[file.data[0].ResponseXYT.length-1][2]
+	var tend = file.data.ResponseXYT[file.data.ResponseXYT.length-1][2]
 }
 
   	for (var i=0; i<=ydata.length-1; i++){
 	  	dataPerformance.addRows([[xdata[i], ydata[i]]])
 
-  		var tfix = file.data[0].FixationXYT[i][2] //in milliseconds
+  		var tfix = file.data.FixationXYT[i][2] //in milliseconds
   		var t = new Date(file.dateSaved)
   		t.setTime(t.getTime() - (tend - tfix))
 	  	dataCumulative.addRows([[new Date(t),ntotal[i],ncorrect[i]]])
@@ -394,18 +440,18 @@ else {
 function toConfusionData(){
 
 // SAMPLE
-	if(typeof file.data[0].ImageFolderSample === 'undefined'){
+	if(typeof file.data.ImageFolderSample === 'undefined'){
 		for (var i=0; i<=cat.length-1; i++){
 			catSample[i]=cat[i];
 		}
 	}
 	else{
-		if (file.data[0].ImageFolderSample === 0 || file.data[0].ImageFolderSample === 4 || file.data[0].ImageFolderSample ===9 || file.data[0].ImageFolderSample === 12){
+		if (file.data.ImageFolderSample === 0 || file.data.ImageFolderSample === 4 || file.data.ImageFolderSample ===9 || file.data.ImageFolderSample === 12){
 			for (var i=0; i<=catlist.length-1; i++){
 				catSample[i]=Math.floor(i/1);
 			}
 		}
-		else if (file.data[0].ImageFolderSample > 0){
+		else if (file.data.ImageFolderSample > 0){
 			for (var i=0; i<=cat.length-1; i++){
 				catSample[i]=cat[i];
 			}
@@ -415,18 +461,18 @@ function toConfusionData(){
 
 
 // TEST
-	if(typeof file.data[0].ImageFolderTest === 'undefined'){
+	if(typeof file.data.ImageFolderTest === 'undefined'){
 		for (var i=0; i<=cat.length-1; i++){
 			catTest[i]=cat[i];
 		}
 	}
 	else{
-		if (file.data[0].ImageFolderTest === 0 || file.data[0].ImageFolderTest === 4 || file.data[0].ImageFolderTest === 9 || file.data[0].ImageFolderTest === 12){
+		if (file.data.ImageFolderTest === 0 || file.data.ImageFolderTest === 4 || file.data.ImageFolderTest === 9 || file.data.ImageFolderTest === 12){
 			for (var i=0; i<=catlist.length-1; i++){
 				catTest[i]=Math.floor(i/1);
 			}
 		}
-		else if (file.data[0].ImageFolderTest > 0){
+		else if (file.data.ImageFolderTest > 0){
 			for (var i=0; i<=cat.length-1; i++){
 				catTest[i]=cat[i];
 			}
@@ -453,16 +499,16 @@ function toConfusionData(){
 	//Fill confusion matrix
 	var samplecatidx;
 	var testcatidx;
-	for (var i=0; i<=file.data[0].Sample.length-1; i++){
-		samplecatidx = catlist.indexOf(catSample[file.data[0].Sample[i]]);
+	for (var i=0; i<=file.data.Sample.length-1; i++){
+		samplecatidx = catlist.indexOf(catSample[file.data.Sample[i]]);
 
-		for (var j=0; j<=file.data[0].Test[i].length-1; j++){
-			testcatidx = catlist.indexOf(catTest[file.data[0].Test[i][j]]);
+		for (var j=0; j<=file.data.Test[i].length-1; j++){
+			testcatidx = catlist.indexOf(catTest[file.data.Test[i][j]]);
 
 			cntConfusion[samplecatidx][testcatidx]++;
 
 			// if that test item was chosen
-			if (file.data[0].RewardStage==1 & file.data[0].Response[i] == j){
+			if (file.data.RewardStage==1 & file.data.Response[i] == j){
 				nConfusion[samplecatidx][testcatidx]++;
 			}
 
@@ -499,21 +545,31 @@ function updatePlots() {
 
 // Synchronous
 function addVitalsText(){
-	lineOptions.title = vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.trials + ", " + vitals.rewardestimate + "mL, " + vitals.time + "min)     " + "Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  Last Trial:" + file.dateSaved.toLocaleTimeString('en-US')
+	lineOptions.title =
+		vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.trials + 
+		", r=" + vitals.nrewards + "=" + vitals.rewardestimate + "mL, " + vitals.time + "min)     " + 
+		"Automator: " + vitals.automator +  ", Stage " + vitals.currentautomatorstage + "_" + vitals.currentautomatorstagename + "     " + 
+		"Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  " + 
+		"Last Trial:" + file.dateSaved.toLocaleTimeString('en-US')
 	titleobj.innerHTML = vitals.subject;
 }
 
 // Synchronous
 function addTaskText(){
-	var rewardedfor = "";
+	task["name"]=""
 	if (task.rewardstage == 0){
-		rewardedfor = "fixation";
+		task["name"] = "Fixation";
 	}
 	else if (task.rewardstage == 1){
-		rewardedfor = "Match";
+		task["name"] = "Match-to-Sample";
 	}
 
-	tasktextobj.innerHTML = "Rewarded for <b>" + rewardedfor + "</b> (" + task.rewardper1000 + "mL/1000)" + "<br>Sample var <b>" + task.varsample + "</b>, " + task.sampleon + "ms" + "<br>Delay " + task.delay + "ms" + "<br>" + task.nway + "-way" + ", " + task.nobj + "-obj";
+	tasktextobj.innerHTML =
+		"<b>" + task.name + "</b>:" + task.nway + "-way" + ", " + task.nobj + "-obj" + "<br>" + 
+		"Sample folder " + task.imagefoldersample + ", Test folder " + task.imagefoldertest + "<br>" + 
+		"Sample On=" + task.sampleon + ", Sample Off=" + task.sampleoff + " ms" + "<br>" + 
+		"objs=[" + task.objectlist + "]" + "<br>" + 
+		"reward=" + task.rewardper1000 + "mL per 1000 correct trials" 
 }
 
 //Synchronous
@@ -774,16 +830,22 @@ var vitals={
 	batteryleft: 0,
 	batteryused: 0,
 	rewardestimate: 0,
+	automator: "",
+	currentautomatorstage: 0,
+	currentautomatorstagename: "",
+	nrewards: 0,
 }
 
 var task={
 	rewardstage: 0,
 	rewardper1000: 0,
-	varsample: 3,
+	imagefoldersample: 0,
+	imagefoldertest: 0,
 	sampleon: 0,
-	delay: 0,
+	sampleoff: 0,
 	nway: 0,
 	nobj: 0,
+	objectlist: [],
 }
 
 var dataPerformance=null;

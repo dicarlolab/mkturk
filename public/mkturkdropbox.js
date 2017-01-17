@@ -89,47 +89,20 @@ function readParametersfromDropbox2(){
 			paramfile.text = reader.result
 			paramfile.data = JSON.parse(reader.result)
 
+if (Array.isArray(paramfile.data)){
+	var datajson = paramfile.data[0]
+}
+else {
+	var datajson = paramfile.data
+}
 			// Set parameters
-			env["weight"] = paramfile.data[0].Weight;
-			env["species"] = paramfile.data[0].Species;
-			env["homecage"] = paramfile.data[0].Homecage;
-			env["separated"] = paramfile.data[0].Separated;
-			env["liquid"] = paramfile.data[0].Liquid;
-			env["tablet"] = paramfile.data[0].Tablet;
-			env["pump"] = paramfile.data[0].Pump;
-			trial["objectlist"] = paramfile.data[0].TestedObjects;
-			trial["nway"] = paramfile.data[0].Nway;
-			trial["ngridpoints"] = paramfile.data[0].NGridPoints;
-			trial["gridscale"] = paramfile.data[0].GridScale;
-			trial["fixationgridindex"] = paramfile.data[0].FixationGridIndex;
-			trial["samplegrid"] = paramfile.data[0].SampleGridIndex;
-			trial["testgrid"] = paramfile.data[0].TestGridIndex;
-			trial["objectgrid"] = paramfile.data[0].ObjectGridIndex; 
-			trial["rewardStage"] = paramfile.data[0].RewardStage;
-			trial["rewardper1000"] = paramfile.data[0].RewardPer1000Trials;
-			trial["punish"] = paramfile.data[0].PunishTimeOut;
-			trial["fixedratio"] = paramfile.data[0].FixedRatio;
-			trial["fixationdur"] = paramfile.data[0].FixationDuration;
-			trial["fixationmove"] = paramfile.data[0].FixationMove;
-			trial["sampleON"] = paramfile.data[0].SampleON;
-			trial["sampleOFF"] = paramfile.data[0].SampleOFF;
-			trial["keepSampleON"] = paramfile.data[0].KeepSampleON;
-			trial["hidetestdistractors"] = paramfile.data[0].HideTestDistractors;
-			trial["sampleblocksize"] = paramfile.data[0].SampleBlockSize;
-			trial["nstickyresponse"] = paramfile.data[0].NStickyResponse;
-			trial["consecutivehitsITI"] = paramfile.data[0].ConsecutiveHitsITI;
-			trial["nconsecutivehitsforbonus"] = paramfile.data[0].NConsecutiveHitsforBonus;
-			trial["nrewardmax"] = paramfile.data[0].NRewardMax;
-			trial["fixationusessample"] = paramfile.data[0].FixationUsesSample;
-			trial["imageFolderSample"] = paramfile.data[0].ImageFolderSample;
-			trial["imageFolderTest"] = paramfile.data[0].ImageFolderTest;
-			trial["fixationScale"] = paramfile.data[0].FixationScale;
-			trial["sampleScale"] = paramfile.data[0].SampleScale;
-			trial["testScale"] = paramfile.data[0].TestScale;
-			trial["automator"] = paramfile.data[0].Automator;
-			trial["currentAutomatorStage"] = paramfile.data[0].CurrentAutomatorStage;
+			for (p in params){
+				if (params[p].user == 1){
+					trial[p] = datajson[params[p].dataname]
+				}
+			} //for p user-defined params
+//			trial["objectlist"] = paramfile.data[0].TestedObjects;
 			trial["params"] = paramfile.name;
-			trial["automatorFilePath"] = paramfile.data[0].AutomatorFilePath
 			resolve(1)
 		}
 		reader.readAsText(data.fileBlob)
@@ -149,10 +122,17 @@ function readAutomatorFilefromDropbox2(){
 		reader.onload = function(e){
 			var data = JSON.parse(reader.result)
 
-			minpctcorrect_sequence = data[0].PercentCorrectCriterion;
-			mintrials_sequence = data[0].MinimumTrialsCriterion;
-			sample_foldernum_sequence = data[0].FolderNumSequence;
-			objectlist_sequence = data[0].ObjectListSequence;
+if (Array.isArray(data)){
+	var datajson = data[0]
+}
+else {
+	var datajson = data
+}
+
+			minpctcorrect_sequence = datajson.PercentCorrectCriterion;
+			mintrials_sequence = datajson.MinimumTrialsCriterion;
+			sample_foldernum_sequence = datajson.FolderNumSequence;
+			objectlist_sequence = datajson.ObjectListSequence;
 			number_automator_stages = objectlist_sequence.length; 
 
 			resolve(1)
@@ -174,43 +154,44 @@ function readPerformanceHistoryfromDropbox2(filenum){
 		reader.onload = function(e){
 			var file = {data: JSON.parse(reader.result)}
 
-			if (typeof(file.data[0].Weight) != "undefined"){
-				env["weight"] = file.data[0].Weight;
-			}
-			else{
-				env["weight"] = 10;
-			}
-			env["species"] = file.data[0].Species;
-			env["homecage"] = file.data[0].Homecage;
-			env["separated"] = file.data[0].Separated;
-			env["liquid"] = file.data[0].Liquid;
-			env["tablet"] = file.data[0].Tablet;
-			env["pump"] = file.data[0].Pump;
-			trial["objectlist"] = file.data[0].TestedObjects;
-			trial["nway"] = file.data[0].Nway;
-			trial["samplegrid"] = file.data[0].SampleGridIndex;
-			trial["testgrid"] = file.data[0].TestGridIndex;
-			trial["objectgrid"] = file.data[0].ObjectGridIndex;
-			trial["rewardStage"] = file.data[0].RewardStage
-			trial["rewardper1000"] = file.data[0].RewardPer1000Trials;
-			// trial.reward = file.data[0].RewardDuration;
-			trial["punish"] = file.data[0].PunishTimeOut;
-			trial["fixationdur"] = file.data[0].FixationDuration;
-			trial["fixationradius"] = file.data[0].FixationRadius;
-			trial["fixationmove"] = file.data[0].FixationMove;
-			trial["sampleON"] = file.data[0].SampleON;
-			trial["sampleOFF"] = file.data[0].SampleOFF;
-			trial["keepSampleON"] = file.data[0].KeepSampleON;
-			trial["hidetestdistractors"] = file.data[0].HideTestDistractors;
-			trial["sampleblocksize"] = file.data[0].SampleBlockSize;
-			trial["nstickyresponse"] = file.data[0].NStickyResponse;
-			trial["imageFolderSample"] = file.data[0].ImageFolderSample;
-			trial["imageFolderTest"] = file.data[0].ImageFolderTest;
-			trial["sampleScale"] = file.data[0].SampleScale;
-			trial["testScale"] = file.data[0].TestScale;			
-			trial["automator"] = file.data[0].Automator;
-			trial["currentAutomatorStage"] = file.data[0].CurrentAutomatorStage;
-			trial["automatorFilePath"] = paramfile.data[0].AutomatorFilePath
+if (Array.isArray(file.data)){
+	var datajson = file.data[0]
+}
+else {
+	var datajson = file.data
+}
+
+			trial["species"] = datajson.Species;
+			trial["homecage"] = datajson.Homecage;
+			trial["separated"] = datajson.Separated;
+			trial["liquid"] = datajson.Liquid;
+			trial["tablet"] = datajson.Tablet;
+			trial["pump"] = datajson.Pump;
+			trial["objectlist"] = datajson.TestedObjects;
+			trial["nway"] = datajson.Nway;
+			trial["samplegrid"] = datajson.SampleGridIndex;
+			trial["testgrid"] = datajson.TestGridIndex;
+			trial["objectgrid"] = datajson.ObjectGridIndex;
+			trial["rewardStage"] = datajson.RewardStage
+			trial["rewardper1000"] = datajson.RewardPer1000Trials;
+			// trial.reward = datajson.RewardDuration;
+			trial["punish"] = datajson.PunishTimeOut;
+			trial["fixationdur"] = datajson.FixationDuration;
+			trial["fixationradius"] = datajson.FixationRadius;
+			trial["fixationmove"] = datajson.FixationMove;
+			trial["sampleON"] = datajson.SampleON;
+			trial["sampleOFF"] = datajson.SampleOFF;
+			trial["keepSampleON"] = datajson.KeepSampleON;
+			trial["hidetestdistractors"] = datajson.HideTestDistractors;
+			trial["sampleblocksize"] = datajson.SampleBlockSize;
+			trial["nstickyresponse"] = datajson.NStickyResponse;
+			trial["imageFolderSample"] = datajson.ImageFolderSample;
+			trial["imageFolderTest"] = datajson.ImageFolderTest;
+			trial["sampleScale"] = datajson.SampleScale;
+			trial["testScale"] = datajson.TestScale;			
+			trial["automator"] = datajson.Automator;
+			trial["currentAutomatorStage"] = datajson.CurrentAutomatorStage;
+			trial["automatorFilePath"] = datajson.AutomatorFilePath
 
 			if (typeof(trial.automator) == "undefined" || trial.automator == 0 || trial.automator != trial.currentAutomator){
 			}
@@ -249,9 +230,6 @@ function readPerformanceHistoryfromDropbox2(filenum){
 			  	}
 			}
 			resolve(1)
-
-
-
 		} //reader.onload
 		reader.readAsText(data.fileBlob)
 	})
@@ -261,6 +239,119 @@ function readPerformanceHistoryfromDropbox2(filenum){
 	})
 }
 //================== LOAD JSON (end) ==================//
+
+//================== WRITE JSON ==================//
+async function writeDatatoDropbox2() {
+	try{
+        var dataobj = {}, datastr;
+        for (p in params){
+        	if (params[p].save == 1){
+        		dataobj[params[p].dataname] = trial[p]
+        	}
+        } //for p user-defined params
+
+		dataobj.PreSequence = canvas.sequencepre
+		dataobj.PreSequenceTimes = canvas.tsequencepre
+		dataobj.ImageSequence = canvas.sequence
+		dataobj.ImageSequenceTimes = canvas.tsequence
+		dataobj.PostSequence = canvas.sequencepost
+		dataobj.PostSequenceTimes = canvas.tsequencepost
+
+		dataobj.PixelRatio = devicePixelRatio
+		dataobj.BackingStoreRatio = backingStoreRatio
+		dataobj.CanvasScale = canvasScale
+		dataobj.WindowWidth = windowWidth
+		dataobj.WindowHeight = windowHeight
+		dataobj.XGridCenter = xgridcent
+		dataobj.YGridCenter = ygridcent
+		dataobj.SamplePixels = [imagesSample.wd, imagesSample.ht],
+		dataobj.TestPixels = [imagesTest.wd, imagesTest.ht],
+		dataobj.SampleScale = imagesSample.scale,
+		dataobj.TestScale = imagesTest.scale,
+		dataobj.SampleImageDir = imagesSample.folder
+		dataobj.TestImageDir = imagesTest.folder
+		dataobj.AllSampleSerials = imagesSample.serial
+		dataobj.AllTestSerials = imagesTest.serial
+		dataobj.BatteryLDT = battery.ldt
+	    	
+	    datastr = JSON.stringify(dataobj);
+
+	response = await dbx.filesUpload({
+		path: trial.datadir + trial.filename,
+		contents: datastr,
+		mode: {[".tag"]: "overwrite"} })
+		console.log("successful data file upload size " + response.size)
+	}
+	catch(error){
+		console.error(error)
+	}
+}
+
+async function writeParameterTexttoDropbox2(){
+	try{
+	    datastr = paramfile.text
+
+	response = await dbx.filesUpload({
+		path: trial.params,
+		contents: datastr,
+		mode: {[".tag"]: "overwrite"} })
+			console.log("successful paramater file upload size " + response.size)
+			trial.need2writeParameters = 0;
+	}
+	catch (error){
+		console.error(error)
+	}
+
+	try{
+	filemeta = await dbx.filesGetMetadata({path: paramfile.name})
+		if (paramfile.rev != filemeta.rev){
+			paramfile.rev = filemeta.rev
+			paramfile.date = new Date(filemeta.client_modified)
+
+			console.log('parameter file was updated rev=' + paramfile.rev)
+		}
+	}
+	catch(error) {
+		console.error(error)
+	}
+}
+
+//Write parameter file to dropbox
+async function writeParameterstoDropbox2() {
+	try{
+		var dataobj = {}, datastr;
+		for (p in params){
+        	if (params[p].user == 1){
+        		dataobj[params[p].dataname] = trial[p]
+        	}
+        } //for p user-defined params
+	    datastr = JSON.stringify(dataobj);
+
+	response = await dbx.filesUpload({
+		path: trial.params,
+		contents: datastr,
+		mode: {[".tag"]: "overwrite"} })
+			console.log("successful paramater file upload size " + response.size)
+			trial.need2writeParameters = 0;
+	}
+	catch (error){
+		console.error(error)
+	}
+
+	try{
+	filemeta = await dbx.filesGetMetadata({path: paramfile.name})
+		if (paramfile.rev != filemeta.rev){
+			paramfile.rev = filemeta.rev
+			paramfile.date = new Date(filemeta.client_modified)
+
+			console.log('parameter file was updated rev=' + paramfile.rev)
+		}
+	}
+	catch(error) {
+		console.error(error)
+	}
+}
+//================== WRITE JSON (end) ==================//
 
 // MDN using files from web applications -->
 //   https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
@@ -390,202 +481,6 @@ function loadOriginalTestImagefromDropbox2(src){
 	})
 }
 //================== LOAD IMAGE (end) ==================//
-
-
-//================== WRITE JSON ==================//
-async function writeDatatoDropbox2() {
-	try{
-        var dataobj = [], datastr;
-	    dataobj.push({
-	    	Subject: trial.subjid,
-	    	Weight: env.weight,
-	    	Species: env.species,
-	    	Homecage: env.homecage,
-	    	Separated: env.separated,
-	    	Liquid: env.liquid,
-	    	Tablet: env.tablet,
-	    	Pump: env.pump,
-	    	TestedObjects: trial.objectlist,
-	    	Nway: trial.nway,
-	    	SampleGridIndex: trial.samplegrid,
-	    	TestGridIndex: trial.testgrid,
-	    	ObjectGridIndex: trial.objectgrid, 
-	    	FixationUsesSample: trial.fixationusessample,
-	    	ImageFolderSample: trial.imageFolderSample,
-	    	ImageFolderTest: trial.imageFolderTest,
-	    	RewardStage: trial.rewardStage,
-	    	RewardPer1000Trials: trial.rewardper1000,
-	    	RewardDuration: trial.reward,
-	    	PunishTimeOut: trial.punish,
-	    	FixationDuration: trial.fixationdur,
-	    	FixedRatio: trial.fixedratio,
-	    	FixationRadius: trial.fixationradius,
-	    	FixationMove: trial.fixationmove,
-	    	SampleON: trial.sampleON,
-	    	SampleOFF: trial.sampleOFF,
-	    	KeepSampleON: trial.keepSampleON,
-	    	HideTestDistractors: trial.hidetestdistractors,
-	    	SampleBlockSize: trial.sampleblocksize,
-	    	NStickyResponse: trial.nstickyresponse,
-	    	ConsecutiveHitsITI: trial.consecutivehitsITI,
-	    	NConsecutiveHitsforBonus: trial.nconsecutivehitsforbonus,
-	    	NRewardMax: trial.nrewardmax,
-	    	Automator: trial.automator,
-	    	CurrentAutomatorStage: trial.currentAutomatorStage,
-	    	AutomatorFilePath: trial.automatorFilePath,
-	    	Params: trial.params,
-
-	    	PreSequence: canvas.sequencepre,
-	    	PreSequenceTimes: canvas.tsequencepre,
-	    	ImageSequence: canvas.sequence,
-	    	ImageSequenceTimes: canvas.tsequence,
-	    	PostSequence: canvas.sequencepost,
-	    	PostSequenceTimes: canvas.tsequencepost,
-	    	PixelRatio: devicePixelRatio,
-	    	BackingStoreRatio: backingStoreRatio,
-	    	CanvasScale: canvasScale,
-	    	WindowWidth: windowWidth,
-	    	WindowHeight: windowHeight,
-	    	XGridCenter: xgridcent,
-	    	YGridCenter: ygridcent,
-
-	    	SamplePixels: [imagesSample.wd, imagesSample.ht],
-    	    TestPixels: [imagesTest.wd, imagesTest.ht],
-    	    SampleScale: imagesSample.scale,
-	    	TestScale: imagesTest.scale,
-	    	SampleImageDir: imagesSample.folder,
-	    	TestImageDir: imagesTest.folder,
-	    	AllSampleSerials: imagesSample.serial,
-	    	AllTestSerials: imagesTest.serial,
-
-	    	FixationGridIndex: trial.fixationgrid,
-	    	Sample: trial.sampleserial,
-	    	Test: trial.testserial,
-	    	Response: trial.response,
-	    	CorrectItem: trial.correctItem,
-	    	StartTime: trial.tstart,
-	    	FixationXYT: trial.xytfixation,
-	    	AllFixationXYT: trial.allxytfixation,
-	    	ResponseXYT: trial.xytresponse,
-	    	BatteryLDT: battery.ldt,
-	    	NReward: trial.nreward,
-	    });
-	    datastr = JSON.stringify(dataobj);
-
-	response = await dbx.filesUpload({
-		path: trial.datadir + trial.filename,
-		contents: datastr,
-		mode: {[".tag"]: "overwrite"} })
-		console.log("successful data file upload size " + response.size)
-	}
-	catch(error){
-		console.error(error)
-	}
-
-}
-
-async function writeParameterTexttoDropbox2(){
-	try{
-	    datastr = paramfile.text
-
-	response = await dbx.filesUpload({
-		path: trial.params,
-		contents: datastr,
-		mode: {[".tag"]: "overwrite"} })
-			console.log("successful paramater file upload size " + response.size)
-			trial.need2writeParameters = 0;
-	}
-	catch (error){
-		console.error(error)
-	}
-
-	try{
-	filemeta = await dbx.filesGetMetadata({path: paramfile.name})
-		if (paramfile.rev != filemeta.rev){
-			paramfile.rev = filemeta.rev
-			paramfile.date = new Date(filemeta.client_modified)
-
-			console.log('parameter file was updated rev=' + paramfile.rev)
-		}
-	}
-	catch(error) {
-		console.error(error)
-	}
-}
-
-//Write parameter file to dropbox
-async function writeParameterstoDropbox2() {
-	try{
-        var dataobj = [], datastr;
-	    dataobj.push({
-	    	Weight: env.weight,
-	    	Species: env.species,
-	    	Homecage: env.homecage,
-	    	Separated: env.separated,
-	    	Liquid: env.liquid,
-	    	Tablet: env.tablet,
-	    	Pump: env.pump,
-	    	TestedObjects: trial.objectlist,
-	    	Nway: trial.nway,
-	    	NGridPoints: trial.ngridpoints,
-	    	GridScale: trial.gridscale,
-	    	FixationGridIndex: trial.fixationgridindex,
-	    	SampleGridIndex: trial.samplegrid,
-	    	TestGridIndex: trial.testgrid,
-	    	ObjectGridIndex: trial.objectgrid, 
-	    	RewardStage: trial.rewardStage,
-	    	RewardPer1000Trials: trial.rewardper1000,
-	    	PunishTimeOut: trial.punish,
-	    	FixationDuration: trial.fixationdur,
-	    	FixedRatio: trial.fixedratio,
-	    	FixationMove: trial.fixationmove,
-	    	SampleON: trial.sampleON,
-	    	SampleOFF: trial.sampleOFF,
-	    	KeepSampleON: trial.keepSampleON,
-	    	HideTestDistractors: trial.hidetestdistractors,
-	    	SampleBlockSize: trial.sampleblocksize,
-	    	NStickyResponse: trial.nstickyresponse,
-			ConsecutiveHitsITI: trial.consecutivehitsITI,
-			NConsecutiveHitsforBonus: trial.nconsecutivehitsforbonus,
-			NRewardMax: trial.nrewardmax,
-			FixationUsesSample: trial.fixationusessample,
-	    	ImageFolderSample: trial.imageFolderSample,
-	    	ImageFolderTest: trial.imageFolderTest,
-	    	FixationScale: trial.fixationScale,
-	    	SampleScale: trial.sampleScale,
-	    	TestScale: trial.testScale,
-	    	Automator: trial.automator,
-	    	CurrentAutomatorStage: trial.currentAutomatorStage, 
-	    	AutomatorFilePath: trial.automatorFilePath
-	    });
-	    datastr = JSON.stringify(dataobj);
-
-	response = await dbx.filesUpload({
-		path: trial.params,
-		contents: datastr,
-		mode: {[".tag"]: "overwrite"} })
-			console.log("successful paramater file upload size " + response.size)
-			trial.need2writeParameters = 0;
-	}
-	catch (error){
-		console.error(error)
-	}
-
-	try{
-	filemeta = await dbx.filesGetMetadata({path: paramfile.name})
-		if (paramfile.rev != filemeta.rev){
-			paramfile.rev = filemeta.rev
-			paramfile.date = new Date(filemeta.client_modified)
-
-			console.log('parameter file was updated rev=' + paramfile.rev)
-		}
-	}
-	catch(error) {
-		console.error(error)
-	}
-}
-//================== WRITE JSON (end) ==================//
-
 
 //================== WRITE IMAGE ==================//
 // asynchronous image capture
