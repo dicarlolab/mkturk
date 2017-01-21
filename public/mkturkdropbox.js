@@ -1,14 +1,4 @@
-// Mkturk
-var DBX_CLIENT_ID = "2m9hmv7q45kwren"
-var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/mkturk.html"
 
-// E. Issa Nightly
-var DBX_CLIENT_ID = "3rd6bco8cdmcadz"
-var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/nightly/public/mkturk.html"
-
-// // M. Lee Nightly
-// var DBX_CLIENT_ID = "c704p4lo4g3op39"
-// var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/tnra0lpcs5uvy54/debugging_mkturk/public/mkturk.html"
 
 //return whether user was redirected here after authenticating
 function isAuthenticated(){
@@ -24,7 +14,7 @@ function getAccessTokenFromUrl(){
 // Asynchronous: Get file list from dropbox directory
 async function getFileListDropbox2(){
 	try{
-	response = await dbx.filesListFolder({path: trial.datadir})
+	response = await dbx.filesListFolder({path: DATA_SAVEPATH+trial.subjid+'/'})
 		console.log("success: read directory ")
 
 		var q2=0;
@@ -44,6 +34,58 @@ async function getFileListDropbox2(){
 			}
 			return 0;
 		}); //sort in descending order
+	}
+	catch (error) {
+		console.error(error)
+	}
+}
+
+async function getFileListDropboxRecursive(dirpath){
+	var file_list = []
+
+	if(dirpath.endsWith('.png')){
+		return [dirpath]
+	}
+
+	try{
+		var entries = []
+		response = await dbx.filesListFolder({path: dirpath, 
+											  recursive: true}) 
+		entries.push(... response.entries)
+
+		// Use response.has_more to propagate 
+		var num_iterations = 0
+		var iteration_limit = 100
+		while(response.has_more == true){
+			response = await dbx.filesListFolderContinue(response.cursor)
+			entries.push(... response.entries)
+
+			num_iterations = num_iterations + 1 
+			if(num_iterations > iteration_limit)
+				{throw 'Hit iteration limit of '+iteration_limit+'. Check your imagebag directory is not insanely large.'}
+		}
+
+		console.log("Success. Read directory \""+dirpath+"\" (and any subdirectories). ")
+		var q2=0;
+		for (var q = 0; q <= entries.length-1; q++){
+			if (entries[q][".tag"] == "file" && entries[q].name.endsWith(".png")) {
+				file_list.push(entries[q].path_display) //'/'+entries[q].name)
+				q2++;
+			}
+		}
+		console.log(file_list.length+" files found.")
+
+		datafiles.sort(function (a,b){
+			if (a > b){
+				return -1;
+			}
+			if (a < b){
+				return 1;
+			}
+			return 0;
+		}); //sort in descending order
+
+		return file_list
 	}
 	catch (error) {
 		console.error(error)
@@ -89,20 +131,42 @@ function readParametersfromDropbox2(){
 			paramfile.text = reader.result
 			paramfile.data = JSON.parse(reader.result)
 
-if (Array.isArray(paramfile.data)){
-	var datajson = paramfile.data[0]
-}
-else {
-	var datajson = paramfile.data
-}
 			// Set parameters
-			for (p in params){
-				if (params[p].user == 1){
-					trial[p] = datajson[params[p].dataname]
-				}
-			} //for p user-defined params
-//			trial["objectlist"] = paramfile.data[0].TestedObjects;
+			env["weight"] = paramfile.data[0].Weight;
+			env["species"] = paramfile.data[0].Species;
+			env["homecage"] = paramfile.data[0].Homecage;
+			env["separated"] = paramfile.data[0].Separated;
+			env["liquid"] = paramfile.data[0].Liquid;
+			env["tablet"] = paramfile.data[0].Tablet;
+			env["pump"] = paramfile.data[0].Pump;
+			trial["objectlist"] = paramfile.data[0].TestedObjects;
+			trial["nway"] = paramfile.data[0].Nway;
+			trial["samplegrid"] = paramfile.data[0].SampleGridIndex;
+			trial["testgrid"] = paramfile.data[0].TestGridIndex;
+			trial["objectgrid"] = paramfile.data[0].ObjectGridIndex; 
+			trial["rewardStage"] = paramfile.data[0].RewardStage;
+			trial["rewardper1000"] = paramfile.data[0].RewardPer1000Trials;
+			trial["punish"] = paramfile.data[0].PunishTimeOut;
+			trial["fixationdur"] = paramfile.data[0].FixationDuration;
+			trial["fixationradius"] = paramfile.data[0].FixationRadius;
+			trial["fixationmove"] = paramfile.data[0].FixationMove;
+			trial["sampleON"] = paramfile.data[0].SampleON;
+			trial["sampleOFF"] = paramfile.data[0].SampleOFF;
+			trial["keepSampleON"] = paramfile.data[0].KeepSampleON;
+			trial["hidetestdistractors"] = paramfile.data[0].HideTestDistractors;
+			trial["sampleblocksize"] = paramfile.data[0].SampleBlockSize;
+			trial["nstickyresponse"] = paramfile.data[0].NStickyResponse;
+			trial["consecutivehitsITI"] = paramfile.data[0].ConsecutiveHitsITI;
+			trial["nconsecutivehitsforbonus"] = paramfile.data[0].NConsecutiveHitsforBonus;
+			trial["nrewardmax"] = paramfile.data[0].NRewardMax;
+			trial["imageFolderSample"] = paramfile.data[0].ImageFolderSample;
+			trial["imageFolderTest"] = paramfile.data[0].ImageFolderTest;
+			trial["sampleScale"] = paramfile.data[0].SampleScale;
+			trial["testScale"] = paramfile.data[0].TestScale;
+			trial["automator"] = paramfile.data[0].Automator;
+			trial["currentAutomatorStage"] = paramfile.data[0].CurrentAutomatorStage;
 			trial["params"] = paramfile.name;
+			trial["automatorFilePath"] = paramfile.data[0].AutomatorFilePath
 			resolve(1)
 		}
 		reader.readAsText(data.fileBlob)
@@ -122,17 +186,16 @@ function readAutomatorFilefromDropbox2(){
 		reader.onload = function(e){
 			var data = JSON.parse(reader.result)
 
-if (Array.isArray(data)){
-	var datajson = data[0]
-}
-else {
-	var datajson = data
-}
+			// Set parameters
+			//var minpctcorrect_sequence = []
+			//var mintrials_sequence = []
+			//var sample_foldernum_sequence = []
+			//var objectlist_sequence = []
 
-			minpctcorrect_sequence = datajson.PercentCorrectCriterion;
-			mintrials_sequence = datajson.MinimumTrialsCriterion;
-			sample_foldernum_sequence = datajson.FolderNumSequence;
-			objectlist_sequence = datajson.ObjectListSequence;
+			minpctcorrect_sequence = data[0].PercentCorrectCriterion;
+			mintrials_sequence = data[0].MinimumTrialsCriterion;
+			sample_foldernum_sequence = data[0].FolderNumSequence;
+			objectlist_sequence = data[0].ObjectListSequence;
 			number_automator_stages = objectlist_sequence.length; 
 
 			resolve(1)
@@ -147,51 +210,50 @@ else {
 
 function readPerformanceHistoryfromDropbox2(filenum){
 	return new Promise(function(resolve,reject){
-		dbx.filesDownload({path: trial.datadir + datafiles[filenum]}).then(function(data){
+		dbx.filesDownload({path: DATA_SAVEPATH + trial.subjid+"/"+ datafiles[filenum]}).then(function(data){
 		console.log("success: read data file size " + data.size)
 
 		var reader = new FileReader()
 		reader.onload = function(e){
 			var file = {data: JSON.parse(reader.result)}
 
-if (Array.isArray(file.data)){
-	var datajson = file.data[0]
-}
-else {
-	var datajson = file.data
-}
-
-			trial["species"] = datajson.Species;
-			trial["homecage"] = datajson.Homecage;
-			trial["separated"] = datajson.Separated;
-			trial["liquid"] = datajson.Liquid;
-			trial["tablet"] = datajson.Tablet;
-			trial["pump"] = datajson.Pump;
-			trial["objectlist"] = datajson.TestedObjects;
-			trial["nway"] = datajson.Nway;
-			trial["samplegrid"] = datajson.SampleGridIndex;
-			trial["testgrid"] = datajson.TestGridIndex;
-			trial["objectgrid"] = datajson.ObjectGridIndex;
-			trial["rewardStage"] = datajson.RewardStage
-			trial["rewardper1000"] = datajson.RewardPer1000Trials;
-			// trial.reward = datajson.RewardDuration;
-			trial["punish"] = datajson.PunishTimeOut;
-			trial["fixationdur"] = datajson.FixationDuration;
-			trial["fixationradius"] = datajson.FixationRadius;
-			trial["fixationmove"] = datajson.FixationMove;
-			trial["sampleON"] = datajson.SampleON;
-			trial["sampleOFF"] = datajson.SampleOFF;
-			trial["keepSampleON"] = datajson.KeepSampleON;
-			trial["hidetestdistractors"] = datajson.HideTestDistractors;
-			trial["sampleblocksize"] = datajson.SampleBlockSize;
-			trial["nstickyresponse"] = datajson.NStickyResponse;
-			trial["imageFolderSample"] = datajson.ImageFolderSample;
-			trial["imageFolderTest"] = datajson.ImageFolderTest;
-			trial["sampleScale"] = datajson.SampleScale;
-			trial["testScale"] = datajson.TestScale;			
-			trial["automator"] = datajson.Automator;
-			trial["currentAutomatorStage"] = datajson.CurrentAutomatorStage;
-			trial["automatorFilePath"] = datajson.AutomatorFilePath
+			if (typeof(file.data[0].Weight) != "undefined"){
+				env["weight"] = file.data[0].Weight;
+			}
+			else{
+				env["weight"] = 10;
+			}
+			env["species"] = file.data[0].Species;
+			env["homecage"] = file.data[0].Homecage;
+			env["separated"] = file.data[0].Separated;
+			env["liquid"] = file.data[0].Liquid;
+			env["tablet"] = file.data[0].Tablet;
+			env["pump"] = file.data[0].Pump;
+			trial["objectlist"] = file.data[0].TestedObjects;
+			trial["nway"] = file.data[0].Nway;
+			trial["samplegrid"] = file.data[0].SampleGridIndex;
+			trial["testgrid"] = file.data[0].TestGridIndex;
+			trial["objectgrid"] = file.data[0].ObjectGridIndex;
+			trial["rewardStage"] = file.data[0].RewardStage
+			trial["rewardper1000"] = file.data[0].RewardPer1000Trials;
+			// trial.reward = file.data[0].RewardDuration;
+			trial["punish"] = file.data[0].PunishTimeOut;
+			trial["fixationdur"] = file.data[0].FixationDuration;
+			trial["fixationradius"] = file.data[0].FixationRadius;
+			trial["fixationmove"] = file.data[0].FixationMove;
+			trial["sampleON"] = file.data[0].SampleON;
+			trial["sampleOFF"] = file.data[0].SampleOFF;
+			trial["keepSampleON"] = file.data[0].KeepSampleON;
+			trial["hidetestdistractors"] = file.data[0].HideTestDistractors;
+			trial["sampleblocksize"] = file.data[0].SampleBlockSize;
+			trial["nstickyresponse"] = file.data[0].NStickyResponse;
+			trial["imageFolderSample"] = file.data[0].ImageFolderSample;
+			trial["imageFolderTest"] = file.data[0].ImageFolderTest;
+			trial["sampleScale"] = file.data[0].SampleScale;
+			trial["testScale"] = file.data[0].TestScale;			
+			trial["automator"] = file.data[0].Automator;
+			trial["currentAutomatorStage"] = file.data[0].CurrentAutomatorStage;
+			trial["automatorFilePath"] = paramfile.data[0].AutomatorFilePath
 
 			if (typeof(trial.automator) == "undefined" || trial.automator == 0 || trial.automator != trial.currentAutomator){
 			}
@@ -230,6 +292,9 @@ else {
 			  	}
 			}
 			resolve(1)
+
+
+
 		} //reader.onload
 		reader.readAsText(data.fileBlob)
 	})
@@ -240,44 +305,252 @@ else {
 }
 //================== LOAD JSON (end) ==================//
 
+// MDN using files from web applications -->
+//   https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
+// Why createObjectUrl and advantages of blob urls --> 
+//   http://stackoverflow.com/questions/20950791/html5s-file-api-blob-usages
+
+//================== LOAD AUDIO ==================//
+function loadSoundfromDropbox2(src,idx){
+	return new Promise(function(resolve,reject){
+		dbx.filesDownload({path: sounds.folder + src + ".wav"}).then(function(data){
+		var reader = new FileReader()
+		reader.onload = function(e){
+			audiocontext.decodeAudioData(reader.result).then(function(buffer){
+				sounds.buffer[idx] = buffer;
+				resolve(idx)
+			})
+		}
+		reader.readAsArrayBuffer(data.fileBlob)
+	})
+	.catch(function(error){
+		console.error(error)
+	})
+	})
+}
+//================== LOAD AUDIO (end) ==================//
+
+
+//================== LOAD IMAGE ==================//
+
+async function loadBagfromDropbox(imagebags_parameter){
+	console.time('TotalBagLoadTime')
+
+	// Locate all .png in directory and subdirectories specified in imagebags_parameter
+	// Return in ONE 1-dimensional array, along with label vector that indexes given imagbags_order
+	var funcreturn = await loadImageBagPaths(imagebags_parameter); 
+	var imagebag_paths = funcreturn[0]
+	var imagebag_labels = funcreturn[1] 
+
+	// Load all .png blobs into an array. 
+	console.log('Will load '+ imagebag_paths.length+' images...')
+	var imagebag = await loadImageArrayfromDropbox(imagebag_paths)
+	console.log(imagebag.length+' images loaded successfully.')
+	console.timeEnd('TotalBagLoadTime')
+	return [imagebag, imagebag_labels, imagebag_paths]
+}
+
+async function loadImageBagPaths(imagebagroot_s){
+	
+	var bagitems_paths = [] // Can also be paths to a single .png file. 
+	var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
+
+	// Case 1: input = string. output = array of .png imagenames
+	if (typeof(imagebagroot_s) == "string"){
+		bagitems_paths = await getFileListDropboxRecursive(imagebagroot_s)
+		for(var i_item = 0; i_item < bagitems_paths.length; i_item++){
+			bagitems_labels.push(0)
+		}
+		return [bagitems_paths, bagitems_labels, bag2itemindex]
+	}
+
+	// Case 2: input = array of (array of) paths. output = array of arrays of .png imagenames 	
+	for (var i = 0; i<imagebagroot_s.length; i++){
+		// If this class's imagebag consists of one (1) root. 
+		if (typeof(imagebagroot_s[i]) == "string"){
+			var i_itempaths = await getFileListDropboxRecursive(imagebagroot_s[i])
+			bagitems_paths.push(... i_itempaths); 
+
+			for(var i_item = 0; i_item < i_itempaths.length; i_item++){
+				bagitems_labels.push(i)
+			}
+		}
+		// If this class's imagebag consists of multiple roots.
+		else if(typeof(imagebagroot_s[i]) == "object"){
+			var i_itempaths = []
+			for (var j = 0; j<imagebagroot_s[i].length; j++){
+				i_itempaths.push(... await getFileListDropboxRecursive(imagebagroot_s[i][j])); 
+			}
+			bagitems_paths.push(... i_itempaths)
+
+			for(var i_item = 0; i_item < i_itempaths.length; i_item++){
+				bagitems_labels.push(i)
+			}	
+		}
+	}
+
+	return [bagitems_paths, bagitems_labels] 
+}
+
+
+async function loadImageArrayfromDropbox(imagepathlist){
+	console.time('ImgLoadingTime')
+	// From a list of paths, load the images from Dropbox and store them into an array. 
+	var MAX_SIMULTANEOUS_REQUESTS = 500 // Empirically chosen based on our guess of Dropbox API's download request limit in a "short" amount of time.
+	var MAX_TOTAL_REQUESTS = 3000 // Empirically chosen
+
+	if (imagepathlist.length > MAX_TOTAL_REQUESTS) {
+		throw "Under the Dropbox API, cannot load more than "+MAX_TOTAL_REQUESTS+" images at a short time period. You have requested "
+		+imagepathlist.length+". Consider using an image loading strategy that reduces the request rate on Dropbox."
+		return 
+	}
+
+	if (imagepathlist.length > MAX_SIMULTANEOUS_REQUESTS){
+		console.log('Chunking your '+ imagepathlist.length+' image requests into '+Math.ceil(imagepathlist.length / MAX_SIMULTANEOUS_REQUESTS)+' chunks of (up to) '+MAX_SIMULTANEOUS_REQUESTS+' each. ')
+		var image_array = []
+
+		for (var i = 0; i < Math.ceil(imagepathlist.length / MAX_SIMULTANEOUS_REQUESTS); i++){
+			var lb = i*MAX_SIMULTANEOUS_REQUESTS; 
+			var ub = i*MAX_SIMULTANEOUS_REQUESTS + MAX_SIMULTANEOUS_REQUESTS; 
+			var partial_pathlist = imagepathlist.slice(lb, ub);
+
+			var partial_image_requests = partial_pathlist.map(loadImagefromDropbox);
+			image_array.push(... await Promise.all(partial_image_requests)); 
+		}
+	}
+	else { // If number of images is less than MAX_SIMULTANEOUS_REQUESTS, request them all simultaneously: 
+		var image_requests = [] 
+		image_requests = imagepathlist.map(loadImagefromDropbox)
+		var image_array = await Promise.all(image_requests) 
+	}
+	console.timeEnd('ImgLoadingTime')
+	return image_array
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function loadImagefromDropbox(imagepath){
+	// Loads and returns a single image located at imagepath into an Image()
+	// Upon failure (e.g. from Dropbox API limit), will retry up to MAX_RETRIES. 
+	// Will wait between retries with linear increase in waittime between tries. 
+
+	var MAX_RETRIES = 5 
+	var backoff_time_seed = 500 // ms; is multiplied by retry number. 
+	var retry_number = 0; 
+	while(true && retry_number <= MAX_RETRIES){
+		try{
+			data = await dbx.filesDownload({path: imagepath}); 
+			image = new Image(); 
+			image.src = window.URL.createObjectURL(data.fileBlob); 
+			image.onload = function(){
+					console.log('Loaded: ' + (imagepath));
+					renderBlank();
+					var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
+					var visible_ctxt = blank_canvasobj.getContext('2d');
+					visible_ctxt.textBaseline = "hanging";
+					visible_ctxt.fillStyle = "white";
+					visible_ctxt.font = "20px Verdana";
+					visible_ctxt.fillText('Loaded image ', imagepath, 20.5,20.5);
+				}
+			return image
+		}
+		catch(error){
+			retry_number = retry_number + 1; 
+			console.log(error)
+			console.log('On retry '+retry_number)
+			await sleep(backoff_time_seed * retry_number)
+			continue
+		}
+	}
+	return 
+}
+
+
+
+//================== LOAD IMAGE (end) ==================//
+
+
 //================== WRITE JSON ==================//
 async function writeDatatoDropbox2() {
 	try{
-        var dataobj = {}, datastr;
-        for (p in params){
-        	if (params[p].save == 1){
-        		dataobj[params[p].dataname] = trial[p]
-        	}
-        } //for p user-defined params
+        var dataobj = [], datastr;
+	    dataobj.push({
+	    	Subject: trial.subjid,
+	    	Weight: env.weight,
+	    	Species: env.species,
+	    	Homecage: env.homecage,
+	    	Separated: env.separated,
+	    	Liquid: env.liquid,
+	    	Tablet: env.tablet,
+	    	Pump: env.pump,
+	    	TestedObjects: trial.objectlist,
+	    	Nway: trial.nway,
+	    	SampleGridIndex: trial.samplegrid,
+	    	TestGridIndex: trial.testgrid,
+	    	ObjectGridIndex: trial.objectgrid, 
+	    	ImageFolderSample: trial.imageFolderSample,
+	    	ImageFolderTest: trial.imageFolderTest,
+	    	RewardStage: trial.rewardStage,
+	    	RewardPer1000Trials: trial.rewardper1000,
+	    	RewardDuration: trial.reward,
+	    	PunishTimeOut: trial.punish,
+	    	FixationDuration: trial.fixationdur,
+	    	FixationRadius: trial.fixationradius,
+	    	FixationMove: trial.fixationmove,
+	    	SampleON: trial.sampleON,
+	    	SampleOFF: trial.sampleOFF,
+	    	KeepSampleON: trial.keepSampleON,
+	    	HideTestDistractors: trial.hidetestdistractors,
+	    	SampleBlockSize: trial.sampleblocksize,
+	    	NStickyResponse: trial.nstickyresponse,
+	    	ConsecutiveHitsITI: trial.consecutivehitsITI,
+	    	NConsecutiveHitsforBonus: trial.nconsecutivehitsforbonus,
+	    	NRewardMax: trial.nrewardmax,
+	    	Automator: trial.automator,
+	    	CurrentAutomatorStage: trial.currentAutomatorStage,
+	    	AutomatorFilePath: trial.automatorFilePath,
+	    	Params: trial.params,
 
-		dataobj.PreSequence = canvas.sequencepre
-		dataobj.PreSequenceTimes = canvas.tsequencepre
-		dataobj.ImageSequence = canvas.sequence
-		dataobj.ImageSequenceTimes = canvas.tsequence
-		dataobj.PostSequence = canvas.sequencepost
-		dataobj.PostSequenceTimes = canvas.tsequencepost
+	    	PreSequence: canvas.sequencepre,
+	    	PreSequenceTimes: canvas.tsequencepre,
+	    	ImageSequence: canvas.sequence,
+	    	ImageSequenceTimes: canvas.tsequence,
+	    	PostSequence: canvas.sequencepost,
+	    	PostSequenceTimes: canvas.tsequencepost,
+	    	PixelRatio: devicePixelRatio,
+	    	BackingStoreRatio: backingStoreRatio,
+	    	CanvasScale: canvasScale,
+	    	WindowWidth: windowWidth,
+	    	WindowHeight: windowHeight,
+	    	XGridCenter: xgridcent,
+	    	YGridCenter: ygridcent,
 
-		dataobj.PixelRatio = devicePixelRatio
-		dataobj.BackingStoreRatio = backingStoreRatio
-		dataobj.CanvasScale = canvasScale
-		dataobj.WindowWidth = windowWidth
-		dataobj.WindowHeight = windowHeight
-		dataobj.XGridCenter = xgridcent
-		dataobj.YGridCenter = ygridcent
-		dataobj.SamplePixels = [imagesSample.wd, imagesSample.ht],
-		dataobj.TestPixels = [imagesTest.wd, imagesTest.ht],
-		dataobj.SampleScale = imagesSample.scale,
-		dataobj.TestScale = imagesTest.scale,
-		dataobj.SampleImageDir = imagesSample.folder
-		dataobj.TestImageDir = imagesTest.folder
-		dataobj.AllSampleSerials = imagesSample.serial
-		dataobj.AllTestSerials = imagesTest.serial
-		dataobj.BatteryLDT = battery.ldt
-	    	
+	    	SamplePixels: [imagesSample.wd, imagesSample.ht],
+    	    TestPixels: [imagesTest.wd, imagesTest.ht],
+    	    SampleScale: imagesSample.scale,
+	    	TestScale: imagesTest.scale,
+	    	SampleImageDir: imagesSample.folder,
+	    	TestImageDir: imagesTest.folder,
+	    	AllSampleSerials: imagesSample.serial,
+	    	AllTestSerials: imagesTest.serial,
+
+	    	FixationGridIndex: trial.fixationgrid,
+	    	Sample: trial.sampleserial,
+	    	Test: trial.testserial,
+	    	Response: trial.response,
+	    	CorrectItem: trial.correctItem,
+	    	StartTime: trial.tstart,
+	    	FixationXYT: trial.xytfixation,
+	    	ResponseXYT: trial.xytresponse,
+	    	BatteryLDT: battery.ldt,
+	    	NReward: trial.nreward,
+	    });
 	    datastr = JSON.stringify(dataobj);
 
 	response = await dbx.filesUpload({
-		path: trial.datadir + trial.filename,
+		path: DATA_SAVEPATH + trial.subjid+"/"+trial.filename,
 		contents: datastr,
 		mode: {[".tag"]: "overwrite"} })
 		console.log("successful data file upload size " + response.size)
@@ -285,6 +558,7 @@ async function writeDatatoDropbox2() {
 	catch(error){
 		console.error(error)
 	}
+
 }
 
 async function writeParameterTexttoDropbox2(){
@@ -319,12 +593,44 @@ async function writeParameterTexttoDropbox2(){
 //Write parameter file to dropbox
 async function writeParameterstoDropbox2() {
 	try{
-		var dataobj = {}, datastr;
-		for (p in params){
-        	if (params[p].user == 1){
-        		dataobj[params[p].dataname] = trial[p]
-        	}
-        } //for p user-defined params
+        var dataobj = [], datastr;
+	    dataobj.push({
+	    	Weight: env.weight,
+	    	Species: env.species,
+	    	Homecage: env.homecage,
+	    	Separated: env.separated,
+	    	Liquid: env.liquid,
+	    	Tablet: env.tablet,
+	    	Pump: env.pump,
+	    	TestedObjects: trial.objectlist,
+	    	Nway: trial.nway,
+	    	SampleGridIndex: trial.samplegrid,
+	    	TestGridIndex: trial.testgrid,
+	    	ObjectGridIndex: trial.objectgrid, 
+	    	RewardStage: trial.rewardStage,
+	    	RewardPer1000Trials: trial.rewardper1000,
+	    	PunishTimeOut: trial.punish,
+	    	FixationDuration: trial.fixationdur,
+	    	FixationRadius: trial.fixationradius,
+	    	FixationMove: trial.fixationmove,
+	    	SampleON: trial.sampleON,
+	    	SampleOFF: trial.sampleOFF,
+	    	KeepSampleON: trial.keepSampleON,
+	    	HideTestDistractors: trial.hidetestdistractors,
+	    	SampleBlockSize: trial.sampleblocksize,
+	    	NStickyResponse: trial.nstickyresponse,
+			ConsecutiveHitsITI: trial.consecutivehitsITI,
+			NConsecutiveHitsforBonus: trial.nconsecutivehitsforbonus,
+			NRewardMax: trial.nrewardmax,	    	    	
+	    	ImageFolderSample: trial.imageFolderSample,
+	    	ImageFolderTest: trial.imageFolderTest,
+	    	SampleScale: trial.sampleScale,
+	    	TestScale: trial.testScale,
+	    	Automator: trial.automator,
+	    	CurrentAutomatorStage: trial.currentAutomatorStage, 
+	    	AutomatorFilePath: trial.automatorFilePath
+	    	// RewardDuration: trial.reward,
+	    });
 	    datastr = JSON.stringify(dataobj);
 
 	response = await dbx.filesUpload({
@@ -353,134 +659,6 @@ async function writeParameterstoDropbox2() {
 }
 //================== WRITE JSON (end) ==================//
 
-// MDN using files from web applications -->
-//   https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
-// Why createObjectUrl and advantages of blob urls --> 
-//   http://stackoverflow.com/questions/20950791/html5s-file-api-blob-usages
-
-//================== LOAD AUDIO ==================//
-function loadSoundfromDropbox2(src,idx){
-	return new Promise(function(resolve,reject){
-		dbx.filesDownload({path: sounds.folder + src + ".wav"}).then(function(data){
-		var reader = new FileReader()
-		reader.onload = function(e){
-			audiocontext.decodeAudioData(reader.result).then(function(buffer){
-				sounds.buffer[idx] = buffer;
-				resolve(idx)
-			})
-		}
-		reader.readAsArrayBuffer(data.fileBlob)
-	})
-	.catch(function(error){
-		console.error(error)
-	})
-	})
-}
-//================== LOAD AUDIO (end) ==================//
-
-
-//================== LOAD IMAGE ==================//
-function loadSampleImagefromDropbox2(src,idx){
-	return new Promise(function(resolve,reject){
-		dbx.filesDownload({path: imagesSample.folder + src + ".png"}).then(function(data){
-			imagesSamplePack[curridx+idx] = new Image();
-			imagesSamplePack[curridx+idx].src = window.URL.createObjectURL(data.fileBlob)
-
-			imagesSamplePack[curridx+idx].onload = function(){
-				console.log('loaded image' + (curridx+idx));
-
-				renderBlank();
-				var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
-				var visible_ctxt = blank_canvasobj.getContext('2d');
-				visible_ctxt.textBaseline = "hanging";
-				visible_ctxt.fillStyle = "white";
-				visible_ctxt.font = "20px Verdana";
-				visible_ctxt.fillText('Loaded image ' + (curridx+idx),20.5,20.5);
-				resolve(curridx+idx)
-			}
-	})
-	.catch(function(error){
-		console.error(error)
-	})
-	})
-}
-
-function loadTestImagefromDropbox2(src,idx){
-	return new Promise(function(resolve,reject){
-		dbx.filesDownload({path: imagesTest.folder + src + ".png"}).then(function(data){
-			imagesTestPack[curridx+idx] = new Image();
-			imagesTestPack[curridx+idx].src = window.URL.createObjectURL(data.fileBlob)
-
-			imagesTestPack[curridx+idx].onload = function(){
-				console.log('loaded image' + (curridx+idx));
-
-				renderBlank();
-				var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
-				var visible_ctxt = blank_canvasobj.getContext('2d');
-				visible_ctxt.textBaseline = "hanging";
-				visible_ctxt.fillStyle = "white";
-				visible_ctxt.font = "20px Verdana";
-				visible_ctxt.fillText('Loaded image ' + (curridx+idx),125.5,20.5);
-				resolve(curridx+idx)
-			}
-	})
-	.catch(function(error){
-		console.error(error)
-	})
-	})
-}
-
-
-function loadOriginalSampleImagefromDropbox2(src){
-	return new Promise(function(resolve,reject){
-		dbx.filesDownload({path: imagesSample.folderOriginal + src + ".png"}).then(function(data){
-			imagesSampleOriginal[src] = new Image();
-			imagesSampleOriginal[src].src = window.URL.createObjectURL(data.fileBlob)
-
-			imagesSampleOriginal[src].onload = function(){
-				console.log('loaded original sample image' + (src));
-
-				renderBlank();
-				var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
-				var visible_ctxt = blank_canvasobj.getContext('2d');
-				visible_ctxt.textBaseline = "hanging";
-				visible_ctxt.fillStyle = "white";
-				visible_ctxt.font = "20px Verdana";
-				visible_ctxt.fillText('Loaded original sample image ' + (src),20.5,20.5);
-				resolve(src)
-			}
-	})
-	.catch(function(error){
-		console.error(error)
-	})
-	})
-}
-
-function loadOriginalTestImagefromDropbox2(src){
-	return new Promise(function(resolve,reject){
-		dbx.filesDownload({path: imagesTest.folderOriginal + src + ".png"}).then(function(data){
-			imagesTestOriginal[src] = new Image();
-			imagesTestOriginal[src].src = window.URL.createObjectURL(data.fileBlob)
-
-			imagesTestOriginal[src].onload = function(){
-				console.log('loaded original sample image' + (src));
-
-				renderBlank();
-				var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
-				var visible_ctxt = blank_canvasobj.getContext('2d');
-				visible_ctxt.textBaseline = "hanging";
-				visible_ctxt.fillStyle = "white";
-				visible_ctxt.font = "20px Verdana";
-				visible_ctxt.fillText('Loaded original sample image ' + (src),20.5,20.5);
-				resolve(src)
-			}
-	})
-	.catch(function(error){
-		console.error(error)
-	})
-	})
-}
-//================== LOAD IMAGE (end) ==================//
 
 //================== WRITE IMAGE ==================//
 // asynchronous image capture

@@ -1,3 +1,11 @@
+// The epsilon operator is a "spread" command for the succeeding object. 
+// arr1.push(... arr2) is like list1.extend(list2), in Python. 
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_operator#A_better_push
+
+
+
+
+
 function getImageList(images,foldernum){
 	images.serial = [];
 	images.obj = [];
@@ -275,7 +283,7 @@ function getImageList(images,foldernum){
 			} //for j exemplars
 		} //for i objects
 	}
-	
+
 	// holdout varB bg Batch0 objects, 16 objects * 200 images created 1/12/2017
 	if (foldernum == 30){
 		perobj = 200; 
