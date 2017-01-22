@@ -17,6 +17,7 @@
 
 <script src="mkturkusersettings.js"></script>
 <script src="mkturkimagedisplay.js"></script>
+<script src="mkturkparams.js"></script>
 
 </head>
 
@@ -348,22 +349,18 @@ for (trial.current=0; trial.current<10000; trial.current++){
 		trial.need2loadImages=1
 	}
 	if (trial.need2loadParameters == 1){
-
 		if (trial.automatorstagechange==0){
 			await readParametersfromDropbox2();
 		}
 
 		console.log("Objects:"+trial.objectlist)
 		canvas.tsequence = [0,100,100+trial.sampleON,100+trial.sampleON+trial.sampleOFF]; //timing between frames
-		imagesSample.folder = "/MonkeyTurk/obj25/imagepacks" + trial.imageFolderSample + "/imp";
-		imagesTest.folder = "/MonkeyTurk/obj25/imagepacks" + trial.imageFolderTest + "/imp";
+		//imagesSample.folder = "/MonkeyTurk/obj25/imagepacks" + trial.imageFolderSample + "/imp";
+		//imagesTest.folder = "/MonkeyTurk/obj25/imagepacks" + trial.imageFolderTest + "/imp";
 		imagesSample.scale = trial.sampleScale;
 		imagesTest.scale = trial.testScale;
 		setReward(); canvas.tsequencepost[2] = canvas.tsequencepost[1]+trial.reward*1000;
-		if (trial.objectgrid.length == trial.objectlist.length){
-			//use object grid
-			trial.testgrid = trial.testgrid.slice(0,trial.objectgrid.length)
-		}
+
 		if (trial.fixationmove==0){
 			trial.fixationinterval = 3000;
 		}
@@ -405,45 +402,20 @@ for (trial.current=0; trial.current<10000; trial.current++){
 	} //============ PARAMETER LOADING (end) ============//
 	// Purge trial tracking variables & initialize data file
 	if (trial.purge == 1){
-		//reset trial tracking variables
-		var d = new Date;
-		var currdate = d
-		var datestr = d.toISOString();
-		trial.filename = datestr.slice(0,datestr.indexOf(".")) + "_" + trial.subjid + ".txt";
-		trial.current=0;
-		trial.fixationgrid=[];
-		trial.sample=[];
-		trial.test=[];
-		trial.sampleserial=[];
-		trial.testserial=[];
-		trial.tstart=[]
-		trial.xytfixation=[];
-		trial.xytresponse=[];
-		trial.response=[];
-		trial.correctItem=[];
-		trial.sampleblockidx=0;
-		trial.stickyresponse=0;
-		trial.consecutivehits=0;
-		trial.nreward=[];
-		trial.purge = 0
+		purgeTrialVars()
 	}
 	//============ IMAGE LOADING ============//
 	if (trial.need2loadImages == 1){
-
-
 		// LOAD IMAGES
-		console.log('Loading imagebags.')
+		console.log('Beginning to load imagebags:')
 
 		// Todo: read samplebags_parameter / testbags_parameter from parameter file: 
-		samplebags_parameter = [['/MonkeyTurk/ImageBags/mil_images/varA_batch0obj47/', '/MonkeyTurk/ImageBags/mil_images/varA_batch0obj47/'
-		], '/MonkeyTurk/ImageBags/mil_images/varA_batch0obj67/']; 
-		var funcreturn = await loadBagfromDropbox(samplebags_parameter)
+		var funcreturn = await loadBagfromDropbox(trial.imageBagsSample)
 		samplebag = funcreturn[0]
 		samplebag_labels = funcreturn[1]
 		samplebag_paths = funcreturn[2]
 
-		testbags_parameter = ['/MonkeyTurk/ImageBags/buttons/white_button512x512.png', '/MonkeyTurk/ImageBags/buttons/white_button512x512.png']; 
-		var funcreturn = await loadBagfromDropbox(testbags_parameter)
+		var funcreturn = await loadBagfromDropbox(trial.imageBagsTest)
 		testbag = funcreturn[0]
 		testbag_labels = funcreturn[1]
 		testbag_paths = funcreturn[2]
@@ -478,65 +450,65 @@ for (trial.current=0; trial.current<10000; trial.current++){
 		}
 		// MAKE THE IMAGE DISPLAY GRID (end)
 		// renderBlank();
-		console.log('Begin rendering stack.')
 		renderEyeFixation();
 		renderReward();
 		renderPhotoReward();
 		renderPunish();
 		renderBlank();
 		trial.need2loadImages = 0;
-		console.log('End rendering stack.')
-
 	} 
 	//============ (end) IMAGE LOADING  ============//
 	trial.automatorstagechange=0
 	//============ CHOOSE SAMPLE & TEST ============//
 
-	// Get sample image according to some SamplingStrategy
-	// Store its index in trial.sample[trial.current]
+	var SamplingStrategy = 'uniform_with_replacement'
+	var sampleImage_index = selectSampleImage(samplebag_labels, SamplingStrategy)
+	var current_sample_label = samplebag_labels[sampleImage_index]; 
+	trial.sample[trial.current] = sampleImage_index 
 
-	if (trial.sampleblockidx == 0){ 
-		var SamplingStrategy = 'uniform_with_replacement'
-		var sampleImage_index = selectSampleImage(samplebag_labels, SamplingStrategy)
-		trial.sample[trial.current] = sampleImage_index 
-	} 
-	// Option: keep sample from last trial
-	else if (trial.sampleblockidx <= trial.sampleblocksize-1){
+	// Option: use sample blocks: 
+	if (trial.sampleblockidx <= trial.sampleblocksize-1){
+		// Keep the sample from last trial
 		trial.sample[trial.current] = trial.sample[trial.current-1];
+		trial.sampleblockidx++;
 	} 
-
-	trial.sampleblockidx++;
-	// Reset sampleblock counter. 
-	if (trial.sampleblockidx > trial.sampleblocksize-1){
+	// If done with sampleblock, reset counter. 
+	if (trial.sampleblockidx >= trial.sampleblocksize){
 		trial.sampleblockidx = 0;
 	} 
 
-	// Get appropriate test image (correct + distractors) according to some SamplingStrategy
-	var current_sample_label = samplebag_labels[trial.sample[trial.current]]; 
+	// Get appropriate test image (correct + distractors) 
 	funcreturn = selectTestImages(current_sample_label, trial.nway, testbag_labels) 
+	console.log(funcreturn[0])
 	trial.test[trial.current] = funcreturn[0] // Indexes testbag, in some order that will be given on the screen according to trial.TestGrid. 
 	trial.correctItem[trial.current] = funcreturn[1] // The rewarded index of trial.test. 
 
-	// TODO
+	// TODO: sticky response logic
 	if (trial.stickyresponse >= trial.nstickyresponse){
 		throw "Not implemented"
 		// If the number of 'sticky responses' is greater than nstickyresponses, 
 		// make sure the correct answer for this trial is not at the sticky location. 
-		// Move this into getTestImageIndices?
+		// Move this logic into selectTestImages?
 	}
 
 	//============ (end) CHOOSE SAMPLE & TEST ============//
 	//============ FIXATION SCREEN ============//
 	canvas.buffered=0;
 
+	// Get image actuals from samplebag / testbag:
 	var trial_sampleimage = samplebag[trial.sample[trial.current]]
 	var trial_testimages = [] 
 	for (var i_test = 0; i_test<trial.test[trial.current].length; i_test++){
 		trial_testimages.push(testbag[trial.test[trial.current][i_test]])
 	}
-		
+	
+	// Buffer images
+	console.log(trial_testimages)
+	await bufferTrialImages(trial_sampleimage, trial.samplegrid, trial_testimages, trial.testgrid);
+	console.log('Done buffering images')
+	// If no fixation holdtime: 
+
 	if (trial.fixationdur <= 0){
-		bufferTrialImages(trial_sampleimage, trial.samplegrid, trial_testimages, trial.testgrid)
 		trial.waitingforFixation=0
 		trial.fixationgrid[trial.current]=-1;
 		trial.tstart[trial.current]=Math.round(performance.now());
@@ -563,10 +535,7 @@ for (trial.current=0; trial.current<10000; trial.current++){
 		}
 		//buffer fixation, sample & test
 		renderTouchFixation();
-		if (canvas.buffered == 0){
-			bufferTrialImages(trial_sampleimage, trial.samplegrid, trial_testimages, trial.testgrid);
-		}
-		//fixation
+		// fixation
 		trial.tstart[trial.current]=Math.round(performance.now());
 		frame.shown=[];
 		for (var q in canvas.sequencepre){
@@ -786,7 +755,7 @@ for (trial.current=0; trial.current<10000; trial.current++){
 	}
 	// check if new day
 	var newdate = new Date;
-	if ( (new Date).getDate() != currdate.getDate()){
+	if ( (new Date).getDate() != trial.currdate.getDate()){
 		trial.need2loadParameters = 1
 	}
 	if (trial.need2loadParameters == 0){

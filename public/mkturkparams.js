@@ -41,8 +41,8 @@ var params = {
 	nconsecutivehitsforbonus: {dataname: "NConsecutiveHitsforBonus",user: 1,save: 1,init: 4,meta: "How many consecutive hits subject needs for the reward amount to increase.  If nconsecutivehitsforbonus=4, then subject will get 2x reward for correct responses on 4 consecutive trials, 3x reward for correct responses on 8 consecutive trials, up to nrewardmax times of 1x reward. This is a way to make chance on a 2AFC task be virtually < 50% since reward is jointly distributed across trials rather than independently on the current trial."},
 	nrewardmax: {dataname: "NRewardMax",user: 1,save: 1,init: 1,meta: "Max number of rewards that can be given for a successful trial. This caps how much extra (bonus) reward subject can get for successful completion of consecutive trials. If nrewardmax=3, then subject can get up to 3x reward for completing 3*nconsecutivehitsforbonus consecutive trials successfully, and then would get 3x reward after that until gets a trial wrong."},
 	fixationusessample: {dataname: "FixationUsesSample",user: 1,save: 1,init: 0,meta: "fixationusessample=0, a fixation circle is shown for subject to touch; fixationusessample=1, sample image is shown as the fixation image. This allows implementation of a trianing strategy where the subject has to engage the sample image nfixations number of times before the choice screen."},
-	imageFolderSample: {dataname: "ImageFolderSample",user: 1,save: 1,init: 0,meta: "Folder number where sample images are drawn. Examples: 0=prototype images (labels), 1=var6 test images with no position variation and no backgrounds, 2=var6 test images with no backgrounds, 3=var6 test images on backgrounds"},
-	imageFolderTest: {dataname: "ImageFolderTest",user: 1,save: 1,init: 0,meta: "Folder number where test images are drawn. Same numbering convention as sample images. Test folder may contain token (prototype) images to represent each object choice."},
+	imageBagsSample: {dataname: "ImageBagsSample",user: 1,save: 1,init: 0,meta: "List of (list of) paths, where entries at the top level are directories / imagepaths for the sample images of one group; e.g. [['/bear_images', '/dog_images'], '/face_images'] is a {bear, dog} versus face task"},
+	imageBagsTest: {dataname: "ImageBagsTest",user: 1,save: 1,init: 0,meta: "List of (list of) paths, where entries at the top level are directories / imagepaths for the test images of one group; e.g. [['/buttons/bear_icon.png, '/buttons/dog_icon.png'], ['/buttons/face_icon1.png, '/buttons/face_icon2.png']]"},
 	fixationScale: {dataname: "FixationScale",user: 1,save: 1,init: 1,meta: "Size of fixation image in units of sample image width."},
 	fixationradius: {dataname: "FixationRadius",user: 0,save: 1,init: 0,meta: "Radius of fixation image in pixels. This is not set by the user. Rather, user specifies fixationScale, and then fixationradius stores the actual pixel-based size in the json data file."},
 	sampleScale: {dataname: "SampleScale",user: 1,save: 1,init: 1,meta: "Size of sample image in units of sample image width. sampleScal=1 displays a npx x npx image on npx x npx screen pixels on the screen (i.e. no up or down sampling/resizing/filtering of the image)"},
@@ -83,3 +83,30 @@ var SRautomatorparams = [
 "objectgrid","keepSampleON","nway","imageFolderSample","sampleScale",
 "testScale","hidetestdistractors","objectlist"
 ]
+
+
+// Functions relating to params 
+function purgeTrialVars(){
+	//reset trial tracking variables
+	var d = new Date;
+	var currdate = d
+	var datestr = d.toISOString();
+	trial.currdate = currdate
+	trial.filename = datestr.slice(0,datestr.indexOf(".")) + "_" + trial.subjid + ".txt";
+	trial.current=0;
+	trial.fixationgrid=[];
+	trial.sample=[];
+	trial.test=[];
+	trial.sampleserial=[];
+	trial.testserial=[];
+	trial.tstart=[]
+	trial.xytfixation=[];
+	trial.xytresponse=[];
+	trial.response=[];
+	trial.correctItem=[];
+	trial.sampleblockidx=0;
+	trial.stickyresponse=0;
+	trial.consecutivehits=0;
+	trial.nreward=[];
+	trial.purge = 0
+}

@@ -159,8 +159,8 @@ function readParametersfromDropbox2(){
 			trial["consecutivehitsITI"] = paramfile.data[0].ConsecutiveHitsITI;
 			trial["nconsecutivehitsforbonus"] = paramfile.data[0].NConsecutiveHitsforBonus;
 			trial["nrewardmax"] = paramfile.data[0].NRewardMax;
-			trial["imageFolderSample"] = paramfile.data[0].ImageFolderSample;
-			trial["imageFolderTest"] = paramfile.data[0].ImageFolderTest;
+			trial["imageBagsSample"] = paramfile.data[0].ImageBagsSample;
+			trial["imageBagsTest"] = paramfile.data[0].ImageBagsTest;
 			trial["sampleScale"] = paramfile.data[0].SampleScale;
 			trial["testScale"] = paramfile.data[0].TestScale;
 			trial["automator"] = paramfile.data[0].Automator;
@@ -247,8 +247,8 @@ function readPerformanceHistoryfromDropbox2(filenum){
 			trial["hidetestdistractors"] = file.data[0].HideTestDistractors;
 			trial["sampleblocksize"] = file.data[0].SampleBlockSize;
 			trial["nstickyresponse"] = file.data[0].NStickyResponse;
-			trial["imageFolderSample"] = file.data[0].ImageFolderSample;
-			trial["imageFolderTest"] = file.data[0].ImageFolderTest;
+			trial["imageBagsSample"] = file.data[0].ImageBagsSample;
+			trial["imageBagsTest"] = file.data[0].ImageBagsTest;
 			trial["sampleScale"] = file.data[0].SampleScale;
 			trial["testScale"] = file.data[0].TestScale;			
 			trial["automator"] = file.data[0].Automator;
@@ -394,37 +394,50 @@ async function loadImageBagPaths(imagebagroot_s){
 
 
 async function loadImageArrayfromDropbox(imagepathlist){
-	console.time('ImgLoadingTime')
-	// From a list of paths, load the images from Dropbox and store them into an array. 
-	var MAX_SIMULTANEOUS_REQUESTS = 500 // Empirically chosen based on our guess of Dropbox API's download request limit in a "short" amount of time.
-	var MAX_TOTAL_REQUESTS = 3000 // Empirically chosen
 
-	if (imagepathlist.length > MAX_TOTAL_REQUESTS) {
-		throw "Under the Dropbox API, cannot load more than "+MAX_TOTAL_REQUESTS+" images at a short time period. You have requested "
-		+imagepathlist.length+". Consider using an image loading strategy that reduces the request rate on Dropbox."
-		return 
-	}
+	try{
+		console.time('ImgLoadingTime')
+		// From a list of paths, load the images from Dropbox and store them into an array. 
+		var MAX_SIMULTANEOUS_REQUESTS = 500 // Empirically chosen based on our guess of Dropbox API's download request limit in a "short" amount of time.
+		var MAX_TOTAL_REQUESTS = 3000 // Empirically chosen
 
-	if (imagepathlist.length > MAX_SIMULTANEOUS_REQUESTS){
-		console.log('Chunking your '+ imagepathlist.length+' image requests into '+Math.ceil(imagepathlist.length / MAX_SIMULTANEOUS_REQUESTS)+' chunks of (up to) '+MAX_SIMULTANEOUS_REQUESTS+' each. ')
-		var image_array = []
-
-		for (var i = 0; i < Math.ceil(imagepathlist.length / MAX_SIMULTANEOUS_REQUESTS); i++){
-			var lb = i*MAX_SIMULTANEOUS_REQUESTS; 
-			var ub = i*MAX_SIMULTANEOUS_REQUESTS + MAX_SIMULTANEOUS_REQUESTS; 
-			var partial_pathlist = imagepathlist.slice(lb, ub);
-
-			var partial_image_requests = partial_pathlist.map(loadImagefromDropbox);
-			image_array.push(... await Promise.all(partial_image_requests)); 
+		if (imagepathlist.length > MAX_TOTAL_REQUESTS) {
+			throw "Under the Dropbox API, cannot load more than "+MAX_TOTAL_REQUESTS+" images at a short time period. You have requested "
+			+imagepathlist.length+". Consider using an image loading strategy that reduces the request rate on Dropbox."
+			return 
 		}
+
+		if (imagepathlist.length > MAX_SIMULTANEOUS_REQUESTS){
+			console.log('Chunking your '+ imagepathlist.length+' image requests into '+Math.ceil(imagepathlist.length / MAX_SIMULTANEOUS_REQUESTS)+' chunks of (up to) '+MAX_SIMULTANEOUS_REQUESTS+' each. ')
+			var image_array = []
+
+			for (var i = 0; i < Math.ceil(imagepathlist.length / MAX_SIMULTANEOUS_REQUESTS); i++){
+				var lb = i*MAX_SIMULTANEOUS_REQUESTS; 
+				var ub = i*MAX_SIMULTANEOUS_REQUESTS + MAX_SIMULTANEOUS_REQUESTS; 
+				var partial_pathlist = imagepathlist.slice(lb, ub);
+
+				var partial_image_requests = partial_pathlist.map(loadImagefromDropbox);
+				var partial_image_array = await Promise.all(partial_image_requests)
+				image_array.push(... partial_image_array); 
+			}
+		}
+		else { // If number of images is less than MAX_SIMULTANEOUS_REQUESTS, request them all simultaneously: 
+			var image_requests = [] 
+			image_requests = imagepathlist.map(loadImagefromDropbox)
+			var image_array = await Promise.all(image_requests) 
+		}
+
+		// Clear out top screen
+		renderBlank()
+		console.log('Blanked out screen')
+
+		console.timeEnd('ImgLoadingTime')
+		return image_array
 	}
-	else { // If number of images is less than MAX_SIMULTANEOUS_REQUESTS, request them all simultaneously: 
-		var image_requests = [] 
-		image_requests = imagepathlist.map(loadImagefromDropbox)
-		var image_array = await Promise.all(image_requests) 
+	catch(err){
+		console.log(err)
 	}
-	console.timeEnd('ImgLoadingTime')
-	return image_array
+
 }
 
 function sleep(ms) {
@@ -436,35 +449,34 @@ async function loadImagefromDropbox(imagepath){
 	// Upon failure (e.g. from Dropbox API limit), will retry up to MAX_RETRIES. 
 	// Will wait between retries with linear increase in waittime between tries. 
 
-	var MAX_RETRIES = 5 
-	var backoff_time_seed = 500 // ms; is multiplied by retry number. 
-	var retry_number = 0; 
-	while(true && retry_number <= MAX_RETRIES){
-		try{
-			data = await dbx.filesDownload({path: imagepath}); 
-			image = new Image(); 
-			image.src = window.URL.createObjectURL(data.fileBlob); 
-			image.onload = function(){
-					console.log('Loaded: ' + (imagepath));
-					renderBlank();
-					var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
-					var visible_ctxt = blank_canvasobj.getContext('2d');
-					visible_ctxt.textBaseline = "hanging";
-					visible_ctxt.fillStyle = "white";
-					visible_ctxt.font = "20px Verdana";
-					visible_ctxt.fillText('Loaded image ', imagepath, 20.5,20.5);
-				}
-			return image
+	try{
+		var MAX_RETRIES = 5 
+		var backoff_time_seed = 500 // ms; is multiplied by retry number. 
+		var retry_number = 0; 
+		while(true && retry_number <= MAX_RETRIES){
+			try{
+				data = await dbx.filesDownload({path: imagepath}); 
+				image = new Image(); 
+				image.src = window.URL.createObjectURL(data.fileBlob); 
+				image.onload = function(){
+						console.log('Loaded: ' + (imagepath));
+						displayTextOnBlackBar('Loaded: ' + (imagepath))
+					}
+				return image
+			}
+			catch(error){
+				retry_number = retry_number + 1; 
+				console.log(error)
+				console.log('On retry '+retry_number)
+				await sleep(backoff_time_seed * retry_number)
+				continue
+			}
 		}
-		catch(error){
-			retry_number = retry_number + 1; 
-			console.log(error)
-			console.log('On retry '+retry_number)
-			await sleep(backoff_time_seed * retry_number)
-			continue
-		}
+		return 
 	}
-	return 
+	catch(error){
+		console.log(error)
+	}
 }
 
 
@@ -490,8 +502,8 @@ async function writeDatatoDropbox2() {
 	    	SampleGridIndex: trial.samplegrid,
 	    	TestGridIndex: trial.testgrid,
 	    	ObjectGridIndex: trial.objectgrid, 
-	    	ImageFolderSample: trial.imageFolderSample,
-	    	ImageFolderTest: trial.imageFolderTest,
+	    	ImageBagsSample: trial.imageBagsSample,
+	    	ImageBagsTest: trial.imageBagsTest,
 	    	RewardStage: trial.rewardStage,
 	    	RewardPer1000Trials: trial.rewardper1000,
 	    	RewardDuration: trial.reward,
@@ -622,8 +634,8 @@ async function writeParameterstoDropbox2() {
 			ConsecutiveHitsITI: trial.consecutivehitsITI,
 			NConsecutiveHitsforBonus: trial.nconsecutivehitsforbonus,
 			NRewardMax: trial.nrewardmax,	    	    	
-	    	ImageFolderSample: trial.imageFolderSample,
-	    	ImageFolderTest: trial.imageFolderTest,
+	    	ImageBagsSample: trial.imageBagsSample,
+	    	ImageBagsTest: trial.imageBagsTest,
 	    	SampleScale: trial.sampleScale,
 	    	TestScale: trial.testScale,
 	    	Automator: trial.automator,

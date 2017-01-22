@@ -105,7 +105,7 @@ else if (canvas.headsupfraction == 0){
 
 
 
-function renderImageOnCanvas(image, grid_index, scale, canvas_id){
+async function renderImageOnCanvas(image, grid_index, scale, canvas_id){
 	var canvasobj=document.getElementById("canvas"+canvas_id);
 	var context=canvasobj.getContext('2d');
 
@@ -140,16 +140,16 @@ function renderImageOnCanvas(image, grid_index, scale, canvas_id){
 	return [xbound, ybound]
 }
 
-function bufferTrialImages(sample_image, sample_image_grid_index, test_images, test_image_grid_indices){
+async function bufferTrialImages(sample_image, sample_image_grid_index, test_images, test_image_grid_indices){
 
-	// --------- Buffer the sample canvas  ---------
+	// --------- Buffer the SAMPLE canvas  ---------
 	var canvasobj=document.getElementById("canvas"+canvas.sample); // Gray out before buffering sample
 	var context=canvasobj.getContext('2d');
 	context.fillStyle="#7F7F7F";
 	context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
-	renderImageOnCanvas(sample_image, sample_image_grid_index, trial.sampleScale, canvas.sample)
+	await renderImageOnCanvas(sample_image, sample_image_grid_index, trial.sampleScale, canvas.sample)
 	
-	// --------- Buffer the test canvas  ---------
+	// --------- Buffer the TEST canvas  ---------
 
 	// Option: gray out before buffering test: (for overriding previous screen if test canvas has transparent elements?)
 	var pre_grayout = true 
@@ -164,14 +164,14 @@ function bufferTrialImages(sample_image, sample_image_grid_index, test_images, t
 	boundingBoxesTest['y'] = []
 	// Draw test object(s): 
 	for (i = 0; i<test_images.length; i++){
-		funcreturn = renderImageOnCanvas(test_images[i], test_image_grid_indices[i], trial.testScale, canvas.test); 
+		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], trial.testScale, canvas.test); 
 		boundingBoxesTest.x.push(funcreturn[0]); 
 		boundingBoxesTest.y.push(funcreturn[1]); 
 	}
 
 	// Option: draw sample (TODO: remove the blink)
 	if (trial.keepSampleON==1){
-		renderImageOnCanvas(trial.sample[trial.current], trial.samplegrid, trial.sampleScale, canvas.sample)
+		await renderImageOnCanvas(trial.sample[trial.current], trial.samplegrid, trial.sampleScale, canvas.sample)
 	}
 
 	canvas.buffered = 1;
@@ -223,6 +223,17 @@ function displayTrial(sequence,tsequence){
 	window.requestAnimationFrame(updateCanvas); // kick off async work
 	return p
 } //displayTrial
+
+function displayTextOnBlackBar(message_string){
+	renderBlank();
+	var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
+	var visible_ctxt = blank_canvasobj.getContext('2d');
+	visible_ctxt.textBaseline = "hanging";
+	visible_ctxt.fillStyle = "white";
+	visible_ctxt.font = "20px Verdana";
+	visible_ctxt.fillText(message_string, 20.5,20.5);
+}
+
 function renderBlank(){
 	var canvasobj=document.getElementById("canvas"+canvas.blank);
 	var context=canvasobj.getContext('2d');
@@ -269,10 +280,10 @@ function renderTouchFixation(){
 	var ycent = ygridcent[trial.fixationgrid[trial.current]];
 	context.beginPath();
 	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
-	if (trial.species == "macaque" || trial.species == "human"){
+	if (env.species == "macaque" || env.species == "human"){
 		context.fillStyle="white";
 	}
-	else if (trial.species == "marmoset"){
+	else if (env.species == "marmoset"){
 		context.fillStyle="blue";
 	}
 	context.fill();
@@ -284,7 +295,7 @@ function renderTouchFixation(){
 	// // add red dot in center
 	// context.fillStyle="red";
 	// context.fillRect(xgridcent[trial.fixationgrid[trial.current]]+rad/2-6,xgridcent[trial.fixationgrid[trial.current]]-rad/2-6,12,12);
-	context.fillStyle="black";
+	//context.fillStyle="black";
 	context.fillRect(0,0,canvasobj.width,40);
 }
 function renderEyeFixation(){
