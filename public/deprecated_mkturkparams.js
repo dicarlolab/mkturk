@@ -65,24 +65,4 @@ var params = {
 
 
 
-function purgeTrackingVariables(){
-	// Purges heresies committed in the test period 
-	TRIAL = {}
-	TRIAL.sample = []
-	TRIAL.test = []
-	TRIAL.correctItem = []
-	TRIAL.tstart = []
-	TRIAL.xytfixation=[]
-	TRIAL.fixationGrid = []
-	TRIAL.response = []
-	TRIAL.xytresponse = []
-	TRIAL.nreward = []
 
-	TASK.currdate = new Date;
-	var datestr = TASK.currdate.toISOString();
-	TASK.filename = datestr.slice(0,datestr.indexOf(".")) + "_" + TASK.subjectID + ".txt";
-
-	FLAGS.current_trial = 0; 
-
-	return 
-}
