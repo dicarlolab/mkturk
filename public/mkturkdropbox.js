@@ -16,7 +16,7 @@ async function getMostRecentBehavioralFilePathsFromDropbox(num_files_to_get, sub
 
 		// TODO: add code for reading huge folders -- (see getImageListDropboxRecursive)
 		response = await dbx.filesListFolder({path: save_directory})
-		console.log("Success: read directory "+save_directory)
+		//console.log("Success: read directory "+save_directory)
 
 		var q2=0;
 		for (var q = 0; q <= response.entries.length-1; q++){
@@ -103,7 +103,7 @@ async function getImageListDropboxRecursive(dirpath){
 				q2++;
 			}
 		}
-		console.log(file_list.length+" file(s) discovered in directory \""+dirpath+"\" (and any subdirectories). ")
+		//console.log(file_list.length+" file(s) discovered in directory \""+dirpath+"\" (and any subdirectories). ")
 
 		datafiles.sort(function (a,b){
 			if (a > b){
@@ -126,8 +126,6 @@ async function getImageListDropboxRecursive(dirpath){
 // Asynchronous: Check for parmater file update
 
 async function checkParameterFileStatus(){
-	var need2refresh = false 
-
 	try{
 		filemeta = await dbx.filesGetMetadata({path: TASK.paramfile})
 		if (TASK.paramfile_rev != filemeta.rev){
@@ -135,7 +133,6 @@ async function checkParameterFileStatus(){
 			TASK.paramfile_date = new Date(filemeta.client_modified)
 
 			FLAGS.need2loadParameters = 1
-			FLAGS.need2loadImages = 1
 
 			console.log('Parameter file on disk was changed. New rev =' + TASK.paramfile_rev)
 		}
@@ -143,8 +140,6 @@ async function checkParameterFileStatus(){
 	catch(error) {
 		console.error(error)
 	}
-
-	return need2refresh
 }
 
 //================== LOAD JSON ==================//
@@ -190,7 +185,7 @@ async function parseAutomatorFilefromDropbox(jsontxt_filepath){
 function loadTextFilefromDropbox(textfile_path){
 	return new Promise(function(resolve,reject){
 		dbx.filesDownload({path: textfile_path}).then(function(data){
-			console.log("Read textfile "+textfile_path+" of size " + data.size)
+			//console.log("Read textfile "+textfile_path+" of size " + data.size)
 
 			var reader = new FileReader()
 			reader.onload = function(e){
@@ -221,7 +216,6 @@ async function readTrialHistoryFromDropbox(filepaths){
 
 	// Iterate over files and add relevant variables
 	for (var i = 0; i< filepaths.length; i++){
-		//console.log('Parsing trialhistory from '+filepaths[i])
 		datastring = await loadTextFilefromDropbox(filepaths[i])
 		data = JSON.parse(datastring)
 		task_data = data[0]
@@ -239,7 +233,7 @@ async function readTrialHistoryFromDropbox(filepaths){
 			trialhistory.trainingstage.push(current_stage)
 		}
 	}
-	console.log('Read trial history successfully from ', filepaths.length, ' datafiles.')
+	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
 	return trialhistory
 }
 
@@ -272,62 +266,73 @@ function loadSoundfromDropbox2(src,idx){
 //================== LOAD IMAGE ==================//
 
 async function loadBagfromDropbox(imagebags_parameter){
+
 	// Locate all .png in directory and subdirectories specified in imagebags_parameter
 	// Return in ONE 1-dimensional array, along with label vector that indexes given imagbags_order
-	var funcreturn = await loadImageBagPaths(imagebags_parameter); 
+	try{
+		var funcreturn = await loadImageBagPaths(imagebags_parameter); 
+	}
+	catch(error){
+		console.log('Path loading failed', error)
+	}
 	var imagebag_paths = funcreturn[0]
 	var imagebag_labels = funcreturn[1] 
 
 	// Load all .png blobs into an array. 
-	var imagebag = []
-	for (var i = 0; i < imagebag_paths.length; i++){
-		var fpath = imagebag_paths[i];
-		var img = await loadImagefromDropbox(fpath)
-		imagebag.push(img)
-	}
 	// Todo: fix array load (promises elements aren't actually fulfilled)
-	// var imagebag = await loadImageArrayfromDropbox(imagebag_paths)
+	try{
+		var imagebag = await loadImageArrayfromDropbox(imagebag_paths)
+	}
+	catch(error){
+		console.log('Image array load failed', error)
+	}
+
 	console.log('Done loading bag: '+imagebag.length+' out of '+imagebag_paths.length+ ' images loaded successfully.')
 	renderBlank()
 	return [imagebag, imagebag_labels, imagebag_paths]
 }
 
 async function loadImageBagPaths(imagebagroot_s){
-	var bagitems_paths = [] // Can also be paths to a single .png file. 
-	var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
+	try{
+		var bagitems_paths = [] // Can also be paths to a single .png file. 
+		var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
 
-	// Case 1: input = string. output = array of .png imagenames
-	if (typeof(imagebagroot_s) == "string"){
-		bagitems_paths = await getImageListDropboxRecursive(imagebagroot_s)
-		for(var i_item = 0; i_item < bagitems_paths.length; i_item++){
-			bagitems_labels.push(0)
+		// Case 1: input = string. output = array of .png imagenames
+		if (typeof(imagebagroot_s) == "string"){
+			bagitems_paths = await getImageListDropboxRecursive(imagebagroot_s)
+			for(var i_item = 0; i_item < bagitems_paths.length; i_item++){
+				bagitems_labels.push(0)
+			}
+			return [bagitems_paths, bagitems_labels, bag2itemindex]
 		}
-		return [bagitems_paths, bagitems_labels, bag2itemindex]
+
+		// Case 2: input = array of (array of) paths. output = array of arrays of .png imagenames 	
+		for (var i = 0; i<imagebagroot_s.length; i++){
+			// If this class's imagebag consists of one (1) root. 
+			if (typeof(imagebagroot_s[i]) == "string"){
+				var i_itempaths = await getImageListDropboxRecursive(imagebagroot_s[i])
+				bagitems_paths.push(... i_itempaths); 
+
+				for(var i_item = 0; i_item < i_itempaths.length; i_item++){
+					bagitems_labels.push(i)
+				}
+			}
+			// If this class's imagebag consists of multiple roots.
+			else if(typeof(imagebagroot_s[i]) == "object"){
+				var i_itempaths = []
+				for (var j = 0; j<imagebagroot_s[i].length; j++){
+					i_itempaths.push(... await getImageListDropboxRecursive(imagebagroot_s[i][j])); 
+				}
+				bagitems_paths.push(... i_itempaths)
+
+				for(var i_item = 0; i_item < i_itempaths.length; i_item++){
+					bagitems_labels.push(i)
+				}	
+			}
+		}
 	}
-
-	// Case 2: input = array of (array of) paths. output = array of arrays of .png imagenames 	
-	for (var i = 0; i<imagebagroot_s.length; i++){
-		// If this class's imagebag consists of one (1) root. 
-		if (typeof(imagebagroot_s[i]) == "string"){
-			var i_itempaths = await getImageListDropboxRecursive(imagebagroot_s[i])
-			bagitems_paths.push(... i_itempaths); 
-
-			for(var i_item = 0; i_item < i_itempaths.length; i_item++){
-				bagitems_labels.push(i)
-			}
-		}
-		// If this class's imagebag consists of multiple roots.
-		else if(typeof(imagebagroot_s[i]) == "object"){
-			var i_itempaths = []
-			for (var j = 0; j<imagebagroot_s[i].length; j++){
-				i_itempaths.push(... await getImageListDropboxRecursive(imagebagroot_s[i][j])); 
-			}
-			bagitems_paths.push(... i_itempaths)
-
-			for(var i_item = 0; i_item < i_itempaths.length; i_item++){
-				bagitems_labels.push(i)
-			}	
-		}
+	catch(error){
+		console.log(error)
 	}
 
 	return [bagitems_paths, bagitems_labels] 
@@ -336,8 +341,6 @@ async function loadImageBagPaths(imagebagroot_s){
 
 async function loadImageArrayfromDropbox(imagepathlist){
 	try{
-		console.time('ImgLoadingTime')
-		// From a list of paths, load the images from Dropbox and store them into an array. 
 		var MAX_SIMULTANEOUS_REQUESTS = 500 // Empirically chosen based on our guess of Dropbox API's download request limit in a "short" amount of time.
 		var MAX_TOTAL_REQUESTS = 3000 // Empirically chosen
 
@@ -356,21 +359,35 @@ async function loadImageArrayfromDropbox(imagepathlist){
 				var ub = i*MAX_SIMULTANEOUS_REQUESTS + MAX_SIMULTANEOUS_REQUESTS; 
 				var partial_pathlist = imagepathlist.slice(lb, ub);
 
-				var partial_image_requests = partial_pathlist.map(loadImagefromDropbox);
+				// var partial_image_requests = partial_pathlist.map(loadImagefromDropbox);
+				var partial_image_requests = []
+				for (var j = 0; j<partial_pathlist.length; j++){
+					partial_image_requests.push(await loadImagefromDropbox(partial_pathlist[j]))
+				}
+
 				var partial_image_array = await Promise.all(partial_image_requests)
 				image_array.push(... partial_image_array); 
 			}
+			
 		}
 		else { // If number of images is less than MAX_SIMULTANEOUS_REQUESTS, request them all simultaneously: 
-			var image_requests = [] 
-			image_requests = imagepathlist.map(loadImagefromDropbox)
-			var image_array = await Promise.all(image_requests) 
-		}
+			//var image_requests = [] 
+			//image_requests = imagepathlist.map(loadImagefromDropbox)
+			//var image_array = await Promise.all(image_requests) 
 
-		// Clear out top screen
+
+			//for (var j = 0; j<imagepathlist.length; j++){
+			//	console.log(j)
+			//	image_array.push(loadImagefromDropbox(imagepathlist[j])) // test with no awaits
+			//}
+
+			var image_requests = imagepathlist.map(loadImagefromDropbox); 
+			
+			var image_array = await Promise.all(image_requests)
+		}
 		renderBlank()
 
-		console.timeEnd('ImgLoadingTime')
+		console.log('Image array has been loaded.')
 		return image_array
 	}
 	catch(err){
@@ -387,35 +404,43 @@ async function loadImagefromDropbox(imagepath){
 	// Loads and returns a single image located at imagepath into an Image()
 	// Upon failure (e.g. from Dropbox API limit), will retry up to MAX_RETRIES. 
 	// Will wait between retries with linear increase in waittime between tries. 
-
-	try{
-		var MAX_RETRIES = 5 
-		var backoff_time_seed = 500 // ms; is multiplied by retry number. 
-		var retry_number = 0; 
-		while(true && retry_number <= MAX_RETRIES){
+	return new Promise(
+		function(resolve, reject){
 			try{
-				data = await dbx.filesDownload({path: imagepath}); 
-				image = new Image(); 
-				image.src = window.URL.createObjectURL(data.fileBlob); 
-				image.onload = function(){
-						console.log('Loaded: ' + (imagepath));
-						displayTextOnBlackBar('Loaded: ' + (imagepath))
+				var MAX_RETRIES = 5 
+				var backoff_time_seed = 500 // ms; is multiplied by retry number. 
+				var retry_number = 0; 
+				//while(true && retry_number <= MAX_RETRIES){
+					try{
+						dbx.filesDownload({path: imagepath}).then( 
+							function(data){
+								data_src = window.URL.createObjectURL(data.fileBlob); 	
+								image = new Image(); 
+
+								image.onload = function(){
+									console.log('Loaded: ' + (imagepath));
+									displayTextOnBlackBar('Loaded: ' + (imagepath))
+									resolve(image)
+									}
+								image.src = data_src
+							}
+						)
 					}
-				return image
+					catch(error){
+						retry_number = retry_number + 1; 
+						console.log(error)
+						console.log('On retry '+retry_number)
+						sleep(backoff_time_seed * retry_number)
+						//continue
+					}
+				//}	
 			}
 			catch(error){
-				retry_number = retry_number + 1; 
 				console.log(error)
-				console.log('On retry '+retry_number)
-				await sleep(backoff_time_seed * retry_number)
-				continue
+				resolve(0)
 			}
 		}
-		return 
-	}
-	catch(error){
-		console.log(error)
-	}
+	)
 }
 
 
@@ -457,7 +482,7 @@ async function writeParameterTexttoDropbox(parameter_text){
 					path: TASK.paramfile,
 					contents: datastr,
 					mode: {[".tag"]: "overwrite"} })
-						console.log("successful paramater file upload size " + response.size)
+						console.log("Successful parameter text upload. Size: " + response.size)
 						FLAGS.need2writeParameters = 0;
 			}
 			catch(error){
@@ -480,7 +505,7 @@ async function writeParameterTexttoDropbox(parameter_text){
 				TASK.paramfile_rev = filemeta.rev
 				TASK.paramfile_date = new Date(filemeta.client_modified)
 
-				console.log('Parameter file was updated rev=' + TASK.paramfile_rev)
+				console.log('Parameter file was updated. Rev=' + TASK.paramfile_rev)
 			}
 	}
 	catch(error) {
@@ -490,9 +515,7 @@ async function writeParameterTexttoDropbox(parameter_text){
 
 
 async function saveParameterstoDropbox() {
-
 	try{
-
 		var savepath = TASK.paramfile
 	    var datastr = JSON.stringify(TASK);
 

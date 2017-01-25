@@ -35,16 +35,13 @@ function automateTask(automator_data, trialhistory){
 	var i_current_stage = TASK.automatorStage; 
 	var current_stage = stageHash(TASK); 
 
-	console.log('Trial history:', trialhistory)
-	console.log('Current stage hash:', current_stage)
-	
-
 	for (var property in automator_data[i_current_stage]){
 		if (automator_data[i_current_stage].hasOwnProperty(property)){ // Apparently a necessary 'if' statement, as explained in: http://stackoverflow.com/questions/8312459/iterate-through-object-properties
 			if (property == 'minPercentCriterion' || property == 'minTrialsCriterion'){
 				continue 
 			}
-			if (TASK[property] != automator_data[i_current_stage][property]){
+
+			if (!TASK[property].equals(automator_data[i_current_stage][property])){
 				console.log('Discrepancy between trial.'+property+'='+TASK[property]+' and automator_data['+i_current_stage+']['+property+']='+automator_data[i_current_stage][property])
 				TASK[property] = automator_data[i_current_stage][property]
 				FLAGS.need2writeParameters=1
@@ -62,10 +59,12 @@ function automateTask(automator_data, trialhistory){
 	pctcorrect = funcreturn[0]
 	ntrials = funcreturn[1]
 
+	console.log('For '+ntrials+' trials, pctcorrect='+pctcorrect)
+
 	// ---------- CHANGE TASK.STUFF TO AUTOMATOR DATA [ NEXT_STAGE ] --------------------------------------- 
 	// If transition criteria are met, 
 	if(pctcorrect > minpctcorrect && ntrials >= mintrials){
-		console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject advanced to stage '+(i_current_stage+1)+' of '+automator_data.length+' of automator.')
+		console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject advanced to stage '+(i_current_stage+1)+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
 
 		// Then update trial.[stuff] with next stage's settings
 		for (var property in automator_data[i_current_stage+1]){
@@ -74,10 +73,14 @@ function automateTask(automator_data, trialhistory){
 			}
 
 			if (automator_data[i_current_stage+1].hasOwnProperty(property)){ 
-				console.log(property+' changed from '+TASK[property]+' to '+automator_data[i_current_stage+1][property])
-				TASK[property] = automator_data[i_current_stage+1][property]
-			}	
+				if (!TASK[property].equals(automator_data[i_current_stage][property])){
+					TASK[property] = automator_data[i_current_stage+1][property]
+					console.log('\"'+property+'\" changed from '+TASK[property]+' to '+automator_data[i_current_stage+1][property])
+				}
+			}			
 		}
+
+		TASK.automatorStage = TASK.automatorStage + 1; 
 
 		// And set update flag 
 		FLAGS.need2writeParameters=1
@@ -140,8 +143,8 @@ function computeRunningHistory(mintrials, current_stage, history_trainingstage, 
 		}
 		ncountedtrials = ncountedtrials+1
 	}
-	console.log('Num discrepancies in history: '+ ndiscrepancy)
-	console.log('Num counted trials: '+ ncountedtrials)
+	//console.log('Num discrepancies in history: '+ ndiscrepancy)
+	//console.log('Num counted trials in history: '+ ncountedtrials)
 
 	var ntrial=0;
 	var ncorrect=0;

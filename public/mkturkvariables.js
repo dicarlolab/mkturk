@@ -43,8 +43,8 @@
 		front: 0,
 		sequenceblank: [0,0],
 		tsequenceblank: [0,100],
-		sequencepre: [0,3],
-		tsequencepre: [0,300],
+		sequencepre: [3],
+		tsequencepre: [300],
 		sequence: [0,1,0,2], //0=gray 1=sample 2=test 3=touchfix 4=reward 5=punish
 		tsequence: [0,100,200,400], //timing between frames
 		sequencepost: [0,5,6],
@@ -83,4 +83,25 @@
 
 	var env = {};
 	
-//================== INITIALIZE VARIABLES (end) ==================//
+// Variable functions
+function purgeTrackingVariables(){
+	// Purges heresies committed in the test period 
+	TRIAL = {}
+	TRIAL.sample = []
+	TRIAL.test = []
+	TRIAL.correctItem = []
+	TRIAL.tstart = []
+	TRIAL.xytfixation=[]
+	TRIAL.fixationGrid = []
+	TRIAL.response = []
+	TRIAL.xytresponse = []
+	TRIAL.nreward = []
+
+	TASK.currdate = new Date;
+	var datestr = TASK.currdate.toISOString();
+	TASK.filename = datestr.slice(0,datestr.indexOf(".")) + "_" + TASK.subjectID + ".txt";
+
+	FLAGS.current_trial = 0; 
+
+	return 
+}

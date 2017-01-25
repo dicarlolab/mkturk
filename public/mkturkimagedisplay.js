@@ -1,4 +1,17 @@
 //================== LOAD STATUS DISPLAY ==================//
+function updateCanvasSettings(TASK){
+	// Todo: put these in the proper locations
+	canvas.tsequence = [0,100,100+TASK.sampleON,100+TASK.sampleON+TASK.sampleOFF]; 
+	canvas.tsequencepost[2] = canvas.tsequencepost[1]+TASK.reward*1000;
+
+	if (TASK.species == "macaque" || TASK.species == "human"){
+		canvas.headsupfraction=0;
+	}
+	else if (TASK.species == "marmoset"){
+		canvas.headsupfraction=1/3-0.06;
+	}
+}
+
 function writeTextonBlankCanvas(textstr,x,y){
 	var blank_canvasobj=document.getElementById("canvas"+canvas.blank)
 	var visible_ctxt = blank_canvasobj.getContext('2d')
@@ -7,17 +20,14 @@ function writeTextonBlankCanvas(textstr,x,y){
 	visible_ctxt.font = "18px Verdana"
 	visible_ctxt.fillText(textstr,x,y)
 }
+
 function updateStatusText(text){
 	var textobj = document.getElementById("headsuptext");
 	textobj.innerHTML = text
-	// updateHeadsUpDisplay()
 }
-//================== STATUS DISPLAY (end) ==================//
 //================== CANVAS SETUP ==================//
-// Sync: Setup heads-up display canvas
 
 function setupCanvasHeadsUp(){
-	console.log('Setting up canvasheadsup.')
 	canvasobj=document.getElementById("canvasheadsup");
 	canvasobj.width=window.innerWidth;
 	canvasobj.height=Math.round(window.innerHeight*canvas.headsupfraction);
@@ -29,12 +39,13 @@ function setupCanvasHeadsUp(){
 		canvasobj.style.display="block";
 	}
 	var context=canvasobj.getContext('2d');
+
 	context.fillStyle="#202020";
 	context.fillRect(0,0,canvasobj.width,canvasobj.height);
 	canvasobj.addEventListener('mousedown',mousedown_listener,false);
 	canvasobj.addEventListener('touchstart',touchstart_listener,false);
 }
-// Sync: Setup canvas
+
 function setupCanvas(id){
 	str="canvas" + id;
 	canvasobj=document.getElementById(str);
@@ -45,18 +56,19 @@ function setupCanvas(id){
 	canvasobj.height=windowHeight;
 	canvasobj.style.margin="0 auto";
 	canvasobj.style.display="block"; //visible
+
 	// assign listeners
-	// handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
 	canvasobj.addEventListener('mousedown',mousedown_listener,false);
 	canvasobj.addEventListener('mousemove',mousemove_listener,false);
 	canvasobj.addEventListener('mouseup',mouseup_listener,false);
-	canvasobj.addEventListener('touchstart',touchstart_listener,false);
+	canvasobj.addEventListener('touchstart',touchstart_listener,false); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
 	// canvasobj.addEventListener('touchmove',touchmove_listener,false);
 	canvasobj.addEventListener('touchmove',touchmove_listener,{passive: true}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
 	canvasobj.addEventListener('touchend',touchend_listener,false);
 	// store canvas size
 	canvasSize=[canvasobj.width, canvasobj.height];
-} //setupCanvas
+} 
+
 // Sync: Adjust canvas for the device pixel ratio & browser backing store size
 // from http://www.html5rocks.com/en/tutorials/canvas/hidpi/#disqus_thread
 function scaleCanvasforHiDPI(id){
@@ -72,11 +84,13 @@ function scaleCanvasforHiDPI(id){
 		canvasobj.style.height = windowHeight + "px";
 		canvasobj.style.margin="0 auto";
 		context.scale(canvasScale,canvasScale);
-	} //if
-} //scaleCanvasforHiDPI
-//================== CANVAS SETUP (end) ==================//
+	} 
+} 
+
+
 function updateHeadsUpDisplay(){
 	var textobj = document.getElementById("headsuptext");
+
 	// Overall performance
 	var ncorrect = 0;
 	for (var i=0; i<=TRIAL.correctItem.length-1; i++){
@@ -177,8 +191,8 @@ async function bufferTrialImages(sample_image, sample_image_grid_index, test_ima
 	
 	// --------- Buffer the TEST canvas  ---------
 
-	// Option: gray out before buffering test: (for overriding previous screen if test canvas has transparent elements?)
-	var pre_grayout = true 
+	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)
+	var pre_grayout = false 
 	if(pre_grayout == true){
 		var canvasobj=document.getElementById("canvas"+canvas.test); 
 		var context=canvasobj.getContext('2d');
@@ -212,7 +226,7 @@ function displayTrial(sequence,tsequence){
 		resolveFunc = resolve;
 		errFunc = reject;
 	}).then();
-	console.log(sequence, tsequence)
+	//console.log('seq', sequence, 'tseq', tsequence)
 
 	var start = null;
 	function updateCanvas(timestamp){
@@ -222,7 +236,7 @@ function displayTrial(sequence,tsequence){
 
 		// If time to show new frame, 
 		if (timestamp - start > tsequence[frame.current]){
-			console.log('Frame =' + frame.current+'Duration ='+(timestamp-start)+'Timestamp = ' + timestamp)
+			//console.log('Frame =' + frame.current+'. Duration ='+(timestamp-start)+'. Timestamp = ' + timestamp)
 			// Move canvas in front
 			var prev_canvasobj=document.getElementById("canvas"+canvas.front);
 			var curr_canvasobj=document.getElementById("canvas"+sequence[frame.current]);
@@ -459,15 +473,19 @@ async function playSound(idx){
 		gainNode.gain.value=0.15; //set boost pedal to 15% volume
 	}
 	else if (idx==2 | idx==3){
-		gainNode.gain.value=0.05; //set boost pedal to 5% volume
+		gainNode.gain.value=0.15; //set boost pedal to 5% volume
 	}
 	source.connect(gainNode);
 	// gainNode.connect(audiocontext.destination); //Connect boost pedal to output
 	// source.connect(audiocontext.destination);       // connect the source to the context's destination (the speakers)
 	source.start(0);                        // play the source now
+
+
 }
 // Promise: dispense reward (through audio control)
 function dispenseReward(){
+	console.log('Legacy dispense reward')
+	return 
 	return new Promise(function(resolve,reject){
 		audiocontext.resume()
 		var oscillator = audiocontext.createOscillator();
