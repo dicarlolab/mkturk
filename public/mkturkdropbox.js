@@ -1,5 +1,3 @@
-
-
 //return whether user was redirected here after authenticating
 function isAuthenticated(){
 	return !!getAccessTokenFromUrl()
@@ -12,15 +10,45 @@ function getAccessTokenFromUrl(){
 
 //================== LIST FILES ==================//
 // Asynchronous: Get file list from dropbox directory
-async function getFileListDropbox2(){
+async function getMostRecentBehavioralFilePathsFromDropbox(num_files_to_get, subject_id, save_directory){
+	var file_list = []
 	try{
-	response = await dbx.filesListFolder({path: DATA_SAVEPATH+trial.subjid+'/'})
-		console.log("success: read directory ")
+
+		// TODO: add code for reading huge folders -- (see getImageListDropboxRecursive)
+		response = await dbx.filesListFolder({path: save_directory})
+		console.log("Success: read directory "+save_directory)
 
 		var q2=0;
 		for (var q = 0; q <= response.entries.length-1; q++){
-			if (response.entries[q][".tag"] == "file" && response.entries[q].name.indexOf(trial.subjid) != -1){
-				datafiles[q2] = response.entries[q].name
+			if (response.entries[q][".tag"] == "file" && response.entries[q].name.indexOf(subject_id) != -1){
+				file_list[q2] = response.entries[q].path_display
+				q2++;
+			}
+		}
+
+		// [oldest,...,most recent]
+		file_list.sort();
+
+		// Return most recent files 
+		num_files = file_list.length
+		return file_list.slice(num_files - num_files_to_get, num_files)
+	}
+	catch (error) {
+		console.error(error)
+	}
+
+}
+
+async function getFileListDropbox(directorypath){
+	// Returns list of files in this directory (no recursion)
+	try{
+		var datafiles = []
+		response = await dbx.filesListFolder({path: directorypath})
+
+		var q2=0;
+		for (var q = 0; q <= response.entries.length-1; q++){
+			if (response.entries[q][".tag"] == "file" && response.entries[q].name.indexOf(TRIAL.subjectID) != -1){
+				datafiles[q2] = response.entries[q].path_display; 
 				q2++;
 			}
 		}
@@ -33,14 +61,16 @@ async function getFileListDropbox2(){
 				return 1;
 			}
 			return 0;
-		}); //sort in descending order
+			}); //sort in descending order
+
+		return datafiles; 
 	}
 	catch (error) {
 		console.error(error)
 	}
 }
 
-async function getFileListDropboxRecursive(dirpath){
+async function getImageListDropboxRecursive(dirpath){
 	var file_list = []
 
 	if(dirpath.endsWith('.png')){
@@ -65,7 +95,7 @@ async function getFileListDropboxRecursive(dirpath){
 				{throw 'Hit iteration limit of '+iteration_limit+'. Check your imagebag directory is not insanely large.'}
 		}
 
-		console.log("Success. Read directory \""+dirpath+"\" (and any subdirectories). ")
+		
 		var q2=0;
 		for (var q = 0; q <= entries.length-1; q++){
 			if (entries[q][".tag"] == "file" && entries[q].name.endsWith(".png")) {
@@ -73,7 +103,7 @@ async function getFileListDropboxRecursive(dirpath){
 				q2++;
 			}
 		}
-		console.log(file_list.length+" files found.")
+		console.log(file_list.length+" file(s) discovered in directory \""+dirpath+"\" (and any subdirectories). ")
 
 		datafiles.sort(function (a,b){
 			if (a > b){
@@ -91,219 +121,128 @@ async function getFileListDropboxRecursive(dirpath){
 		console.error(error)
 	}
 }
-//================== LIST FILES (end) ==================//
-
 
 //================== CHECK FILE REV ==================//
 // Asynchronous: Check for parmater file update
-async function checkParameterFileStatus2(){
+
+async function checkParameterFileStatus(){
+	var need2refresh = false 
+
 	try{
-	filemeta = await dbx.filesGetMetadata({path: paramfile.name})
-		if (paramfile.rev != filemeta.rev){
-			paramfile.rev = filemeta.rev
-			paramfile.date = new Date(filemeta.client_modified)
+		filemeta = await dbx.filesGetMetadata({path: TASK.paramfile})
+		if (TASK.paramfile_rev != filemeta.rev){
+			TASK.paramfile_rev = filemeta.rev
+			TASK.paramfile_date = new Date(filemeta.client_modified)
 
-			trial.need2loadParameters = 1
-			trial.need2loadImages = 1
+			FLAGS.need2loadParameters = 1
+			FLAGS.need2loadImages = 1
 
-			console.log('parameter file was updated rev=' + paramfile.rev)
+			console.log('Parameter file on disk was changed. New rev =' + TASK.paramfile_rev)
 		}
 	}
 	catch(error) {
 		console.error(error)
 	}
-	return false
-}
-//================== CHECK FILE REV (end)==================//
 
+	return need2refresh
+}
 
 //================== LOAD JSON ==================//
-function readParametersfromDropbox2(){
-	return new Promise(function(resolve,reject){
-		dbx.filesDownload({path: paramfile.name}).then(function(data){
-		console.log("success: read parameter file size" + data.size)
+async function loadParametersfromDropbox(paramfile_path){
+	datastring = await loadTextFilefromDropbox(paramfile_path)
+	filemeta = await dbx.filesGetMetadata({path: paramfile_path})
+	data = JSON.parse(datastring)
 
-		paramfile.rev = data.rev
-		paramfile.date = new Date(data.client_modified)
+	TASK = {}
+	TASK = data
 
-		var reader = new FileReader()
-		reader.onload = function(e){
-			paramfile.text = reader.result
-			paramfile.data = JSON.parse(reader.result)
+	TASK.paramfile = filemeta.path_display; 
+	TASK.paramfile_rev = filemeta.rev
+	TASK.paramfile_date = new Date(filemeta.client_modified)
+}
 
-			// Set parameters
-			env["weight"] = paramfile.data[0].Weight;
-			env["species"] = paramfile.data[0].Species;
-			env["homecage"] = paramfile.data[0].Homecage;
-			env["separated"] = paramfile.data[0].Separated;
-			env["liquid"] = paramfile.data[0].Liquid;
-			env["tablet"] = paramfile.data[0].Tablet;
-			env["pump"] = paramfile.data[0].Pump;
-			trial["objectlist"] = paramfile.data[0].TestedObjects;
-			trial["nway"] = paramfile.data[0].Nway;
-			trial["samplegrid"] = paramfile.data[0].SampleGridIndex;
-			trial["testgrid"] = paramfile.data[0].TestGridIndex;
-			trial["objectgrid"] = paramfile.data[0].ObjectGridIndex; 
-			trial["rewardStage"] = paramfile.data[0].RewardStage;
-			trial["rewardper1000"] = paramfile.data[0].RewardPer1000Trials;
-			trial["punish"] = paramfile.data[0].PunishTimeOut;
-			trial["fixationdur"] = paramfile.data[0].FixationDuration;
-			trial["fixationradius"] = paramfile.data[0].FixationRadius;
-			trial["fixationmove"] = paramfile.data[0].FixationMove;
-			trial["sampleON"] = paramfile.data[0].SampleON;
-			trial["sampleOFF"] = paramfile.data[0].SampleOFF;
-			trial["keepSampleON"] = paramfile.data[0].KeepSampleON;
-			trial["hidetestdistractors"] = paramfile.data[0].HideTestDistractors;
-			trial["sampleblocksize"] = paramfile.data[0].SampleBlockSize;
-			trial["nstickyresponse"] = paramfile.data[0].NStickyResponse;
-			trial["consecutivehitsITI"] = paramfile.data[0].ConsecutiveHitsITI;
-			trial["nconsecutivehitsforbonus"] = paramfile.data[0].NConsecutiveHitsforBonus;
-			trial["nrewardmax"] = paramfile.data[0].NRewardMax;
-			trial["imageBagsSample"] = paramfile.data[0].ImageBagsSample;
-			trial["imageBagsTest"] = paramfile.data[0].ImageBagsTest;
-			trial["sampleScale"] = paramfile.data[0].SampleScale;
-			trial["testScale"] = paramfile.data[0].TestScale;
-			trial["automator"] = paramfile.data[0].Automator;
-			trial["currentAutomatorStage"] = paramfile.data[0].CurrentAutomatorStage;
-			trial["params"] = paramfile.name;
-			trial["automatorFilePath"] = paramfile.data[0].AutomatorFilePath
-			resolve(1)
+
+async function parseAutomatorFilefromDropbox(jsontxt_filepath){
+	// From a JSON.txt of the format: 
+	// [{param:val, param:val}, {param:val, param:val}]
+
+	// Returns an array of identical format
+	var datastring = await loadTextFilefromDropbox(jsontxt_filepath)
+	data = JSON.parse(datastring);
+	return data
+
+	// Not being used, but maybe if you want to iterate over individual parameters
+	// e.g. to check that certain parameters are present; and to set defaults otherwise 
+	// e.g. to ensure consistency between fieldnames and TRIAL.[stuff]
+	automator_stage_parameters = []
+	for (var i = 0; i<data.length; i++){
+		automator_stage_parameters[i] = []
+		for (var property in data[i]){
+			if (data[i].hasOwnProperty(property)){ // Apparently necessary as explained in: http://stackoverflow.com/questions/8312459/iterate-through-object-properties
+				automator_stage_parameters[i][property] = data[i][property]
+			}	
 		}
-		reader.readAsText(data.fileBlob)
-	})
+	}
+	return automator_stage_parameters
+}
+
+
+function loadTextFilefromDropbox(textfile_path){
+	return new Promise(function(resolve,reject){
+		dbx.filesDownload({path: textfile_path}).then(function(data){
+			console.log("Read textfile "+textfile_path+" of size " + data.size)
+
+			var reader = new FileReader()
+			reader.onload = function(e){
+				var data = JSON.parse(reader.result)
+				resolve(reader.result)
+			}
+			reader.readAsText(data.fileBlob)
+		})
 	.catch(function(error){
 		console.error(error)
 	})
 	})
 }
 
-function readAutomatorFilefromDropbox2(){
-	return new Promise(function(resolve,reject){
-		dbx.filesDownload({path: trial.automatorFilePath}).then(function(data){
-		console.log("success: read AutomatorFile of size " + data.size)
+async function readTrialHistoryFromDropbox(filepaths){
+	
+	var trialhistory = []
+	trialhistory.trainingstage = []
+	trialhistory.correct = []
 
-		var reader = new FileReader()
-		reader.onload = function(e){
-			var data = JSON.parse(reader.result)
+	if (typeof filepaths == "string"){
+		filepaths = [filepaths]
+	}
 
-			// Set parameters
-			//var minpctcorrect_sequence = []
-			//var mintrials_sequence = []
-			//var sample_foldernum_sequence = []
-			//var objectlist_sequence = []
+	// Sort in ascending order, such that the OLDEST file is FIRST in trialhistory 
+	// trialhistory: [oldest TRIALs... most recent TRIALs]
+	filepaths.sort()
 
-			minpctcorrect_sequence = data[0].PercentCorrectCriterion;
-			mintrials_sequence = data[0].MinimumTrialsCriterion;
-			sample_foldernum_sequence = data[0].FolderNumSequence;
-			objectlist_sequence = data[0].ObjectListSequence;
-			number_automator_stages = objectlist_sequence.length; 
+	// Iterate over files and add relevant variables
+	for (var i = 0; i< filepaths.length; i++){
+		//console.log('Parsing trialhistory from '+filepaths[i])
+		datastring = await loadTextFilefromDropbox(filepaths[i])
+		data = JSON.parse(datastring)
+		task_data = data[0]
+		trial_data = data[1]
 
-			resolve(1)
+		var numTRIALs = trial_data.response.length; 
+		// Iterate over TRIALs
+		for (var i_TRIAL = 0; i<numTRIALs; i++){
+			// Correct/incorrect TRIAL
+			var correct = trial_data.response[i] == trial_data.correctItem[i]
+			trialhistory.correct.push(correct)
+
+			// Current automator stage 
+			var current_stage = stageHash(task_data)
+			trialhistory.trainingstage.push(current_stage)
 		}
-		reader.readAsText(data.fileBlob)
-	})
-	.catch(function(error){
-		console.error(error)
-	})
-	})
+	}
+	console.log('Read trial history successfully from ', filepaths.length, ' datafiles.')
+	return trialhistory
 }
 
-function readPerformanceHistoryfromDropbox2(filenum){
-	return new Promise(function(resolve,reject){
-		dbx.filesDownload({path: DATA_SAVEPATH + trial.subjid+"/"+ datafiles[filenum]}).then(function(data){
-		console.log("success: read data file size " + data.size)
-
-		var reader = new FileReader()
-		reader.onload = function(e){
-			var file = {data: JSON.parse(reader.result)}
-
-			if (typeof(file.data[0].Weight) != "undefined"){
-				env["weight"] = file.data[0].Weight;
-			}
-			else{
-				env["weight"] = 10;
-			}
-			env["species"] = file.data[0].Species;
-			env["homecage"] = file.data[0].Homecage;
-			env["separated"] = file.data[0].Separated;
-			env["liquid"] = file.data[0].Liquid;
-			env["tablet"] = file.data[0].Tablet;
-			env["pump"] = file.data[0].Pump;
-			trial["objectlist"] = file.data[0].TestedObjects;
-			trial["nway"] = file.data[0].Nway;
-			trial["samplegrid"] = file.data[0].SampleGridIndex;
-			trial["testgrid"] = file.data[0].TestGridIndex;
-			trial["objectgrid"] = file.data[0].ObjectGridIndex;
-			trial["rewardStage"] = file.data[0].RewardStage
-			trial["rewardper1000"] = file.data[0].RewardPer1000Trials;
-			// trial.reward = file.data[0].RewardDuration;
-			trial["punish"] = file.data[0].PunishTimeOut;
-			trial["fixationdur"] = file.data[0].FixationDuration;
-			trial["fixationradius"] = file.data[0].FixationRadius;
-			trial["fixationmove"] = file.data[0].FixationMove;
-			trial["sampleON"] = file.data[0].SampleON;
-			trial["sampleOFF"] = file.data[0].SampleOFF;
-			trial["keepSampleON"] = file.data[0].KeepSampleON;
-			trial["hidetestdistractors"] = file.data[0].HideTestDistractors;
-			trial["sampleblocksize"] = file.data[0].SampleBlockSize;
-			trial["nstickyresponse"] = file.data[0].NStickyResponse;
-			trial["imageBagsSample"] = file.data[0].ImageBagsSample;
-			trial["imageBagsTest"] = file.data[0].ImageBagsTest;
-			trial["sampleScale"] = file.data[0].SampleScale;
-			trial["testScale"] = file.data[0].TestScale;			
-			trial["automator"] = file.data[0].Automator;
-			trial["currentAutomatorStage"] = file.data[0].CurrentAutomatorStage;
-			trial["automatorFilePath"] = paramfile.data[0].AutomatorFilePath
-
-			if (typeof(trial.automator) == "undefined" || trial.automator == 0 || trial.automator != trial.currentAutomator){
-			}
-			else if (trial.automator == 1){
-				funcreturn = updateTask1("readtaskstageonly"); //read task stage only
-				trialhistory.trainingstage[trialhistory.current]=funcreturn;
-			}
-			else if (trial.automator == 2){
-				funcreturn = updateTask2("readtaskstageonly"); //read task stage only
-				trialhistory.trainingstage[trialhistory.current]=funcreturn;
-			}
-			else if (trial.automator == 3){
-				funcreturn = updateTask3("readtaskstageonly"); //read task stage only
-				trialhistory.trainingstage[trialhistory.current]=funcreturn;
-			}
-
-			else if (trial.automator == "SR"){
-				trialhistory.trainingstage[trialhistory.current]=trial.currentAutomatorStage;
-				trialhistory.automator_filepath[trialhistory.current] = trial.automatorFilePath; 
-			}
-
-			if (typeof(trial.automator) == "undefined" || trial.automator == 0 || trial.automator != trial.currentAutomator){
-				// do nothing 
-			}
-			else {
-			  	for (var i=0; i<=file.data[0].CorrectItem.length-1; i++){
-			  		if (file.data[0].CorrectItem[i] == file.data[0].Response[i]){
-			  			trialhistory.correct[trialhistory.current]=1;
-			  		}
-			  		else {
-			  			trialhistory.correct[trialhistory.current]=0;
-			  		}
-			  		trialhistory.automator_filepath[trialhistory.current] = file.data[0].AutomatorFilePath
-
-			  		trialhistory.current++;
-			  	}
-			}
-			resolve(1)
-
-
-
-		} //reader.onload
-		reader.readAsText(data.fileBlob)
-	})
-	.catch(function(error){
-		console.error(error)
-	})
-	})
-}
-//================== LOAD JSON (end) ==================//
 
 // MDN using files from web applications -->
 //   https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
@@ -328,14 +267,11 @@ function loadSoundfromDropbox2(src,idx){
 	})
 	})
 }
-//================== LOAD AUDIO (end) ==================//
 
 
 //================== LOAD IMAGE ==================//
 
 async function loadBagfromDropbox(imagebags_parameter){
-	console.time('TotalBagLoadTime')
-
 	// Locate all .png in directory and subdirectories specified in imagebags_parameter
 	// Return in ONE 1-dimensional array, along with label vector that indexes given imagbags_order
 	var funcreturn = await loadImageBagPaths(imagebags_parameter); 
@@ -343,21 +279,26 @@ async function loadBagfromDropbox(imagebags_parameter){
 	var imagebag_labels = funcreturn[1] 
 
 	// Load all .png blobs into an array. 
-	console.log('Will load '+ imagebag_paths.length+' images...')
-	var imagebag = await loadImageArrayfromDropbox(imagebag_paths)
-	console.log(imagebag.length+' images loaded successfully.')
-	console.timeEnd('TotalBagLoadTime')
+	var imagebag = []
+	for (var i = 0; i < imagebag_paths.length; i++){
+		var fpath = imagebag_paths[i];
+		var img = await loadImagefromDropbox(fpath)
+		imagebag.push(img)
+	}
+	// Todo: fix array load (promises elements aren't actually fulfilled)
+	// var imagebag = await loadImageArrayfromDropbox(imagebag_paths)
+	console.log('Done loading bag: '+imagebag.length+' out of '+imagebag_paths.length+ ' images loaded successfully.')
+	renderBlank()
 	return [imagebag, imagebag_labels, imagebag_paths]
 }
 
 async function loadImageBagPaths(imagebagroot_s){
-	
 	var bagitems_paths = [] // Can also be paths to a single .png file. 
 	var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
 
 	// Case 1: input = string. output = array of .png imagenames
 	if (typeof(imagebagroot_s) == "string"){
-		bagitems_paths = await getFileListDropboxRecursive(imagebagroot_s)
+		bagitems_paths = await getImageListDropboxRecursive(imagebagroot_s)
 		for(var i_item = 0; i_item < bagitems_paths.length; i_item++){
 			bagitems_labels.push(0)
 		}
@@ -368,7 +309,7 @@ async function loadImageBagPaths(imagebagroot_s){
 	for (var i = 0; i<imagebagroot_s.length; i++){
 		// If this class's imagebag consists of one (1) root. 
 		if (typeof(imagebagroot_s[i]) == "string"){
-			var i_itempaths = await getFileListDropboxRecursive(imagebagroot_s[i])
+			var i_itempaths = await getImageListDropboxRecursive(imagebagroot_s[i])
 			bagitems_paths.push(... i_itempaths); 
 
 			for(var i_item = 0; i_item < i_itempaths.length; i_item++){
@@ -379,7 +320,7 @@ async function loadImageBagPaths(imagebagroot_s){
 		else if(typeof(imagebagroot_s[i]) == "object"){
 			var i_itempaths = []
 			for (var j = 0; j<imagebagroot_s[i].length; j++){
-				i_itempaths.push(... await getFileListDropboxRecursive(imagebagroot_s[i][j])); 
+				i_itempaths.push(... await getImageListDropboxRecursive(imagebagroot_s[i][j])); 
 			}
 			bagitems_paths.push(... i_itempaths)
 
@@ -394,7 +335,6 @@ async function loadImageBagPaths(imagebagroot_s){
 
 
 async function loadImageArrayfromDropbox(imagepathlist){
-
 	try{
 		console.time('ImgLoadingTime')
 		// From a list of paths, load the images from Dropbox and store them into an array. 
@@ -429,7 +369,6 @@ async function loadImageArrayfromDropbox(imagepathlist){
 
 		// Clear out top screen
 		renderBlank()
-		console.log('Blanked out screen')
 
 		console.timeEnd('ImgLoadingTime')
 		return image_array
@@ -480,225 +419,105 @@ async function loadImagefromDropbox(imagepath){
 }
 
 
-
-//================== LOAD IMAGE (end) ==================//
-
-
 //================== WRITE JSON ==================//
-async function writeDatatoDropbox2() {
+async function writeBehaviortoDropbox(){
 	try{
-        var dataobj = [], datastr;
-	    dataobj.push({
-	    	Subject: trial.subjid,
-	    	Weight: env.weight,
-	    	Species: env.species,
-	    	Homecage: env.homecage,
-	    	Separated: env.separated,
-	    	Liquid: env.liquid,
-	    	Tablet: env.tablet,
-	    	Pump: env.pump,
-	    	TestedObjects: trial.objectlist,
-	    	Nway: trial.nway,
-	    	SampleGridIndex: trial.samplegrid,
-	    	TestGridIndex: trial.testgrid,
-	    	ObjectGridIndex: trial.objectgrid, 
-	    	ImageBagsSample: trial.imageBagsSample,
-	    	ImageBagsTest: trial.imageBagsTest,
-	    	RewardStage: trial.rewardStage,
-	    	RewardPer1000Trials: trial.rewardper1000,
-	    	RewardDuration: trial.reward,
-	    	PunishTimeOut: trial.punish,
-	    	FixationDuration: trial.fixationdur,
-	    	FixationRadius: trial.fixationradius,
-	    	FixationMove: trial.fixationmove,
-	    	SampleON: trial.sampleON,
-	    	SampleOFF: trial.sampleOFF,
-	    	KeepSampleON: trial.keepSampleON,
-	    	HideTestDistractors: trial.hidetestdistractors,
-	    	SampleBlockSize: trial.sampleblocksize,
-	    	NStickyResponse: trial.nstickyresponse,
-	    	ConsecutiveHitsITI: trial.consecutivehitsITI,
-	    	NConsecutiveHitsforBonus: trial.nconsecutivehitsforbonus,
-	    	NRewardMax: trial.nrewardmax,
-	    	Automator: trial.automator,
-	    	CurrentAutomatorStage: trial.currentAutomatorStage,
-	    	AutomatorFilePath: trial.automatorFilePath,
-	    	Params: trial.params,
+        var dataobj = [] 
+		dataobj.push(TASK)
+		dataobj.push(TRIAL)
+		datastr = JSON.stringify(dataobj);
 
-	    	PreSequence: canvas.sequencepre,
-	    	PreSequenceTimes: canvas.tsequencepre,
-	    	ImageSequence: canvas.sequence,
-	    	ImageSequenceTimes: canvas.tsequence,
-	    	PostSequence: canvas.sequencepost,
-	    	PostSequenceTimes: canvas.tsequencepost,
-	    	PixelRatio: devicePixelRatio,
-	    	BackingStoreRatio: backingStoreRatio,
-	    	CanvasScale: canvasScale,
-	    	WindowWidth: windowWidth,
-	    	WindowHeight: windowHeight,
-	    	XGridCenter: xgridcent,
-	    	YGridCenter: ygridcent,
+		// TODO: 
+		// Check if folder DATA_SAVEPATH + TASK.subjectID+"/"+TASK.filename exists 
+		// If not, create it for this subjectID using dbx.filesCreateFolder (see: http://dropbox.github.io/dropbox-sdk-js/Dropbox.html#filesCreateFolder__anchor)
 
-	    	SamplePixels: [imagesSample.wd, imagesSample.ht],
-    	    TestPixels: [imagesTest.wd, imagesTest.ht],
-    	    SampleScale: imagesSample.scale,
-	    	TestScale: imagesTest.scale,
-	    	SampleImageDir: imagesSample.folder,
-	    	TestImageDir: imagesTest.folder,
-	    	AllSampleSerials: imagesSample.serial,
-	    	AllTestSerials: imagesTest.serial,
-
-	    	FixationGridIndex: trial.fixationgrid,
-	    	Sample: trial.sampleserial,
-	    	Test: trial.testserial,
-	    	Response: trial.response,
-	    	CorrectItem: trial.correctItem,
-	    	StartTime: trial.tstart,
-	    	FixationXYT: trial.xytfixation,
-	    	ResponseXYT: trial.xytresponse,
-	    	BatteryLDT: battery.ldt,
-	    	NReward: trial.nreward,
-	    });
-	    datastr = JSON.stringify(dataobj);
-
-	response = await dbx.filesUpload({
-		path: DATA_SAVEPATH + trial.subjid+"/"+trial.filename,
-		contents: datastr,
-		mode: {[".tag"]: "overwrite"} })
-		console.log("successful data file upload size " + response.size)
-	}
+		response = await dbx.filesUpload({
+			path: DATA_SAVEPATH + TASK.subjectID+"/"+TASK.filename,
+			contents: datastr,
+			mode: {[".tag"]: "overwrite"} })
+			console.log("Successful behavior file upload. Size:" + response.size)
+		}
 	catch(error){
 		console.error(error)
 	}
-
 }
 
-async function writeParameterTexttoDropbox2(){
+async function writeParameterTexttoDropbox(parameter_text){
 	try{
-	    datastr = paramfile.text
+	    datastr = parameter_text
 
-	response = await dbx.filesUpload({
-		path: trial.params,
-		contents: datastr,
-		mode: {[".tag"]: "overwrite"} })
-			console.log("successful paramater file upload size " + response.size)
-			trial.need2writeParameters = 0;
+	    var success = false 
+	    var i = 1; 
+	    var timeout_seed =  1000; 
+	    var max_retries = 10; 
+
+	    while(!success && i < max_retries){
+	    	try{
+				response = await dbx.filesUpload({
+					path: TASK.paramfile,
+					contents: datastr,
+					mode: {[".tag"]: "overwrite"} })
+						console.log("successful paramater file upload size " + response.size)
+						FLAGS.need2writeParameters = 0;
+			}
+			catch(error){
+				console.log(error)
+				console.log('Trying to write in '+(timeout_seed*i)+'ms...on try '+ i)
+				sleep(timeout_seed * i)
+				i++
+				continue; 
+			}
+			success = true
+		}
 	}
 	catch (error){
 		console.error(error)
 	}
 
 	try{
-	filemeta = await dbx.filesGetMetadata({path: paramfile.name})
-		if (paramfile.rev != filemeta.rev){
-			paramfile.rev = filemeta.rev
-			paramfile.date = new Date(filemeta.client_modified)
+		filemeta = await dbx.filesGetMetadata({path: TASK.paramfile})
+			if (TASK.paramfile_rev != filemeta.rev){
+				TASK.paramfile_rev = filemeta.rev
+				TASK.paramfile_date = new Date(filemeta.client_modified)
 
-			console.log('parameter file was updated rev=' + paramfile.rev)
-		}
+				console.log('Parameter file was updated rev=' + TASK.paramfile_rev)
+			}
 	}
 	catch(error) {
 		console.error(error)
 	}
 }
 
-//Write parameter file to dropbox
-async function writeParameterstoDropbox2() {
-	try{
-        var dataobj = [], datastr;
-	    dataobj.push({
-	    	Weight: env.weight,
-	    	Species: env.species,
-	    	Homecage: env.homecage,
-	    	Separated: env.separated,
-	    	Liquid: env.liquid,
-	    	Tablet: env.tablet,
-	    	Pump: env.pump,
-	    	TestedObjects: trial.objectlist,
-	    	Nway: trial.nway,
-	    	SampleGridIndex: trial.samplegrid,
-	    	TestGridIndex: trial.testgrid,
-	    	ObjectGridIndex: trial.objectgrid, 
-	    	RewardStage: trial.rewardStage,
-	    	RewardPer1000Trials: trial.rewardper1000,
-	    	PunishTimeOut: trial.punish,
-	    	FixationDuration: trial.fixationdur,
-	    	FixationRadius: trial.fixationradius,
-	    	FixationMove: trial.fixationmove,
-	    	SampleON: trial.sampleON,
-	    	SampleOFF: trial.sampleOFF,
-	    	KeepSampleON: trial.keepSampleON,
-	    	HideTestDistractors: trial.hidetestdistractors,
-	    	SampleBlockSize: trial.sampleblocksize,
-	    	NStickyResponse: trial.nstickyresponse,
-			ConsecutiveHitsITI: trial.consecutivehitsITI,
-			NConsecutiveHitsforBonus: trial.nconsecutivehitsforbonus,
-			NRewardMax: trial.nrewardmax,	    	    	
-	    	ImageBagsSample: trial.imageBagsSample,
-	    	ImageBagsTest: trial.imageBagsTest,
-	    	SampleScale: trial.sampleScale,
-	    	TestScale: trial.testScale,
-	    	Automator: trial.automator,
-	    	CurrentAutomatorStage: trial.currentAutomatorStage, 
-	    	AutomatorFilePath: trial.automatorFilePath
-	    	// RewardDuration: trial.reward,
-	    });
-	    datastr = JSON.stringify(dataobj);
 
-	response = await dbx.filesUpload({
-		path: trial.params,
-		contents: datastr,
-		mode: {[".tag"]: "overwrite"} })
-			console.log("successful paramater file upload size " + response.size)
-			trial.need2writeParameters = 0;
+async function saveParameterstoDropbox() {
+
+	try{
+
+		var savepath = TASK.paramfile
+	    var datastr = JSON.stringify(TASK);
+
+		response = await dbx.filesUpload({
+			path: savepath,
+			contents: datastr,
+			mode: {[".tag"]: "overwrite"} })
+		
+		FLAGS.need2writeParameters = 0;
+
+		filemeta = await dbx.filesGetMetadata({path: savepath})
+		if (TASK.paramfile_rev != filemeta.rev){
+			TASK.paramfile_rev = filemeta.rev
+			TASK.paramfile_date = new Date(filemeta.client_modified)	
+		}
+		console.log("Task parameters successfully saved to disk. Size: " + response.size)
+
 	}
 	catch (error){
 		console.error(error)
 	}
 
-	try{
-	filemeta = await dbx.filesGetMetadata({path: paramfile.name})
-		if (paramfile.rev != filemeta.rev){
-			paramfile.rev = filemeta.rev
-			paramfile.date = new Date(filemeta.client_modified)
-
-			console.log('parameter file was updated rev=' + paramfile.rev)
-		}
-	}
-	catch(error) {
-		console.error(error)
-	}
 }
+
+
 //================== WRITE JSON (end) ==================//
 
 
-//================== WRITE IMAGE ==================//
-// asynchronous image capture
-// using blobs for image capture to work with binary data directly instead of base64 encoded uri string -->
-// https://developers.google.com/web/updates/2016/03/canvas-toblob-in-chrome-50
-function takephoto2(currtrial,currstage){
-	canvascaptureobj=document.getElementById('canvascapture');
-
-	canvascaptureobj.setAttribute('width',videoobj.clientWidth);
-	canvascaptureobj.setAttribute('height',videoobj.clientHeight);
-
-	var context = canvascaptureobj.getContext('2d');
-	context.drawImage(videoobj,0,0,videoobj.clientWidth,videoobj.clientHeight);
-
-	canvascaptureobj.toBlob(async function(blob){
-		// var reader = new FileReader()
-		// reader.onload = function(e){
-		try{
-		response = await dbx.filesUpload({
-				path: "/MonkeyTurk/imagecapture/" + trial.subjid + "/imcapture" + currtrial + "_" + currstage + ".png",
-				contents: blob,
-				mode: {[".tag"]: "overwrite"} })
-			console.log("successful image upload size " + response.size)
-		}
-		catch(error){
-			console.error(error)
-		}
-		// reader.readAsArrayBuffer(blob)
-	},'image/png')
-}
-//================== (end) WRITE IMAGE  ==================//

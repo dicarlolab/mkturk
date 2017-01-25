@@ -7,15 +7,17 @@ function writeTextonBlankCanvas(textstr,x,y){
 	visible_ctxt.font = "18px Verdana"
 	visible_ctxt.fillText(textstr,x,y)
 }
-function updateStatusText(){
+function updateStatusText(text){
 	var textobj = document.getElementById("headsuptext");
-	textobj.innerHTML = ble.statustext
+	textobj.innerHTML = text
 	// updateHeadsUpDisplay()
 }
 //================== STATUS DISPLAY (end) ==================//
 //================== CANVAS SETUP ==================//
 // Sync: Setup heads-up display canvas
+
 function setupCanvasHeadsUp(){
+	console.log('Setting up canvasheadsup.')
 	canvasobj=document.getElementById("canvasheadsup");
 	canvasobj.width=window.innerWidth;
 	canvasobj.height=Math.round(window.innerHeight*canvas.headsupfraction);
@@ -74,36 +76,60 @@ function scaleCanvasforHiDPI(id){
 } //scaleCanvasforHiDPI
 //================== CANVAS SETUP (end) ==================//
 function updateHeadsUpDisplay(){
-var textobj = document.getElementById("headsuptext");
-// Overall performance
-var ncorrect = 0;
-for (var i=0; i<=trial.correctItem.length-1; i++){
-		if (trial.correctItem[i] == trial.response[i]){
-			ncorrect++;
-		}
-}
-var pctcorrect = Math.round(100 * ncorrect / trial.response.length);
-// Task type
-var task1 = "";
-var task2 = "";
-if (trial.rewardStage == 0){
-	task1 = "Fixation";
-}
-else if (trial.rewardStage == 1){
-	task1 = "Match to Sample var" + trial.imageFolderSample;
-	task2 = trial.sampleON + "ms, " + trial.nway + "-way, " + trial.objectlist.length + "-obj";
-}
-if (canvas.headsupfraction > 0){
-	textobj.innerHTML = trial.subjid + ": <font color=green><b>" + pctcorrect + "%</b></font> " + "(" + ncorrect + " of " + trial.response.length +")" + "<br>" + "Estimated Reward: <font color=green><b>" + Math.round(trial.rewardper1000*ncorrect/1000) + "mL</b></font> (" + Math.round(trial.rewardper1000) + " per 1000)" + "<br> " + "<br>" + " Stage " + trial.currentAutomatorStage + ": " + task1 + "<br>" + task2 + "<br>" + "<br>" + "<br>" + "<font color=red><b>" + "<font color=blue><b>" + ble.statustext + "<br></font>";
-}
-else if (canvas.headsupfraction == 0){
-	textobj.innerHTML = ble.statustext
-}
+	var textobj = document.getElementById("headsuptext");
+	// Overall performance
+	var ncorrect = 0;
+	for (var i=0; i<=TRIAL.correctItem.length-1; i++){
+			if (TRIAL.correctItem[i] == TRIAL.response[i]){
+				ncorrect++;
+			}
+	}
+	var pctcorrect = Math.round(100 * ncorrect / TRIAL.response.length);
+	// Task type
+	var task1 = "";
+	var task2 = "";
+	if (TASK.rewardStage == 0){
+		task1 = "Fixation";
+	}
+	else if (TASK.rewardStage == 1){
+		task1 = TASK.testGrid.length + "-way AFC. ImageBags:" + TASK.imageBagsSample;
+		task2 = TASK.sampleON + "ms, " + TASK.imageBagsTest.length + "-categories in pool";
+	}
+	if (canvas.headsupfraction > 0){
+		textobj.innerHTML = TASK.subjectID + ": <font color=green><b>" + pctcorrect + "%</b></font> " + "(" + ncorrect + " of " + TRIAL.response.length +")" + "<br>" + "Estimated Reward: <font color=green><b>" + Math.round(TASK.rewardper1000*ncorrect/1000) + "mL</b></font> (" + Math.round(TASK.rewardper1000) + " per 1000)" + "<br> " + "<br>" + " Stage " + TASK.AutomatorStage + ": " + task1 + "<br>" + task2 + "<br>" + "<br>" + "<br>" + "<font color=red><b>" + "<font color=blue><b>" + ble.statustext + "<br></font>";
+	}
+	else if (canvas.headsupfraction == 0){
+		textobj.innerHTML = ble.statustext
+	}
 }
 //================== IMAGE RENDERING ==================//
 // Sync: buffer trial images
 
+function defineImageGrid(ngridpoints, wd, ht, scale, canvasScale){
+	var xgrid =[]
+	var ygrid =[]
+	var xgridcent =[] 
+	var ygridcent =[]
+	var cnt=0;
+	for (var i=1; i<=3; i++){
+		for (var j=1; j<=3; j++){
+			xgrid[cnt]=i - 1/2;
+			ygrid[cnt]=j - 1/2;
+			cnt++;
+		}
+	}
 
+	//center x & y grid within canvas
+	var dx = (document.body.clientWidth - canvas.offsetleft)*devicePixelRatio/2/canvasScale - xgrid[4]*wd*scale/canvasScale;
+	var dy = (document.body.clientHeight - canvas.offsettop)*devicePixelRatio/2/canvasScale - ygrid[4]*ht*scale/canvasScale;
+	for (var i=0; i<=xgrid.length-1; i++){
+		xgridcent[i]=Math.round(xgrid[i]*wd*scale/canvasScale + dx);
+		ygridcent[i]=Math.round(ygrid[i]*ht*scale/canvasScale + dy);
+	}
+
+	return [xgrid, ygrid, xgridcent, ygridcent]
+
+}
 
 async function renderImageOnCanvas(image, grid_index, scale, canvas_id){
 	var canvasobj=document.getElementById("canvas"+canvas_id);
@@ -147,7 +173,7 @@ async function bufferTrialImages(sample_image, sample_image_grid_index, test_ima
 	var context=canvasobj.getContext('2d');
 	context.fillStyle="#7F7F7F";
 	context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
-	await renderImageOnCanvas(sample_image, sample_image_grid_index, trial.sampleScale, canvas.sample)
+	await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.sampleScale, canvas.sample)
 	
 	// --------- Buffer the TEST canvas  ---------
 
@@ -164,14 +190,14 @@ async function bufferTrialImages(sample_image, sample_image_grid_index, test_ima
 	boundingBoxesTest['y'] = []
 	// Draw test object(s): 
 	for (i = 0; i<test_images.length; i++){
-		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], trial.testScale, canvas.test); 
+		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], TASK.testScale, canvas.test); 
 		boundingBoxesTest.x.push(funcreturn[0]); 
 		boundingBoxesTest.y.push(funcreturn[1]); 
 	}
 
 	// Option: draw sample (TODO: remove the blink)
-	if (trial.keepSampleON==1){
-		await renderImageOnCanvas(trial.sample[trial.current], trial.samplegrid, trial.sampleScale, canvas.sample)
+	if (TASK.keepSampleON==1){
+		await renderImageOnCanvas(TRIAL.sample[FLAGS.current_trial], TASK.sampleGrid, TASK.sampleScale, canvas.sample)
 	}
 
 	canvas.buffered = 1;
@@ -179,27 +205,31 @@ async function bufferTrialImages(sample_image, sample_image_grid_index, test_ima
 }
 
 
-// Promise: display trial images
 function displayTrial(sequence,tsequence){
 	var resolveFunc
 	var errFunc
 	p = new Promise(function(resolve,reject){
 		resolveFunc = resolve;
 		errFunc = reject;
-	}).then(function(){
-		//console.log('displayed images')
-	});
+	}).then();
+	console.log(sequence, tsequence)
+
 	var start = null;
 	function updateCanvas(timestamp){
+
+		// If start has not been set to a float timestamp, set it now.
 		if (!start) start = timestamp;
+
+		// If time to show new frame, 
 		if (timestamp - start > tsequence[frame.current]){
-			//console.log('displaying frame' + currframe + ' ' + timestamp);
+			console.log('Frame =' + frame.current+'Duration ='+(timestamp-start)+'Timestamp = ' + timestamp)
 			// Move canvas in front
 			var prev_canvasobj=document.getElementById("canvas"+canvas.front);
 			var curr_canvasobj=document.getElementById("canvas"+sequence[frame.current]);
 			if (canvas.front != canvas.blank){
+				// Move to back
 				prev_canvasobj.style.zIndex="0";
-			} // move back
+			} 
 			if (sequence[frame.current] != canvas.blank){
 				curr_canvasobj.style.zIndex="100";
 				canvas.front = sequence[frame.current];
@@ -210,7 +240,7 @@ function displayTrial(sequence,tsequence){
 			
 			frame.shown[frame.current]=1;
 			frame.current++;
-		}; // if show new frame
+		}; 
 		// continue if not all frames shown
 		if (frame.shown[frame.shown.length-1] != 1){
 			window.requestAnimationFrame(updateCanvas);
@@ -222,7 +252,7 @@ function displayTrial(sequence,tsequence){
 	//requestAnimationFrame advantages: goes on next screen refresh and syncs to browsers refresh rate on separate clock (not js clock)
 	window.requestAnimationFrame(updateCanvas); // kick off async work
 	return p
-} //displayTrial
+} 
 
 function displayTextOnBlackBar(message_string){
 	renderBlank();
@@ -247,7 +277,7 @@ function renderReward(){
 	var context=canvasobj.getContext('2d');
 	context.fillStyle="green";
 	context.fillRect(xgridcent[4]-200,ygridcent[4]-200,400,400);
-	if (trial.species == 'marmoset'){
+	if (TASK.species == 'marmoset'){
 		context.fillStyle="black";
 		context.fillRect(0,0,canvasobj.width,100);
 	}
@@ -257,7 +287,7 @@ function renderPhotoReward(){
 	var context=canvasobj.getContext('2d');
 	context.fillStyle="green";
 	context.fillRect(xgridcent[4]-200,ygridcent[4]-200,400,400);
-	if (trial.species == 'marmoset'){
+	if (TASK.species == 'marmoset'){
 		context.fillStyle="white";
 		context.fillRect(0,0,canvasobj.width,100);
 	}
@@ -275,15 +305,15 @@ function renderTouchFixation(){
 	var canvasobj=document.getElementById("canvas"+canvas.touchfix);
 	var context=canvasobj.getContext('2d');
 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
-	var rad = trial.fixationradius;
-	var xcent = xgridcent[trial.fixationgrid[trial.current]];
-	var ycent = ygridcent[trial.fixationgrid[trial.current]];
+	var rad = TASK.fixationRadius;
+	var xcent = xgridcent[TASK.fixationGrid];
+	var ycent = ygridcent[TASK.fixationGrid];
 	context.beginPath();
 	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
-	if (env.species == "macaque" || env.species == "human"){
+	if (TASK.species == "macaque" || TASK.species == "human"){
 		context.fillStyle="white";
 	}
-	else if (env.species == "marmoset"){
+	else if (TASK.species == "marmoset"){
 		context.fillStyle="blue";
 	}
 	context.fill();
@@ -294,7 +324,7 @@ function renderTouchFixation(){
 	// context.fillRect(xgridcent[4]-6,ygridcent[4]-6,12,12);
 	// // add red dot in center
 	// context.fillStyle="red";
-	// context.fillRect(xgridcent[trial.fixationgrid[trial.current]]+rad/2-6,xgridcent[trial.fixationgrid[trial.current]]-rad/2-6,12,12);
+	// context.fillRect(xgridcent[trial.fixationGrid[FLAGS.current_trial]]+rad/2-6,xgridcent[trial.fixationGrid[FLAGS.current_trial]]-rad/2-6,12,12);
 	//context.fillStyle="black";
 	context.fillRect(0,0,canvasobj.width,40);
 }
@@ -307,7 +337,7 @@ function renderEyeFixation(){
 //================== IMAGE RENDERING (end) ==================//
 //================== PROMISE STATES ==================//
 // Promise: Select Subject
-function subjidPromise(){
+function subjectIDPromise(){
 	var resolveFunc
 	var errFunc
 	p = new Promise(function(resolve,reject){
@@ -327,7 +357,7 @@ function subjidPromise(){
 }
 function subjectlist_listener(event){
 	console.log("subject selected");
-	trial.subjid = subjectlist[this.value];
+	TASK.subjectID = subjectlist[this.value];
 	subjectdialog.close();
 	waitforClick.next(1);
 	return
@@ -339,7 +369,7 @@ function editParamsPromise(){
 	p = new Promise(function(resolve,reject){
 		resolveFunc = resolve;
 		errFunc = reject;
-	}).then(function(resolveval){console.log('User is done editing params')});
+	}).then(function(resolveval){console.log('User is done editing parameters.')});
 	function *waitforclickGenerator(){
 		var imclicked =[-1];
 		while (true){
@@ -352,18 +382,18 @@ function editParamsPromise(){
 	return p;
 }
 function doneEditing_listener(event){
-	console.log("Done editing params")
+	//console.log("Done editing params")
 	waitforClick.next(1);
 	return
 }
 function headsuptext_listener(event){
-	trial.need2writeParameters = 1
+	FLAGS.need2writeParameters = 1
 	return
 }
 function doneTesting_listener(event){
 	console.log("User is done testing. Start saving data");
-	trial.savedata=1
-	trial.purge=1
+	FLAGS.savedata=1
+	FLAGS.purge=1
 	document.querySelector("button[name=doneTesting]").style.display = "none"
 	return
 }
@@ -385,11 +415,17 @@ function fixationPromise(){
 			resolveFunc(imclicked);
 		}
 	}
-	trial.waitingforFixation = 1;
+	FLAGS.waitingforFixation = 1;
 	waitforClick = waitforclickGenerator(); // start async function
 	waitforClick.next(); //move out of default state
 	//Start timer
-	movefixationTimer = setTimeout(function(){trial.waitingforFixation=1; trial.brokeFixation=1; clearTimeout(fixationTimer); waitforClick.next(1); },trial.fixationinterval);
+
+	movefixationTimer = setTimeout(function(){
+		FLAGS.waitingforFixation=1; 
+		FLAGS.brokeFixation=1; 
+		clearTimeout(fixationTimer); 
+		waitforClick.next(1); },
+		TASK.fixationInterval);
 	return p;
 }
 // Promise: response
@@ -399,7 +435,9 @@ function responsePromise(){
 	p = new Promise(function(resolve,reject){
 		resolveFunc = resolve;
 		errFunc = reject;
-	}).then(function(resolveval){console.log('User clicked ' + resolveval)});
+	}).then(function(resolveval){
+		//console.log('User clicked ' + resolveval)
+});
 	function *waitforclickGenerator(){
 		var imclicked =[-1];
 		while (true){
@@ -407,13 +445,13 @@ function responsePromise(){
 			resolveFunc(imclicked);
 		}
 	}
-	trial.waitingforResponse = 1;
+	FLAGS.waitingforResponse = 1;
 	waitforClick = waitforclickGenerator(); // start async function
 	waitforClick.next(); //move out of default state
 	return p;
 }
 //Asynch: play sound
-function playSound(idx){
+async function playSound(idx){
 	audiocontext.resume()
 	var source = audiocontext.createBufferSource(); // creates a sound source
 	source.buffer = sounds.buffer[idx];                    // tell the source which sound to play
@@ -434,27 +472,27 @@ function dispenseReward(){
 		audiocontext.resume()
 		var oscillator = audiocontext.createOscillator();
 		gainNode.gain.value=1;
-		if (env.pump == 1){
+		if (TASK.pump == 1){
 			oscillator.type='square'; //Square wave
 			oscillator.frequency.value=25; //frequency in hertz				
 		} //peristaltic (adafruit)
-		else if (env.pump==2){
+		else if (TASK.pump==2){
 			oscillator.type='square'; //Square wave
 			oscillator.frequency.value=0.1; //frequency in hertz
 		} //submersible (TCS)
-		else if (env.pump==3){
+		else if (TASK.pump==3){
 			oscillator.type='square'; //Square wave
 			oscillator.frequency.value=10; //frequency in hertz		
 		} //diaphragm (TCS)
-		else if (env.pump==4){
+		else if (TASK.pump==4){
 			oscillator.type='square'; //Square wave
 			oscillator.frequency.value=0.1; //frequency in hertz				
 		} //piezoelectric (takasago)
-		else if (env.pump==5){
+		else if (TASK.pump==5){
 			oscillator.type='square';
 			oscillator.frequency.value=0.1;
 		} //diaphragm new (TCS)
-		else if (env.pump==6){
+		else if (TASK.pump==6){
 			oscillator.type='square'; //Square wave
 			oscillator.frequency.value=0.1; //frequency in hertz				
 		} //piezoelectric 7ml/min (takasago)
@@ -471,14 +509,14 @@ function dispenseReward(){
 
 
 		oscillator.start(currentTime);
-		oscillator.stop(currentTime + trial.reward);
-		setTimeout(function(){console.log('sound done'); resolve(1);},trial.reward*1000);
+		oscillator.stop(currentTime + TASK.reward);
+		setTimeout(function(){console.log('sound done'); resolve(1);},TASK.reward*1000);
 	}).then();
 }
 // Promise: punish time-out
 function dispensePunish(){
 	return new Promise(function(resolve,reject){
-		setTimeout(function(){resolve(1);},trial.punish); //milliseconds
+		setTimeout(function(){resolve(1);},TASK.punish); //milliseconds
 	}).then();
 }
 //================== PROMISE STATES (end) ==================//
@@ -490,40 +528,26 @@ function mousedown_listener(event){
 	};
 	var x = event.clientX
 	var y = event.clientY
-	if (y < canvas.offsettop){
-		//clicked on headsup display
-		if (videoobj.style.zIndex != 100){
-			if (trial.takephoto == 0){
-				videoobj.play();
-			}
-			videoobj.style.zIndex = 100;
-		}
-		else if (videoobj.style.zIndex != 0){
-			if (trial.takephoto == 0){
-				videoobj.pause();
-			}
-			videoobj.style.zIndex = 0;
-		}
-	}
-	if (trial.waitingforFixation == 1){
+
+	if (FLAGS.waitingforFixation == 1){
 		//determine if clicked on fixation dot
 		if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
 			 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
-			trial.brokeFixation = 0;
-			trial.xytfixation[trial.current]=[x,y,Math.round(performance.now())];
+			FLAGS.brokeFixation = 0;
+			TRIAL.xytfixation[FLAGS.current_trial]=[x,y,Math.round(performance.now())];
 			//Start timer
-			fixationTimer = setTimeout(function(){ trial.waitingforFixation=0;clearTimeout(movefixationTimer); waitforClick.next(1);},trial.fixationdur);
+			fixationTimer = setTimeout(function(){ FLAGS.waitingforFixation=0;clearTimeout(movefixationTimer); waitforClick.next(1);},TASK.fixationDur);
 		} //if clicked fixation
 		else{
 		}
 	}
-	if (trial.waitingforResponse == 1){
+	if (FLAGS.waitingforResponse == 1){
 		// Determine if clicked in test box
 		for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
 			if (x >= boundingBoxesTest.x[q][0] && x <= boundingBoxesTest.x[q][1] &&
 				y >= boundingBoxesTest.y[q][0] && y <= boundingBoxesTest.y[q][1]){
-				trial.response[trial.current]=q;
-				trial.xytresponse[trial.current]=[x,y,Math.round(performance.now())];
+				TRIAL.response[FLAGS.current_trial]=q;
+				TRIAL.xytresponse[FLAGS.current_trial]=[x,y,Math.round(performance.now())];
 				waitforClick.next(q);
 				return
 			}
@@ -531,7 +555,7 @@ function mousedown_listener(event){
 	}
 }
 function mousemove_listener(event){
-	if (trial.waitingforFixation==1 && trial.brokeFixation==0){
+	if (FLAGS.waitingforFixation==1 && FLAGS.brokeFixation==0){
 		var x = event.clientX
 		var y = event.clientY
 		if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
@@ -540,15 +564,15 @@ function mousemove_listener(event){
 		}
 		else{
 			// moved from fixation dot, cancel fixation timers
-			trial.brokeFixation = 1;
+			FLAGS.brokeFixation = 1;
 			clearTimeout(fixationTimer);
 		}
 	}
 }
 function mouseup_listener(event){
-	if (trial.waitingforFixation==1 && trial.brokeFixation == 0){
+	if (FLAGS.waitingforFixation==1 && FLAGS.brokeFixation == 0){
 		// broke touch with fixation dot too early, cancel fixation timers
-		trial.brokeFixation = 1;
+		FLAGS.brokeFixation = 1;
 		clearTimeout(fixationTimer);
 	}
 }
@@ -560,49 +584,39 @@ function touchstart_listener(event){
 	};
 	var x = event.targetTouches[0].pageX;
 	var y = event.targetTouches[0].pageY;
-	if (y < canvas.offsettop){
-		//clicked on headsup display
-		if (videoobj.style.zIndex != 100){
-			if (trial.takephoto == 0){
-				videoobj.play();
-			}
-			videoobj.style.zIndex = 100;
-		}
-		else if (videoobj.style.zIndex != 0){
-			if (trial.takephoto == 0){
-				videoobj.pause();
-			}
-			videoobj.style.zIndex = 0;
-		}
-	}
-	if (trial.waitingforFixation == 1){
+
+	if (FLAGS.waitingforFixation == 1){
 		//determine if clicked on fixation dot
 		if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
 			 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
-			trial.brokeFixation = 0;
-			trial.xytfixation[trial.current]=[x,y,Math.round(performance.now())];
+			FLAGS.brokeFixation = 0;
+			TRIAL.xytfixation[FLAGS.current_trial]=[x,y,Math.round(performance.now())];
 			//Start timer
-			fixationTimer = setTimeout(function(){console.log('started fixation timer');trial.waitingforFixation=0;clearTimeout(movefixationTimer); waitforClick.next(1);},trial.fixationdur);
+			fixationTimer = setTimeout(function(){console.log('started fixation timer');
+				FLAGS.waitingforFixation=0;
+				clearTimeout(movefixationTimer); 
+				waitforClick.next(1);},
+				TASK.fixationDur);
 		} //if clicked fixation
 		else{
-			if (trial.rewardStage == 0){
+			if (TASK.rewardStage == 0){
 				console.log('clicked outside fixation');
-				trial.xytfixation[trial.current]=[x,y,Math.round(performance.now())];
-				trial.waitingforFixation=0;
-				trial.brokeFixation = 1;
+				TRIAL.xytfixation[FLAGS.current_trial]=[x,y,Math.round(performance.now())];
+				FLAGS.waitingforFixation=0;
+				FLAGS.brokeFixation = 1;
 				clearTimeout(movefixationTimer);
 				clearTimeout(fixationTimer);
 				waitforClick.next(0);
 			} //advance to punish for clicking outside fixation
 		}
 	}
-	if (trial.waitingforResponse == 1){
+	if (FLAGS.waitingforResponse == 1){
 		//determine if clicked in test box
 		for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
 			if (x >= boundingBoxesTest.x[q][0] && x <= boundingBoxesTest.x[q][1] &&
 				y >= boundingBoxesTest.y[q][0] && y <= boundingBoxesTest.y[q][1]){
-				trial.response[trial.current]=q;
-				trial.xytresponse[trial.current]=[x,y,Math.round(performance.now())];
+				TRIAL.response[FLAGS.current_trial]=q;
+				TRIAL.xytresponse[FLAGS.current_trial]=[x,y,Math.round(performance.now())];
 				waitforClick.next(q);
 				return
 			}
@@ -610,7 +624,7 @@ function touchstart_listener(event){
 	}
 }
 function touchmove_listener(event){
-	if (trial.waitingforFixation==1 && trial.brokeFixation==0){
+	if (FLAGS.waitingforFixation==1 && FLAGS.brokeFixation==0){
 		var x = event.targetTouches[0].pageX;
 		var y = event.targetTouches[0].pageY;
 		if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
@@ -619,32 +633,32 @@ function touchmove_listener(event){
 		}
 		else{
 			// moved from fixation dot, cancel fixation timers
-			trial.brokeFixation = 1;
+			FLAGS.brokeFixation = 1;
 			console.log('was fixating but moved out');
 			clearTimeout(fixationTimer);
 		}
 	}
-	else if (trial.waitingforFixation==1 && trial.brokeFixation==1){
+	else if (FLAGS.waitingforFixation==1 && FLAGS.brokeFixation==1){
 		//check if moved back into fixation
 		var x = event.targetTouches[0].pageX;
 		var y = event.targetTouches[0].pageY;
 		if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
 			 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
 			//gained fixation
-			trial.brokeFixation = 0;
+			FLAGS.brokeFixation = 0;
 			touchstart_listener(event);
 		}
 	}
 	//Allows dragging into response box
-	if (trial.waitingforResponse == 1){
+	if (FLAGS.waitingforResponse == 1){
 		var x = event.targetTouches[0].pageX;
 		var y = event.targetTouches[0].pageY;
 		//determine if moved into a test box
 		for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
 			if (x >= boundingBoxesTest.x[q][0] && x <= boundingBoxesTest.x[q][1] &&
 				y >= boundingBoxesTest.y[q][0] && y <= boundingBoxesTest.y[q][1]){
-				trial.response[trial.current]=q;
-				trial.xytresponse[trial.current]=[x,y,Math.round(performance.now())];
+				TRIAL.response[FLAGS.current_trial]=q;
+				TRIAL.xytresponse[FLAGS.current_trial]=[x,y,Math.round(performance.now())];
 				waitforClick.next(q);
 				return
 			}
@@ -652,9 +666,9 @@ function touchmove_listener(event){
 	}
 }
 function touchend_listener(event){
-	if (trial.waitingforFixation==1 && trial.brokeFixation == 0){
+	if (FLAGS.waitingforFixation==1 && FLAGS.brokeFixation == 0){
 		// broke touch with fixation dot too early, cancel fixation timers
-		trial.brokeFixation = 1;
+		FLAGS.brokeFixation = 1;
 		console.log('was fixating but lifted finger');
 		clearTimeout(fixationTimer);
 	}
@@ -727,18 +741,31 @@ function selectSampleImage(samplebag_labels, SamplingStrategy){
 	if(SamplingStrategy == 'uniform_without_ImageReplacementAfterMaxReps'){
 		throw "Not implemented."
 	}
+
+	// TODO: 
+	// Option: use sample blocks: 
+	if (FLAGS.sampleblockidx <= FLAGS.sampleBlockSize-1){
+		// Keep the sample from last trial
+		TRIAL.sample[FLAGS.current_trial] = TRIAL.sample[FLAGS.current_trial-1];
+		FLAGS.sampleblockidx++;
+	} 
+	// If done with sampleblock, reset counter. 
+	if (FLAGS.sampleblockidx >= TASK.sampleBlockSize){
+		FLAGS.sampleblockidx = 0;
+	} 
 	
 }
 
-function selectTestImages(correct_label, nway, testbag_labels){
+function selectTestImages(correct_label, testbag_labels){
 	
 	// Input arguments: 
 	// 	correct_label: int. It is one element of testbag_labels corresponding to the rewarded group. 
-	//	nway: int. number of test images to select
 	//	testbag_labels: array of ints, of length equal to the number of images ( == testbag.length). 
 
+	// Globals: TASK.objectGrid; TASK.testGrid; TASK.nstickyresponse; 
+
 	// Outputs: 
-	//	testIndices: array of ints, of length nway. The elements are indexes of testbag_labels. The order corresponds to testGrid. 
+	//	testIndices: array of ints, of length TASK.testGrid.length. The elements are indexes of testbag_labels. The order corresponds to testGrid. 
 	//	correctSelection: int. It indexes testIndices / testGrid to convey the correct element. 
 
 
@@ -746,9 +773,9 @@ function selectTestImages(correct_label, nway, testbag_labels){
 	var correctSelection = NaN;
 
 	// If SR is on, 
-	if (trial.objectgrid.length == trial.objectlist.length){ // Is this a robust SR check?
+	if (TASK.objectGrid.length == TASK.imageBagsTest.length){ // Is this a robust SR check?
 		// For each object, 
-		for (var i = 0; i<trial.objectgrid.length; i++){
+		for (var i = 0; i<TASK.objectGrid.length; i++){
 			
 			// Get pool of the object's test images: 
 			var object_test_indices = getAllInstancesIndexes(testbag_labels, i)
@@ -757,10 +784,10 @@ function selectTestImages(correct_label, nway, testbag_labels){
 			var test_image_index = object_test_indices[Math.floor((object_test_indices.length)*Math.random())]; 
 
 			// Get grid index where the object should be placed: 
-			var object_grid_index = trial.objectgrid[i] 
+			var object_grid_index = TASK.objectGrid[i] 
 
 			// Determine which location that grid index corresponds to in testIndices: 
-			order_idx = trial.testgrid.indexOf(object_grid_index)
+			order_idx = TASK.testGrid.indexOf(object_grid_index)
 
 			// Place the selected test image in the appropriate location in testIndices. 
 			testIndices[order_idx] = test_image_index
@@ -785,7 +812,7 @@ function selectTestImages(correct_label, nway, testbag_labels){
 
 	// Randomly select n-1 labels to serve as distractors 
 	var distractors = []
-	while(distractors.length < nway-1){
+	while(distractors.length < TASK.testGrid.length-1){
 		distractor_sample = labelspace[Math.floor((labelspace.length)*Math.random())]; 
 		if(distractors.indexOf(distractor_sample) == -1){
 			labelspace.push(distractor_sample)
@@ -811,36 +838,45 @@ function selectTestImages(correct_label, nway, testbag_labels){
 
 	return [testIndices, correctSelection] 
 
+	// TODO: sticky response logic
+	if (FLAGS.stickyresponse >= TASK.nstickyresponse){
+		throw "Not implemented"
+		// If the number of 'sticky responses' is greater than nstickyresponses, 
+		// make sure the correct answer for this trial is not at the sticky location. 
+		// Move this logic into selectTestImages?
+	}
+
 }
 
 function setReward(){
 	var m = 0;
 	var b = 0;
-	if (env.pump == 1){
+	if (TASK.pump == 1){
 		// m = 1.13; b = 15.04;
 		m = 0.99; b = 14.78;
 	} //peristaltic (adafruit)
-	else if (env.pump == 2){
+	else if (TASK.pump == 2){
 		// m = 3.20; b = -15.47;
 		m = 1.40; b = -58.77;
 	} //submersible (tcs)
-	else if (env.pump == 3){
+	else if (TASK.pump == 3){
 		// m = 0.80; b = -3.00;
 		m=0.91; b = -15;
 	} //diaphragm (tcs)
-	else if (env.pump == 4){
+	else if (TASK.pump == 4){
 		m = 0.0531; b=-1.2594;
 	} //piezoelectric (takasago)
-	else if (env.pump == 5){
+	else if (TASK.pump == 5){
 		m = 2.4463; b=53.6418;
 	} //new diaphragm (tcs)
-	else if (env.pump == 6){
-		if (env.liquid==1 || env.liquid==3){
+	else if (TASK.pump == 6){
+		if (TASK.liquid==1 || TASK.liquid==3){
 			m=0.1251; b=-0.0833; //1=water 2=water-condensed milk 3=marshmallow slurry (4/30mL)
 		}
-		else if (env.liquid==2){
+		else if (TASK.liquid==2){
 			m=0.0550; b=0.6951; //water-condensed milk (50/50)
 		}
 	} //piezoelectric 7mL/min (takasago)
-	trial.reward = (trial.rewardper1000 - b)/m/1000;
+	return (TASK.rewardper1000 - b)/m/1000;
+	TASK.reward = (TASK.rewardper1000 - b)/m/1000;
 }
