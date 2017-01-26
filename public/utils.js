@@ -70,7 +70,7 @@ function _base64ToArrayBuffer(base64){
   return bytes.buffer;
 }
 
-// Array equality 
+// ----- Array equality ---- 
 if(Array.prototype.equals)
     console.warn("Overriding existing Array.prototype.equals. Possible causes: New API defines the method, there's a framework conflict or you've got double inclusions in your code.");
 // attach the .equals method to Array's prototype to call it on any array
@@ -99,3 +99,11 @@ Array.prototype.equals = function (array) {
 }
 // Hide method from for-in loops
 Object.defineProperty(Array.prototype, "equals", {enumerable: false});
+
+
+// 
+function get_filename_from_pathstring(pathstring){
+  var filename = pathstring.replace(/^.*[\\\/]/, '')
+  return filename
+}
+

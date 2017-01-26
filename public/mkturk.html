@@ -133,11 +133,11 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	// GET PARAMFILE NAME
 	subjectdialog.showModal();
 	await subjectIDPromise();	
-	TASK.paramfile = PARAM_DIRPATH + TASK.subjectID + "_params.txt";
-	await loadParametersfromDropbox(TASK.paramfile);
+	ENV.paramfile = PARAM_DIRPATH + ENV.subjectID + "_params.txt";
+	await loadParametersfromDropbox(ENV.paramfile);
 
 	//================== USER CAN EDIT PARAMS ==================//
-	ble.statustext = await loadTextFilefromDropbox(TASK.paramfile)
+	ble.statustext = await loadTextFilefromDropbox(ENV.paramfile)
 	updateStatusText(ble.statustext)
 	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
 	document.querySelector("button[name=doneEditing]").style.display = "block"
@@ -153,7 +153,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	if (FLAGS.need2writeParameters == 1){
 		var user_param_text = document.getElementById("headsuptext").innerHTML 		
 		await writeParameterTexttoDropbox(user_param_text) 
-		await loadParametersfromDropbox(TASK.paramfile);
+		await loadParametersfromDropbox(ENV.paramfile);
 	}
 
 	updateStatusText('Loading images...')
@@ -164,8 +164,8 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	document.querySelector("button[name=doneTesting]").style.visibility = "visible"
 
 	// Read performance history
-	var subject_behavior_save_directory = DATA_SAVEPATH + TASK.subjectID + '/'
-	var history_file_paths = await getMostRecentBehavioralFilePathsFromDropbox(ndatafiles2read, TASK.subjectID, subject_behavior_save_directory)
+	var subject_behavior_save_directory = DATA_SAVEPATH + ENV.subjectID + '/'
+	var history_file_paths = await getMostRecentBehavioralFilePathsFromDropbox(ndatafiles2read, ENV.subjectID, subject_behavior_save_directory)
 	var trialhistory = await readTrialHistoryFromDropbox(history_file_paths);
 
 	// Initialize automator
@@ -173,7 +173,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 		automator_data = await parseAutomatorFilefromDropbox(TASK.automatorFilePath) 
 		automateTask(automator_data, trialhistory) 
 		await saveParameterstoDropbox() 
-		await loadParametersfromDropbox(TASK.paramfile); 
+		await loadParametersfromDropbox(ENV.paramfile); 
 	}
 
 	//Load sounds
@@ -188,12 +188,13 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 // =========================================================================================================== // 
 FLAGS.need2loadParameters = 1
 FLAGS.current_trial = -1
+FLAGS.sampleblockcount = 0; 
 
 while(true){
 	FLAGS.current_trial++
 
 	if (FLAGS.need2loadParameters == 1){
-		await loadParametersfromDropbox(TASK.paramfile);
+		await loadParametersfromDropbox(ENV.paramfile);
 		FLAGS.need2loadParameters = 0; 	
 		FLAGS.need2loadImages = 1; 
 	
@@ -201,7 +202,7 @@ while(true){
 
 	// Todo: put these in the correct spot
 	updateCanvasSettings(TASK); 
-	TASK.reward = setReward(); 
+	ENV.reward = setReward(); 
 	
 	setupCanvasHeadsUp()
 	windowWidth = window.innerWidth; 
@@ -223,31 +224,34 @@ while(true){
 	}
 
 	//============ IMAGE LOADING ============//
+
 	if (FLAGS.need2loadImages == 1){
+		console.time('Image loading time:')
 		var funcreturn = await loadBagfromDropbox(TASK.imageBagsSample)
 		samplebag = funcreturn[0]
 		samplebag_labels = funcreturn[1]
 		samplebag_paths = funcreturn[2]
-		TASK.samplebag_paths = samplebag_paths; 
+		ENV.ordered_samplebag_filenames = samplebag_paths.map(get_filename_from_pathstring); 
 
 		var funcreturn = await loadBagfromDropbox(TASK.imageBagsTest)
 		testbag = funcreturn[0]
 		testbag_labels = funcreturn[1]
 		testbag_paths = funcreturn[2]
-		TASK.testbag_paths = testbag_paths; 
+		ENV.ordered_testbag_filenames = testbag_paths.map(get_filename_from_pathstring); 
 
 		// Write down dimensions of (assumedly) all images in bag, based on the first sample image. 
-		TASK.wd = samplebag[0].width
-		TASK.ht = samplebag[0].height
-		
+		ENV.wd = samplebag[0].width
+		ENV.ht = samplebag[0].height
+
 		// Make image display grid
-		funcreturn = defineImageGrid(TASK.ngridpoints, TASK.wd, TASK.ht, TASK.sampleScale, canvasScale); 
+		funcreturn = defineImageGrid(TASK.ngridpoints, ENV.wd, ENV.ht, TASK.sampleScale, canvasScale); 
 		xgrid = funcreturn[0]
 		ygrid = funcreturn[1]
 		xgridcent = funcreturn[2]
 		ygridcent = funcreturn[3]
 		
 		FLAGS.need2loadImages = 0;
+		console.timeEnd('Image loading time:')
 	} 
 
 	renderReward();
@@ -273,14 +277,25 @@ while(true){
 	// Test: get image blobs actual from testbag
 	var trial_testimages = [] 
 	for (var i_test = 0; i_test<TRIAL.test[FLAGS.current_trial].length; i_test++){
-		trial_testimages.push(testbag[TRIAL.test[FLAGS.current_trial][i_test]])
-		console.log('index:', i_test, '. label:', testbag_labels[TRIAL.test[FLAGS.current_trial][i_test]])
+
+		trial_testimages[i_test] = testbag[TRIAL.test[FLAGS.current_trial][i_test]]
+
+		// TODO: if hideTestDistractors is on, then use gray image instead
+		if (TASK.hideTestDistractors == 1 && i_test != TRIAL.correctItem[FLAGS.current_trial]){
+			throw('still need to implement')
+			continue 
+
+			trial_testimages[i_test] = GRAY_IMAGE; 
+			 
+		}
+		
+		
+		
 	}
 	
 	// Buffer canvases with these images
 	canvas.buffered=0;
 	await bufferTrialImages(trial_sampleimage, TASK.sampleGrid, trial_testimages, TASK.testGrid);
-	//console.log('Done buffering images.')
 
 	//============ RUN FIXATION SCREEN ============//
 	
@@ -362,7 +377,7 @@ while(true){
 			TRIAL.response[FLAGS.current_trial] = TRIAL.correctItem[FLAGS.current_trial];
 			canvas.sequencepost[1]=canvas.photoreward;
 			canvas.sequencepost[2]=canvas.reward;
-			canvas.tsequencepost[2] = canvas.tsequencepost[1]+TASK.reward*1000;
+			canvas.tsequencepost[2] = canvas.tsequencepost[1]+ENV.reward*1000;
 			//console.log('Touched fixation - reward')
 		}
 		else if (FLAGS.brokeFixation == 1){
@@ -377,7 +392,7 @@ while(true){
 		if (TRIAL.response[FLAGS.current_trial] == TRIAL.correctItem[FLAGS.current_trial]){
 			canvas.sequencepost[1]=canvas.photoreward;
 			canvas.sequencepost[2]=canvas.reward;
-			canvas.tsequencepost[2] = canvas.tsequencepost[1]+TASK.reward*1000;
+			canvas.tsequencepost[2] = canvas.tsequencepost[1]+ENV.reward*1000;
 			//console.log('Trial correct - reward.')
 		} 
 		else { 
@@ -436,7 +451,7 @@ while(true){
 				await Promise.all([p1])
 			}
 			else if (ble.connected == true){
-				var p2 = writepumpdurationtoBLE(Math.round(TASK.reward*1000))
+				var p2 = writepumpdurationtoBLE(Math.round(ENV.reward*1000))
 				await Promise.all([p1, p2])
 			}
 		}
@@ -452,7 +467,7 @@ while(true){
 				//await Promise.all([p1, p2])
 			}
 			else if (ble.connected == true){
-				var p3 = writepumpdurationtoBLE(Math.round(TASK.reward*1000))
+				var p3 = writepumpdurationtoBLE(Math.round(ENV.reward*1000))
 				await Promise.all([p1, p2, p3])
 			}
 		}
@@ -485,12 +500,17 @@ while(true){
 		}
 	}
 
+	// Write out results of trial to TRIAL 
+	TRIAL.automatorStage[FLAGS.current_trial] = TASK.automatorStage; 
+
 	// Lazily save the data once every SAVE_EVERY number of trials
 	// Todo: after some timeout, savebehavior
 	// Todo: have button at top for forcing save (end of day)
 	if (FLAGS.savedata == 1 && FLAGS.purge == 0){ 
-		if(FLAGS.current_trial % SAVE_EVERY == 0){
-			writeBehaviortoDropbox(); 		
+		if(FLAGS.current_trial % SAVE_EVERY == 0 || FLAGS.need2loadParameters == 1 || FLAGS.need2loadImages == 1){
+			// default: save every SAVE_EVERy trials
+			// if you're going to load new images or parameters, then dump
+			writeBehaviortoDropbox(TASK, ENV, TRIAL); 		
 		}		
 	}
 	

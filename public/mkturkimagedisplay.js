@@ -2,7 +2,7 @@
 function updateCanvasSettings(TASK){
 	// Todo: put these in the proper locations
 	canvas.tsequence = [0,100,100+TASK.sampleON,100+TASK.sampleON+TASK.sampleOFF]; 
-	canvas.tsequencepost[2] = canvas.tsequencepost[1]+TASK.reward*1000;
+	canvas.tsequencepost[2] = canvas.tsequencepost[1]+ENV.reward*1000;
 
 	if (TASK.species == "macaque" || TASK.species == "human"){
 		canvas.headsupfraction=0;
@@ -110,7 +110,7 @@ function updateHeadsUpDisplay(){
 		task2 = TASK.sampleON + "ms, " + TASK.imageBagsTest.length + "-categories in pool";
 	}
 	if (canvas.headsupfraction > 0){
-		textobj.innerHTML = TASK.subjectID + ": <font color=green><b>" + pctcorrect + "%</b></font> " + "(" + ncorrect + " of " + TRIAL.response.length +")" + "<br>" + "Estimated Reward: <font color=green><b>" + Math.round(TASK.rewardper1000*ncorrect/1000) + "mL</b></font> (" + Math.round(TASK.rewardper1000) + " per 1000)" + "<br> " + "<br>" + " Stage " + TASK.AutomatorStage + ": " + task1 + "<br>" + task2 + "<br>" + "<br>" + "<br>" + "<font color=red><b>" + "<font color=blue><b>" + ble.statustext + "<br></font>";
+		textobj.innerHTML = ENV.subjectID + ": <font color=green><b>" + pctcorrect + "%</b></font> " + "(" + ncorrect + " of " + TRIAL.response.length +")" + "<br>" + "Estimated Reward: <font color=green><b>" + Math.round(TASK.rewardper1000*ncorrect/1000) + "mL</b></font> (" + Math.round(TASK.rewardper1000) + " per 1000)" + "<br> " + "<br>" + " Stage " + TASK.AutomatorStage + ": " + task1 + "<br>" + task2 + "<br>" + "<br>" + "<br>" + "<font color=red><b>" + "<font color=blue><b>" + ble.statustext + "<br></font>";
 	}
 	else if (canvas.headsupfraction == 0){
 		textobj.innerHTML = ble.statustext
@@ -125,8 +125,8 @@ function defineImageGrid(ngridpoints, wd, ht, scale, canvasScale){
 	var xgridcent =[] 
 	var ygridcent =[]
 	var cnt=0;
-	for (var i=1; i<=3; i++){
-		for (var j=1; j<=3; j++){
+	for (var i=1; i<=ngridpoints; i++){
+		for (var j=1; j<=ngridpoints; j++){
 			xgrid[cnt]=i - 1/2;
 			ygrid[cnt]=j - 1/2;
 			cnt++;
@@ -194,7 +194,7 @@ async function bufferTrialImages(sample_image, sample_image_grid_index, test_ima
 	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)
 	var pre_grayout = false 
 	if(pre_grayout == true){
-		var canvasobj=document.getElementById("canvas"+canvas.test); 
+		var canvasobj=document.getElementById("canvas"+canvas.test); selectSampleImage
 		var context=canvasobj.getContext('2d');
 		context.fillStyle="#7F7F7F";
 		context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
@@ -209,9 +209,9 @@ async function bufferTrialImages(sample_image, sample_image_grid_index, test_ima
 		boundingBoxesTest.y.push(funcreturn[1]); 
 	}
 
-	// Option: draw sample (TODO: remove the blink)
+	// Option: draw sample (TODO: remove the blink between sample screen and test screen)
 	if (TASK.keepSampleON==1){
-		await renderImageOnCanvas(TRIAL.sample[FLAGS.current_trial], TASK.sampleGrid, TASK.sampleScale, canvas.sample)
+		await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.sampleScale, canvas.test)
 	}
 
 	canvas.buffered = 1;
@@ -333,6 +333,7 @@ function renderTouchFixation(){
 	context.fill();
 	boundingBoxFixation.x = [xcent-rad+canvas.offsetleft, xcent+rad+canvas.offsetleft];
 	boundingBoxFixation.y = [ycent-rad+canvas.offsettop, ycent+rad+canvas.offsettop];
+
 	// //add eye fixation
 	// context.fillStyle="red";
 	// context.fillRect(xgridcent[4]-6,ygridcent[4]-6,12,12);
@@ -341,6 +342,10 @@ function renderTouchFixation(){
 	// context.fillRect(xgridcent[trial.fixationGrid[FLAGS.current_trial]]+rad/2-6,xgridcent[trial.fixationGrid[FLAGS.current_trial]]-rad/2-6,12,12);
 	//context.fillStyle="black";
 	context.fillRect(0,0,canvasobj.width,40);
+
+	if(TASK.fixationUsesSample == 1){
+		throw('fixationUsesSample needs to be implemented')
+	}
 }
 function renderEyeFixation(){
 	var canvasobj=document.getElementById("canvas"+canvas.eyefix);
@@ -371,7 +376,7 @@ function subjectIDPromise(){
 }
 function subjectlist_listener(event){
 	console.log("subject selected");
-	TASK.subjectID = subjectlist[this.value];
+	ENV.subjectID = subjectlist[this.value];
 	subjectdialog.close();
 	waitforClick.next(1);
 	return
@@ -527,8 +532,8 @@ function dispenseReward(){
 
 
 		oscillator.start(currentTime);
-		oscillator.stop(currentTime + TASK.reward);
-		setTimeout(function(){console.log('sound done'); resolve(1);},TASK.reward*1000);
+		oscillator.stop(currentTime + ENV.reward);
+		setTimeout(function(){console.log('sound done'); resolve(1);},ENV.reward*1000);
 	}).then();
 }
 // Promise: punish time-out
@@ -751,26 +756,27 @@ function shuffle(array) {
 }
 
 function selectSampleImage(samplebag_labels, SamplingStrategy){
+
+	// Vanilla random uniform sampling with replacement: 
 	var sample_image_index = NaN
 	if(SamplingStrategy == 'uniform_with_replacement'){
 		sample_image_index = Math.floor((samplebag.length)*Math.random());
-		return sample_image_index
 	}
-	if(SamplingStrategy == 'uniform_without_ImageReplacementAfterMaxReps'){
+	else if(SamplingStrategy == 'uniform_without_ImageReplacementAfterMaxReps'){
 		throw "Not implemented."
 	}
 
-	// TODO: 
-	// Option: use sample blocks: 
-	if (FLAGS.sampleblockidx <= FLAGS.sampleBlockSize-1){
-		// Keep the sample from last trial
-		TRIAL.sample[FLAGS.current_trial] = TRIAL.sample[FLAGS.current_trial-1];
-		FLAGS.sampleblockidx++;
+	// Sample blocking behavior: 
+	if (FLAGS.sampleblockcount >0 && FLAGS.sampleblockcount < TASK.sampleBlockSize && TASK.sampleBlockSize > 1){
+		sample_image_index = TRIAL.sample[FLAGS.current_trial - 1];
+		FLAGS.sampleblockcount++;
 	} 
-	// If done with sampleblock, reset counter. 
-	if (FLAGS.sampleblockidx >= TASK.sampleBlockSize){
-		FLAGS.sampleblockidx = 0;
-	} 
+	else if(FLAGS.sampleblockcount >= TASK.sampleBlockSize && TASK.sampleBlockSize > 1){
+		FLAGS.sampleblockcount = 0 ; 
+	}
+
+	return sample_image_index
+	
 	
 }
 
@@ -843,6 +849,32 @@ function selectTestImages(correct_label, testbag_labels){
 	testpool.push(correct_label)
 	testpool = shuffle(testpool)
 
+	// If the past nstickyresponse trials has been on one side, then make this upcoming trial's correct answer be at another location. 
+	if (FLAGS.stickyresponse >= TASK.nstickyresponse && TASK.nstickyresponse > 0){
+		console.log('Moving correct response to nonstick location')
+		var sticky_grid_location = TRIAL.response[FLAGS.current_trial-1]; 
+		if (sticky_grid_location == undefined){
+			console.log('Something strange has happened in the stickyresponse logic')
+		}
+
+		var candidate_nonstick_locations = []
+		for (var i = 0; i < testpool.length; i++){
+			if(i == sticky_grid_location)
+				{continue}
+			else if (i != sticky_grid_location){
+				candidate_nonstick_locations.push(i)
+			}
+			else{throw 'Error occurred in sticky response logic'}
+		}
+		
+		// Switch correct_label into correct_label_nonstick_location
+		var correct_label_nonstick_location =candidate_nonstick_locations[Math.floor((candidate_nonstick_locations.length)*Math.random())]; 
+		var switched_out_label = testpool[correct_label_nonstick_location]; 
+		testpool[correct_label_nonstick_location] = correct_label; 
+		testpool[sticky_grid_location] = switched_out_label
+	}	
+	
+
 	// For each label in the testpool, add a random testimage index of it to testIndices. 
 	for (var i = 0; i<testpool.length; i++){
 		label = testpool[i]
@@ -856,13 +888,7 @@ function selectTestImages(correct_label, testbag_labels){
 
 	return [testIndices, correctSelection] 
 
-	// TODO: sticky response logic
-	if (FLAGS.stickyresponse >= TASK.nstickyresponse){
-		throw "Not implemented"
-		// If the number of 'sticky responses' is greater than nstickyresponses, 
-		// make sure the correct answer for this trial is not at the sticky location. 
-		// Move this logic into selectTestImages?
-	}
+
 
 }
 
@@ -896,5 +922,5 @@ function setReward(){
 		}
 	} //piezoelectric 7mL/min (takasago)
 	return (TASK.rewardper1000 - b)/m/1000;
-	TASK.reward = (TASK.rewardper1000 - b)/m/1000;
+	ENV.reward = (TASK.rewardper1000 - b)/m/1000;
 }
