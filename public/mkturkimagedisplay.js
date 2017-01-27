@@ -204,6 +204,15 @@ async function bufferTrialImages(sample_image, sample_image_grid_index, test_ima
 	boundingBoxesTest['y'] = []
 	// Draw test object(s): 
 	for (i = 0; i<test_images.length; i++){
+		// If hideTestDistractors, simply do not draw the image
+		if(TASK.hideTestDistractors == 1){
+			if (TRIAL.correctItem[FLAGS.current_trial] != i){
+				boundingBoxesTest.x.push([NaN, NaN]); 
+				boundingBoxesTest.y.push([NaN, NaN]); 
+				continue 
+			}
+		}		
+		
 		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], TASK.testScale, canvas.test); 
 		boundingBoxesTest.x.push(funcreturn[0]); 
 		boundingBoxesTest.y.push(funcreturn[1]); 
@@ -797,8 +806,8 @@ function selectTestImages(correct_label, testbag_labels){
 	// Globals: TASK.objectGrid; TASK.testGrid; TASK.nstickyresponse; 
 
 	// Outputs: 
-	//	testIndices: array of ints, of length TASK.testGrid.length. The elements are indexes of testbag_labels. The order corresponds to testGrid. 
-	//	correctSelection: int. It indexes testIndices / testGrid to convey the correct element. 
+	//	[0]: testIndices: array of ints, of length TASK.testGrid.length. The elements are indexes of testbag_labels. The order corresponds to testGrid. 
+	//	[1]: correctSelection: int. It indexes testIndices / testGrid to convey the correct element. 
 
 
 	var testIndices = []; 
@@ -843,13 +852,14 @@ function selectTestImages(correct_label, testbag_labels){
 	}
 
 	// Randomly select n-1 labels to serve as distractors 
+
 	var distractors = []
 	while(distractors.length < TASK.testGrid.length-1){
 		distractor_sample = labelspace[Math.floor((labelspace.length)*Math.random())]; 
 		if(distractors.indexOf(distractor_sample) == -1){
 			labelspace.push(distractor_sample)
 		} 
-	}
+	}	
 
 	// Add distractors and correct label to testpool, and then shuffle. 
 	var testpool = []

@@ -277,19 +277,7 @@ while(true){
 	// Test: get image blobs actual from testbag
 	var trial_testimages = [] 
 	for (var i_test = 0; i_test<TRIAL.test[FLAGS.current_trial].length; i_test++){
-
-		trial_testimages[i_test] = testbag[TRIAL.test[FLAGS.current_trial][i_test]]
-
-		// TODO: if hideTestDistractors is on, then do not buffer. 
-		// Make sure the indices are all correct
-		if (TASK.hideTestDistractors == 1 && i_test != TRIAL.correctItem[FLAGS.current_trial]){
-			throw('still need to implement') 
-			trial_testimages[i_test] = GRAY_IMAGE; 
-			 
-		}
-		
-		
-		
+		trial_testimages[i_test] = testbag[TRIAL.test[FLAGS.current_trial][i_test]]		
 	}
 	
 	// Buffer canvases with these images
