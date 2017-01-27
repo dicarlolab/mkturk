@@ -101,9 +101,78 @@ Array.prototype.equals = function (array) {
 Object.defineProperty(Array.prototype, "equals", {enumerable: false});
 
 
-// 
+// Gets "filename.ext" from some /.../path/filename.ext
 function get_filename_from_pathstring(pathstring){
   var filename = pathstring.replace(/^.*[\\\/]/, '')
   return filename
+}
+
+// Return all indices of val in arr
+function getAllInstancesIndexes(arr, val){
+  var indexes = []
+    for(var i = 0; i < arr.length; i++)
+        if (arr[i] === val)
+            indexes.push(i);
+    return indexes;
+}
+
+// Shuffles an array...in place?
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
+
+/* Randomize array element order in-place.  Using Fisher-Yates shuffle algorithm. http://bost.ocks.org/mike/shuffle/ */
+// To test your shuffling algorithm: go to http://bost.ocks.org/mike/shuffle/compare.html
+function shuffleArray(array){
+  // Expand to index vector if needed
+  if (array.length==1){
+    var len=array[0];
+    for (var i = 0; i<=len-1; i++){array[i]=i;}
+  }
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+    return array
+}
+
+
+// convert base64 to buffer array (from: http://stackoverflow.com.80bola.com/questions/27524283/save-image-to-dropbox-with-data-from-canvas?rq=1)
+function _base64ToArrayBuffer(base64){
+  base64 = base64.split('data:image/png;base64,').join('');
+  var binary_string =  window.atob(base64),
+  len = binary_string.length,
+  bytes = new Uint8Array( len ),
+  i;
+  for (i = 0; i < len; i++){
+    bytes[i] = binary_string.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+
+function toBytesInt16(num){
+  arr = new ArrayBuffer(2) //2 bytes
+  view = new DataView(arr)
+  view.setUint16(0,num); //arg1: byteOffset arg3: false || undefined -> bigEndian
+  arr = new Uint8Array([view.getUint8(1), view.getUint8(0)])
+  return arr
 }
 

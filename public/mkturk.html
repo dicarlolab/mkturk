@@ -14,8 +14,8 @@
 <script src="mkturkautomator.js" type="text/javascript"></script>
 <script src="mkturkble.js" type="text/javascript"></script> -->
 
-<script src="mkturkusersettings.js"></script>
-<script src="mkturkimagedisplay.js"></script>
+<script src="mkturk_usersettings.js"></script>
+<script src="mkturk_screenfunctions.js"></script>
 
 </head>
 
@@ -51,11 +51,12 @@
   </select>
 </dialog>
 
-
-<script src="mkturkvariables.js"></script>
-<script src="mkturkdropbox.js" type="text/javascript"></script>
-<script src="mkturkautomator.js" type="text/javascript"></script>
-<script src="mkturkble.js" type="text/javascript"></script>
+<script src="mkturk_eventlisteners.js" type="text/javascript"></script>
+<script src="mkturk_variables.js"></script>
+<script src="mkturk_dropbox.js" type="text/javascript"></script>
+<script src="mkturk_automator.js" type="text/javascript"></script>
+<script src="mkturk_hardware.js" type="text/javascript"></script>
+<script src="mkturk_tasklogic.js" type="text/javascript"></script>
 
 
 <script>
@@ -100,7 +101,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	var gainNode = audiocontext.createGain()
 	gainNode.connect(audiocontext.destination)
 	var devicePixelRatio = window.devicePixelRatio || 1;
-	var visiblecanvasobj = document.getElementById("canvas" + canvas.front);
+	var visiblecanvasobj = document.getElementById("canvas" + CANVAS.front);
 	var visiblecontext = visiblecanvasobj.getContext("2d");
 	var backingStoreRatio = visiblecontext.webkitBackingStorePixelRatio ||
 	                            visiblecontext.mozBackingStorePixelRatio ||
@@ -208,13 +209,13 @@ while(true){
 	windowWidth = window.innerWidth; 
 	windowHeight = window.innerHeight;
 	
-	for (i = 0; i <= canvas.punish; i++) {
+	for (i = 0; i <= CANVAS.punish; i++) {
 		setupCanvas(i);
 	}
 
 	if (devicePixelRatio !== 1){
-		scaleCanvasforHiDPI(canvas.sample);
-		scaleCanvasforHiDPI(canvas.test);
+		scaleCanvasforHiDPI(CANVAS.sample);
+		scaleCanvasforHiDPI(CANVAS.test);
 	}
 
 
@@ -239,7 +240,7 @@ while(true){
 		testbag_paths = funcreturn[2]
 		ENV.ordered_testbag_filenames = testbag_paths.map(get_filename_from_pathstring); 
 
-		// Write down dimensions of (assumedly) all images in bag, based on the first sample image. 
+		// Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image. 
 		ENV.wd = samplebag[0].width
 		ENV.ht = samplebag[0].height
 
@@ -288,7 +289,7 @@ while(true){
 	}
 	
 	// Buffer canvases with these images
-	canvas.buffered=0;
+	CANVAS.buffered=0;
 	await bufferTrialImages(trial_sampleimage, TASK.sampleGrid, trial_testimages, TASK.testGrid);
 
 	//============ RUN FIXATION SCREEN ============//
@@ -296,7 +297,6 @@ while(true){
 	// If no fixation requirement: 
 	if (TASK.fixationDur <= 0){
 		FLAGS.waitingforFixation=0
-
 		TRIAL.fixationGrid[FLAGS.current_trial]=-1;
 		TRIAL.tstart[FLAGS.current_trial]=Math.round(performance.now());
 		TRIAL.xytfixation[FLAGS.current_trial]=[-1,-1,TRIAL.tstart[FLAGS.current_trial]];
@@ -304,6 +304,7 @@ while(true){
 	else if (TASK.fixationDur > 0){
 		FLAGS.waitingforFixation=1;
 	}
+
 	while (FLAGS.waitingforFixation==1){
 		// Choose fixation grid index at random
 		if (TASK.fixationMove > 0){
@@ -333,7 +334,7 @@ while(true){
 		// Start timer for this fixation render trial. 
 		TRIAL.tstart[FLAGS.current_trial]=Math.round(performance.now());
 		frame.shown=[];
-		for (var q in canvas.sequencepre){
+		for (var q in CANVAS.sequencepre){
 			frame.shown[q]=0
 		}; 
 		frame.current=0;
@@ -343,10 +344,10 @@ while(true){
 			playSound(0);
 		}
 
-		await displayTrial(canvas.sequencepre,canvas.tsequencepre);
+		await displayTrial(CANVAS.sequencepre,CANVAS.tsequencepre);
 		audiocontext.suspend()
 		await fixationPromise();
-		for (var q in canvas.sequenceblank){
+		for (var q in CANVAS.sequenceblank){
 			frame.shown[q]=0
 		}; 
 		frame.current=0;
@@ -357,17 +358,17 @@ while(true){
 	// Show sample (then) test:
 	if (TASK.rewardStage === 1){
 		frame.shown=[];
-		while (canvas.buffered == 0){
+		while (CANVAS.buffered == 0){
 			console.log('Waiting for buffer...')
 			continue 
 		}
 		
-		for (var q in canvas.sequence){
+		for (var q in CANVAS.sequence){
 			frame.shown[q]=0
 		}; 
 
 		frame.current=0;
-		await displayTrial(canvas.sequence,canvas.tsequence);
+		await displayTrial(CANVAS.sequence,CANVAS.tsequence);
 		audiocontext.suspend()
 		await responsePromise();
 		FLAGS.waitingforResponse=0;
@@ -376,36 +377,36 @@ while(true){
 	//============ REWARD/PUNISH SCREEN ============//
 	FLAGS.stage=2;
 	frame.shown=[];
-	for (var q in canvas.sequencepost){frame.shown[q]=0}; frame.current=0;
+	for (var q in CANVAS.sequencepost){frame.shown[q]=0}; frame.current=0;
 
 	// Fixation task reward/punish screens
 	if (TASK.rewardStage === 0){
 		if (FLAGS.brokeFixation == 0){
 			TRIAL.response[FLAGS.current_trial] = TRIAL.correctItem[FLAGS.current_trial];
-			canvas.sequencepost[1]=canvas.photoreward;
-			canvas.sequencepost[2]=canvas.reward;
-			canvas.tsequencepost[2] = canvas.tsequencepost[1]+ENV.reward*1000;
+			CANVAS.sequencepost[1]=CANVAS.photoreward;
+			CANVAS.sequencepost[2]=CANVAS.reward;
+			CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+ENV.reward*1000;
 			//console.log('Touched fixation - reward')
 		}
 		else if (FLAGS.brokeFixation == 1){
 			TRIAL.response[FLAGS.current_trial] = -1;
-			canvas.sequencepost[1]=canvas.punish;
-			canvas.sequencepost[2]=canvas.punish;
-			canvas.tsequencepost[2] = TASK.punish;
+			CANVAS.sequencepost[1]=CANVAS.punish;
+			CANVAS.sequencepost[2]=CANVAS.punish;
+			CANVAS.tsequencepost[2] = TASK.punish;
 			//console.log('Touched outside fixation - punish')
 		}
 	} // Choice task reward/punish screens
 	else if (TASK.rewardStage === 1){ 
 		if (TRIAL.response[FLAGS.current_trial] == TRIAL.correctItem[FLAGS.current_trial]){
-			canvas.sequencepost[1]=canvas.photoreward;
-			canvas.sequencepost[2]=canvas.reward;
-			canvas.tsequencepost[2] = canvas.tsequencepost[1]+ENV.reward*1000;
+			CANVAS.sequencepost[1]=CANVAS.photoreward;
+			CANVAS.sequencepost[2]=CANVAS.reward;
+			CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+ENV.reward*1000;
 			//console.log('Trial correct - reward.')
 		} 
 		else { 
-			canvas.sequencepost[1]=canvas.punish;
-			canvas.sequencepost[2]=canvas.punish;
-			canvas.tsequencepost[2] = TASK.punish;
+			CANVAS.sequencepost[1]=CANVAS.punish;
+			CANVAS.sequencepost[2]=CANVAS.punish;
+			CANVAS.tsequencepost[2] = TASK.punish;
 			//console.log('Trial incorrect! - punished.')
 		}
 
@@ -447,13 +448,13 @@ while(true){
 	
 	// Deliver reward or punishment
 	frame.shown=[];
-	for (var q in canvas.sequencepost){frame.shown[q]=0}; frame.current=0;
-	if (canvas.sequencepost[1]==canvas.photoreward && TASK.species == 'marmoset'){
+	for (var q in CANVAS.sequencepost){frame.shown[q]=0}; frame.current=0;
+	if (CANVAS.sequencepost[1]==CANVAS.photoreward && TASK.species == 'marmoset'){
 		for (var q = 0; q <= TRIAL.nreward[FLAGS.current_trial]-1; q++){
 			frame.shown=[];
-			for (var q2 in canvas.sequencepost){frame.shown[q2]=0}; frame.current=0;
+			for (var q2 in CANVAS.sequencepost){frame.shown[q2]=0}; frame.current=0;
 			await playSound(2); 
-			var p1 = displayTrial(canvas.sequencepost,canvas.tsequencepost)
+			var p1 = displayTrial(CANVAS.sequencepost,CANVAS.tsequencepost)
 			if (ble.connected == false){
 				await Promise.all([p1])
 			}
@@ -463,12 +464,12 @@ while(true){
 			}
 		}
 	} 
-	if (canvas.sequencepost[1]==canvas.photoreward && (TASK.species == 'macaque' || TASK.species == "human")){
+	if (CANVAS.sequencepost[1]==CANVAS.photoreward && (TASK.species == 'macaque' || TASK.species == "human")){
 		for (var q = 0; q <= TRIAL.nreward[FLAGS.current_trial]-1; q++){
 			frame.shown=[];
-			for (var q2 in canvas.sequencepost){frame.shown[q2]=0}; frame.current=0;
+			for (var q2 in CANVAS.sequencepost){frame.shown[q2]=0}; frame.current=0;
 			await playSound(2);
-			await displayTrial(canvas.sequencepost,canvas.tsequencepost)
+			await displayTrial(CANVAS.sequencepost,CANVAS.tsequencepost)
 			//var p2 = await dispenseReward()
 			if (ble.connected == false){
 				//await Promise.all([p1, p2])
@@ -479,11 +480,11 @@ while(true){
 			}
 		}
 	} // Play pump sound
-	if (canvas.sequencepost[1]==canvas.punish){
+	if (CANVAS.sequencepost[1]==CANVAS.punish){
 		if (TASK.species == 'marmoset'){
 			playSound(3);
 		}
-		await displayTrial(canvas.sequencepost,canvas.tsequencepost);
+		await displayTrial(CANVAS.sequencepost,CANVAS.tsequencepost);
 		await dispensePunish();
 	}
 
@@ -554,7 +555,7 @@ The reasons for using this approach are twofold:
 As of 2014.12.01, generators are not supported in safari and not in iOS (even Chrome for iOS is limited to apple webkit).  Could transpile but better to use a native Chrome environment (i.e. android tablet).
 // Load audio webkit, see http://middleearmedia.com/controlling-web-audio-api-oscillators/
 // var audiocontext = new webkitAudioContext(); // Create audio container with webkit prefix
-// In case you're wondering why you can't use the devicePixelRatio to determine the backing store size, the answer is that they aren't guaranteed to match. Despite presenting the same devicePixelRatio value, Chrome and Safari 6 can and do have entirely different approaches for the backing store size (and therefore the webkitBackingStorePixelRatio) on HiDPI devices. The net result is that we can't rely on devicePixelRatio to know how the browser is going to scale images that are written into the canvas.  http://www.html5rocks.com/en/tutorials/canvas/hidpi/
+// In case you're wondering why you can't use the devicePixelRatio to determine the backing store size, the answer is that they aren't guaranteed to match. Despite presenting the same devicePixelRatio value, Chrome and Safari 6 can and do have entirely different approaches for the backing store size (and therefore the webkitBackingStorePixelRatio) on HiDPI devices. The net result is that we can't rely on devicePixelRatio to know how the browser is going to scale images that are written into the CANVAS.  http://www.html5rocks.com/en/tutorials/canvas/hidpi/
 -->
 <!-- ************ /COMMENT SECTION ************ -->
 
