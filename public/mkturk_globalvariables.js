@@ -89,8 +89,6 @@ var battery = {
 }
 var datafiles=[];
 
-
-
 // Variable functions
 function resetTRIAL(){
 	var TRIAL = {}
@@ -106,6 +104,28 @@ function resetTRIAL(){
 	TRIAL.automatorStage = []
 	return TRIAL
 }
+
+
+function purgeTrackingVariables(){
+	// Purges heresies committed in the test period 
+	TRIAL = resetTRIAL()
+
+	ENV.currdate = new Date;
+	var datestr = ENV.currdate.toISOString();
+	ENV.filename = datestr.slice(0,datestr.indexOf(".")) + "_" + ENV.subjectID + ".txt";
+
+	FLAGS.current_trial = 0; 
+	FLAGS.sampleblockcount = 0; 
+
+	return 
+}
+
+
+
+
+
+
+
 
 function clearTASK(){
 	// This function has no use in the current (01/27/2017) code, but TASK properties should be written down here, rather than propagated culturally through params files. 
@@ -155,18 +175,4 @@ function clearTASK(){
 		fixationGrid: [], // {dataname: "FixationGridIndex",user: 0,save: 1,init: [],meta: "Fixation grid location on each trial."},
 		nreward: -1, // {dataname: "NReward",user: 0,save: 1,init: [],meta: "The number of rewards given at the end of the trial; usually 1x reward unless subject got many trials in a row correct in which case may get bonus reward according to nconsecutivehitsforbonus."},
 	}
-}
-
-function purgeTrackingVariables(){
-	// Purges heresies committed in the test period 
-	TRIAL = resetTRIAL()
-
-	ENV.currdate = new Date;
-	var datestr = ENV.currdate.toISOString();
-	ENV.filename = datestr.slice(0,datestr.indexOf(".")) + "_" + ENV.subjectID + ".txt";
-
-	FLAGS.current_trial = 0; 
-	FLAGS.sampleblockcount = 0; 
-
-	return 
 }

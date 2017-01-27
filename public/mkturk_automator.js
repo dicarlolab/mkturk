@@ -1,24 +1,3 @@
-// ***NOTE****
-// Add list of automator controlled params to mkturkparams.js
-
-function stageHash(task){
-	// Returns a value that uniquely describes the automator and stage of the automator
-	var current_stage_hash_string = ''
-	if (task.automator != 0){
-		current_stage_hash_string = task.automatorFilePath+'_stage'+task.automatorStage; 
-	}
-
-	else{
-		current_stage_hash_string = 'automator_off'
-	}
-
-	return current_stage_hash_string
-
-	// Todo: decide whether to count trials which have TASK that is consistent with an automator stage, as being part of that stage
-	
-
-
-}
 function automateTask(automator_data, trialhistory){
 	// Input: automator array; trialhistory (.trainingstage, .correct), current_automator_stage
 	// Globals: trial.currentAutomatorStage (for reading); trial.stuff (for writing to)
@@ -90,6 +69,21 @@ function automateTask(automator_data, trialhistory){
 }
 
 
+function stageHash(task){
+	// Returns a value that uniquely describes the automator and stage of the automator
+	var current_stage_hash_string = ''
+	if (task.automator != 0){
+		current_stage_hash_string = task.automatorFilePath+'_stage'+task.automatorStage; 
+	}
+
+	else{
+		current_stage_hash_string = 'automator_off'
+	}
+
+	return current_stage_hash_string
+
+	// Todo: decide whether to count trials which have TASK that is consistent with an automator stage, as being part of that stage
+}
 
 function computeRunningHistory(mintrials, current_stage, history_trainingstage, history_corrects){
 	// todo: 
