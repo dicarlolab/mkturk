@@ -315,22 +315,34 @@ function renderPunish(){
 	context.fillStyle="black";
 	context.fillRect(0,0,canvasobj.width,60);
 }
-function renderTouchFixation(){
+
+async function renderFixationUsingImage(image, gridindex, scale){
 	var canvasobj=document.getElementById("canvas"+canvas.touchfix);
 	var context=canvasobj.getContext('2d');
 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
-	var rad = TASK.fixationRadius;
-	var xcent = xgridcent[TASK.fixationGrid];
-	var ycent = ygridcent[TASK.fixationGrid];
+
+	// Draw fixation dot
+	boundingBoxFixation['x'] = []
+	boundingBoxFixation['y'] = []
+
+	funcreturn = await renderImageOnCanvas(image, gridindex, scale, canvas.touchfix); 
+	boundingBoxFixation.x = funcreturn[0]; 
+	boundingBoxFixation.y = funcreturn[1]; 
+}
+function renderFixationUsingDot(color, gridindex, dot_pixelradius){
+	var canvasobj=document.getElementById("canvas"+canvas.touchfix);
+	var context=canvasobj.getContext('2d');
+	context.clearRect(0,0,canvasobj.width,canvasobj.height);
+
+	// Draw fixation dot
+	var rad = dot_pixelradius;
+	var xcent = xgridcent[gridindex];
+	var ycent = ygridcent[gridindex];
 	context.beginPath();
 	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
-	if (TASK.species == "macaque" || TASK.species == "human"){
-		context.fillStyle="white";
-	}
-	else if (TASK.species == "marmoset"){
-		context.fillStyle="blue";
-	}
+	context.fillStyle=color; 
 	context.fill();
+	// Define (rectangular) boundaries of fixation
 	boundingBoxFixation.x = [xcent-rad+canvas.offsetleft, xcent+rad+canvas.offsetleft];
 	boundingBoxFixation.y = [ycent-rad+canvas.offsettop, ycent+rad+canvas.offsettop];
 
@@ -342,10 +354,6 @@ function renderTouchFixation(){
 	// context.fillRect(xgridcent[trial.fixationGrid[FLAGS.current_trial]]+rad/2-6,xgridcent[trial.fixationGrid[FLAGS.current_trial]]-rad/2-6,12,12);
 	//context.fillStyle="black";
 	context.fillRect(0,0,canvasobj.width,40);
-
-	if(TASK.fixationUsesSample == 1){
-		throw('fixationUsesSample needs to be implemented')
-	}
 }
 function renderEyeFixation(){
 	var canvasobj=document.getElementById("canvas"+canvas.eyefix);

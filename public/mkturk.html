@@ -280,11 +280,10 @@ while(true){
 
 		trial_testimages[i_test] = testbag[TRIAL.test[FLAGS.current_trial][i_test]]
 
-		// TODO: if hideTestDistractors is on, then use gray image instead
+		// TODO: if hideTestDistractors is on, then do not buffer. 
+		// Make sure the indices are all correct
 		if (TASK.hideTestDistractors == 1 && i_test != TRIAL.correctItem[FLAGS.current_trial]){
-			throw('still need to implement')
-			continue 
-
+			throw('still need to implement') 
 			trial_testimages[i_test] = GRAY_IMAGE; 
 			 
 		}
@@ -319,9 +318,22 @@ while(true){
 			TRIAL.fixationGrid[FLAGS.current_trial]=TASK.fixationGrid;
 		}
 
-		// Render fixation dot. 
+		// Render fixation screen 
 		FLAGS.stage=0;
-		renderTouchFixation();
+
+		if (TASK.fixationUsesSample == 1){
+			renderFixationUsingImage(trial_sampleimage, TASK.fixationGrid, TASK.sampleScale)
+		}
+		else if(TASK.fixationUsesSample != 1){
+			if (TASK.species == "macaque" || TASK.species == "human"){
+				var color = "white";
+			}
+			else if (TASK.species == "marmoset"){
+				var color = "blue";
+			}
+			renderFixationUsingDot(color, TASK.fixationGrid, TASK.fixationRadius);
+		}
+		
 
 		// Start timer for this fixation render trial. 
 		TRIAL.tstart[FLAGS.current_trial]=Math.round(performance.now());

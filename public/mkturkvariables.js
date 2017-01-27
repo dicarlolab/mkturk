@@ -81,8 +81,8 @@
 		serial: [0,1,2,3,4],
 		buffer: [],
 	}
-	var boundingBoxFixation=[]; //where the fixation dot is on the canvas
-	var boundingBoxesTest = []; //where the test images are on the canvas
+	var boundingBoxFixation={}; //where the fixation dot is on the canvas
+	var boundingBoxesTest = {}; //where the test images are on the canvas
 	var waitforClick; //variable to hold generator
 	var fixationTimer; //variable to hold timer
 	var xgrid=[];
