@@ -256,7 +256,14 @@ while(true){
 
 	renderReward();
 	renderPunish();
-	renderBlank();
+	if(FLAGS.savedata == 0){
+		// In test mode show grid on screen
+		renderBlankWithGridMarkers(); 
+	}
+	else if (FLAGS.savedata == 1){
+		renderBlank();
+	}
+	
 
 	//============ BUFFER SAMPLE & TEST ============//
 

@@ -212,7 +212,7 @@ async function bufferTrialImages(sample_image, sample_image_grid_index, test_ima
 				continue 
 			}
 		}		
-		
+
 		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], TASK.testScale, canvas.test); 
 		boundingBoxesTest.x.push(funcreturn[0]); 
 		boundingBoxesTest.y.push(funcreturn[1]); 
@@ -295,6 +295,49 @@ function renderBlank(){
 	context.fillStyle="black";
 	context.fillRect(0,0,canvasobj.width,60);
 }
+
+function renderBlankWithGridMarkers(){
+	var canvasobj=document.getElementById("canvas"+canvas.blank);
+	var context=canvasobj.getContext('2d');
+	context.fillStyle="#7F7F7F";
+	context.fillRect(0,0,canvasobj.width,canvasobj.height);
+
+	//Show image positions & display grid
+	//Display grid
+	for (var i = 0; i <= xgridcent.length-1; i++){
+		rad = 10
+		context.beginPath()
+		context.arc(xgridcent[i],ygridcent[i],rad,0*Math.PI,2*Math.PI)
+		context.fillStyle="red"
+		context.fill();
+	}
+
+	//Fixation Image Bounding Box
+	var wd = ENV.wd*TASK.fixationScale/canvasScale
+	var xcent = xgridcent[TASK.fixationGrid]
+	var ycent = xgridcent[TASK.fixationGrid]
+	context.strokeStyle="white"
+	context.strokeRect(xcent-wd/2,ycent-wd/2,wd+1,wd+1)
+	
+
+	//Sample Image Bounding Box
+	var wd = ENV.wd*TASK.sampleScale/canvasScale
+	var xcent = xgridcent[TASK.sampleGrid]
+	var ycent = ygridcent[TASK.sampleGrid]
+	context.strokeStyle="green"
+	context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
+
+	//Test Image Bounding Box(es)
+	for (var i = 0; i <= TASK.testGrid.length-1; i++){
+		var wd = ENV.wd*TASK.testScale/canvasScale
+		var xcent = xgridcent[TASK.testGrid[i]]
+		var ycent = ygridcent[TASK.testGrid[i]]
+		context.strokeStyle="black"
+		context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
+	}
+}
+
+
 function renderReward(){
 	var canvasobj=document.getElementById("canvas"+canvas.reward);
 	var context=canvasobj.getContext('2d');
