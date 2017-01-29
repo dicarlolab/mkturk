@@ -1,4 +1,4 @@
-function automateTask(automator_data, trialhistory){
+async function automateTask(automator_data, trialhistory){
 	// Input: automator array; trialhistory (.trainingstage, .correct), current_automator_stage
 	// Globals: trial.currentAutomatorStage (for reading); trial.stuff (for writing to)
 
@@ -16,12 +16,12 @@ function automateTask(automator_data, trialhistory){
 
 	for (var property in automator_data[i_current_stage]){
 		if (automator_data[i_current_stage].hasOwnProperty(property)){ // Apparently a necessary 'if' statement, as explained in: http://stackoverflow.com/questions/8312459/iterate-through-object-properties
-			if (property == 'minPercentCriterion' || property == 'minTrialsCriterion'){
+			if (property === 'minPercentCriterion' || property === 'minTrialsCriterion'){
 				continue 
 			}
 
 			if (!TASK[property].equals(automator_data[i_current_stage][property])){
-				console.log('Discrepancy between trial.'+property+'='+TASK[property]+' and automator_data['+i_current_stage+']['+property+']='+automator_data[i_current_stage][property])
+				console.log('Discrepancy between TASK.'+property+'='+TASK[property]+' and automator_data['+i_current_stage+']['+property+']='+automator_data[i_current_stage][property])
 				TASK[property] = automator_data[i_current_stage][property]
 				FLAGS.need2writeParameters=1
 			}
@@ -43,25 +43,48 @@ function automateTask(automator_data, trialhistory){
 	// ---------- CHANGE TASK.STUFF TO AUTOMATOR DATA [ NEXT_STAGE ] --------------------------------------- 
 	// If transition criteria are met, 
 	if(pctcorrect > minpctcorrect && ntrials >= mintrials){
+
+		
+		// If finished final stage of automator,
+		if(automator_data.length <= TASK.automatorStage+1){
+			// Stay in current stage settings, and 
+			// Turn automator off
+			TASK.automator = 0; 
+			console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject completed the final stage '+(i_current_stage)+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
+			console.log('Turning automator OFF.')
+			return 
+		}
+
+		// Otherwise, advance to the next stage.
+		TASK.automatorStage = TASK.automatorStage + 1; 
 		console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject advanced to stage '+(i_current_stage+1)+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
 
-		// Then update trial.[stuff] with next stage's settings
+		// Save behavior with current TASK, ENV, and TRIAL before moving on. 
+		await writeBehaviortoDropbox(TASK, ENV, TRIAL); 
+
+		// Reset tracking variables 
+		purgeTrackingVariables()
+
 		for (var property in automator_data[i_current_stage+1]){
-			if (property == 'minPercentCriterion' || property == 'minTrialsCriterion'){
+			if (property === 'minPercentCriterion' || property === 'minTrialsCriterion'){
 				continue 
 			}
 
 			if (automator_data[i_current_stage+1].hasOwnProperty(property)){ 
-				if (!TASK[property].equals(automator_data[i_current_stage][property])){
-					TASK[property] = automator_data[i_current_stage+1][property]
+				if (!TASK[property].equals(automator_data[i_current_stage+1][property])){
 					console.log('\"'+property+'\" changed from '+TASK[property]+' to '+automator_data[i_current_stage+1][property])
+
+					TASK[property] = automator_data[i_current_stage+1][property]
+					
+					// If imagebags are changed by automator, load images at beginning of next trial. 
+					if (property === 'imageBagsSample' || property === 'imageBagsTest'){
+						FLAGS.need2loadImages = 1; 
+					}
 				}
 			}			
 		}
 
-		TASK.automatorStage = TASK.automatorStage + 1; 
-
-		// And set update flag 
+		
 		FLAGS.need2writeParameters=1
 	}
 
@@ -84,6 +107,45 @@ function stageHash(task){
 
 	// Todo: decide whether to count trials which have TASK that is consistent with an automator stage, as being part of that stage
 }
+
+
+async function readTrialHistoryFromDropbox(filepaths){
+	
+	var trialhistory = {}
+	trialhistory.trainingstage = []
+	trialhistory.correct = []
+
+	if (typeof filepaths == "string"){
+		filepaths = [filepaths]
+	}
+
+	// Sort in ascending order, such that the OLDEST file is FIRST in trialhistory 
+	// trialhistory: [oldest TRIALs... most recent TRIALs]
+	filepaths.sort()
+
+	// Iterate over files and add relevant variables
+	for (var i = 0; i< filepaths.length; i++){
+		datastring = await loadTextFilefromDropbox(filepaths[i])
+		data = JSON.parse(datastring)
+		task_data = data[0]
+		trial_data = data[1]
+
+		var numTRIALs = trial_data.response.length; 
+		// Iterate over TRIALs
+		for (var i_trial = 0; i_trial<numTRIALs; i_trial++){
+			// Correct/incorrect TRIAL
+			var correct = trial_data.response[i_trial] == trial_data.correctItem[i_trial]
+			trialhistory.correct.push(correct)
+
+			// Current automator stage 
+			var current_stage = stageHash(task_data)
+			trialhistory.trainingstage.push(current_stage)
+		}
+	}
+	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
+	return trialhistory
+}
+
 
 function computeRunningHistory(mintrials, current_stage, history_trainingstage, history_corrects){
 	// todo: 
@@ -137,19 +199,20 @@ function computeRunningHistory(mintrials, current_stage, history_trainingstage, 
 		}
 		ncountedtrials = ncountedtrials+1
 	}
-	//console.log('Num discrepancies in history: '+ ndiscrepancy)
-	//console.log('Num counted trials in history: '+ ncountedtrials)
 
 	var ntrial=0;
 	var ncorrect=0;
 	var pctcorrect = NaN
-	if (startingindex == NaN){
+	if (startingindex == history_corrects.length){
 		pctcorrect = 0;
-		return pctcorrect
+		return [pctcorrect, ntrial]
 	}
 
 	for (var i=startingindex; i<history_corrects.length; i++){
-		if (history_corrects[i]==1){ncorrect = ncorrect+1;}
+		if (history_corrects[i]==1){
+			ncorrect = ncorrect+1;
+		}
+		
 		ntrial++;
 	}
 	pctcorrect = 100 * ncorrect/ntrial;

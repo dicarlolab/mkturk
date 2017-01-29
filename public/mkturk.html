@@ -70,7 +70,19 @@ else {
 	var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
 	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
 }
-//================== AUTHENTICATE (end) ==================//
+
+
+// GET PARAMFILE NAME
+var subjectdialog = document.getElementById("subjectID_dialog");
+var subjectlistobj = document.getElementById("subjectID_list");
+for (var i=subjectlist.length-1; i>=0; i--){
+	var opt = document.createElement('option');
+	opt.value = i;
+	opt.innerHTML = subjectlist[i];
+	subjectlistobj.appendChild(opt);
+}
+subjectlistobj.addEventListener("change",subjectlist_listener,false);
+
 // Button callbacks
 document.querySelector("button[name=connectble]").addEventListener(
 	'touchend',findBLEDevice,false)
@@ -131,7 +143,6 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	document.querySelector("button[name=noble]").style.display = "none"
 	
-	// GET PARAMFILE NAME
 	subjectdialog.showModal();
 	await subjectIDPromise();	
 	ENV.paramfile = PARAM_DIRPATH + ENV.subjectID + "_params.txt";
@@ -158,6 +169,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	}
 
 	updateStatusText('Loading images...')
+
 	
 	//================== TEST MODE ==================//
 	FLAGS.savedata = 0
@@ -167,9 +179,8 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	// Read performance history
 	var subject_behavior_save_directory = DATA_SAVEPATH + ENV.subjectID + '/'
 	var history_file_paths = await getMostRecentBehavioralFilePathsFromDropbox(ndatafiles2read, ENV.subjectID, subject_behavior_save_directory)
-	var trialhistory = await readTrialHistoryFromDropbox(history_file_paths);
-
-	// Initialize automator
+	trialhistory = await readTrialHistoryFromDropbox(history_file_paths);
+	// Initialize automator - change TASK to that specified by TASK.automatorStage. 
 	if (TASK.automator != 0){
 		automator_data = await parseAutomatorFilefromDropbox(TASK.automatorFilePath) 
 		automateTask(automator_data, trialhistory) 
@@ -198,13 +209,10 @@ while(true){
 		await loadParametersfromDropbox(ENV.paramfile);
 		FLAGS.need2loadParameters = 0; 	
 		FLAGS.need2loadImages = 1; 
-	
 	}
 
-	// Todo: put these in the correct spot
-	updateCanvasSettings(TASK); 
-	ENV.reward = setReward(); 
-	
+	// Update canvas based on latest TASK state: 
+	refreshCanvasSettings(TASK); 
 	setupCanvasHeadsUp()
 	windowWidth = window.innerWidth; 
 	windowHeight = window.innerHeight;
@@ -264,7 +272,6 @@ while(true){
 	else if (FLAGS.savedata == 1){
 		renderBlank();
 	}
-	
 
 	//============ BUFFER SAMPLE & TEST ============//
 
@@ -289,7 +296,6 @@ while(true){
 	}
 	
 	// Buffer canvases with these images
-	CANVAS.buffered=0;
 	await bufferTrialImages(trial_sampleimage, TASK.sampleGrid, trial_testimages, TASK.testGrid);
 
 	//============ RUN FIXATION SCREEN ============//
@@ -306,6 +312,7 @@ while(true){
 	}
 
 	while (FLAGS.waitingforFixation==1){
+
 		// Choose fixation grid index at random
 		if (TASK.fixationMove > 0){
 			TRIAL.fixationGrid[FLAGS.current_trial]=Math.floor((xgrid.length)*Math.random()); 
@@ -358,10 +365,6 @@ while(true){
 	// Show sample (then) test:
 	if (TASK.rewardStage === 1){
 		frame.shown=[];
-		while (CANVAS.buffered == 0){
-			console.log('Waiting for buffer...')
-			continue 
-		}
 		
 		for (var q in CANVAS.sequence){
 			frame.shown[q]=0
@@ -380,6 +383,7 @@ while(true){
 	for (var q in CANVAS.sequencepost){frame.shown[q]=0}; frame.current=0;
 
 	// Fixation task reward/punish screens
+	ENV.reward = setReward(); 
 	if (TASK.rewardStage === 0){
 		if (FLAGS.brokeFixation == 0){
 			TRIAL.response[FLAGS.current_trial] = TRIAL.correctItem[FLAGS.current_trial];
@@ -514,28 +518,36 @@ while(true){
 	// Lazily save the data once every SAVE_EVERY number of trials
 	// Todo: after some timeout, savebehavior
 	// Todo: have button at top for forcing save (end of day)
-	if (FLAGS.savedata == 1 && FLAGS.purge == 0){ 
-		if(FLAGS.current_trial % SAVE_EVERY == 0 || FLAGS.need2loadParameters == 1 || FLAGS.need2loadImages == 1){
-			// default: save every SAVE_EVERy trials
-			// if you're going to load new images or parameters, then dump
-			writeBehaviortoDropbox(TASK, ENV, TRIAL); 		
-		}		
-	}
+
 	
 	updateHeadsUpDisplay(); 
 
+
+	if (FLAGS.savedata == 1 && FLAGS.purge == 0){ 
+		if(FLAGS.current_trial % SAVE_EVERY == 0 || FLAGS.need2loadParameters == 1 || FLAGS.need2loadImages == 1 || FLAGS.need2writeBehavior == 1){
+			writeBehaviortoDropbox(TASK, ENV, TRIAL); 		
+		}		
+	}
+
 	// Check if automator needs to update task
 	if (FLAGS.savedata == 1 && TASK.automator != 0){
-		automateTask(automator_data, trialhistory);
-		if (FLAGS.need2writeParameters == 1){
-			saveParameterstoDropbox(); 
-			FLAGS.need2loadImages = 1; 
-		}
+		await automateTask(automator_data, trialhistory);
+	}
+	console.log('End of trial. Flags: ', FLAGS)
+
+	if (FLAGS.need2writeParameters == 1){
+		saveParameterstoDropbox(); 
+		FLAGS.need2writeParameters = 0; 
 	}
 
 	if (FLAGS.need2loadParameters == 0){
 		FLAGS.need2loadParameters = checkParameterFileStatus()
 	}
+
+	console.log('End of trial2. Flags: ', FLAGS)
+
+	
+
 } 
 })(); 
 
