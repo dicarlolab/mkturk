@@ -15,4 +15,4 @@ var PARAM_DIRPATH = "/MonkeyTurk/parameterfiles/"
 
 // ------ Misc. -----------------------
 var ndatafiles2read=5;
-var SAVE_EVERY = 1; 
+var SAVE_EVERY = 5; 

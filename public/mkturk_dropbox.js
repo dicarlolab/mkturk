@@ -200,6 +200,42 @@ function loadTextFilefromDropbox(textfile_path){
 	})
 }
 
+async function readTrialHistoryFromDropbox(filepaths){
+	
+	var trialhistory = []
+	trialhistory.trainingstage = []
+	trialhistory.correct = []
+
+	if (typeof filepaths == "string"){
+		filepaths = [filepaths]
+	}
+
+	// Sort in ascending order, such that the OLDEST file is FIRST in trialhistory 
+	// trialhistory: [oldest TRIALs... most recent TRIALs]
+	filepaths.sort()
+
+	// Iterate over files and add relevant variables
+	for (var i = 0; i< filepaths.length; i++){
+		datastring = await loadTextFilefromDropbox(filepaths[i])
+		data = JSON.parse(datastring)
+		task_data = data[0]
+		trial_data = data[1]
+
+		var numTRIALs = trial_data.response.length; 
+		// Iterate over TRIALs
+		for (var i_TRIAL = 0; i<numTRIALs; i++){
+			// Correct/incorrect TRIAL
+			var correct = trial_data.response[i] == trial_data.correctItem[i]
+			trialhistory.correct.push(correct)
+
+			// Current automator stage 
+			var current_stage = stageHash(task_data)
+			trialhistory.trainingstage.push(current_stage)
+		}
+	}
+	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
+	return trialhistory
+}
 
 
 // MDN using files from web applications -->
@@ -350,6 +386,8 @@ async function loadImageArrayfromDropbox(imagepathlist){
 			var image_array = await Promise.all(image_requests)
 		}
 		renderBlank()
+
+		console.log('Image array has been loaded.')
 		return image_array
 	}
 	catch(err){
@@ -358,6 +396,9 @@ async function loadImageArrayfromDropbox(imagepathlist){
 
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 async function loadImagefromDropbox(imagepath){
 	// Loads and returns a single image located at imagepath into an Image()
@@ -492,7 +533,7 @@ async function saveParameterstoDropbox() {
 			ENV.paramfile_rev = filemeta.rev
 			ENV.paramfile_date = new Date(filemeta.client_modified)	
 		}
-		console.log("TASK written to disk as "+ENV.paramfile+". Size: " + response.size)
+		console.log("Task parameters successfully saved to disk. Size: " + response.size)
 
 	}
 	catch (error){

@@ -1,21 +1,9 @@
 //================== LOAD STATUS DISPLAY ==================//
-function refreshCanvasSettings(TASK){
-	// TODO: cleanup CANVAS; separate canvas ID from sequence logic; 'tsequence' variables coded by length rather than absolute time
-
-	// Adjust length / toggle presence of gray screen between sample and test screens
-	if (TASK.sampleOFF > 0){
-		CANVAS.sequence = [0, 1, 0, 2]
-		CANVAS.tsequence = [0,100,100+TASK.sampleON,100+TASK.sampleON+TASK.sampleOFF]; 
-	}
-	else if (TASK.sampleOFF <= 0 ){
-		CANVAS.sequence = [0, 1, 2]
-		CANVAS.tsequence = [0,100,100+TASK.sampleON]; 
-	}
-	
-	// Adjust length of reward screen based on reward amount 
+function updateCanvasSettings(TASK){
+	// Todo: put these in the proper locations
+	CANVAS.tsequence = [0,100,100+TASK.sampleON,100+TASK.sampleON+TASK.sampleOFF]; 
 	CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+ENV.reward*1000;
 
-	// Adjust location of CANVAS based on species-specific setup
 	if (TASK.species == "macaque" || TASK.species == "human"){
 		CANVAS.headsupfraction=0;
 	}
@@ -235,6 +223,8 @@ async function bufferTrialImages(sample_image, sample_image_grid_index, test_ima
 		await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.sampleScale, CANVAS.test)
 	}
 
+	CANVAS.buffered = 1;
+
 }
 
 
@@ -428,15 +418,10 @@ function renderEyeFixation(){
 function subjectIDPromise(){
 	var resolveFunc
 	var errFunc
-	p = new Promise(
-		function(resolve,reject){
-			resolveFunc = resolve;
-			errFunc = reject;
-		}).then(
-		function(resolveval){
-			console.log('User selected ' + resolveval)
-		});
-	
+	p = new Promise(function(resolve,reject){
+		resolveFunc = resolve;
+		errFunc = reject;
+	}).then(function(resolveval){console.log('User selected ' + resolveval)});
 	function *waitforclickGenerator(){
 		var imclicked =[-1];
 		while (true){
@@ -444,7 +429,6 @@ function subjectIDPromise(){
 			resolveFunc(imclicked);
 		}
 	}
-
 	waitforClick = waitforclickGenerator(); // start async function
 	waitforClick.next(); //move out of default state
 	return p;
