@@ -5,6 +5,7 @@
 
 var TASK = {}; // Global that encapsulates state of the current task 
 var TRIAL = resetTRIAL() // Global that contains data variables that are incremented every trial, and are dumped to disk for scientific purposes.
+
 var FLAGS = {} // Global that keeps track of the task's requests to the Dropbox/server/disk/whatever; buffering requests; etc.
 // The scientist does not care about tracking this variable into the behavioral files. 
 FLAGS.consecutivehits = 0; 
@@ -15,6 +16,7 @@ FLAGS.sampleblockcount = 0;
 FLAGS.savedata = 0; 
 FLAGS.stage = 0; 
 FLAGS.waitingforFixation = 0; 
+FLAGS.need2writeBehavior = 0; 
 
 var ENV = {}; // Task specific variables that are slaves to TASK settings, but still desired to be recorded. Hence, they should not appear in the TASK-based params file, but should be logged on their own. 
 ENV.subjectID = ''
@@ -29,41 +31,31 @@ ENV.paramfile_rev = ''
 ENV.paramfile_date = ''
 ENV.filename = ''
 
-var subjectdialog = document.getElementById("subjectID_dialog");
-var subjectlistobj = document.getElementById("subjectID_list");
-//populate list
-for (var q=subjectlist.length-1; q>=0; q--){
-	// add menu option
-	var opt = document.createElement('option');
-	opt.value = q;
-	opt.innerHTML = subjectlist[q];
-	subjectlistobj.appendChild(opt);
-}
-subjectlistobj.addEventListener("change",subjectlist_listener,false);
-
+var CANVAS = {}; 
 var CANVAS = {
-	blank: 0,
-	sample: 1,
-	test: 2,
-	touchfix: 3,
-	eyefix: 4,
-	reward: 5,
-	photoreward: 6,
-	punish: 7,
-	front: 0,
-	sequenceblank: [0,0],
-	tsequenceblank: [0,100],
-	sequencepre: [3],
-	tsequencepre: [300],
-	sequence: [0,1,0,2], //0=gray 1=sample 2=test 3=touchfix 4=reward 5=punish
-	tsequence: [0,100,200,400], //timing between frames
-	sequencepost: [0,5,6],
-	tsequencepost: [0,25,600],
-	buffered: 0,
-	headsupfraction: 1/3,
-	offsetleft: 0,
-	offsettop: 0,
-};
+		blank: 0,
+		sample: 1,
+		test: 2,
+		touchfix: 3,
+		eyefix: 4,
+		reward: 5,
+		photoreward: 6,
+		punish: 7,
+		front: 0,
+		sequenceblank: [0], 
+		tsequenceblank: [0], 
+		sequencepre: [3],
+		tsequencepre: [300],
+		sequence: [0,1,0,2], // blank, sample, blank, test
+		tsequence: NaN, 
+		sequencepost: [0,5,6], // blank, reward, photoreward
+		tsequencepost: [0,25,600],
+		headsupfraction: NaN,
+		offsetleft: 0,
+		offsettop: 0,
+	};
+
+var trialhistory = {}
 
 var frame = {
 	current: 0,
@@ -116,6 +108,9 @@ function purgeTrackingVariables(){
 
 	FLAGS.current_trial = 0; 
 	FLAGS.sampleblockcount = 0; 
+	FLAGS.consecutivehits = 0; 
+
+
 
 	return 
 }

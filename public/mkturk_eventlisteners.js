@@ -165,7 +165,11 @@ function doneTesting_listener(event){
 	console.log("User is done testing. Start saving data");
 	FLAGS.savedata=1
 	FLAGS.purge=1
+	console.log("hello1", trialhistory)
+	purgeTrackingVariables()
+	console.log("hello2", trialhistory)
 	renderBlank()
+	console.log("hello3", trialhistory)
 	document.querySelector("button[name=doneTesting]").style.display = "none"
 	return
 }
