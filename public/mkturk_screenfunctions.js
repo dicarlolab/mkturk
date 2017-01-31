@@ -104,13 +104,12 @@ function updateHeadsUpDisplay(){
 	var textobj = document.getElementById("headsuptext");
 
 	// Overall performance
-	var ncorrect = 0;
-	for (var i=0; i<=TRIAL.correctItem.length-1; i++){
-			if (TRIAL.correctItem[i] == TRIAL.response[i]){
-				ncorrect++;
-			}
+	var ncorrect = 0; 
+	for (var i=0; i<=trialhistory.correct.length-1; i++){
+		ncorrect = ncorrect + trialhistory.correct[i]
 	}
-	var pctcorrect = Math.round(100 * ncorrect / TRIAL.response.length);
+
+	var pctcorrect = Math.round(100 * ncorrect / trialhistory.correct.length);
 	// Task type
 	var task1 = "";
 	var task2 = "";
@@ -122,7 +121,14 @@ function updateHeadsUpDisplay(){
 		task2 = TASK.sampleON + "ms, " + TASK.imageBagsTest.length + "-categories in pool";
 	}
 	if (CANVAS.headsupfraction > 0){
-		textobj.innerHTML = ENV.subjectID + ": <font color=green><b>" + pctcorrect + "%</b></font> " + "(" + ncorrect + " of " + TRIAL.response.length +")" + "<br>" + "Estimated Reward: <font color=green><b>" + Math.round(TASK.rewardper1000*ncorrect/1000) + "mL</b></font> (" + Math.round(TASK.rewardper1000) + " per 1000)" + "<br> " + "<br>" + " Stage " + TASK.AutomatorStage + ": " + task1 + "<br>" + task2 + "<br>" + "<br>" + "<br>" + "<font color=red><b>" + "<font color=blue><b>" + ble.statustext + "<br></font>";
+		textobj.innerHTML = ENV.subjectID + ": <font color=green><b>" + pctcorrect 
+		+ "%</b></font> " + "(" + ncorrect + " of " + trialhistory.correct.length +")" 
+		+ "<br>" + "Estimated Reward: <font color=green><b>" 
+		+ Math.round(TASK.rewardper1000*ncorrect/1000) 
+		+ "mL</b></font> (" + Math.round(TASK.rewardper1000) 
+		+ " per 1000)" + "<br> " + "<br>" + " Stage " 
+		+ TASK.AutomatorStage + ": " + task1 + "<br>" + task2 + "<br>" + "<br>" 
+		+ "<br>" + "<font color=red><b>" + "<font color=blue><b>" + ble.statustext + "<br></font>";
 	}
 	else if (CANVAS.headsupfraction == 0){
 		textobj.innerHTML = ble.statustext
@@ -192,7 +198,7 @@ async function renderImageOnCanvas(image, grid_index, scale, canvas_id){
 	return [xbound, ybound]
 }
 
-async function bufferTrialImages(sample_image, sample_image_grid_index, test_images, test_image_grid_indices){
+async function bufferTrialImages(sample_image, sample_image_grid_index, test_images, test_image_grid_indices, correct_index){
 
 	// --------- Buffer the SAMPLE canvas  ---------
 	var canvasobj=document.getElementById("canvas"+CANVAS.sample); // Gray out before buffering sample
@@ -218,7 +224,7 @@ async function bufferTrialImages(sample_image, sample_image_grid_index, test_ima
 	for (i = 0; i<test_images.length; i++){
 		// If hideTestDistractors, simply do not draw the image
 		if(TASK.hideTestDistractors == 1){
-			if (TRIAL.correctItem[FLAGS.current_trial] != i){
+			if (correct_index != i){
 				boundingBoxesTest.x.push([NaN, NaN]); 
 				boundingBoxesTest.y.push([NaN, NaN]); 
 				continue 

@@ -16,7 +16,9 @@ FLAGS.sampleblockcount = 0;
 FLAGS.savedata = 0; 
 FLAGS.stage = 0; 
 FLAGS.waitingforFixation = 0; 
+FLAGS.waitingforResponse = 0;
 FLAGS.need2writeBehavior = 0; 
+
 
 var ENV = {}; // Task specific variables that are slaves to TASK settings, but still desired to be recorded. Hence, they should not appear in the TASK-based params file, but should be logged on their own. 
 ENV.subjectID = ''
@@ -106,11 +108,19 @@ function purgeTrackingVariables(){
 	var datestr = ENV.currdate.toISOString();
 	ENV.filename = datestr.slice(0,datestr.indexOf(".")) + "_" + ENV.subjectID + ".txt";
 
-	FLAGS.current_trial = 0; 
+	if(FLAGS.waitingforFixation == 1 || FLAGS.waitingforResponse == 1 || FLAGS.purge == 1){
+		// purge requested by user at beginning of trial during fixation (most likely) 
+		console.log('setting to 0')
+		FLAGS.current_trial = 0
+	}
+	else{
+		console.log('setting to -1')
+		// purge requested by automator at end of trial
+		FLAGS.current_trial = -1; 
+	}
+	
 	FLAGS.sampleblockcount = 0; 
 	FLAGS.consecutivehits = 0; 
-
-
 
 	return 
 }

@@ -12,7 +12,7 @@ function mousedown_listener(event){
 		if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
 			 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
 			FLAGS.brokeFixation = 0;
-			TRIAL.xytfixation[FLAGS.current_trial]=[x,y,Math.round(performance.now())];
+			trial_xytfixation = [x,y,Math.round(performance.now())];
 			//Start timer
 			fixationTimer = setTimeout(function(){ FLAGS.waitingforFixation=0;clearTimeout(movefixationTimer); waitforClick.next(1);},TASK.fixationDur);
 		} //if clicked fixation
@@ -24,8 +24,8 @@ function mousedown_listener(event){
 		for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
 			if (x >= boundingBoxesTest.x[q][0] && x <= boundingBoxesTest.x[q][1] &&
 				y >= boundingBoxesTest.y[q][0] && y <= boundingBoxesTest.y[q][1]){
-				TRIAL.response[FLAGS.current_trial]=q;
-				TRIAL.xytresponse[FLAGS.current_trial]=[x,y,Math.round(performance.now())];
+				trial_response =q;
+				trial_xytresponse =[x,y,Math.round(performance.now())];
 				waitforClick.next(q);
 				return
 			}
@@ -68,7 +68,7 @@ function touchstart_listener(event){
 		if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
 			 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
 			FLAGS.brokeFixation = 0;
-			TRIAL.xytfixation[FLAGS.current_trial]=[x,y,Math.round(performance.now())];
+			trial_xytfixation = [x,y,Math.round(performance.now())];
 			//Start timer
 			fixationTimer = setTimeout(function(){console.log('started fixation timer');
 				FLAGS.waitingforFixation=0;
@@ -79,7 +79,7 @@ function touchstart_listener(event){
 		else{
 			if (TASK.rewardStage == 0){
 				console.log('clicked outside fixation');
-				TRIAL.xytfixation[FLAGS.current_trial]=[x,y,Math.round(performance.now())];
+				trial_xytfixation = [x,y,Math.round(performance.now())];
 				FLAGS.waitingforFixation=0;
 				FLAGS.brokeFixation = 1;
 				clearTimeout(movefixationTimer);
@@ -93,8 +93,8 @@ function touchstart_listener(event){
 		for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
 			if (x >= boundingBoxesTest.x[q][0] && x <= boundingBoxesTest.x[q][1] &&
 				y >= boundingBoxesTest.y[q][0] && y <= boundingBoxesTest.y[q][1]){
-				TRIAL.response[FLAGS.current_trial]=q;
-				TRIAL.xytresponse[FLAGS.current_trial]=[x,y,Math.round(performance.now())];
+				trial_response = q;
+				trial_xytresponse =[x,y,Math.round(performance.now())];
 				waitforClick.next(q);
 				return
 			}
@@ -135,8 +135,8 @@ function touchmove_listener(event){
 		for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
 			if (x >= boundingBoxesTest.x[q][0] && x <= boundingBoxesTest.x[q][1] &&
 				y >= boundingBoxesTest.y[q][0] && y <= boundingBoxesTest.y[q][1]){
-				TRIAL.response[FLAGS.current_trial]=q;
-				TRIAL.xytresponse[FLAGS.current_trial]=[x,y,Math.round(performance.now())];
+				trial_response =q;
+				trial_xytresponse =[x,y,Math.round(performance.now())];
 				waitforClick.next(q);
 				return
 			}
@@ -164,12 +164,8 @@ function headsuptext_listener(event){
 function doneTesting_listener(event){
 	console.log("User is done testing. Start saving data");
 	FLAGS.savedata=1
-	FLAGS.purge=1
-	console.log("hello1", trialhistory)
 	purgeTrackingVariables()
-	console.log("hello2", trialhistory)
 	renderBlank()
-	console.log("hello3", trialhistory)
 	document.querySelector("button[name=doneTesting]").style.display = "none"
 	return
 }

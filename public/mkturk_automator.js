@@ -114,6 +114,7 @@ async function readTrialHistoryFromDropbox(filepaths){
 	var trialhistory = {}
 	trialhistory.trainingstage = []
 	trialhistory.correct = []
+	trialhistory.tstart = []
 
 	if (typeof filepaths == "string"){
 		filepaths = [filepaths]
@@ -134,12 +135,16 @@ async function readTrialHistoryFromDropbox(filepaths){
 		// Iterate over TRIALs
 		for (var i_trial = 0; i_trial<numTRIALs; i_trial++){
 			// Correct/incorrect TRIAL
-			var correct = trial_data.response[i_trial] == trial_data.correctItem[i_trial]
+			var correct = Number(trial_data.response[i_trial] == trial_data.correctItem[i_trial])
 			trialhistory.correct.push(correct)
 
 			// Current automator stage 
 			var current_stage = stageHash(task_data)
 			trialhistory.trainingstage.push(current_stage)
+
+			// Start time (fixation dot appears) of trial 
+			var starttime = trial_data.tstart[i_trial]
+			trialhistory.tsart.push(starttime)
 		}
 	}
 	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
