@@ -6,6 +6,13 @@
 var TASK = {}; // Global that encapsulates state of the current task 
 var TRIAL = resetTRIAL() // Global that contains data variables that are incremented every trial, and are dumped to disk for scientific purposes.
 
+var trial_fixationGrid = NaN; 
+var trial_tstart = NaN; 
+var trial_nreward = NaN; 
+var trial_xytfixation = []; 
+var trial_xytresponse = []; 
+var trial_response = []; 
+
 var FLAGS = {} // Global that keeps track of the task's requests to the Dropbox/server/disk/whatever; buffering requests; etc.
 // The scientist does not care about tracking this variable into the behavioral files. 
 FLAGS.consecutivehits = 0; 

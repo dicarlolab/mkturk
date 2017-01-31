@@ -24,8 +24,9 @@ function mousedown_listener(event){
 		for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
 			if (x >= boundingBoxesTest.x[q][0] && x <= boundingBoxesTest.x[q][1] &&
 				y >= boundingBoxesTest.y[q][0] && y <= boundingBoxesTest.y[q][1]){
-				trial_response =q;
+				trial_response = q;
 				trial_xytresponse =[x,y,Math.round(performance.now())];
+				//console.log('button clicked', trial_response, trial_xytresponse)
 				waitforClick.next(q);
 				return
 			}

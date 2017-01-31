@@ -284,6 +284,7 @@ while(true){
 	funcreturn = selectTestImages(current_sample_label, testbag_labels) 
 	var trial_testImage_indices = funcreturn[0] 
 	var trial_correctItem_index = funcreturn[1] 
+
 	
 	// Sample: get image blob actual from samplebag
 	var trial_sampleimage = samplebag[trial_sampleImage_index]
@@ -300,13 +301,6 @@ while(true){
 	//============ RUN FIXATION SCREEN ============//
 	
 	// If no fixation requirement: 
-	var trial_fixationGrid = NaN; 
-	var trial_tstart = NaN; 
-	var trial_nreward = NaN; 
-	var trial_xytfixation = []; 
-	var trial_xytresponse = []; 
-	var trial_response = []; 
-
 
 	if (TASK.fixationDur <= 0){
 		FLAGS.waitingforFixation=0
@@ -386,6 +380,8 @@ while(true){
 	}
 
 	//============ REWARD/PUNISH SCREEN ============//
+	
+
 	FLAGS.stage=2;
 	frame.shown=[];
 	for (var q in CANVAS.sequencepost){frame.shown[q]=0}; frame.current=0;
@@ -432,6 +428,9 @@ while(true){
 		}
 	} 
 
+	console.log('response:', trial_response)
+	console.log('correct response', trial_correctItem_index)
+
 	// Calculate number of rewards to give
 	if (trial_response == trial_correctItem_index && 
 		(FLAGS.current_trial==0 || 
@@ -456,7 +455,7 @@ while(true){
 			trial_nreward = 0;
 		}	
 	}
-	console.log('nhits: ' + FLAGS.consecutivehits + ', nreward: ' + trial_nreward)
+	// console.log('nhits: ' + FLAGS.consecutivehits + ', nreward: ' + trial_nreward)
 	
 	// Deliver reward or punishment
 	frame.shown=[];
@@ -500,7 +499,9 @@ while(true){
 		await dispensePunish();
 	}
 
-	// Update TRIAL and trialhistory 
+
+
+	// Update TRIAL only if saving data
 	FLAGS.stage=3;
 	if (FLAGS.savedata == 1){
 
@@ -515,31 +516,33 @@ while(true){
 		TRIAL.xytresponse[FLAGS.current_trial] = trial_xytresponse
 		TRIAL.nreward[FLAGS.current_trial] = trial_nreward
 
-		if (TASK.automator !=0){	
-			var current_stage = stageHash(TASK); 
-			trialhistory.trainingstage.push(current_stage); 
-			trialhistory.tstart.push(TRIAL.tstart[FLAGS.current_trial])
+		// Update trialhistory 
+		var current_stage = stageHash(TASK); 
+		trialhistory.trainingstage.push(current_stage); 
+		trialhistory.tstart.push(trial_tstart)
 
-			if (TASK.rewardStage==0 & FLAGS.brokeFixation==0){
-				trialhistory.correct.push(1);
-			}
-			if (TASK.rewardStage==0 & FLAGS.brokeFixation==1){
-				trialhistory.correct.push(0);
-			}
-			if (TASK.rewardStage==1 & TRIAL.response[FLAGS.current_trial] == TRIAL.correctItem[FLAGS.current_trial]){
-				trialhistory.correct.push(1);
-			}
-			else if (TASK.rewardStage==1) {
-				trialhistory.correct.push(0);
-			}
+		if (TASK.rewardStage==0 & FLAGS.brokeFixation==0){
+			trialhistory.correct.push(1);
+		}
+		if (TASK.rewardStage==0 & FLAGS.brokeFixation==1){
+			trialhistory.correct.push(0);
+		}
+		if (TASK.rewardStage==1 & TRIAL.response[FLAGS.current_trial] == TRIAL.correctItem[FLAGS.current_trial]){
+			trialhistory.correct.push(1);
+		}
+		else if (TASK.rewardStage==1) {
+			trialhistory.correct.push(0);
+		}
+
+		// Run automator
+		if (TASK.automator !=0){	
 			await automateTask(automator_data, trialhistory);
 		}
 
-		if (FLAGS.savedata == 1 && FLAGS.purge == 0){ 
-			if(FLAGS.need2loadParameters == 1 || FLAGS.need2loadImages == 1 || FLAGS.need2writeBehavior == 1){
-				writeBehaviortoDropbox(TASK, ENV, TRIAL); 		
-			}		
-		}
+		// Save data
+		if(FLAGS.need2writeBehavior == 1 || FLAGS.need2loadParameters == 1 || FLAGS.need2loadImages == 1){
+			writeBehaviortoDropbox(TASK, ENV, TRIAL); 		
+		}		
 	}
 
 	updateHeadsUpDisplay(); 
