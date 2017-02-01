@@ -3,7 +3,7 @@ function selectSampleImage(samplebag_labels, SamplingStrategy){
 	// Vanilla random uniform sampling with replacement: 
 	var sample_image_index = NaN
 	if(SamplingStrategy == 'uniform_with_replacement'){
-		sample_image_index = Math.floor((samplebag.length)*Math.random());
+		sample_image_index = Math.floor((samplebag_labels.length)*Math.random());
 	}
 	else if(SamplingStrategy == 'uniform_without_ImageReplacementAfterMaxReps'){
 		throw "Not implemented."
