@@ -3,8 +3,10 @@ class ImageBuffer {
 	// Nothing else. No labels, no grouping, nothing. Just images and their filenames. 
 
 	// Single buffer for now for finite list of images that can completely fit in device RAM. 
-	// Todo: double buffer to serve imagelists > device RAM
+	// Todo: double buffer to serve imagelists > device RAM (basically, set upper limit on size of cache)
+	//														and then flush cache as needed) 
 	// Todo: make this Dropbox independent - make this usable with local disk, or in-lab server, for example
+	// Todo:  
 
 constructor(image_source){
 	// image source can be list of directory paths, or single directory path
@@ -148,9 +150,12 @@ async prepare_queue(){
 
 async buffer_chunk(chunksize){
 	try{
+		if(chunksize == 0){
+			return 
+		}
 		// The queue has not been created 
 		if (this.not_downloaded_filenames.length == undefined){
-			await prepare_queue()
+			await this.prepare_queue()
 		}
 
 		// Nothing left to buffer
@@ -158,11 +163,17 @@ async buffer_chunk(chunksize){
 			return 
 		}
 		else if(this.not_downloaded_filenames.length > 0){
-			requested_imagenames = []
+			var requested_imagenames = []
 			for ( var i = 0; i < chunksize; i++){
-				requested_imagenames.push(this.not_downloaded_filenames.pop())
+				var image_request = this.not_downloaded_filenames.pop(); 
+				if(image_request != undefined){
+					requested_imagenames.push(image_request)
+				}
+				else{
+					break
+				}
 			}
-			var image_array = loadImageArrayFromDropbox(requested_imagenames)
+			var image_array = await loadImageArrayfromDropbox(requested_imagenames)
 			this.cache_images.push(... image_array)
 			this.cache_filenames.push(... requested_imagenames) 
 		}

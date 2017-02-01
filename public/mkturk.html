@@ -204,7 +204,7 @@ FLAGS.current_trial = 0;
 FLAGS.sampleblockcount = 0; 
 
 while(true){
-	
+		
 
 	if (FLAGS.need2loadParameters == 1){
 		await loadParametersfromDropbox(ENV.paramfile);
@@ -258,17 +258,13 @@ while(true){
 		all_image_directories.push(... TASK.imageBagsTest)
 		imagebag = new ImageBuffer(all_image_directories)
 
-		//samplebag = new ImageBuffer(TASK.imageBagsSample)
 		var funcreturn = await loadImageBagPaths(TASK.imageBagsSample); 
 		samplebag_paths = funcreturn[0]
 		samplebag_labels = funcreturn[1]
 
-		//testbag = new ImageBuffer(TASK.imageBagsTest)
 		var funcreturn = await loadImageBagPaths(TASK.imageBagsTest); 
 		testbag_paths = funcreturn[0]
 		testbag_labels = funcreturn[1]
-
-		// todo: buffer some images at the beginning
 
 
 		// Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image. 
@@ -283,10 +279,10 @@ while(true){
 		xgridcent = funcreturn[2]
 		ygridcent = funcreturn[3]
 
+		// Preload some randomly chosen images?
+		await imagebag.buffer_chunk(num_preload_images)
 		
 		FLAGS.need2loadImages = 0;
-
-
 
 		console.timeEnd('Image loading time:')
 	} 
@@ -301,7 +297,7 @@ while(true){
 		renderBlank();
 	}
 
-	//============ BUFFER SAMPLE & TEST ============//
+	//============ BUFFER SAMPLE & TEST (for next trial) ============//
 
 	// Draw one (1) sample image from samplebag
 	var samplingStrategy = 'uniform_with_replacement'
@@ -324,8 +320,7 @@ while(true){
 		var current_test_filename = testbag_paths[trial_testImage_indices[i_test]]
 		trial_testimages[i_test] = await imagebag.get_by_name(current_test_filename); 		
 	}
-	
-	// Buffer canvases with these images
+
 	await bufferTrialImages(trial_sampleimage, TASK.sampleGrid, trial_testimages, TASK.testGrid, trial_correctItem_index);
 
 	//============ RUN FIXATION SCREEN ============//
@@ -589,7 +584,7 @@ while(true){
 		FLAGS.need2loadParameters = checkParameterFileStatus()
 	}
 
-	console.log('End of trial ', FLAGS.current_trial, '. TRIAL: ', TRIAL)
+	//console.log('End of trial ', FLAGS.current_trial, '. TRIAL: ', TRIAL)
 	FLAGS.current_trial++
 	
 

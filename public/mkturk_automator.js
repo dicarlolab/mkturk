@@ -144,7 +144,7 @@ async function readTrialHistoryFromDropbox(filepaths){
 
 			// Start time (fixation dot appears) of trial 
 			var starttime = trial_data.tstart[i_trial]
-			trialhistory.tsart.push(starttime)
+			trialhistory.tstart.push(starttime)
 		}
 	}
 	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
