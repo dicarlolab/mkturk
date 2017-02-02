@@ -18,6 +18,13 @@ constructor(){
 	this.download_queue = []; // [first in line, ..., last in line]
 }
 
+
+print_buffer(){
+	console.log("Printing buffer:")
+	for (var filename in this.cache_dict){
+		console.log(filename)
+	}
+}
 // ------- Image blob getting functions ----------------------------
 async get_by_name(filename){
 
@@ -107,7 +114,8 @@ async buffer_chunk(chunksize){
 			for ( var i = 0; i < chunksize; i++){
 				var image_request = this.download_queue.shift();
 				// Add to request array 
-				if(image_request != undefined && !(image_request in this.cache_dict)){
+				if (image_request != undefined && !(image_request in this.cache_dict) && (requested_imagenames.indexOf(image_request) == -1)){
+					//console.log('Will download ', image_request)
 					requested_imagenames.push(image_request)
 				}
 				// Nothing left in download queue
@@ -117,7 +125,13 @@ async buffer_chunk(chunksize){
 				}
 				// Image was already cached
 				else if(image_request in this.cache_dict){
-					console.log('image already downloaded, continuing')
+					//console.log('image already downloaded, continuing')
+					continue
+				}
+
+				// Image was already requested
+				else if(requested_imagenames.indexOf(image_request) != -1){
+					//console.log('image '+ image_request+' already requested, continuing')
 					continue
 				}
 			}

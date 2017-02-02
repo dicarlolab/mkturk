@@ -108,12 +108,9 @@ read_next_image_filenames(n){
 	var sample_filenames = this.sampleq.filename.slice(0, n)
 	var test_filenames = this.testq.filenames.slice(0, n)
 
-
-	
-
 	var image_filenames = []
-	image_filenames.push(... sample_filenames)
-	for (var i = 0; i < test_filenames.length; i++){
+	for (var i = 0; i < sample_filenames.length; i++){
+		image_filenames.push(sample_filenames[i])
 		image_filenames.push(... test_filenames[i])
 	}
 	
