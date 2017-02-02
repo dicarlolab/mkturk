@@ -485,7 +485,6 @@ async function saveParameterstoDropbox() {
 			contents: datastr,
 			mode: {[".tag"]: "overwrite"} })
 		
-		FLAGS.need2writeParameters = 0;
 
 		filemeta = await dbx.filesGetMetadata({path: savepath})
 		if (ENV.paramfile_rev != filemeta.rev){

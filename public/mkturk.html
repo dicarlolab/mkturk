@@ -57,7 +57,7 @@
 <script src="mkturk_ImageBuffer.js" type="text/javascript"></script>
 <script src="mkturk_automator.js" type="text/javascript"></script>
 <script src="mkturk_hardware.js" type="text/javascript"></script>
-<script src="mkturk_tasklogic.js" type="text/javascript"></script>
+<script src="mkturk_TrialQueue.js" type="text/javascript"></script>
 
 
 <script>
@@ -187,6 +187,32 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 		automateTask(automator_data, trialhistory) 
 		await saveParameterstoDropbox() 
 		await loadParametersfromDropbox(ENV.paramfile); 
+
+		// Preload stuff now (to ensure smooth transitions between automator stages)
+		var AutomatorPreBuffer = {}; 
+		AutomatorPreBuffer['TrialQueue'] = {}; 
+		AutomatorPreBuffer['ImageBuffer'] = {}; 
+		
+		console.log('Starting to populate automator prebuffer:')
+
+		var num_prebuffer_trials = 5; 
+		for (var a = 0; a< automator_data.length; a++){
+			console.time('Stage '+a)
+
+			// Make TrialQueue
+			var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
+			AutomatorPreBuffer['TrialQueue'][a] = new TrialQueue(samplingStrategy, automator_data[a].imageBagsSample, automator_data[a].imageBagsTest); 
+			await AutomatorPreBuffer['TrialQueue'][a].build(); 
+
+			// Make ImageBuffer
+			AutomatorPreBuffer['ImageBuffer'][a] = new ImageBuffer(); 
+
+			// Populate the stage's imagebuffer with some images
+			AutomatorPreBuffer['ImageBuffer'][a].add_to_queue(AutomatorPreBuffer['TrialQueue'][a].read_next_image_filenames(num_prebuffer_trials)); 
+			await AutomatorPreBuffer['ImageBuffer'][a].buffer_chunk(num_prebuffer_trials); 
+			console.timeEnd('Stage '+a)
+		}
+		console.log('Done prebuffering')
 	}
 
 	//Load sounds
@@ -202,14 +228,30 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 FLAGS.need2loadParameters = 1
 FLAGS.current_trial = 0; 
 FLAGS.sampleblockcount = 0; 
+FLAGS.need2loadImages = 1; 
 
 while(true){
 		
+	if (FLAGS.need2writeParameters == 1){
+		saveParameterstoDropbox(); 
+		FLAGS.need2writeParameters = 0; 
+	}
+
+	if (FLAGS.need2loadParameters == 0){
+		FLAGS.need2loadParameters = checkParameterFileStatus()
+	}
 
 	if (FLAGS.need2loadParameters == 1){
+		var old_imageBagsSample = TASK.imageBagsSample
+		var old_imageBagsTest = TASK.imageBagsTest
 		await loadParametersfromDropbox(ENV.paramfile);
 		FLAGS.need2loadParameters = 0; 	
-		FLAGS.need2loadImages = 1; 
+
+		// Check if images were changed
+		if(!old_imageBagsTest.equals(TASK.imageBagsTest) || !old_imageBagsSample.equals(TASK.imageBagsSample)){
+			FLAGS.need2loadImages = 1; 
+		}
+		
 	}
 
 	// Update canvas based on latest TASK state: 
@@ -234,61 +276,90 @@ while(true){
 	}
 
 	//============ IMAGE LOADING ============//
-
 	if (FLAGS.need2loadImages == 1){
 		console.time('Image loading time:')
 
-		/*
-		var funcreturn = await loadBagfromDropbox(TASK.imageBagsSample)
-		samplebag = funcreturn[0]
-		samplebag_labels = funcreturn[1]
-		samplebag_paths = funcreturn[2]
-		ENV.ordered_samplebag_filenames = samplebag_paths.map(get_filename_from_pathstring); 
+		if(TASK.automator != 1){
+			// Load filenames manually from Dropbox
+			var funcreturn = await loadImageBagPaths(TASK.imageBagsSample); 
+			samplebag_paths = funcreturn[0]
+			samplebag_labels = funcreturn[1]
 
-		var funcreturn = await loadBagfromDropbox(TASK.imageBagsTest)
-		testbag = funcreturn[0]
-		testbag_labels = funcreturn[1]
-		testbag_paths = funcreturn[2]
-		ENV.ordered_testbag_filenames = testbag_paths.map(get_filename_from_pathstring); 
-		*/
+			var funcreturn = await loadImageBagPaths(TASK.imageBagsTest); 
+			testbag_paths = funcreturn[0]
+			testbag_labels = funcreturn[1]
 
+			// Make TrialQueue
+			var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
+			TQ = new TrialQueue(samplingStrategy, samplebag_labels, samplebag_paths, testbag_labels, testbag_paths)
 
-		var all_image_directories = []; 
-		all_image_directories.push(... TASK.imageBagsSample)
-		all_image_directories.push(... TASK.imageBagsTest)
-		imagebag = new ImageBuffer(all_image_directories)
+			// Make ImageBuffer
+			var all_image_paths = []
+			all_image_paths.push(...samplebag_paths)
+			all_image_paths.push(...testbag_paths)
 
-		var funcreturn = await loadImageBagPaths(TASK.imageBagsSample); 
-		samplebag_paths = funcreturn[0]
-		samplebag_labels = funcreturn[1]
+			var all_image_directories = []; 
+			all_image_directories.push(... TASK.imageBagsSample)
+			all_image_directories.push(... TASK.imageBagsTest)
+			imagebag = new ImageBuffer(all_image_directories, all_image_paths)
 
-		var funcreturn = await loadImageBagPaths(TASK.imageBagsTest); 
-		testbag_paths = funcreturn[0]
-		testbag_labels = funcreturn[1]
+			// Preload the first pre_buffer_trials
+			var pre_buffer_size = 30; 
+			TQ.generate_trials(pre_buffer_size)
+			var pre_buffer_imagenames = TQ.read_next_image_filenames(pre_buffer_size)
+			imagebag.add_to_queue(pre_buffer_imagenames)
+			await imagebag.buffer_chunk(num_preload_images)
 
+		}	
+		else if(TASK.automator == 1){
+			
+			TQ = AutomatorPreBuffer.TrialQueue[TASK.automatorStage]
+			imagebag = AutomatorPreBuffer.ImageBuffer[TASK.automatorStage]
 
-		// Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image. 
-		var representative_image = await imagebag.get_by_name(samplebag_paths[0])
-		ENV.wd = representative_image.width
-		ENV.ht = representative_image.height
-
-		// Make image display grid
-		funcreturn = defineImageGrid(TASK.ngridpoints, ENV.wd, ENV.ht, TASK.sampleScale, canvasScale); 
-		xgrid = funcreturn[0]
-		ygrid = funcreturn[1]
-		xgridcent = funcreturn[2]
-		ygridcent = funcreturn[3]
-
-		// Preload some randomly chosen images?
-		await imagebag.buffer_chunk(num_preload_images)
+			samplebag_paths = TQ.samplebag_paths
+			testbag_paths = TQ.testbag_paths
+		}
 		
 		FLAGS.need2loadImages = 0;
-
 		console.timeEnd('Image loading time:')
+		ENV.ordered_samplebag_filenames = samplebag_paths; 
+		ENV.ordered_testbag_filenames = testbag_paths; 
 	} 
 
 	renderReward();
 	renderPunish();
+	
+
+	//============ BUFFER SAMPLE & TEST (for next trial) ============//
+
+	var [current_sample_filename, trial_sampleImage_index, current_test_filenames ,trial_testImage_indices, trial_correctItem_index] = TQ.get_next_trial(); 
+
+	// Sample: get sample image blob from imagebag
+	console.time('sample_load')
+	var trial_sampleimage = await imagebag.get_by_name(current_sample_filename); 
+	console.timeEnd('sample_load')
+
+
+	// Test: get test image blobs from imagebag
+	console.time('test_load')
+	var trial_testimages = [] 
+	for (var i_test = 0; i_test<trial_testImage_indices.length; i_test++){
+		var current_test_filename = current_test_filenames[trial_testImage_indices[i_test]]
+		trial_testimages[i_test] = await imagebag.get_by_name(current_test_filename); 		
+	}
+	console.timeEnd('test_load')
+
+
+	// Write down dimensions of (assumedly) all images in samplebag and testbag, based on this sample image. 
+	var representative_image = trial_sampleimage
+	ENV.wd = representative_image.width
+	ENV.ht = representative_image.height
+	// Make image display grid
+	funcreturn = defineImageGrid(TASK.ngridpoints, ENV.wd, ENV.ht, TASK.sampleScale, canvasScale); 
+	xgrid = funcreturn[0]
+	ygrid = funcreturn[1]
+	xgridcent = funcreturn[2]
+	ygridcent = funcreturn[3]
 	if(FLAGS.savedata == 0){
 		// In test mode show grid on screen
 		renderBlankWithGridMarkers(); 
@@ -297,32 +368,9 @@ while(true){
 		renderBlank();
 	}
 
-	//============ BUFFER SAMPLE & TEST (for next trial) ============//
 
-	// Draw one (1) sample image from samplebag
-	var samplingStrategy = 'uniform_with_replacement'
-	var trial_sampleImage_index = selectSampleImage(samplebag_labels, samplingStrategy)
-	var current_sample_label = samplebag_labels[trial_sampleImage_index]; 
-	var current_sample_filename = samplebag_paths[trial_sampleImage_index]; 
-	
-	// Select appropriate test images (correct one and distractors) 
-	funcreturn = selectTestImages(current_sample_label, testbag_labels) 
-	var trial_testImage_indices = funcreturn[0] 
-	var trial_correctItem_index = funcreturn[1] 
-
-	
-	// Sample: get image blob actual from samplebag
-	var trial_sampleimage = await imagebag.get_by_name(current_sample_filename); 
-
-	// Test: get image blobs actual from testbag
-	var trial_testimages = [] 
-	for (var i_test = 0; i_test<trial_testImage_indices.length; i_test++){
-		var current_test_filename = testbag_paths[trial_testImage_indices[i_test]]
-		trial_testimages[i_test] = await imagebag.get_by_name(current_test_filename); 		
-	}
 
 	await bufferTrialImages(trial_sampleimage, TASK.sampleGrid, trial_testimages, TASK.testGrid, trial_correctItem_index);
-
 	//============ RUN FIXATION SCREEN ============//
 	
 	// If no fixation requirement: 
@@ -520,8 +568,15 @@ while(true){
 		if (TASK.species == 'marmoset'){
 			playSound(3);
 		}
+		
 		await displayTrial(CANVAS.sequencepost,CANVAS.tsequencepost);
-		await dispensePunish();
+
+
+		console.time('punish download/timeout')
+		var num_trials_to_buffer_in_punishperiod = 30
+		imagebag.add_to_queue(TQ.read_next_image_filenames(num_trials_to_buffer_in_punishperiod))
+		await Promise.all([dispensePunish(), imagebag.buffer_chunk(num_trials_to_buffer_in_punishperiod)])
+		console.timeEnd('punish download/timeout')
 	}
 
 
@@ -564,25 +619,12 @@ while(true){
 		}
 
 		// Save data
-		if(FLAGS.need2writeBehavior == 1 || FLAGS.need2loadParameters == 1 || FLAGS.need2loadImages == 1){
+		if(FLAGS.need2writeBehavior == 1){
 			writeBehaviortoDropbox(TASK, ENV, TRIAL); 		
 		}		
 	}
 
 	updateHeadsUpDisplay(); 
-
-	
-
-	
-
-	if (FLAGS.need2writeParameters == 1){
-		saveParameterstoDropbox(); 
-		FLAGS.need2writeParameters = 0; 
-	}
-
-	if (FLAGS.need2loadParameters == 0){
-		FLAGS.need2loadParameters = checkParameterFileStatus()
-	}
 
 	//console.log('End of trial ', FLAGS.current_trial, '. TRIAL: ', TRIAL)
 	FLAGS.current_trial++

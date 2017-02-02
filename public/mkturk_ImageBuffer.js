@@ -3,41 +3,32 @@ class ImageBuffer {
 	// Nothing else. No labels, no grouping, nothing. Just images and their filenames. 
 
 	// Single buffer for now for finite list of images that can completely fit in device RAM. 
+	// Construct with image_source (directory string or list of directory strings) and all_filenames ([first to download, last to download])
+
 	// Todo: double buffer to serve imagelists > device RAM (basically, set upper limit on size of cache)
 	//														and then flush cache as needed) 
 	// Todo: make this Dropbox independent - make this usable with local disk, or in-lab server, for example
 	// Todo:  
 
-constructor(image_source){
-	// image source can be list of directory paths, or single directory path
+constructor(){
 	// future: some "generator" object that can take queries 
-	this.src = image_source; 
 	
 	// Buffer: 
-	this.cache_images = []; 
-	this.cache_filenames = []; 
-
-	this.all_filenames = NaN; 
-	this.not_downloaded_filenames = NaN; 
-
+	this.cache_dict = {}; // filename:
+	this.download_queue = []; // [first in line, ..., last in line]
 }
 
-// Image blob getting functions
+// ------- Image blob getting functions ----------------------------
 async get_by_name(filename){
 
 	try{
-		var buffer_index = this.get_buffer_index(filename)
-
 		// Requested image not in buffer. Add it, then return. 
-		if(buffer_index == -1){
-			await this.buffer_these_images(filename)
-			buffer_index = this.get_buffer_index(filename)
-			return this.cache_images[buffer_index]
+		if (filename in this.cache_dict){
+			return this.cache_dict[filename]
 		}
-
-		// Image already in buffer. Return it.
-		else if (buffer_index != -1){
-			return this.cache_images[buffer_index]
+		else if (!(filename in this.cache_dict)){
+			await this.buffer_these_images(filename)
+			return this.cache_dict[filename]
 		}
 
 	}
@@ -48,44 +39,40 @@ async get_by_name(filename){
 
 async get_by_query(query){
 	throw("Getting images by query not yet implemented.")
+	// For future use with generators. 
 }
 
-// Buffer-related functions
-
-
+// ------- Buffer-related functions --------------------------------
 // Add specific image, or list of images, to cache before moving on.
 async buffer_these_images(imagenames){
 	try{
-		if (this.not_downloaded_filenames.length == undefined){
-			await this.prepare_queue()
-		}
 
 		if (typeof(imagenames) == "string"){
-			if (this.get_buffer_index(imagenames) == -1){
-				var image = await loadImagefromDropbox(imagenames) 
-				this.cache_images.push(image)
-				this.cache_filenames.push(imagenames)
-
+			var filename = imagenames; 
+			if (!(filename in this.cache_dict)){
+				var image = await loadImagefromDropbox(filename); 
+				this.cache_dict[filename] = image; 
 				// Remove this image from queue 
-				this.remove_from_queue(imagenames)
+				this.remove_from_queue(filename)
 				return 
 			}
 			else{
 				return 
 			}
-			
 		}
+
 		else if (typeof(imagenames) == "object"){
 			var requested_imagenames = []
 			for (var i = 0; i < imagenames.length; i ++){
-				if(this.get_buffer_index(imagenames[i]) == -1){
+				if(!(filename in this.cache_dict)){
 					requested_imagenames.push(imagenames[i])
 				}
 			}
 
 			var image_array = await loadImageArrayFromDropbox(requested_imagenames)
-			this.cache_images.push(... image_array)
-			this.cache_filenames.push(... imagenames)
+			for (var i = 0; i < image_array.length; i++){
+				this.cache_dict[imagenames[i]] = image_array[i]; 
+			}
 
 			// Remove these images from queue 
 			for (var i = 0; i < imagenames.length; i ++){
@@ -99,83 +86,45 @@ async buffer_these_images(imagenames){
 	}
 }
 
-async get_all_filenames(){
-	try{
-		// Get total list of names 
-		this.all_filenames = NaN; 
 
-		if(typeof(this.src) == "string"){
-			var images2download = await getImageListDropboxRecursive(this.src)
-		}
-
-		else if (typeof(this.src) == "object"){
-			var images2download = []; 
-			for (var i = 0; i < this.src.length; i++){
-				images2download.push(... await getImageListDropboxRecursive(this.src[i]))
-			}
-		}		
-		else{
-			throw("Image sources other than directorypaths and lists of directorypaths are NOT yet implemented.")
-		}
-		this.all_filenames = images2download; 
-	}
-
-	catch(error) { 
-		console.error("get_all_filenames failed with error:", error)
-	}
-}
-
-async prepare_queue(){
-	// Gets this.all_filenames (if not already there)
-	// Updates this.not_downloaded_filenames
-	try{
-		// get_all_filenames() is intended to only be run once in the lifetime of this object
-		if (isNaN(this.all_filenames)){
-			await this.get_all_filenames(); 
-		}
-
-		var not_downloaded_yet = []; 
-		for (var i = 0; i < this.all_filenames.length; i++){
-			if(this.get_buffer_index(this.all_filenames[i]) == -1){
-				not_downloaded_yet.push(this.all_filenames[i])
-			}
-		}
-
-		this.not_downloaded_filenames = not_downloaded_yet; 
-	}
-	catch(error){
-		console.error("prepare_queue failed with error:", error)
-	}
-}
 
 async buffer_chunk(chunksize){
+	// Downloads files using this.download_queue, [first_in_line, last_in_line]
+	// and adds to this.cache_dict
 	try{
 		if(chunksize == 0){
 			return 
 		}
-		// The queue has not been created 
-		if (this.not_downloaded_filenames.length == undefined){
-			await this.prepare_queue()
-		}
+
 
 		// Nothing left to buffer
-		if(this.not_downloaded_filenames.length == 0){
+		if(this.download_queue.length == 0){
+			console.log("buffer_chunk requested, but this.download_queue is empty.")
 			return 
 		}
-		else if(this.not_downloaded_filenames.length > 0){
+		else if(this.download_queue.length > 0){
 			var requested_imagenames = []
 			for ( var i = 0; i < chunksize; i++){
-				var image_request = this.not_downloaded_filenames.pop(); 
-				if(image_request != undefined){
+				var image_request = this.download_queue.shift();
+				// Add to request array 
+				if(image_request != undefined && !(image_request in this.cache_dict)){
 					requested_imagenames.push(image_request)
 				}
-				else{
+				// Nothing left in download queue
+				else if(this.download_queue.length == 0){
+					console.log('download queue depleted, continuing')
 					break
+				}
+				// Image was already cached
+				else if(image_request in this.cache_dict){
+					console.log('image already downloaded, continuing')
+					continue
 				}
 			}
 			var image_array = await loadImageArrayfromDropbox(requested_imagenames)
-			this.cache_images.push(... image_array)
-			this.cache_filenames.push(... requested_imagenames) 
+			for (var i = 0; i < image_array.length; i++){
+				this.cache_dict[requested_imagenames[i]] = image_array[i]; 
+			}
 		}
 	}
 	catch(error){
@@ -183,28 +132,50 @@ async buffer_chunk(chunksize){
 	}
 }
 
-get_buffer_index(filename){
-	// Get location (index) of this file in current cache 
-	// If not present, returns -1. 
-	var buffer_index = this.cache_filenames.indexOf(filename)
-	return buffer_index
+add_to_queue(filenames){
+	// Adds filename(s) to front of queue, in their given order. 
+	// Lazily does so, such that duplicate elements may end up in queue. 
+	// The default behavior for buffer_chunk is that images that are already in the cache are skipped. 
+	// The downside is that overriding previous imagenames in the cache is not possible. todo: force override option
 
+	// or: check now, if in queue...because adding to queue is not done at critical times anyway...
+	// if in queue, delete later entry and move to front. 
+	// solution with arrays?
+	if (typeof(filenames) == "string"){
+		var imagename = filenames; 
+		this.download_queue.unshift(imagename)
+	}
+	else if (typeof(filenames) == "object"){
+		this.download_queue.unshift(... filenames)
+	}
+
+	return
 }
 
 remove_from_queue(filename){
 	// Get location (index) of this file in current queue 
 	// If not present, returns -1. 
-	var queue_index = this.not_downloaded_filenames.indexOf(filename)
-	if(queue_index > -1){
-		this.not_downloaded_filenames.splice(queue_index, 1)
+	//var queue_index = this.download_queue.indexOf(filename)
+	var queue_indices = getAllInstancesIndexes(this.download_queue, filename); 
+	// todo: performance improvement...?
+
+	if(queue_indices.length > 0){
+		for(var i = 0; i < queue_indices.length; i ++){
+			this.download_queue.splice(queue_indices[i], 1)
+		}
 	}
-	else if (queue_index == -1){
-		console.log ('Filename '+filename+' was not in queue')
+	else if (queue_indices.length == 0){
+		console.log ('Filename '+filename+' was requested to be removed, but not in queue')
+	}
+	else{
+		throw "remove_from_queue failed"
 	}
 }
 
-async remove_element_from_buffer(buffer_idx){
-	window.URL.revokeObjectURL(this.cache_images[buffer_idx].src)
+async remove_image_from_buffer(filename){
+	window.URL.revokeObjectURL(this.cache_dict[filename].src)
+	delete this.cache_dict[filename]; 
+
 	return 
 }
 }

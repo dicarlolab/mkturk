@@ -60,10 +60,15 @@ async function automateTask(automator_data, trialhistory){
 		console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject advanced to stage '+(i_current_stage+1)+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
 
 		// Save behavior with current TASK, ENV, and TRIAL before moving on. 
-		await writeBehaviortoDropbox(TASK, ENV, TRIAL); 
+		writeBehaviortoDropbox(TASK, ENV, TRIAL); 
 
 		// Reset tracking variables 
 		purgeTrackingVariables()
+
+
+		// Update TASK 
+		var old_imageBagsSample = TASK.imageBagsSample
+		var old_imageBagsTest = TASK.imageBagsTest
 
 		for (var property in automator_data[i_current_stage+1]){
 			if (property === 'minPercentCriterion' || property === 'minTrialsCriterion'){
@@ -75,13 +80,12 @@ async function automateTask(automator_data, trialhistory){
 					console.log('\"'+property+'\" changed from '+TASK[property]+' to '+automator_data[i_current_stage+1][property])
 
 					TASK[property] = automator_data[i_current_stage+1][property]
-					
-					// If imagebags are changed by automator, load images at beginning of next trial. 
-					if (property === 'imageBagsSample' || property === 'imageBagsTest'){
-						FLAGS.need2loadImages = 1; 
-					}
 				}
 			}			
+		}
+		// If imagebags are changed by automator, load images at beginning of next trial. 
+		if(!old_imageBagsTest.equals(TASK.imageBagsTest) || !old_imageBagsSample.equals(TASK.imageBagsSample)){
+			FLAGS.need2loadImages = 1; 
 		}
 
 		
