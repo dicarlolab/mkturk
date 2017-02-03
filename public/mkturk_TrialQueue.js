@@ -17,9 +17,16 @@ constructor(samplingStrategy, imageBagsSample, imageBagsTest){
 	this.testq.indices = []; 
 	this.testq.correctIndex = []; 
 
+	// ImageBuffer
+	this.IB = new ImageBuffer(); 
+
+	// Settings 
+	this.max_queue_size = 500; // Max number of trials (and their images) to have prepared from now
+	this.num_in_queue = 0; // Tracking variable
 }
 
-async build(){
+async build(trial_cushion_size){
+	// Call after construction
 	var funcreturn = await loadImageBagPaths(this.imageBagsSample); 
 	this.samplebag_labels = funcreturn[1];
 	this.samplebag_paths = funcreturn[0]; 
@@ -28,28 +35,35 @@ async build(){
 	this.testbag_labels = funcreturn[1]; 
 	this.testbag_paths = funcreturn[0]; 
 
-
-	var trial_cushion_size = 100; 
-	this.generate_trials(trial_cushion_size); 
+	console.log('this.build() will generate '+trial_cushion_size+' trials')
+	await this.generate_trials(trial_cushion_size); 
 }
 
-print_q(){
-	console.log(this.sampleq.filename.length)
-	console.log(this.sampleq.index.length)
-	console.log(this.testq.filenames)
-	console.log(this.testq.indices)
-	console.log(this.testq.correctIndex)
 
-}
+async generate_trials(n_trials){
+	// Performance critical: sometimes called by this.get_next_trial() (when TQ is empty), which is called during each mkturk trial
 
-generate_trials(n_trials){
-	// Adds trials to queue
+	// Adds trials to queue and downloads their images 
+
+	n_trials = Math.min(this.max_queue_size - this.num_in_queue, n_trials); 
+	if(n_trials == 0){
+		console.log('TQ.generate_trials(): Queue is full or no trials were requested')
+		return 
+	}
+
+
+	var image_requests = []; 
+
+	console.log('TQ.generate_trials() will generate '+n_trials+' trials')
+
 	for (var i = 0; i < n_trials; i++){
 		// Draw one (1) sample image from samplebag
 		var sample_index = selectSampleImage(this.samplebag_labels, this.samplingStrategy)
 		var sample_label = this.samplebag_labels[sample_index]; 
 		var sample_filename = this.samplebag_paths[sample_index]; 
 		
+		image_requests.push(sample_filename)
+	
 
 		// Select appropriate test images (correct one and distractors) 
 		var funcreturn = selectTestImages(sample_label, this.testbag_labels) 
@@ -58,7 +72,11 @@ generate_trials(n_trials){
 		var test_filenames = []
 		for (var j = 0; j < test_indices.length; j++){
 			test_filenames.push(this.testbag_paths[test_indices[j]])
+			
 		}
+		
+
+		image_requests.push(... test_filenames)
 
 		// Add to queue 
 		this.sampleq.filename.push(sample_filename)
@@ -67,55 +85,45 @@ generate_trials(n_trials){
 		this.testq.filenames.push(test_filenames)
 		this.testq.indices.push(test_indices)
 		this.testq.correctIndex.push(correctIndex)
+
+		this.num_in_queue++;
 	}
+	// Download images to support these trials to download queue
+	console.log("TQ.generate_trials() will request", image_requests.length)
+	await this.IB.cache_these_images(image_requests); 
 }
 
 
-get_next_trial(){
+async get_next_trial(){
 	// Shift out first element of Trial queue and return it
+	// along with its sample/test images 
+
+
+	if (this.sampleq.filename.length == 0){
+		console.log("Reached end of trial queue... generating one more in this.get_next_trial")
+		await this.generate_trials(1); 
+	}
 
 	var sample_filename = this.sampleq.filename.shift(); 
 	var sample_index = this.sampleq.index.shift(); 
-
 
 	var test_filenames = this.testq.filenames.shift(); 
 	var test_indices = this.testq.indices.shift(); 
 	var test_correctIndex = this.testq.correctIndex.shift(); 
 
+	// Get image from imagebag
+	var sample_image = await this.IB.get_by_name(sample_filename); 
+	var test_images = []
+	for (var i = 0; i < test_filenames.length; i++){
+		test_images.push(await this.IB.get_by_name(test_filenames[i]))
+	}
 
-	// Generate trial to replace this one 
-	this.generate_trials(1)
+	console.log('get_next_trial() test_filenames:', test_filenames); 
+	this.num_in_queue--;
 
-	return [sample_filename, sample_index, test_filenames,test_indices, test_correctIndex]
+	return [sample_image, sample_index, test_images, test_indices, test_correctIndex]
 }
 
-
-read_next_image_filenames(n){
-	// Returns filenames of n trials without altering queue 
-	// (i.e. for buffering purposes)
-	// If less than n trials left, then generate more trials
-
-
-	if (this.sampleq.filename.length != this.testq.filenames.length){
-		throw ('The queues are of different lengths, as detected by this.read_next_image_filenames')
-	}
-	if (this.sampleq.filename.length < n){
-		console.log('Reached end of queue read. Making more trials...')
-		this.generate_trials(n - this.sampleq.filename.length)
-	}
-
-	// Read filenames and return
-	var sample_filenames = this.sampleq.filename.slice(0, n)
-	var test_filenames = this.testq.filenames.slice(0, n)
-
-	var image_filenames = []
-	for (var i = 0; i < sample_filenames.length; i++){
-		image_filenames.push(sample_filenames[i])
-		image_filenames.push(... test_filenames[i])
-	}
-	
-	return image_filenames
-}
 }
 
 
@@ -250,7 +258,6 @@ function selectTestImages(correct_label, testbag_labels){
 	}
 
 	return [testIndices, correctSelection] 
-
-
-
 }
+
+

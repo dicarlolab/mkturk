@@ -15,16 +15,14 @@ constructor(){
 	
 	// Buffer: 
 	this.cache_dict = {}; // filename:
-	this.download_queue = []; // [first in line, ..., last in line]
+
+	// Todo: double buffer 
+	this.num_elements_in_cache = 0; // tracking variable
+	this.max_buffer_size = 10; // (for now, arbitrary) number of unique images to keep in buffer
+
 }
 
 
-print_buffer(){
-	console.log("Printing buffer:")
-	for (var filename in this.cache_dict){
-		console.log(filename)
-	}
-}
 // ------- Image blob getting functions ----------------------------
 async get_by_name(filename){
 
@@ -34,7 +32,7 @@ async get_by_name(filename){
 			return this.cache_dict[filename]
 		}
 		else if (!(filename in this.cache_dict)){
-			await this.buffer_these_images(filename)
+			await this.cache_these_images(filename)
 			return this.cache_dict[filename]
 		}
 
@@ -44,14 +42,21 @@ async get_by_name(filename){
 	}
 }
 
-async get_by_query(query){
-	throw("Getting images by query not yet implemented.")
-	// For future use with generators. 
-}
 
 // ------- Buffer-related functions --------------------------------
 // Add specific image, or list of images, to cache before moving on.
-async buffer_these_images(imagenames){
+
+async remove_image_from_cache(filename){
+	window.URL.revokeObjectURL(this.cache_dict[filename].src)
+	delete this.cache_dict[filename]; 
+	return 
+}
+
+async clear_cache(){
+	return 
+}
+
+async cache_these_images(imagenames){
 	try{
 
 		if (typeof(imagenames) == "string"){
@@ -59,8 +64,7 @@ async buffer_these_images(imagenames){
 			if (!(filename in this.cache_dict)){
 				var image = await loadImagefromDropbox(filename); 
 				this.cache_dict[filename] = image; 
-				// Remove this image from queue 
-				this.remove_from_queue(filename)
+				this.num_elements_in_cache++; 
 				return 
 			}
 			else{
@@ -68,128 +72,38 @@ async buffer_these_images(imagenames){
 			}
 		}
 
+
 		else if (typeof(imagenames) == "object"){
 			var requested_imagenames = []
 			for (var i = 0; i < imagenames.length; i ++){
-				if(!(filename in this.cache_dict)){
-					requested_imagenames.push(imagenames[i])
+				var filename = imagenames[i]
+				if(!(filename in this.cache_dict) && (requested_imagenames.indexOf(filename) == -1)){
+					requested_imagenames.push(filename)
 				}
-			}
-
-			var image_array = await loadImageArrayFromDropbox(requested_imagenames)
-			for (var i = 0; i < image_array.length; i++){
-				this.cache_dict[imagenames[i]] = image_array[i]; 
-			}
-
-			// Remove these images from queue 
-			for (var i = 0; i < imagenames.length; i ++){
-				this.remove_from_queue(imagenames[i])
-			}
-			return
-		}
-	}
-	catch(error){
-		console.error("buffer_these_images failed with error:", error)
-	}
-}
-
-
-
-async buffer_chunk(chunksize){
-	// Downloads files using this.download_queue, [first_in_line, last_in_line]
-	// and adds to this.cache_dict
-	try{
-		if(chunksize == 0){
-			return 
-		}
-
-
-		// Nothing left to buffer
-		if(this.download_queue.length == 0){
-			console.log("buffer_chunk requested, but this.download_queue is empty.")
-			return 
-		}
-		else if(this.download_queue.length > 0){
-			var requested_imagenames = []
-			for ( var i = 0; i < chunksize; i++){
-				var image_request = this.download_queue.shift();
-				// Add to request array 
-				if (image_request != undefined && !(image_request in this.cache_dict) && (requested_imagenames.indexOf(image_request) == -1)){
-					//console.log('Will download ', image_request)
-					requested_imagenames.push(image_request)
+				else if(requested_imagenames.indexOf(filename) != -1){
+					//console.log('image already requested')
+					continue 
 				}
-				// Nothing left in download queue
-				else if(this.download_queue.length == 0){
-					console.log('download queue depleted, continuing')
-					break
-				}
-				// Image was already cached
-				else if(image_request in this.cache_dict){
-					//console.log('image already downloaded, continuing')
-					continue
-				}
-
-				// Image was already requested
-				else if(requested_imagenames.indexOf(image_request) != -1){
-					//console.log('image '+ image_request+' already requested, continuing')
+				else if(filename in this.cache_dict){
+					//console.log('image already cached')
 					continue
 				}
 			}
 			var image_array = await loadImageArrayfromDropbox(requested_imagenames)
 			for (var i = 0; i < image_array.length; i++){
 				this.cache_dict[requested_imagenames[i]] = image_array[i]; 
+				this.num_elements_in_cache++; 
 			}
+			return
+		}
+
+		if (this.num_elements_in_cache > this.max_buffer_size){
+			console.log('Exceeded max buffer size: '+this.num_elements_in_cache+'/'+this.max_buffer_size)
+			console.log('But I did not do anything.')
 		}
 	}
 	catch(error){
-		console.error("buffer_chunk failed with error:", error)
+		console.error("cache_these_images failed with error:", error)
 	}
-}
-
-add_to_queue(filenames){
-	// Adds filename(s) to front of queue, in their given order. 
-	// Lazily does so, such that duplicate elements may end up in queue. 
-	// The default behavior for buffer_chunk is that images that are already in the cache are skipped. 
-	// The downside is that overriding previous imagenames in the cache is not possible. todo: force override option
-
-	// or: check now, if in queue...because adding to queue is not done at critical times anyway...
-	// if in queue, delete later entry and move to front. 
-	// solution with arrays?
-	if (typeof(filenames) == "string"){
-		var imagename = filenames; 
-		this.download_queue.unshift(imagename)
-	}
-	else if (typeof(filenames) == "object"){
-		this.download_queue.unshift(... filenames)
-	}
-
-	return
-}
-
-remove_from_queue(filename){
-	// Get location (index) of this file in current queue 
-	// If not present, returns -1. 
-	//var queue_index = this.download_queue.indexOf(filename)
-	var queue_indices = getAllInstancesIndexes(this.download_queue, filename); 
-	// todo: performance improvement...?
-
-	if(queue_indices.length > 0){
-		for(var i = 0; i < queue_indices.length; i ++){
-			this.download_queue.splice(queue_indices[i], 1)
-		}
-	}
-	else if (queue_indices.length == 0){
-		console.log ('Filename '+filename+' was requested to be removed, but not in queue')
-	}
-	else{
-		throw "remove_from_queue failed"
-	}
-}
-
-async remove_image_from_buffer(filename){
-	window.URL.revokeObjectURL(this.cache_dict[filename].src)
-	delete this.cache_dict[filename]; 
-
-	return 
 }
 }

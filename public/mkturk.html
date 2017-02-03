@@ -55,9 +55,9 @@
 <script src="mkturk_globalvariables.js"></script>
 <script src="mkturk_dropbox.js" type="text/javascript"></script>
 <script src="mkturk_ImageBuffer.js" type="text/javascript"></script>
+<script src="mkturk_TrialQueue.js" type="text/javascript"></script>
 <script src="mkturk_automator.js" type="text/javascript"></script>
 <script src="mkturk_hardware.js" type="text/javascript"></script>
-<script src="mkturk_TrialQueue.js" type="text/javascript"></script>
 
 
 <script>
@@ -191,25 +191,19 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 		// Preload stuff now (to ensure smooth transitions between automator stages)
 		var AutomatorPreBuffer = {}; 
 		AutomatorPreBuffer['TrialQueue'] = {}; 
-		AutomatorPreBuffer['ImageBuffer'] = {}; 
 		
 		console.log('Starting to populate automator prebuffer:')
 
-		var num_prebuffer_trials = 5; 
-		for (var a = 0; a< automator_data.length; a++){
+		
+		for (var a = TASK.automatorStage; a < automator_data.length; a++){
 			console.time('Stage '+a)
 
 			// Make TrialQueue
 			var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
 			AutomatorPreBuffer['TrialQueue'][a] = new TrialQueue(samplingStrategy, automator_data[a].imageBagsSample, automator_data[a].imageBagsTest); 
-			await AutomatorPreBuffer['TrialQueue'][a].build(); 
 
-			// Make ImageBuffer
-			AutomatorPreBuffer['ImageBuffer'][a] = new ImageBuffer(); 
-
-			// Populate the stage's imagebuffer with some images
-			AutomatorPreBuffer['ImageBuffer'][a].add_to_queue(AutomatorPreBuffer['TrialQueue'][a].read_next_image_filenames(num_prebuffer_trials)); 
-			await AutomatorPreBuffer['ImageBuffer'][a].buffer_chunk(num_prebuffer_trials); 
+			var num_prebuffer_trials = 30; 
+			await AutomatorPreBuffer['TrialQueue'][a].build(num_prebuffer_trials); 
 			console.timeEnd('Stage '+a)
 		}
 		console.log('Done prebuffering')
@@ -292,30 +286,11 @@ while(true){
 			// Make TrialQueue
 			var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
 			TQ = new TrialQueue(samplingStrategy, samplebag_labels, samplebag_paths, testbag_labels, testbag_paths)
-
-			// Make ImageBuffer
-			var all_image_paths = []
-			all_image_paths.push(...samplebag_paths)
-			all_image_paths.push(...testbag_paths)
-
-			var all_image_directories = []; 
-			all_image_directories.push(... TASK.imageBagsSample)
-			all_image_directories.push(... TASK.imageBagsTest)
-			imagebag = new ImageBuffer(all_image_directories, all_image_paths)
-
-			// Preload the first pre_buffer_trials
-			var pre_buffer_size = 30; 
-			TQ.generate_trials(pre_buffer_size)
-			var pre_buffer_imagenames = TQ.read_next_image_filenames(pre_buffer_size)
-			imagebag.add_to_queue(pre_buffer_imagenames)
-			await imagebag.buffer_chunk(num_preload_images)
-
+			TQ.build(1); 
 		}	
-		else if(TASK.automator == 1){
-			
-			TQ = AutomatorPreBuffer.TrialQueue[TASK.automatorStage]
-			imagebag = AutomatorPreBuffer.ImageBuffer[TASK.automatorStage]
 
+		else if(TASK.automator == 1){
+			TQ = AutomatorPreBuffer.TrialQueue[TASK.automatorStage]
 			samplebag_paths = TQ.samplebag_paths
 			testbag_paths = TQ.testbag_paths
 		}
@@ -332,22 +307,9 @@ while(true){
 
 	//============ BUFFER SAMPLE & TEST (for next trial) ============//
 
-	var [current_sample_filename, trial_sampleImage_index, current_test_filenames ,trial_testImage_indices, trial_correctItem_index] = TQ.get_next_trial(); 
-
-	// Sample: get sample image blob from imagebag
-	console.time('sample_load')
-	var trial_sampleimage = await imagebag.get_by_name(current_sample_filename); 
-	console.timeEnd('sample_load')
-
-
-	// Test: get test image blobs from imagebag
-	console.time('test_load')
-	var trial_testimages = [] 
-	for (var i_test = 0; i_test<trial_testImage_indices.length; i_test++){
-		var current_test_filename = current_test_filenames[trial_testImage_indices[i_test]]
-		trial_testimages[i_test] = await imagebag.get_by_name(current_test_filename); 		
-	}
-	console.timeEnd('test_load')
+	console.time('trial images loadtime:')
+	var [trial_sampleimage, trial_sampleImage_index, trial_testimages, trial_testImage_indices, trial_correctItem_index] = await TQ.get_next_trial(); 
+	console.timeEnd('trial images loadtime:')
 
 
 	// Write down dimensions of (assumedly) all images in samplebag and testbag, based on this sample image. 
@@ -367,7 +329,6 @@ while(true){
 	else if (FLAGS.savedata == 1){
 		renderBlank();
 	}
-
 
 
 	await bufferTrialImages(trial_sampleimage, TASK.sampleGrid, trial_testimages, TASK.testGrid, trial_correctItem_index);
@@ -573,9 +534,8 @@ while(true){
 
 
 		console.time('punish download/timeout')
-		var num_trials_to_buffer_in_punishperiod = 30
-		imagebag.add_to_queue(TQ.read_next_image_filenames(num_trials_to_buffer_in_punishperiod))
-		await Promise.all([dispensePunish(), imagebag.buffer_chunk(num_trials_to_buffer_in_punishperiod)])
+		var num_trials_to_buffer_in_punishperiod = 20
+		await Promise.all([dispensePunish(), TQ.generate_trials(num_trials_to_buffer_in_punishperiod)])
 		console.timeEnd('punish download/timeout')
 	}
 
