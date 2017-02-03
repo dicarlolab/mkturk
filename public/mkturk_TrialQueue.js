@@ -21,7 +21,7 @@ constructor(samplingStrategy, imageBagsSample, imageBagsTest){
 	this.IB = new ImageBuffer(); 
 
 	// Settings 
-	this.max_queue_size = 500; // Max number of trials (and their images) to have prepared from now
+	this.max_queue_size = 500; // Max number of trials (and their images) to have prepared from now; to improve browser performance
 	this.num_in_queue = 0; // Tracking variable
 }
 
@@ -118,7 +118,9 @@ async get_next_trial(){
 		test_images.push(await this.IB.get_by_name(test_filenames[i]))
 	}
 
-	console.log('get_next_trial() test_filenames:', test_filenames); 
+	console.log('sample- get_next_trial()  image:', sample_index, '. name:', sample_filename); 
+	console.log('test- get_next_trial() images:', test_indices, '. name:', test_filenames); 
+	console.log('correct- get_next_trial()', test_correctIndex)
 	this.num_in_queue--;
 
 	return [sample_image, sample_index, test_images, test_indices, test_correctIndex]

@@ -380,8 +380,8 @@ async function loadImagefromDropbox(imagepath){
 					try{
 						dbx.filesDownload({path: imagepath}).then( 
 							function(data){
-								data_src = window.URL.createObjectURL(data.fileBlob); 	
-								image = new Image(); 
+								var data_src = window.URL.createObjectURL(data.fileBlob); 	
+								var image = new Image(); 
 
 								image.onload = function(){
 									console.log('Loaded: ' + (imagepath));
