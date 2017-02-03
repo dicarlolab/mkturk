@@ -144,16 +144,23 @@ async function checkParameterFileStatus(){
 
 //================== LOAD JSON ==================//
 async function loadParametersfromDropbox(paramfile_path){
-	datastring = await loadTextFilefromDropbox(paramfile_path)
-	filemeta = await dbx.filesGetMetadata({path: paramfile_path})
-	data = JSON.parse(datastring)
+	try{
+		datastring = await loadTextFilefromDropbox(paramfile_path)
+		filemeta = await dbx.filesGetMetadata({path: paramfile_path})
+		data = JSON.parse(datastring)
 
-	TASK = {}
-	TASK = data
+		TASK = {}
+		TASK = data
 
-	ENV.paramfile = filemeta.path_display; 
-	ENV.paramfile_rev = filemeta.rev
-	ENV.paramfile_date = new Date(filemeta.client_modified)
+		ENV.paramfile = filemeta.path_display; 
+		ENV.paramfile_rev = filemeta.rev
+		ENV.paramfile_date = new Date(filemeta.client_modified)
+		return 0;  // need2loadParameters
+	}	
+	catch(error){
+		console.error('loadParametersfromDropbox() error: '+error)
+		return 1; // need2loadParameters
+	}
 }
 
 
@@ -411,7 +418,7 @@ async function writeBehaviortoDropbox(TASK, ENV, TRIAL){
 		dataobj.push(TASK)
 		dataobj.push(TRIAL)
 		dataobj.push(ENV)
-		datastr = JSON.stringify(dataobj);
+		datastr = JSON.stringify(dataobj, null, ' ');
 
 		// TODO: 
 		// Check if folder DATA_SAVEPATH + ENV.subjectID+"/"+ENV.filename exists 
@@ -478,7 +485,7 @@ async function writeParameterTexttoDropbox(parameter_text){
 async function saveParameterstoDropbox() {
 	try{
 		var savepath = ENV.paramfile
-	    var datastr = JSON.stringify(TASK);
+	    var datastr = JSON.stringify(TASK, null, ' ');
 
 		response = await dbx.filesUpload({
 			path: savepath,
@@ -492,10 +499,11 @@ async function saveParameterstoDropbox() {
 			ENV.paramfile_date = new Date(filemeta.client_modified)	
 		}
 		console.log("TASK written to disk as "+ENV.paramfile+". Size: " + response.size)
-
+		return 0; // need2writeParameters
 	}
 	catch (error){
 		console.error(error)
+		return 1; // need2writeParameters
 	}
 
 }

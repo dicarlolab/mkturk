@@ -227,8 +227,7 @@ FLAGS.need2loadImages = 1;
 while(true){
 		
 	if (FLAGS.need2writeParameters == 1){
-		saveParameterstoDropbox(); 
-		FLAGS.need2writeParameters = 0; 
+		FLAGS.need2writeParameters  = saveParameterstoDropbox();
 	}
 
 	if (FLAGS.need2loadParameters == 0){
@@ -238,14 +237,12 @@ while(true){
 	if (FLAGS.need2loadParameters == 1){
 		var old_imageBagsSample = TASK.imageBagsSample
 		var old_imageBagsTest = TASK.imageBagsTest
-		await loadParametersfromDropbox(ENV.paramfile);
-		FLAGS.need2loadParameters = 0; 	
+		FLAGS.need2loadParameters = await loadParametersfromDropbox(ENV.paramfile);
 
 		// Check if images were changed
 		if(!old_imageBagsTest.equals(TASK.imageBagsTest) || !old_imageBagsSample.equals(TASK.imageBagsSample)){
 			FLAGS.need2loadImages = 1; 
 		}
-		
 	}
 
 	// Update canvas based on latest TASK state: 

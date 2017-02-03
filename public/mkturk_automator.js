@@ -87,7 +87,6 @@ async function automateTask(automator_data, trialhistory){
 		if(!old_imageBagsTest.equals(TASK.imageBagsTest) || !old_imageBagsSample.equals(TASK.imageBagsSample)){
 			FLAGS.need2loadImages = 1; 
 		}
-
 		
 		FLAGS.need2writeParameters=1
 	}
