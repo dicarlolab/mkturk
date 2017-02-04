@@ -180,3 +180,111 @@ function toBytesInt16(num){
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+
+// Async: play sound
+async function playSound(idx){
+  audiocontext.resume()
+  var source = audiocontext.createBufferSource(); // creates a sound source
+  source.buffer = sounds.buffer[idx];                    // tell the source which sound to play
+  if (idx==0){
+    gainNode.gain.value=0.15; //set boost pedal to 15% volume
+  }
+  else if (idx==2 | idx==3){
+    gainNode.gain.value=0.15; //set boost pedal to 5% volume
+  }
+  source.connect(gainNode);
+  // gainNode.connect(audiocontext.destination); //Connect boost pedal to output
+  // source.connect(audiocontext.destination);       // connect the source to the context's destination (the speakers)
+  source.start(0);                        // play the source now
+}
+// Promise: dispense reward (through audio control)
+function dispenseReward(){
+  console.log('Legacy dispense reward')
+  return 
+  return new Promise(function(resolve,reject){
+    audiocontext.resume()
+    var oscillator = audiocontext.createOscillator();
+    gainNode.gain.value=1;
+    if (TASK.Pump == 1){
+      oscillator.type='square'; //Square wave
+      oscillator.frequency.value=25; //frequency in hertz       
+    } //peristaltic (adafruit)
+    else if (TASK.Pump==2){
+      oscillator.type='square'; //Square wave
+      oscillator.frequency.value=0.1; //frequency in hertz
+    } //submersible (TCS)
+    else if (TASK.Pump==3){
+      oscillator.type='square'; //Square wave
+      oscillator.frequency.value=10; //frequency in hertz   
+    } //diaphragm (TCS)
+    else if (TASK.Pump==4){
+      oscillator.type='square'; //Square wave
+      oscillator.frequency.value=0.1; //frequency in hertz        
+    } //piezoelectric (takasago)
+    else if (TASK.Pump==5){
+      oscillator.type='square';
+      oscillator.frequency.value=0.1;
+    } //diaphragm new (TCS)
+    else if (TASK.Pump==6){
+      oscillator.type='square'; //Square wave
+      oscillator.frequency.value=0.1; //frequency in hertz        
+    } //piezoelectric 7ml/min (takasago)
+    // oscillator.connect(audiocontext.destination); //Connect sound to output
+    // //var gainNode = audiocontext.createGainNode(); //Create boost pedal
+    // //gainNode.gain.value=0.3; //set boost pedal to 30% volume
+    oscillator.connect(gainNode);
+    // //gainNode.connect(audiocontext.destination); //Connect boost pedal to output
+    // // oscillator.onended=function(){
+    // //   console.log('done with reward pulse');
+    // //   resolve(1);
+    // // }
+    var currentTime=audiocontext.currentTime;
+
+
+    oscillator.start(currentTime);
+    oscillator.stop(currentTime + ENV.RewardDuration);
+    setTimeout(function(){console.log('sound done'); resolve(1);},ENV.RewardDuration*1000);
+  }).then();
+}
+// Promise: punish time-out
+function dispensePunish(){
+  return new Promise(function(resolve,reject){
+    setTimeout(function(){resolve(1);},TASK.PunishTimeOut); //milliseconds
+  }).then();
+}
+
+
+//================== UTILITIES ==================//
+function setReward(){
+  var m = 0;
+  var b = 0;
+  if (TASK.Pump == 1){
+    // m = 1.13; b = 15.04;
+    m = 0.99; b = 14.78;
+  } //peristaltic (adafruit)
+  else if (TASK.Pump == 2){
+    // m = 3.20; b = -15.47;
+    m = 1.40; b = -58.77;
+  } //submersible (tcs)
+  else if (TASK.Pump == 3){
+    // m = 0.80; b = -3.00;
+    m=0.91; b = -15;
+  } //diaphragm (tcs)
+  else if (TASK.Pump == 4){
+    m = 0.0531; b=-1.2594;
+  } //piezoelectric (takasago)
+  else if (TASK.Pump == 5){
+    m = 2.4463; b=53.6418;
+  } //new diaphragm (tcs)
+  else if (TASK.Pump == 6){
+    if (TASK.Liquid==1 || TASK.Liquid==3){
+      m=0.1251; b=-0.0833; //1=water 2=water-condensed milk 3=marshmallow slurry (4/30mL)
+    }
+    else if (TASK.Liquid==2){
+      m=0.0550; b=0.6951; //water-condensed milk (50/50)
+    }
+  } //piezoelectric 7mL/min (takasago)
+  return (TASK.RewardPer1000Trials - b)/m/1000;
+  ENV.RewardDuration = (TASK.RewardPer1000Trials - b)/m/1000;
+}

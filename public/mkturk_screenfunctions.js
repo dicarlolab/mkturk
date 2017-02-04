@@ -3,29 +3,29 @@ function refreshCanvasSettings(TASK){
 	// TODO: cleanup CANVAS; separate canvas ID from sequence logic; 'tsequence' variables coded by length rather than absolute time
 
 	// Adjust length / toggle presence of gray screen between sample and test screens
-	if (TASK.sampleOFF > 0){
-		CANVAS.sequence = [0, 1, 0, 2]
-		CANVAS.tsequence = [0,100,100+TASK.sampleON,100+TASK.sampleON+TASK.sampleOFF]; 
+	if (TASK.SampleOFF > 0){
+		CANVAS.sequence = ["blank", "sample","blank","test"]
+		CANVAS.tsequence = [0,100,100+TASK.SampleON,100+TASK.SampleON+TASK.SampleOFF]; 
 	}
-	else if (TASK.sampleOFF <= 0 ){
-		CANVAS.sequence = [0, 1, 2]
-		CANVAS.tsequence = [0,100,100+TASK.sampleON]; 
+	else if (TASK.SampleOFF <= 0 ){
+		CANVAS.sequence = ["blank","sample","test"]
+		CANVAS.tsequence = [0,100,100+TASK.SampleON]; 
 	}
 	
 	// Adjust length of reward screen based on reward amount 
-	CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+ENV.reward*1000;
+	CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+ENV.RewardDuration*1000;
 
 	// Adjust location of CANVAS based on species-specific setup
-	if (TASK.species == "macaque" || TASK.species == "human"){
+	if (TASK.Species == "macaque" || TASK.Species == "human"){
 		CANVAS.headsupfraction=0;
 	}
-	else if (TASK.species == "marmoset"){
+	else if (TASK.Species == "marmoset"){
 		CANVAS.headsupfraction=1/3-0.06;
 	}
 }
 
 function writeTextonBlankCanvas(textstr,x,y){
-	var blank_canvasobj=document.getElementById("canvas"+CANVAS.blank)
+	var blank_canvasobj=CANVAS.obj.blank
 	var visible_ctxt = blank_canvasobj.getContext('2d')
 	visible_ctxt.textBaseline = "hanging"
 	visible_ctxt.fillStyle = "white"
@@ -54,13 +54,10 @@ function setupCanvasHeadsUp(){
 
 	context.fillStyle="#202020";
 	context.fillRect(0,0,canvasobj.width,canvasobj.height);
-	canvasobj.addEventListener('mousedown',mousedown_listener,false);
 	canvasobj.addEventListener('touchstart',touchstart_listener,false);
 }
 
-function setupCanvas(id){
-	str="canvas" + id;
-	canvasobj=document.getElementById(str);
+function setupCanvas(canvasobj){
 	// center in page
 	canvasobj.style.top=CANVAS.offsettop + "px";
 	canvasobj.style.left=CANVAS.offsetleft + "px";
@@ -70,32 +67,27 @@ function setupCanvas(id){
 	canvasobj.style.display="block"; //visible
 
 	// assign listeners
-	canvasobj.addEventListener('mousedown',mousedown_listener,false);
-	canvasobj.addEventListener('mousemove',mousemove_listener,false);
-	canvasobj.addEventListener('mouseup',mouseup_listener,false);
-	canvasobj.addEventListener('touchstart',touchstart_listener,false); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
+	canvasobj.addEventListener('touchstart',touchstart_listener,{capture: false,passive: false}); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
 	// canvasobj.addEventListener('touchmove',touchmove_listener,false);
-	canvasobj.addEventListener('touchmove',touchmove_listener,{passive: true}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
-	canvasobj.addEventListener('touchend',touchend_listener,false);
+	canvasobj.addEventListener('touchmove',touchmove_listener,{passive: false}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
+	canvasobj.addEventListener('touchend',touchend_listener,{capture: false, passive:false});
 	// store canvas size
 	canvasSize=[canvasobj.width, canvasobj.height];
 } 
 
 // Sync: Adjust canvas for the device pixel ratio & browser backing store size
 // from http://www.html5rocks.com/en/tutorials/canvas/hidpi/#disqus_thread
-function scaleCanvasforHiDPI(id){
-	if (devicePixelRatio !== backingStoreRatio){
-		str="canvas" + id;
-		canvasobj=document.getElementById(str);
+function scaleCanvasforHiDPI(canvasobj){
+	if (ENV.DevicePixelRatio !== backingStoreRatio){
 		context=canvasobj.getContext("2d");
 		var oldWidth = canvasobj.width;
 		var oldHeight = canvasobj.height;
-		canvasobj.width = oldWidth * canvasScale;
-		canvasobj.height = oldHeight * canvasScale;
+		canvasobj.width = oldWidth/ENV.CanvasRatio;
+		canvasobj.height = oldHeight/ENV.CanvasRatio;
 		canvasobj.style.width = windowWidth + "px";
 		canvasobj.style.height = windowHeight + "px";
 		canvasobj.style.margin="0 auto";
-		context.scale(canvasScale,canvasScale);
+		context.scale(1/ENV.CanvasRatio,1/ENV.CanvasRatio);
 	} 
 } 
 
@@ -113,19 +105,19 @@ function updateHeadsUpDisplay(){
 	// Task type
 	var task1 = "";
 	var task2 = "";
-	if (TASK.rewardStage == 0){
+	if (TASK.RewardStage == 0){
 		task1 = "Fixation";
 	}
-	else if (TASK.rewardStage == 1){
-		task1 = TASK.testGrid.length + "-way AFC. ImageBags:" + TASK.imageBagsSample;
-		task2 = TASK.sampleON + "ms, " + TASK.imageBagsTest.length + "-categories in pool";
+	else if (TASK.RewardStage == 1){
+		task1 = TASK.TestGridIndex.length + "-way AFC. ImageBags:" + TASK.ImageBagsSample;
+		task2 = TASK.SampleON + "ms, " + TASK.ImageBagsTest.length + "-categories in pool";
 	}
 	if (CANVAS.headsupfraction > 0){
-		textobj.innerHTML = ENV.subjectID + ": <font color=green><b>" + pctcorrect 
+		textobj.innerHTML = ENV.Subject + ": <font color=green><b>" + pctcorrect 
 		+ "%</b></font> " + "(" + ncorrect + " of " + trialhistory.correct.length +")" 
 		+ "<br>" + "Estimated Reward: <font color=green><b>" 
-		+ Math.round(TASK.rewardper1000*ncorrect/1000) 
-		+ "mL</b></font> (" + Math.round(TASK.rewardper1000) 
+		+ Math.round(TASK.RewardPer1000Trials*ncorrect/1000) 
+		+ "mL</b></font> (" + Math.round(TASK.RewardPer1000Trials) 
 		+ " per 1000)" + "<br> " + "<br>" + " Stage " 
 		+ TASK.AutomatorStage + ": " + task1 + "<br>" + task2 + "<br>" + "<br>" 
 		+ "<br>" + "<font color=red><b>" + "<font color=blue><b>" + ble.statustext + "<br></font>";
@@ -137,7 +129,7 @@ function updateHeadsUpDisplay(){
 //================== IMAGE RENDERING ==================//
 // Sync: buffer trial images
 
-function defineImageGrid(ngridpoints, wd, ht, scale, canvasScale){
+function defineImageGrid(ngridpoints, wd, ht, gridscale){
 	var xgrid =[]
 	var ygrid =[]
 	var xgridcent =[] 
@@ -152,67 +144,31 @@ function defineImageGrid(ngridpoints, wd, ht, scale, canvasScale){
 	}
 
 	//center x & y grid within canvas
-	var dx = (document.body.clientWidth - CANVAS.offsetleft)*devicePixelRatio/2/canvasScale - xgrid[4]*wd*scale/canvasScale;
-	var dy = (document.body.clientHeight - CANVAS.offsettop)*devicePixelRatio/2/canvasScale - ygrid[4]*ht*scale/canvasScale;
+	var dx = (document.body.clientWidth - CANVAS.offsetleft)*ENV.CanvasRatio*ENV.DevicePixelRatio/2 - ENV.CanvasRatio*ngridpoints/2*wd*gridscale;
+	var dy = (document.body.clientHeight - CANVAS.offsettop)*ENV.CanvasRatio*ENV.DevicePixelRatio/2 - ENV.CanvasRatio*ngridpoints/2*ht*gridscale;
 	for (var i=0; i<=xgrid.length-1; i++){
-		xgridcent[i]=Math.round(xgrid[i]*wd*scale/canvasScale + dx);
-		ygridcent[i]=Math.round(ygrid[i]*ht*scale/canvasScale + dy);
+		xgridcent[i]=Math.round(xgrid[i]*wd*gridscale*ENV.CanvasRatio + dx);
+		ygridcent[i]=Math.round(ygrid[i]*ht*gridscale*ENV.CanvasRatio + dy);
 	}
 
 	return [xgrid, ygrid, xgridcent, ygridcent]
-
-}
-
-async function renderImageOnCanvas(image, grid_index, scale, canvas_id){
-	var canvasobj=document.getElementById("canvas"+canvas_id);
-	var context=canvasobj.getContext('2d');
-
-	var xleft=NaN;
-	var ytop=NaN;
-	var xbound=[];
-	var ybound=[];
-
-	wd = image.width
-	ht = image.height
-	xleft = Math.round(xgridcent[grid_index] - 0.5*wd*scale/canvasScale);
-	ytop = Math.round(ygridcent[grid_index] - 0.5*ht*scale/canvasScale);
-	
-	context.drawImage(
-		image, // Image element
-		xleft, // dx: Canvas x-coordinate of image's top-left corner. 
-		ytop, // dy: Canvas y-coordinate of  image's top-left corner. 
-		image.width*scale/canvasScale, // dwidth. width of drawn image. 
-		image.height*scale/canvasScale); // dheight. height of drawn image.
-
-	// For drawing cropped regions of an image in the canvas, see alternate input argument structures,
-	// See: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
-	
-	// Bounding boxes of images on canvas
-	xbound=[xleft, xleft+wd*scale/canvasScale];
-	ybound=[ytop, ytop+ht*scale/canvasScale];
-
-	xbound[0]=xbound[0]+CANVAS.offsetleft;
-	xbound[1]=xbound[1]+CANVAS.offsetleft;
-	ybound[0]=ybound[0]+CANVAS.offsettop;
-	ybound[1]=ybound[1]+CANVAS.offsettop;
-	return [xbound, ybound]
 }
 
 async function bufferTrialImages(sample_image, sample_image_grid_index, test_images, test_image_grid_indices, correct_index){
 
-	// --------- Buffer the SAMPLE canvas  ---------
-	var canvasobj=document.getElementById("canvas"+CANVAS.sample); // Gray out before buffering sample
-	var context=canvasobj.getContext('2d');
-	context.fillStyle="#7F7F7F";
+	//========== BUFFER SAMPLE CANVAS ==========//
+	var canvasobj=CANVAS.obj.sample
+	var context=CANVAS.obj.sample.getContext('2d'); 
+	context.fillStyle="#7F7F7F";  // Gray out before buffering sample
 	context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
-	await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.sampleScale, CANVAS.sample)
+	await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, CANVAS.obj.sample)
 	
-	// --------- Buffer the TEST canvas  ---------
-
+	//========== BUFFER TEST CANVAS ==========//
 	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)
 	var pre_grayout = false 
 	if(pre_grayout == true){
-		var canvasobj=document.getElementById("canvas"+CANVAS.test); selectSampleImage
+		var canvasobj=CANVAS.obj.test;
+		selectSampleImage
 		var context=canvasobj.getContext('2d');
 		context.fillStyle="#7F7F7F";
 		context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
@@ -231,16 +187,51 @@ async function bufferTrialImages(sample_image, sample_image_grid_index, test_ima
 			}
 		}		
 
-		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], TASK.testScale, CANVAS.test); 
+		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], TASK.TestScale, CANVAS.obj.test); 
 		boundingBoxesTest.x.push(funcreturn[0]); 
 		boundingBoxesTest.y.push(funcreturn[1]); 
 	}
 
 	// Option: draw sample (TODO: remove the blink between sample screen and test screen)
-	if (TASK.keepSampleON==1){
-		await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.sampleScale, CANVAS.test)
+	if (TASK.KeepSampleON==1){
+		await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, CANVAS.obj.test)
 	}
 
+}
+
+
+async function renderImageOnCanvas(image, grid_index, scale, canvasobj){
+	var context=canvasobj.getContext('2d');
+
+	var xleft=NaN;
+	var ytop=NaN;
+	var xbound=[];
+	var ybound=[];
+
+	wd = image.width
+	ht = image.height
+	xleft = Math.round(xgridcent[grid_index] - 0.5*wd*scale*ENV.CanvasRatio);
+	ytop = Math.round(ygridcent[grid_index] - 0.5*ht*scale*ENV.CanvasRatio);
+	
+	context.drawImage(
+		image, // Image element
+		xleft, // dx: Canvas x-coordinate of image's top-left corner. 
+		ytop, // dy: Canvas y-coordinate of  image's top-left corner. 
+		image.width*scale*ENV.CanvasRatio, // dwidth. width of drawn image. 
+		image.height*scale*ENV.CanvasRatio); // dheight. height of drawn image.
+
+	// For drawing cropped regions of an image in the canvas, see alternate input argument structures,
+	// See: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
+	
+	// Bounding boxes of images on canvas
+	xbound=[xleft, xleft+wd*scale*ENV.CanvasRatio];
+	ybound=[ytop, ytop+ht*scale*ENV.CanvasRatio];
+
+	xbound[0]=xbound[0]+CANVAS.offsetleft;
+	xbound[1]=xbound[1]+CANVAS.offsetleft;
+	ybound[0]=ybound[0]+CANVAS.offsettop;
+	ybound[1]=ybound[1]+CANVAS.offsettop;
+	return [xbound, ybound]
 }
 
 
@@ -263,18 +254,18 @@ function displayTrial(sequence,tsequence){
 		if (timestamp - start > tsequence[frame.current]){
 			//console.log('Frame =' + frame.current+'. Duration ='+(timestamp-start)+'. Timestamp = ' + timestamp)
 			// Move canvas in front
-			var prev_canvasobj=document.getElementById("canvas"+CANVAS.front);
-			var curr_canvasobj=document.getElementById("canvas"+sequence[frame.current]);
-			if (CANVAS.front != CANVAS.blank){
+			var prev_canvasobj=CANVAS.obj[CANVAS.front]
+			var curr_canvasobj=CANVAS.obj[sequence[frame.current]]
+			if (CANVAS.front != "blank"){
 				// Move to back
 				prev_canvasobj.style.zIndex="0";
 			} 
-			if (sequence[frame.current] != CANVAS.blank){
+			if (sequence[frame.current] != "blank"){
 				curr_canvasobj.style.zIndex="100";
 				CANVAS.front = sequence[frame.current];
 			} // move to front
 			else{
-				CANVAS.front = CANVAS.blank;
+				CANVAS.front = "blank";
 			}
 			
 			frame.shown[frame.current]=1;
@@ -293,18 +284,16 @@ function displayTrial(sequence,tsequence){
 	return p
 } 
 
-function displayTextOnBlackBar(message_string){
-	renderBlank();
-	var blank_canvasobj=document.getElementById("canvas"+CANVAS.blank);
-	var visible_ctxt = blank_canvasobj.getContext('2d');
+function displayTextOnBlackBar(message_string,canvasobj){
+	renderBlank(canvasobj);
+	var visible_ctxt = canvasobj.getContext('2d');
 	visible_ctxt.textBaseline = "hanging";
 	visible_ctxt.fillStyle = "white";
 	visible_ctxt.font = "20px Verdana";
 	visible_ctxt.fillText(message_string, 20.5,20.5);
 }
 
-function renderBlank(){
-	var canvasobj=document.getElementById("canvas"+CANVAS.blank);
+function renderBlank(canvasobj){
 	var context=canvasobj.getContext('2d');
 	context.fillStyle="#7F7F7F";
 	context.fillRect(0,0,canvasobj.width,canvasobj.height);
@@ -312,8 +301,7 @@ function renderBlank(){
 	context.fillRect(0,0,canvasobj.width,60);
 }
 
-function renderBlankWithGridMarkers(){
-	var canvasobj=document.getElementById("canvas"+CANVAS.blank);
+function renderBlankWithGridMarkers(canvasobj){
 	var context=canvasobj.getContext('2d');
 	context.fillStyle="#7F7F7F";
 	context.fillRect(0,0,canvasobj.width,canvasobj.height);
@@ -329,53 +317,40 @@ function renderBlankWithGridMarkers(){
 	}
 
 	//Fixation Image Bounding Box
-	var wd = ENV.wd*TASK.fixationScale/canvasScale
+	var wd = ENV.ImageWidthPixels*TASK.FixationScale*ENV.CanvasRatio
 	var xcent = xgridcent[TASK.fixationGrid]
 	var ycent = xgridcent[TASK.fixationGrid]
 	context.strokeStyle="white"
 	context.strokeRect(xcent-wd/2,ycent-wd/2,wd+1,wd+1)
 	
-
 	//Sample Image Bounding Box
-	var wd = ENV.wd*TASK.sampleScale/canvasScale
-	var xcent = xgridcent[TASK.sampleGrid]
-	var ycent = ygridcent[TASK.sampleGrid]
+	var wd = ENV.ImageWidthPixels*TASK.SampleScale*ENV.CanvasRatio
+	var xcent = xgridcent[TASK.SampleGridIndex]
+	var ycent = ygridcent[TASK.SampleGridIndex]
 	context.strokeStyle="green"
 	context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
 
 	//Test Image Bounding Box(es)
-	for (var i = 0; i <= TASK.testGrid.length-1; i++){
-		var wd = ENV.wd*TASK.testScale/canvasScale
-		var xcent = xgridcent[TASK.testGrid[i]]
-		var ycent = ygridcent[TASK.testGrid[i]]
+	for (var i = 0; i <= TASK.TestGridIndex.length-1; i++){
+		var wd = ENV.ImageWidthPixels*TASK.TestScale*ENV.CanvasRatio
+		var xcent = xgridcent[TASK.TestGridIndex[i]]
+		var ycent = ygridcent[TASK.TestGridIndex[i]]
 		context.strokeStyle="black"
 		context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
 	}
 }
 
-
-function renderReward(){
-	var canvasobj=document.getElementById("canvas"+CANVAS.reward);
+function renderReward(canvasobj){
 	var context=canvasobj.getContext('2d');
 	context.fillStyle="green";
 	context.fillRect(xgridcent[4]-200,ygridcent[4]-200,400,400);
-	if (TASK.species == 'marmoset'){
+	if (TASK.Species == 'marmoset'){
 		context.fillStyle="black";
 		context.fillRect(0,0,canvasobj.width,100);
 	}
 }
-function renderPhotoReward(){
-	var canvasobj=document.getElementById("canvas"+CANVAS.photoreward);
-	var context=canvasobj.getContext('2d');
-	context.fillStyle="green";
-	context.fillRect(xgridcent[4]-200,ygridcent[4]-200,400,400);
-	if (TASK.species == 'marmoset'){
-		context.fillStyle="white";
-		context.fillRect(0,0,canvasobj.width,100);
-	}
-}
-function renderPunish(){
-	var canvasobj=document.getElementById("canvas"+CANVAS.punish);
+
+function renderPunish(canvasobj){
 	var context=canvasobj.getContext('2d');
 	context.rect(xgridcent[4]-200,ygridcent[4]-200,400,400);
 	context.fillStyle="black";
@@ -384,8 +359,7 @@ function renderPunish(){
 	context.fillRect(0,0,canvasobj.width,60);
 }
 
-async function renderFixationUsingImage(image, gridindex, scale){
-	var canvasobj=document.getElementById("canvas"+CANVAS.touchfix);
+async function renderFixationUsingImage(image, gridindex, scale, canvasobj){
 	var context=canvasobj.getContext('2d');
 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 
@@ -393,12 +367,11 @@ async function renderFixationUsingImage(image, gridindex, scale){
 	boundingBoxFixation['x'] = []
 	boundingBoxFixation['y'] = []
 
-	funcreturn = await renderImageOnCanvas(image, gridindex, scale, CANVAS.touchfix); 
+	funcreturn = await renderImageOnCanvas(image, gridindex, scale, canvasobj); 
 	boundingBoxFixation.x = funcreturn[0]; 
 	boundingBoxFixation.y = funcreturn[1]; 
 }
-function renderFixationUsingDot(color, gridindex, dot_pixelradius){
-	var canvasobj=document.getElementById("canvas"+CANVAS.touchfix);
+function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 	var context=canvasobj.getContext('2d');
 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 
@@ -414,119 +387,5 @@ function renderFixationUsingDot(color, gridindex, dot_pixelradius){
 	boundingBoxFixation.x = [xcent-rad+CANVAS.offsetleft, xcent+rad+CANVAS.offsetleft];
 	boundingBoxFixation.y = [ycent-rad+CANVAS.offsettop, ycent+rad+CANVAS.offsettop];
 
-	// //add eye fixation
-	// context.fillStyle="red";
-	// context.fillRect(xgridcent[4]-6,ygridcent[4]-6,12,12);
-	// // add red dot in center
-	// context.fillStyle="red";
-	// context.fillRect(xgridcent[trial.fixationGrid[FLAGS.current_trial]]+rad/2-6,xgridcent[trial.fixationGrid[FLAGS.current_trial]]-rad/2-6,12,12);
-	//context.fillStyle="black";
 	context.fillRect(0,0,canvasobj.width,40);
 }
-function renderEyeFixation(){
-	var canvasobj=document.getElementById("canvas"+CANVAS.eyefix);
-	var context=canvasobj.getContext('2d');
-	context.fillStyle="red";
-	context.fillRect(xgridcent[4]-6,ygridcent[4]-6,12,12);
-}
-//================== PROMISE STATES ==================//
-// Promise: Select Subject
-function subjectIDPromise(){
-	var resolveFunc
-	var errFunc
-	p = new Promise(
-		function(resolve,reject){
-			resolveFunc = resolve;
-			errFunc = reject;
-		}).then(
-		function(resolveval){
-			console.log('User selected ' + resolveval)
-		});
-	
-	function *waitforclickGenerator(){
-		var imclicked =[-1];
-		while (true){
-			imclicked = yield imclicked;
-			resolveFunc(imclicked);
-		}
-	}
-
-	waitforClick = waitforclickGenerator(); // start async function
-	waitforClick.next(); //move out of default state
-	return p;
-}
-
-// Promise: Edit Parameters Text
-function editParamsPromise(){
-	var resolveFunc
-	var errFunc
-	p = new Promise(function(resolve,reject){
-		resolveFunc = resolve;
-		errFunc = reject;
-	}).then(function(resolveval){console.log('User is done editing parameters.')});
-	function *waitforclickGenerator(){
-		var imclicked =[-1];
-		while (true){
-			imclicked = yield imclicked;
-			resolveFunc(imclicked);
-		}
-	}
-	waitforClick = waitforclickGenerator(); // start async function
-	waitforClick.next(); //move out of default state
-	return p;
-}
-
-// Promise: fixation
-function fixationPromise(){
-	var resolveFunc
-	var errFunc
-	p = new Promise(function(resolve,reject){
-		resolveFunc = resolve;
-		errFunc = reject;
-	}).then(function(resolveval){
-		//console.log('Fixation Promise resolved' + resolveval)
-	});
-	function *waitforclickGenerator(){
-		var imclicked =[-1];
-		while (true){
-			imclicked = yield imclicked;
-			//console.log('moved generator forward')
-			resolveFunc(imclicked);
-		}
-	}
-	FLAGS.waitingforFixation = 1;
-	waitforClick = waitforclickGenerator(); // start async function
-	waitforClick.next(); //move out of default state
-	//Start timer
-
-	movefixationTimer = setTimeout(function(){
-		FLAGS.waitingforFixation=1; 
-		FLAGS.brokeFixation=1; 
-		clearTimeout(fixationTimer); 
-		waitforClick.next(1); },
-		TASK.fixationInterval);
-	return p;
-}
-// Promise: response
-function responsePromise(){
-	var resolveFunc
-	var errFunc
-	p = new Promise(function(resolve,reject){
-		resolveFunc = resolve;
-		errFunc = reject;
-	}).then(function(resolveval){
-		//console.log('User clicked ' + resolveval)
-});
-	function *waitforclickGenerator(){
-		var imclicked =[-1];
-		while (true){
-			imclicked = yield imclicked;
-			resolveFunc(imclicked);
-		}
-	}
-	FLAGS.waitingforResponse = 1;
-	waitforClick = waitforclickGenerator(); // start async function
-	waitforClick.next(); //move out of default state
-	return p;
-}
-

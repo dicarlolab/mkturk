@@ -11,7 +11,7 @@ async function automateTask(automator_data, trialhistory){
 	// Check for consistency between automator_data[current_stage] and trial.stuff: 
 	// i_current_stage is the master; the ground truth for what trial.stuff should be. 
 
-	var i_current_stage = TASK.automatorStage; 
+	var i_current_stage = TASK.CurrentAutomatorStage; 
 	var current_stage = stageHash(TASK); 
 
 	for (var property in automator_data[i_current_stage]){
@@ -46,29 +46,29 @@ async function automateTask(automator_data, trialhistory){
 
 		
 		// If finished final stage of automator,
-		if(automator_data.length <= TASK.automatorStage+1){
+		if(automator_data.length <= TASK.CurrentAutomatorStage+1){
 			// Stay in current stage settings, and 
 			// Turn automator off
-			TASK.automator = 0; 
+			TASK.Automator = 0; 
 			console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject completed the final stage '+(i_current_stage)+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
 			console.log('Turning automator OFF.')
 			return 
 		}
 
 		// Otherwise, advance to the next stage.
-		TASK.automatorStage = TASK.automatorStage + 1; 
+		TASK.CurrentAutomatorStage = TASK.CurrentAutomatorStage + 1; 
 		console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject advanced to stage '+(i_current_stage+1)+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
 
 		// Save behavior with current TASK, ENV, and TRIAL before moving on. 
-		writeBehaviortoDropbox(TASK, ENV, TRIAL); 
+		saveBehaviorDatatoDropbox(TASK, ENV, TRIAL); 
 
 		// Reset tracking variables 
 		purgeTrackingVariables()
 
 
 		// Update TASK 
-		var old_imageBagsSample = TASK.imageBagsSample
-		var old_imageBagsTest = TASK.imageBagsTest
+		var old_imageBagsSample = TASK.ImageBagsSample
+		var old_imageBagsTest = TASK.ImageBagsTest
 
 		for (var property in automator_data[i_current_stage+1]){
 			if (property === 'minPercentCriterion' || property === 'minTrialsCriterion'){
@@ -84,11 +84,11 @@ async function automateTask(automator_data, trialhistory){
 			}			
 		}
 		// If imagebags are changed by automator, load images at beginning of next trial. 
-		if(!old_imageBagsTest.equals(TASK.imageBagsTest) || !old_imageBagsSample.equals(TASK.imageBagsSample)){
+		if(!old_imageBagsTest.equals(TASK.ImageBagsTest) || !old_imageBagsSample.equals(TASK.ImageBagsSample)){
 			FLAGS.need2loadImages = 1; 
 		}
-		
-		FLAGS.need2writeParameters=1
+
+		FLAGS.need2saveParameters=1
 	}
 
 	return 
@@ -98,8 +98,8 @@ async function automateTask(automator_data, trialhistory){
 function stageHash(task){
 	// Returns a value that uniquely describes the automator and stage of the automator
 	var current_stage_hash_string = ''
-	if (task.automator != 0){
-		current_stage_hash_string = task.automatorFilePath+'_stage'+task.automatorStage; 
+	if (task.Automator != 0){
+		current_stage_hash_string = task.AutomatorFilePath+'_stage'+task.CurrentAutomatorStage; 
 	}
 
 	else{
@@ -116,8 +116,9 @@ async function readTrialHistoryFromDropbox(filepaths){
 	
 	var trialhistory = {}
 	trialhistory.trainingstage = []
+	trialhistory.starttime = []
+	trialhistory.response = []
 	trialhistory.correct = []
-	trialhistory.tstart = []
 
 	if (typeof filepaths == "string"){
 		filepaths = [filepaths]
@@ -131,14 +132,14 @@ async function readTrialHistoryFromDropbox(filepaths){
 	for (var i = 0; i< filepaths.length; i++){
 		datastring = await loadTextFilefromDropbox(filepaths[i])
 		data = JSON.parse(datastring)
-		task_data = data[0]
-		trial_data = data[1]
+		task_data = data[1]
+		trial_data = data[2]
 
-		var numTRIALs = trial_data.response.length; 
+		var numTRIALs = trial_data.Response.length; 
 		// Iterate over TRIALs
 		for (var i_trial = 0; i_trial<numTRIALs; i_trial++){
 			// Correct/incorrect TRIAL
-			var correct = Number(trial_data.response[i_trial] == trial_data.correctItem[i_trial])
+			var correct = Number(trial_data.Response[i_trial] == trial_data.CorrectItem[i_trial])
 			trialhistory.correct.push(correct)
 
 			// Current automator stage 
@@ -146,8 +147,8 @@ async function readTrialHistoryFromDropbox(filepaths){
 			trialhistory.trainingstage.push(current_stage)
 
 			// Start time (fixation dot appears) of trial 
-			var starttime = trial_data.tstart[i_trial]
-			trialhistory.tstart.push(starttime)
+			var starttime = trial_data.StartTime[i_trial]
+			trialhistory.starttime.push(starttime)
 		}
 	}
 	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
@@ -226,4 +227,3 @@ function computeRunningHistory(mintrials, current_stage, history_trainingstage, 
 	pctcorrect = 100 * ncorrect/ntrial;
 	return [pctcorrect, ntrial]
 }
-

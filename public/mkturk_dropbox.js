@@ -39,6 +39,7 @@ async function getMostRecentBehavioralFilePathsFromDropbox(num_files_to_get, sub
 
 }
 
+// LEGACY (not used): getFileListDropbox
 async function getFileListDropbox(directorypath){
 	// Returns list of files in this directory (no recursion)
 	try{
@@ -47,7 +48,7 @@ async function getFileListDropbox(directorypath){
 
 		var q2=0;
 		for (var q = 0; q <= response.entries.length-1; q++){
-			if (response.entries[q][".tag"] == "file" && response.entries[q].name.indexOf(ENV.subjectID) != -1){
+			if (response.entries[q][".tag"] == "file" && response.entries[q].name.indexOf(ENV.Subject) != -1){
 				datafiles[q2] = response.entries[q].path_display; 
 				q2++;
 			}
@@ -124,17 +125,16 @@ async function getImageListDropboxRecursive(dirpath){
 
 //================== CHECK FILE REV ==================//
 // Asynchronous: Check for parmater file update
-
 async function checkParameterFileStatus(){
 	try{
-		filemeta = await dbx.filesGetMetadata({path: ENV.paramfile})
-		if (ENV.paramfile_rev != filemeta.rev){
-			ENV.paramfile_rev = filemeta.rev
-			ENV.paramfile_date = new Date(filemeta.client_modified)
+		filemeta = await dbx.filesGetMetadata({path: ENV.ParamFileName})
+		if (ENV.ParamFileRev != filemeta.rev){
+			ENV.ParamFileRev = filemeta.rev
+			ENV.ParamFileDate = new Date(filemeta.client_modified)
 
 			FLAGS.need2loadParameters = 1
 
-			console.log('Parameter file on disk was changed. New rev =' + ENV.paramfile_rev)
+			console.log('Parameter file on disk was changed. New rev =' + ENV.ParamFileRev)
 		}
 	}
 	catch(error) {
@@ -144,7 +144,7 @@ async function checkParameterFileStatus(){
 
 //================== LOAD JSON ==================//
 async function loadParametersfromDropbox(paramfile_path){
-	try{
+	try{ 
 		datastring = await loadTextFilefromDropbox(paramfile_path)
 		filemeta = await dbx.filesGetMetadata({path: paramfile_path})
 		data = JSON.parse(datastring)
@@ -152,14 +152,14 @@ async function loadParametersfromDropbox(paramfile_path){
 		TASK = {}
 		TASK = data
 
-		ENV.paramfile = filemeta.path_display; 
-		ENV.paramfile_rev = filemeta.rev
-		ENV.paramfile_date = new Date(filemeta.client_modified)
-		return 0;  // need2loadParameters
-	}	
+		ENV.ParamFileName = filemeta.path_display; 
+		ENV.ParamFileRev = filemeta.rev
+		ENV.ParamFileDate = new Date(filemeta.client_modified)
+		return 0; //need2loadParameters
+	}
 	catch(error){
-		console.error('loadParametersfromDropbox() error: '+error)
-		return 1; // need2loadParameters
+		console.error('loadParametersfromDropbox() error: ' + error)
+		return 1; //need2loadParameters
 	}
 }
 
@@ -235,7 +235,6 @@ function loadSoundfromDropbox2(src,idx){
 
 
 //================== LOAD IMAGE ==================//
-
 async function loadBagfromDropbox(imagebags_parameter){
 
 	// Locate all .png in directory and subdirectories specified in imagebags_parameter
@@ -259,7 +258,7 @@ async function loadBagfromDropbox(imagebags_parameter){
 	}
 
 	console.log('Done loading bag: '+imagebag.length+' out of '+imagebag_paths.length+ ' images loaded successfully.')
-	renderBlank()
+	renderBlank(CANVAS.obj.blank)
 	return [imagebag, imagebag_labels, imagebag_paths]
 }
 
@@ -356,7 +355,7 @@ async function loadImageArrayfromDropbox(imagepathlist){
 			
 			var image_array = await Promise.all(image_requests)
 		}
-		renderBlank()
+		renderBlank(CANVAS.obj.blank)
 		return image_array
 	}
 	catch(err){
@@ -385,7 +384,7 @@ async function loadImagefromDropbox(imagepath){
 
 								image.onload = function(){
 									console.log('Loaded: ' + (imagepath));
-									displayTextOnBlackBar('Loaded: ' + (imagepath))
+									displayTextOnBlackBar('Loaded: ' + (imagepath),CANVAS.obj.blank)
 									resolve(image)
 									}
 								image.src = data_src
@@ -411,21 +410,21 @@ async function loadImagefromDropbox(imagepath){
 
 
 //================== WRITE JSON ==================//
-async function writeBehaviortoDropbox(TASK, ENV, TRIAL){
+async function saveBehaviorDatatoDropbox(TASK, ENV, TRIAL){
 	try{
         var dataobj = [] 
 
+		dataobj.push(ENV)
 		dataobj.push(TASK)
 		dataobj.push(TRIAL)
-		dataobj.push(ENV)
-		datastr = JSON.stringify(dataobj, null, ' ');
+		datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
 
 		// TODO: 
-		// Check if folder DATA_SAVEPATH + ENV.subjectID+"/"+ENV.filename exists 
+		// Check if folder ENV.DataFileName exists 
 		// If not, create it for this subjectID using dbx.filesCreateFolder (see: http://dropbox.github.io/dropbox-sdk-js/Dropbox.html#filesCreateFolder__anchor)
 
 		response = await dbx.filesUpload({
-			path: DATA_SAVEPATH + ENV.subjectID+"/"+ENV.filename,
+			path: ENV.DataFileName,
 			contents: datastr,
 			mode: {[".tag"]: "overwrite"} })
 			console.log("Successful behavior file upload. Size:" + response.size)
@@ -435,7 +434,7 @@ async function writeBehaviortoDropbox(TASK, ENV, TRIAL){
 	}
 }
 
-async function writeParameterTexttoDropbox(parameter_text){
+async function saveParameterTexttoDropbox(parameter_text){
 	try{
 	    datastr = parameter_text
 
@@ -447,11 +446,11 @@ async function writeParameterTexttoDropbox(parameter_text){
 	    while(!success && i < max_retries){
 	    	try{
 				response = await dbx.filesUpload({
-					path: ENV.paramfile,
+					path: ENV.ParamFileName,
 					contents: datastr,
 					mode: {[".tag"]: "overwrite"} })
 						console.log("Successful parameter text upload. Size: " + response.size)
-						FLAGS.need2writeParameters = 0;
+						FLAGS.need2saveParameters = 0;
 			}
 			catch(error){
 				console.log(error)
@@ -468,12 +467,12 @@ async function writeParameterTexttoDropbox(parameter_text){
 	}
 
 	try{
-		filemeta = await dbx.filesGetMetadata({path: ENV.paramfile})
-			if (ENV.paramfile_rev != filemeta.rev){
-				ENV.paramfile_rev = filemeta.rev
-				ENV.paramfile_date = new Date(filemeta.client_modified)
+		filemeta = await dbx.filesGetMetadata({path: ENV.ParamFileName})
+			if (ENV.ParamFileRev != filemeta.rev){
+				ENV.ParamFileRev = filemeta.rev
+				ENV.ParamFileDate = new Date(filemeta.client_modified)
 
-				console.log('Parameter file was updated. Rev=' + ENV.paramfile_rev)
+				console.log('Parameter file was updated. Rev=' + ENV.ParamFileRev)
 			}
 	}
 	catch(error) {
@@ -484,31 +483,27 @@ async function writeParameterTexttoDropbox(parameter_text){
 
 async function saveParameterstoDropbox() {
 	try{
-		var savepath = ENV.paramfile
-	    var datastr = JSON.stringify(TASK, null, ' ');
+		var savepath = ENV.ParamFileName
+	    var datastr = JSON.stringify(TASK,null,' ');
 
 		response = await dbx.filesUpload({
 			path: savepath,
 			contents: datastr,
 			mode: {[".tag"]: "overwrite"} })
 		
-
 		filemeta = await dbx.filesGetMetadata({path: savepath})
-		if (ENV.paramfile_rev != filemeta.rev){
-			ENV.paramfile_rev = filemeta.rev
-			ENV.paramfile_date = new Date(filemeta.client_modified)	
+		if (ENV.ParamFileRev != filemeta.rev){
+			ENV.ParamFileRev = filemeta.rev
+			ENV.ParamFileDate = new Date(filemeta.client_modified)	
 		}
-		console.log("TASK written to disk as "+ENV.paramfile+". Size: " + response.size)
-		return 0; // need2writeParameters
+		console.log("TASK written to disk as "+ENV.ParamFileName+". Size: " + response.size)
+		return 0; //need2saveParameters
 	}
 	catch (error){
 		console.error(error)
-		return 1; // need2writeParameters
+		return 1 //need2saveParameters
 	}
-
 }
 
 
 //================== WRITE JSON (end) ==================//
-
-

@@ -16,10 +16,9 @@ constructor(){
 	// Buffer: 
 	this.cache_dict = {}; // filename:
 
-	// Todo: double buffer 
+	// Todo: double buffer
 	this.num_elements_in_cache = 0; // tracking variable
 	this.max_buffer_size = 10; // (for now, arbitrary) number of unique images to keep in buffer
-
 }
 
 
@@ -42,18 +41,16 @@ async get_by_name(filename){
 	}
 }
 
-
 // ------- Buffer-related functions --------------------------------
 // Add specific image, or list of images, to cache before moving on.
-
 async remove_image_from_cache(filename){
 	window.URL.revokeObjectURL(this.cache_dict[filename].src)
-	delete this.cache_dict[filename]; 
-	return 
+	delete this.cache_dict[filename];
+	return
 }
 
 async clear_cache(){
-	return 
+	return
 }
 
 async cache_these_images(imagenames){
@@ -64,14 +61,13 @@ async cache_these_images(imagenames){
 			if (!(filename in this.cache_dict)){
 				var image = await loadImagefromDropbox(filename); 
 				this.cache_dict[filename] = image; 
-				this.num_elements_in_cache++; 
+				this.num_elements_in_cache++
 				return 
 			}
 			else{
 				return 
 			}
 		}
-
 
 		else if (typeof(imagenames) == "object"){
 			var requested_imagenames = []

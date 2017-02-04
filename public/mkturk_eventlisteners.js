@@ -1,60 +1,4 @@
 //================== MOUSE & TOUCH EVENTS ==================//
-function mousedown_listener(event){
-	if(typeof event === 'undefined'){
-		console.log('no click, loading images, initializing response promise');
-		return
-	};
-	var x = event.clientX
-	var y = event.clientY
-
-	if (FLAGS.waitingforFixation == 1){
-		//determine if clicked on fixation dot
-		if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
-			 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
-			FLAGS.brokeFixation = 0;
-			trial_xytfixation = [x,y,Math.round(performance.now())];
-			//Start timer
-			fixationTimer = setTimeout(function(){ FLAGS.waitingforFixation=0;clearTimeout(movefixationTimer); waitforClick.next(1);},TASK.fixationDur);
-		} //if clicked fixation
-		else{
-		}
-	}
-	if (FLAGS.waitingforResponse == 1){
-		// Determine if clicked in test box
-		for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
-			if (x >= boundingBoxesTest.x[q][0] && x <= boundingBoxesTest.x[q][1] &&
-				y >= boundingBoxesTest.y[q][0] && y <= boundingBoxesTest.y[q][1]){
-				trial_response = q;
-				trial_xytresponse =[x,y,Math.round(performance.now())];
-				//console.log('button clicked', trial_response, trial_xytresponse)
-				waitforClick.next(q);
-				return
-			}
-		}
-	}
-}
-function mousemove_listener(event){
-	if (FLAGS.waitingforFixation==1 && FLAGS.brokeFixation==0){
-		var x = event.clientX
-		var y = event.clientY
-		if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
-			 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
-			//holding fixation
-		}
-		else{
-			// moved from fixation dot, cancel fixation timers
-			FLAGS.brokeFixation = 1;
-			clearTimeout(fixationTimer);
-		}
-	}
-}
-function mouseup_listener(event){
-	if (FLAGS.waitingforFixation==1 && FLAGS.brokeFixation == 0){
-		// broke touch with fixation dot too early, cancel fixation timers
-		FLAGS.brokeFixation = 1;
-		clearTimeout(fixationTimer);
-	}
-}
 function touchstart_listener(event){
 	event.preventDefault(); //prevents additional downstream call of click listener
 	if(typeof event === 'undefined'){
@@ -64,117 +8,216 @@ function touchstart_listener(event){
 	var x = event.targetTouches[0].pageX;
 	var y = event.targetTouches[0].pageY;
 
-	if (FLAGS.waitingforFixation == 1){
+	if (FLAGS.waitingforFixation > 0){
 		//determine if clicked on fixation dot
 		if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
 			 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
-			FLAGS.brokeFixation = 0;
-			trial_xytfixation = [x,y,Math.round(performance.now())];
-			//Start timer
-			fixationTimer = setTimeout(function(){console.log('started fixation timer');
-				FLAGS.waitingforFixation=0;
-				clearTimeout(movefixationTimer); 
-				waitforClick.next(1);},
-				TASK.fixationDur);
+			if (!FLAGS.fixationImagePresent){
+				return
+			}
+			else if (FLAGS.fixationImagePresent){
+				FLAGS.brokeFixation = 0;
+				CURRTRIAL.fixationxyt = [x,y,Math.round(performance.now())];
+				CURRTRIAL.allfixationxyt[TASK.NFixations - FLAGS.waitingforFixation] = 
+				[x,y,Math.round(performance.now())]
+
+				//Start timer
+				fixationTimer = setTimeout(function(){
+					FLAGS.waitingforFixation--;
+					waitforClick.next(1);
+					console.log('Fixation',FLAGS.waitingforFixation)
+				}, TASK.FixationDuration);			
+			}
 		} //if clicked fixation
-		else{
-			if (TASK.rewardStage == 0){
+		else {
+			if (TASK.RewardStage == 0){
 				console.log('clicked outside fixation');
-				trial_xytfixation = [x,y,Math.round(performance.now())];
+				CURRTRIAL.fixationxyt = [x,y,Math.round(performance.now())];
+				CURRTRIAL.allfixationxyt[TASK.NFixations - FLAGS.waitingforFixation] = 
+				[x,y,Math.round(performance.now())]
 				FLAGS.waitingforFixation=0;
 				FLAGS.brokeFixation = 1;
-				clearTimeout(movefixationTimer);
 				clearTimeout(fixationTimer);
 				waitforClick.next(0);
 			} //advance to punish for clicking outside fixation
-		}
-	}
-	if (FLAGS.waitingforResponse == 1){
+		} //clicked outside
+	} //if waitingforFixation
+	else if (FLAGS.waitingforChoice == 1){
 		//determine if clicked in test box
 		for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
 			if (x >= boundingBoxesTest.x[q][0] && x <= boundingBoxesTest.x[q][1] &&
 				y >= boundingBoxesTest.y[q][0] && y <= boundingBoxesTest.y[q][1]){
-				trial_response = q;
-				trial_xytresponse =[x,y,Math.round(performance.now())];
+				CURRTRIAL.response = q;
+				CURRTRIAL.responsexyt =[x,y,Math.round(performance.now())];
 				waitforClick.next(q);
 				return
 			}
 		}
-	}
-}
+	} //if waiting for Fixation or Choice
+} //touchstart_listener
+
 function touchmove_listener(event){
-	if (FLAGS.waitingforFixation==1 && FLAGS.brokeFixation==0){
+	if (FLAGS.waitingforFixation > 0 && FLAGS.brokeFixation==0){
 		var x = event.targetTouches[0].pageX;
 		var y = event.targetTouches[0].pageY;
 		if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
 			 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
-			//holding fixation
-		}
+		} //holding fixation
 		else{
-			// moved from fixation dot, cancel fixation timers
+			// moved from fixation, cancel fixation timers
 			FLAGS.brokeFixation = 1;
 			console.log('was fixating but moved out');
 			clearTimeout(fixationTimer);
-		}
+			waitforClick.next(0)
+		} //broke fixation
 	}
-	else if (FLAGS.waitingforFixation==1 && FLAGS.brokeFixation==1){
-		//check if moved back into fixation
+	else if (FLAGS.waitingforFixation > 0 && FLAGS.brokeFixation==1){
 		var x = event.targetTouches[0].pageX;
 		var y = event.targetTouches[0].pageY;
 		if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
 			 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
-			//gained fixation
 			FLAGS.brokeFixation = 0;
-			touchstart_listener(event);
-		}
+			// touchstart_listener(event);
+		} //re-gained fixation
 	}
-	//Allows dragging into response box
-	if (FLAGS.waitingforResponse == 1){
+	else if (FLAGS.waitingforChoice == 1){
 		var x = event.targetTouches[0].pageX;
 		var y = event.targetTouches[0].pageY;
 		//determine if moved into a test box
 		for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
 			if (x >= boundingBoxesTest.x[q][0] && x <= boundingBoxesTest.x[q][1] &&
 				y >= boundingBoxesTest.y[q][0] && y <= boundingBoxesTest.y[q][1]){
-				trial_response =q;
-				trial_xytresponse =[x,y,Math.round(performance.now())];
+				CURRTRIAL.response =q;
+				CURRTRIAL.responsexyt =[x,y,Math.round(performance.now())];
 				waitforClick.next(q);
 				return
 			}
-		}
+		} //moved into response box from outside
 	}
-}
-function touchend_listener(event){
-	if (FLAGS.waitingforFixation==1 && FLAGS.brokeFixation == 0){
-		// broke touch with fixation dot too early, cancel fixation timers
-		FLAGS.brokeFixation = 1;
-		console.log('was fixating but lifted finger');
-		clearTimeout(fixationTimer);
-	}
-}
+} //touchmove_listener
 
-function doneEditing_listener(event){
-	//console.log("Done editing params")
+function touchend_listener(event){
+	if (FLAGS.waitingforFixation > 0 && FLAGS.brokeFixation == 0){
+		FLAGS.brokeFixation = 1;
+		console.log('was fixating but lifted finger prematurely');
+		clearTimeout(fixationTimer);
+		waitforClick.next(0)
+	} //released fixation too early
+} //touchend_listener
+
+function doneEditingParams_listener(event){
 	waitforClick.next(1);
 	return
 }
 function headsuptext_listener(event){
-	FLAGS.need2writeParameters = 1
+	FLAGS.need2saveParameters = 1
 	return
 }
-function doneTesting_listener(event){
+function doneTestingTask_listener(event){
 	console.log("User is done testing. Start saving data");
 	FLAGS.savedata=1
+	FLAGS.purge=1
 	purgeTrackingVariables()
-	renderBlank()
-	document.querySelector("button[name=doneTesting]").style.display = "none"
+	renderBlank(CANVAS.obj.blank)
+	document.querySelector("button[name=doneTestingTask]").style.display = "none"
 	return
 }
 
 function subjectlist_listener(event){
 	console.log("subject selected");
-	ENV.subjectID = subjectlist[this.value];
+	ENV.Subject = subjectlist[this.value];
 	subjectdialog.close();
 	waitforClick.next(1);
 	return
+}
+
+//================== PROMISE STATES ==================//
+// Promise: Select Subject
+function subjectIDPromise(){
+	var resolveFunc
+	var errFunc
+	p = new Promise(
+		function(resolve,reject){
+			resolveFunc = resolve;
+			errFunc = reject;
+		}).then(
+		function(resolveval){
+			console.log('User selected ' + resolveval)
+		});
+	
+	function *waitforclickGenerator(){
+		var imclicked =[-1];
+		while (true){
+			imclicked = yield imclicked;
+			resolveFunc(imclicked);
+		}
+	}
+
+	waitforClick = waitforclickGenerator(); // start async function
+	waitforClick.next(); //move out of default state
+	return p;
+}
+
+// Promise: Edit Parameters Text
+function editParamsPromise(){
+	var resolveFunc
+	var errFunc
+	p = new Promise(function(resolve,reject){
+		resolveFunc = resolve;
+		errFunc = reject;
+	}).then(function(resolveval){console.log('User is done editing parameters.')});
+	function *waitforclickGenerator(){
+		var imclicked =[-1];
+		while (true){
+			imclicked = yield imclicked;
+			resolveFunc(imclicked);
+		}
+	}
+	waitforClick = waitforclickGenerator(); // start async function
+	waitforClick.next(); //move out of default state
+	return p;
+}
+
+// Promise: fixation
+function fixationPromise(){
+	var resolveFunc
+	var errFunc
+	p = new Promise(function(resolve,reject){
+		resolveFunc = resolve;
+		errFunc = reject;
+	}).then(function(resolveval){
+		//console.log('Fixation Promise resolved' + resolveval)
+	});
+	function *waitforclickGenerator(){
+		var imclicked =[-1];
+		while (true){
+			imclicked = yield imclicked;
+			resolveFunc(imclicked);
+		}
+	}
+	waitforClick = waitforclickGenerator(); // start async function
+	waitforClick.next(); //move out of default state
+	return p;
+}
+// Promise: response
+function responsePromise(){
+	var resolveFunc
+	var errFunc
+	p = new Promise(function(resolve,reject){
+		resolveFunc = resolve;
+		errFunc = reject;
+	}).then(function(resolveval){
+		//console.log('User clicked ' + resolveval)
+});
+	function *waitforclickGenerator(){
+		var imclicked =[-1];
+		while (true){
+			imclicked = yield imclicked;
+			resolveFunc(imclicked);
+		}
+	}
+	FLAGS.waitingforChoice = 1;
+	waitforClick = waitforclickGenerator(); // start async function
+	waitforClick.next(); //move out of default state
+	return p;
 }
