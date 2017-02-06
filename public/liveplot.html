@@ -4,10 +4,12 @@
     <title id="page_title">liveplot_nightly</title>
 
 <script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
-<script src="utils.js"></script>
+<script src="mkturk_utils.js"></script>
 
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script src="liveplot_googlecharts.js" type="text/javascript"></script>
+<script src="mkturk_installsettings.js"></script>
+
 
 <style type='text/css'>
 	.small-font{
@@ -122,13 +124,7 @@ function loadGoogleCharts(){
 
 //================== DROPBOX STUFF ==================//
 // Mkturk
-var DBX_CLIENT_ID = "2m9hmv7q45kwren"
-var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/liveplot.html"
-
-// E. Issa Nightly
-var DBX_CLIENT_ID = "3rd6bco8cdmcadz"
-var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/nightly/public/liveplot.html"
-
+var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "liveplot.html"
 
 //return whether user was redirected here after authenticating
 function isAuthenticated(){
@@ -142,14 +138,15 @@ function getAccessTokenFromUrl(){
 
 // Asynchronous: Get file list from dropbox directory
 function getFileListDropbox2(){
-	dbx.filesListFolder({path: file.dir}).then(function(response){
+	dbx.filesListFolder({path: file.dir, recursive:true}).then(function(response){
 		console.log("success: read directory ");
 
 //FilesFileMetadata: tag/name/id/rev/size/...
 //   http://dropbox.github.io/dropbox-sdk-js/global.html#FilesFileMetadata
 		var menuobj = document.getElementById("file_list");
 		for (var q = response.entries.length-1; q>=0; q--){
-			if (response.entries[q][".tag"] == "file"){
+			if (response.entries[q][".tag"] == "file" && response.entries[q].name.endsWith(".txt")){
+				console.log("found ", response.entries[q].name)
 				file.list[q] = response.entries[q].name
 				file.pathlist[q] = response.entries[q].path_display
 
@@ -215,7 +212,13 @@ function readDatafromDropbox2(){
 			var datajson
 			datajson = JSON.parse(reader.result)
 			if (Array.isArray(datajson)){
-				file.data = datajson[0]
+				file.data = {}; 
+				for(var elem = 0; elem < datajson.length; elem++){
+					for(var prop in datajson[elem]){
+						file.data[prop] = datajson[elem][prop]
+					}
+				}
+								
 			}
 			else{
 				file.data = datajson
@@ -323,8 +326,8 @@ function toTask(){
 	}
 
 	task.nway = file.data.Nway;
-	task.nobj = file.data.TestedObjects.length;
-	task.objectlist = file.data.TestedObjects
+	task.nobj = file.data.ImageBagsTest.length;
+	task.objectlist = file.data.ImageBagsTest
 
 	task.rewardper1000 = 0;
 	if (typeof(file.data.RewardPer1000Trials) != "undefined"){
@@ -687,7 +690,8 @@ function smooth(data,n){
 
 function filelist_listener(event){
 	console.log("new file");
-	file.name=file.dir + file.list[this.value];
+	//file.name=file.dir + file.list[this.value]; 
+	file.name = file.pathlist[this.value]
 	file.filehasChanged=true;
 }
 
@@ -742,10 +746,10 @@ if (!Array.prototype.fill) {
 
 <script type="text/javascript">
 var file={
-			dir: "/MonkeyTurk/",
+			dir: DATA_SAVEPATH, // from mkturk_installsettings.js
 			list: [],
 			pathlist: [],
-			name: "/MonkeyTurk/data.txt",
+			name: "",
 			data: null,
 			ver: null,
 			date: null,
