@@ -258,7 +258,6 @@ async function loadBagfromDropbox(imagebags_parameter){
 	}
 
 	console.log('Done loading bag: '+imagebag.length+' out of '+imagebag_paths.length+ ' images loaded successfully.')
-	renderBlank(CANVAS.obj.blank)
 	return [imagebag, imagebag_labels, imagebag_paths]
 }
 
@@ -355,7 +354,6 @@ async function loadImageArrayfromDropbox(imagepathlist){
 			
 			var image_array = await Promise.all(image_requests)
 		}
-		renderBlank(CANVAS.obj.blank)
 		return image_array
 	}
 	catch(err){

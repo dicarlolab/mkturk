@@ -4,6 +4,7 @@
 
 //================ TASK,TRIAL,ENV (SAVED) ================//
 // TASK <-- Read from Subject Parameter file
+// ENV <-- TASK drives creation of ENV
 // TASK,TRIAL,ENV --> Saved to Behavioral Data file
 var TASK = {}; // Global that encapsulates state of the current task, read from Subject's Params file
 var TRIAL = resetTRIAL() // Global that contains data variables that are incremented every trial, and are dumped to disk for scientific purposes.
@@ -16,14 +17,12 @@ ENV.CanvasRatio = 1
 ENV.DevicePixelRatio = 1
 ENV.FixationRadius = 0
 ENV.RewardDuration = NaN
-ENV.ordered_samplebag_filenames = []
-ENV.ordered_testbag_filenames = []
+ENV.Ordered_Samplebag_Filenames = []
+ENV.Ordered_Testbag_Filenames = []
 ENV.ParamFileName = ''
 ENV.ParamFileRev = ''
 ENV.ParamFileDate = '' //stores complete path to subject parameter file
 ENV.DataFileName = '' //stores complete path to behavioral data file
-
-
 
 //================ OTHER GLOBALS (NOT SAVED) ================//
 var FLAGS = {} // Global that keeps track of the task's requests to the Dropbox/server/disk/whatever; buffering requests; etc.
@@ -33,17 +32,21 @@ FLAGS.need2loadImages = 1;
 FLAGS.need2loadparameters = 1; 
 FLAGS.savedata = 0; 
 FLAGS.stage = 0; 
-FLAGS.waitingforFixation = 0;
-FLAGS.fixationImagePresent = 0;
-FLAGS.waitingforChoice = 0;
+FLAGS.imagesPresent = 0;
 FLAGS.stickyresponse = 0;
+
+FLAGS.waitingforTouches = 0
+FLAGS.touchduration = -1;
+FLAGS.punishOutsideTouch = 0
+FLAGS.acquiredTouch = 0
+FLAGS.touchGeneratorCreated = 0
 
 var CANVAS = {}; 
 var CANVAS = {
 	names: ["blank","sample","test","touchfix","eyefix","reward","photoreward","punish"],
 	front: "blank",
-	sequenceblank: ["blank"], 
-	tsequenceblank: [0], 
+	sequenceblank: ["blank","blank"], 
+	tsequenceblank: [0,50], 
 	sequencepre: ["touchfix"],
 	tsequencepre: [300],
 	sequence: ["blank","sample","blank","test"], // blank, sample, blank, test
@@ -80,6 +83,9 @@ CURRTRIAL.response = [];
 CURRTRIAL.correctitem = NaN;
 CURRTRIAL.correct = [];
 CURRTRIAL.nreward = NaN;
+CURRTRIAL.fixationtouchevent = ""
+CURRTRIAL.responsetouchevent = ""
+
 
 var trialhistory = {}
 trialhistory.trainingstage = []
@@ -93,10 +99,11 @@ var sounds = {
 	serial: [0,1,2,3,4],
 	buffer: [],
 }
-var boundingBoxFixation={}; //where the fixation dot is on the canvas
-var boundingBoxesTest = {}; //where the test images are on the canvas
+var boundingBoxesFixation={}; //where the fixation touch targets are on the canvas
+var boundingBoxesChoice={}; //where the choice touch targets are on the canvas
 var waitforClick; //variable to hold generator
-var fixationTimer; //variable to hold timer
+var waitforEvent; //variable to hold generator
+var touchTimer; //variable to hold timer
 var xgrid=[];
 var ygrid=[];
 var xgridcent=[];
@@ -120,6 +127,8 @@ function resetTRIAL(){
 	TRIAL.ResponseXYT = []
 	TRIAL.Response = []
 	TRIAL.CorrectItem = []
+	TRIAL.FixationTouchEvent = []
+	TRIAL.ResponseTouchEvent = []
 	TRIAL.NReward = []
 	TRIAL.AutomatorStage = []
 	return TRIAL
@@ -134,6 +143,8 @@ function updateTRIAL(){
 	TRIAL.Test[CURRTRIAL.num] = CURRTRIAL.testindices 
 	TRIAL.ResponseXYT[CURRTRIAL.num] = CURRTRIAL.responsexyt
 	TRIAL.Response[CURRTRIAL.num] = CURRTRIAL.response
+	TRIAL.FixationTouchEvent[CURRTRIAL.num] = CURRTRIAL.fixationtouchevent
+	TRIAL.ResponseTouchEvent[CURRTRIAL.num] = CURRTRIAL.responsetouchevent
 	TRIAL.CorrectItem[CURRTRIAL.num] = CURRTRIAL.correctitem
 	TRIAL.NReward[CURRTRIAL.num] = CURRTRIAL.nreward
 	TRIAL.AutomatorStage[CURRTRIAL.num] = TASK.CurrentAutomatorStage; 
@@ -155,7 +166,7 @@ function purgeTrackingVariables(){
 	var datestr = ENV.CurrentDate.toISOString();
 	ENV.DataFileName = DATA_SAVEPATH + ENV.Subject + "/" + datestr.slice(0,datestr.indexOf(".")) + "_" + ENV.Subject + ".txt";
 
-	if(FLAGS.waitingforFixation == 1 || FLAGS.waitingforChoice == 1 || FLAGS.purge == 1){
+	if(FLAGS.waitingforTouches > 0 || FLAGS.purge == 1){
 		// purge requested by user at beginning of trial during fixation (most likely) 
 		console.log('setting to 0')
 		CURRTRIAL.num = 0
@@ -163,7 +174,7 @@ function purgeTrackingVariables(){
 	else{
 		console.log('setting to -1')
 		// purge requested by automator at end of trial
-		CURRTRIAL.num = -1; 
+		CURRTRIAL.num = -1;
 	}
 	
 	FLAGS.sampleblockcount = 0; 

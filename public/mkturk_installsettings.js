@@ -9,12 +9,18 @@
 // var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/tnra0lpcs5uvy54/GHprototype_mkturk/mkturk/public/mkturk.html"
 
 
-// EIssa Nightly
-var DBX_CLIENT_ID = "3rd6bco8cdmcadz"
-var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/nightly/public2/mkturk.html"
+// // EIssa Nightly
+// var DBX_CLIENT_ID = "3rd6bco8cdmcadz"
+// var DBX_REDIRECT_URI_ROOT = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/nightly/public2/"
+
+
+// MKTURK
+var DBX_CLIENT_ID = "2m9hmv7q45kwren"
+var DBX_REDIRECT_URI_ROOT = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/"
+
 
 // ------ Subject settings ------ 
-var subjectlist = ["Eliaso"];
+var subjectlist = ["Eliaso","Michaelo","Bento","Crypto"];
 
 // ------ Save location settings ------
 var DATA_SAVEPATH = "/MonkeyTurk/datafiles/"

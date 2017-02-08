@@ -2,7 +2,7 @@
 
 <head>
 <meta name="mobile-web-app-capable" content="yes"> <!-- full screen https://developer.chrome.com/multidevice/android/installtohomescreen -->
-<meta name="viewport" content="width=device-width, user-scalable=no"> <!-- do not allow window rescaling.  To avoid window rescaling in portrait mode, added with=device-width from http://stackoverflow.com/questions/22771523/ipad-w-retina-safari-reported-dimensions-in-landscape-make-no-sense -->
+<meta name="viewport" content="width=device-width, user-scalable=no"> <!-- do not allow window rescaling.  To avoid window rescaling in portrait mode, added with=device-width from http://stackoverflow.com/questions/22771523/ipad-w-retina-safari-reported-dimensions-in-landscape-make-no-sense. Also, removes 300-350ms tap delay (https://developers.google.com/web/updates/2013/12/300ms-tap-delay-gone-away) -->
 
 <link rel="manifest" href="mkturkmanifest.json">
 <link rel="icon" href="mkturklogo48.png">
@@ -58,6 +58,7 @@
 <script>
 
 //================== AUTHENTICATE ==================//
+var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "mkturk.html"
 if (isAuthenticated()){
 	//Create an instance of Dropbox with the access token
 	var dbx = new Dropbox({accessToken: getAccessTokenFromUrl()})
@@ -106,7 +107,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	// Prevent window scrolling and bounce back effect
 	document.body.addEventListener('touchmove',function(event){
 		event.preventDefault();
-	}, false);
+	}, {capture: false, passive:false});
 	//Audio pulses for reward
 	var audiocontext = new (window.AudioContext || window.webkitAudioContext)();
 	var gainNode = audiocontext.createGain()
@@ -238,12 +239,12 @@ while(true){
 		if(!old_ImageBagsTest.equals(TASK.ImageBagsTest) || !old_ImageBagsSample.equals(TASK.ImageBagsSample)){
 			FLAGS.need2loadImages = 1; 
 		}
-	}
+	} //if need2loadParameters
 
 	if (FLAGS.purge == 1){
 		purgeTrackingVariables()
 		FLAGS.purge = 0; 
-	}
+	} //if purge
 
 	//============= SET UP CANVAS =============//
 	// Update canvas based on latest TASK state: 
@@ -300,8 +301,8 @@ while(true){
 		xgridcent = funcreturn[2]
 		ygridcent = funcreturn[3]
 		
-		ENV.ordered_samplebag_filenames = samplebag_paths; 
-		ENV.ordered_testbag_filenames = testbag_paths; 
+		ENV.Ordered_Samplebag_Filenames = samplebag_paths; 
+		ENV.Ordered_Testbag_Filenames = testbag_paths; 
 		FLAGS.need2loadImages = 0;
 		console.timeEnd('Image loading time:')
 	} //if need2loadImages
@@ -311,7 +312,10 @@ while(true){
 	renderPunish(CANVAS.obj.punish);
 	if(FLAGS.savedata == 0){
 		// In test mode show grid on screen
-		renderBlankWithGridMarkers(CANVAS.obj.blank); 
+		renderBlankWithGridMarkers(xgridcent,ygridcent, 
+			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, 
+			TASK.FixationScale, TASK.SampleScale, TASK.TestScale, 
+			ENV.ImageWidthPixels, ENV.CanvasRatio,CANVAS.obj.blank); 
 	}
 	else if (FLAGS.savedata == 1){
 		renderBlank(CANVAS.obj.blank);
@@ -328,9 +332,12 @@ while(true){
 	await bufferTrialImages(CURRTRIAL.sampleimage, TASK.SampleGridIndex, CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem);
 
 	//============ WHILE RUN FIXATION SCREEN ============//
-	FLAGS.waitingforFixation = TASK.NFixations
+	FLAGS.waitingforTouches = TASK.NFixations
+	if (TASK.RewardStage == 0){
+		FLAGS.punishOutsideTouch = 1		
+	}
 	CURRTRIAL.allfixationxyt = []
-	while (FLAGS.waitingforFixation > 0){
+	while (FLAGS.waitingforTouches > 0){
 		// Choose fixation grid index at random
 		if (TASK.FixationMove > 0){
 			CURRTRIAL.fixationgridindex = Math.floor((xgrid.length)*Math.random()); 
@@ -366,34 +373,33 @@ while(true){
 		if (TASK.Species == 'marmoset'){
 			playSound(0)
 		}
-		FLAGS.fixationImagePresent = 1
 		await displayTrial(CANVAS.sequencepre,CANVAS.tsequencepre);
 		audiocontext.suspend()
 
-		//========= AWAIT TOUCH FIXATION =========//
-		await fixationPromise()
+		//========= AWAIT HOLD FIXATION TOUCH =========//
+		var touchhold_return = await touchhold_promise(TASK.FixationDuration,boundingBoxesFixation,FLAGS.punishOutsideTouch)
+		CURRTRIAL.fixationtouchevent = touchhold_return.type
+		CURRTRIAL.fixationxyt = [touchhold_return.cxyt[1], touchhold_return.cxyt[2], touchhold_return.cxyt[3]]
+		CURRTRIAL.allfixationxyt[TASK.NFixations - FLAGS.waitingforTouches - 1] = CURRTRIAL.fixationxyt
+		if (CURRTRIAL.fixationtouchevent == "touchheld"){
+			CURRTRIAL.response = CURRTRIAL.correctitem
+		} //touched outside fixation
+		else if (CURRTRIAL.fixationtouchevent == "touchbroken"){
+			CURRTRIAL.response = -1
+			FLAGS.waitingforTouches = 0 //exit loop
+		} //touched fixation
 
 		//========= AWAIT CLEAR FIXATION =========//
 		for (var q in CANVAS.sequenceblank){frame.shown[q]=0}
 		frame.current=0;
-		if (FLAGS.waitingforFixation > 0){
-			FLAGS.fixationImagePresent = 0
+		if (FLAGS.waitingforTouches > 0){
 			await displayTrial(CANVAS.sequenceblank,CANVAS.tsequenceblank);
 		} //blank out screen
-	} //while waiting for NFixations 
+	} //while waiting for NFixations
 	//============ (end) WHILE RUN FIXATION SCREEN ============//
 
-	if (TASK.RewardStage === 0){
-		if (FLAGS.brokeFixation == 0){
-			CURRTRIAL.response = CURRTRIAL.correctitem
-		} //touched inside fixation
-		else if (FLAGS.brokeFixation == 1){
-			CURRTRIAL.response = -1
-		} // touched outside fixation
-	}
-	else if (TASK.RewardStage === 1){
-
-		//========= AWAIT SHOW SAMPLE THEN TEST =========//
+	//============== AWAIT SHOW SAMPLE THEN TEST ==============//
+	if (TASK.RewardStage === 1){
 		frame.shown=[]
 		for (var q in CANVAS.sequence){frame.shown[q]=0} 
 		frame.current=0
@@ -401,18 +407,25 @@ while(true){
 		audiocontext.suspend()
 
 		//========= AWAIT TOUCH RESPONSE =========//
-		await responsePromise();
-		FLAGS.waitingforChoice=0;
+		FLAGS.waitingforTouches = 1
+		FLAGS.punishOutsideTouch = 0
+		var p1 = touchhold_promise(0,boundingBoxesChoice,FLAGS.punishOutsideTouch)
+		var p2 = choiceTimeOut(TASK.ChoiceTimeOut)
+
+		var race_return = await Promise.race([p1,p2])
+		CURRTRIAL.responsetouchevent = race_return.type
+		CURRTRIAL.response = race_return.cxyt[0]
+		CURRTRIAL.responsexyt = [race_return.cxyt[1], race_return.cxyt[2], race_return.cxyt[3]]
 
 		// Keep track of repeated responses to one side
-		if (CURRTRIAL.num > 0 && FLAGS.savedata){
+		if (CURRTRIAL.num > 0 && FLAGS.savedata && CURRTRIAL.responsetouchevent == "touchheld"){
 			if (CURRTRIAL.response==trialhistory.response[trialhistory.correct.length-1]){
 				FLAGS.stickyresponse++;
 			}
 			else {
 				FLAGS.stickyresponse=0;
 			}
-		}
+		} //if
 	} //if TASK.RewardStage
 
 	if (CURRTRIAL.response == CURRTRIAL.correctitem){ CURRTRIAL.correct = 1; }

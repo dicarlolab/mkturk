@@ -247,6 +247,16 @@ function dispenseReward(){
     setTimeout(function(){console.log('sound done'); resolve(1);},ENV.RewardDuration*1000);
   }).then();
 }
+
+// Promise: choice time-out
+function choiceTimeOut(timeout){
+  return new Promise(
+    function(resolve, reject){
+      var timer_return = {type: "TimeOut", cxyt: [-1,-1,-1,-1]}
+      setTimeout(function(){resolve(timer_return)},timeout)
+    })
+}
+
 // Promise: punish time-out
 function dispensePunish(){
   return new Promise(function(resolve,reject){

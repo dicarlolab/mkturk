@@ -68,9 +68,11 @@ function setupCanvas(canvasobj){
 
 	// assign listeners
 	canvasobj.addEventListener('touchstart',touchstart_listener,{capture: false,passive: false}); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
-	// canvasobj.addEventListener('touchmove',touchmove_listener,false);
 	canvasobj.addEventListener('touchmove',touchmove_listener,{passive: false}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
 	canvasobj.addEventListener('touchend',touchend_listener,{capture: false, passive:false});
+	canvasobj.addEventListener('mousedown',touchstart_listener,{capture: false,passive: false}); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
+	canvasobj.addEventListener('mousemove',touchmove_listener,{passive: false}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
+	canvasobj.addEventListener('mouseup',touchend_listener,{capture: false, passive:false});
 	// store canvas size
 	canvasSize=[canvasobj.width, canvasobj.height];
 } 
@@ -174,22 +176,22 @@ async function bufferTrialImages(sample_image, sample_image_grid_index, test_ima
 		context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
 	}
 	
-	boundingBoxesTest['x'] = []
-	boundingBoxesTest['y'] = []
+	boundingBoxesChoice['x'] = []
+	boundingBoxesChoice['y'] = []
 	// Draw test object(s): 
 	for (i = 0; i<test_images.length; i++){
 		// If hideTestDistractors, simply do not draw the image
 		if(TASK.hideTestDistractors == 1){
 			if (correct_index != i){
-				boundingBoxesTest.x.push([NaN, NaN]); 
-				boundingBoxesTest.y.push([NaN, NaN]); 
+				boundingBoxesChoice.x.push([NaN, NaN]); 
+				boundingBoxesChoice.y.push([NaN, NaN]); 
 				continue 
 			}
 		}		
 
 		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], TASK.TestScale, CANVAS.obj.test); 
-		boundingBoxesTest.x.push(funcreturn[0]); 
-		boundingBoxesTest.y.push(funcreturn[1]); 
+		boundingBoxesChoice.x.push(funcreturn[0]); 
+		boundingBoxesChoice.y.push(funcreturn[1]); 
 	}
 
 	// Option: draw sample (TODO: remove the blink between sample screen and test screen)
@@ -285,7 +287,6 @@ function displayTrial(sequence,tsequence){
 } 
 
 function displayTextOnBlackBar(message_string,canvasobj){
-	renderBlank(canvasobj);
 	var visible_ctxt = canvasobj.getContext('2d');
 	visible_ctxt.textBaseline = "hanging";
 	visible_ctxt.fillStyle = "white";
@@ -297,44 +298,43 @@ function renderBlank(canvasobj){
 	var context=canvasobj.getContext('2d');
 	context.fillStyle="#7F7F7F";
 	context.fillRect(0,0,canvasobj.width,canvasobj.height);
-	context.fillStyle="black";
-	context.fillRect(0,0,canvasobj.width,60);
 }
 
-function renderBlankWithGridMarkers(canvasobj){
+function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,fixationscale,samplescale,testscale,imwidth,canvasratio,canvasobj)
+{
 	var context=canvasobj.getContext('2d');
 	context.fillStyle="#7F7F7F";
 	context.fillRect(0,0,canvasobj.width,canvasobj.height);
 
 	//Show image positions & display grid
 	//Display grid
-	for (var i = 0; i <= xgridcent.length-1; i++){
+	for (var i = 0; i <= gridx.length-1; i++){
 		rad = 10
 		context.beginPath()
-		context.arc(xgridcent[i],ygridcent[i],rad,0*Math.PI,2*Math.PI)
+		context.arc(gridx[i],gridy[i],rad,0*Math.PI,2*Math.PI)
 		context.fillStyle="red"
 		context.fill();
 	}
 
 	//Fixation Image Bounding Box
-	var wd = ENV.ImageWidthPixels*TASK.FixationScale*ENV.CanvasRatio
-	var xcent = xgridcent[TASK.fixationGrid]
-	var ycent = xgridcent[TASK.fixationGrid]
+	var wd = imwidth*fixationscale*canvasratio
+	var xcent = gridx[fixationgridindex]
+	var ycent = gridy[fixationgridindex]
 	context.strokeStyle="white"
 	context.strokeRect(xcent-wd/2,ycent-wd/2,wd+1,wd+1)
 	
 	//Sample Image Bounding Box
-	var wd = ENV.ImageWidthPixels*TASK.SampleScale*ENV.CanvasRatio
-	var xcent = xgridcent[TASK.SampleGridIndex]
-	var ycent = ygridcent[TASK.SampleGridIndex]
+	var wd = imwidth*samplescale*canvasratio
+	var xcent = gridx[samplegridindex]
+	var ycent = gridy[samplegridindex]
 	context.strokeStyle="green"
 	context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
 
 	//Test Image Bounding Box(es)
-	for (var i = 0; i <= TASK.TestGridIndex.length-1; i++){
-		var wd = ENV.ImageWidthPixels*TASK.TestScale*ENV.CanvasRatio
-		var xcent = xgridcent[TASK.TestGridIndex[i]]
-		var ycent = ygridcent[TASK.TestGridIndex[i]]
+	for (var i = 0; i <= testgridindex.length-1; i++){
+		var wd = imwidth*testscale*canvasratio
+		var xcent = gridx[testgridindex[i]]
+		var ycent = gridy[testgridindex[i]]
 		context.strokeStyle="black"
 		context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
 	}
@@ -344,10 +344,6 @@ function renderReward(canvasobj){
 	var context=canvasobj.getContext('2d');
 	context.fillStyle="green";
 	context.fillRect(xgridcent[4]-200,ygridcent[4]-200,400,400);
-	if (TASK.Species == 'marmoset'){
-		context.fillStyle="black";
-		context.fillRect(0,0,canvasobj.width,100);
-	}
 }
 
 function renderPunish(canvasobj){
@@ -355,8 +351,6 @@ function renderPunish(canvasobj){
 	context.rect(xgridcent[4]-200,ygridcent[4]-200,400,400);
 	context.fillStyle="black";
 	context.fill();
-	context.fillStyle="black";
-	context.fillRect(0,0,canvasobj.width,60);
 }
 
 async function renderFixationUsingImage(image, gridindex, scale, canvasobj){
@@ -364,12 +358,12 @@ async function renderFixationUsingImage(image, gridindex, scale, canvasobj){
 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 
 	// Draw fixation dot
-	boundingBoxFixation['x'] = []
-	boundingBoxFixation['y'] = []
+	boundingBoxesFixation['x']=[]
+	boundingBoxesFixation['y']=[]
 
 	funcreturn = await renderImageOnCanvas(image, gridindex, scale, canvasobj); 
-	boundingBoxFixation.x = funcreturn[0]; 
-	boundingBoxFixation.y = funcreturn[1]; 
+	boundingBoxesFixation.x.push[funcreturn[0]];
+	boundingBoxesFixation.y.push[funcreturn[1]];
 }
 function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 	var context=canvasobj.getContext('2d');
@@ -383,9 +377,10 @@ function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
 	context.fillStyle=color; 
 	context.fill();
-	// Define (rectangular) boundaries of fixation
-	boundingBoxFixation.x = [xcent-rad+CANVAS.offsetleft, xcent+rad+CANVAS.offsetleft];
-	boundingBoxFixation.y = [ycent-rad+CANVAS.offsettop, ycent+rad+CANVAS.offsettop];
 
-	context.fillRect(0,0,canvasobj.width,40);
+	// Define (rectangular) boundaries of fixation
+	boundingBoxesFixation['x']=[]
+	boundingBoxesFixation['y']=[]
+	boundingBoxesFixation.x.push([xcent-rad+CANVAS.offsetleft, xcent+rad+CANVAS.offsetleft]);
+	boundingBoxesFixation.y.push([ycent-rad+CANVAS.offsettop, ycent+rad+CANVAS.offsettop]);
 }
