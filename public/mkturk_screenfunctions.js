@@ -146,14 +146,16 @@ function defineImageGrid(ngridpoints, wd, ht, gridscale){
 	}
 
 	//center x & y grid within canvas
-	var dx = (document.body.clientWidth - CANVAS.offsetleft)*ENV.CanvasRatio*ENV.DevicePixelRatio/2 - ENV.CanvasRatio*ngridpoints/2*wd*gridscale;
-	var dy = (document.body.clientHeight - CANVAS.offsettop)*ENV.CanvasRatio*ENV.DevicePixelRatio/2 - ENV.CanvasRatio*ngridpoints/2*ht*gridscale;
+	var xcanvascent = (document.body.clientWidth - CANVAS.offsetleft)*ENV.CanvasRatio*ENV.DevicePixelRatio/2
+	var dx = xcanvascent - ENV.CanvasRatio*ngridpoints/2*wd*gridscale; //left side of grid
+	var ycanvascent = (document.body.clientHeight - CANVAS.offsettop)*ENV.CanvasRatio*ENV.DevicePixelRatio/2
+	var dy = ycanvascent - ENV.CanvasRatio*ngridpoints/2*ht*gridscale; //top of grid
 	for (var i=0; i<=xgrid.length-1; i++){
 		xgridcent[i]=Math.round(xgrid[i]*wd*gridscale*ENV.CanvasRatio + dx);
 		ygridcent[i]=Math.round(ygrid[i]*ht*gridscale*ENV.CanvasRatio + dy);
 	}
 
-	return [xgrid, ygrid, xgridcent, ygridcent]
+	return [xcanvascent, ycanvascent, xgridcent, ygridcent]
 }
 
 async function bufferTrialImages(sample_image, sample_image_grid_index, test_images, test_image_grid_indices, correct_index){
@@ -212,8 +214,8 @@ async function renderImageOnCanvas(image, grid_index, scale, canvasobj){
 
 	wd = image.width
 	ht = image.height
-	xleft = Math.round(xgridcent[grid_index] - 0.5*wd*scale*ENV.CanvasRatio);
-	ytop = Math.round(ygridcent[grid_index] - 0.5*ht*scale*ENV.CanvasRatio);
+	xleft = Math.round(ENV.XGridCenter[grid_index] - 0.5*wd*scale*ENV.CanvasRatio);
+	ytop = Math.round(ENV.YGridCenter[grid_index] - 0.5*ht*scale*ENV.CanvasRatio);
 	
 	context.drawImage(
 		image, // Image element
@@ -343,12 +345,12 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 function renderReward(canvasobj){
 	var context=canvasobj.getContext('2d');
 	context.fillStyle="green";
-	context.fillRect(xgridcent[4]-200,ygridcent[4]-200,400,400);
+	context.fillRect(xcanvascenter-200,ycanvascenter-200,400,400);
 }
 
 function renderPunish(canvasobj){
 	var context=canvasobj.getContext('2d');
-	context.rect(xgridcent[4]-200,ygridcent[4]-200,400,400);
+	context.rect(xcanvascenter-200,ycanvascenter-200,400,400);
 	context.fillStyle="black";
 	context.fill();
 }
@@ -362,8 +364,8 @@ async function renderFixationUsingImage(image, gridindex, scale, canvasobj){
 	boundingBoxesFixation['y']=[]
 
 	funcreturn = await renderImageOnCanvas(image, gridindex, scale, canvasobj); 
-	boundingBoxesFixation.x.push[funcreturn[0]];
-	boundingBoxesFixation.y.push[funcreturn[1]];
+	boundingBoxesFixation.x.push(funcreturn[0]);
+	boundingBoxesFixation.y.push(funcreturn[1]);
 }
 function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 	var context=canvasobj.getContext('2d');
@@ -371,8 +373,8 @@ function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 
 	// Draw fixation dot
 	var rad = dot_pixelradius;
-	var xcent = xgridcent[gridindex];
-	var ycent = ygridcent[gridindex];
+	var xcent = ENV.XGridCenter[gridindex];
+	var ycent = ENV.YGridCenter[gridindex];
 	context.beginPath();
 	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
 	context.fillStyle=color; 

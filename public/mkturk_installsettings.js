@@ -20,7 +20,10 @@ var DBX_REDIRECT_URI_ROOT = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr3
 
 
 // ------ Subject settings ------ 
-var subjectlist = ["Eliaso","Michaelo","Bento","Crypto"];
+var subjectlist = [
+"Eliaso","Michaelo","Zico","Waffles",
+"Setta","Sausage","Pablo","Crypto","Chromeo","Bento"
+];
 
 // ------ Save location settings ------
 var DATA_SAVEPATH = "/MonkeyTurk/datafiles/"

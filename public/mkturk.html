@@ -124,11 +124,9 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	
 	//Monitor Battery - from: http://www.w3.org/TR/battery-status/
 	navigator.getBattery().then(function(batteryobj){
-		battery.ldt[battery.current]=[batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())];
-		battery.current++;
+		ENV.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
 		batteryobj.addEventListener('levelchange',function(){
-			battery.ldt[battery.current]=[batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())];
-			battery.current++;
+			ENV.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
 		})
 	});
 //============= (end) Initialize Audio & Battery Objects ==================//
@@ -295,11 +293,11 @@ while(true){
 		// define image display grid
 		ENV.FixationRadius=(ENV.ImageWidthPixels/2)*TASK.FixationScale*ENV.CanvasRatio
 
-		funcreturn = defineImageGrid(TASK.NGridPoints, ENV.ImageWidthPixels, ENV.ImageHeightPixels, TASK.GridScale); 
-		xgrid = funcreturn[0]
-		ygrid = funcreturn[1]
-		xgridcent = funcreturn[2]
-		ygridcent = funcreturn[3]
+		funcreturn = defineImageGrid(TASK.NGridPoints, ENV.ImageWidthPixels, ENV.ImageHeightPixels, TASK.GridScale);
+		xcanvascenter = funcreturn[0]
+		ycanvascenter = funcreturn[1]
+		ENV.XGridCenter = funcreturn[2]
+		ENV.YGridCenter = funcreturn[3]
 		
 		ENV.Ordered_Samplebag_Filenames = samplebag_paths; 
 		ENV.Ordered_Testbag_Filenames = testbag_paths; 
@@ -312,7 +310,7 @@ while(true){
 	renderPunish(CANVAS.obj.punish);
 	if(FLAGS.savedata == 0){
 		// In test mode show grid on screen
-		renderBlankWithGridMarkers(xgridcent,ygridcent, 
+		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter, 
 			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, 
 			TASK.FixationScale, TASK.SampleScale, TASK.TestScale, 
 			ENV.ImageWidthPixels, ENV.CanvasRatio,CANVAS.obj.blank); 
@@ -340,7 +338,7 @@ while(true){
 	while (FLAGS.waitingforTouches > 0){
 		// Choose fixation grid index at random
 		if (TASK.FixationMove > 0){
-			CURRTRIAL.fixationgridindex = Math.floor((xgrid.length)*Math.random()); 
+			CURRTRIAL.fixationgridindex = Math.floor((ENV.XGridCenter.length)*Math.random()); 
 		}
 		else if (TASK.FixationMove == 0){
 			CURRTRIAL.fixationgridindex = TASK.StaticFixationGridIndex;
@@ -516,7 +514,7 @@ while(true){
 	//FLAGS.need2loadParameters=1: reload task which automatically creates a new data file
 	checkParameterFileStatus()
 	if ( (new Date).getDate() != ENV.CurrentDate.getDate()){
-		trial.need2loadParameters = 1
+		TRIAL.need2loadParameters = 1
 	} //if new day
 	//================= (end) HOUSEKEEPING =================//
 

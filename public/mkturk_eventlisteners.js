@@ -46,7 +46,8 @@ console.log('TOUCHEVENT', touchevent.type)
 			} //if waiting for touch, get coords
 
 			//================== ACQUIRING TOUCH ==================//
-			if (!FLAGS.acquiredTouch && touchevent.type != "touchend" && 
+			if (!FLAGS.acquiredTouch && 
+				touchevent.type != "touchend" && touchevent.type != "touchmove" && 
 				touchevent.type != "mouseup" && touchevent.type != "mousemove"){
 				if (chosenbox == -1){
 					if (punishOutsideTouch){

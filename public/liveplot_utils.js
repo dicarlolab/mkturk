@@ -69,3 +69,55 @@ function _base64ToArrayBuffer(base64){
   }
   return bytes.buffer;
 }
+
+//================== UTILS ==================//
+// Synchronous
+function smooth(data,n){
+  var smoothed_data=[];
+  for (var i=0; i<=data.length-1; i++){
+    if (i<n-1){
+      smoothed_data[i]=data[i];
+    }
+    else{
+      var sub = data.slice(i-n+1,i+1);
+      smoothed_data[i] = sub.reduce(function(a,b){return a + b;}) / n;
+    }
+  }
+  return smoothed_data;
+}
+
+function filelist_listener(event){
+  console.log("new file");
+  //file.name=file.dir + file.list[this.value]; 
+  file.name = file.pathlist[this.value]
+  file.filehasChanged=true;
+}
+
+//polyfill for array.prototype.fill
+if (!Array.prototype.fill) {
+  Array.prototype.fill = function(value) {
+    if (this == null) {
+      throw new TypeError('this is null or not defined');
+    }
+    var O = Object(this);
+    var len = O.length >>> 0;
+    var start = arguments[1];
+    var relativeStart = start >> 0;
+    var k = relativeStart < 0 ?
+      Math.max(len + relativeStart, 0) :
+      Math.min(relativeStart, len);
+    var end = arguments[2];
+    var relativeEnd = end === undefined ?
+      len : end >> 0;
+    var final = relativeEnd < 0 ?
+      Math.max(len + relativeEnd, 0) :
+      Math.min(relativeEnd, len);
+    while (k < final) {
+      O[k] = value;
+      k++;
+    }
+    return O;
+  };
+}
+//================== UTILS (end) ==================//
+

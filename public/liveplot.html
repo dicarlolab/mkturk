@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-    <title id="page_title">liveplot_nightly</title>
+    <title id="page_title">liveplot_mkturk</title>
 
 <script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
 <script src="liveplot_utils.js"></script>
@@ -31,7 +31,6 @@
 //================== DROPBOX STUFF ==================//
 //================== DATA HANDLING ==================//
 //================== PLOTTING ==================//
-//================== UTILS ==================//
 
 //================== GOOGLE CHARTS LOADING ==================//
 // Asynchronous: Live plotting using google charts
@@ -421,7 +420,8 @@ function toPerformanceData(){
 //Referencing to time file was last written & time of last trial rather than to file start.
 //Done because file can be changed on the fly which changes file start relative to performance.now()
 if (typeof file.data.ResponseXYT === 'undefined' || 
-	file.data.ResponseXYT.length < 1){
+	file.data.ResponseXYT.length < 1 || 
+	typeof file.data.ResponseXYT[file.data.ResponseXYT.length-1][2] === 'undefined'){
 	var tend = file.data.FixationXYT[file.data.FixationXYT.length-1][2]
 }
 else {
@@ -670,58 +670,6 @@ function drawTable(){
 	livetable.draw(dataConfusion,tableOptions)
 }
 //================== PLOTTING (end) ==================//
-
-
-//================== UTILS ==================//
-// Synchronous
-function smooth(data,n){
-	var smoothed_data=[];
-	for (var i=0; i<=data.length-1; i++){
-		if (i<n-1){
-			smoothed_data[i]=data[i];
-		}
-		else{
-			var sub = data.slice(i-n+1,i+1);
-			smoothed_data[i] = sub.reduce(function(a,b){return a + b;}) / n;
-		}
-	}
-	return smoothed_data;
-}
-
-function filelist_listener(event){
-	console.log("new file");
-	//file.name=file.dir + file.list[this.value]; 
-	file.name = file.pathlist[this.value]
-	file.filehasChanged=true;
-}
-
-//polyfill for array.prototype.fill
-if (!Array.prototype.fill) {
-  Array.prototype.fill = function(value) {
-    if (this == null) {
-      throw new TypeError('this is null or not defined');
-    }
-    var O = Object(this);
-    var len = O.length >>> 0;
-    var start = arguments[1];
-    var relativeStart = start >> 0;
-    var k = relativeStart < 0 ?
-      Math.max(len + relativeStart, 0) :
-      Math.min(relativeStart, len);
-    var end = arguments[2];
-    var relativeEnd = end === undefined ?
-      len : end >> 0;
-    var final = relativeEnd < 0 ?
-      Math.max(len + relativeEnd, 0) :
-      Math.min(relativeEnd, len);
-    while (k < final) {
-      O[k] = value;
-      k++;
-    }
-    return O;
-  };
-}
-//================== UTILS (end) ==================//
 
 </script>
 </head>

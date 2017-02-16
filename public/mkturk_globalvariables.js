@@ -16,6 +16,8 @@ ENV.ImageWidthPixels = NaN;
 ENV.CanvasRatio = 1
 ENV.DevicePixelRatio = 1
 ENV.FixationRadius = 0
+ENV.XGridCenter = []
+ENV.YGridCenter = []
 ENV.RewardDuration = NaN
 ENV.Ordered_Samplebag_Filenames = []
 ENV.Ordered_Testbag_Filenames = []
@@ -23,6 +25,7 @@ ENV.ParamFileName = ''
 ENV.ParamFileRev = ''
 ENV.ParamFileDate = '' //stores complete path to subject parameter file
 ENV.DataFileName = '' //stores complete path to behavioral data file
+ENV.BatteryLDT = []
 
 //================ OTHER GLOBALS (NOT SAVED) ================//
 var FLAGS = {} // Global that keeps track of the task's requests to the Dropbox/server/disk/whatever; buffering requests; etc.
@@ -48,7 +51,7 @@ var CANVAS = {
 	sequenceblank: ["blank","blank"], 
 	tsequenceblank: [0,50], 
 	sequencepre: ["touchfix"],
-	tsequencepre: [300],
+	tsequencepre: [0],
 	sequence: ["blank","sample","blank","test"], // blank, sample, blank, test
 	tsequence: NaN, 
 	sequencepost: ["blank","reward","blank"], // blank, reward
@@ -104,15 +107,9 @@ var boundingBoxesChoice={}; //where the choice touch targets are on the canvas
 var waitforClick; //variable to hold generator
 var waitforEvent; //variable to hold generator
 var touchTimer; //variable to hold timer
-var xgrid=[];
-var ygrid=[];
-var xgridcent=[];
-var ygridcent=[];
+var xcanvascenter=[];
+var ycanvascenter=[];
 var curridx = null;
-var battery = {
-	current: 0,
-	ldt: [],
-}
 var datafiles=[];
 
 //================ UPDATE VARIABLE FUNCTIONS ================//
