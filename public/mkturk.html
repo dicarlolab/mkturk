@@ -237,6 +237,7 @@ while(true){
 		if(!old_ImageBagsTest.equals(TASK.ImageBagsTest) || !old_ImageBagsSample.equals(TASK.ImageBagsSample)){
 			FLAGS.need2loadImages = 1; 
 		}
+		FLAGS.purge = 1
 	} //if need2loadParameters
 
 	if (FLAGS.purge == 1){
@@ -289,21 +290,20 @@ while(true){
 		// var representative_image = await imagebag.get_by_name(samplebag_paths[0])
 		ENV.ImageWidthPixels = representative_image.width
 		ENV.ImageHeightPixels = representative_image.height
-
-		// define image display grid
-		ENV.FixationRadius=(ENV.ImageWidthPixels/2)*TASK.FixationScale*ENV.CanvasRatio
-
-		funcreturn = defineImageGrid(TASK.NGridPoints, ENV.ImageWidthPixels, ENV.ImageHeightPixels, TASK.GridScale);
-		xcanvascenter = funcreturn[0]
-		ycanvascenter = funcreturn[1]
-		ENV.XGridCenter = funcreturn[2]
-		ENV.YGridCenter = funcreturn[3]
 		
 		ENV.Ordered_Samplebag_Filenames = samplebag_paths; 
 		ENV.Ordered_Testbag_Filenames = testbag_paths; 
 		FLAGS.need2loadImages = 0;
 		console.timeEnd('Image loading time:')
 	} //if need2loadImages
+
+	// define image display grid
+	ENV.FixationRadius=(ENV.ImageWidthPixels/2)*TASK.FixationScale*ENV.CanvasRatio
+	funcreturn = defineImageGrid(TASK.NGridPoints, ENV.ImageWidthPixels, ENV.ImageHeightPixels, TASK.GridScale);
+	xcanvascenter = funcreturn[0]
+	ycanvascenter = funcreturn[1]
+	ENV.XGridCenter = funcreturn[2]
+	ENV.YGridCenter = funcreturn[3]
 	//============ (end) CREATE IMAGE BAG & DISPLAY GRID ============//
 
 	renderReward(CANVAS.obj.reward);
@@ -514,7 +514,7 @@ while(true){
 	//FLAGS.need2loadParameters=1: reload task which automatically creates a new data file
 	checkParameterFileStatus()
 	if ( (new Date).getDate() != ENV.CurrentDate.getDate()){
-		TRIAL.need2loadParameters = 1
+		FLAGS.need2loadParameters = 1
 	} //if new day
 	//================= (end) HOUSEKEEPING =================//
 

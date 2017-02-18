@@ -163,6 +163,7 @@ function doneTestingTask_listener(event){
 	FLAGS.savedata=1
 	FLAGS.purge=1
 	purgeTrackingVariables()
+	FLAGS.purge=0
 	renderBlank(CANVAS.obj.blank)
 	document.querySelector("button[name=doneTestingTask]").style.display = "none"
 	return
