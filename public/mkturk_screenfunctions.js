@@ -98,12 +98,16 @@ function updateHeadsUpDisplay(){
 	var textobj = document.getElementById("headsuptext");
 
 	// Overall performance
-	var ncorrect = 0; 
-	for (var i=0; i<=trialhistory.correct.length-1; i++){
-		ncorrect = ncorrect + trialhistory.correct[i]
+	var ncorrect = 0;
+	var nreward = 0;
+	for (var i=0; i<=TRIAL.Response.length-1; i++){
+		if (TRIAL.Response[i] == TRIAL.CorrectItem[i]){
+			ncorrect = ncorrect + 1
+			nreward = nreward + TRIAL.NReward[i]
+		}
 	}
 
-	var pctcorrect = Math.round(100 * ncorrect / trialhistory.correct.length);
+	var pctcorrect = Math.round(100 * ncorrect / TRIAL.Response.length);
 	// Task type
 	var task1 = "";
 	var task2 = "";
@@ -116,11 +120,11 @@ function updateHeadsUpDisplay(){
 	}
 	if (CANVAS.headsupfraction > 0){
 		textobj.innerHTML = ENV.Subject + ": <font color=green><b>" + pctcorrect 
-		+ "%</b></font> " + "(" + ncorrect + " of " + trialhistory.correct.length +")" 
-		+ "<br>" + "Estimated Reward: <font color=green><b>" 
-		+ Math.round(TASK.RewardPer1000Trials*ncorrect/1000) 
+		+ "%</b></font> " + "(" + ncorrect + " of " + TRIAL.Response.length + " trials)" 
+		+ "<br>" + "NRewards=" + nreward + ", Estimated Reward: <font color=green><b>" 
+		+ Math.round(TASK.RewardPer1000Trials*nreward/1000) 
 		+ "mL</b></font> (" + Math.round(TASK.RewardPer1000Trials) 
-		+ " per 1000)" + "<br> " + "<br>" + " Stage " 
+		+ " mL per 1000)" + "<br> " + "<br>" + " Stage " 
 		+ TASK.AutomatorStage + ": " + task1 + "<br>" + task2 + "<br>" + "<br>" 
 		+ "<br>" + "<font color=red><b>" + "<font color=blue><b>" + ble.statustext + "<br></font>";
 	}

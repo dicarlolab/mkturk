@@ -264,25 +264,19 @@ while(true){
 		console.time('Image loading time:')
 
 		if(TASK.Automator != 1){
-			// Load filenames manually from Dropbox
-			var funcreturn = await loadImageBagPaths(TASK.ImageBagsSample);
-			samplebag_paths = funcreturn[0]
-			samplebag_labels = funcreturn[1]
-
-			var funcreturn = await loadImageBagPaths(TASK.ImageBagsTest); 
-			testbag_paths = funcreturn[0]
-			testbag_labels = funcreturn[1]
-
 			// Make TrialQueue
+			// Loads filenames manually from Dropbox
 			var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
 			TQ = new TrialQueue(samplingStrategy, TASK.ImageBagsSample, TASK.ImageBagsTest)
 			await TQ.build(1)
 		}	
 		else if(TASK.Automator == 1){
 			TQ = AutomatorPreBuffer.TrialQueue[TASK.AutomatorStage]
-			samplebag_paths = TQ.samplebag_paths
-			testbag_paths = TQ.testbag_paths
 		} //if automator
+		samplebag_paths = TQ.samplebag_paths
+		samplebag_labels = TQ.samplebag_labels
+		testbag_paths = TQ.testbag_paths
+		testbag_labels = TQ.testbag_labels
 
 		// Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image.
 		await TQ.generate_trials(1)
@@ -340,7 +334,7 @@ while(true){
 		if (TASK.FixationMove > 0){
 			CURRTRIAL.fixationgridindex = Math.floor((ENV.XGridCenter.length)*Math.random()); 
 		}
-		else if (TASK.FixationMove == 0){
+		else if (TASK.FixationMove <= 0){
 			CURRTRIAL.fixationgridindex = TASK.StaticFixationGridIndex;
 		}
 

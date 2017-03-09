@@ -27,11 +27,11 @@ constructor(samplingStrategy, ImageBagsSample, ImageBagsTest){
 
 async build(trial_cushion_size){
 	// Call after construction
-	var funcreturn = await loadImageBagPaths(this.ImageBagsSample); 
+	var funcreturn = await loadImageBagPathsParallel(this.ImageBagsSample); 
 	this.samplebag_labels = funcreturn[1];
 	this.samplebag_paths = funcreturn[0]; 
 
-	var funcreturn = await loadImageBagPaths(this.ImageBagsTest); 
+	var funcreturn = await loadImageBagPathsParallel(this.ImageBagsTest); 
 	this.testbag_labels = funcreturn[1]; 
 	this.testbag_paths = funcreturn[0]; 
 
@@ -105,6 +105,42 @@ async get_next_trial(){
 	var test_filenames = this.testq.filenames.shift(); 
 	var test_indices = this.testq.indices.shift(); 
 	var test_correctIndex = this.testq.correctIndex.shift();
+
+
+	// If the past NStickyResponse trials has been on one side, then make this upcoming trial's correct answer be at another location. 
+	if (FLAGS.stickyresponse >= TASK.NStickyResponse &&
+		TASK.NStickyResponse > 0 && 
+		test_correctIndex == TRIAL.Response[CURRTRIAL.num-1])
+	{
+		console.log('Moving correct response to nonstick location')
+		var sticky_grid_location = TRIAL.Response[CURRTRIAL.num-1]; 
+		if (sticky_grid_location == undefined){
+			console.log('Something strange has happened in the stickyresponse logic')
+		}
+
+		var candidate_nonstick_locations = []
+		for (var i = 0; i < test_indices.length; i++){
+			if (i == sticky_grid_location)
+				{continue}
+			else if (i != sticky_grid_location){
+				candidate_nonstick_locations.push(i)
+			}
+			else{throw 'Error occurred in sticky response logic'}
+		}
+		
+		// Switch correct_label into correct_label_nonstick_location
+		var correct_label_nonstick_location =candidate_nonstick_locations[Math.floor((candidate_nonstick_locations.length)*Math.random())];
+
+		var tempfilename = test_filenames[correct_label_nonstick_location]
+		test_filenames[correct_label_nonstick_location] = test_filenames[sticky_grid_location]
+		test_filenames[sticky_grid_location] = tempfilename
+
+		var tempindex = test_indices[correct_label_nonstick_location]
+		test_indices[correct_label_nonstick_location] = test_indices[sticky_grid_location]
+		test_indices[sticky_grid_location] = tempindex
+
+		test_correctIndex = correct_label_nonstick_location
+	}
 
 	// Get image from imagebag
 	var sample_image = await this.IB.get_by_name(sample_filename); 
@@ -203,33 +239,7 @@ function selectTestImages(correct_label, testbag_labels){
 	var testpool = []
 	testpool.push(... distractors)
 	testpool.push(correct_label)
-	testpool = shuffle(testpool)
-
-	// If the past NStickyResponse trials has been on one side, then make this upcoming trial's correct answer be at another location. 
-	if (FLAGS.stickyresponse >= TASK.NStickyResponse && TASK.NStickyResponse > 0){
-		console.log('Moving correct response to nonstick location')
-		var sticky_grid_location = TRIAL.Response[CURRTRIAL.num-1]; 
-		if (sticky_grid_location == undefined){
-			console.log('Something strange has happened in the stickyresponse logic')
-		}
-
-		var candidate_nonstick_locations = []
-		for (var i = 0; i < testpool.length; i++){
-			if(i == sticky_grid_location)
-				{continue}
-			else if (i != sticky_grid_location){
-				candidate_nonstick_locations.push(i)
-			}
-			else{throw 'Error occurred in sticky response logic'}
-		}
-		
-		// Switch correct_label into correct_label_nonstick_location
-		var correct_label_nonstick_location =candidate_nonstick_locations[Math.floor((candidate_nonstick_locations.length)*Math.random())]; 
-		var switched_out_label = testpool[correct_label_nonstick_location]; 
-		testpool[correct_label_nonstick_location] = correct_label; 
-		testpool[sticky_grid_location] = switched_out_label
-	}
-	
+	testpool = shuffle(testpool)	
 
 	// For each label in the testpool, add a random testimage index of it to testIndices. 
 	for (var i = 0; i<testpool.length; i++){

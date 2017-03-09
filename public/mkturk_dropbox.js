@@ -39,37 +39,69 @@ async function getMostRecentBehavioralFilePathsFromDropbox(num_files_to_get, sub
 
 }
 
-// LEGACY (not used): getFileListDropbox
-async function getFileListDropbox(directorypath){
-	// Returns list of files in this directory (no recursion)
-	try{
-		var datafiles = []
-		response = await dbx.filesListFolder({path: directorypath})
+async function loadImageBagPathsParallel(imagebagroot_s){
+	var imagepath_promises = imagebagroot_s.map(loadImageBagPaths); //create array of recursive path load Promises
+	var funcreturn = await Promise.all(imagepath_promises);
+	//Assemble images and add labels
+	var bagitems_paths = [] // Can also be paths to a single .png file. 
+	var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
+	for (var i=0; i<=funcreturn.length-1; i++){
+		bagitems_paths.push(... funcreturn[i][0])
+		for (var j=0; j<= funcreturn[i][0].length-1; j++){
+			bagitems_labels.push(i)
+		}
+	} //for i labels
+	return [bagitems_paths, bagitems_labels] 
+}
 
-		var q2=0;
-		for (var q = 0; q <= response.entries.length-1; q++){
-			if (response.entries[q][".tag"] == "file" && response.entries[q].name.indexOf(ENV.Subject) != -1){
-				datafiles[q2] = response.entries[q].path_display; 
-				q2++;
+
+async function loadImageBagPaths(imagebagroot_s,idx) //(imagebagroot_s)
+{
+	try{
+		var bagitems_paths = [] // Can also be paths to a single .png file. 
+		var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
+
+		// Case 1: input = string. output = array of .png imagenames
+		if (typeof(imagebagroot_s) == "string"){
+			bagitems_paths = await getImageListDropboxRecursive(imagebagroot_s)
+			for(var i_item = 0; i_item < bagitems_paths.length; i_item++){
+				bagitems_labels.push(0)
 			}
+			return [bagitems_paths, bagitems_labels]
 		}
 
-		datafiles.sort(function (a,b){
-			if (a > b){
-				return -1;
-			}
-			if (a < b){
-				return 1;
-			}
-			return 0;
-			}); //sort in descending order
+		// Case 2: input = array of (array of) paths. output = array of arrays of .png imagenames 	
+		for (var i = 0; i<imagebagroot_s.length; i++){
+			// If this class's imagebag consists of one (1) root. 
+			if (typeof(imagebagroot_s[i]) == "string"){
+				var i_itempaths = await getImageListDropboxRecursive(imagebagroot_s[i])
+				bagitems_paths.push(... i_itempaths); 
 
-		return datafiles; 
+				for(var i_item = 0; i_item < i_itempaths.length; i_item++){
+					bagitems_labels.push(i)
+				}
+			}
+			// If this class's imagebag consists of multiple roots.
+			else if(typeof(imagebagroot_s[i]) == "object"){
+				var i_itempaths = []
+				for (var j = 0; j<imagebagroot_s[i].length; j++){
+					i_itempaths.push(... await getImageListDropboxRecursive(imagebagroot_s[i][j])); 
+				}
+				bagitems_paths.push(... i_itempaths)
+
+				for(var i_item = 0; i_item < i_itempaths.length; i_item++){
+					bagitems_labels.push(i)
+				}	
+			}
+		}
 	}
-	catch (error) {
-		console.error(error)
+	catch(error){
+		console.log(error)
 	}
+
+	return [bagitems_paths, bagitems_labels] 
 }
+
 
 async function getImageListDropboxRecursive(dirpath){
 	var file_list = []
@@ -259,52 +291,6 @@ async function loadBagfromDropbox(imagebags_parameter){
 
 	console.log('Done loading bag: '+imagebag.length+' out of '+imagebag_paths.length+ ' images loaded successfully.')
 	return [imagebag, imagebag_labels, imagebag_paths]
-}
-
-async function loadImageBagPaths(imagebagroot_s){
-	try{
-		var bagitems_paths = [] // Can also be paths to a single .png file. 
-		var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
-
-		// Case 1: input = string. output = array of .png imagenames
-		if (typeof(imagebagroot_s) == "string"){
-			bagitems_paths = await getImageListDropboxRecursive(imagebagroot_s)
-			for(var i_item = 0; i_item < bagitems_paths.length; i_item++){
-				bagitems_labels.push(0)
-			}
-			return [bagitems_paths, bagitems_labels, bag2itemindex]
-		}
-
-		// Case 2: input = array of (array of) paths. output = array of arrays of .png imagenames 	
-		for (var i = 0; i<imagebagroot_s.length; i++){
-			// If this class's imagebag consists of one (1) root. 
-			if (typeof(imagebagroot_s[i]) == "string"){
-				var i_itempaths = await getImageListDropboxRecursive(imagebagroot_s[i])
-				bagitems_paths.push(... i_itempaths); 
-
-				for(var i_item = 0; i_item < i_itempaths.length; i_item++){
-					bagitems_labels.push(i)
-				}
-			}
-			// If this class's imagebag consists of multiple roots.
-			else if(typeof(imagebagroot_s[i]) == "object"){
-				var i_itempaths = []
-				for (var j = 0; j<imagebagroot_s[i].length; j++){
-					i_itempaths.push(... await getImageListDropboxRecursive(imagebagroot_s[i][j])); 
-				}
-				bagitems_paths.push(... i_itempaths)
-
-				for(var i_item = 0; i_item < i_itempaths.length; i_item++){
-					bagitems_labels.push(i)
-				}	
-			}
-		}
-	}
-	catch(error){
-		console.log(error)
-	}
-
-	return [bagitems_paths, bagitems_labels] 
 }
 
 
