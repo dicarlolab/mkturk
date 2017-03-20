@@ -13,28 +13,33 @@ async function automateTask(automator_data, trialhistory){
 
 	var i_current_stage = TASK.CurrentAutomatorStage; 
 	var current_stage = stageHash(TASK); 
+	var automator_eventstring = []
 
 	for (var property in automator_data[i_current_stage]){
 		if (automator_data[i_current_stage].hasOwnProperty(property)){ // Apparently a necessary 'if' statement, as explained in: http://stackoverflow.com/questions/8312459/iterate-through-object-properties
-			if (property === 'minPercentCriterion' || property === 'minTrialsCriterion'){
+			if (property === 'MinPercentCriterion' || property === 'MinTrialsCriterion' || 
+				property === 'CurrentAutomatorStageName'){
 				continue 
 			}
 
-			if (!TASK[property].equals(automator_data[i_current_stage][property])){
-				console.log('Discrepancy between TASK.'+property+'='+TASK[property]+' and automator_data['+i_current_stage+']['+property+']='+automator_data[i_current_stage][property])
+			if (!(TASK[property].toString() == automator_data[i_current_stage][property].toString())){
+automator_eventstring.push('WRITE NEW PARAMS: ' + 'Discrepancy between TASK.'+property+'='+TASK[property]+
+' and automator_data['+i_current_stage+']['+property+']='+automator_data[i_current_stage][property])
+console.log('Discrepancy between TASK.'+property+'='+TASK[property]+' and automator_data['+i_current_stage+']['+property+']='+automator_data[i_current_stage][property])
 				TASK[property] = automator_data[i_current_stage][property]
 				FLAGS.need2writeParameters=1
 			}
-		}	
+		}
 	}
 
 	// ---------- CHECK IF STAGE TRANSITION CRITERIA HAS BEEN MET: -----------------------------------------
 	// Read transition criteria from automator_data
-	var minpctcorrect = automator_data[i_current_stage].minPercentCriterion; 
-	var mintrials = automator_data[i_current_stage].minTrialsCriterion; 
+	ENV.MinPercentCriterion = automator_data[i_current_stage].MinPercentCriterion;
+	ENV.MinTrialsCriterion = automator_data[i_current_stage].MinTrialsCriterion; 
+	ENV.CurrentAutomatorStageName = automator_data[i_current_stage].CurrentAutomatorStageName;
 
 	// Calculate current pctcorrect and ntrials
-	var funcreturn = computeRunningHistory(mintrials, current_stage, trialhistory.trainingstage, trialhistory.correct)
+	var funcreturn = computeRunningHistory(ENV.MinTrialsCriterion, current_stage, trialhistory.trainingstage, trialhistory.correct)
 	pctcorrect = funcreturn[0]
 	ntrials = funcreturn[1]
 
@@ -42,7 +47,7 @@ async function automateTask(automator_data, trialhistory){
 
 	// ---------- CHANGE TASK.STUFF TO AUTOMATOR DATA [ NEXT_STAGE ] --------------------------------------- 
 	// If transition criteria are met, 
-	if(pctcorrect > minpctcorrect && ntrials >= mintrials){
+	if(pctcorrect > ENV.MinPercentCriterion && ntrials >= ENV.MinTrialsCriterion){
 
 		
 		// If finished final stage of automator,
@@ -50,6 +55,10 @@ async function automateTask(automator_data, trialhistory){
 			// Stay in current stage settings, and 
 			// Turn automator off
 			TASK.Automator = 0; 
+			TASK.CurrentAutomatorStage = -1;
+			ENV.CurrentAutomatorStageName = '';
+automator_eventstring.push('COMPLETED FINAL STAGE, TURNING AUTOMATOR OFF')
+updateHeadsUpDisplayAutomator(ENV.CurrentAutomatorStageName,pctcorrect,ntrials,ENV.MinPercentCriterion,ENV.MinTrialsCriterion,automator_eventstring)
 			console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject completed the final stage '+(i_current_stage)+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
 			console.log('Turning automator OFF.')
 			return 
@@ -57,6 +66,9 @@ async function automateTask(automator_data, trialhistory){
 
 		// Otherwise, advance to the next stage.
 		TASK.CurrentAutomatorStage = TASK.CurrentAutomatorStage + 1; 
+automator_eventstring.push(
+	'SUBJECT ADVANCED TO STAGE ' + (i_current_stage+1) + ' of '+(automator_data.length-1) + 
+	' with ' + pctcorrect+'\% performance on n='+ntrials)
 		console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject advanced to stage '+(i_current_stage+1)+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
 
 		// Save behavior with current TASK, ENV, and TRIAL before moving on. 
@@ -71,25 +83,30 @@ async function automateTask(automator_data, trialhistory){
 		var old_imageBagsTest = TASK.ImageBagsTest
 
 		for (var property in automator_data[i_current_stage+1]){
-			if (property === 'minPercentCriterion' || property === 'minTrialsCriterion'){
+			if (property === 'MinPercentCriterion' || property === 'MinTrialsCriterion' ||
+				property === 'CurrentAutomatorStageName'){
 				continue 
 			}
 
 			if (automator_data[i_current_stage+1].hasOwnProperty(property)){ 
-				if (!TASK[property].equals(automator_data[i_current_stage+1][property])){
+				if (!(TASK[property].toString() == automator_data[i_current_stage+1][property].toString())){
 					console.log('\"'+property+'\" changed from '+TASK[property]+' to '+automator_data[i_current_stage+1][property])
 
 					TASK[property] = automator_data[i_current_stage+1][property]
 				}
 			}			
 		}
+
 		// If imagebags are changed by automator, load images at beginning of next trial. 
 		if(!old_imageBagsTest.equals(TASK.ImageBagsTest) || !old_imageBagsSample.equals(TASK.ImageBagsSample)){
 			FLAGS.need2loadImages = 1; 
+automator_eventstring.push('NEW IMAGES NEEDED for this automator stage')
 		}
 
 		FLAGS.need2saveParameters=1
 	}
+updateHeadsUpDisplayAutomator(ENV.CurrentAutomatorStageName,pctcorrect,ntrials,ENV.MinPercentCriterion,ENV.MinTrialsCriterion,automator_eventstring)
+
 
 	return 
 }

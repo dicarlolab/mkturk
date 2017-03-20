@@ -115,23 +115,50 @@ function updateHeadsUpDisplay(){
 		task1 = "Fixation";
 	}
 	else if (TASK.RewardStage == 1){
-		task1 = TASK.TestGridIndex.length + "-way AFC. ImageBags:" + TASK.ImageBagsSample;
-		task2 = TASK.SampleON + "ms, " + TASK.ImageBagsTest.length + "-categories in pool";
+		task1 = TASK.TestGridIndex.length + "-way AFC:"
+		task2 = TASK.SampleON + "ms, " + TASK.ImageBagsTest.length + "-categories in pool"
 	}
 	if (CANVAS.headsupfraction > 0){
 		textobj.innerHTML = ENV.Subject + ": <font color=green><b>" + pctcorrect 
 		+ "%</b></font> " + "(" + ncorrect + " of " + TRIAL.Response.length + " trials)" 
-		+ "<br>" + "NRewards=" + nreward + ", Estimated Reward: <font color=green><b>" 
+		+ "<br>" + "NRewards=" + nreward + ", <font color=green><b>" 
 		+ Math.round(TASK.RewardPer1000Trials*nreward/1000) 
 		+ "mL</b></font> (" + Math.round(TASK.RewardPer1000Trials) 
-		+ " mL per 1000)" + "<br> " + "<br>" + " Stage " 
-		+ TASK.AutomatorStage + ": " + task1 + "<br>" + task2 + "<br>" + "<br>" 
+		+ " mL per 1000)" + "<br> " 
+		+ task1 + "<br>" + task2 + "<br>" + "<br>"
+		+ "last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>"
+		+ "last saved to dropbox @ " + CURRTRIAL.lastDropboxSave.toLocaleTimeString("en-US")
+		+ "<br>" + "<br>" 
 		+ "<br>" + "<font color=red><b>" + "<font color=blue><b>" + ble.statustext + "<br></font>";
 	}
 	else if (CANVAS.headsupfraction == 0){
 		textobj.innerHTML = ble.statustext
 	}
 }
+
+function updateHeadsUpDisplayAutomator(currentautomatorstagename,pctcorrect,ntrials,minpctcorrect,mintrials,eventstring){
+	var textobj = document.getElementById("headsuptextautomator");
+	if (CANVAS.headsupfraction > 0){
+		textobj.innerHTML =
+			"Automator: " + 
+			"<font color=red><b>" + TASK.Automator + "</b></font> " +
+			" " + "<font color=white><b>" +
+			 "Stage" + TASK.CurrentAutomatorStage + "=" +
+				currentautomatorstagename +
+			"</b></font>" +"<br>" +
+			"Performance: " + 
+			"<font color=green><b>" + Math.round(pctcorrect) + "%, last " + 
+			ntrials + " trials</b></font> " + 
+			"(min: " + minpctcorrect + 
+				"%, " + mintrials + " trials)" + "<br>" + "<br>" +
+			eventstring
+	}
+	else if (CANVAS.headsupfraction == 0){
+		textobj.innerHTML = ""
+	}
+}
+
+
 //================== IMAGE RENDERING ==================//
 // Sync: buffer trial images
 
@@ -186,8 +213,8 @@ async function bufferTrialImages(sample_image, sample_image_grid_index, test_ima
 	boundingBoxesChoice['y'] = []
 	// Draw test object(s): 
 	for (i = 0; i<test_images.length; i++){
-		// If hideTestDistractors, simply do not draw the image
-		if(TASK.hideTestDistractors == 1){
+		// If HideTestDistractors, simply do not draw the image
+		if(TASK.HideTestDistractors == 1){
 			if (correct_index != i){
 				boundingBoxesChoice.x.push([NaN, NaN]); 
 				boundingBoxesChoice.y.push([NaN, NaN]); 

@@ -159,6 +159,7 @@ function headsuptext_listener(event){
 	return
 }
 function doneTestingTask_listener(event){
+	event.preventDefault()
 	console.log("User is done testing. Start saving data");
 	FLAGS.savedata=1
 	FLAGS.purge=1

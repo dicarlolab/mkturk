@@ -19,9 +19,9 @@
 
 	<button name="noble" style="visibility:hidden; position: absolute; top: 55%; left: 45%; height: 50px; width: 200px; border-radius: 20px">No Bluetooth juicer</button>
 
-	<p id="headsuptext" style="z-index:99; position: absolute; left: 1px; top: 1px; height: 40%; width: 60%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"></p>
+	<p id="headsuptext" style="z-index:99; position: absolute; left: 1px; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;"></p>
 
-	<p id="headsuptextautomator" style="z-index:99; position: absolute; left: 500px; top: 1px; height: 40%; width: 60%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"></p>
+	<p id="headsuptextautomator" style="z-index:99; position: absolute; left: 50%; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
 
 	<button name="doneEditingParams" style="visibility:hidden; position: absolute; top: 45%; left: 70%; height: 75px; width: 100px; border-radius: 20px">Done editing params</button>
 
@@ -201,7 +201,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 			AutomatorPreBuffer['TrialQueue'][a] = new TrialQueue(samplingStrategy, automator_data[a].ImageBagsSample, automator_data[a].ImageBagsTest); 
 
 			// Populate the stage's imagebuffer with some images
-			var num_prebuffer_trials = 30
+			var num_prebuffer_trials = 5
 			await AutomatorPreBuffer['TrialQueue'][a].build(num_prebuffer_trials)
 			console.timeEnd('Stage '+a)
 		}
@@ -400,7 +400,12 @@ while(true){
 
 		//========= AWAIT TOUCH RESPONSE =========//
 		FLAGS.waitingforTouches = 1
-		FLAGS.punishOutsideTouch = 0
+		if (TASK.HideTestDistractors >= 1){
+			FLAGS.punishOutsideTouch = 1
+		}
+		else {
+			FLAGS.punishOutsideTouch = 0			
+		}
 		var p1 = touchhold_promise(0,boundingBoxesChoice,FLAGS.punishOutsideTouch)
 		var p2 = choiceTimeOut(TASK.ChoiceTimeOut)
 
@@ -486,6 +491,7 @@ while(true){
 	//============ (end) DELIVER REWARD/PUNISH ============//
 
 	//================= HOUSEKEEPING =================//
+	CURRTRIAL.lastTrialCompleted = new Date()
 	// Update TRIAL only if saving data
 	if (FLAGS.savedata == 1){
 		// Update trial tracking variables

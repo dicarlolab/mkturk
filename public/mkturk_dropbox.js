@@ -411,6 +411,7 @@ async function saveBehaviorDatatoDropbox(TASK, ENV, TRIAL){
 			path: ENV.DataFileName,
 			contents: datastr,
 			mode: {[".tag"]: "overwrite"} })
+			CURRTRIAL.lastDropboxSave = new Date(response.client_modified)
 			console.log("Successful behavior file upload. Size:" + response.size)
 		}
 	catch(error){
