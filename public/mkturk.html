@@ -19,9 +19,11 @@
 
 	<button name="noble" style="visibility:hidden; position: absolute; top: 55%; left: 45%; height: 50px; width: 200px; border-radius: 20px">No Bluetooth juicer</button>
 
-	<p id="headsuptext" style="z-index:99; position: absolute; left: 1px; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;"></p>
+	<p id="headsuptext" style="z-index:101; position: absolute; left: 1px; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;"></p>
 
 	<p id="headsuptextautomator" style="z-index:99; position: absolute; left: 50%; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
+
+	<p id="imageloadingtext" style="z-index:100; position: absolute; left: 1px; top: 1px; height: 5%; width: 100%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
 
 	<button name="doneEditingParams" style="visibility:hidden; position: absolute; top: 45%; left: 70%; height: 75px; width: 100px; border-radius: 20px">Done editing params</button>
 
@@ -233,6 +235,28 @@ while(true){
 		var old_ImageBagsTest = TASK.ImageBagsTest
 		FLAGS.need2loadParameters = await loadParametersfromDropbox(ENV.ParamFileName);
 
+		//============= SET UP CANVAS =============//
+		// Update canvas based on latest TASK state: 
+		refreshCanvasSettings(TASK); 
+		setupCanvasHeadsUp()
+		setupImageLoadingText()
+		windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
+		windowHeight = document.body.clientHeight;	
+		for (var i = 0; i <= CANVAS.names.length-1; i++) {
+			setupCanvas(CANVAS.obj[CANVAS.names[i]]);
+		}
+		if (ENV.DevicePixelRatio !== 1){
+			scaleCanvasforHiDPI(CANVAS.obj.sample);
+			scaleCanvasforHiDPI(CANVAS.obj.test);
+		}
+
+		CANVAS.workspace = [
+			0,
+			0,
+			CANVAS.obj["touchfix"].width,
+			CANVAS.obj["touchfix"].height
+		]
+
 		// Check if images were changed
 		if(!old_ImageBagsTest.equals(TASK.ImageBagsTest) || !old_ImageBagsSample.equals(TASK.ImageBagsSample)){
 			FLAGS.need2loadImages = 1; 
@@ -245,19 +269,6 @@ while(true){
 		FLAGS.purge = 0; 
 	} //if purge
 
-	//============= SET UP CANVAS =============//
-	// Update canvas based on latest TASK state: 
-	refreshCanvasSettings(TASK); 
-	setupCanvasHeadsUp()
-	windowWidth = window.innerWidth; //get true window dimensions at last possible moment
-	windowHeight = window.innerHeight;	
-	for (var i = 0; i <= CANVAS.names.length-1; i++) {
-		setupCanvas(CANVAS.obj[CANVAS.names[i]]);
-	}
-	if (ENV.DevicePixelRatio !== 1){
-		scaleCanvasforHiDPI(CANVAS.obj.sample);
-		scaleCanvasforHiDPI(CANVAS.obj.test);
-	}
 
 	//============ CREATE IMAGE BAG & DISPLAY GRID ============//
 	if (FLAGS.need2loadImages == 1){
@@ -395,7 +406,8 @@ while(true){
 		frame.shown=[]
 		for (var q in CANVAS.sequence){frame.shown[q]=0} 
 		frame.current=0
-		await displayTrial(CANVAS.sequence,CANVAS.tsequence);
+		CURRTRIAL.tsequenceactual = await displayTrial(CANVAS.sequence,CANVAS.tsequence);
+		CURRTRIAL.tsequencedesired = CANVAS.tsequence
 		audiocontext.suspend()
 
 		//========= AWAIT TOUCH RESPONSE =========//
@@ -504,7 +516,7 @@ while(true){
 		}
 
 		// Save data asynchronously
-		saveBehaviorDatatoDropbox(TASK, ENV, TRIAL);
+		saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL);
 	}
 
 	if (FLAGS.need2saveParameters == 1){

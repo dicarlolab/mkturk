@@ -368,7 +368,7 @@ async function loadImagefromDropbox(imagepath){
 
 								image.onload = function(){
 									console.log('Loaded: ' + (imagepath));
-									displayTextOnBlackBar('Loaded: ' + (imagepath),CANVAS.obj.blank)
+									updateImageLoadingAndDisplayText('Loaded: ' + imagepath)
 									resolve(image)
 									}
 								image.src = data_src
@@ -394,11 +394,12 @@ async function loadImagefromDropbox(imagepath){
 
 
 //================== WRITE JSON ==================//
-async function saveBehaviorDatatoDropbox(TASK, ENV, TRIAL){
+async function saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL){
 	try{
         var dataobj = [] 
 
 		dataobj.push(ENV)
+		dataobj.push(CANVAS)
 		dataobj.push(TASK)
 		dataobj.push(TRIAL)
 		datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials

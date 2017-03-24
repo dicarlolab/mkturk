@@ -41,8 +41,8 @@ function updateStatusText(text){
 
 function setupCanvasHeadsUp(){
 	canvasobj=document.getElementById("canvasheadsup");
-	canvasobj.width=window.innerWidth;
-	canvasobj.height=Math.round(window.innerHeight*CANVAS.headsupfraction);
+	canvasobj.width=document.body.clientWidth;
+	canvasobj.height=Math.round(document.body.clientHeight*CANVAS.headsupfraction);
 	CANVAS.offsettop = canvasobj.height;
 	if (CANVAS.headsupfraction == 0){
 		canvasobj.style.display="none";
@@ -56,13 +56,12 @@ function setupCanvasHeadsUp(){
 	context.fillRect(0,0,canvasobj.width,canvasobj.height);
 	canvasobj.addEventListener('touchstart',touchstart_listener,false);
 }
-
 function setupCanvas(canvasobj){
 	// center in page
 	canvasobj.style.top=CANVAS.offsettop + "px";
 	canvasobj.style.left=CANVAS.offsetleft + "px";
-	canvasobj.width=windowWidth;
-	canvasobj.height=windowHeight;
+	canvasobj.width=windowWidth - CANVAS.offsetleft;
+	canvasobj.height=windowHeight - CANVAS.offsettop;
 	canvasobj.style.margin="0 auto";
 	canvasobj.style.display="block"; //visible
 
@@ -73,8 +72,6 @@ function setupCanvas(canvasobj){
 	canvasobj.addEventListener('mousedown',touchstart_listener,{capture: false,passive: false}); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
 	canvasobj.addEventListener('mousemove',touchmove_listener,{passive: false}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
 	canvasobj.addEventListener('mouseup',touchend_listener,{capture: false, passive:false});
-	// store canvas size
-	canvasSize=[canvasobj.width, canvasobj.height];
 } 
 
 // Sync: Adjust canvas for the device pixel ratio & browser backing store size
@@ -86,8 +83,8 @@ function scaleCanvasforHiDPI(canvasobj){
 		var oldHeight = canvasobj.height;
 		canvasobj.width = oldWidth/ENV.CanvasRatio;
 		canvasobj.height = oldHeight/ENV.CanvasRatio;
-		canvasobj.style.width = windowWidth + "px";
-		canvasobj.style.height = windowHeight + "px";
+		canvasobj.style.width = windowWidth - CANVAS.offsetleft + "px";
+		canvasobj.style.height = windowHeight - CANVAS.offsettop + "px";
 		canvasobj.style.margin="0 auto";
 		context.scale(1/ENV.CanvasRatio,1/ENV.CanvasRatio);
 	} 
@@ -108,6 +105,7 @@ function updateHeadsUpDisplay(){
 	}
 
 	var pctcorrect = Math.round(100 * ncorrect / TRIAL.Response.length);
+
 	// Task type
 	var task1 = "";
 	var task2 = "";
@@ -129,7 +127,7 @@ function updateHeadsUpDisplay(){
 		+ "last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>"
 		+ "last saved to dropbox @ " + CURRTRIAL.lastDropboxSave.toLocaleTimeString("en-US")
 		+ "<br>" + "<br>" 
-		+ "<br>" + "<font color=red><b>" + "<font color=blue><b>" + ble.statustext + "<br></font>";
+		+ "<br>" + "<font color=red><b>" + "<font color=blue><b>" + ble.statustext + "<br></font>" 
 	}
 	else if (CANVAS.headsupfraction == 0){
 		textobj.innerHTML = ble.statustext
@@ -280,6 +278,7 @@ function displayTrial(sequence,tsequence){
 	//console.log('seq', sequence, 'tseq', tsequence)
 
 	var start = null;
+	var tActual = []
 	function updateCanvas(timestamp){
 
 		// If start has not been set to a float timestamp, set it now.
@@ -288,6 +287,7 @@ function displayTrial(sequence,tsequence){
 		// If time to show new frame, 
 		if (timestamp - start > tsequence[frame.current]){
 			//console.log('Frame =' + frame.current+'. Duration ='+(timestamp-start)+'. Timestamp = ' + timestamp)
+			tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
 			// Move canvas in front
 			var prev_canvasobj=CANVAS.obj[CANVAS.front]
 			var curr_canvasobj=CANVAS.obj[sequence[frame.current]]
@@ -311,21 +311,13 @@ function displayTrial(sequence,tsequence){
 			window.requestAnimationFrame(updateCanvas);
 		}
 		else{
-			resolveFunc(1);
+			resolveFunc(tActual);
 		}
 	}
 	//requestAnimationFrame advantages: goes on next screen refresh and syncs to browsers refresh rate on separate clock (not js clock)
 	window.requestAnimationFrame(updateCanvas); // kick off async work
 	return p
 } 
-
-function displayTextOnBlackBar(message_string,canvasobj){
-	var visible_ctxt = canvasobj.getContext('2d');
-	visible_ctxt.textBaseline = "hanging";
-	visible_ctxt.fillStyle = "white";
-	visible_ctxt.font = "20px Verdana";
-	visible_ctxt.fillText(message_string, 20.5,20.5);
-}
 
 function renderBlank(canvasobj){
 	var context=canvasobj.getContext('2d');
@@ -335,6 +327,7 @@ function renderBlank(canvasobj){
 
 function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,fixationscale,samplescale,testscale,imwidth,canvasratio,canvasobj)
 {
+	var outofbounds_str = ''
 	var context=canvasobj.getContext('2d');
 	context.fillStyle="#7F7F7F";
 	context.fillRect(0,0,canvasobj.width,canvasobj.height);
@@ -347,6 +340,12 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 		context.arc(gridx[i],gridy[i],rad,0*Math.PI,2*Math.PI)
 		context.fillStyle="red"
 		context.fill();
+
+		var displaycoord = [gridx[i]-rad,gridy[i]-rad,gridx[i]+rad,gridy[i]+rad]
+		var outofbounds=checkDisplayBounds(displaycoord)
+		if (outofbounds == 1){
+			outofbounds_str = outofbounds_str + "<br>" + "gridpoint" + i + " is out of bounds"
+		}
 	}
 
 	//Fixation Image Bounding Box
@@ -355,6 +354,14 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 	var ycent = gridy[fixationgridindex]
 	context.strokeStyle="white"
 	context.strokeRect(xcent-wd/2,ycent-wd/2,wd+1,wd+1)
+
+	var displaycoord = [xcent-wd/2,ycent-wd/2,xcent+wd/2,ycent+wd/2]
+	var outofbounds=checkDisplayBounds(displaycoord)
+	if (outofbounds == 1){
+		outofbounds_str = outofbounds_str + "<br>" + "Fixation dot is out of bounds"
+	}
+	displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
+
 	
 	//Sample Image Bounding Box
 	var wd = imwidth*samplescale*canvasratio
@@ -363,6 +370,14 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 	context.strokeStyle="green"
 	context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
 
+	var displaycoord = [xcent-wd/2,ycent-wd/2,xcent+wd/2,ycent+wd/2]
+	var outofbounds=checkDisplayBounds(displaycoord)
+	if (outofbounds == 1){
+		outofbounds_str = outofbounds_str + "<br>" + "Sample Image is out of bounds"
+	}
+	displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
+
+
 	//Test Image Bounding Box(es)
 	for (var i = 0; i <= testgridindex.length-1; i++){
 		var wd = imwidth*testscale*canvasratio
@@ -370,7 +385,20 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 		var ycent = gridy[testgridindex[i]]
 		context.strokeStyle="black"
 		context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
+
+		displaycoord = [xcent-wd/2,ycent-wd/2,xcent+wd/2,ycent+wd/2]
+		var outofbounds=checkDisplayBounds(displaycoord)
+		if (outofbounds == 1){
+			outofbounds_str = outofbounds_str + "<br>" + "Test Image" + i + " is out of bounds"
+		}
+		displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
 	}
+	if (outofbounds_str == ''){
+		outofbounds_str = 'All display elements are fully visible'
+	}
+
+	displayoutofboundsstr = outofbounds_str
+	updateImageLoadingAndDisplayText(' ')
 }
 
 function renderReward(canvasobj){
@@ -416,4 +444,69 @@ function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 	boundingBoxesFixation['y']=[]
 	boundingBoxesFixation.x.push([xcent-rad+CANVAS.offsetleft, xcent+rad+CANVAS.offsetleft]);
 	boundingBoxesFixation.y.push([ycent-rad+CANVAS.offsettop, ycent+rad+CANVAS.offsettop]);
+}
+
+function checkDisplayBounds(displayobject_coord){
+	var outofbounds=0
+	if (displayobject_coord[0] < CANVAS.workspace[0] ||
+		displayobject_coord[1] < CANVAS.workspace[1] ||
+		displayobject_coord[2] > CANVAS.workspace[2] ||
+		displayobject_coord[3] > CANVAS.workspace[3]){
+		outofbounds=1
+	}
+	return outofbounds
+}
+function setupImageLoadingText(){
+	var textobj = document.getElementById("imageloadingtext")
+	textobj.style.top = CANVAS.offsettop + "px"
+	textobj.innerHTML = ''
+}
+function updateImageLoadingAndDisplayText(str){
+	var textobj = document.getElementById("imageloadingtext")
+
+	// Software check for frame drops
+	var dt = []
+	var u_dt = 0
+	for (var i=0; i<=CURRTRIAL.tsequenceactual.length-1; i++){
+		dt[i] = CURRTRIAL.tsequenceactual[i] - CURRTRIAL.tsequencedesired[i]
+		u_dt = u_dt + Math.abs(dt[i])
+	}
+	u_dt = u_dt/dt.length
+
+	textobj.innerHTML =
+	str
+	+ displayoutofboundsstr 
+	+ "<br>" + "Software reported frame display (t_actual - t_desired) :"
+	+ "<br>" + "<font color=red> mean dt = " + Math.round(u_dt) + " ms"
+	+ "  (min=" + Math.round(Math.min(... dt)) + ", max=" + Math.round(Math.max(... dt)) + ") </font>"
+}
+
+
+function displayPhysicalSize(tabletname,displayobject_coord,canvasobj){
+	if (tabletname == "nexus9"){
+		var dpi = 281
+	}
+	else if (tabletname == "samsung10"){
+		var dpi = 287
+	}
+	else if (tabletname == "samsung8"){
+		var dpi = 359
+	}
+	else if (tabletname == "pixelc"){
+		var dpi = 308
+	}
+	else {
+		var dpi = -1
+	}
+	var visible_ctxt = canvasobj.getContext('2d');
+	visible_ctxt.textBaseline = "hanging";
+	visible_ctxt.fillStyle = "white";
+	visible_ctxt.font = "16px Verdana";
+	visible_ctxt.fillText( 
+		Math.round(100*(displayobject_coord[2]-displayobject_coord[0])/dpi/ENV.CanvasRatio)/100 +
+		' x ' +
+		Math.round(100*(displayobject_coord[3]-displayobject_coord[1])/dpi/ENV.CanvasRatio)/100 + 
+		' in', 
+		displayobject_coord[0],displayobject_coord[1]-16
+	);
 }

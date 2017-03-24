@@ -75,63 +75,64 @@ TestScale: Size of the test image in units of sample image width
 Weight: Weight in kilograms
 
 ## ENV
-BatteryLDT:
+BatteryLDT: Stores any status update from the battery API, L=battery level in %  D=estimated time until battery discharges  T=performance.now() timestamp of latest battery status update
 
-CanvasRatio:
+CanvasRatio: Ratio of the logical canvas pixels to the physical screen pixels = BackingStoreRatio/DevicePixelRatio
 
-CurrentDate:
+CurrentDate: date & time when task session was initiated
 
-DataFileName:
+DataFileName: complete file path and name of datafile
 
-DevicePixelRatio:
+DevicePixelRatio: In a typical retina display, there can be a devicePixelRatio of 2 so that each 1x1 logical pixel is rendered using 2x2 logical pixels. This upsampling requires interpolation and can lead to blurring over your image. However, this can be compensated by setting the CanvasRatio = BackingStoreRatio/DevicePixelRatio
 
 FixationRadius: Radius of fixation image in pixels. This is not set by the user. Rather, user specifies FixationScale, and then FixationRadius stores the actual pixel-based size in the json data file.
 
-ImageHeightPixels:
+ImageHeightPixels: The height of the sample image in pixels. The image height is used as the unit for the vertical dimension. SampleScale, FixationScale, TestScale, or GridScale = 1 means correspond to 1 unit in terms of the sample image
 
-ImageWidthPixels:
+ImageWidthPixels: The width of the sample image in pixels. The image width is used as the unit for the horizontal dimension. SampleScale, FixationScale, TestScale, or GridScale = 1 means correspond to 1 unit in terms of the sample image
 
-Ordered_Samplebag_Filenames:
+Ordered_Samplebag_Filenames: Names of the sample image bags. Each bag is treated as a separate label class
 
-Ordered_Testbag_Filenames:
+Ordered_Testbag_Filenames: Names of the test image bags. Each test image bag serves as the label images for each sample class
 
-ParamFileDate:
+ParamFileDate: Date of revision on dropbox of the parameter file used for loading the task.
 
-ParamFileName:
+ParamFileName: Name of the parameter file used for loading the task
 
-ParamFileRev:
+ParamFileRev: Dropbox revision # of the parameter file. The revision number is used to determine if a new version of the parameter file was found
 
-RewardDuration:
+RewardDuration: How long the reward is dispensed in milliseconds of time the pump is on. RewardDuration is derived by the user-specified RewardPer1000Trials in mL and the calibration curve for that pump type. 
 
 Subject: Name of subject, chosen from pulldown menu at beginning of task.
 
-XGridCenter:
+XGridCenter: The location of all grid points in pixels. Follows from user-specified NGridPoints and GridScale (e.g. to create a 3x3 grid with adjacent non-overlapping images, set NGridPoints=3, GridScale=1 and XGridCenters will be spaced by ImageWidthPixels)
 
-YGridCenter:
+YGridCenter: The location of all grid points in pixels. Follows from user-specified NGridPoints and GridScale (e.g. to create a 3x3 grid with adjacent non-overlapping images, set NGridPoints=3, GridScale=1 and YGridCenters will be spaced by ImageHeightPixels)
 
 ## TRIAL
-AllFixationXYT:
+AllFixationXYT: records all fixation touches as opposed to most recent fixation touch in FixationXYT. If NFixations > 1, then AllFixationXYT will have multiple touch entries on a given trial. X,Y=horizontal,vertical position of fixation touch in pixels T=time of touch measured during performance.now()
 
-AutomatorStage:
+AutomatorStage: Stage number if Automator=1
 
-CorrectItem:
+CorrectItem: Index of the correct item on each trial
 
 FixationGridIndex: Fixation grid location on each trial.
 
-FixationTouchEvent:
+FixationTouchEvent: The type of touch event that was registered for that trial (e.g. touchheld or touchbroke if there was a required FixationDuration>0 period)
 
-FixationXYT:
+FixationXYT: records most recent fixation touch on each trial. X,Y=horizontal,vertical position of fixation touch in pixels T=time of touch measured using performance.now()
 
-NReward: The number of rewards given at the end of the trial; usually 1x reward unless subject got many trials in a row correct in which case may get bonus reward according to nconsecutivehitsforbonus.
+NReward: The number of rewards given at the end of each trial; usually 1x reward unless subject got many trials in a row correct in which case may get bonus reward according to nconsecutivehitsforbonus.
 
-Response:
+Response: Index of the chosen item on each trial
 
-ResponseTouchEvent: 
+ResponseTouchEvent: The type of touch event that was registered for that trial (e.g. touchheld, touchbroken, TimeOut)
 
-ResponseXYT: 
+ResponseXYT: records the coordinates and time of touching the choice item. X,Y=horizontal,vertical position of response touch in pixels T=time of touch measured using performance.now()
 
-Sample: 
 
-StartTime: 
+Sample: Index of sample displayed on each trial. Index into list of imagebags for that session
 
-Test: 
+StartTime: Time recorded when the most recent fixation dot was shown for that trial.
+
+Test: Indices of test choices displayed on each trial where N indices are stored for an N-AFC task. Index into list of test imagebags for that session

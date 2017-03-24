@@ -72,7 +72,7 @@ automator_eventstring.push(
 		console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject advanced to stage '+(i_current_stage+1)+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
 
 		// Save behavior with current TASK, ENV, and TRIAL before moving on. 
-		saveBehaviorDatatoDropbox(TASK, ENV, TRIAL); 
+		saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL); 
 
 		// Reset tracking variables 
 		purgeTrackingVariables()

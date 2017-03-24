@@ -93,6 +93,8 @@ CURRTRIAL.fixationtouchevent = ""
 CURRTRIAL.responsetouchevent = ""
 CURRTRIAL.lastTrialCompleted = new Date
 CURRTRIAL.lastDropboxSave = new Date
+CURRTRIAL.tsequenceactual = []
+CURRTRIAL.tsequencedesired = []
 
 
 var trialhistory = {}
@@ -116,6 +118,7 @@ var xcanvascenter=[];
 var ycanvascenter=[];
 var curridx = null;
 var datafiles=[];
+var displayoutofboundsstr=""
 
 //================ UPDATE VARIABLE FUNCTIONS ================//
 function resetTRIAL(){
@@ -133,6 +136,8 @@ function resetTRIAL(){
 	TRIAL.ResponseTouchEvent = []
 	TRIAL.NReward = []
 	TRIAL.AutomatorStage = []
+	TRIAL.TSequenceDesired = []
+	TRIAL.TSequenceActual = []
 	return TRIAL
 }
 
@@ -150,6 +155,8 @@ function updateTRIAL(){
 	TRIAL.CorrectItem[CURRTRIAL.num] = CURRTRIAL.correctitem
 	TRIAL.NReward[CURRTRIAL.num] = CURRTRIAL.nreward
 	TRIAL.AutomatorStage[CURRTRIAL.num] = TASK.CurrentAutomatorStage; 
+	TRIAL.TSequenceDesired[CURRTRIAL.num] = CURRTRIAL.tsequencedesired
+	TRIAL.TSequenceActual[CURRTRIAL.num] = CURRTRIAL.tsequenceactual
 }
 
 function updateTrialHistory(){
