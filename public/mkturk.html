@@ -386,11 +386,16 @@ while(true){
 		CURRTRIAL.allfixationxyt[TASK.NFixations - FLAGS.waitingforTouches - 1] = CURRTRIAL.fixationxyt
 		if (CURRTRIAL.fixationtouchevent == "touchheld"){
 			CURRTRIAL.response = CURRTRIAL.correctitem
-		} //touched outside fixation
-		else if (CURRTRIAL.fixationtouchevent == "touchbroken"){
+		} //touched fixation
+		else if (CURRTRIAL.fixationtouchevent == "touchbroken" &&
+			TASK.RewardStage == 0){
 			CURRTRIAL.response = -1
 			FLAGS.waitingforTouches = 0 //exit loop
-		} //touched fixation
+		} //fixation task, but touched outside fixation
+		else if (CURRTRIAL.fixationtouchevent == "touchbroken" &&
+			TASK.RewardStage == 1){
+			//dms task, ok if touched outside, just wait for touch inside fixation area
+		}
 
 		//========= AWAIT CLEAR FIXATION =========//
 		for (var q in CANVAS.sequenceblank){frame.shown[q]=0}

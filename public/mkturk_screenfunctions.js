@@ -198,10 +198,9 @@ async function bufferTrialImages(sample_image, sample_image_grid_index, test_ima
 	
 	//========== BUFFER TEST CANVAS ==========//
 	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)
-	var pre_grayout = false 
+	var pre_grayout = true 
 	if(pre_grayout == true){
 		var canvasobj=CANVAS.obj.test;
-		selectSampleImage
 		var context=canvasobj.getContext('2d');
 		context.fillStyle="#7F7F7F";
 		context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
