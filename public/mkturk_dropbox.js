@@ -249,7 +249,7 @@ function loadTextFilefromDropbox(textfile_path){
 //================== LOAD AUDIO ==================//
 function loadSoundfromDropbox2(src,idx){
 	return new Promise(function(resolve,reject){
-		dbx.filesDownload({path: sounds.folder + src + ".wav"}).then(function(data){
+		dbx.filesDownload({path: SOUND_FILEPREFIX + src + ".wav"}).then(function(data){
 		var reader = new FileReader()
 		reader.onload = function(e){
 			audiocontext.decodeAudioData(reader.result).then(function(buffer){

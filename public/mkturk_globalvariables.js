@@ -105,7 +105,6 @@ trialhistory.correct = []
 
 
 var sounds = {
-	folder: "/MonkeyTurk/sounds/au",
 	serial: [0,1,2,3,4],
 	buffer: [],
 }

@@ -149,8 +149,8 @@ async function readTrialHistoryFromDropbox(filepaths){
 	for (var i = 0; i< filepaths.length; i++){
 		datastring = await loadTextFilefromDropbox(filepaths[i])
 		data = JSON.parse(datastring)
-		task_data = data[1]
-		trial_data = data[2]
+		task_data = data[2]
+		trial_data = data[3]
 
 		var numTRIALs = trial_data.Response.length; 
 		// Iterate over TRIALs
