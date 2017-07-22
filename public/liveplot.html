@@ -624,25 +624,27 @@ function drawArea(){
 
 	//updating slider
 	if (file.datahasChanged == true && file.filehasChanged == false){
-		if (trange < onehr){
+		// if (trange < onehr){
 			// expand window size automatically up to 100
 			sliderstate.range.start = tmin
 			sliderstate.range.end = tmax
-		}
-		else {
-			//shift slider over
-			var dt = tmax.getTime() - tlast.getTime()
-			sliderstate.range.start.setTime(sliderstate.range.start.getTime() + dt)
-			sliderstate.range.end.setTime(sliderstate.range.end.getTime() + dt)
-		}
+		// }
+		// else {
+		// 	//shift slider over
+		// 	var dt = tmax.getTime() - tlast.getTime()
+		// 	sliderstate.range.start.setTime(sliderstate.range.start.getTime() + dt)
+		// 	sliderstate.range.end.setTime(sliderstate.range.end.getTime() + dt)
+		// }
 	}
 	else if (file.filehasChanged == true){
-		//shift slider to end
-		sliderstate.range.start = new Date(tmax.getTime() - onehr)
-		sliderstate.range.end = tmax
-		if (sliderstate.range.start.getTime() < tmin.getTime()){
-			sliderstate.range.start = new Date(tmin.getTime())
-		}
+			sliderstate.range.start = tmin
+			sliderstate.range.end = tmax
+		// //shift slider to end
+		// sliderstate.range.start = new Date(tmax.getTime() - onehr)
+		// sliderstate.range.end = tmax
+		// if (sliderstate.range.start.getTime() < tmin.getTime()){
+		// 	sliderstate.range.start = new Date(tmin.getTime())
+		// }
 	}
 	tlast = new Date(dataCumulative.getColumnRange(0).max)
 
