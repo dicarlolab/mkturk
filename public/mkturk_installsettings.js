@@ -21,8 +21,8 @@ var DBX_REDIRECT_URI_ROOT = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr3
 
 // ------ Subject settings ------ 
 var subjectlist = [
-"Eliaso","Michaelo","Zico","Waffles",
-"Setta","Sausage","Picasso","Pablo","Crypto","Chromeo","Bento"
+"Eliaso","Michaelo","Zico","Waffles","Solo",
+"Setta","Sausage","Picasso","Pablo","Crypto","Chromeo","Castro","Bento"
 ];
 
 // ------ Save location settings ------
