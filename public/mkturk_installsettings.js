@@ -2,21 +2,10 @@
 // Also used for liveplot to identify where to look for behavioral files
 
 // ------ Dropbox WebApp settings ------ 
-// // MLee Prototype
-// var DBX_CLIENT_ID = "g7cp4rtcbm6xm7k"
-// var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/tnra0lpcs5uvy54/personalPrototype_mkturk/public/mkturk.html"
-// var DBX_CLIENT_ID = "62jec4hj1swj2ee"
-// var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/tnra0lpcs5uvy54/GHprototype_mkturk/mkturk/public/mkturk.html"
-
-
-// // EIssa Nightly
-// var DBX_CLIENT_ID = "3rd6bco8cdmcadz"
-// var DBX_REDIRECT_URI_ROOT = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/nightly/public2/"
-
-
 // MKTURK
-var DBX_CLIENT_ID = "2m9hmv7q45kwren"
-var DBX_REDIRECT_URI_ROOT = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/"
+
+var DBX_CLIENT_ID = "ayaj26gekiu83wo"
+var DBX_REDIRECT_URI_ROOT = "https://dicarlo5.mit.edu/~mil/MonkeyTurk/mkturk/public/"
 
 
 // ------ Subject settings ------ 
