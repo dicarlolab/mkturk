@@ -55,6 +55,7 @@ async clear_cache(){
 
 async cache_these_images(imagenames){
 	try{
+		console.log('hello0')
 
 		if (typeof(imagenames) == "string"){
 			var filename = imagenames; 
@@ -69,7 +70,9 @@ async cache_these_images(imagenames){
 			}
 		}
 
+		
 		else if (typeof(imagenames) == "object"){
+			console.log('hello1')
 			var requested_imagenames = []
 			for (var i = 0; i < imagenames.length; i ++){
 				var filename = imagenames[i]

@@ -4,20 +4,21 @@
 // ------ Dropbox WebApp settings ------ 
 // MKTURK
 
-var DBX_CLIENT_ID = "ayaj26gekiu83wo"
+var DBX_CLIENT_ID = "jufvjpyt19d4eh7"
 var DBX_REDIRECT_URI_ROOT = "https://dicarlo5.mit.edu/~mil/MonkeyTurk/mkturk/public/"
 
 
 // ------ Subject settings ------ 
 var subjectlist = [
-"Eliaso","Michaelo","Zico","Waffles","Solo",
-"Setta","Sausage","Picasso","Pablo","Crypto","Chromeo","Castro","Bento"
+"Michaelo","Zico",
+"Crypto","Chromeo"
 ];
 
 // ------ Save location settings ------
-var DATA_SAVEPATH = "/MonkeyTurk/datafiles/"
-var PARAM_DIRPATH = "/MonkeyTurk/parameterfiles/subjects/"
-var SOUND_FILEPREFIX = "/MonkeyTurk/sounds/au"
+var DATA_SAVEPATH = "/Behavior/science_logfiles/"
+var PARAM_DIRPATH = "/Tasks/SubjectParameters/"
+var SOUND_FILEPREFIX = "/Resources/sounds/au"
+var AUTOMATOR_FILEPATH
 
 // ------ Misc. -----------------------
 var ndatafiles2read=5; // todo: change to trials. and use as upper bound (stop reading once you hit the first discrepancy). maybe this is effectively synonymous with mintrials

@@ -15,6 +15,13 @@ async function getMostRecentBehavioralFilePathsFromDropbox(num_files_to_get, sub
 	try{
 
 		// TODO: add code for reading huge folders -- (see getImageListDropboxRecursive)
+
+		// If folder does not end with /, add it. 
+		console.log(save_directory)
+		if (save_directory.endsWith('/') == false){ 
+			save_directory = save_directory + '/'
+			console.log(save_directory)
+		}
 		response = await dbx.filesListFolder({path: save_directory})
 		//console.log("Success: read directory "+save_directory)
 
@@ -201,7 +208,7 @@ async function parseAutomatorFilefromDropbox(jsontxt_filepath){
 	// [{param:val, param:val}, {param:val, param:val}]
 
 	// Returns an array of identical format
-	console.log('Loading automator file from Dropbox:'+jsontxt_filepath)
+	console.log('Starting load of automator file from Dropbox:'+jsontxt_filepath)
 	var datastring = await loadTextFilefromDropbox(jsontxt_filepath)
 
 	data = JSON.parse(datastring);
@@ -357,6 +364,7 @@ async function loadImagefromDropbox(imagepath){
 	// Loads and returns a single image located at imagepath into an Image()
 	// Upon failure (e.g. from Dropbox API limit), will retry up to MAX_RETRIES. 
 	// Will wait between retries with linear increase in waittime between tries. 
+	console.log('hello2')
 	return new Promise(
 		function(resolve, reject){
 			try{

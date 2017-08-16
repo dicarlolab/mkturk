@@ -72,7 +72,6 @@ else {
 }
 //=============== (end) AUTHENTICATE ===============//
 
-
 // GET PARAMFILE NAME
 var subjectdialog = document.getElementById("subjectID_dialog");
 var subjectlistobj = document.getElementById("subjectID_list");
@@ -131,6 +130,8 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 			ENV.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
 		})
 	});
+
+
 //============= (end) Initialize Audio & Battery Objects ==================//
 
 (async function(){
@@ -139,7 +140,6 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	document.querySelector("button[name=connectble]").style.visibility = "visible"
 	document.querySelector("button[name=noble]").style.display = "block"
 	document.querySelector("button[name=noble]").style.visibility = "visible"
-
 	await connectBLEButtonPromise()
 
 	document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
@@ -157,14 +157,14 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
 	document.querySelector("button[name=doneEditingParams]").style.display = "block"
 	document.querySelector("button[name=doneEditingParams]").style.visibility = "visible"
-	
+		
 	await editParamsPromise()
 	document.querySelector("button[name=doneEditingParams]").style.display = "none"
 	var textobj = document.getElementById("headsuptext")
 	textobj.removeEventListener('touchend',headsuptext_listener)
 	textobj.removeEventListener('mouseup',headsuptext_listener)
 	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",false)
-
+	
 	if (FLAGS.need2saveParameters == 1){
 		var user_param_text = document.getElementById("headsuptext").innerHTML //get new params
 		await saveParameterTexttoDropbox(user_param_text) //write new params
@@ -174,8 +174,18 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 
 	//============= AWAIT READ SUBJECT PERFORMANCE HISTORY =============//
 	// Read performance history
-	var subject_behavior_save_directory = DATA_SAVEPATH + ENV.Subject + '/'
+	var subject_behavior_save_directory = DATA_SAVEPATH + ENV.Subject
 	if (TASK.Automator != 0){
+
+		try{
+			await dbx.filesGetMetadata({"path":subject_behavior_save_directory, "include_deleted":false})
+		}
+		catch(error){
+			console.log(error)
+			console.log("Subject save directory does not exist...making one at "+subject_behavior_save_directory)
+			await dbx.filesCreateFolder({"path":subject_behavior_save_directory})
+		}		
+
 		var history_file_paths = await getMostRecentBehavioralFilePathsFromDropbox(ndatafiles2read, ENV.Subject, subject_behavior_save_directory)
 		trialhistory = await readTrialHistoryFromDropbox(history_file_paths);		
 	}
