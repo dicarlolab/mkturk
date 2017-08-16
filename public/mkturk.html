@@ -205,7 +205,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 			// Populate the stage's imagebuffer with some images
 			var num_prebuffer_trials = 5
 			await AutomatorPreBuffer['TrialQueue'][a].build(num_prebuffer_trials)
-			console.timeEnd('Stage '+a)
+			console.timeEnd('Loaded stage '+a)
 		}
 		console.log('Done prebuffering')
 	} //if automator
@@ -281,8 +281,10 @@ while(true){
 			TQ = new TrialQueue(samplingStrategy, TASK.ImageBagsSample, TASK.ImageBagsTest)
 			await TQ.build(1)
 		}	
+
+
 		else if(TASK.Automator == 1){
-			TQ = AutomatorPreBuffer.TrialQueue[TASK.AutomatorStage]
+			TQ = AutomatorPreBuffer.TrialQueue[TASK.CurrentAutomatorStage]
 		} //if automator
 		samplebag_paths = TQ.samplebag_paths
 		samplebag_labels = TQ.samplebag_labels

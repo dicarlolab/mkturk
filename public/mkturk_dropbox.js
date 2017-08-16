@@ -201,8 +201,11 @@ async function parseAutomatorFilefromDropbox(jsontxt_filepath){
 	// [{param:val, param:val}, {param:val, param:val}]
 
 	// Returns an array of identical format
+	console.log('Loading automator file from Dropbox:'+jsontxt_filepath)
 	var datastring = await loadTextFilefromDropbox(jsontxt_filepath)
+
 	data = JSON.parse(datastring);
+	console.log('Successfully loaded automator file from Dropbox:'+jsontxt_filepath)
 	return data
 
 	// Not being used, but maybe if you want to iterate over individual parameters
@@ -217,6 +220,7 @@ async function parseAutomatorFilefromDropbox(jsontxt_filepath){
 			}	
 		}
 	}
+
 	return automator_stage_parameters
 }
 
@@ -413,7 +417,7 @@ async function saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL){
 			contents: datastr,
 			mode: {[".tag"]: "overwrite"} })
 			CURRTRIAL.lastDropboxSave = new Date(response.client_modified)
-			console.log("Successful behavior file upload. Size:" + response.size)
+			console.log("Successful behavior file upload at "+ENV.DataFileName+ ". Size:" + response.size)
 		}
 	catch(error){
 		console.error(error)

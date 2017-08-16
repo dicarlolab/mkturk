@@ -21,7 +21,8 @@ async function automateTask(automator_data, trialhistory){
 				property === 'CurrentAutomatorStageName'){
 				continue 
 			}
-
+			console.log('hello'+property)
+			console.log(automator_data[i_current_stage][property])
 			if (!(TASK[property].toString() == automator_data[i_current_stage][property].toString())){
 automator_eventstring.push('WRITE NEW PARAMS: ' + 'Discrepancy between TASK.'+property+'='+TASK[property]+
 ' and automator_data['+i_current_stage+']['+property+']='+automator_data[i_current_stage][property])
