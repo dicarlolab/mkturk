@@ -169,11 +169,6 @@ async function readTrialHistoryFromDropbox(filepaths){
 			var starttime = trial_data.StartTime[i_trial]
 			trialhistory.starttime.push(starttime)
 
-			// Trial number 
-			var trialnumber = trial_data.TrialNumber[i_trial]
-			trialhistory.trialnumber.push(trialnumber) 
-			
-
 		}
 	}
 	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
