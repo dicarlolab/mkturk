@@ -2,7 +2,7 @@
 Wireless touchscreen behavioral training
 
 Todo: 
-* ~~ Refactor folder structure ~~
+* ~~Refactor folder structure~~
 * Dynamically populate subject list w/ paramfiles, not hard coded subject names.
     * Improve subject selection UI (don't use dropdown menu with small buttons)
 * Explicit sound referencing - remove constraint of file pattern matching; currently convention 'au'[*]
