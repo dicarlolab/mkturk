@@ -516,7 +516,7 @@ async function saveTouchestoDropbox() {
 		
 		var starttime = window.performance.timing.navigationStart
 
-		header = 'x_pixels_left2right, y_pixels_top2bottom, touch_number, unix_timestamp_delta_from__'+starttime+', Tap_or_Drag\n'
+		header = 'x_pixels_left2right,y_pixels_top2bottom,touch_number,unix_timestamp_delta_from__'+starttime+',Tap_or_Drag\n'
 
 		response = await dbx.filesUpload({
 			path: root_savedir,

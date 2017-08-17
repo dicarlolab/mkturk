@@ -116,8 +116,10 @@ function getAllInstancesIndexes(arr, val){
     return indexes;
 }
 
-// Shuffles an array...in place?
-function shuffle(array) {
+// Shuffles an array
+function shuffle(array, RNGseed) {
+  Math.seedrandom(RNGseed)
+
   var currentIndex = array.length, temporaryValue, randomIndex;
 
   // While there remain elements to shuffle...
@@ -134,6 +136,28 @@ function shuffle(array) {
   }
 
   return array;
+}
+
+function cantor(k1, k2){
+  // Cantor hash function maps two nonnegative integers into another nonnegative integer 
+  // https://stackoverflow.com/questions/919612/mapping-two-integers-to-one-in-a-unique-and-deterministic-way
+  
+  if (k1 < 0){
+    k1 = -1 * k1 * 2 - 1
+  }
+  else{
+    k1 = 2 * k1
+  }
+  if (k2 < 0){
+    k2 = -1 * k2 * 2 - 1
+  }
+  else{
+    k2 = 2 * k2
+  }
+
+  hash = (k1 + k2) * (k1 + k2 + 1) /  2 + k2
+
+  return hash
 }
 
 /* Randomize array element order in-place.  Using Fisher-Yates shuffle algorithm. http://bost.ocks.org/mike/shuffle/ */

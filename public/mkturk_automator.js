@@ -137,6 +137,7 @@ async function readTrialHistoryFromDropbox(filepaths){
 	trialhistory.starttime = []
 	trialhistory.response = []
 	trialhistory.correct = []
+	trialhistory.trialnumber = []
 
 	if (typeof filepaths == "string"){
 		filepaths = [filepaths]
@@ -167,6 +168,12 @@ async function readTrialHistoryFromDropbox(filepaths){
 			// Start time (fixation dot appears) of trial 
 			var starttime = trial_data.StartTime[i_trial]
 			trialhistory.starttime.push(starttime)
+
+			// Trial number 
+			var trialnumber = trial_data.TrialNumber[i_trial]
+			trialhistory.trialnumber.push(trialnumber) 
+			
+
 		}
 	}
 	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')

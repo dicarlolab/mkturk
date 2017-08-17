@@ -1,9 +1,14 @@
 class TrialQueue { 
 
-constructor(samplingStrategy, ImageBagsSample, ImageBagsTest){
-
-	// Properties
+constructor(samplingStrategy, ImageBagsSample, ImageBagsTest, samplingRNGseed, trialStartNumber){
+	// Sampling properties
 	this.samplingStrategy = samplingStrategy; 
+	this.trialStartNumber = trialStartNumber; 
+	this.samplingRNGseed = samplingRNGseed; 
+	this._numtrialsgenerated = 0
+
+
+	// Resource properties
 	this.ImageBagsSample = ImageBagsSample; 
 	this.ImageBagsTest = ImageBagsTest; 
 
@@ -57,14 +62,18 @@ async generate_trials(n_trials){
 
 	for (var i = 0; i < n_trials; i++){
 		// Draw one (1) sample image from samplebag
-		var sample_index = selectSampleImage(this.samplebag_labels, this.samplingStrategy)
+		var trialnumber = this.trialStartNumber + this._numtrialsgenerated
+		var _RNGseed = cantor(this.samplingRNGseed, trialnumber)
+		console.log('Generating trial ', trialnumber, '. Using seed ', _RNGseed)
+
+		var sample_index = selectSampleImage(this.samplebag_labels, this.samplingStrategy, _RNGseed)
 		var sample_label = this.samplebag_labels[sample_index]; 
 		var sample_filename = this.samplebag_paths[sample_index]; 
 		
 		image_requests.push(sample_filename)
 
 		// Select appropriate test images (correct one and distractors) 
-		var funcreturn = selectTestImages(sample_label, this.testbag_labels) 
+		var funcreturn = selectTestImages(sample_label, this.testbag_labels, _RNGseed) 
 		var test_indices = funcreturn[0] 
 		var correctIndex = funcreturn[1] 
 		var test_filenames = []
@@ -83,7 +92,9 @@ async generate_trials(n_trials){
 		this.testq.correctIndex.push(correctIndex)
 
 		this.num_in_queue++;
+		this._numtrialsgenerated+=1
 	}
+
 	// Download images to support these trials to download queue
 	console.log("TQ.generate_trials() will request", image_requests.length)
 	await this.IB.cache_these_images(image_requests); 
@@ -159,7 +170,9 @@ async get_next_trial(){
 }
 
 
-function selectSampleImage(samplebag_labels, SamplingStrategy){
+function selectSampleImage(samplebag_labels, SamplingStrategy, _RNGseed){
+	
+	Math.seedrandom(_RNGseed)
 
 	// Vanilla random uniform sampling with replacement: 
 	var sample_image_index = NaN
@@ -173,7 +186,7 @@ function selectSampleImage(samplebag_labels, SamplingStrategy){
 	return sample_image_index
 }
 
-function selectTestImages(correct_label, testbag_labels){
+function selectTestImages(correct_label, testbag_labels, _RNGseed){
 	
 	// Input arguments: 
 	// 	correct_label: int. It is one element of testbag_labels corresponding to the rewarded group. 
@@ -185,6 +198,7 @@ function selectTestImages(correct_label, testbag_labels){
 	//	[0]: testIndices: array of ints, of length TASK.TestGridIndex.length. The elements are indexes of testbag_labels. The order corresponds to TestGridIndex. 
 	//	[1]: correctSelection: int. It indexes testIndices / TestGridIndex to convey the correct element. 
 
+	Math.seedrandom(_RNGseed)
 
 	var testIndices = []; 
 	var correctSelection = NaN;

@@ -18,6 +18,7 @@ var TASK = {}; // Global that encapsulates state of the current task, read from 
 var TRIAL = resetTRIAL() // Global that contains data variables that are incremented every trial, and are dumped to disk for scientific purposes.
 var ENV = {}; // Task specific variables that are slaves to TASK settings, but still desired to be recorded. Hence, they should not appear in the TASK-based params file, but should be logged on their own. 
 ENV.Subject = ''
+ENV.UnixTimestampAtStart = window.performance.timing.navigationStart
 ENV.CurrentDate = new Date;
 ENV.ImageHeightPixels = NaN; 
 ENV.ImageWidthPixels = NaN;
