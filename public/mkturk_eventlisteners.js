@@ -13,8 +13,17 @@ function touchhold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 		var return_event = {type: "", cxyt: []}
 		while (true){
 			touchevent = yield touchevent
-
-console.log('TOUCHEVENT', touchevent.type)
+			console.log('TOUCHEVENT', touchevent.type)
+			if (touchevent.type == "touchstart" || touchevent.type == "touchmove"){
+				var x = touchevent.targetTouches[0].pageX;
+				var y = touchevent.targetTouches[0].pageY;					
+			}
+			else if (touchevent.type == "mousedown" || touchevent.type == "mousemove"){
+				var x = touchevent.clientX
+				var y = touchevent.clientY
+			}
+			var t = Math.round(performance.now())
+			console.log(x, y, t)
 
 			if (touchevent.type == 'touchheld' || touchevent.type == 'touchbroken'){
 				return_event.type = touchevent.type
@@ -163,6 +172,8 @@ function doneTestingTask_listener(event){
 	console.log("User is done testing. Start saving data");
 	FLAGS.savedata=1
 	FLAGS.purge=1
+	TOUCHSTRING = ""
+	TOUCHSTRING_UDPATECOUNTER = 0
 	purgeTrackingVariables()
 	FLAGS.purge=0
 	renderBlank(CANVAS.obj.blank)

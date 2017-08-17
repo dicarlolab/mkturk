@@ -10,6 +10,7 @@ function getAccessTokenFromUrl(){
 
 //================== LIST FILES ==================//
 // Asynchronous: Get file list from dropbox directory
+
 async function getMostRecentBehavioralFilePathsFromDropbox(num_files_to_get, subject_id, save_directory){
 	var file_list = []
 	try{
@@ -502,6 +503,38 @@ async function saveParameterstoDropbox() {
 		return 1 //need2saveParameters
 	}
 }
+async function saveTouchestoDropbox() {
+	try{
+		var root_savedir = "/Behavior/touch_logfiles/"+ENV.Subject+'/'
+
+		var datestr = ENV.CurrentDate.toISOString();
+		datestr = datestr.slice(0,datestr.indexOf("."))
+
+		var filename = ENV.Subject+'__'+datestr+'__'+"touch"+TOUCHSTRING_UDPATECOUNTER+'.txt'
+	
+		root_savedir = root_savedir + filename 
+		
+		var starttime = window.performance.timing.navigationStart
+
+		header = 'x_pixels_left2right, y_pixels_top2bottom, touch_number, unix_timestamp_delta_from__'+starttime+', Tap_or_Drag\n'
+
+		response = await dbx.filesUpload({
+			path: root_savedir,
+			contents: header+TOUCHSTRING,
+			mode: {[".tag"]: "overwrite"} })
+		TOUCHSTRING = ""
+		
+		console.log("Touches written to disk as "+root_savedir+". Size: " + response.size)
+		return 0; //need2saveParameters
+	}
+	catch (error){
+		console.error(error)
+		return -50 //need2saveParameters
+	}
+}
+
+
+
 
 
 //================== WRITE JSON (end) ==================//

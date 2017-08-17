@@ -29,6 +29,7 @@
 
 	<button name="doneTestingTask" style="visibility:hidden; position: absolute; top: 55%; left: 70%; height: 75px; width: 200px; border-radius: 20px; z-index:101">Done with testing trials</button>
 
+
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:98; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasblank" width="0" height="0" src="" style="z-index:99; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvassample" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
@@ -70,6 +71,11 @@ else {
 	var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
 	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
 }
+
+setupDragTracker()
+setupTapTracker()
+//setupMouseTracker()
+
 //=============== (end) AUTHENTICATE ===============//
 
 // GET PARAMFILE NAME
@@ -164,7 +170,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	textobj.removeEventListener('touchend',headsuptext_listener)
 	textobj.removeEventListener('mouseup',headsuptext_listener)
 	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",false)
-	
+
 	if (FLAGS.need2saveParameters == 1){
 		var user_param_text = document.getElementById("headsuptext").innerHTML //get new params
 		await saveParameterTexttoDropbox(user_param_text) //write new params
@@ -545,7 +551,14 @@ while(true){
 	if ( (new Date).getDate() != ENV.CurrentDate.getDate()){
 		FLAGS.need2loadParameters = 1
 	} //if new day
+	
+	if (TOUCHSTRING.length > TOUCHSTRING_UPDATE_PERIOD){
+		console.log('Writing out touchstring')
+		await saveTouchestoDropbox()
+	}
 	//================= (end) HOUSEKEEPING =================//
+
+
 
 	updateHeadsUpDisplay();
 	console.log('End of trial ', CURRTRIAL.num, '. TRIAL: ', TRIAL)

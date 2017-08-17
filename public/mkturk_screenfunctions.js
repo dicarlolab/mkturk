@@ -39,6 +39,35 @@ function updateStatusText(text){
 }
 //================== CANVAS SETUP ==================//
 
+
+function setupDragTracker(){
+
+	window.addEventListener('touchmove', function(event){
+		// the user touched the screen
+		x = Math.round(event.targetTouches[0].clientX)
+		y = Math.round(event.targetTouches[0].clientY)
+		t = Math.round(performance.now())
+		TOUCHSTRING+=x+','+y+','+TOUCHSTRING_UDPATECOUNTER+','+t+',d\n'
+		TOUCHSTRING_UDPATECOUNTER+=1
+
+		console.log(TOUCHSTRING_UDPATECOUNTER)
+		//console.log('drag', x, y, t)
+	})
+}
+
+function setupTapTracker(){
+	window.addEventListener('touchstart', function(event){
+		// the user touched the screen
+		x = Math.round(event.targetTouches[0].clientX)
+		y = Math.round(event.targetTouches[0].clientY)
+		t = Math.round(performance.now())
+		TOUCHSTRING+=x+','+y+','+TOUCHSTRING_UDPATECOUNTER+','+t+',t\n'
+		TOUCHSTRING_UDPATECOUNTER+=1
+		console.log(TOUCHSTRING_UDPATECOUNTER)
+		//console.log('tap', x, y, t)
+	})
+}
+
 function setupCanvasHeadsUp(){
 	canvasobj=document.getElementById("canvasheadsup");
 	canvasobj.width=document.body.clientWidth;
