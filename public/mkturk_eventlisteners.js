@@ -13,7 +13,7 @@ function touchhold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 		var return_event = {type: "", cxyt: []}
 		while (true){
 			touchevent = yield touchevent
-			console.log('TOUCHEVENT', touchevent.type)
+			//console.log('TOUCHEVENT', touchevent.type)
 			if (touchevent.type == "touchstart" || touchevent.type == "touchmove"){
 				var x = touchevent.targetTouches[0].pageX;
 				var y = touchevent.targetTouches[0].pageY;					
@@ -23,7 +23,7 @@ function touchhold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 				var y = touchevent.clientY
 			}
 			var t = Math.round(performance.now())
-			console.log(x, y, t)
+			//console.log(x, y, t)
 
 			if (touchevent.type == 'touchheld' || touchevent.type == 'touchbroken'){
 				return_event.type = touchevent.type
@@ -105,19 +105,19 @@ function touchhold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 			//================== TOUCH END ==================//
 			if ((touchevent.type == "touchend" || touchevent.type == "mouseup") && FLAGS.acquiredTouch){
 				FLAGS.acquiredTouch = 0
-				console.log('was fixating but lifted finger prematurely');
+				//console.log('was fixating but lifted finger prematurely');
 				clearTimeout(touchTimer);
 				return_event.type = "touchbroken"
 				break;
 			} //if ended touch too early			
 		} //while events
-		console.log('RETURN_EVENT', return_event.type)
+		////console.log('RETURN_EVENT', return_event.type)
 		return_event.cxyt = touchcxyt
 		resolveFunc(return_event)
 	} //generator
 	waitforEvent = waitforeventGenerator(); // start async function
 	FLAGS.touchGeneratorCreated = 1
-	console.log('GENERATOR CREATED waiting for ntouches',FLAGS.waitingforTouches)
+	////console.log('GENERATOR CREATED waiting for ntouches',FLAGS.waitingforTouches)
 	waitforEvent.next(); //move out of default state
 	return p;
 }
@@ -126,15 +126,15 @@ function touchhold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 function touchstart_listener(event){
 	event.preventDefault(); //prevents additional downstream call of click listener
 	if(typeof event === 'undefined'){
-		console.log('no click, loading images, initializing responsepromise');
+		////console.log('no click, loading images, initializing responsepromise');
 		return
 	}
 	if (!FLAGS.touchGeneratorCreated){
 		//wait for touch generator promise to be created before registering new touches
-		console.log("IGNORING TOUCH EVENT: no active touch generators")
+		////console.log("IGNORING TOUCH EVENT: no active touch generators")
 	} //if no click generator created
 	else {
-		console.log('touchstart_listener called')
+		////console.log('touchstart_listener called')
 		waitforEvent.next(event)
 	}
 } //touchstart_listener
@@ -142,7 +142,7 @@ function touchstart_listener(event){
 function touchmove_listener(event){
 	if (!FLAGS.touchGeneratorCreated){
 		//wait for touch generator promise to be created before registering new touches
-		console.log("IGNORING TOUCH EVENT: no active touch generators")
+		////console.log("IGNORING TOUCH EVENT: no active touch generators")
 	} //if no click generator created
 	else {
 		waitforEvent.next(event)
@@ -152,7 +152,7 @@ function touchmove_listener(event){
 function touchend_listener(event){
 	if (!FLAGS.touchGeneratorCreated){
 		//wait for touch generator promise to be created before registering new touches
-		console.log("IGNORING TOUCH EVENT: no active touch generators")
+		////console.log("IGNORING TOUCH EVENT: no active touch generators")
 	} //if no click generator created
 	else {
 		waitforEvent.next(event)
@@ -169,13 +169,9 @@ function headsuptext_listener(event){
 }
 function doneTestingTask_listener(event){
 	event.preventDefault()
-	console.log("User is done testing. Start saving data");
-	FLAGS.savedata=1
-	FLAGS.purge=1
-	TOUCHSTRING = ""
-	TOUCHSTRING_UDPATECOUNTER = 0
-	purgeTrackingVariables()
-	FLAGS.purge=0
+	//console.log("User is done testing. Start saving data");
+	FLAGS.debug_mode = 0
+	transition_from_debug_to_science_trials()
 	renderBlank(CANVAS.obj.blank)
 	document.querySelector("p[id=imageloadingtext]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	document.querySelector("button[name=doneTestingTask]").style.display = "none"
@@ -183,7 +179,7 @@ function doneTestingTask_listener(event){
 }
 
 function subjectlist_listener(event){
-	console.log("subject selected");
+	//console.log("subject selected");
 	ENV.Subject = subjectlist[this.value];
 	subjectdialog.close();
 	waitforClick.next(1);
@@ -201,7 +197,7 @@ function subjectIDPromise(){
 			errFunc = reject;
 		}).then(
 		function(resolveval){
-			console.log('User selected ' + resolveval)
+			//console.log('User selected ' + resolveval)
 		});
 	
 	function *waitforclickGenerator(){
@@ -225,7 +221,7 @@ function editParamsPromise(){
 		resolveFunc = resolve;
 		errFunc = reject;
 	}).then(function(resolveval){
-		console.log('User is done editing parameters.')
+		//console.log('User is done editing parameters.')
 	});
 	function *waitforclickGenerator(){
 		var imclicked =[-1];

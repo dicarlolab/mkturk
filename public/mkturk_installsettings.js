@@ -15,7 +15,14 @@ var subjectlist = [
 ];
 
 // ------ Save location settings ------
-var DATA_SAVEPATH = "/Behavior/science_logfiles/"
+// Make sure to include the forward slash for the savepaths 
+
+var TRIAL_DATA_SAVEPATH = "/Behavior/trial_logfiles/"
+var TOUCH_DATA_SAVEPATH = "/Behavior/touch_logfiles/"
+var _debug_TRIAL_DATA_SAVEPATH = "/Behavior/debug/debug_trial_logfiles/"
+var _debug_TOUCH_DATA_SAVEPATH = "/Behavior/debug/debug_touch_logfiles/"
+
+
 var PARAM_DIRPATH = "/Tasks/SubjectParameters/"
 var SOUND_FILEPREFIX = "/Resources/sounds/au"
 var AUTOMATOR_FILEPATH

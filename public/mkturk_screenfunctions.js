@@ -50,7 +50,7 @@ function setupDragTracker(){
 		TOUCHSTRING+=x+','+y+','+TOUCHSTRING_UDPATECOUNTER+','+t+',d\n'
 		TOUCHSTRING_UDPATECOUNTER+=1
 
-		console.log(TOUCHSTRING_UDPATECOUNTER)
+		//console.log(TOUCHSTRING_UDPATECOUNTER)
 		//console.log('drag', x, y, t)
 	})
 }
@@ -63,7 +63,7 @@ function setupTapTracker(){
 		t = Math.round(performance.now())
 		TOUCHSTRING+=x+','+y+','+TOUCHSTRING_UDPATECOUNTER+','+t+',t\n'
 		TOUCHSTRING_UDPATECOUNTER+=1
-		console.log(TOUCHSTRING_UDPATECOUNTER)
+		//console.log(TOUCHSTRING_UDPATECOUNTER)
 		//console.log('tap', x, y, t)
 	})
 }
@@ -153,8 +153,6 @@ function updateHeadsUpDisplay(){
 		+ "mL</b></font> (" + Math.round(TASK.RewardPer1000Trials) 
 		+ " mL per 1000)" + "<br> " 
 		+ task1 + "<br>" + task2 + "<br>" + "<br>"
-		+ "last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>"
-		+ "last saved to dropbox @ " + CURRTRIAL.lastDropboxSave.toLocaleTimeString("en-US")
 		+ "<br>" + "<br>" 
 		+ "<br>" + "<font color=red><b>" + "<font color=blue><b>" + ble.statustext + "<br></font>" 
 	}

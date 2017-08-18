@@ -55,12 +55,11 @@ async clear_cache(){
 
 async cache_these_images(imagenames){
 	try{
-		console.log('hello0')
 
 		if (typeof(imagenames) == "string"){
 			var filename = imagenames; 
 			if (!(filename in this.cache_dict)){
-				var image = await loadImagefromDropbox(filename); 
+				var image = await DW.loadImagefromDropbox(filename); 
 				this.cache_dict[filename] = image; 
 				this.num_elements_in_cache++
 				return 
@@ -72,7 +71,6 @@ async cache_these_images(imagenames){
 
 		
 		else if (typeof(imagenames) == "object"){
-			console.log('hello1')
 			var requested_imagenames = []
 			for (var i = 0; i < imagenames.length; i ++){
 				var filename = imagenames[i]
@@ -88,7 +86,7 @@ async cache_these_images(imagenames){
 					continue
 				}
 			}
-			var image_array = await loadImageArrayfromDropbox(requested_imagenames)
+			var image_array = await DW.loadImageArrayfromDropbox(requested_imagenames)
 			for (var i = 0; i < image_array.length; i++){
 				this.cache_dict[requested_imagenames[i]] = image_array[i]; 
 				this.num_elements_in_cache++; 
