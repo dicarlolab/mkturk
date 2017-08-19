@@ -29,6 +29,7 @@
 
 	<button name="doneTestingTask" style="visibility:hidden; position: absolute; top: 55%; left: 70%; height: 75px; width: 200px; border-radius: 20px; z-index:101">Done with testing trials</button>
 
+	<button name="SyncButton" style="visibility:hidden; position: absolute; top: 1%; left: 92%; height: 30px; width: 50px; font-size: 10px; color: green; border-radius: 10px; z-index:101">Sync data</button>
 
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:98; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasblank" width="0" height="0" src="" style="z-index:99; position: absolute; left: 0px; top: 0px;"> </canvas>
@@ -112,6 +113,12 @@ document.querySelector("button[name=doneTestingTask]").addEventListener(
 	'touchend',doneTestingTask_listener,false)
 document.querySelector("button[name=doneTestingTask]").addEventListener(
 	'mouseup',doneTestingTask_listener,false)
+
+document.querySelector("button[name=SyncButton]").addEventListener(
+	'mouseup',sync_data_listener,false)
+document.querySelector("button[name=SyncButton]").addEventListener(
+	'touchend',sync_data_listener,false)
+
 var textobj = document.getElementById("headsuptext")
 textobj.addEventListener('touchend',headsuptext_listener,false)
 textobj.addEventListener('mouseup',headsuptext_listener,false)
@@ -149,6 +156,9 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	SP = new SoundPlayer()
 	await SP.build()
 	
+	// display sync button 
+	document.querySelector("button[name=SyncButton]").style.visibility = "visible"
+
 	//================== AWAIT CONNECT TO BLE ==================//
 	document.querySelector("button[name=connectble]").style.display = "block"
 	document.querySelector("button[name=connectble]").style.visibility = "visible"
@@ -208,8 +218,8 @@ console.log('LINE 206', TASK)
 console.log('LINE 206', TASK.samplingRNGseed)
 __initial_load_TASK = TASK // Reset to this once you transition from debug to test mode
 
-AM = new Automator("uniform_with_replacement", TASK.samplingRNGseed, TASK.trialStartNumber)
-await AM.build()
+AM = new Automator("uniform_with_replacement")
+await AM.build(5)
 
 while(true){
 	await runtrial()

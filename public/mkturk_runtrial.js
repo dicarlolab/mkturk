@@ -33,8 +33,6 @@ if (FLAGS.need2loadParameters == 1){
         CANVAS.obj["touchfix"].height
     ]
 
-
-
     if(!old_ImageBagsTest.equals(TASK.ImageBagsTest) || !old_ImageBagsSample.equals(TASK.ImageBagsSample)){
         FLAGS.need2loadImages = 1; 
     }
@@ -58,7 +56,7 @@ if (FLAGS.need2loadImages == 1){
     testbag_labels = TQ.testbag_labels
 
     // Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image.
-    await TQ.generate_trials(1)
+    await TQ.get_trial(TASK.trialStartNumber)
     var representative_image = await TQ.IB.get_by_name(TQ.sampleq.filename[0])
     ENV.ImageWidthPixels = representative_image.width
     ENV.ImageHeightPixels = representative_image.height
@@ -81,7 +79,7 @@ renderBlank(CANVAS.obj.blank);
 
 //============ SELECT SAMPLE & TEST IMAGES ============//
 // Draw one (1) sample image from samplebag
-[CURRTRIAL.sampleimage, CURRTRIAL.sampleindex, CURRTRIAL.testimages, CURRTRIAL.testindices, CURRTRIAL.correctitem] = await TQ.get_next_trial();
+[CURRTRIAL.sampleimage, CURRTRIAL.sampleindex, CURRTRIAL.testimages, CURRTRIAL.testindices, CURRTRIAL.correctitem] = await TQ.get_trial(TASK.trialStartNumber);
 
 
 //============ AWAIT BUFFER CANVASES WITH SAMPLE & TEST IMAGES ============//
@@ -208,7 +206,7 @@ else if (CURRTRIAL.correct == 0) {
 
     var p1 = displayTrial(CANVAS.sequencepost,CANVAS.tsequencepost);
     var num_trials_to_buffer_in_punishperiod = 20
-    var p2 = TQ.generate_trials(num_trials_to_buffer_in_punishperiod)
+    var p2 = TQ.buffer_trials(num_trials_to_buffer_in_punishperiod)
     SP.playSound(3);
     await Promise.all([p1,p2])
 }
@@ -238,7 +236,7 @@ AM.trialhistory.response.push(CURRTRIAL.response)
 AM.trialhistory.correct.push(CURRTRIAL.correct)
 
 CURRTRIAL.num++
-
+TASK.trialStartNumber++
 
 // Asynchronous save at most every T seconds
 
@@ -250,7 +248,7 @@ if ( _ms_since_last_trial_data_save > TRIALDATA_SAVE_TIMEOUT_PERIOD){
     last_trial_data_save = performance.now()
 }
 
-if (TOUCHSTRING.length > TOUCHSTRING_MAX_CACHE_SIZE || _ms_since_last_touch_data_save > TOUCHSTRING_SAVE_TIMEOUT_PERIOD){
+if (_ms_since_last_touch_data_save > TOUCHSTRING_SAVE_TIMEOUT_PERIOD){
     console.log(_ms_since_last_touch_data_save/1000 +'s since last TOUCHSTRING save. '+TOUCHSTRING.length+' length TOUCHSTRING save requested.')
     DW.saveTouchestoDropbox(FLAGS.debug_mode)
     last_touch_save = performance.now()

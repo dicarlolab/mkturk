@@ -1,12 +1,29 @@
+
+
 class Automator{
-	constructor(samplingStrategy, samplingRNGseed, trialStartNumber){
+	constructor(samplingStrategy){
 		this.trialhistory = []
 		this.samplingStrategy = samplingStrategy
-		this.samplingRNGseed = samplingRNGseed
-		console.log('Automator samplingRNGseed', this.samplingRNGseed)
-		this.trialStartNumber = trialStartNumber
+		//this.samplingRNGseed = samplingRNGseed
+		//console.log('Automator samplingRNGseed', this.samplingRNGseed)
+		//this.trialStartNumber = trialStartNumber
 	}
 
+	_populate_default(a, property){
+		if (this.automator_data[a].hasOwnProperty(property)){
+			console.log('Found '+property+' in automator data')
+			var _property = this.automator_data[a][property]
+		}
+		else if(property == 'trialStartNumber'){
+			console.log('Reverting to 0 for trialStartNumber')
+			var _property = 0
+		}
+		else{
+			console.log('Reverting to TASK setting for '+property)
+			var _property = TASK[property]
+		}
+		return _property
+	}
 	async build(num_prebuffer_trials){
 		this.trialhistory = await DW.readTrialHistoryFromDropbox(ndatafiles2read);
 		// trialhistory.trainingstage 
@@ -25,13 +42,19 @@ class Automator{
 		for (var a = TASK.CurrentAutomatorStage; a < this.automator_data.length; a++){
 			console.time('Stage '+a)
 
-			// Make TrialQueue
+
+			var _ImageBagsSample = this._populate_default(a, 'ImageBagsSample')
+			var _ImageBagsTest = this._populate_default(a, 'ImageBagsTest')
+			var _samplingRNGseed = this._populate_default(a, 'samplingRNGseed')
+			var _trialStartNumber = this._populate_default(a, 'trialStartNumber')
+			
 			this.AutomatorPreBuffer['TrialQueue'][a] = new TrialQueue(
 				this.samplingStrategy, 
-				this.automator_data[a].ImageBagsSample, 
-				this.automator_data[a].ImageBagsTest, 
-				this.samplingRNGseed, 
-				this.trialStartNumber); 
+				_ImageBagsSample,
+				_ImageBagsTest,
+				_samplingRNGseed, 
+				_trialStartNumber,
+				); 
 
 			// Populate the stage's imagebuffer with some images
 			await this.AutomatorPreBuffer['TrialQueue'][a].build(num_prebuffer_trials)

@@ -186,6 +186,14 @@ function subjectlist_listener(event){
 	return
 }
 
+async function sync_data_listener(event){
+	console.log("Called data save from sync button")
+	await DW.saveTrialDatatoDropbox(TASK, ENV, CANVAS, TRIAL, TASK.debug_mode)
+	await DW.saveTouchestoDropbox(TASK.debug_mode)
+
+	return 
+}
+
 //================== PROMISE STATES ==================//
 // Promise: Select Subject
 function subjectIDPromise(){

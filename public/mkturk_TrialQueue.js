@@ -5,9 +5,6 @@ constructor(samplingStrategy, ImageBagsSample, ImageBagsTest, samplingRNGseed, t
 	this.samplingStrategy = samplingStrategy; 
 	this.trialStartNumber = trialStartNumber; 
 	this.samplingRNGseed = samplingRNGseed; 
-	console.log('this.samplingRNGseed', this.samplingRNGseed)
-	this._numtrialsgenerated = 0
-
 
 	// Resource properties
 	this.ImageBagsSample = ImageBagsSample; 
@@ -23,12 +20,13 @@ constructor(samplingStrategy, ImageBagsSample, ImageBagsTest, samplingRNGseed, t
 	this.testq.indices = []; 
 	this.testq.correctIndex = [];
 
+	this.trialNumber_q = []
+
 	// ImageBuffer
 	this.IB = new ImageBuffer(); 
 
 	// Settings 
 	this.max_queue_size = 500; // Max number of trials (and their images) to have prepared from now; to improve browser performance
-	this.num_in_queue = 0; // Tracking variable
 }
 
 async build(trial_cushion_size){
@@ -41,40 +39,36 @@ async build(trial_cushion_size){
 	this.testbag_labels = funcreturn[1]; 
 	this.testbag_paths = funcreturn[0]; 
 
-	//console.log('this.build() will generate ' + trial_cushion_size + ' trials')
-	await this.generate_trials(trial_cushion_size); 
+	await this.buffer_trials(trial_cushion_size); 
 }
 
-async generate_trials(n_trials){
-	// Performance critical: sometimes called by this.get_next_trial() (when TQ is empty), which is called during each mkturk trial
-
-	// Adds trials to queue and downloads their images 
-
-	n_trials = Math.min(this.max_queue_size - this.num_in_queue, n_trials); 
-	if(n_trials == 0){
-		console.log('TQ.generate_trials(): Queue is full or no trials were requested')
-		return 
+async buffer_trials(num_trials_to_buffer){
+	var max_trial_number = Math.max(Math.max(... this.trialNumber_q), -1)
+	var trial_generation_calls = []
+	var trial_num
+	for (var t = 0; t < num_trials_to_buffer; t++){
+		trial_num = max_trial_number + t + 1
+		trial_generation_calls.push(this.generate_trial(trial_num))
 	}
+	console.time('Trial generation')
+	await Promise.all(trial_generation_calls)
+	console.timeEnd('Trial generation')
+}
 
+async generate_trial(i){
+	try{
+		if (this.trialNumber_q.indexOf(i) >= 0){
+			return 
+			// Already generated 
+		}
 
-	var image_requests = []; 
-
-	//console.log('TQ.generate_trials() will generate '+n_trials+' trials')
-
-	for (var i = 0; i < n_trials; i++){
-		// Draw one (1) sample image from samplebag
-		var trialnumber = this.trialStartNumber + this._numtrialsgenerated
+		var trialnumber = i 
 		var _RNGseed = cantor(this.samplingRNGseed, trialnumber)
-
+		
 		console.log('Generating trial ', trialnumber, '. Using seed ', _RNGseed)
-
 		var sample_index = selectSampleImage(this.samplebag_labels, this.samplingStrategy, _RNGseed)
 		var sample_label = this.samplebag_labels[sample_index]; 
 		var sample_filename = this.samplebag_paths[sample_index]; 
-		
-		image_requests.push(sample_filename)
-
-		// Select appropriate test images (correct one and distractors) 
 		var funcreturn = selectTestImages(sample_label, this.testbag_labels, _RNGseed) 
 		var test_indices = funcreturn[0] 
 		var correctIndex = funcreturn[1] 
@@ -83,9 +77,9 @@ async generate_trials(n_trials){
 			test_filenames.push(this.testbag_paths[test_indices[j]])
 		}
 
+		var image_requests = []; 
+		image_requests.push(sample_filename)
 		image_requests.push(... test_filenames)
-
-		// Add to queue 
 		this.sampleq.filename.push(sample_filename)
 		this.sampleq.index.push(sample_index)
 
@@ -93,49 +87,39 @@ async generate_trials(n_trials){
 		this.testq.indices.push(test_indices)
 		this.testq.correctIndex.push(correctIndex)
 
-		this.num_in_queue++;
-		this._numtrialsgenerated+=1
+		this.trialNumber_q.push(trialnumber)
+		await this.IB.cache_these_images(image_requests); 
 	}
-
-	// Download images to support these trials to download queue
-	//console.log("TQ.generate_trials() will request", image_requests.length)
-	await this.IB.cache_these_images(image_requests); 
+	catch(error){
+		console.log(error)
+	}
 }
 
-
-async get_next_trial(){
-	// Shift out first element of Trial queue and return it
-	// along with its sample/test images 
-
-	if (this.sampleq.filename.length == 0){
-		console.log("Reached end of trial queue... generating one more in this.get_next_trial")
-		await this.generate_trials(1); 
+async get_trial(i){
+	
+	var idx = this.trialNumber_q.indexOf(i)
+	if (idx < 0){
+		console.log('Trial number '+i+ ' was not found in queue. Generating...')
+		await this.generate_trial(i)
+		idx = this.trialNumber_q.indexOf(i)
 	}
 
-	var sample_filename = this.sampleq.filename.shift(); 
-	var sample_index = this.sampleq.index.shift(); 
+	var sample_filename = this.sampleq.filename[idx]; 
+	var sample_index = this.sampleq.index[idx] 
 
-	var test_filenames = this.testq.filenames.shift(); 
-	var test_indices = this.testq.indices.shift(); 
-	var test_correctIndex = this.testq.correctIndex.shift();
+	var test_filenames = this.testq.filenames[idx]
+	var test_indices = this.testq.indices[idx] 
+	var test_correctIndex = this.testq.correctIndex[idx]
 
-
-	// Get image from imagebag
 	var sample_image = await this.IB.get_by_name(sample_filename); 
 	var test_images = []
 	for (var i = 0; i < test_filenames.length; i++){
 		test_images.push(await this.IB.get_by_name(test_filenames[i]))
 	}
 
-	//console.log('sample- get_next_trial()  image:', sample_index, '. name:', sample_filename); 
-	//console.log('test- get_next_trial() images:', test_indices, '. name:', test_filenames); 
-	//console.log('correct- get_next_trial()', test_correctIndex)
-	this.num_in_queue--;
-
 	return [sample_image, sample_index, test_images, test_indices, test_correctIndex]
 }
 }
-
 
 function selectSampleImage(samplebag_labels, SamplingStrategy, _RNGseed){
 	

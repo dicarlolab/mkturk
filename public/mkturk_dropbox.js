@@ -15,6 +15,7 @@ class DropboxWriter{
 
 	constructor(dbx){
 		this.dbx = dbx
+		this._touch_filename = ENV.Subject+'_touch_'+datestr+'__0.txt'
 	}
 
 	async getMostRecentBehavioralFilePathsFromDropbox(num_files_to_get, subject_id, save_directory){
@@ -491,21 +492,25 @@ class DropboxWriter{
 			var datestr = ENV.CurrentDate.toISOString();
 			datestr = datestr.slice(0,datestr.indexOf("."))
 
-			var filename = ENV.Subject+'__'+datestr+'__'+"touch"+TOUCHSTRING_UDPATECOUNTER+'.txt'
-		
-			root_savedir = root_savedir + filename 
+			var savepath = root_savedir + this._touch_filename 
 			
 			var starttime = ENV.UnixTimestampAtStart
 
 			var header = 'x_pixels_left2right,y_pixels_top2bottom,touch_number,unix_timestamp_delta_from__'+starttime+',Tap_or_Drag\n'
 
 			var response = await this.dbx.filesUpload({
-				path: root_savedir,
+				path: savepath,
 				contents: header+TOUCHSTRING,
 				mode: {[".tag"]: "overwrite"} })
-			TOUCHSTRING = ""
+
+			if(TOUCHSTRING.length > TOUCHSTRING_MAX_CACHE_SIZE){
+				// Start new file and flush cache
+				this._touch_filename = ENV.Subject+'_touch_'+datestr+'__'+TOUCHSTRING_UDPATECOUNTER+'.txt'
+				TOUCHSTRING = ""
+			}
+
 			
-			console.log("Touches written to disk as "+root_savedir+". Size: " + response.size)
+			console.log("Touches written to disk as "+savepath+". Size: " + response.size)
 			return 0; //need2saveParameters
 		}
 		catch (error){
