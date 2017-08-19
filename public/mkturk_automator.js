@@ -3,6 +3,7 @@ class Automator{
 		this.trialhistory = []
 		this.samplingStrategy = samplingStrategy
 		this.samplingRNGseed = samplingRNGseed
+		console.log('Automator samplingRNGseed', this.samplingRNGseed)
 		this.trialStartNumber = trialStartNumber
 	}
 
@@ -29,7 +30,7 @@ class Automator{
 				this.samplingStrategy, 
 				this.automator_data[a].ImageBagsSample, 
 				this.automator_data[a].ImageBagsTest, 
-				this.samplingRNGSeed, 
+				this.samplingRNGseed, 
 				this.trialStartNumber); 
 
 			// Populate the stage's imagebuffer with some images
@@ -85,8 +86,8 @@ class Automator{
 				TASK.Automator = 0; 
 				TASK.CurrentAutomatorStage = 'off';
 				console.log('COMPLETED FINAL STAGE, TURNING AUTOMATOR OFF')
-				console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject completed the final stage '+(i_current_stage)+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
-				return 
+				console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject completed the final stage '+(i_current_stage)+' of '+(this.automator_data.length-1)+' (zero indexing) of automator.')
+				return TASK
 			}
 			else{
 				// Otherwise, advance to the next stage.

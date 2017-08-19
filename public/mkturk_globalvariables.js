@@ -11,6 +11,7 @@
 TOUCHSTRING = ""
 TOUCHSTRING_UDPATECOUNTER = 0
 
+
 var TASK = {}; // Global that encapsulates state of the current task, read from Subject's Params file
 var TRIAL = {} // Global that contains data variables that are incremented every trial, and are dumped to disk for scientific purposes.
 TRIAL.StartTime = []

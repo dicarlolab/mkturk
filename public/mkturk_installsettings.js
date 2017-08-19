@@ -30,5 +30,15 @@ var AUTOMATOR_FILEPATH
 // ------ Misc. -----------------------
 var ndatafiles2read=5; // todo: change to trials. and use as upper bound (stop reading once you hit the first discrepancy). maybe this is effectively synonymous with mintrials
 var num_preload_images=0; // how long can you/the NHP bother waiting at each imageload? 400 images ~ 30 seconds. Recommended to keep = 0 with good internet connection and automator on
+var max_save_rate = 1/5 // times per second; i.e. once every five seconds
 
+var TOUCHSTRING_MAX_CACHE_SIZE = 30000 // saves if touchstring gets to be 30k characters or larger
+var TOUCHSTRING_SAVE_TIMEOUT_PERIOD_IN_SECONDS = 10 // saves touches at most every TOUCHSTRING_SAVE_TIMEOUT_PERIOD seconds
+var TOUCHSTRING_SAVE_TIMEOUT_PERIOD = TOUCHSTRING_SAVE_TIMEOUT_PERIOD_IN_SECONDS * 1000 
+var last_touch_save = performance.now()
+
+
+var TRIALDATA_SAVE_TIMEOUT_PERIOD_IN_SECONDS = 5 // 
+var TRIALDATA_SAVE_TIMEOUT_PERIOD = TRIALDATA_SAVE_TIMEOUT_PERIOD_IN_SECONDS * 1000 
+var last_trial_data_save = performance.now()
 // ------ todo: move into params file -

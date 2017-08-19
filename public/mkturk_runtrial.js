@@ -44,7 +44,7 @@ if (FLAGS.need2loadParameters == 1){
 if (FLAGS.need2loadImages == 1){
     if(TASK.Automator != 1){
         var samplingStrategy = 'uniform_with_replacement'
-        TQ = new TrialQueue(samplingStrategy, TASK.ImageBagsSample, TASK.ImageBagsTest, TASK.samplingRNGSeed, TASK.trialStartNumber)
+        TQ = new TrialQueue(samplingStrategy, TASK.ImageBagsSample, TASK.ImageBagsTest, TASK.samplingRNGseed, TASK.trialStartNumber)
         await TQ.build(1)
     }   
 
@@ -240,8 +240,21 @@ AM.trialhistory.correct.push(CURRTRIAL.correct)
 CURRTRIAL.num++
 
 
-console.log('Calling save from mkturk_runtrial.js at trial', CURRTRIAL.num, '. automator stage:', TASK.CurrentAutomatorStage)
-await DW.saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL, FLAGS.debug_mode);
+// Asynchronous save at most every T seconds
+
+var _ms_since_last_trial_data_save = performance.now() - last_trial_data_save
+var _ms_since_last_touch_data_save = performance.now() - last_touch_save
+if ( _ms_since_last_trial_data_save > TRIALDATA_SAVE_TIMEOUT_PERIOD){ 
+    console.log(_ms_since_last_trial_data_save/1000+'s since last trial data save. At trial'+ CURRTRIAL.num+'. automator stage:'+TASK.CurrentAutomatorStage)
+    DW.saveTrialDatatoDropbox(TASK, ENV, CANVAS, TRIAL, FLAGS.debug_mode)
+    last_trial_data_save = performance.now()
+}
+
+if (TOUCHSTRING.length > TOUCHSTRING_MAX_CACHE_SIZE || _ms_since_last_touch_data_save > TOUCHSTRING_SAVE_TIMEOUT_PERIOD){
+    console.log(_ms_since_last_touch_data_save/1000 +'s since last TOUCHSTRING save. '+TOUCHSTRING.length+' length TOUCHSTRING save requested.')
+    DW.saveTouchestoDropbox(FLAGS.debug_mode)
+    last_touch_save = performance.now()
+}
 
 if (FLAGS.need2saveParameters == 1){
     FLAGS.need2saveParameters = DW.saveParameterstoDropbox(); // Save parameters asynchronously

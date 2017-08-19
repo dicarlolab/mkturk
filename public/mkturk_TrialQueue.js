@@ -5,6 +5,7 @@ constructor(samplingStrategy, ImageBagsSample, ImageBagsTest, samplingRNGseed, t
 	this.samplingStrategy = samplingStrategy; 
 	this.trialStartNumber = trialStartNumber; 
 	this.samplingRNGseed = samplingRNGseed; 
+	console.log('this.samplingRNGseed', this.samplingRNGseed)
 	this._numtrialsgenerated = 0
 
 
@@ -64,7 +65,8 @@ async generate_trials(n_trials){
 		// Draw one (1) sample image from samplebag
 		var trialnumber = this.trialStartNumber + this._numtrialsgenerated
 		var _RNGseed = cantor(this.samplingRNGseed, trialnumber)
-		//console.log('Generating trial ', trialnumber, '. Using seed ', _RNGseed)
+
+		console.log('Generating trial ', trialnumber, '. Using seed ', _RNGseed)
 
 		var sample_index = selectSampleImage(this.samplebag_labels, this.samplingStrategy, _RNGseed)
 		var sample_label = this.samplebag_labels[sample_index]; 

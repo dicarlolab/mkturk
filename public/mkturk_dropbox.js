@@ -198,15 +198,14 @@ class DropboxWriter{
 			var data = JSON.parse(datastring)
 
 			var TASK = data
-
 			ENV.ParamFileName = filemeta.path_display; 
 			ENV.ParamFileRev = filemeta.rev
 			ENV.ParamFileDate = new Date(filemeta.client_modified)
-			return TASK; //need2loadParameters
+			return TASK; 
 		}
 		catch(error){
 			console.error('loadParametersfromDropbox() error: ' + error)
-			return 1; //need2loadParameters
+			return 1; 
 		}
 	}
 
@@ -441,16 +440,20 @@ class DropboxWriter{
 	}
 
 	//================== WRITE JSON ==================//
-	async saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL, save_to_debug_directory){
+	async saveTrialDatatoDropbox(TASK, ENV, CANVAS, TRIAL, save_to_debug_directory){
+		// Add request to queue 
+
+		var dataobj = [] 
+		dataobj.push(ENV)
+		dataobj.push(CANVAS)
+		dataobj.push(TASK)
+		dataobj.push(TRIAL)
+		var datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
+
+
 		try{
 			//console.log("Attempting save at trial", CURRTRIAL.num, '. automator stage:', TASK.CurrentAutomatorStage, 'tag: Called purge')
-	        var dataobj = [] 
-
-			dataobj.push(ENV)
-			dataobj.push(CANVAS)
-			dataobj.push(TASK)
-			dataobj.push(TRIAL)
-			var datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
+	        
 
 			if (save_to_debug_directory == 0){
 				var savepath = TRIAL_DATA_SAVEPATH + ENV.Subject+'/'+ ENV.TrialDataFileName
@@ -465,7 +468,6 @@ class DropboxWriter{
 				mode: {[".tag"]: "overwrite"} })
 				console.log(TASK.CurrentAutomatorStage+" BEHAVIOR FILE UPLOADED at "+savepath)
 			
-			this.___saveTouchestoDropbox(save_to_debug_directory)
 
 			}
 
@@ -476,7 +478,7 @@ class DropboxWriter{
 		}
 	}
 
-	async ___saveTouchestoDropbox(save_to_debug_directory) {
+	async saveTouchestoDropbox(save_to_debug_directory) {
 		try{
 			
 			if (save_to_debug_directory == 0){

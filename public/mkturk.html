@@ -191,8 +191,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 		ble.statustext=""
 	}
 
-	AM = new Automator("uniform_with_replacement", TASK.samplingRNGseed, TASK.trialStartNumber)
-	await AM.build()
+
 	
 	//========= Start in TEST mode =======//
 	document.querySelector("button[name=doneTestingTask]").style.display = "block"
@@ -204,8 +203,13 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	FLAGS.debug_mode = 1 // starts in debug mode; press 'Done Testing' button to start actual trials and store in appropriate directory
 
 // ============ MAIN LOOP ==================================================================================== // 
+console.log('LINE 206', TASK)
 
+console.log('LINE 206', TASK.samplingRNGseed)
 __initial_load_TASK = TASK // Reset to this once you transition from debug to test mode
+
+AM = new Automator("uniform_with_replacement", TASK.samplingRNGseed, TASK.trialStartNumber)
+await AM.build()
 
 while(true){
 	await runtrial()
