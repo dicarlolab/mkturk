@@ -98,6 +98,7 @@ async cache_these_images(imagenames){
 			console.log('Exceeded max buffer size: '+this.num_elements_in_cache+'/'+this.max_buffer_size)
 			console.log('But I did not do anything.')
 		}
+
 	}
 	catch(error){
 		console.error("cache_these_images failed with error:", error)

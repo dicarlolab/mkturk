@@ -1,25 +1,44 @@
+function updateProgressbar(pct) {
+    var elem = document.getElementById("myBar"); 
+
+	elem.style.width = pct + '%'; 
+	elem.innerHTML = Math.round(pct) + '%'; // text
+}
+
+function toggleProgressbar(on_or_off){
+	var elem = document.getElementById("myProgress"); 
+
+	if(on_or_off == 0){
+		elem.style.visibility = 'hidden'
+	}
+	else if(on_or_off == 1){
+		elem.style.visibility = 'visible'
+	}
+}
+
+
 //================== LOAD STATUS DISPLAY ==================//
-function refreshCanvasSettings(TASK){
+function refreshCanvasSettings(TASK_entry){
 	// TODO: cleanup CANVAS; separate canvas ID from sequence logic; 'tsequence' variables coded by length rather than absolute time
 
 	// Adjust length / toggle presence of gray screen between sample and test screens
-	if (TASK.SampleOFF > 0){
+	if (TASK_entry.SampleOFF > 0){
 		CANVAS.sequence = ["blank", "sample","blank","test"]
-		CANVAS.tsequence = [0,100,100+TASK.SampleON,100+TASK.SampleON+TASK.SampleOFF]; 
+		CANVAS.tsequence = [0,100,100+TASK_entry.SampleON,100+TASK_entry.SampleON+TASK_entry.SampleOFF]; 
 	}
-	else if (TASK.SampleOFF <= 0 ){
+	else if (TASK_entry.SampleOFF <= 0 ){
 		CANVAS.sequence = ["blank","sample","test"]
-		CANVAS.tsequence = [0,100,100+TASK.SampleON]; 
+		CANVAS.tsequence = [0,100,100+TASK_entry.SampleON]; 
 	}
 	
 	// Adjust length of reward screen based on reward amount 
-	CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+ENV.RewardDuration*1000;
+	CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+RewardDuration*1000;
 
 	// Adjust location of CANVAS based on species-specific setup
-	if (TASK.Species == "macaque" || TASK.Species == "human"){
+	if (TASK_entry.Species == "macaque" || TASK_entry.Species == "human"){
 		CANVAS.headsupfraction=0;
 	}
-	else if (TASK.Species == "marmoset"){
+	else if (TASK_entry.Species == "marmoset"){
 		CANVAS.headsupfraction=1/3-0.06;
 	}
 }
@@ -33,10 +52,7 @@ function writeTextonBlankCanvas(textstr,x,y){
 	visible_ctxt.fillText(textstr,x,y)
 }
 
-function updateStatusText(text){
-	var textobj = document.getElementById("headsuptext");
-	textobj.innerHTML = text
-}
+
 //================== CANVAS SETUP ==================//
 
 
@@ -106,86 +122,23 @@ function setupCanvas(canvasobj){
 // Sync: Adjust canvas for the device pixel ratio & browser backing store size
 // from http://www.html5rocks.com/en/tutorials/canvas/hidpi/#disqus_thread
 function scaleCanvasforHiDPI(canvasobj){
-	if (ENV.DevicePixelRatio !== backingStoreRatio){
+	if (DEVICE.DevicePixelRatio !== backingStoreRatio){
 		context=canvasobj.getContext("2d");
 		var oldWidth = canvasobj.width;
 		var oldHeight = canvasobj.height;
-		canvasobj.width = oldWidth/ENV.CanvasRatio;
-		canvasobj.height = oldHeight/ENV.CanvasRatio;
+		canvasobj.width = oldWidth/DEVICE.CanvasRatio;
+		canvasobj.height = oldHeight/DEVICE.CanvasRatio;
 		canvasobj.style.width = windowWidth - CANVAS.offsetleft + "px";
 		canvasobj.style.height = windowHeight - CANVAS.offsettop + "px";
 		canvasobj.style.margin="0 auto";
-		context.scale(1/ENV.CanvasRatio,1/ENV.CanvasRatio);
+		context.scale(1/DEVICE.CanvasRatio,1/DEVICE.CanvasRatio);
 	} 
 } 
 
 
-function updateHeadsUpDisplay(){
-	var textobj = document.getElementById("headsuptext");
-
-	// Overall performance
-	var ncorrect = 0;
-	var nreward = 0;
-	for (var i=0; i<=TRIAL.Response.length-1; i++){
-		if (TRIAL.Response[i] == TRIAL.CorrectItem[i]){
-			ncorrect = ncorrect + 1
-			nreward = nreward + TRIAL.NReward[i]
-		}
-	}
-
-	var pctcorrect = Math.round(100 * ncorrect / TRIAL.Response.length);
-
-	// Task type
-	var task1 = "";
-	var task2 = "";
-	if (TASK.RewardStage == 0){
-		task1 = "Fixation";
-	}
-	else if (TASK.RewardStage == 1){
-		task1 = TASK.TestGridIndex.length + "-way AFC:"
-		task2 = TASK.SampleON + "ms, " + TASK.ImageBagsTest.length + "-categories in pool"
-	}
-	if (CANVAS.headsupfraction > 0){
-		textobj.innerHTML = ENV.Subject + ": <font color=green><b>" + pctcorrect 
-		+ "%</b></font> " + "(" + ncorrect + " of " + TRIAL.Response.length + " trials)" 
-		+ "<br>" + "NRewards=" + nreward + ", <font color=green><b>" 
-		+ Math.round(TASK.RewardPer1000Trials*nreward/1000) 
-		+ "mL</b></font> (" + Math.round(TASK.RewardPer1000Trials) 
-		+ " mL per 1000)" + "<br> " 
-		+ task1 + "<br>" + task2 + "<br>" + "<br>"
-		+ "<br>" + "<br>" 
-		+ "<br>" + "<font color=red><b>" + "<font color=blue><b>" + ble.statustext + "<br></font>" 
-	}
-	else if (CANVAS.headsupfraction == 0){
-		textobj.innerHTML = ble.statustext
-	}
-}
-
-function updateHeadsUpDisplayAutomator(currentautomatorstagename,pctcorrect,ntrials,minpctcorrect,mintrials,eventstring){
-	var textobj = document.getElementById("headsuptextautomator");
-	if (CANVAS.headsupfraction > 0){
-		textobj.innerHTML =
-			"Automator: " + 
-			"<font color=red><b>" + TASK.Automator + "</b></font> " +
-			" " + "<font color=white><b>" +
-			 "Stage" + TASK.CurrentAutomatorStage + "=" +
-				currentautomatorstagename +
-			"</b></font>" +"<br>" +
-			"Performance: " + 
-			"<font color=green><b>" + Math.round(pctcorrect) + "%, last " + 
-			ntrials + " trials</b></font> " + 
-			"(min: " + minpctcorrect + 
-				"%, " + mintrials + " trials)" + "<br>" + "<br>" +
-			eventstring
-	}
-	else if (CANVAS.headsupfraction == 0){
-		textobj.innerHTML = ""
-	}
-}
 
 
 //================== IMAGE RENDERING ==================//
-// Sync: buffer trial images
 
 function defineImageGrid(ngridpoints, wd, ht, gridscale){
 	var xgrid =[]
@@ -202,16 +155,16 @@ function defineImageGrid(ngridpoints, wd, ht, gridscale){
 	}
 
 	//center x & y grid within canvas
-	var xcanvascent = (document.body.clientWidth - CANVAS.offsetleft)*ENV.CanvasRatio*ENV.DevicePixelRatio/2
-	var dx = xcanvascent - ENV.CanvasRatio*ngridpoints/2*wd*gridscale; //left side of grid
-	var ycanvascent = (document.body.clientHeight - CANVAS.offsettop)*ENV.CanvasRatio*ENV.DevicePixelRatio/2
-	var dy = ycanvascent - ENV.CanvasRatio*ngridpoints/2*ht*gridscale; //top of grid
+	var canvas_center_x = (document.body.clientWidth - CANVAS.offsetleft)*DEVICE.CanvasRatio*DEVICE.DevicePixelRatio/2
+	var dx = canvas_center_x - DEVICE.CanvasRatio*ngridpoints/2*wd*gridscale; //left side of grid
+	var canvas_center_y = (document.body.clientHeight - CANVAS.offsettop)*DEVICE.CanvasRatio*DEVICE.DevicePixelRatio/2
+	var dy = canvas_center_y - DEVICE.CanvasRatio*ngridpoints/2*ht*gridscale; //top of grid
 	for (var i=0; i<=xgrid.length-1; i++){
-		xgridcent[i]=Math.round(xgrid[i]*wd*gridscale*ENV.CanvasRatio + dx);
-		ygridcent[i]=Math.round(ygrid[i]*ht*gridscale*ENV.CanvasRatio + dy);
+		xgridcent[i]=Math.round(xgrid[i]*wd*gridscale*DEVICE.CanvasRatio + dx);
+		ygridcent[i]=Math.round(ygrid[i]*ht*gridscale*DEVICE.CanvasRatio + dy);
 	}
 
-	return [xcanvascent, ycanvascent, xgridcent, ygridcent]
+	return [canvas_center_x, canvas_center_y, xgridcent, ygridcent]
 }
 
 async function bufferTrialImages(sample_image, sample_image_grid_index, test_images, test_image_grid_indices, correct_index){
@@ -269,22 +222,22 @@ async function renderImageOnCanvas(image, grid_index, scale, canvasobj){
 
 	wd = image.width
 	ht = image.height
-	xleft = Math.round(ENV.XGridCenter[grid_index] - 0.5*wd*scale*ENV.CanvasRatio);
-	ytop = Math.round(ENV.YGridCenter[grid_index] - 0.5*ht*scale*ENV.CanvasRatio);
+	xleft = Math.round(DEVICE.XGridCenter[grid_index] - 0.5*wd*scale*DEVICE.CanvasRatio);
+	ytop = Math.round(DEVICE.YGridCenter[grid_index] - 0.5*ht*scale*DEVICE.CanvasRatio);
 	
 	context.drawImage(
 		image, // Image element
 		xleft, // dx: Canvas x-coordinate of image's top-left corner. 
 		ytop, // dy: Canvas y-coordinate of  image's top-left corner. 
-		image.width*scale*ENV.CanvasRatio, // dwidth. width of drawn image. 
-		image.height*scale*ENV.CanvasRatio); // dheight. height of drawn image.
+		image.width*scale*DEVICE.CanvasRatio, // dwidth. width of drawn image. 
+		image.height*scale*DEVICE.CanvasRatio); // dheight. height of drawn image.
 
 	// For drawing cropped regions of an image in the canvas, see alternate input argument structures,
 	// See: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
 	
 	// Bounding boxes of images on canvas
-	xbound=[xleft, xleft+wd*scale*ENV.CanvasRatio];
-	ybound=[ytop, ytop+ht*scale*ENV.CanvasRatio];
+	xbound=[xleft, xleft+wd*scale*DEVICE.CanvasRatio];
+	ybound=[ytop, ytop+ht*scale*DEVICE.CanvasRatio];
 
 	xbound[0]=xbound[0]+CANVAS.offsetleft;
 	xbound[1]=xbound[1]+CANVAS.offsetleft;
@@ -458,8 +411,8 @@ function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 
 	// Draw fixation dot
 	var rad = dot_pixelradius;
-	var xcent = ENV.XGridCenter[gridindex];
-	var ycent = ENV.YGridCenter[gridindex];
+	var xcent = DEVICE.XGridCenter[gridindex];
+	var ycent = DEVICE.YGridCenter[gridindex];
 	context.beginPath();
 	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
 	context.fillStyle=color; 
@@ -482,30 +435,7 @@ function checkDisplayBounds(displayobject_coord){
 	}
 	return outofbounds
 }
-function setupImageLoadingText(){
-	var textobj = document.getElementById("imageloadingtext")
-	textobj.style.top = CANVAS.offsettop + "px"
-	textobj.innerHTML = ''
-}
-function updateImageLoadingAndDisplayText(str){
-	var textobj = document.getElementById("imageloadingtext")
 
-	// Software check for frame drops
-	var dt = []
-	var u_dt = 0
-	for (var i=0; i<=CURRTRIAL.tsequenceactual.length-1; i++){
-		dt[i] = CURRTRIAL.tsequenceactual[i] - CURRTRIAL.tsequencedesired[i]
-		u_dt = u_dt + Math.abs(dt[i])
-	}
-	u_dt = u_dt/dt.length
-
-	textobj.innerHTML =
-	str
-	+ displayoutofboundsstr 
-	+ "<br>" + "Software reported frame display (t_actual - t_desired) :"
-	+ "<br>" + "<font color=red> mean dt = " + Math.round(u_dt) + " ms"
-	+ "  (min=" + Math.round(Math.min(... dt)) + ", max=" + Math.round(Math.max(... dt)) + ") </font>"
-}
 
 
 function displayPhysicalSize(tabletname,displayobject_coord,canvasobj){
@@ -529,9 +459,9 @@ function displayPhysicalSize(tabletname,displayobject_coord,canvasobj){
 	visible_ctxt.fillStyle = "white";
 	visible_ctxt.font = "16px Verdana";
 	visible_ctxt.fillText( 
-		Math.round(100*(displayobject_coord[2]-displayobject_coord[0])/dpi/ENV.CanvasRatio)/100 +
+		Math.round(100*(displayobject_coord[2]-displayobject_coord[0])/dpi/DEVICE.CanvasRatio)/100 +
 		' x ' +
-		Math.round(100*(displayobject_coord[3]-displayobject_coord[1])/dpi/ENV.CanvasRatio)/100 + 
+		Math.round(100*(displayobject_coord[3]-displayobject_coord[1])/dpi/DEVICE.CanvasRatio)/100 + 
 		' in', 
 		displayobject_coord[0],displayobject_coord[1]-16
 	);

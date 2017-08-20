@@ -48,20 +48,6 @@ function loadGoogleCharts(){
 		dataCumulative.addColumn('number','cumulativeTrials')
 		dataCumulative.addColumn('number','cumulativePerformance')
 
-		dataConfusion = new google.visualization.DataTable();
-
-		dataConfusion.addColumn('string','blo');
-		for (var i=0; i<=catlist.length-1; i++){
-			dataConfusion.addColumn('number',objlabels[catlist[i]]);			
-		} //sample labels
-
-		for (var i=0; i<=catlist.length-1; i++){
-			var row =[objlabels[catlist[i]]];
-			for (var j=0; j<=catlist.length-1; j++){
-				row[j+1]=0;
-			}
-			dataConfusion.addRow(row);
-		} //test labels
 
 		// Create a dashboard.
         dashboard1 = new google.visualization.Dashboard(
@@ -111,9 +97,9 @@ function loadGoogleCharts(){
 		formatterColor = new google.visualization.ColorFormat();
 
 		// cell color formatting --> https://developers.google.com/chart/interactive/docs/reference#colorformatter
-		dx=1/(colormapJet.length-1);
-		for (var i=0; i<=colormapJet.length-1; i++){
-			formatterColor.addRange(i*dx,(i+1)*dx,'gray',colormapJet[i])
+		dx=1/(colormapViridis.length-1);
+		for (var i=0; i<=colormapViridis.length-1; i++){
+			formatterColor.addRange(i*dx,(i+1)*dx,'gray',colormapViridis[i])
 		}
 
 		getFileListDropbox2();
@@ -139,6 +125,8 @@ function getAccessTokenFromUrl(){
 function getFileListDropbox2(){
 	dbx.filesListFolder({path: file.dir, recursive:true}).then(function(response){
 		console.log("success: read directory ");
+
+		console.log(response)
 
 //FilesFileMetadata: tag/name/id/rev/size/...
 //   http://dropbox.github.io/dropbox-sdk-js/global.html#FilesFileMetadata
@@ -696,7 +684,7 @@ function drawTable(){
 
 <script type="text/javascript">
 var file={
-			dir: DATA_SAVEPATH, // from mkturk_installsettings.js
+			dir: TRIAL_DATA_SAVEPATH, // from mkturk_installsettings.js
 			list: [],
 			pathlist: [],
 			name: "",

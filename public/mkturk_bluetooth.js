@@ -44,7 +44,6 @@ var ble = {
   tnotify_rfid: 0,
   statustext: "",
 }
-//================ INITIALIZE BLE VARIABLE (end) ================//
 
 
 //==================== CONNECT BLE ====================//
@@ -171,8 +170,7 @@ async function connectBLEDeviceAndCacheCharacteristics(){
     ble.rfidcharacteristic.addEventListener('characteristicvaluechanged',onRFIDNotificationFromBLE)
     ble.connected = true
     pingBLE()
-} //connectBLEDeviceAndCacheCharacteristics
-//==================== CONNECT BLE (end) ====================//
+} 
 
 
 //==================== RECONNECT BLE ====================//
@@ -183,7 +181,6 @@ function onDisconnectedBLE(){
   var textstr = 'BLE disconnected'
   console.log(textstr)
   ble.statustext = textstr
-  updateHeadsUpDisplay()
 
   reconnectBLE()
 }
@@ -195,7 +192,6 @@ async function reconnectBLE(){
       var textstr = 'Attempting to reconnect to BLE...'
       console.log(textstr)
       ble.statustext = textstr
-      updateHeadsUpDisplay()
 
       await connectBLEDeviceAndCacheCharacteristics()
     },
@@ -204,14 +200,12 @@ async function reconnectBLE(){
       var textstr = 'Successful reconnection!'
       console.log(textstr)
       ble.statustext = textstr
-      updateHeadsUpDisplay()
     },
     function fail() {
       time('Failed to reconnect.');
       var textstr = 'Could not reconnect to Bluetooth Device after multipe tries'
       console.log(textstr)
       ble.statustext = textstr
-      updateHeadsUpDisplay()
     });
 }
 
@@ -236,7 +230,6 @@ async function exponentialBackoff(max, delay, toTry, success, fail) {
 function time(text) {
   console.log('[' + new Date().toJSON().substr(11, 8) + '] ' + text);
 }
-//==================== RECONNECT BLE (end) ====================//
 
 //============== READ NOTIFICATIONS & WRITES ==============//
 async function writepumpdurationtoBLE(num){
@@ -247,7 +240,6 @@ async function writepumpdurationtoBLE(num){
       var textstr = 'wrote ble val >> ' + num + ', byte values ' + arrInt8
       console.log(textstr)
       ble.statustext = textstr
-      updateHeadsUpDisplay()
       // updateStatusText()
       // writeTextonBlankCanvas(textstr,25.5,20.5)
   }
@@ -277,7 +269,6 @@ function onPumpNotificationFromBLE(event){
           Math.round(ble.tnotify_pump - ble.twrite_pumpduration) + 'ms'
   console.log(textstr)
   ble.statustext = ble.statustext + "  <---->  " + textstr
-  updateHeadsUpDisplay()
   // updateStatusText()
   // writeTextonBlankCanvas(textstr,400,20.5)
 
@@ -304,6 +295,4 @@ function onRFIDNotificationFromBLE(event){
 
     var textstr = 'BLE RFID notification:  value << ' + a.join(' ') + '  interval << ' + Math.round(ble.tnotify_rfid - t0) + 'ms'
     ble.statustext = textstr
-    updateHeadsUpDisplay()
 }
-//============== READ NOTIFICATIONS & WRITES (end) ==============//

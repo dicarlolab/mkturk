@@ -12,6 +12,8 @@ function touchhold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 		var touchevent
 		var return_event = {type: "", cxyt: []}
 		while (true){
+		
+
 			touchevent = yield touchevent
 			//console.log('TOUCHEVENT', touchevent.type)
 			if (touchevent.type == "touchstart" || touchevent.type == "touchmove"){
@@ -163,24 +165,20 @@ function doneEditingParams_listener(event){
 	waitforClick.next(1);
 	return
 }
-function headsuptext_listener(event){
-	FLAGS.need2saveParameters = 1
-	return
-}
+
 function doneTestingTask_listener(event){
 	event.preventDefault()
 	//console.log("User is done testing. Start saving data");
 	FLAGS.debug_mode = 0
-	transition_from_debug_to_science_trials()
+	
 	renderBlank(CANVAS.obj.blank)
-	document.querySelector("p[id=imageloadingtext]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	document.querySelector("button[name=doneTestingTask]").style.display = "none"
 	return
 }
 
 function subjectlist_listener(event){
 	//console.log("subject selected");
-	ENV.Subject = subjectlist[this.value];
+	SESSION.Subject = subjectlist[this.value];
 	subjectdialog.close();
 	waitforClick.next(1);
 	return
@@ -188,8 +186,8 @@ function subjectlist_listener(event){
 
 async function sync_data_listener(event){
 	console.log("Called data save from sync button")
-	await DW.saveTrialDatatoDropbox(TASK, ENV, CANVAS, TRIAL, TASK.debug_mode)
-	await DW.saveTouchestoDropbox(TASK.debug_mode)
+	await DW.saveTrialDatatoDropbox(TASK_ARCHIVE, CANVAS, TRIAL, FLAGS.debug_mode)
+	await DW.saveTouchestoDropbox(FLAGS.debug_mode)
 
 	return 
 }

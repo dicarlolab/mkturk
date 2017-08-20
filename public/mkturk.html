@@ -1,4 +1,25 @@
 <!doctype html>
+<style>
+#myProgress {
+  width: 90%;
+  margin-left: 1%;
+  margin-right: 8%;
+  background-color: #ddd;
+  z-index:101;
+  position: absolute;
+}
+
+#myBar {
+  width: 0.2%;
+  height: 15px;
+  background-color: #4CAF50;
+  color:white;
+  font-size: 8px; 
+  font-family: 'Helvetica Neue';
+  z-index:101;
+  position: absolute;
+}
+</style>
 
 <head>
 <meta name="mobile-web-app-capable" content="yes"> <!-- full screen https://developer.chrome.com/multidevice/android/installtohomescreen -->
@@ -19,11 +40,14 @@
 
 	<button name="noble" style="visibility:hidden; position: absolute; top: 55%; left: 45%; height: 50px; width: 200px; border-radius: 20px">No Bluetooth juicer</button>
 
-	<p id="headsuptext" style="z-index:101; position: absolute; left: 1px; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;"></p>
+	<div id="myProgress">
+  		<div id="myBar"></div>
+	</div>
 
-	<p id="headsuptextautomator" style="z-index:99; position: absolute; left: 50%; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
 
-	<p id="imageloadingtext" style="z-index:100; position: absolute; left: 1px; top: 1px; height: 5%; width: 100%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
+
+
+
 
 	<button name="doneEditingParams" style="visibility:hidden; position: absolute; top: 45%; left: 70%; height: 75px; width: 100px; border-radius: 20px">Done editing params</button>
 
@@ -77,12 +101,10 @@ else {
 }
 
 DW = new DropboxWriter(dbx)
-
 setupDragTracker()
 setupTapTracker()
 //setupMouseTracker()
 
-//=============== (end) AUTHENTICATE ===============//
 
 
 // GET PARAMFILE NAME
@@ -119,9 +141,7 @@ document.querySelector("button[name=SyncButton]").addEventListener(
 document.querySelector("button[name=SyncButton]").addEventListener(
 	'touchend',sync_data_listener,false)
 
-var textobj = document.getElementById("headsuptext")
-textobj.addEventListener('touchend',headsuptext_listener,false)
-textobj.addEventListener('mouseup',headsuptext_listener,false)
+
 
 //============= Initialize Audio & Battery Objects ==================//
 	// Prevent window scrolling and bounce back effect
@@ -129,7 +149,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 		event.preventDefault();
 	}, {capture: false, passive:false});
 	
-	ENV.DevicePixelRatio = window.devicePixelRatio || 1;
+	DEVICE.DevicePixelRatio = window.devicePixelRatio || 1;
 	var visiblecanvasobj = CANVAS.obj[CANVAS.front];
 	var visiblecontext = visiblecanvasobj.getContext("2d");
 	var backingStoreRatio = visiblecontext.webkitBackingStorePixelRatio ||
@@ -137,18 +157,17 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	                            visiblecontext.msBackingStorePixelRatio ||
 	                            visiblecontext.oBackingStorePixelRatio ||
 	                            visiblecontext.backingStorePixelRatio || 1;
-	ENV.CanvasRatio = backingStoreRatio/ENV.DevicePixelRatio
+	DEVICE.CanvasRatio = backingStoreRatio/DEVICE.DevicePixelRatio
 	
 	//Monitor Battery - from: http://www.w3.org/TR/battery-status/
 	navigator.getBattery().then(function(batteryobj){
-		ENV.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
+		DEVICE.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
 		batteryobj.addEventListener('levelchange',function(){
-			ENV.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
+			DEVICE.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
 		})
 	});
 
 
-//============= (end) Initialize Audio & Battery Objects ==================//
 
 (async function(){
 
@@ -172,59 +191,48 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	//================== AWAIT LOAD SUBJECT PARAMS ==================//
 	subjectdialog.showModal()
 	await subjectIDPromise()
-	ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.txt";
-	TASK = await DW.loadParametersfromDropbox(ENV.ParamFileName)
-
-	//================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
-	var debug = false
-	if (debug == true){
-		ble.statustext = await DW.loadTextFilefromDropbox(dbx, ENV.ParamFileName)
-		updateStatusText(ble.statustext)
-		document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
-		document.querySelector("button[name=doneEditingParams]").style.display = "block"
-		document.querySelector("button[name=doneEditingParams]").style.visibility = "visible"
-			
-		await editParamsPromise()
-		document.querySelector("button[name=doneEditingParams]").style.display = "none"
-		var textobj = document.getElementById("headsuptext")
-		textobj.removeEventListener('touchend',headsuptext_listener)
-		textobj.removeEventListener('mouseup',headsuptext_listener)
-		document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",false)
-
-		if (FLAGS.need2saveParameters == 1){
-			var user_param_JSON = JSON.parse(document.getElementById("headsuptext").innerHTML) //get new params
-			// TODO FIX THE JSON [write out string AS "object Object" instead of json actual]
-			await DW.saveParameterTexttoDropbox(user_param_text) //write new params
-			TASK = await DW.loadParametersfromDropbox(ENV.ParamFileName) //then read them
-			FLAGS.need2saveParameters = 0
-		}
-		ble.statustext=""
-	}
-
-
+	ParamFilePath = PARAM_DIRPATH + SESSION.Subject + "_params.txt";
+	_funcreturn = await DW.loadParametersfromDropbox(ParamFilePath)
+	TASK = _funcreturn[0]
+	ParamFileRev = _funcreturn[1]
+	
+	
 	
 	//========= Start in TEST mode =======//
 	document.querySelector("button[name=doneTestingTask]").style.display = "block"
 	document.querySelector("button[name=doneTestingTask]").style.visibility = "visible"
 	
 
-	CURRTRIAL.num = 0
+	TRIAL_NUMBER_FROM_SESSION_START = 0
 	FLAGS.need2loadImages = 1
 	FLAGS.debug_mode = 1 // starts in debug mode; press 'Done Testing' button to start actual trials and store in appropriate directory
 
 // ============ MAIN LOOP ==================================================================================== // 
 console.log('LINE 206', TASK)
-
-console.log('LINE 206', TASK.samplingRNGseed)
-__initial_load_TASK = TASK // Reset to this once you transition from debug to test mode
+__initial_load_TASK = TASK
+__initial_load_TASK_ARCHIVE = TASK_ARCHIVE // Reset to this once you transition from debug to test mode
 
 AM = new Automator("uniform_with_replacement")
 await AM.build(5)
 
+
+INITIALIZE = true
+
+// Start in testing mode
+while(FLAGS.debug_mode == 1){
+	await runtrial()
+}
+toggleProgressbar(1)
+
+transition_from_debug_to_science_trials()
+toggleProgressbar(0)
+
+// Science mode
 while(true){
 	await runtrial()
 }
-})();
+
+} ())
 
 </script>
 </body>

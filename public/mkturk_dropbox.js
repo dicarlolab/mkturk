@@ -15,7 +15,11 @@ class DropboxWriter{
 
 	constructor(dbx){
 		this.dbx = dbx
-		this._touch_filename = ENV.Subject+'_touch_'+datestr+'__0.txt'
+
+		var datestr = SESSION.CurrentDate.toISOString();
+		datestr = datestr.slice(0,datestr.indexOf("."))
+
+		this._touch_filename_suffix = '_touch_'+datestr+'__0.txt'
 	}
 
 	async getMostRecentBehavioralFilePathsFromDropbox(num_files_to_get, subject_id, save_directory){
@@ -172,22 +176,22 @@ class DropboxWriter{
 	}
 
 	//================== CHECK FILE REV ==================//
-	// Asynchronous: Check for parmater file update
-	async checkParameterFileStatus(){
+	async checkIfFileChangedOnDisk(_Filepath, _FileRevisionHash){
 		try{
-			var filemeta = await this.dbx.filesGetMetadata({path: ENV.ParamFileName})
-			if (ENV.ParamFileRev != filemeta.rev){
-				ENV.ParamFileRev = filemeta.rev
-				ENV.ParamFileDate = new Date(filemeta.client_modified)
-
-				var need2loadParameters = 1
-
-				console.log('Parameter file on disk was changed. New rev =' + ENV.ParamFileRev)
-				return need2loadParameters
+			var filemeta = await this.dbx.filesGetMetadata({path: _Filepath})
+			if (_FileRevisionHash != filemeta.rev){
+				_FileRevisionHash = filemeta.rev
+				console.log('File '+_Filepath+ ' on disk was changed. New rev =' + _FileRevisionHash)
+				console.log('checkIfFileChangedOnDisk', 1)
+				return 1
+			}
+			else{
+				return 0
 			}
 		}
 		catch(error) {
 			console.error(error)
+			return 1
 		}
 	}
 
@@ -198,15 +202,13 @@ class DropboxWriter{
 			var filemeta = await this.dbx.filesGetMetadata({path: paramfile_path})
 			var data = JSON.parse(datastring)
 
-			var TASK = data
-			ENV.ParamFileName = filemeta.path_display; 
-			ENV.ParamFileRev = filemeta.rev
-			ENV.ParamFileDate = new Date(filemeta.client_modified)
-			return TASK; 
+			var TASK_entry = data
+			var ParamFileRev = filemeta.rev
+			return [TASK_entry, ParamFileRev]; 
 		}
 		catch(error){
 			console.error('loadParametersfromDropbox() error: ' + error)
-			return 1; 
+			return undefined; 
 		}
 	}
 
@@ -298,6 +300,7 @@ class DropboxWriter{
 				var image_array = []
 
 				for (var i = 0; i < Math.ceil(imagepathlist.length / MAX_SIMULTANEOUS_REQUESTS); i++){
+
 					var lb = i*MAX_SIMULTANEOUS_REQUESTS; 
 					var ub = i*MAX_SIMULTANEOUS_REQUESTS + MAX_SIMULTANEOUS_REQUESTS; 
 					var partial_pathlist = imagepathlist.slice(lb, ub);
@@ -313,19 +316,8 @@ class DropboxWriter{
 				}
 				
 			}
-			else { // If number of images is less than MAX_SIMULTANEOUS_REQUESTS, request them all simultaneously: 
-				//var image_requests = [] 
-				//image_requests = imagepathlist.map(loadImagefromDropbox)
-				//var image_array = await Promise.all(image_requests) 
-
-
-				//for (var j = 0; j<imagepathlist.length; j++){
-				//	console.log(j)
-				//	image_array.push(loadImagefromDropbox(imagepathlist[j])) // test with no awaits
-				//}
-
+			else { 
 				var image_requests = imagepathlist.map(this.loadImagefromDropbox); 
-				
 				var image_array = await Promise.all(image_requests)
 			}
 			return image_array
@@ -347,30 +339,27 @@ class DropboxWriter{
 					var MAX_RETRIES = 5 
 					var backoff_time_seed = 500 // ms; is multiplied by retry number. 
 					var retry_number = 0; 
-					//while(true && retry_number <= MAX_RETRIES){
-						try{
-							dbx.filesDownload({path: imagepath}).then( 
-								function(data){
-									var data_src = window.URL.createObjectURL(data.fileBlob); 	
-									var image = new Image(); 
+					try{
+						dbx.filesDownload({path: imagepath}).then( 
+							function(data){
+								var data_src = window.URL.createObjectURL(data.fileBlob); 	
+								var image = new Image(); 
 
-									image.onload = function(){
-										//console.log('Loaded: ' + (imagepath));
-										updateImageLoadingAndDisplayText('Loaded: ' + imagepath)
-										resolve(image)
-										}
-									image.src = data_src
-								}
-							)
-						}
-						catch(error){
-							retry_number = retry_number + 1; 
-							console.log(error)
-							console.log('On retry '+retry_number)
-							sleep(backoff_time_seed * retry_number)
-							//continue
-						}
-					//}	
+								image.onload = function(){
+									//console.log('Loaded: ' + (imagepath));
+									resolve(image)
+									}
+								image.src = data_src
+							}
+						)
+					}
+					catch(error){
+						retry_number = retry_number + 1; 
+						console.log(error)
+						console.log('On retry '+retry_number)
+						sleep(backoff_time_seed * retry_number)
+						//continue
+					}	
 				}
 				catch(error){
 					console.log(error)
@@ -380,7 +369,7 @@ class DropboxWriter{
 		)
 	}
 	async readTrialHistoryFromDropbox(ndatafiles2read){
-		var subject_behavior_save_directory = TRIAL_DATA_SAVEPATH + ENV.Subject
+		var subject_behavior_save_directory = TRIAL_DATA_SAVEPATH + SESSION.Subject
 		
 		try{
 				await dbx.filesGetMetadata({"path":subject_behavior_save_directory, "include_deleted":false})
@@ -391,7 +380,7 @@ class DropboxWriter{
 			await dbx.filesCreateFolder({"path":subject_behavior_save_directory})
 		}
 
-		 var filepaths = await this.getMostRecentBehavioralFilePathsFromDropbox(ndatafiles2read, ENV.Subject, subject_behavior_save_directory)
+		 var filepaths = await this.getMostRecentBehavioralFilePathsFromDropbox(ndatafiles2read, SESSION.Subject, subject_behavior_save_directory)
 		
 
 		var trialhistory = {}
@@ -414,10 +403,13 @@ class DropboxWriter{
 			var datastring = await DW.loadTextFilefromDropbox(dbx, filepaths[i])
 			var data = JSON.parse(datastring)
 
-			var env_data = data[0]
-			var UnixTimeStampAtStart = env_data.UnixTimeStampAtStart
-			var task_data = data[2]
-			var trial_data = data[3]
+		
+
+
+			var session_data = data[0]
+			var UnixTimeStampAtStart = session_data.UnixTimeStampAtStart
+			var task_archive_data = data[2]
+			var trial_data = data[4]
 
 			var numTRIALs = trial_data.Response.length; 
 			// Iterate over TRIALs
@@ -427,7 +419,7 @@ class DropboxWriter{
 				trialhistory.correct.push(correct)
 
 				// Current automator stage 
-				var current_stage = stageHash(task_data)
+				var current_stage = stageHash(task_archive_data[task_archive_data.length-1])
 				trialhistory.trainingstage.push(current_stage)
 
 				// Start time (fixation dot appears) of trial 
@@ -441,26 +433,26 @@ class DropboxWriter{
 	}
 
 	//================== WRITE JSON ==================//
-	async saveTrialDatatoDropbox(TASK, ENV, CANVAS, TRIAL, save_to_debug_directory){
+	async saveTrialDatatoDropbox(SESSION, DEVICE, TASK_ARCHIVE, CANVAS, TRIAL, save_to_debug_directory){
 		// Add request to queue 
 
 		var dataobj = [] 
-		dataobj.push(ENV)
+		dataobj.push(SESSION)
+		dataobj.push(DEVICE)
+		dataobj.push(TASK_ARCHIVE)
 		dataobj.push(CANVAS)
-		dataobj.push(TASK)
 		dataobj.push(TRIAL)
 		var datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
 
 
 		try{
-			//console.log("Attempting save at trial", CURRTRIAL.num, '. automator stage:', TASK.CurrentAutomatorStage, 'tag: Called purge')
-	        
+        
 
 			if (save_to_debug_directory == 0){
-				var savepath = TRIAL_DATA_SAVEPATH + ENV.Subject+'/'+ ENV.TrialDataFileName
+				var savepath = TRIAL_DATA_SAVEPATH + SESSION.Subject+'/'+ SESSION.Subject +'_'+ SESSION.TrialDataFileName_suffix
 			}
 			else { // In debug mode
-				var savepath = _debug_TRIAL_DATA_SAVEPATH + ENV.Subject+'/'+ "debug__"+ENV.TrialDataFileName
+				var savepath = _debug_TRIAL_DATA_SAVEPATH + SESSION.Subject+'/'+ "debug__"+SESSION.Subject +'_'+SESSION.TrialDataFileName_suffix
 			}
 			 
 			var response = await this.dbx.filesUpload({
@@ -483,18 +475,18 @@ class DropboxWriter{
 		try{
 			
 			if (save_to_debug_directory == 0){
-				var root_savedir = TOUCH_DATA_SAVEPATH+ENV.Subject+'/'
+				var root_savedir = TOUCH_DATA_SAVEPATH+SESSION.Subject+'/'
 			}
 			else { // In debug mode
-				var root_savedir = _debug_TOUCH_DATA_SAVEPATH+ENV.Subject+'/'
+				var root_savedir = _debug_TOUCH_DATA_SAVEPATH+SESSION.Subject+'/'
 			}
 
-			var datestr = ENV.CurrentDate.toISOString();
+			var datestr = SESSION.CurrentDate.toISOString();
 			datestr = datestr.slice(0,datestr.indexOf("."))
 
-			var savepath = root_savedir + this._touch_filename 
+			var savepath = root_savedir + SESSION.Subject+this._touch_filename_suffix 
 			
-			var starttime = ENV.UnixTimestampAtStart
+			var starttime = SESSION.UnixTimestampAtStart
 
 			var header = 'x_pixels_left2right,y_pixels_top2bottom,touch_number,unix_timestamp_delta_from__'+starttime+',Tap_or_Drag\n'
 
@@ -505,7 +497,7 @@ class DropboxWriter{
 
 			if(TOUCHSTRING.length > TOUCHSTRING_MAX_CACHE_SIZE){
 				// Start new file and flush cache
-				this._touch_filename = ENV.Subject+'_touch_'+datestr+'__'+TOUCHSTRING_UDPATECOUNTER+'.txt'
+				this._touch_filename_suffix = '_touch_'+datestr+'__'+TOUCHSTRING_UDPATECOUNTER+'.txt'
 				TOUCHSTRING = ""
 			}
 
@@ -531,7 +523,7 @@ class DropboxWriter{
 		    while(!success && i < max_retries){
 		    	try{
 					var response = await this.dbx.filesUpload({
-						path: ENV.ParamFileName,
+						path: ParamFilePath,
 						contents: datastr,
 						mode: {[".tag"]: "overwrite"} })
 							console.log("Successful parameter text upload. Size: " + response.size)
@@ -552,12 +544,11 @@ class DropboxWriter{
 		}
 
 		try{
-			var filemeta = await this.dbx.filesGetMetadata({path: ENV.ParamFileName})
-				if (ENV.ParamFileRev != filemeta.rev){
-					ENV.ParamFileRev = filemeta.rev
-					ENV.ParamFileDate = new Date(filemeta.client_modified)
+			var filemeta = await this.dbx.filesGetMetadata({path: ParamFilePath})
+				if (ParamFileRev != filemeta.rev){
+					ParamFileRev = filemeta.rev
 
-					//console.log('Parameter file was updated. Rev=' + ENV.ParamFileRev)
+					//console.log('Parameter file was updated. Rev=' + ParamFileRev)
 				}
 		}
 		catch(error) {
@@ -568,8 +559,8 @@ class DropboxWriter{
 
 	async saveParameterstoDropbox() {
 		try{
-			var savepath = ENV.ParamFileName
-		    var datastr = JSON.stringify(TASK,null,' ');
+			var savepath = ParamFilePath
+		    var datastr = JSON.stringify(TASK ,null,' ');
 
 			var response = await this.dbx.filesUpload({
 				path: savepath,
@@ -577,11 +568,10 @@ class DropboxWriter{
 				mode: {[".tag"]: "overwrite"} })
 			
 			var filemeta = await this.dbx.filesGetMetadata({path: savepath})
-			if (ENV.ParamFileRev != filemeta.rev){
-				ENV.ParamFileRev = filemeta.rev
-				ENV.ParamFileDate = new Date(filemeta.client_modified)	
+			if (ParamFileRev != filemeta.rev){
+				ParamFileRev = filemeta.rev
 			}
-			console.log("TASK written to disk as "+ENV.ParamFileName+". Size: " + response.size)
+			console.log("TASK written to disk as "+ParamFilePath+". Size: " + response.size)
 			return 0; //need2saveParameters
 		}
 		catch (error){
@@ -594,5 +584,3 @@ class DropboxWriter{
 
 }
 
-
-//================== WRITE JSON (end) ==================//

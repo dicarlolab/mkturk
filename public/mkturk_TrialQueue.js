@@ -1,9 +1,9 @@
 class TrialQueue { 
 
-constructor(samplingStrategy, ImageBagsSample, ImageBagsTest, samplingRNGseed, trialStartNumber){
+constructor(samplingStrategy, ImageBagsSample, ImageBagsTest, samplingRNGseed, trial_num_TaskStream){
 	// Sampling properties
 	this.samplingStrategy = samplingStrategy; 
-	this.trialStartNumber = trialStartNumber; 
+	this.trialStartNumber = trial_num_TaskStream; 
 	this.samplingRNGseed = samplingRNGseed; 
 
 	// Resource properties
@@ -58,6 +58,7 @@ async buffer_trials(num_trials_to_buffer){
 async generate_trial(i){
 	try{
 		if (this.trialNumber_q.indexOf(i) >= 0){
+			//console.log(i+' already geneated')
 			return 
 			// Already generated 
 		}
@@ -65,10 +66,11 @@ async generate_trial(i){
 		var trialnumber = i 
 		var _RNGseed = cantor(this.samplingRNGseed, trialnumber)
 		
-		console.log('Generating trial ', trialnumber, '. Using seed ', _RNGseed)
+		// console.log('Generating trial ', trialnumber, '. Using seed ', _RNGseed)
 		var sample_index = selectSampleImage(this.samplebag_labels, this.samplingStrategy, _RNGseed)
 		var sample_label = this.samplebag_labels[sample_index]; 
 		var sample_filename = this.samplebag_paths[sample_index]; 
+
 		var funcreturn = selectTestImages(sample_label, this.testbag_labels, _RNGseed) 
 		var test_indices = funcreturn[0] 
 		var correctIndex = funcreturn[1] 
@@ -143,7 +145,6 @@ function selectTestImages(correct_label, testbag_labels, _RNGseed){
 	// 	correct_label: int. It is one element of testbag_labels corresponding to the rewarded group. 
 	//	testbag_labels: array of ints, of length equal to the number of images ( == testbag.length). 
 
-	// Globals: TASK.ObjectGridIndex; TASK.TestGridIndex; TASK.NStickyResponse; 
 
 	// Outputs: 
 	//	[0]: testIndices: array of ints, of length TASK.TestGridIndex.length. The elements are indexes of testbag_labels. The order corresponds to TestGridIndex. 

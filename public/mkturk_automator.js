@@ -4,28 +4,30 @@ class Automator{
 	constructor(samplingStrategy){
 		this.trialhistory = []
 		this.samplingStrategy = samplingStrategy
-		//this.samplingRNGseed = samplingRNGseed
-		//console.log('Automator samplingRNGseed', this.samplingRNGseed)
-		//this.trialStartNumber = trialStartNumber
+		this.__initial_trial_history_on_load = undefined
+
 	}
 
 	_populate_default(a, property){
 		if (this.automator_data[a].hasOwnProperty(property)){
-			console.log('Found '+property+' in automator data')
+			//console.log('Found '+property+' in automator data')
 			var _property = this.automator_data[a][property]
 		}
-		else if(property == 'trialStartNumber'){
-			console.log('Reverting to 0 for trialStartNumber')
+		else if(property == 'trial_num_TaskStream'){
+			//console.log('Reverting to 0 for trial_num_TaskStream')
 			var _property = 0
 		}
 		else{
-			console.log('Reverting to TASK setting for '+property)
+			//console.log('Reverting to TASK setting for '+property)
 			var _property = TASK[property]
 		}
 		return _property
 	}
 	async build(num_prebuffer_trials){
 		this.trialhistory = await DW.readTrialHistoryFromDropbox(ndatafiles2read);
+
+		this.__initial_trial_history_on_load = await DW.readTrialHistoryFromDropbox(ndatafiles2read);
+
 		// trialhistory.trainingstage 
 		// trialhistory.starttime
 		// trialhistory.response 
@@ -33,27 +35,27 @@ class Automator{
 		// trialhistory.trialnumber 		
 		this.automator_data = await DW.parseAutomatorFilefromDropbox(TASK.AutomatorFilePath)
 		// await DW.saveParameterstoDropbox() 
-		// TASK = await DW.loadParametersfromDropbox(ENV.ParamFileName)
 
 		this.AutomatorPreBuffer = {}
 		this.AutomatorPreBuffer['TrialQueue'] = {}; 
 
 
 		for (var a = TASK.CurrentAutomatorStage; a < this.automator_data.length; a++){
+			updateProgressbar(a/this.automator_data.length * 100)
 			console.time('Stage '+a)
 
 
 			var _ImageBagsSample = this._populate_default(a, 'ImageBagsSample')
 			var _ImageBagsTest = this._populate_default(a, 'ImageBagsTest')
 			var _samplingRNGseed = this._populate_default(a, 'samplingRNGseed')
-			var _trialStartNumber = this._populate_default(a, 'trialStartNumber')
+			var _trial_num_TaskStream = this._populate_default(a, 'trial_num_TaskStream')
 			
 			this.AutomatorPreBuffer['TrialQueue'][a] = new TrialQueue(
 				this.samplingStrategy, 
 				_ImageBagsSample,
 				_ImageBagsTest,
 				_samplingRNGseed, 
-				_trialStartNumber,
+				_trial_num_TaskStream,
 				); 
 
 			// Populate the stage's imagebuffer with some images
@@ -61,6 +63,11 @@ class Automator{
 			console.timeEnd('Loaded stage '+a)
 		}
 		console.log('Done prebuffering automator stages.')
+	}
+
+	async resetToInitialLoadState(){
+		this.trialhistory = this.__initial_trial_history_on_load
+		this.__initial_trial_history_on_load = undefined
 	}
 	async monitorStage_State_and_Transition(TASK){
 
@@ -80,8 +87,8 @@ class Automator{
 				}
 				if (!(TASK[property].toString() == this.automator_data[i_current_stage][property].toString())){
 
-				TASK[property] = this.automator_data[i_current_stage][property]
-				FLAGS.need2writeParameters=1
+					TASK[property] = this.automator_data[i_current_stage][property]
+					FLAGS.need2writeParameters=1
 				}
 			}
 		}
@@ -101,6 +108,10 @@ class Automator{
 
 		// ---------- CHANGE TASK.STUFF TO AUTOMATOR DATA [ NEXT_STAGE ] --------------------------------------- 
 		if(pctcorrect >= MinPercentCriterion && ntrials >= MinTrialsCriterion){
+			TRIAL_NUMBER_FROM_TASKSTREAM_START = 0 // todo: read from disk 
+			console.log('TASK_ARCHIVE.push @ stage transition')
+			TASK_ARCHIVE.push(TASK) // Archive current TASK state
+			TASK_ARCHIVE_COUNTER++
 			// If finished final stage of automator,
 
 			if(TASK.CurrentAutomatorStage+1 >= this.automator_data.length){
@@ -128,7 +139,6 @@ class Automator{
 						property === 'CurrentAutomatorStageName'){
 						continue 
 					}
-
 					if (this.automator_data[i_current_stage+1].hasOwnProperty(property)){ 
 						if (!(TASK[property].toString() == this.automator_data[i_current_stage+1][property].toString())){
 							console.log('\"'+property+'\" changed from '+TASK[property]+' to '+this.automator_data[i_current_stage+1][property])
@@ -145,6 +155,7 @@ class Automator{
 				}
 			}
 		}
+
 		return TASK  
 	}
 }

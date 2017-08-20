@@ -266,5 +266,5 @@ function setReward(){
     }
   } //piezoelectric 7mL/min (takasago)
   return (TASK.RewardPer1000Trials - b)/m/1000;
-  ENV.RewardDuration = (TASK.RewardPer1000Trials - b)/m/1000;
+  
 }
