@@ -156,9 +156,9 @@ function selectTestImages(correct_label, testbag_labels, _RNGseed){
 	var correctSelection = NaN;
 
 	// If SR is on, 
-	if (TASK.ObjectGridIndex.length == TASK.ImageBagsTest.length){ // Is this a robust SR check?
+	if (TASK.ObjectGridMapping.length == TASK.ImageBagsTest.length){ // Is this a robust SR check?
 		// For each object, 
-		for (var i = 0; i<TASK.ObjectGridIndex.length; i++){
+		for (var i = 0; i<TASK.ObjectGridMapping.length; i++){
 			
 			// Get pool of the object's test images: 
 			var object_test_indices = getAllInstancesIndexes(testbag_labels, i)
@@ -167,7 +167,7 @@ function selectTestImages(correct_label, testbag_labels, _RNGseed){
 			var test_image_index = object_test_indices[Math.floor((object_test_indices.length)*Math.random())]; 
 
 			// Get grid index where the object should be placed: 
-			var object_grid_index = TASK.ObjectGridIndex[i] 
+			var object_grid_index = TASK.ObjectGridMapping[i] 
 
 			// Determine which location that grid index corresponds to in testIndices: 
 			order_idx = TASK.TestGridIndex.indexOf(object_grid_index)

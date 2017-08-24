@@ -2,8 +2,11 @@
 // In the interest of code readability and spaghetti-minimization, the use of globals should be kept to a minimum, and instead explicit passage of variables into and out of functions is encouraged.
 // For certain things, globals make sense and may even be required, like event listeners and async processes.
 
+windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
+windowHeight = document.body.clientHeight;  
 
 FixationRadius = 0
+acquiredTouch = 0 
 
 TOUCHSTRING = ""
 TOUCHSTRING_UDPATECOUNTER = 0
@@ -22,11 +25,8 @@ var TASK // Current
 var TRIAL = {} // Global that contains data variables that are incremented every trial, and are dumped to disk for scientific purposes.
 TRIAL.StartTime = []
 TRIAL.FixationGridIndex = []
-TRIAL.FixationXYT=[]
-TRIAL.AllFixationXYT=[]
 TRIAL.Sample = []
 TRIAL.Test = []
-TRIAL.ResponseXYT = []
 TRIAL.Response = []
 TRIAL.CorrectItem = []
 TRIAL.FixationTouchEvent = []
@@ -43,7 +43,7 @@ TRIAL.TASK_ARCHIVE_counter = []
 var DEVICE = {} // Does not change during a session on a particular device 
 DEVICE.BatteryLDT = []
 DEVICE.DevicePixelRatio = 1
-DEVICE.CanvasRatio = 1
+DEVICE.CanvasRatio = 
 DEVICE.XGridCenter = []
 DEVICE.YGridCenter = []
 DEVICE.source_ImageHeightPixels = NaN; 
@@ -64,63 +64,36 @@ FLAGS.need2loadParameters = 0;
 FLAGS.debug_mode = 1; 
 
 FLAGS.waitingforTouches = 0
-FLAGS.punishOutsideTouch = 0
-FLAGS.acquiredTouch = 0
 FLAGS.touchGeneratorCreated = 0
 
-var CANVAS = {}; 
-var CANVAS = {
-	names: ["blank","sample","test","touchfix","eyefix","reward","photoreward","punish"],
-	front: "blank",
-	sequenceblank: ["blank","blank"], 
-	tsequenceblank: [0,50], 
-	sequencepre: ["touchfix"],
-	tsequencepre: [0],
-	sequence: ["blank","sample","blank","test"], // blank, sample, blank, test
-	tsequence: NaN, 
-	sequencepost: ["blank","reward","blank"], // blank, reward
-	tsequencepost: [0,50,100],
-	headsupfraction: NaN,
-	offsetleft: 0,
-	offsettop: 0,
-	obj: [],
-}
+var CANVAS = {};
+CANVAS.names= ["blank","sample","test","touchfix","eyefix","reward","photoreward","punish"]
+CANVAS.front= "blank"
+CANVAS.sequenceblank= ["blank","blank"],
+CANVAS.tsequenceblank= [0,50],
+CANVAS.sequencepre= ["touchfix"]
+CANVAS.tsequencepre= [0]
+CANVAS.sequence= ["blank","sample","blank","test"], // blank, sample, blank, tes
+CANVAS.tsequence= NaN,
+CANVAS.sequencepost= ["blank","reward","blank"], // blank, rewar
+CANVAS.tsequencepost= [0,50,100]
+CANVAS.offsetleft= 0
+CANVAS.offsettop= 0
+CANVAS.obj= []
+
 for (var i in CANVAS.names){
 	CANVAS.obj[CANVAS.names[i]]=document.getElementById("canvas" + CANVAS.names[i])
 }
 
-var frame = {
-	current: 0,
-	shown: [],
-}
 
-var CURRTRIAL = {}
-CURRTRIAL.starttime = NaN; 
-CURRTRIAL.fixationgridindex = NaN; 
-CURRTRIAL.fixationxyt = [];
-CURRTRIAL.allfixationxyt = [];
-CURRTRIAL.sampleindex = NaN;
-CURRTRIAL.sampleimage = undefined;
-CURRTRIAL.testindices = NaN;
-CURRTRIAL.testimages = [];
-CURRTRIAL.responsexyt = []; 
-CURRTRIAL.response = []; 
-CURRTRIAL.correctitem = NaN;
-CURRTRIAL.correct = [];
-CURRTRIAL.nreward = NaN;
-CURRTRIAL.fixationtouchevent = ""
-CURRTRIAL.responsetouchevent = ""
-CURRTRIAL.tsequenceactual = []
-CURRTRIAL.tsequencedesired = []
-CURRTRIAL.TASK_idx = []
 
-var boundingBoxesFixation={}; //where the fixation touch targets are on the canvas
-var boundingBoxesChoice={}; //where the choice touch targets are on the canvas
+var boundingBoxesFixation={}; //where the fixation touch targets are on the canva
+var boundingBoxesChoice={}; //where the choice touch targets are on the canva
 var waitforClick; //variable to hold generator
 var waitforEvent; //variable to hold generator
 var touchTimer; //variable to hold timer
-var xcanvascenter=[];
-var ycanvascenter=[];
+var xcanvascenter=[]
+var ycanvascenter=[]
 var curridx = null;
 var datafiles=[];
 var displayoutofboundsstr=""
@@ -151,11 +124,9 @@ function transition_from_debug_to_science_trials(){
 
 	TRIAL.StartTime = []
 	TRIAL.FixationGridIndex = []
-	TRIAL.FixationXYT=[]
-	TRIAL.AllFixationXYT=[]
+
 	TRIAL.Sample = []
 	TRIAL.Test = []
-	TRIAL.ResponseXYT = []
 	TRIAL.Response = []
 	TRIAL.CorrectItem = []
 	TRIAL.FixationTouchEvent = []
@@ -167,7 +138,7 @@ function transition_from_debug_to_science_trials(){
 	TRIAL.trial_num_Session = []
 
 	TRIAL_NUMBER_FROM_SESSION_START = 0
-	TRIAL_NUMBER_FROM_TASKSTREAM_START = 0 // todo: read from disk
+	CANVAS.TRIAL_NUMBER_FROM_TASKSTREAM_START = 0 // todo= read from dis
 
 
 	return 

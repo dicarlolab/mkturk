@@ -1,128 +1,143 @@
-function touchhold_promise(touchduration,boundingBoxes,punishOutsideTouch){
-	var resolveFunc
-	var errFunc
-	p = new Promise(function(resolve,reject){
-		resolveFunc = resolve;
-		errFunc = reject;
-	}).then(function(resolveval){
-		FLAGS.touchGeneratorCreated = 0
-		return resolveval
-	});
-	function *waitforeventGenerator(){
-		var touchevent
-		var return_event = {type: "", cxyt: []}
-		while (true){
-		
 
-			touchevent = yield touchevent
-			//console.log('TOUCHEVENT', touchevent.type)
-			if (touchevent.type == "touchstart" || touchevent.type == "touchmove"){
-				var x = touchevent.targetTouches[0].pageX;
-				var y = touchevent.targetTouches[0].pageY;					
-			}
-			else if (touchevent.type == "mousedown" || touchevent.type == "mousemove"){
-				var x = touchevent.clientX
-				var y = touchevent.clientY
-			}
-			var t = Math.round(performance.now())
-			//console.log(x, y, t)
+// Continuously log x,y position until it hits a hotspot; then give juice and/or transition to the next canvas
 
-			if (touchevent.type == 'touchheld' || touchevent.type == 'touchbroken'){
-				return_event.type = touchevent.type
-				break;
-			}
-			else{
-				//keep processing touchstart, touchmove, touchend events
-			}
 
-			// Get CHOICE,XYT
-			var touchcxyt = [-1, -1, -1, -1]
-			if (FLAGS.waitingforTouches > 0 && touchevent.type != "touchend" && touchevent.type != "mouseup"){
-				var chosenbox = -1
-				if (touchevent.type == "touchstart" || touchevent.type == "touchmove"){
-					var x = touchevent.targetTouches[0].pageX;
-					var y = touchevent.targetTouches[0].pageY;					
-				}
-				else if (touchevent.type == "mousedown" || touchevent.type == "mousemove"){
-					var x = touchevent.clientX
-					var y = touchevent.clientY
-				}	
-				for (var q=0; q<=boundingBoxes.x.length-1; q++){
-					if (x >= boundingBoxes.x[q][0] && x <= boundingBoxes.x[q][1] &&
-						y >= boundingBoxes.y[q][0] && y <= boundingBoxes.y[q][1]){
-						chosenbox=q
-					}//if in bounding box
-				}//for q boxes
-				var touchcxyt = [chosenbox,x,y,Math.round(performance.now())];		
-			} //if waiting for touch, get coords
+// A value passed to next() will be treated as the result of the last yield expression that paused the generator.
 
-			//================== ACQUIRING TOUCH ==================//
-			if (!FLAGS.acquiredTouch && 
-				touchevent.type != "touchend" && touchevent.type != "touchmove" && 
-				touchevent.type != "mouseup" && touchevent.type != "mousemove"){
-				if (chosenbox == -1){
-					if (punishOutsideTouch){
-						FLAGS.acquiredTouch = 0
-						clearTimeout(touchTimer);
-						return_event.type = "touchbroken"
-						break;
-					} //touched outside fixation, advance to punish
-					else {
-						//do nothing for touching outside boxes
-						touchcxyt[0] = -1
-					}
-				} //if touched outside box
-				else if (chosenbox >= 0){
-					FLAGS.acquiredTouch = 1
-					if (touchduration > 0){
-						//Start timer
-						touchTimer = setTimeout(function(){
-							FLAGS.waitingforTouches--
-							FLAGS.acquiredTouch = 0
-							FLAGS.touchGeneratorCreated = 0 //block other callbacks
-							waitforEvent.next({type: "touchheld"})
-						},touchduration)
-					} //if touch hold required
-					else {
-						FLAGS.waitingforTouches--
-						FLAGS.acquiredTouch = 0
-						return_event.type = "touchheld"
-						break;
-					} //if no touch hold required
-				} //if touched inside box		
-			} //if !acquiredTouch
+function* SubjectXYGenerator(){
+	var touchevent 
+	var x = undefined
+	var y = undefined
+	var response = {}
+	while(true){
+		console.log(x, y, t)
+		var t = Math.round(performance.now())
 
-			//================== HOLDING TOUCH ==================//
-			if (touchevent.type == "touchmove" && FLAGS.acquiredTouch){
-				if (chosenbox >= 0){
-				} //if moving within a touch bounding box, just wait
-				else if (chosenbox == -1){
-					FLAGS.acquiredTouch = 0
-					clearTimeout(touchTimer)
-					return_event.type = "touchbroken"
-					break;
-				} //if moved out of touch bounding box
-			} //if touchmove
+		touchevent = yield touchevent 
+		if (touchevent.type == "touchstart" || touchevent.type == "touchmove"){
+			x = touchevent.targetTouches[0].pageX;
+			y = touchevent.targetTouches[0].pageY;
+			response['is_waiting_for_response'] = false 
+			response['x'] = x
+			response['y'] = y
+			yield [x, y]					
+		}
+		else if (touchevent.type == "mousedown" || touchevent.type == "mousemove"){
+			x = touchevent.clientX
+			y = touchevent.clientY
+			response['is_waiting_for_response'] = false 
+			response['x'] = x
+			response['y'] = y
+			yield response			
+		}
 
-			//================== TOUCH END ==================//
-			if ((touchevent.type == "touchend" || touchevent.type == "mouseup") && FLAGS.acquiredTouch){
-				FLAGS.acquiredTouch = 0
-				//console.log('was fixating but lifted finger prematurely');
-				clearTimeout(touchTimer);
-				return_event.type = "touchbroken"
-				break;
-			} //if ended touch too early			
-		} //while events
-		////console.log('RETURN_EVENT', return_event.type)
-		return_event.cxyt = touchcxyt
-		resolveFunc(return_event)
-	} //generator
-	waitforEvent = waitforeventGenerator(); // start async function
-	FLAGS.touchGeneratorCreated = 1
-	////console.log('GENERATOR CREATED waiting for ntouches',FLAGS.waitingforTouches)
-	waitforEvent.next(); //move out of default state
-	return p;
+		if (touchevent.type == 'touchheld' || touchevent.type == 'touchbroken'){
+			response['is_waiting_for_response'] = true 
+			response['x'] = undefined
+			response['y'] = undefined
+			yield response
+		}
+	}
 }
+
+
+// function touchhold_promise(touchduration,boundingBoxes){
+// 	var resolveFunc
+// 	var errFunc
+// 	p = new Promise(
+// 		function(resolve,reject){
+// 			resolveFunc = resolve;
+// 			errFunc = reject;
+// 		}).then(
+// 			function(resolveval){
+// 				FLAGS.touchGeneratorCreated = 0
+// 				return resolveval
+// 			});
+// 	function *waitforeventGenerator(){
+// 		var touchevent
+// 		var return_event = {type: "", cxyt: []}
+// 		while (true){
+// 			var t = Math.round(performance.now())
+// 			touchevent = yield touchevent
+// 			if (touchevent.type == "touchstart" || touchevent.type == "touchmove"){
+// 				var x = touchevent.targetTouches[0].pageX;
+// 				var y = touchevent.targetTouches[0].pageY;					
+// 			}
+// 			else if (touchevent.type == "mousedown" || touchevent.type == "mousemove"){
+// 				var x = touchevent.clientX
+// 				var y = touchevent.clientY
+// 			}
+
+// 			if (touchevent.type == 'touchheld' || touchevent.type == 'touchbroken'){
+// 				return_event.type = touchevent.type
+// 				break;
+// 			}
+
+// 			var touchcxyt = [-1, -1, -1, -1]
+
+
+// 			if (FLAGS.waitingforTouches > 0 && touchevent.type != "touchend" && touchevent.type != "mouseup"){
+// 				var chosenbox = -1
+// 				if (touchevent.type == "touchstart" || touchevent.type == "touchmove"){
+// 					var x = touchevent.targetTouches[0].pageX;
+// 					var y = touchevent.targetTouches[0].pageY;					
+// 				}
+// 				else if (touchevent.type == "mousedown" || touchevent.type == "mousemove"){
+// 					var x = touchevent.clientX
+// 					var y = touchevent.clientY
+// 				}	
+// 				for (var q=0; q<=boundingBoxes.x.length-1; q++){
+// 					if (x >= boundingBoxes.x[q][0] && x <= boundingBoxes.x[q][1] &&
+// 						y >= boundingBoxes.y[q][0] && y <= boundingBoxes.y[q][1]){
+// 						chosenbox=q
+// 					}
+// 				}
+// 				var touchcxyt = [chosenbox,x,y,Math.round(performance.now())];		
+// 			} 
+
+// 			//================== ACQUIRING TOUCH ==================//
+// 			if (!acquiredTouch && 
+// 				touchevent.type != "touchend" &&  
+// 				touchevent.type != "mouseup"){
+				
+// 				if (chosenbox == -1){
+// 					touchcxyt[0] = -1
+// 				}
+				
+// 				if (chosenbox >= 0){
+// 					acquiredTouch = 1
+					
+// 					FLAGS.waitingforTouches--
+// 					acquiredTouch = 0
+// 					return_event.type = "touchheld"
+				
+// 					} 
+// 			} //if touched inside box		
+			 
+
+
+
+// 			//================== TOUCH END ==================//
+// 			if ((touchevent.type == "touchend" || touchevent.type == "mouseup") && acquiredTouch){
+// 				acquiredTouch = 0
+// 				//console.log('was fixating but lifted finger prematurely');
+// 				clearTimeout(touchTimer);
+// 				return_event.type = "touchbroken"
+// 				break;
+// 			} //if ended touch too early			
+		 
+
+// 		return_event.cxyt = touchcxyt
+// 		resolveFunc(return_event)
+// 	} 
+
+
+// 	waitforEvent = waitforeventGenerator(); // start async function
+// 	FLAGS.touchGeneratorCreated = 1
+// 	////console.log('GENERATOR CREATED waiting for ntouches',FLAGS.waitingforTouches)
+// 	waitforEvent.next(); //move out of default state
+// 	return p;
+// }
 
 //================== MOUSE & TOUCH EVENTS ==================//
 function touchstart_listener(event){
@@ -214,28 +229,6 @@ function subjectIDPromise(){
 		}
 	}
 
-	waitforClick = waitforclickGenerator(); // start async function
-	waitforClick.next(); //move out of default state
-	return p;
-}
-
-// Promise: Edit Parameters Text
-function editParamsPromise(){
-	var resolveFunc
-	var errFunc
-	p = new Promise(function(resolve,reject){
-		resolveFunc = resolve;
-		errFunc = reject;
-	}).then(function(resolveval){
-		//console.log('User is done editing parameters.')
-	});
-	function *waitforclickGenerator(){
-		var imclicked =[-1];
-		while (true){
-			imclicked = yield imclicked;
-			resolveFunc(imclicked);
-		}
-	}
 	waitforClick = waitforclickGenerator(); // start async function
 	waitforClick.next(); //move out of default state
 	return p;

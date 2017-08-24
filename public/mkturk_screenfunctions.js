@@ -22,25 +22,19 @@ function refreshCanvasSettings(TASK_entry){
 	// TODO: cleanup CANVAS; separate canvas ID from sequence logic; 'tsequence' variables coded by length rather than absolute time
 
 	// Adjust length / toggle presence of gray screen between sample and test screens
-	if (TASK_entry.SampleOFF > 0){
+	if (TASK_entry.t_SampleOFF > 0){
 		CANVAS.sequence = ["blank", "sample","blank","test"]
-		CANVAS.tsequence = [0,100,100+TASK_entry.SampleON,100+TASK_entry.SampleON+TASK_entry.SampleOFF]; 
+		CANVAS.tsequence = [0,100,100+TASK_entry.t_SampleON,100+TASK_entry.t_SampleON+TASK_entry.t_SampleOFF]; 
 	}
-	else if (TASK_entry.SampleOFF <= 0 ){
+	else if (TASK_entry.t_SampleOFF <= 0 ){
 		CANVAS.sequence = ["blank","sample","test"]
-		CANVAS.tsequence = [0,100,100+TASK_entry.SampleON]; 
+		CANVAS.tsequence = [0,100,100+TASK_entry.t_SampleON]; 
 	}
 	
 	// Adjust length of reward screen based on reward amount 
 	CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+RewardDuration*1000;
 
-	// Adjust location of CANVAS based on species-specific setup
-	if (TASK_entry.Species == "macaque" || TASK_entry.Species == "human"){
-		CANVAS.headsupfraction=0;
-	}
-	else if (TASK_entry.Species == "marmoset"){
-		CANVAS.headsupfraction=1/3-0.06;
-	}
+
 }
 
 function writeTextonBlankCanvas(textstr,x,y){
@@ -84,23 +78,7 @@ function setupTapTracker(){
 	})
 }
 
-function setupCanvasHeadsUp(){
-	canvasobj=document.getElementById("canvasheadsup");
-	canvasobj.width=document.body.clientWidth;
-	canvasobj.height=Math.round(document.body.clientHeight*CANVAS.headsupfraction);
-	CANVAS.offsettop = canvasobj.height;
-	if (CANVAS.headsupfraction == 0){
-		canvasobj.style.display="none";
-	}
-	else{
-		canvasobj.style.display="block";
-	}
-	var context=canvasobj.getContext('2d');
 
-	context.fillStyle="#202020";
-	context.fillRect(0,0,canvasobj.width,canvasobj.height);
-	canvasobj.addEventListener('touchstart',touchstart_listener,false);
-}
 function setupCanvas(canvasobj){
 	// center in page
 	canvasobj.style.top=CANVAS.offsettop + "px";
@@ -247,7 +225,7 @@ async function renderImageOnCanvas(image, grid_index, scale, canvasobj){
 }
 
 
-function displayTrial(sequence,tsequence){
+function displayScreenSequence(sequence,tsequence){
 	var resolveFunc
 	var errFunc
 	p = new Promise(function(resolve,reject){
@@ -258,35 +236,38 @@ function displayTrial(sequence,tsequence){
 
 	var start = null;
 	var tActual = []
+
+	var current_frame_index = 0
+	var frames_left_to_animate = sequence.length
+
 	function updateCanvas(timestamp){
 
 		// If start has not been set to a float timestamp, set it now.
 		if (!start) start = timestamp;
 
 		// If time to show new frame, 
-		if (timestamp - start > tsequence[frame.current]){
-			//console.log('Frame =' + frame.current+'. Duration ='+(timestamp-start)+'. Timestamp = ' + timestamp)
-			tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+		if (timestamp - start > tsequence[current_frame_index]){
+			//console.log('Frame =' + current_frame_index+'. Duration ='+(timestamp-start)+'. Timestamp = ' + timestamp)
+			tActual[current_frame_index] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
 			// Move canvas in front
 			var prev_canvasobj=CANVAS.obj[CANVAS.front]
-			var curr_canvasobj=CANVAS.obj[sequence[frame.current]]
+			var curr_canvasobj=CANVAS.obj[sequence[current_frame_index]]
 			if (CANVAS.front != "blank"){
 				// Move to back
 				prev_canvasobj.style.zIndex="0";
 			} 
-			if (sequence[frame.current] != "blank"){
+			if (sequence[current_frame_index] != "blank"){
 				curr_canvasobj.style.zIndex="100";
-				CANVAS.front = sequence[frame.current];
+				CANVAS.front = sequence[current_frame_index];
 			} // move to front
 			else{
 				CANVAS.front = "blank";
 			}
-			
-			frame.shown[frame.current]=1;
-			frame.current++;
+			frames_left_to_animate--
+			current_frame_index++;
 		}; 
 		// continue if not all frames shown
-		if (frame.shown[frame.shown.length-1] != 1){
+		if (frames_left_to_animate>0){
 			window.requestAnimationFrame(updateCanvas);
 		}
 		else{
