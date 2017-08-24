@@ -25,34 +25,29 @@
 // loadGoogleCharts --> getFileListDropbox
 // checkFileStatus -- wait 1 second -- if new data -->
 // readDatafromDropbox --> initializeChartData --> updatePlots
-
 // SECTIONS:
 //================== GOOGLE CHARTS LOADING ==================//
 //================== DROPBOX STUFF ==================//
 //================== DATA HANDLING ==================//
 //================== PLOTTING ==================//
-
 //================== GOOGLE CHARTS LOADING ==================//
 // Asynchronous: Live plotting using google charts
 function loadGoogleCharts(){
 	// Load the Visualization API and the piechart package.
 	google.charts.load('current', {'packages':['corechart', 'bar','table','controls']});
 	google.charts.setOnLoadCallback(function(){
-
 		dataPerformance = new google.visualization.DataTable()
 		dataPerformance.addColumn('number','currentTrial')
 		dataPerformance.addColumn('number','currentPerformance')
-
 		dataCumulative = new google.visualization.DataTable()
 		dataCumulative.addColumn('datetime','time')
 		dataCumulative.addColumn('number','cumulativeTrials')
 		dataCumulative.addColumn('number','cumulativePerformance')
-
-
+		
+		
 		// Create a dashboard.
         dashboard1 = new google.visualization.Dashboard(
             document.getElementById('dashboard1_div'));
-
 		// Initialize plotting elements
 		// See for chartrange example: https://google-developers.appspot.com/chart/interactive/docs/gallery/controls_5cece98b344aa0b1575282db7d34d5f4.frame
 		livesliderTrial = new google.visualization.ControlWrapper({
@@ -61,73 +56,57 @@ function loadGoogleCharts(){
 			'options': livesliderTrialOptions,
 			'state': {'range': {'start': 0, 'end': 100}}
        	}) //wrapper
-
 		liveline = new google.visualization.ChartWrapper({
 			'chartType': 'LineChart',
 			'containerId': 'line_div'
 		})
-
         dashboard2 = new google.visualization.Dashboard(
             document.getElementById('dashboard2_div'));
-
 		livesliderTime = new google.visualization.ControlWrapper({
 			'controlType': 'ChartRangeFilter',
 			'containerId': 'filtertime_div',
 			'options': livesliderTimeOptions,
 			'state': {'range': {'start': 0, 'end': 100}}
        	}) //wrapper
-
 		livearea = new google.visualization.ChartWrapper({
 			'chartType': 'AreaChart',
 			'containerId': 'area_div'
 		})
-
         // Establish dependencies, declaring that the sliders drive 'liveline' & 'livearea',
         // so that data will only display for entries that are let through
         // given the chosen slider range.
         dashboard1.bind(livesliderTrial, liveline)
         dashboard2.bind(livesliderTime, livearea)
-
 		livebar = new google.visualization.ColumnChart(document.getElementById('bar_div'));
 		livetable = new google.visualization.Table(document.getElementById('table_div'));
-
 		// data formatters
 		formatterDate = new google.visualization.DateFormat({pattern: 'h aa'})
 		formatterDigits = new google.visualization.NumberFormat({fractionDigits: 2})
 		formatterColor = new google.visualization.ColorFormat();
-
 		// cell color formatting --> https://developers.google.com/chart/interactive/docs/reference#colorformatter
 		dx=1/(colormapViridis.length-1);
 		for (var i=0; i<=colormapViridis.length-1; i++){
 			formatterColor.addRange(i*dx,(i+1)*dx,'gray',colormapViridis[i])
 		}
-
 		getFileListDropbox2();
 	})
 }
 //================== GOOGLE CHARTS LOADING (end) ==================//
-
 //================== DROPBOX STUFF ==================//
 // Mkturk
 var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "liveplot.html"
-
 //return whether user was redirected here after authenticating
 function isAuthenticated(){
 	return !!getAccessTokenFromUrl()
 }
-
 //parse access token from url if in urls hash
 function getAccessTokenFromUrl(){
 	return utils.parseQueryString(window.location.hash).access_token
 }
-
 // Asynchronous: Get file list from dropbox directory
 function getFileListDropbox2(){
 	dbx.filesListFolder({path: file.dir, recursive:true}).then(function(response){
 		console.log("success: read directory ");
-
-		console.log(response)
-
 //FilesFileMetadata: tag/name/id/rev/size/...
 //   http://dropbox.github.io/dropbox-sdk-js/global.html#FilesFileMetadata
 		var menuobj = document.getElementById("file_list");
@@ -136,7 +115,6 @@ function getFileListDropbox2(){
 				console.log("found ", response.entries[q].name)
 				file.list[q] = response.entries[q].name
 				file.pathlist[q] = response.entries[q].path_display
-
 				//add to menu as option
 				var opt = document.createElement('option')
 				opt.value = q
@@ -154,7 +132,6 @@ function getFileListDropbox2(){
 	})
 	return false
 }
-
 // Asynchronous: Check for file updates
 function checkFileStatus2(){
 	dbx.filesGetMetadata({path: file.name}).then(function(filemeta){
@@ -166,7 +143,6 @@ function checkFileStatus2(){
 		else{
 			file.datahasChanged=false
 		}
-
 		if (file.filehasChanged == true || file.datahasChanged == true){
 			readDatafromDropbox2()
 		}
@@ -179,25 +155,22 @@ function checkFileStatus2(){
 	})
 	return false
 }
-
 //Asynchronous: Read data from selected file in dropbox
 function readDatafromDropbox2(){
 	dbx.filesDownload({path: file.name}).then(function(data){
 		console.log("success: loaded file size " + data.size);
-
 		file.rev = data.rev
 		file.dateSaved = new Date(data.client_modified)
-
 		//Parse date
 		var ind1 = file.name.indexOf("/2")
 		var ind2 = file.name.indexOf('_')
 		var datestr = file.name.substring(ind1+1,ind2)
 		file.dateCreated = new Date(datestr)
-
 		var reader = new FileReader()
 		reader.onload = function(e){
 			var datajson
 			datajson = JSON.parse(reader.result)
+			console.log(datajson)
 			if (Array.isArray(datajson)){
 				file.data = {}; 
 				for(var elem = 0; elem < datajson.length; elem++){
@@ -219,29 +192,8 @@ function readDatafromDropbox2(){
 	})
 	return false
 }
-
 function parseImageInfo(){
-	if (file.data.ImageFolderSample==4 | file.data.ImageFolderSample==5){
-		objlabels = objlabelsMURI;
-		cat = catMURI;
-		catlist = catlistMURI;
-	}
-	else if (file.data.ImageFolderSample==9 | file.data.ImageFolderSample==10 | file.data.ImageFolderSample==11){
-		objlabels = objlabelsHVM;
-		cat = catHVM;
-		catlist = catlistHVM;
-	}
-	else if (file.data.ImageFolderSample==12 | file.data.ImageFolderSample==13 | file.data.ImageFolderSample==14 | file.data.ImageFolderSample==15){
-		objlabels = objlabelsCOCO;
-		cat = catCOCO;
-		catlist = catlistCOCO;
-	}			
-	else {
-		objlabels = objlabelsOBJ;
-		cat = catOBJ;
-		catlist = catlistOBJ;
-	}
-
+	
 	if (file.filehasChanged==true){
 		initializeChartData()
 	}
@@ -250,8 +202,6 @@ function parseImageInfo(){
 	}
 }
 //================== DROPBOX STUFF (end) ==================//
-
-
 //================== DATA HANDLING ==================//
 // Synchronous: Initialize chart data matrices
 function initializeChartData(){
@@ -259,8 +209,6 @@ function initializeChartData(){
 	dataPerformance.removeColumns(0,dataPerformance.getNumberOfColumns());
 	dataCumulative.removeRows(0,dataCumulative.getNumberOfRows());
 	dataCumulative.removeColumns(0,dataCumulative.getNumberOfColumns());
-	dataConfusion.removeRows(0,dataConfusion.getNumberOfRows());
-	dataConfusion.removeColumns(0,dataConfusion.getNumberOfColumns());
 
 	dataPerformance.addColumn('number','currentTrial')
 	dataPerformance.addColumn('number','currentPerformance')
@@ -268,23 +216,9 @@ function initializeChartData(){
 	dataCumulative.addColumn('number','cumulativeTrials') //1
 	dataCumulative.addColumn('number','cumulativePerformance') //2
 		
-	dataConfusion.addColumn('string','sample');
-	for (var i=0; i<=catlist.length-1; i++){
-		dataConfusion.addColumn('number',objlabels[catlist[i]]);			
-	} //sample labels
-
-	for (var i=0; i<=catlist.length-1; i++){
-		var row =[objlabels[catlist[i]]];
-		for (var j=0; j<=catlist.length-1; j++){
-			row[j+1]=0;
-		}
-		dataConfusion.addRow(row);
-	} //test labels
-
 	updatePlots()
 	file.filehasChanged=false
 }
-
 // Synchronous
 function toTask(){
 	task.rewardstage = 1;
@@ -303,7 +237,6 @@ function toTask(){
 	if (typeof(file.data.ImageFolderTest) != "undefined"){
 		task.imagefoldertest = file.data.ImageFolderTest;
 	}
-
 	task.sampleon = file.data.SampleON;
 	task.sampleoff = file.data.SampleOFF
 	if (typeof(file.data.KeepSampleON) != "undefined"){
@@ -311,23 +244,19 @@ function toTask(){
 			task.sampleoff = -1; //Sample left on
 		}
 	}
-
 	task.nway = file.data.Nway;
-	task.nobj = file.data.ImageBagsTest.length;
+	//task.nobj = file.data.ImageBagsTest.length;
 	task.objectlist = file.data.ImageBagsTest
-
 	task.rewardper1000 = 0;
 	if (typeof(file.data.RewardPer1000Trials) != "undefined"){
 		task.rewardper1000 = Math.round(file.data.RewardPer1000Trials);
 	}
 }
-
 // Synchronous
 function toVitals(){
 	vitals.subject = file.data.Subject;
 	vitals.trials = file.data.Response.length;
 	vitals.time = Math.round(Math.round(file.data.StartTime[vitals.trials-1] - file.data.StartTime[0])/60000); //convert msec to minutes
-
 vitals["automator"]
 	if (typeof(file.data.Automator) != "undefined"){
 		vitals.automator = file.data.Automator
@@ -335,21 +264,18 @@ vitals["automator"]
 	else {
 		vitals.automator = null
 	}
-
 	if (typeof(file.data.CurrentAutomatorStage) != "undefined"){
 		vitals.currentautomatorstage = file.data.CurrentAutomatorStage
 	}
 	else {
 		vitals.currentautomatorstage = null
 	}
-
 	if (typeof(file.data.CurrentAutomatorStageName) != "undefined"){
 		vitals.currentautomatorstagename = file.data.CurrentAutomatorStageName
 	}
 	else {
 		vitals.currentautomatorstagename = null
 	}
-
 	if (typeof(file.data.BatteryLDT) != "undefined"){
 		vitals.batteryleft = Math.round(file.data.BatteryLDT[file.data.BatteryLDT.length-1][0]*100);
 		vitals.batteryused = Math.round(file.data.BatteryLDT[0][0]*100 - vitals.batteryleft);
@@ -365,24 +291,20 @@ vitals["automator"]
   		}
 	}
 	vitals.pctcorrect = Math.round(100 * ncorrect / file.data.Response.length);
-
 	if (typeof(file.data.NReward) != "undefined"){
 		vitals.nrewards = file.data.NReward.reduce(function(a, b) {
   			return a + b;
 		}, 0);
 	}
-
 	vitals.rewardestimate = 0;
 	if (typeof(file.data.RewardPer1000Trials) != "undefined"){
 		vitals.rewardestimate = Math.round(file.data.RewardPer1000Trials * vitals.nrewards / 1000);
 	}
 }
-
 // Synchronous
 function toPerformanceData(){
 	dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
 	dataCumulative.removeRows(0,dataCumulative.getNumberOfRows());
-
 	//Create the data table
   	var xdata = []
   	var ydata = []
@@ -397,143 +319,38 @@ function toPerformanceData(){
   			ydata[i]=0;
   		}
   		xdata[i]=i;
-
   		//Cumulative trials & correct trials
   		ntotal[i]=xdata.length
   		if (i>0){ ncorrect[i]=ncorrect[i-1]+ydata[i] }
   		else if (i==0) { ncorrect[i] = ydata[i] }
   	}
   	ydata = smooth(ydata,lineOptions.smooth);
-
 //Referencing to time file was last written & time of last trial rather than to file start.
 //Done because file can be changed on the fly which changes file start relative to performance.now()
-if (typeof file.data.ResponseXYT === 'undefined' || 
-	file.data.ResponseXYT.length < 1 || 
-	typeof file.data.ResponseXYT[file.data.ResponseXYT.length-1][2] === 'undefined'){
-	var tend = file.data.FixationXYT[file.data.FixationXYT.length-1][2]
-}
-else {
-	var tend = file.data.ResponseXYT[file.data.ResponseXYT.length-1][2]
-}
 
-  	for (var i=0; i<=ydata.length-1; i++){
-	  	dataPerformance.addRows([[xdata[i], ydata[i]]])
-
-  		var tfix = file.data.FixationXYT[i][2] //in milliseconds
-  		var t = new Date(file.dateSaved)
-  		t.setTime(t.getTime() - (tend - tfix))
-	  	dataCumulative.addRows([[new Date(t),ntotal[i],ncorrect[i]]])
-  	}
-  	formatterDate.format(dataCumulative,0)
+for (var i=0; i<=ydata.length-1; i++){
+	dataPerformance.addRows([[xdata[i], ydata[i]]])
+	var tfix = file.data.StartTime[i] //in milliseconds
+	var t = new Date(file.dateSaved)
+	t.setTime(t.getTime() -  tfix)
+	dataCumulative.addRows([[new Date(t),ntotal[i],ncorrect[i]]])
+}
+formatterDate.format(dataCumulative,0)
 }
 
-// Synchronous
-function toConfusionData(){
-
-// SAMPLE
-	if(typeof file.data.ImageFolderSample === 'undefined'){
-		for (var i=0; i<=cat.length-1; i++){
-			catSample[i]=cat[i];
-		}
-	}
-	else{
-		if (file.data.ImageFolderSample === 0 || file.data.ImageFolderSample === 4 || file.data.ImageFolderSample ===9 || file.data.ImageFolderSample === 12){
-			for (var i=0; i<=catlist.length-1; i++){
-				catSample[i]=Math.floor(i/1);
-			}
-		}
-		else if (file.data.ImageFolderSample > 0){
-			for (var i=0; i<=cat.length-1; i++){
-				catSample[i]=cat[i];
-			}
-		}
-	}
-
-
-
-// TEST
-	if(typeof file.data.ImageFolderTest === 'undefined'){
-		for (var i=0; i<=cat.length-1; i++){
-			catTest[i]=cat[i];
-		}
-	}
-	else{
-		if (file.data.ImageFolderTest === 0 || file.data.ImageFolderTest === 4 || file.data.ImageFolderTest === 9 || file.data.ImageFolderTest === 12){
-			for (var i=0; i<=catlist.length-1; i++){
-				catTest[i]=Math.floor(i/1);
-			}
-		}
-		else if (file.data.ImageFolderTest > 0){
-			for (var i=0; i<=cat.length-1; i++){
-				catTest[i]=cat[i];
-			}
-		}
-	}
-
-
-	//Create bar chart groupings
-	// dataConfusion.removeRows(0,dataConfusion.getNumberOfRows());
-
-	//Initialize confusion matrix
-	var pctConfusion=new Array(catlist.length);
-	var nConfusion=new Array(catlist.length);
-	var cntConfusion=new Array(catlist.length);
-	for (var i=0; i<=catlist.length-1; i++){
-		pctConfusion[i]=new Array(catlist.length);
-		nConfusion[i]=new Array(catlist.length);
-		cntConfusion[i]=new Array(catlist.length);
-		pctConfusion[i].fill(0);
-		nConfusion[i].fill(0);
-		cntConfusion[i].fill(0);
-	}
-
-	//Fill confusion matrix
-	var samplecatidx;
-	var testcatidx;
-	for (var i=0; i<=file.data.Sample.length-1; i++){
-		samplecatidx = catlist.indexOf(catSample[file.data.Sample[i]]);
-
-		for (var j=0; j<=file.data.Test[i].length-1; j++){
-			testcatidx = catlist.indexOf(catTest[file.data.Test[i][j]]);
-
-			cntConfusion[samplecatidx][testcatidx]++;
-
-			// if that test item was chosen
-			if (file.data.RewardStage==1 & file.data.Response[i] == j){
-				nConfusion[samplecatidx][testcatidx]++;
-			}
-
-			pctConfusion[samplecatidx][testcatidx]=nConfusion[samplecatidx][testcatidx]/cntConfusion[samplecatidx][testcatidx];
-		} //for j test
-	} //for i trials
-
-	for (var i=0; i<=catlist.length-1; i++){
-		for (var j=0; j<=catlist.length-1; j++){
-			dataConfusion.setValue(i,j+1,pctConfusion[i][j]);
-		} //for j test
-	} //for i sample
-} //function toConfusionData
 //================== DATA HANDLING (end) ==================//
-
-
 //================== PLOTTING ==================//
 // Synchronous
 function updatePlots() {
 	toVitals();
 	toTask();
 	toPerformanceData();
-	toConfusionData();
 	addVitalsText();
-	addTaskText();
-
 	drawLine() //current
 	drawArea() //cumulative
-	drawBar();
-	drawTable();
 	file.datahasChanged=false
 	checkFileStatus2();
 }
-
 // Synchronous
 function addVitalsText(){
 	lineOptions.title =
@@ -544,30 +361,12 @@ function addVitalsText(){
 		"Last Trial:" + file.dateSaved.toLocaleTimeString('en-US')
 	titleobj.innerHTML = vitals.subject;
 }
-
 // Synchronous
-function addTaskText(){
-	task["name"]=""
-	if (task.rewardstage == 0){
-		task["name"] = "Fixation";
-	}
-	else if (task.rewardstage == 1){
-		task["name"] = "Match-to-Sample";
-	}
-
-	tasktextobj.innerHTML =
-		"<b>" + task.name + "</b>:" + task.nway + "-way" + ", " + task.nobj + "-obj" + "<br>" + 
-		"Sample folder " + task.imagefoldersample + ", Test folder " + task.imagefoldertest + "<br>" + 
-		"Sample On=" + task.sampleon + ", Sample Off=" + task.sampleoff + " ms" + "<br>" + 
-		"objs=[" + task.objectlist + "]" + "<br>" + 
-		"reward=" + task.rewardper1000 + "mL per 1000 correct trials" 
-}
 
 //Synchronous
 function drawLine(){
 	var nrows = dataPerformance.getNumberOfRows()
 	var sliderstate = livesliderTrial.getState()
-
 	//updating slider
 	if (file.datahasChanged == true && file.filehasChanged == false){
 		if (nrows <= 100){
@@ -591,25 +390,19 @@ function drawLine(){
 			sliderstate.range.start = 0
 		}
 	}
-
 	liveline.setOptions(lineOptions)
-
  	//move slider which will drive replotting
 	livesliderTrial.setState({'range': {'start': sliderstate.range.start,'end': sliderstate.range.end}})
 	dashboard1.draw(dataPerformance)
 	ntrials = nrows //new trial range
 }
-
 //Synchronous
 function drawArea(){
 	var sliderstate = livesliderTime.getState()
-
 	var tmin = new Date(dataCumulative.getColumnRange(0).min)
 	var tmax = new Date(dataCumulative.getColumnRange(0).max)
-
 	var trange = tmax.getTime() - tmin.getTime()
 	var onehr = 60*60*1000
-
 	//updating slider
 	if (file.datahasChanged == true && file.filehasChanged == false){
 		// if (trange < onehr){
@@ -635,32 +428,16 @@ function drawArea(){
 		// }
 	}
 	tlast = new Date(dataCumulative.getColumnRange(0).max)
-
  	//move slider which will drive replotting
 	livesliderTime.setState({'range': {'start': sliderstate.range.start,'end': sliderstate.range.end}})
 	livearea.setOptions(areaOptions)
 	dashboard2.draw(dataCumulative)
 }
-
+// Synchronous
 
 // Synchronous
-function drawBar(){
-	livebar.draw(dataConfusion,barOptions);
-}
 
-// Synchronous
-function drawTable(){
-	// format data
-	for (var i=1; i<=dataConfusion.getNumberOfColumns()-1; i++){
-		formatterDigits.format(dataConfusion,i)
-		formatterColor.format(dataConfusion,i)
-	}
-
-	livetable.draw(dataConfusionView,tableOptions)
-	livetable.draw(dataConfusion,tableOptions)
-}
 //================== PLOTTING (end) ==================//
-
 </script>
 </head>
 
@@ -695,74 +472,11 @@ var file={
 			datahasChanged: false,
 			filehasChanged: false,
 		};
-
 var titleobj = document.getElementById("page_title");
 var menuobj = document.getElementById("file_list");
 var tasktextobj = document.getElementById("task_text");
 menuobj.addEventListener("change",filelist_listener,false);
-
 //_____________ LABELS (begin)
-var objlabels=['wrench','rhino','leg','camel','tank','bird','shorts','elephant','house','hanger','pen','hammer','zebra','fork','guitar','bear','watch','dog','spider','truck','drawer table','calculator','gun','knife','head','shoe','drum','cat','camera','train','frog','shirt','helicopter','pear','piano','horse','plane'];
-var objlabelsOBJ = objlabels;
-var objlabelsMURI=['bucket','cradle','dishwasher','drum','fourpostbed','fryingpan','golfcart','jeep','microphone','microwave','panpipe','parkbench','piano','plate','pooltable','stationwagon','sunglasses','umbrella','ant','cat','chameleon','chihuahua','cockroach','crockodile','eel','gilamonster','hound','lizard','mantis','mongoose','pig','platypus','spaniel','turtle','vase','bookcase','stove','glockenspiel','chiffonier','pot','gokart','hotrod','subwoofer','oven','bagpipe','flatbench','accordion','bowl','pinballmachine','taxi','goggles','awning','hornet','horse','snake','termite','gecko','cod','walkingstick','meerkat','llama','echidna'];
-var objlabelsHVM=['bear','elephant','table','head','car','dog','turtle','apple','plane','chair']
-var objlabelsCOCO=['bear','elephant','head','car','dog','apple','chair','plane','bird','zebra']
-
-var cat=[];
-for (var i=0; i<=3699; i++){cat[i]=Math.floor(i/100);}
-
-var catOBJ = cat;
-
-var catMURI=[];
-var perobjvec=[12,8,10,12,6,12,8,10,12,12,8,10,6,14,6,6,12,10,8,6,6,8,6,8,12,6,12,6,8,6,10,12,6,6,12,8,10,12,6,12,8,10,12,12,8,10,6,14,6,6,12,10,8,32,24,6,8,12,8,6,10,12];
-var cnt=0;
-for (var i=0; i<=perobjvec.length-1; i++){
-	for (var j=0; j<=perobjvec[i]-1; j++){
-		catMURI[cnt]=i;
-		cnt++;
-	}
-}
-
-catHVM=[]
-for (var i=0; i<=999; i++){catHVM[i]=Math.floor(i/100)}
-
-catCOCO=[]
-for (var i=0; i<=999; i++){catCOCO[i]=Math.floor(i/100)}
-
-
-var catSample=[];
-var catTest=[];
-
-// Generate cat list
-var catlist=[];
-for (var i=0; i<=cat.length-1; i++){
-	if (catlist.indexOf(cat[i]) == -1){
-		catlist[catlist.length]=cat[i]; //add category
-	}//if
-}//for
-var catlistOBJ = catlist;
-
-var catlistMURI=[];
-for (var i=0; i<=catMURI.length-1; i++){
-	if (catlistMURI.indexOf(catMURI[i]) == -1){
-		catlistMURI[catlistMURI.length]=catMURI[i]; //add category
-	}//if
-}//for
-
-var catlistHVM=[];
-for (var i=0; i<=catHVM.length-1; i++){
-	if (catlistHVM.indexOf(catHVM[i]) == -1){
-		catlistHVM[catlistHVM.length]=catHVM[i]; //add category
-	}//if
-}//for
-
-var catlistCOCO=[];
-for (var i=0; i<=catCOCO.length-1; i++){
-	if (catlistCOCO.indexOf(catCOCO[i]) == -1){
-		catlistCOCO[catlistCOCO.length]=catCOCO[i]; //add category
-	}//if
-}//for
-//_____________ LABELS (end)
 
 var vitals={
 	subject: null,
@@ -777,7 +491,6 @@ var vitals={
 	currentautomatorstagename: "",
 	nrewards: 0,
 }
-
 var task={
 	rewardstage: 0,
 	rewardper1000: 0,
@@ -789,7 +502,6 @@ var task={
 	nobj: 0,
 	objectlist: [],
 }
-
 var dataPerformance=null;
 var dataCumulative=null;
 var dataConfusion=null;
@@ -799,9 +511,7 @@ var livebar=null;
 var livetable=null;
 var formatterDigits=null;
 var formatterColor=null;
-
 var trialrange=[0,0]
-
 if (isAuthenticated()){
 	//Create an instance of Dropbox with the access token
 	var dbx = new Dropbox({accessToken: getAccessTokenFromUrl()})
