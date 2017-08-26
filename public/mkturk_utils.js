@@ -207,11 +207,18 @@ function sleep(ms) {
 
 
 // Promise: choice time-out
-function choiceTimeOut(timeout){
+function choiceTimeOut(timeout_length){
   return new Promise(
     function(resolve, reject){
-      var timer_return = {type: "TimeOut", cxyt: [-1,-1,-1,-1]}
-      setTimeout(function(){resolve(timer_return)},timeout)
+      var juice_timeout_amount = 0 // todo: move into task params
+      var timer_return = function(){resolve({
+        "x":'timed_out', 
+        "y":'timed_out', 
+        'timestamp':performance.now(), 
+        'juice':juice_timeout_amount, 
+        'region_index':'timed_out'})}
+
+      setTimeout(timer_return,timeout_length)
     })
 }
 

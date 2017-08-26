@@ -4,23 +4,40 @@
 
 // A value passed to next() will be treated as the result of the last yield expression that paused the generator.
 
+
+
+function on_touchmove(event){
+    response = touchgen.next(event)
+    console.log(event.type, response.value.x, response.value.y)
+    // response.value.{whatever}, not response.value["whatever"] for some reason
+
+    if (response.value.x > 200){
+    	console.log('DONE. Removing event listener...')
+    	window.removeEventListener('touchmove', on_touchmove)
+    }
+}
+
+
 function* SubjectXYGenerator(){
 	var touchevent 
 	var x = undefined
 	var y = undefined
 	var response = {}
-	while(true){
-		console.log(x, y, t)
-		var t = Math.round(performance.now())
 
-		touchevent = yield touchevent 
+	var counter = 0
+
+	touchevent = yield {}
+
+	while(true){		
+		var t = Math.round(performance.now())
 		if (touchevent.type == "touchstart" || touchevent.type == "touchmove"){
 			x = touchevent.targetTouches[0].pageX;
 			y = touchevent.targetTouches[0].pageY;
 			response['is_waiting_for_response'] = false 
 			response['x'] = x
 			response['y'] = y
-			yield [x, y]					
+
+			touchevent = yield response // the subsequent call of .next() will feed the LHS for the next iteration of the while loop					
 		}
 		else if (touchevent.type == "mousedown" || touchevent.type == "mousemove"){
 			x = touchevent.clientX
@@ -28,15 +45,12 @@ function* SubjectXYGenerator(){
 			response['is_waiting_for_response'] = false 
 			response['x'] = x
 			response['y'] = y
-			yield response			
+			touchevent = yield response			
 		}
 
-		if (touchevent.type == 'touchheld' || touchevent.type == 'touchbroken'){
-			response['is_waiting_for_response'] = true 
-			response['x'] = undefined
-			response['y'] = undefined
-			yield response
-		}
+		
+
+		
 	}
 }
 

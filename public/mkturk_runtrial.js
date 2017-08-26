@@ -1,5 +1,8 @@
 //============= AWAIT LOAD PARAMS =============//
 async function runtrial(){
+windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
+windowHeight = document.body.clientHeight;  
+
 if (TASK.Automator !=0){    
     TASK = await AM.monitorStage_State_and_Transition(TASK);
 }
@@ -88,77 +91,62 @@ renderBlank(CANVAS.obj.blank);
 await bufferTrialImages(sampleimage, TASK.SampleGridIndex, testimages, TASK.TestGridIndex, correctitem);
 
 //============ FIXATION SCREEN ============//
-FLAGS.waitingforTouches = 1
+var event_timestamps = {}
 
 
-screen = SCREEN_STATE_MACHINE.get_initial_screen()
-while(trial_running){
-    
-    _emission = await screen.monitor_subject_input()
+renderFixationUsingDot("white", TASK.StaticFixationGridIndex, FixationRadius, CANVAS.obj.touchfix);
+var fixation_timestamps = await displayScreenSequence(CANVAS.sequencepre,CANVAS.tsequencepre);
+console.log("fixation_timestamps", fixation_timestamps)
 
-    giveJuice(_emission['juice'])
-    screen = _emission['next_screen']
+FixationRewardMap = new RewardMap()
+reward_amounts = [0]
+FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxesFixation, reward_amounts)
+var outcome = await FixationRewardMap.Promise_wait_until_active_response_then_return_juice()
+await displayScreenSequence(CANVAS.sequenceblank,CANVAS.tsequenceblank);
 
-    if(_emission['is_terminal'] == true){
-        trial_running = false
+var fixation_x = outcome['x']
+var fixation_y = outcome['y']
+var fixation_timestamp = outcome['timestamp']
+var fixation_juice = outcome['juice']
+
+//============== SHOW SAMPLE THEN TEST ==============//
+
+var stimulus_timestamps = await displayScreenSequence(CANVAS.sequence,CANVAS.tsequence);
+tsequencedesired = CANVAS.tsequence
+
+console.log("stimulus_timestamps", stimulus_timestamps)
+
+console.log(boundingBoxesChoice)
+
+
+reward_amounts = []
+for (var _r = 0; _r < boundingBoxesChoice.length; _r++){
+    if(_r != correctitem){
+        reward_amounts[_r] = 0
+    }
+    else{
+        console.log("correct choice:", correctitem)
+        reward_amounts[_r] = 1
     }
 }
+FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxesChoice, reward_amounts)
+var outcome_from_touch_response_promise = FixationRewardMap.Promise_wait_until_active_response_then_return_juice()
+var timeout_promise = choiceTimeOut(TASK.ChoiceTimeOut)
+var choice_outcome = await Promise.race([outcome_from_touch_response_promise, timeout_promise])
 
+var choice_x = choice_outcome['x']
+var choice_y = choice_outcome['y']
+var choice_timestamp = choice_outcome['timestamp']
+var choice_juice = choice_outcome['juice']
 
-var response = -1 
-while (FLAGS.waitingforTouches > 0){
-    console.log(x, y)
-     
-    fixationgridindex = TASK.StaticFixationGridIndex;
-
-    // Render fixation screen 
-
-    var color = "white" // todo move into task    
-    renderFixationUsingDot(color, fixationgridindex, FixationRadius, CANVAS.obj.touchfix);
-    
-    // Start timer for this fixation render trial. 
-    starttime=Math.round(performance.now());
-
-    //========= SHOW FIXATION =========//
-    await displayScreenSequence(CANVAS.sequencepre,CANVAS.tsequencepre);
-
-    //========= HOLD FIXATION TOUCH =========//
-    var touchhold_return = await touchhold_promise(TASK.FixationDuration,boundingBoxesFixation)
-    var fixationtouchevent = touchhold_return.type
-    if (fixationtouchevent == "touchheld"){
-        response = correctitem
-    } 
-
-    //========= CLEAR FIXATION =========//
-    if (FLAGS.waitingforTouches > 0){
-        await displayScreenSequence(CANVAS.sequenceblank,CANVAS.tsequenceblank);
-    } 
-} 
-
-//============== AWAIT SHOW SAMPLE THEN TEST ==============//
-
-tsequenceactual = await displayScreenSequence(CANVAS.sequence,CANVAS.tsequence);
-tsequencedesired = CANVAS.tsequence
-//SP.audiocontext.suspend()
+console.log("trial outcome: ", choice_outcome)
 
 //========= AWAIT TOUCH RESPONSE =========//
-FLAGS.waitingforTouches = 1    
+
+var correct = choice_juice
+var response = choice_outcome["region_index"]
 
 
-
-var p1 = touchhold_promise(0,boundingBoxesChoice)
-var p2 = choiceTimeOut(TASK.ChoiceTimeOut)
-
-var race_return = await Promise.race([p1,p2])
-var responsetouchevent = race_return.type
-response = race_return.cxyt[0]
-
-if (response == correctitem){ 
-    correct = 1; 
-}
-else { 
-    correct=0; 
-}
 
 
 //============ DETERMINE NUMBER OF REWARDS ============//
@@ -192,7 +180,7 @@ if (correct == 1){
 }
 
 //PUNISH
-else if (correct == 0) {
+else{
     CANVAS.sequencepost[1] = "punish";
     CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+TASK.PunishTimeOut;
 
@@ -202,29 +190,27 @@ else if (correct == 0) {
 }
 
 //================= Record results of trial =================//
-TRIAL.StartTime.push(starttime)
-TRIAL.FixationGridIndex.push(fixationgridindex)
+TRIAL.EventTimestamps.push(event_timestamps)
+TRIAL.FixationGridIndex.push(TASK.StaticFixationGridIndex)
 TRIAL.Sample.push(sampleindex )
 TRIAL.Test.push(testindices )
 TRIAL.Response.push(response)
-TRIAL.FixationTouchEvent.push(fixationtouchevent)
-TRIAL.ResponseTouchEvent.push(responsetouchevent)
 TRIAL.CorrectItem.push(correctitem)
 TRIAL.NReward.push(nreward)
 TRIAL.AutomatorStage.push(TASK.CurrentAutomatorStage)
-TRIAL.TSequenceDesired.push(tsequencedesired)
-TRIAL.TSequenceActual.push(tsequenceactual)
 TRIAL.trial_num_Session.push(TRIAL_NUMBER_FROM_SESSION_START)
 TRIAL.trial_num_TaskStream.push(TRIAL_NUMBER_FROM_TASKSTREAM_START)
 TRIAL.reward_duration.push(RewardDuration)
 TRIAL.TASK_ARCHIVE_counter.push(TASK_ARCHIVE_COUNTER)
 
 
-var current_stage = stageHash(TASK); 
-AM.trialhistory.trainingstage.push(current_stage);
-AM.trialhistory.starttime.push(starttime)
-AM.trialhistory.response.push(response)
-AM.trialhistory.correct.push(correct)
+if (TASK.Automator == 1){
+    var current_stage = stageHash(TASK); 
+    AM.trialhistory.trainingstage.push(current_stage);
+    AM.trialhistory.starttime.push(starttime)
+    AM.trialhistory.response.push(response)
+    AM.trialhistory.correct.push(correct)
+}
 
 TRIAL_NUMBER_FROM_SESSION_START++
 TRIAL_NUMBER_FROM_TASKSTREAM_START++

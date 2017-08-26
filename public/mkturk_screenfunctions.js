@@ -164,24 +164,24 @@ async function bufferTrialImages(sample_image, sample_image_grid_index, test_ima
 		context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
 	}
 	
-	boundingBoxesChoice['x'] = []
-	boundingBoxesChoice['y'] = []
+	boundingBoxesChoice = [] // todo: move out of here
 	// Draw test object(s): 
 	for (i = 0; i<test_images.length; i++){
+		boundingBoxesChoice.push({"x":[], "y":[]})
 		// If HideTestDistractors, simply do not draw the image
 		if(TASK.HideTestDistractors == 1){
 			if (correct_index != i){
-				boundingBoxesChoice.x.push([NaN, NaN]); 
-				boundingBoxesChoice.y.push([NaN, NaN]); 
+				boundingBoxesChoice[i].x = [NaN, NaN]
+				boundingBoxesChoice[i].y = [NaN, NaN] 
 				continue 
 			}
 		}		
 
 		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], TASK.TestScale, CANVAS.obj.test); 
-		boundingBoxesChoice.x.push(funcreturn[0]); 
-		boundingBoxesChoice.y.push(funcreturn[1]); 
+		boundingBoxesChoice[i].x = funcreturn[0]
+		boundingBoxesChoice[i].y = funcreturn[1]
 	}
-
+	console.log('boundingBoxesChoice', boundingBoxesChoice)
 	// Option: draw sample (TODO: remove the blink between sample screen and test screen)
 	if (TASK.KeepSampleON==1){
 		await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, CANVAS.obj.test)
@@ -235,7 +235,7 @@ function displayScreenSequence(sequence,tsequence){
 	//console.log('seq', sequence, 'tseq', tsequence)
 
 	var start = null;
-	var tActual = []
+	var frame_unix_timestamps = []
 
 	var current_frame_index = 0
 	var frames_left_to_animate = sequence.length
@@ -248,7 +248,7 @@ function displayScreenSequence(sequence,tsequence){
 		// If time to show new frame, 
 		if (timestamp - start > tsequence[current_frame_index]){
 			//console.log('Frame =' + current_frame_index+'. Duration ='+(timestamp-start)+'. Timestamp = ' + timestamp)
-			tActual[current_frame_index] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+			frame_unix_timestamps[current_frame_index] = timestamp //in milliseconds, rounded to nearest hundredth of a millisecond
 			// Move canvas in front
 			var prev_canvasobj=CANVAS.obj[CANVAS.front]
 			var curr_canvasobj=CANVAS.obj[sequence[current_frame_index]]
@@ -271,7 +271,7 @@ function displayScreenSequence(sequence,tsequence){
 			window.requestAnimationFrame(updateCanvas);
 		}
 		else{
-			resolveFunc(tActual);
+			resolveFunc(frame_unix_timestamps);
 		}
 	}
 	//requestAnimationFrame advantages: goes on next screen refresh and syncs to browsers refresh rate on separate clock (not js clock)
@@ -374,18 +374,7 @@ function renderPunish(canvasobj){
 	context.fill();
 }
 
-async function renderFixationUsingImage(image, gridindex, scale, canvasobj){
-	var context=canvasobj.getContext('2d');
-	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 
-	// Draw fixation dot
-	boundingBoxesFixation['x']=[]
-	boundingBoxesFixation['y']=[]
-
-	funcreturn = await renderImageOnCanvas(image, gridindex, scale, canvasobj); 
-	boundingBoxesFixation.x.push(funcreturn[0]);
-	boundingBoxesFixation.y.push(funcreturn[1]);
-}
 function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 	var context=canvasobj.getContext('2d');
 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
@@ -400,10 +389,10 @@ function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 	context.fill();
 
 	// Define (rectangular) boundaries of fixation
-	boundingBoxesFixation['x']=[]
-	boundingBoxesFixation['y']=[]
-	boundingBoxesFixation.x.push([xcent-rad+CANVAS.offsetleft, xcent+rad+CANVAS.offsetleft]);
-	boundingBoxesFixation.y.push([ycent-rad+CANVAS.offsettop, ycent+rad+CANVAS.offsettop]);
+	boundingBoxesFixation = [{}] // todo: move out of here 
+	boundingBoxesFixation[0]['x']= [xcent-rad+CANVAS.offsetleft, xcent+rad+CANVAS.offsetleft]
+	boundingBoxesFixation[0]['y']= [ycent-rad+CANVAS.offsettop, ycent+rad+CANVAS.offsettop]
+	console.log(boundingBoxesFixation)
 }
 
 function checkDisplayBounds(displayobject_coord){

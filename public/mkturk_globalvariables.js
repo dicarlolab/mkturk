@@ -2,8 +2,7 @@
 // In the interest of code readability and spaghetti-minimization, the use of globals should be kept to a minimum, and instead explicit passage of variables into and out of functions is encouraged.
 // For certain things, globals make sense and may even be required, like event listeners and async processes.
 
-windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
-windowHeight = document.body.clientHeight;  
+
 
 FixationRadius = 0
 acquiredTouch = 0 
@@ -23,18 +22,14 @@ var TASK_ARCHIVE = []; // Array whose entries are objects that encapsulates stat
 var TASK // Current 
 
 var TRIAL = {} // Global that contains data variables that are incremented every trial, and are dumped to disk for scientific purposes.
-TRIAL.StartTime = []
+TRIAL.EventTimestamps = []
 TRIAL.FixationGridIndex = []
 TRIAL.Sample = []
 TRIAL.Test = []
 TRIAL.Response = []
 TRIAL.CorrectItem = []
-TRIAL.FixationTouchEvent = []
-TRIAL.ResponseTouchEvent = []
 TRIAL.NReward = []
 TRIAL.AutomatorStage = []
-TRIAL.TSequenceDesired = []
-TRIAL.TSequenceActual = []
 TRIAL.trial_num_Session = []
 TRIAL.trial_num_TaskStream = []
 TRIAL.reward_duration = []
@@ -87,8 +82,8 @@ for (var i in CANVAS.names){
 
 
 
-var boundingBoxesFixation={}; //where the fixation touch targets are on the canva
-var boundingBoxesChoice={}; //where the choice touch targets are on the canva
+var boundingBoxesFixation=[]; //where the fixation touch targets are on the canva
+var boundingBoxesChoice=[]; //where the choice touch targets are on the canva
 var waitforClick; //variable to hold generator
 var waitforEvent; //variable to hold generator
 var touchTimer; //variable to hold timer
@@ -122,20 +117,18 @@ function transition_from_debug_to_science_trials(){
 	TOUCHSTRING_UDPATECOUNTER = 0
 	
 
-	TRIAL.StartTime = []
+	TRIAL.EventTimestamps = []
 	TRIAL.FixationGridIndex = []
-
 	TRIAL.Sample = []
 	TRIAL.Test = []
 	TRIAL.Response = []
 	TRIAL.CorrectItem = []
-	TRIAL.FixationTouchEvent = []
-	TRIAL.ResponseTouchEvent = []
 	TRIAL.NReward = []
 	TRIAL.AutomatorStage = []
-	TRIAL.TSequenceDesired = []
-	TRIAL.TSequenceActual = []
 	TRIAL.trial_num_Session = []
+	TRIAL.trial_num_TaskStream = []
+	TRIAL.reward_duration = []
+	TRIAL.TASK_ARCHIVE_counter = []
 
 	TRIAL_NUMBER_FROM_SESSION_START = 0
 	CANVAS.TRIAL_NUMBER_FROM_TASKSTREAM_START = 0 // todo= read from dis
