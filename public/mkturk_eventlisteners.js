@@ -215,7 +215,7 @@ function subjectlist_listener(event){
 
 async function sync_data_listener(event){
 	console.log("Called data save from sync button")
-	await DW.saveTrialDatatoDropbox(TASK_ARCHIVE, CANVAS, TRIAL, FLAGS.debug_mode)
+	await DW.saveTrialDatatoDropbox(TASK_ARCHIVE, CANVAS, TRIAL, EVENT_TIMESTAMPS, FLAGS.debug_mode)
 	await DW.saveTouchestoDropbox(FLAGS.debug_mode)
 
 	return 

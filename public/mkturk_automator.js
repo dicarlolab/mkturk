@@ -41,7 +41,7 @@ class Automator{
 
 
 		for (var a = TASK.CurrentAutomatorStage; a < this.automator_data.length; a++){
-			updateProgressbar(a/this.automator_data.length * 100)
+			updateProgressbar((a+1)/this.automator_data.length * 100, "AutomatorLoadBar")
 			console.time('Stage '+a)
 
 
@@ -49,15 +49,16 @@ class Automator{
 			var _ImageBagsTest = this._populate_default(a, 'ImageBagsTest')
 			var _samplingRNGseed = this._populate_default(a, 'samplingRNGseed')
 			var _trial_num_TaskStream = this._populate_default(a, 'trial_num_TaskStream')
-			
+			var _ObjectGridMapping = this._populate_default(a, 'ObjectGridMapping')
+			console.log('automator _ObjectGridMapping', _ObjectGridMapping)
 			this.AutomatorPreBuffer['TrialQueue'][a] = new TrialQueue(
 				this.samplingStrategy, 
 				_ImageBagsSample,
 				_ImageBagsTest,
+				_ObjectGridMapping,
 				_samplingRNGseed, 
 				_trial_num_TaskStream,
 				); 
-
 			// Populate the stage's imagebuffer with some images
 			await this.AutomatorPreBuffer['TrialQueue'][a].build(num_prebuffer_trials)
 			console.timeEnd('Loaded stage '+a)
@@ -105,6 +106,7 @@ class Automator{
 		var ntrials = funcreturn[1]
 
 		console.log('For '+ntrials+' trials, pctcorrect='+pctcorrect)
+		updateProgressbar((i_current_stage + 1)/this.automator_data.length * 100, 'EpochBar')
 
 		// ---------- CHANGE TASK.STUFF TO AUTOMATOR DATA [ NEXT_STAGE ] --------------------------------------- 
 		if(pctcorrect >= MinPercentCriterion && ntrials >= MinTrialsCriterion){

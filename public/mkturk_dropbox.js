@@ -433,7 +433,7 @@ class DropboxWriter{
 	}
 
 	//================== WRITE JSON ==================//
-	async saveTrialDatatoDropbox(SESSION, DEVICE, TASK_ARCHIVE, CANVAS, TRIAL, save_to_debug_directory){
+	async saveTrialDatatoDropbox(SESSION, DEVICE, TASK_ARCHIVE, CANVAS, TRIAL, EVENT_TIMESTAMPS, save_to_debug_directory){
 		// Add request to queue 
 
 		var dataobj = [] 
@@ -442,6 +442,7 @@ class DropboxWriter{
 		dataobj.push(TASK_ARCHIVE)
 		dataobj.push(CANVAS)
 		dataobj.push(TRIAL)
+		dataobj.push(EVENT_TIMESTAMPS)
 		var datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
 
 

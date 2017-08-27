@@ -3,6 +3,8 @@ async function runtrial(){
 windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
 windowHeight = document.body.clientHeight;  
 
+console.log('windowWidth', windowWidth, 'windowHeight', windowHeight)
+
 if (TASK.Automator !=0){    
     TASK = await AM.monitorStage_State_and_Transition(TASK);
 }
@@ -47,7 +49,7 @@ if (FLAGS.need2loadParameters == 1 || INITIALIZE == true){
 if (FLAGS.need2loadImages == 1){
     if(TASK.Automator != 1){
         var samplingStrategy = 'uniform_with_replacement'
-        TQ = new TrialQueue(samplingStrategy, TASK.ImageBagsSample, TASK.ImageBagsTest, TASK.samplingRNGseed, TRIAL_NUMBER_FROM_TASKSTREAM_START)
+        TQ = new TrialQueue(samplingStrategy, TASK.ImageBagsSample, TASK.ImageBagsTest, TASK.ObjectGridMapping, TASK.samplingRNGseed, TRIAL_NUMBER_FROM_TASKSTREAM_START)
         await TQ.build(1)
     }   
 
@@ -55,12 +57,14 @@ if (FLAGS.need2loadImages == 1){
         TQ = AM.AutomatorPreBuffer.TrialQueue[TASK.CurrentAutomatorStage]
     } 
 
+    console.log('hello TQ', TQ)
     samplebag_paths = TQ.samplebag_paths
     samplebag_labels = TQ.samplebag_labels
     testbag_paths = TQ.testbag_paths
     testbag_labels = TQ.testbag_labels
 
     // Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image.
+    console.log('ehllo')
     await TQ.get_trial(TRIAL_NUMBER_FROM_TASKSTREAM_START)
     var representative_image = await TQ.IB.get_by_name(TQ.sampleq.filename[0])
     DEVICE.source_ImageWidthPixels = representative_image.width
@@ -69,7 +73,6 @@ if (FLAGS.need2loadImages == 1){
     FLAGS.need2loadImages = 0;
 } 
 
-// define image display grid
 FixationRadius=(DEVICE.source_ImageWidthPixels/2)*TASK.FixationScale*DEVICE.CanvasRatio
 funcreturn = defineImageGrid(TASK.NGridPoints, DEVICE.source_ImageWidthPixels, DEVICE.source_ImageHeightPixels, TASK.GridScale);
 xcanvascenter = funcreturn[0]
@@ -83,70 +86,67 @@ renderPunish(CANVAS.obj.punish);
 renderBlank(CANVAS.obj.blank);
 
 //============ SELECT SAMPLE & TEST IMAGES ============//
-// Draw one (1) sample image from samplebag
-[sampleimage, sampleindex, testimages, testindices, correctitem] = await TQ.get_trial(TRIAL_NUMBER_FROM_TASKSTREAM_START);
+
+[sample_image,
+     samplebag_index, 
+     sample_grid_index_placement, 
+     test_images, 
+     testbag_indices, 
+     test_correct_grid_index, 
+     test_grid_index_placements] = await TQ.get_trial(TRIAL_NUMBER_FROM_TASKSTREAM_START);
 
 
 //============ AWAIT BUFFER CANVASES WITH SAMPLE & TEST IMAGES ============//
-await bufferTrialImages(sampleimage, TASK.SampleGridIndex, testimages, TASK.TestGridIndex, correctitem);
+boundingBoxesFixation = await bufferFixationScreenUsingDot("white", TASK.StaticFixationGridIndex, FixationRadius);
+boundingBoxesSample = await bufferStimulusScreen(sample_image, sample_grid_index_placement)
+boundingBoxesChoice = await bufferChoiceScreen(test_images, test_grid_index_placements)
 
 //============ FIXATION SCREEN ============//
-var event_timestamps = {}
 
 
-renderFixationUsingDot("white", TASK.StaticFixationGridIndex, FixationRadius, CANVAS.obj.touchfix);
-var fixation_timestamps = await displayScreenSequence(CANVAS.sequencepre,CANVAS.tsequencepre);
-console.log("fixation_timestamps", fixation_timestamps)
+FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxesFixation, [0])
 
-FixationRewardMap = new RewardMap()
-reward_amounts = [0]
-FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxesFixation, reward_amounts)
-var outcome = await FixationRewardMap.Promise_wait_until_active_response_then_return_juice()
-await displayScreenSequence(CANVAS.sequenceblank,CANVAS.tsequenceblank);
 
-var fixation_x = outcome['x']
-var fixation_y = outcome['y']
-var fixation_timestamp = outcome['timestamp']
-var fixation_juice = outcome['juice']
+var choice_reward_amounts = []
+for (var _r = 0; _r < boundingBoxesChoice.length; _r++){
+    // boundingBoxesChoice is in the same order as 
+    // test_grid_index_placements
+    if(test_grid_index_placements[_r] != test_correct_grid_index){
+        choice_reward_amounts[_r] = 0
+    }
+    else{
+        console.log("correct choice:", test_correct_grid_index)
+        choice_reward_amounts[_r] = 1
+    }
+}
+ChoiceRewardMap.create_reward_map_with_bounding_boxes(boundingBoxesChoice, choice_reward_amounts)
+
+var fixation_onset_timestamps = await displayScreenSequence(CANVAS.sequencepre,CANVAS.tsequencepre);
+
+var fixation_outcome = await FixationRewardMap.Promise_wait_until_active_response_then_return_juice()
+
+var fixation_x = fixation_outcome['x']
+var fixation_y = fixation_outcome['y']
+var fixation_juice = fixation_outcome['juice']
 
 //============== SHOW SAMPLE THEN TEST ==============//
 
 var stimulus_timestamps = await displayScreenSequence(CANVAS.sequence,CANVAS.tsequence);
-tsequencedesired = CANVAS.tsequence
-
-console.log("stimulus_timestamps", stimulus_timestamps)
-
-console.log(boundingBoxesChoice)
 
 
-reward_amounts = []
-for (var _r = 0; _r < boundingBoxesChoice.length; _r++){
-    if(_r != correctitem){
-        reward_amounts[_r] = 0
-    }
-    else{
-        console.log("correct choice:", correctitem)
-        reward_amounts[_r] = 1
-    }
-}
-FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxesChoice, reward_amounts)
-var outcome_from_touch_response_promise = FixationRewardMap.Promise_wait_until_active_response_then_return_juice()
+
+var outcome_from_touch_response_promise = ChoiceRewardMap.Promise_wait_until_active_response_then_return_juice()
 var timeout_promise = choiceTimeOut(TASK.ChoiceTimeOut)
 var choice_outcome = await Promise.race([outcome_from_touch_response_promise, timeout_promise])
 
 var choice_x = choice_outcome['x']
 var choice_y = choice_outcome['y']
-var choice_timestamp = choice_outcome['timestamp']
 var choice_juice = choice_outcome['juice']
 
-console.log("trial outcome: ", choice_outcome)
 
 //========= AWAIT TOUCH RESPONSE =========//
-
 var correct = choice_juice
-var response = choice_outcome["region_index"]
-
-
+var chosen_grid_index = test_grid_index_placements[choice_outcome["region_index"]]
 
 
 //============ DETERMINE NUMBER OF REWARDS ============//
@@ -160,13 +160,12 @@ else if (correct == 0){
 RewardDuration = setReward();
 
 //============ DELIVER REWARD/PUNISH ============//
-// REWARD
 if (correct == 1){
     CANVAS.sequencepost[1]="reward";
     CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+RewardDuration*1000;
 
     for (var q = 0; q <= nreward-1; q++){
-
+        reinforcement_onset = performance.now()
         SP.playSound(2);
         var p1 = displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost)
         if (ble.connected == false){
@@ -181,21 +180,40 @@ if (correct == 1){
 
 //PUNISH
 else{
+    reinforcement_onset = performance.now()
     CANVAS.sequencepost[1] = "punish";
     CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+TASK.PunishTimeOut;
-
-    
     SP.playSound(3);
     var p1 = await displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost);
 }
+reinforcement_end = performance.now()
+
 
 //================= Record results of trial =================//
-TRIAL.EventTimestamps.push(event_timestamps)
+EVENT_TIMESTAMPS.fixation_onset.push(fixation_onset_timestamps[0])
+EVENT_TIMESTAMPS.fixation_touch.push(fixation_outcome['timestamp'])
+
+EVENT_TIMESTAMPS.blank_onset.push(stimulus_timestamps[0])
+EVENT_TIMESTAMPS.stimulus_onset.push(stimulus_timestamps[1])
+
+if (TASK.t_sampleOFF > 0) {
+    EVENT_TIMESTAMPS.delay_onset.push(stimulus_timestamps[2])
+    EVENT_TIMESTAMPS.choice_onset.push(stimulus_timestamps[3]) 
+}
+else{
+    EVENT_TIMESTAMPS.delay_onset.push(-1)
+    EVENT_TIMESTAMPS.choice_onset.push(stimulus_timestamps[2]) 
+}
+EVENT_TIMESTAMPS.choice_touch.push(choice_outcome['timestamp'])
+EVENT_TIMESTAMPS.reinforcement_onset.push(reinforcement_onset)
+EVENT_TIMESTAMPS.reinforcement_end.push(reinforcement_end)
+
 TRIAL.FixationGridIndex.push(TASK.StaticFixationGridIndex)
-TRIAL.Sample.push(sampleindex )
-TRIAL.Test.push(testindices )
-TRIAL.Response.push(response)
-TRIAL.CorrectItem.push(correctitem)
+TRIAL.Sample.push(samplebag_index)
+TRIAL.Test.push(testbag_indices)
+TRIAL.Response.push(chosen_grid_index)
+TRIAL.CorrectItem.push(test_correct_grid_index)
+TRIAL.Juice.push(choice_juice)
 TRIAL.NReward.push(nreward)
 TRIAL.AutomatorStage.push(TASK.CurrentAutomatorStage)
 TRIAL.trial_num_Session.push(TRIAL_NUMBER_FROM_SESSION_START)
@@ -207,9 +225,9 @@ TRIAL.TASK_ARCHIVE_counter.push(TASK_ARCHIVE_COUNTER)
 if (TASK.Automator == 1){
     var current_stage = stageHash(TASK); 
     AM.trialhistory.trainingstage.push(current_stage);
-    AM.trialhistory.starttime.push(starttime)
-    AM.trialhistory.response.push(response)
-    AM.trialhistory.correct.push(correct)
+    AM.trialhistory.starttime.push(fixation_outcome['timestamp'])
+    AM.trialhistory.response.push(chosen_grid_index)
+    AM.trialhistory.correct.push(choice_juice)
 }
 
 TRIAL_NUMBER_FROM_SESSION_START++
@@ -220,13 +238,13 @@ TRIAL_NUMBER_FROM_TASKSTREAM_START++
 var _ms_since_last_trial_data_save = performance.now() - last_trial_data_save
 var _ms_since_last_touch_data_save = performance.now() - last_touch_save
 if ( _ms_since_last_trial_data_save > TRIALDATA_SAVE_TIMEOUT_PERIOD){ 
-    // console.log(_ms_since_last_trial_data_save/1000+'s since last trial data save. At trial'+ TRIAL_NUMBER_FROM_SESSION_START +'. automator stage:'+TASK.CurrentAutomatorStage)
-    DW.saveTrialDatatoDropbox(SESSION, DEVICE, TASK_ARCHIVE, CANVAS, TRIAL, FLAGS.debug_mode)
+    console.log(_ms_since_last_trial_data_save/1000+'s since last trial data save. At trial'+ TRIAL_NUMBER_FROM_SESSION_START +'. automator stage:'+TASK.CurrentAutomatorStage)
+    DW.saveTrialDatatoDropbox(SESSION, DEVICE, TASK_ARCHIVE, CANVAS, TRIAL, EVENT_TIMESTAMPS, FLAGS.debug_mode)
     last_trial_data_save = performance.now()
 }
 
 if (_ms_since_last_touch_data_save > TOUCHSTRING_SAVE_TIMEOUT_PERIOD){
-    // console.log(_ms_since_last_touch_data_save/1000 +'s since last TOUCHSTRING save. '+TOUCHSTRING.length+' length TOUCHSTRING save requested.')
+    console.log(_ms_since_last_touch_data_save/1000 +'s since last TOUCHSTRING save. '+TOUCHSTRING.length+' length TOUCHSTRING save requested.')
     DW.saveTouchestoDropbox(FLAGS.debug_mode)
     last_touch_save = performance.now()
 }

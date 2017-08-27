@@ -21,13 +21,26 @@ TASK_ARCHIVE_COUNTER = 0 // attached to trial data
 var TASK_ARCHIVE = []; // Array whose entries are objects that encapsulates state of the current task, read from Subject's Params file
 var TASK // Current 
 
+
+var EVENT_TIMESTAMPS = {}
+EVENT_TIMESTAMPS.fixation_onset = [] // todo: move to control of task / screen state machine
+EVENT_TIMESTAMPS.fixation_touch = []
+EVENT_TIMESTAMPS.blank_onset = []
+EVENT_TIMESTAMPS.stimulus_onset = []
+EVENT_TIMESTAMPS.delay_onset = []
+EVENT_TIMESTAMPS.choice_onset = []
+EVENT_TIMESTAMPS.choice_touch = []
+EVENT_TIMESTAMPS.reinforcement_onset = []
+EVENT_TIMESTAMPS.reinforcement_end = []
+
+
 var TRIAL = {} // Global that contains data variables that are incremented every trial, and are dumped to disk for scientific purposes.
-TRIAL.EventTimestamps = []
 TRIAL.FixationGridIndex = []
 TRIAL.Sample = []
 TRIAL.Test = []
 TRIAL.Response = []
 TRIAL.CorrectItem = []
+TRIAL.Juice = []
 TRIAL.NReward = []
 TRIAL.AutomatorStage = []
 TRIAL.trial_num_Session = []
@@ -92,6 +105,11 @@ var ycanvascenter=[]
 var curridx = null;
 var datafiles=[];
 var displayoutofboundsstr=""
+
+
+FixationRewardMap = new RewardMap()
+ChoiceRewardMap = new RewardMap()
+
 
 //================ UPDATE VARIABLE FUNCTIONS ================//
 

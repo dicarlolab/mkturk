@@ -1,12 +1,12 @@
-function updateProgressbar(pct) {
-    var elem = document.getElementById("myBar"); 
+function updateProgressbar(pct, bar_id) {
+    var elem = document.getElementById(bar_id); 
 
 	elem.style.width = pct + '%'; 
 	elem.innerHTML = Math.round(pct) + '%'; // text
 }
 
-function toggleProgressbar(on_or_off){
-	var elem = document.getElementById("myProgress"); 
+function toggleProgressbar(on_or_off, bar_id){
+	var elem = document.getElementById(bar_id); 
 
 	if(on_or_off == 0){
 		elem.style.visibility = 'hidden'
@@ -88,13 +88,16 @@ function setupCanvas(canvasobj){
 	canvasobj.style.margin="0 auto";
 	canvasobj.style.display="block"; //visible
 
+	canvasobj.addEventListener('touchstart', function(e){e.preventDefault()})
+	canvasobj.addEventListener('touchmove', function(e){e.preventDefault()})
+	
 	// assign listeners
-	canvasobj.addEventListener('touchstart',touchstart_listener,{capture: false,passive: false}); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
-	canvasobj.addEventListener('touchmove',touchmove_listener,{passive: false}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
-	canvasobj.addEventListener('touchend',touchend_listener,{capture: false, passive:false});
-	canvasobj.addEventListener('mousedown',touchstart_listener,{capture: false,passive: false}); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
-	canvasobj.addEventListener('mousemove',touchmove_listener,{passive: false}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
-	canvasobj.addEventListener('mouseup',touchend_listener,{capture: false, passive:false});
+	//canvasobj.addEventListener('touchstart',touchstart_listener,{capture: false,passive: false}); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
+	//canvasobj.addEventListener('touchmove',touchmove_listener,{passive: false}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
+	//canvasobj.addEventListener('touchend',touchend_listener,{capture: false, passive:false});
+	//canvasobj.addEventListener('mousedown',touchstart_listener,{capture: false,passive: false}); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
+	//canvasobj.addEventListener('mousemove',touchmove_listener,{passive: false}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
+	//canvasobj.addEventListener('mouseup',touchend_listener,{capture: false, passive:false});
 } 
 
 // Sync: Adjust canvas for the device pixel ratio & browser backing store size
@@ -145,48 +148,31 @@ function defineImageGrid(ngridpoints, wd, ht, gridscale){
 	return [canvas_center_x, canvas_center_y, xgridcent, ygridcent]
 }
 
-async function bufferTrialImages(sample_image, sample_image_grid_index, test_images, test_image_grid_indices, correct_index){
+async function bufferChoiceScreen(test_images, test_image_grid_indices){
 
-	//========== BUFFER SAMPLE CANVAS ==========//
-	var canvasobj=CANVAS.obj.sample
-	var context=CANVAS.obj.sample.getContext('2d'); 
-	context.fillStyle="#7F7F7F";  // Gray out before buffering sample
-	context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
-	await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, CANVAS.obj.sample)
-	
-	//========== BUFFER TEST CANVAS ==========//
-	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)
-	var pre_grayout = true 
-	if(pre_grayout == true){
-		var canvasobj=CANVAS.obj.test;
-		var context=canvasobj.getContext('2d');
-		context.fillStyle="#7F7F7F";
-		context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
-	}
-	
-	boundingBoxesChoice = [] // todo: move out of here
-	// Draw test object(s): 
+	var boundingBoxesChoice = [] // todo: move out of here
 	for (i = 0; i<test_images.length; i++){
 		boundingBoxesChoice.push({"x":[], "y":[]})
-		// If HideTestDistractors, simply do not draw the image
-		if(TASK.HideTestDistractors == 1){
-			if (correct_index != i){
-				boundingBoxesChoice[i].x = [NaN, NaN]
-				boundingBoxesChoice[i].y = [NaN, NaN] 
-				continue 
-			}
-		}		
-
 		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], TASK.TestScale, CANVAS.obj.test); 
 		boundingBoxesChoice[i].x = funcreturn[0]
 		boundingBoxesChoice[i].y = funcreturn[1]
 	}
 	console.log('boundingBoxesChoice', boundingBoxesChoice)
-	// Option: draw sample (TODO: remove the blink between sample screen and test screen)
-	if (TASK.KeepSampleON==1){
-		await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, CANVAS.obj.test)
-	}
 
+	return boundingBoxesChoice
+}
+async function bufferStimulusScreen(sample_image, sample_image_grid_index){
+
+	//========== BUFFER SAMPLE CANVAS ==========//
+	var canvasobj=CANVAS.obj.sample
+	var context=CANVAS.obj.sample.getContext('2d'); 
+	context.fillStyle="#7F7F7F";  // Gray out before buffering sample
+	
+	var boundingBoxesSample = [{"x":[], "y":[]}]
+	funcreturn = await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, CANVAS.obj.sample)
+	boundingBoxesSample[0].x = funcreturn[0]
+	boundingBoxesSample[0].y = funcreturn[1]
+	return boundingBoxesSample
 }
 
 
@@ -248,7 +234,7 @@ function displayScreenSequence(sequence,tsequence){
 		// If time to show new frame, 
 		if (timestamp - start > tsequence[current_frame_index]){
 			//console.log('Frame =' + current_frame_index+'. Duration ='+(timestamp-start)+'. Timestamp = ' + timestamp)
-			frame_unix_timestamps[current_frame_index] = timestamp //in milliseconds, rounded to nearest hundredth of a millisecond
+			frame_unix_timestamps[current_frame_index] = performance.now() //in milliseconds, rounded to nearest hundredth of a millisecond
 			// Move canvas in front
 			var prev_canvasobj=CANVAS.obj[CANVAS.front]
 			var curr_canvasobj=CANVAS.obj[sequence[current_frame_index]]
@@ -375,9 +361,9 @@ function renderPunish(canvasobj){
 }
 
 
-function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
-	var context=canvasobj.getContext('2d');
-	context.clearRect(0,0,canvasobj.width,canvasobj.height);
+async function bufferFixationScreenUsingDot(color, gridindex, dot_pixelradius){
+	var context=CANVAS.obj.touchfix.getContext('2d');
+	context.clearRect(0,0,CANVAS.obj.touchfix.width,CANVAS.obj.touchfix.height);
 
 	// Draw fixation dot
 	var rad = dot_pixelradius;
@@ -392,7 +378,7 @@ function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 	boundingBoxesFixation = [{}] // todo: move out of here 
 	boundingBoxesFixation[0]['x']= [xcent-rad+CANVAS.offsetleft, xcent+rad+CANVAS.offsetleft]
 	boundingBoxesFixation[0]['y']= [ycent-rad+CANVAS.offsettop, ycent+rad+CANVAS.offsettop]
-	console.log(boundingBoxesFixation)
+	return boundingBoxesFixation
 }
 
 function checkDisplayBounds(displayobject_coord){

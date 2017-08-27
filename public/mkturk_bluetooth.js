@@ -85,7 +85,7 @@ async function findBLEDevice(event){
       var textstr = 'Error getting ble device/service/characteristic';
       console.log(textstr)
       ble.statustext = ble.statustext + "<br>" + textstr
-      updateStatusText()
+      
     }
   }
 }
@@ -106,7 +106,7 @@ async function requestBLEDevice(){
         console.log(device.uuids)
         var textstr = "found a device name: " + device.name + "<br>" + "id: " + device.id
         ble.statustext = textstr
-        updateStatusText()
+        
         ble.device=device
         ble.device.addEventListener('gattserverdisconnected',onDisconnectedBLE)
     }
@@ -115,7 +115,7 @@ async function requestBLEDevice(){
         var textstr = 'Still waiting for user to select device'
         console.log(textstr)
         ble.statustext = ble.statustext + "<br>" + textstr
-        updateStatusText()
+        
         return error
       }
     }
@@ -131,7 +131,7 @@ async function connectBLEDeviceAndCacheCharacteristics(){
     var textstr = "found a GATT server"
     console.log(textstr,server)
     ble.statustext = ble.statustext + "<br>" + textstr
-    updateStatusText()
+    
     ble.server=server
 
   service = await server.getPrimaryService(ble.customserviceUUID)
@@ -139,7 +139,7 @@ async function connectBLEDeviceAndCacheCharacteristics(){
     var textstr = "found a service"
     console.log(textstr,service)
     ble.statustext = ble.statustext + "<br>" + textstr
-    updateStatusText()
+    
     ble.service=service
 
   characteristics = await Promise.all([
@@ -150,7 +150,7 @@ async function connectBLEDeviceAndCacheCharacteristics(){
     var textstr = "found a connection, pump duration, pump, & rfid characteristics"
     console.log(textstr,characteristics)
     ble.statustext = ble.statustext + "<br>" + textstr
-    updateStatusText()
+    
     ble.writeconnectioncharacteristic=characteristics[0]
     ble.writepumpdurationcharacteristic=characteristics[1]
     ble.pumpcharacteristic=characteristics[2]
@@ -165,7 +165,7 @@ async function connectBLEDeviceAndCacheCharacteristics(){
     var textstr="pump & rfid notifications started" + "<br><font color=blue>" + " bluetooth loading complete!"
     console.log(textstr)
     ble.statustext = ble.statustext + "<br>" + textstr
-    updateStatusText()
+    
     ble.pumpcharacteristic.addEventListener('characteristicvaluechanged',onPumpNotificationFromBLE)
     ble.rfidcharacteristic.addEventListener('characteristicvaluechanged',onRFIDNotificationFromBLE)
     ble.connected = true
@@ -240,14 +240,14 @@ async function writepumpdurationtoBLE(num){
       var textstr = 'wrote ble val >> ' + num + ', byte values ' + arrInt8
       console.log(textstr)
       ble.statustext = textstr
-      // updateStatusText()
+      // 
       // writeTextonBlankCanvas(textstr,25.5,20.5)
   }
   catch(error) {
       var textstr = 'Could not write pump duration to ble device'
       console.log(textstr)
       ble.statustext = ble.statustext + "<br>" + textstr
-      updateStatusText()
+      
   }
 }
 
@@ -269,7 +269,7 @@ function onPumpNotificationFromBLE(event){
           Math.round(ble.tnotify_pump - ble.twrite_pumpduration) + 'ms'
   console.log(textstr)
   ble.statustext = ble.statustext + "  <---->  " + textstr
-  // updateStatusText()
+  // 
   // writeTextonBlankCanvas(textstr,400,20.5)
 
   let value = event.target.value

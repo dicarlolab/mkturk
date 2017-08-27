@@ -52,15 +52,19 @@ class RewardMap{
                                             var t = performance.now()
                                             var x = event.targetTouches[0].pageX
                                             var y = event.targetTouches[0].pageY
-
                                             for (var box_index = 0; box_index<boundingBoxes.length; box_index++){
                                                 if (x <= boundingBoxes[box_index].x[1] 
                                                     && x >= boundingBoxes[box_index].x[0]
                                                     && y <= boundingBoxes[box_index].y[1] 
                                                     && y >= boundingBoxes[box_index].y[0]){
                                                         
-                                                        console.log(box_index, x, y, t)
-                                                        var outcome = {"x":x, "y":y, "timestamp":t, "juice":reward_amounts[box_index], "region_index":box_index}
+                                                        //console.log(box_index, x, y, t)
+                                                        var outcome = {
+                                                            "x":x, 
+                                                            "y":y, 
+                                                            "timestamp":t, 
+                                                            "juice":reward_amounts[box_index], 
+                                                            "region_index":box_index}
 
                                                         resolveFunc(outcome)
                                                     }

@@ -73,6 +73,7 @@ async cache_these_images(imagenames){
 		else if (typeof(imagenames) == "object"){
 			var requested_imagenames = []
 			for (var i = 0; i < imagenames.length; i ++){
+				updateProgressbar((i+1)/imagenames.length*100, 'ImageLoadBar')
 				var filename = imagenames[i]
 				if(!(filename in this.cache_dict) && (requested_imagenames.indexOf(filename) == -1)){
 					requested_imagenames.push(filename)
