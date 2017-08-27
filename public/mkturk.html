@@ -39,6 +39,17 @@
   position: absolute;
 }
 
+#TrialCounter {
+   position: fixed;
+   margin-top: 51px;
+   left: 10px; /* space between top of browser and annoying box */
+   height: 30px;
+   color:white;
+   font-size: 24px; 
+   z-index:101;
+   font-family: 'Helvetica Neue';
+   color:white;
+}
 
 </style>
 
@@ -66,6 +77,8 @@
   		<div id="ImageLoadBar"></div>
   		<div id="EpochBar"></div>
 	</div>
+
+	<div id="TrialCounter">WELCOME TO MONKEYTURK, HUMAN</div>
 
 
 	<button name="doneEditingParams" style="visibility:hidden; position: absolute; top: 45%; left: 70%; height: 75px; width: 100px; border-radius: 20px">Done editing params</button>

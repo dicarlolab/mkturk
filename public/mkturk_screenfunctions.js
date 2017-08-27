@@ -1,3 +1,19 @@
+function writeTextToBox(s){
+	var elem = document.getElementById('TrialCounter')
+	console.log(elem)
+	elem.innerHTML = 'Trials done in session: '+s; // text
+}
+
+function toggleTextBox(on_or_off){
+		var elem = document.getElementById('TrialCounter')
+	if(on_or_off == 0){
+		elem.style.visibility = 'hidden'
+	}
+	else if(on_or_off == 1){
+		elem.style.visibility = 'visible'
+	}
+}
+
 function updateProgressbar(pct, bar_id) {
     var elem = document.getElementById(bar_id); 
 
@@ -157,7 +173,6 @@ async function bufferChoiceScreen(test_images, test_image_grid_indices){
 		boundingBoxesChoice[i].x = funcreturn[0]
 		boundingBoxesChoice[i].y = funcreturn[1]
 	}
-	console.log('boundingBoxesChoice', boundingBoxesChoice)
 
 	return boundingBoxesChoice
 }

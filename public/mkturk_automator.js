@@ -61,6 +61,7 @@ class Automator{
 				); 
 			// Populate the stage's imagebuffer with some images
 			await this.AutomatorPreBuffer['TrialQueue'][a].build(num_prebuffer_trials)
+			this.AutomatorPreBuffer['TrialQueue'][a].nickname = 'stage'+a+' trial queue'
 			console.timeEnd('Loaded stage '+a)
 		}
 		console.log('Done prebuffering automator stages.')

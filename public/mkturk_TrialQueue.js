@@ -2,7 +2,8 @@ class TrialQueue {
 
 constructor(samplingStrategy, ImageBagsSample, ImageBagsTest, _ObjectGridMapping, samplingRNGseed, trial_num_TaskStream){
 	// Sampling properties
-
+	this.nickname = ''
+	
 	this.samplingStrategy = samplingStrategy; 
 	this.trialStartNumber = trial_num_TaskStream; 
 	this.samplingRNGseed = samplingRNGseed; 
@@ -11,8 +12,7 @@ constructor(samplingStrategy, ImageBagsSample, ImageBagsTest, _ObjectGridMapping
 	this.ImageBagsSample = ImageBagsSample; 
 	this.ImageBagsTest = ImageBagsTest; 
 	this.ObjectGridMapping = _ObjectGridMapping; 
-	console.log("constructor this.ImageBagsTest", this.ImageBagsTest.length)
-	console.log("constructor this.ObjectGridMapping", this.ObjectGridMapping.length)
+
 	// Queues
 	this.sampleq = {}
 	this.sampleq.filename = []; 
@@ -76,7 +76,6 @@ async generate_trial(i){
 		var sample_label = this.samplebag_labels[sample_index]; 
 		var sample_filename = this.samplebag_paths[sample_index]; 
 
-		console.log('generate_trial', sample_label, this.testbag_labels, _RNGseed)
 		var funcreturn = this.selectTestImages(sample_label, this.testbag_labels, _RNGseed) 
 		var testbag_indices = funcreturn[0] 
 		var correctGridIndex = funcreturn[1] 
@@ -123,6 +122,8 @@ async get_trial(i){
 	var testbag_indices = this.testq.testbag_indices[idx] 
 	var test_correct_grid_index = this.testq.correctGridIndex[idx]
 	var test_grid_index_placements = this.testq.grid_index_placements[idx]
+
+	console.log('get_trial: samplebag_index', samplebag_index, 'test_correct_grid_index', test_correct_grid_index)
 
 	var sample_image = await this.IB.get_by_name(sample_filename); 
 	var test_images = []
@@ -178,6 +179,7 @@ selectTestImages(correct_label, testbag_labels, _RNGseed){
 			grid_index_placements.push(object_grid_index)
 
 			if(i == correct_label){
+				console.log(this.ObjectGridMapping, 'image:', i, 'correct_grid_index', object_grid_index)
 				correct_grid_index = object_grid_index; 
 			}
 

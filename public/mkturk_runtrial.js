@@ -1,5 +1,8 @@
 //============= AWAIT LOAD PARAMS =============//
 async function runtrial(){
+
+writeTextToBox(TRIAL_NUMBER_FROM_SESSION_START)
+
 windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
 windowHeight = document.body.clientHeight;  
 
@@ -11,7 +14,6 @@ if (TASK.Automator !=0){
 
 // Check if parameters need to be reloaded (e.g. because they changed on disk or because of the automator)
 if (FLAGS.need2loadParameters == 1 || INITIALIZE == true){
-    INITIALIZE = false 
 
     var old_ImageBagsSample = TASK.ImageBagsSample
     var old_ImageBagsTest = TASK.ImageBagsTest
@@ -46,17 +48,21 @@ if (FLAGS.need2loadParameters == 1 || INITIALIZE == true){
 } 
 
 // Check if images need to be reloaded. 
-if (FLAGS.need2loadImages == 1){
-    if(TASK.Automator != 1){
+
+if(TASK.Automator != 1){
+    if (FLAGS.need2loadImages == 1){
         var samplingStrategy = 'uniform_with_replacement'
         TQ = new TrialQueue(samplingStrategy, TASK.ImageBagsSample, TASK.ImageBagsTest, TASK.ObjectGridMapping, TASK.samplingRNGseed, TRIAL_NUMBER_FROM_TASKSTREAM_START)
         await TQ.build(1)
-    }   
+   }   
+}
+else if(TASK.Automator == 1){
+    console.log("TASK.CurrentAutomatorStage", TASK.CurrentAutomatorStage)
+    TQ = AM.AutomatorPreBuffer.TrialQueue[TASK.CurrentAutomatorStage]
+} 
 
-    else if(TASK.Automator == 1){
-        TQ = AM.AutomatorPreBuffer.TrialQueue[TASK.CurrentAutomatorStage]
-    } 
-
+if (INITIALIZE == true){
+    INITIALIZE = false // todo: remove this 
     console.log('hello TQ', TQ)
     samplebag_paths = TQ.samplebag_paths
     samplebag_labels = TQ.samplebag_labels
@@ -64,14 +70,13 @@ if (FLAGS.need2loadImages == 1){
     testbag_labels = TQ.testbag_labels
 
     // Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image.
-    console.log('ehllo')
     await TQ.get_trial(TRIAL_NUMBER_FROM_TASKSTREAM_START)
     var representative_image = await TQ.IB.get_by_name(TQ.sampleq.filename[0])
     DEVICE.source_ImageWidthPixels = representative_image.width
     DEVICE.source_ImageHeightPixels = representative_image.height
 
     FLAGS.need2loadImages = 0;
-} 
+}
 
 FixationRadius=(DEVICE.source_ImageWidthPixels/2)*TASK.FixationScale*DEVICE.CanvasRatio
 funcreturn = defineImageGrid(TASK.NGridPoints, DEVICE.source_ImageWidthPixels, DEVICE.source_ImageHeightPixels, TASK.GridScale);
