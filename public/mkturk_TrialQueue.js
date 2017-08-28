@@ -123,7 +123,6 @@ async get_trial(i){
 	var test_correct_grid_index = this.testq.correctGridIndex[idx]
 	var test_grid_index_placements = this.testq.grid_index_placements[idx]
 
-	console.log('get_trial: samplebag_index', samplebag_index, 'test_correct_grid_index', test_correct_grid_index)
 
 	var sample_image = await this.IB.get_by_name(sample_filename); 
 	var test_images = []
@@ -179,7 +178,6 @@ selectTestImages(correct_label, testbag_labels, _RNGseed){
 			grid_index_placements.push(object_grid_index)
 
 			if(i == correct_label){
-				console.log(this.ObjectGridMapping, 'image:', i, 'correct_grid_index', object_grid_index)
 				correct_grid_index = object_grid_index; 
 			}
 
