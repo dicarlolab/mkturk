@@ -3,10 +3,22 @@ async function runtrial(){
 
 writeTextToBox(TRIAL_NUMBER_FROM_SESSION_START)
 
-windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
-windowHeight = document.body.clientHeight;  
+windowHeight = window.innerHeight
+|| document.documentElement.clientHeight
+|| document.body.clientHeight;
+
+
+ //get true window dimensions at last possible moment
+windowWidth = window.innerWidth
+|| document.documentElement.clientWidth
+|| document.body.clientWidth;
+
 
 console.log('windowWidth', windowWidth, 'windowHeight', windowHeight)
+
+
+// Reference: https://www.w3schools.com/js/js_window.asp
+
 
 if (TASK.Automator !=0){    
     TASK = await AM.monitorStage_State_and_Transition(TASK);
@@ -17,9 +29,7 @@ if (FLAGS.need2loadParameters == 1 || INITIALIZE == true){
 
     var old_ImageBagsSample = TASK.ImageBagsSample
     var old_ImageBagsTest = TASK.ImageBagsTest
-    var _funcreturn = await DW.loadParametersfromDropbox(ParamFilePath)
-    TASK =_funcreturn[0]
-    ParamFileRev = _funcreturn[1]
+    TASK = await TASK_buffer.read()
 
     TASK_ARCHIVE.push(TASK)
     TASK_ARCHIVE_COUNTER++
@@ -79,7 +89,11 @@ if (INITIALIZE == true){
 }
 
 FixationRadius=(DEVICE.source_ImageWidthPixels/2)*TASK.FixationScale*DEVICE.CanvasRatio
-funcreturn = defineImageGrid(TASK.NGridPoints, DEVICE.source_ImageWidthPixels, DEVICE.source_ImageHeightPixels, TASK.GridScale);
+funcreturn = defineImageGrid(TASK.NGridPoints, 
+    DEVICE.source_ImageWidthPixels, 
+    DEVICE.source_ImageHeightPixels, 
+    TASK.GridScale);
+
 xcanvascenter = funcreturn[0]
 ycanvascenter = funcreturn[1]
 DEVICE.XGridCenter = funcreturn[2]
@@ -128,7 +142,9 @@ ChoiceRewardMap.create_reward_map_with_bounding_boxes(boundingBoxesChoice, choic
 
 var fixation_onset_timestamps = await displayScreenSequence(CANVAS.sequencepre,CANVAS.tsequencepre);
 
+console.log('Awaiting fixation...')
 var fixation_outcome = await FixationRewardMap.Promise_wait_until_active_response_then_return_juice()
+console.log('Fixation reached')
 
 var fixation_x = fixation_outcome['x']
 var fixation_y = fixation_outcome['y']
@@ -213,6 +229,7 @@ EVENT_TIMESTAMPS.choice_touch.push(choice_outcome['timestamp'])
 EVENT_TIMESTAMPS.reinforcement_onset.push(reinforcement_onset)
 EVENT_TIMESTAMPS.reinforcement_end.push(reinforcement_end)
 
+TRIAL.StartTime.push(fixation_outcome['timestamp'])
 TRIAL.FixationGridIndex.push(TASK.StaticFixationGridIndex)
 TRIAL.Sample.push(samplebag_index)
 TRIAL.Test.push(testbag_indices)
@@ -239,12 +256,13 @@ TRIAL_NUMBER_FROM_SESSION_START++
 TRIAL_NUMBER_FROM_TASKSTREAM_START++
 
 // Asynchronous save at most every T seconds
-
 var _ms_since_last_trial_data_save = performance.now() - last_trial_data_save
 var _ms_since_last_touch_data_save = performance.now() - last_touch_save
+var _ms_since_last_paramfile_check = performance.now() - last_paramfile_check 
+
 if ( _ms_since_last_trial_data_save > TRIALDATA_SAVE_TIMEOUT_PERIOD){ 
     console.log(_ms_since_last_trial_data_save/1000+'s since last trial data save. At trial'+ TRIAL_NUMBER_FROM_SESSION_START +'. automator stage:'+TASK.CurrentAutomatorStage)
-    DW.saveTrialDatatoDropbox(SESSION, DEVICE, TASK_ARCHIVE, CANVAS, TRIAL, EVENT_TIMESTAMPS, FLAGS.debug_mode)
+    DW.saveTrialDatatoDropbox(FLAGS.debug_mode)
     last_trial_data_save = performance.now()
 }
 
@@ -254,10 +272,17 @@ if (_ms_since_last_touch_data_save > TOUCHSTRING_SAVE_TIMEOUT_PERIOD){
     last_touch_save = performance.now()
 }
 
-if (FLAGS.need2saveParameters == 1){
-    FLAGS.need2saveParameters = DW.saveParameterstoDropbox(); // Save parameters asynchronously
+if(_ms_since_last_paramfile_check > PARAMFILE_CHECK_TIMEOUT_PERIOD){
+    console.log(_ms_since_last_touch_data_save/1000 +'s since last TOUCHSTRING save. '+TOUCHSTRING.length+' length TOUCHSTRING save requested.')
+    TASK_buffer.check_if_changed_on_disk()
+    last_paramfile_check = performance.now()
 }
 
-FLAGS.need2loadParameters = DW.checkIfFileChangedOnDisk(ParamFilePath, ParamFileRev)
+
+if (FLAGS.need2saveParameters == 1){
+    TASK_buffer.write_object_as_json(TASK)
+    FLAGS.need2saveParameters = 0 
+}
+
 
 }

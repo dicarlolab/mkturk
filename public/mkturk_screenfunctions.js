@@ -1,11 +1,18 @@
+
+
+
 function writeTextToBox(s){
 	var elem = document.getElementById('TrialCounter')
-	console.log(elem)
-	elem.innerHTML = 'Trials done in session: '+s; // text
+	elem.innerHTML = s; // text
 }
 
-function toggleTextBox(on_or_off){
-		var elem = document.getElementById('TrialCounter')
+function writeDebugMessage(s){
+	var elem = document.getElementById('DebugMessageTextBox')
+	elem.innerHTML = s; // text
+}
+
+function toggleElement(on_or_off, element_id){
+		var elem = document.getElementById(element_id)
 	if(on_or_off == 0){
 		elem.style.visibility = 'hidden'
 	}
@@ -15,9 +22,10 @@ function toggleTextBox(on_or_off){
 }
 
 function updateProgressbar(pct, bar_id) {
+	var max_bar_width = 30
     var elem = document.getElementById(bar_id); 
 
-	elem.style.width = pct + '%'; 
+	elem.style.width = max_bar_width*pct/100+"%" // pct + '%'; 
 	elem.innerHTML = Math.round(pct) + '%'; // text
 }
 
@@ -70,28 +78,79 @@ function setupDragTracker(){
 
 	window.addEventListener('touchmove', function(event){
 		// the user touched the screen
-		x = Math.round(event.targetTouches[0].clientX)
-		y = Math.round(event.targetTouches[0].clientY)
+		pageX = event.targetTouches[0].pageX
+		pageY = event.targetTouches[0].pageY
+
+		clientXdelta_from_pageX = event.targetTouches[0].clientX - pageX
+		clientYdelta_from_pageY = event.targetTouches[0].clientY - pageY
+		
+		screenXdelta_from_pageX = Math.round(event.targetTouches[0].screenX - pageX)
+		screenYdelta_from_pageY = Math.round(event.targetTouches[0].screenY - pageY)
+
+		radiusX = Math.round(event.targetTouches[0].radiusX)
+		radiusY = Math.round(event.targetTouches[0].radiusY)
 		t = Math.round(performance.now())
-		TOUCHSTRING+=x+','+y+','+TOUCHSTRING_UDPATECOUNTER+','+t+',d\n'
+
+
+		TOUCHSTRING+= Math.round(pageX)
+		TOUCHSTRING+=','+Math.round(pageY)
+		
+		TOUCHSTRING+=','+clientXdelta_from_pageX
+		TOUCHSTRING+=','+clientYdelta_from_pageY
+
+		TOUCHSTRING+=','+screenXdelta_from_pageX
+		TOUCHSTRING+=','+screenYdelta_from_pageX
+		
+		TOUCHSTRING+=','+radiusX
+		TOUCHSTRING+=','+radiusY
+
+		TOUCHSTRING+=','+TOUCHSTRING_UDPATECOUNTER
+		TOUCHSTRING+=','+t
+		TOUCHSTRING+=',d\n'
+
 		TOUCHSTRING_UDPATECOUNTER+=1
 
 		//console.log(TOUCHSTRING_UDPATECOUNTER)
 		//console.log('drag', x, y, t)
-	})
+	},  {passive: true})
 }
-
+//passive event handlers: 
+//https://stackoverflow.com/questions/39152877/consider-marking-event-handler-as-passive-to-make-the-page-more-responsive
 function setupTapTracker(){
 	window.addEventListener('touchstart', function(event){
-		// the user touched the screen
-		x = Math.round(event.targetTouches[0].clientX)
-		y = Math.round(event.targetTouches[0].clientY)
+
+		pageX = event.targetTouches[0].pageX
+		pageY = event.targetTouches[0].pageY
+
+		clientXdelta_from_pageX = event.targetTouches[0].clientX - pageX
+		clientYdelta_from_pageY = event.targetTouches[0].clientY - pageY
+		
+		screenXdelta_from_pageX = Math.round(event.targetTouches[0].screenX - pageX)
+		screenYdelta_from_pageX = Math.round(event.targetTouches[0].screenY - pageY)
+
+		radiusX = Math.round(event.targetTouches[0].radiusX)
+		radiusY = Math.round(event.targetTouches[0].radiusY)
 		t = Math.round(performance.now())
-		TOUCHSTRING+=x+','+y+','+TOUCHSTRING_UDPATECOUNTER+','+t+',t\n'
+
+
+		TOUCHSTRING+= Math.round(pageX)
+		TOUCHSTRING+=','+Math.round(pageY)
+		
+		TOUCHSTRING+=','+clientXdelta_from_pageX
+		TOUCHSTRING+=','+clientYdelta_from_pageY
+
+		TOUCHSTRING+=','+screenXdelta_from_pageX
+		TOUCHSTRING+=','+screenYdelta_from_pageX
+		
+		TOUCHSTRING+=','+radiusX
+		TOUCHSTRING+=','+radiusY
+
+		TOUCHSTRING+=','+TOUCHSTRING_UDPATECOUNTER
+		TOUCHSTRING+=','+t
+		TOUCHSTRING+=',t\n'
+
 		TOUCHSTRING_UDPATECOUNTER+=1
-		//console.log(TOUCHSTRING_UDPATECOUNTER)
-		//console.log('tap', x, y, t)
-	})
+	},  {passive: true})
 }
 
 
@@ -104,10 +163,10 @@ function setupCanvas(canvasobj){
 	canvasobj.style.margin="0 auto";
 	canvasobj.style.display="block"; //visible
 
-	canvasobj.addEventListener('touchstart', function(e){e.preventDefault()})
-	canvasobj.addEventListener('touchmove', function(e){e.preventDefault()})
+	// canvasobj.addEventListener('touchstart', function(e){e.preventDefault()})
+	// canvasobj.addEventListener('touchmove', function(e){e.preventDefault()})
 	
-	// assign listeners
+	//assign listeners
 	//canvasobj.addEventListener('touchstart',touchstart_listener,{capture: false,passive: false}); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
 	//canvasobj.addEventListener('touchmove',touchmove_listener,{passive: false}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
 	//canvasobj.addEventListener('touchend',touchend_listener,{capture: false, passive:false});
@@ -137,28 +196,29 @@ function scaleCanvasforHiDPI(canvasobj){
 
 //================== IMAGE RENDERING ==================//
 
-function defineImageGrid(ngridpoints, wd, ht, gridscale){
-	var xgrid =[]
-	var ygrid =[]
+function defineImageGrid(ngridpoints, source_image_width, source_image_height, gridscale){
+	var unitgrid_x =[]
+	var unitgrid_y =[]
 	var xgridcent =[] 
 	var ygridcent =[]
+
 	var cnt=0;
 	for (var i=1; i<=ngridpoints; i++){
 		for (var j=1; j<=ngridpoints; j++){
-			xgrid[cnt]=i - 1/2;
-			ygrid[cnt]=j - 1/2;
+			unitgrid_x[cnt]=i - 1/2;
+			unitgrid_y[cnt]=j - 1/2;
 			cnt++;
 		}
 	}
 
 	//center x & y grid within canvas
-	var canvas_center_x = (document.body.clientWidth - CANVAS.offsetleft)*DEVICE.CanvasRatio*DEVICE.DevicePixelRatio/2
-	var dx = canvas_center_x - DEVICE.CanvasRatio*ngridpoints/2*wd*gridscale; //left side of grid
-	var canvas_center_y = (document.body.clientHeight - CANVAS.offsettop)*DEVICE.CanvasRatio*DEVICE.DevicePixelRatio/2
-	var dy = canvas_center_y - DEVICE.CanvasRatio*ngridpoints/2*ht*gridscale; //top of grid
-	for (var i=0; i<=xgrid.length-1; i++){
-		xgridcent[i]=Math.round(xgrid[i]*wd*gridscale*DEVICE.CanvasRatio + dx);
-		ygridcent[i]=Math.round(ygrid[i]*ht*gridscale*DEVICE.CanvasRatio + dy);
+	var canvas_center_x = (windowWidth - CANVAS.offsetleft)*DEVICE.CanvasRatio*DEVICE.DevicePixelRatio/2
+	var dx = canvas_center_x - DEVICE.CanvasRatio*ngridpoints/2*source_image_width*gridscale; //left side of grid
+	var canvas_center_y = (windowHeight - CANVAS.offsettop)*DEVICE.CanvasRatio*DEVICE.DevicePixelRatio/2
+	var dy = canvas_center_y - DEVICE.CanvasRatio*ngridpoints/2*source_image_height*gridscale; //top of grid
+	for (var i=0; i<=unitgrid_x.length-1; i++){
+		xgridcent[i]=Math.round(unitgrid_x[i]*source_image_width*gridscale*DEVICE.CanvasRatio + dx);
+		ygridcent[i]=Math.round(unitgrid_y[i]*source_image_height*gridscale*DEVICE.CanvasRatio + dy);
 	}
 
 	return [canvas_center_x, canvas_center_y, xgridcent, ygridcent]

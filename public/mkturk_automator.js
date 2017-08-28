@@ -2,6 +2,7 @@
 
 class Automator{
 	constructor(samplingStrategy){
+		writeDebugMessage("Initializing automator...")
 		this.trialhistory = []
 		this.samplingStrategy = samplingStrategy
 		this.__initial_trial_history_on_load = undefined
@@ -23,48 +24,60 @@ class Automator{
 		}
 		return _property
 	}
+
+	async check_if_changed_on_disk(){
+
+	}
 	async build(num_prebuffer_trials){
-		this.trialhistory = await DW.readTrialHistoryFromDropbox(ndatafiles2read);
+		try{
 
-		this.__initial_trial_history_on_load = await DW.readTrialHistoryFromDropbox(ndatafiles2read);
+			this.trialhistory = await DW.readTrialHistoryFromDropbox(ndatafiles2read);
+			writeDebugMessage("Read trial history")
+			this.__initial_trial_history_on_load = JSON.parse(JSON.stringify(this.trialhistory));
 
-		// trialhistory.trainingstage 
-		// trialhistory.starttime
-		// trialhistory.response 
-		// trialhistory.correct 
-		// trialhistory.trialnumber 		
-		this.automator_data = await DW.parseAutomatorFilefromDropbox(TASK.AutomatorFilePath)
-		// await DW.saveParameterstoDropbox() 
+			// trialhistory.trainingstage 
+			// trialhistory.starttime
+			// trialhistory.response 
+			// trialhistory.correct 
+			// trialhistory.trialnumber 		
+			this.automator_data = await DW.parseAutomatorFilefromDropbox(TASK.AutomatorFilePath)
+			writeDebugMessage("Read automator file")
 
-		this.AutomatorPreBuffer = {}
-		this.AutomatorPreBuffer['TrialQueue'] = {}; 
-
-
-		for (var a = TASK.CurrentAutomatorStage; a < this.automator_data.length; a++){
-			updateProgressbar((a+1)/this.automator_data.length * 100, "AutomatorLoadBar")
-			console.time('Stage '+a)
+			this.AutomatorPreBuffer = {}
+			this.AutomatorPreBuffer['TrialQueue'] = {}; 
 
 
-			var _ImageBagsSample = this._populate_default(a, 'ImageBagsSample')
-			var _ImageBagsTest = this._populate_default(a, 'ImageBagsTest')
-			var _samplingRNGseed = this._populate_default(a, 'samplingRNGseed')
-			var _trial_num_TaskStream = this._populate_default(a, 'trial_num_TaskStream')
-			var _ObjectGridMapping = this._populate_default(a, 'ObjectGridMapping')
-			console.log('automator _ObjectGridMapping', _ObjectGridMapping)
-			this.AutomatorPreBuffer['TrialQueue'][a] = new TrialQueue(
-				this.samplingStrategy, 
-				_ImageBagsSample,
-				_ImageBagsTest,
-				_ObjectGridMapping,
-				_samplingRNGseed, 
-				_trial_num_TaskStream,
-				); 
-			// Populate the stage's imagebuffer with some images
-			await this.AutomatorPreBuffer['TrialQueue'][a].build(num_prebuffer_trials)
-			this.AutomatorPreBuffer['TrialQueue'][a].nickname = 'stage'+a+' trial queue'
-			console.timeEnd('Loaded stage '+a)
+			for (var a = TASK.CurrentAutomatorStage; a < this.automator_data.length; a++){
+				writeDebugMessage("Loading stage"+a)
+				updateProgressbar((a+1)/this.automator_data.length * 100, "AutomatorLoadBar")
+				console.time('Stage '+a)
+
+
+				var _ImageBagsSample = this._populate_default(a, 'ImageBagsSample')
+				var _ImageBagsTest = this._populate_default(a, 'ImageBagsTest')
+				var _samplingRNGseed = this._populate_default(a, 'samplingRNGseed')
+				var _trial_num_TaskStream = this._populate_default(a, 'trial_num_TaskStream')
+				var _ObjectGridMapping = this._populate_default(a, 'ObjectGridMapping')
+				console.log('automator _ObjectGridMapping', _ObjectGridMapping)
+				this.AutomatorPreBuffer['TrialQueue'][a] = new TrialQueue(
+					this.samplingStrategy, 
+					_ImageBagsSample,
+					_ImageBagsTest,
+					_ObjectGridMapping,
+					_samplingRNGseed, 
+					_trial_num_TaskStream); 
+				// Populate the stage's imagebuffer with some images
+				await this.AutomatorPreBuffer['TrialQueue'][a].build(num_prebuffer_trials)
+				this.AutomatorPreBuffer['TrialQueue'][a].nickname = 'stage'+a+' trial queue'
+				console.timeEnd('Loaded stage '+a)
+			}
+			writeDebugMessage("Done constructing automator")
+			console.log('Done prebuffering automator stages.')
 		}
-		console.log('Done prebuffering automator stages.')
+		catch(error){
+			writeDebugMessage(error)
+			console.error(error)
+		}
 	}
 
 	async resetToInitialLoadState(){
@@ -110,6 +123,9 @@ class Automator{
 		updateProgressbar((i_current_stage + 1)/this.automator_data.length * 100, 'EpochBar')
 
 		// ---------- CHANGE TASK.STUFF TO AUTOMATOR DATA [ NEXT_STAGE ] --------------------------------------- 
+
+		var loop_automator = true // todo: move into settings
+
 		if(pctcorrect >= MinPercentCriterion && ntrials >= MinTrialsCriterion){
 			TRIAL_NUMBER_FROM_TASKSTREAM_START = 0 // todo: read from disk 
 			console.log('TASK_ARCHIVE.push @ stage transition')
@@ -119,44 +135,54 @@ class Automator{
 
 			if(TASK.CurrentAutomatorStage+1 >= this.automator_data.length){
 				// Stay in current stage settings, and 
-				// Turn automator off
-				TASK.Automator = 0; 
-				TASK.CurrentAutomatorStage = 'off';
-				console.log('COMPLETED FINAL STAGE, TURNING AUTOMATOR OFF')
-				console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject completed the final stage '+(i_current_stage)+' of '+(this.automator_data.length-1)+' (zero indexing) of automator.')
-				return TASK
+				// either turn off automator, or start over from beginning
+
+				if(loop_automator == false){ 
+					TASK.Automator = 0; 
+					TASK.CurrentAutomatorStage = 'off';
+					console.log('COMPLETED FINAL STAGE, TURNING AUTOMATOR OFF')
+					console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject completed the final stage '+(i_current_stage)+' of '+(this.automator_data.length-1)+' (zero indexing) of automator.')
+					return TASK
+				}
+				else if(loop_automator == true){
+					TASK.CurrentAutomatorStage = 0
+					console.log("COMPLETED FINAL STAGE, LOOPING AUTOMATOR:")
+					
+				}
 			}
 			else{
 				// Otherwise, advance to the next stage.
 				TASK.CurrentAutomatorStage = TASK.CurrentAutomatorStage + 1; 
-				FLAGS.need2saveParameters=1
-				console.log('SUBJECT ADVANCED TO STAGE ' + (i_current_stage+1) + ' of '+(this.automator_data.length-1) + ' with ' + pctcorrect+'\% performance on n='+ntrials)
-				console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject advanced to stage '+(i_current_stage+1)+' of '+(this.automator_data.length-1)+' (zero indexing) of automator.')
-
-				// Update TASK 
-				var old_imageBagsSample = TASK.ImageBagsSample
-				var old_imageBagsTest = TASK.ImageBagsTest
-
-				for (var property in this.automator_data[i_current_stage+1]){
-					if (property === 'MinPercentCriterion' || property === 'MinTrialsCriterion' ||
-						property === 'CurrentAutomatorStageName'){
-						continue 
-					}
-					if (this.automator_data[i_current_stage+1].hasOwnProperty(property)){ 
-						if (!(TASK[property].toString() == this.automator_data[i_current_stage+1][property].toString())){
-							console.log('\"'+property+'\" changed from '+TASK[property]+' to '+this.automator_data[i_current_stage+1][property])
-
-							TASK[property] = this.automator_data[i_current_stage+1][property]
-							
-						}
-					}			
-				}
-
-				// If imagebags are changed by automator, load images at beginning of next trial. 
-				if(!old_imageBagsTest.equals(TASK.ImageBagsTest) || !old_imageBagsSample.equals(TASK.ImageBagsSample)){
-					FLAGS.need2loadImages = 1; 
-				}
 			}
+
+			FLAGS.need2saveParameters=1
+			console.log('SUBJECT ADVANCED TO STAGE ' + (i_current_stage+1) + ' of '+(this.automator_data.length-1) + ' with ' + pctcorrect+'\% performance on n='+ntrials)
+			console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject advanced to stage '+(i_current_stage+1)+' of '+(this.automator_data.length-1)+' (zero indexing) of automator.')
+
+			// Update TASK 
+			var old_imageBagsSample = TASK.ImageBagsSample
+			var old_imageBagsTest = TASK.ImageBagsTest
+
+			for (var property in this.automator_data[i_current_stage+1]){
+				if (property === 'MinPercentCriterion' || property === 'MinTrialsCriterion' ||
+					property === 'CurrentAutomatorStageName'){
+					continue 
+				}
+				if (this.automator_data[i_current_stage+1].hasOwnProperty(property)){ 
+					if (!(TASK[property].toString() == this.automator_data[i_current_stage+1][property].toString())){
+						console.log('\"'+property+'\" changed from '+TASK[property]+' to '+this.automator_data[i_current_stage+1][property])
+
+						TASK[property] = this.automator_data[i_current_stage+1][property]
+						
+					}
+				}			
+			}
+
+			// If imagebags are changed by automator, load images at beginning of next trial. 
+			if(!old_imageBagsTest.equals(TASK.ImageBagsTest) || !old_imageBagsSample.equals(TASK.ImageBagsSample)){
+				FLAGS.need2loadImages = 1; 
+			}
+			
 		}
 
 		return TASK  

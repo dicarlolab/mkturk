@@ -3,6 +3,7 @@
 
 
 #AutomatorLoadBar {
+  margin:;
   width: 0.2%;
   height: 15px;
   background-color: #4CAF50;
@@ -11,6 +12,7 @@
   font-family: 'Helvetica Neue';
   z-index:101;
   position: absolute;
+  overflow:hidden;
 }
 
 #ImageLoadBar {
@@ -24,6 +26,7 @@
   font-family: 'Helvetica Neue';
   z-index:101;
   position: absolute;
+  overflow:hidden;
 }
 
 
@@ -37,18 +40,32 @@
   font-family: 'Helvetica Neue';
   z-index:101;
   position: absolute;
+  overflow:hidden;
 }
 
 #TrialCounter {
    position: fixed;
-   margin-top: 51px;
-   left: 10px; /* space between top of browser and annoying box */
+   margin-top: -5px;
+   left: 1px; /* space between top of browser and annoying box */
    height: 30px;
    color:white;
-   font-size: 24px; 
-   z-index:101;
+   font-size: 8px; 
+   z-index:102;
    font-family: 'Helvetica Neue';
    color:white;
+}
+
+#DebugMessageTextBox {
+   position: fixed;
+   margin-top: 51px;
+   left: 1px; /* space between top of browser and annoying box */
+   height: 30px;
+   color:white;
+   font-size: 8px; 
+   z-index:102;
+   font-family: 'Helvetica Neue';
+   color:white;
+
 }
 
 </style>
@@ -66,37 +83,36 @@
 </head>
 
 <!-- ************* BODY *************** -->
-<body bgcolor=#7F7F7F margin=0px padding=0px>
-<div id="canvasdiv", style="position:relative; width:100vw; height:100vh">
-	<button name="connectble" style="visibility:hidden; position: absolute; top: 45%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to Bluetooth juicer</button>
+<body bgcolor=#7F7F7F>
 
-	<button name="noble" style="visibility:hidden; position: absolute; top: 55%; left: 45%; height: 50px; width: 200px; border-radius: 20px">No Bluetooth juicer</button>
-
-	<div id="myProgress">
-  		<div id="AutomatorLoadBar"></div>
-  		<div id="ImageLoadBar"></div>
-  		<div id="EpochBar"></div>
-	</div>
-
-	<div id="TrialCounter">WELCOME TO MONKEYTURK, HUMAN</div>
-
-
-	<button name="doneEditingParams" style="visibility:hidden; position: absolute; top: 45%; left: 70%; height: 75px; width: 100px; border-radius: 20px">Done editing params</button>
-
-	<button name="doneTestingTask" style="visibility:hidden; position: absolute; top: 55%; left: 70%; height: 75px; width: 200px; border-radius: 20px; z-index:101">Done with testing trials</button>
-
-	<button name="SyncButton" style="visibility:hidden; position: absolute; top: 0.05%; left: 96%; height: 30px; width: 42px; font-size: 10px; color: green; border-radius: 10px; z-index:101">Sync data</button>
-
-
-	<canvas id="canvasblank" width="0" height="0" src="" style="z-index:99; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvassample" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvastest" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvastouchfix" width="0" height="0" src="" style="z-index:3; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvaseyefix" width="0" height="0" src="" style="z-index:4; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvasreward" width="0" height="0" src="" style="z-index:5; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvasphotoreward" width="0" height="0" src="" style="z-index:6; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvaspunish" width="0" height="0" src="" style="z-index:7; position: absolute; left: 0px; top: 0px;"> </canvas>
+<div id="myProgress", style="overflow:hidden">
+		<div id="AutomatorLoadBar"></div>
+		<div id="ImageLoadBar"></div>
+		<div id="EpochBar"></div>
 </div>
+
+<button name="connectble" style="z-index:101; visibility:hidden; position: absolute; top: 45%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to Bluetooth juicer</button>
+
+<button name="noble" style="z-index:101; visibility:hidden; position: absolute; top: 55%; left: 45%; height: 50px; width: 200px; border-radius: 20px">No Bluetooth juicer</button>
+
+
+<div id="TrialCounter">0</div>
+<div id="DebugMessageTextBox">0</div>
+
+<button name="doneTestingTask" style="visibility:hidden; position: absolute; top: 55%; left: 70%; height: 75px; width: 200px; border-radius: 20px; z-index:101">Done with testing trials</button>
+
+<button name="SyncButton" style="visibility:hidden; position: absolute; margin-top:1px; left: 97%; font-size: 6px; color: #A6A6A6; padding:10px 10px; border:0px solid #959595; z-index:101; background-color: #808080; text-align:center;">Save</button>
+
+
+<canvas id="blank" width="0" height="0" src="" style="z-index:99; position: absolute; left: 0px; top: 0px;width:100%; height:100%; padding:0px; margin:0px;"> </canvas>
+<canvas id="sample" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;width:100%; height:100%; padding:0px; margin:0px;"> </canvas>
+<canvas id="test" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;width:100%; height:100%; padding:0px; margin:0px;"> </canvas>
+<canvas id="touchfix" width="0" height="0" src="" style="z-index:3; position: absolute; left: 0px; top: 0px;width:100%; height:100%; padding:0px; margin:0px;"> </canvas>
+<canvas id="eyefix" width="0" height="0" src="" style="z-index:4; position: absolute; left: 0px; top: 0px;width:100%; height:100%; padding:0px; margin:0px;"> </canvas>
+<canvas id="reward" width="0" height="0" src="" style="z-index:5; position: absolute; left: 0px; top: 0px;width:100%; height:100%; padding:0px; margin:0px;"> </canvas>
+<canvas id="photoreward" width="0" height="0" src="" style="z-index:6; position: absolute; left: 0px; top: 0px;width:100%; height:100%; padding:0px; margin:0px;"> </canvas>
+<canvas id="punish" width="0" height="0" src="" style="z-index:7; position: absolute; left: 0px; top: 0px;width:100%; height:100%; padding:0px; margin:0px;"> </canvas>
+
 
 <dialog id="subjectID_dialog">
   <p>Select subject: </p>
@@ -122,6 +138,7 @@
 
 <script>
 
+writeDebugMessage("Initialized")
 //================== AUTHENTICATE ==================//
 var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "mkturk.html"
 if (isAuthenticated()){
@@ -137,7 +154,7 @@ else {
 DW = new DropboxWriter(dbx)
 setupDragTracker()
 setupTapTracker()
-//setupMouseTracker()
+
 
 // GET PARAMFILE NAME
 var subjectdialog = document.getElementById("subjectID_dialog");
@@ -163,16 +180,17 @@ document.querySelector("button[name=doneTestingTask]").addEventListener(
 	'touchend',doneTestingTask_listener,false)
 document.querySelector("button[name=doneTestingTask]").addEventListener(
 	'mouseup',doneTestingTask_listener,false)
-document.querySelector("button[name=SyncButton]").addEventListener(
-	'mouseup',sync_data_listener,false)
+//document.querySelector("button[name=SyncButton]").addEventListener(
+//	'mouseup',sync_data_listener,false)
 document.querySelector("button[name=SyncButton]").addEventListener(
 	'touchend',sync_data_listener,false)
 
 //============= Initialize Audio & Battery Objects ==================//
 	// Prevent window scrolling and bounce back effect
-	document.body.addEventListener('touchmove',function(event){
-		event.preventDefault();
-	}, {capture: false, passive:false});
+	// document.body.addEventListener('touchmove',function(event){
+	//	event.preventDefault();
+	//}, {capture: false, passive:false});
+
 	
 	DEVICE.DevicePixelRatio = window.devicePixelRatio || 1;
 	var visiblecanvasobj = CANVAS.obj[CANVAS.front];
@@ -194,13 +212,14 @@ document.querySelector("button[name=SyncButton]").addEventListener(
 
 
 (async function(){
+	
 
 	//================== await create SoundPlayer ==================// 
 	SP = new SoundPlayer()
-	await SP.build()
-	
-	// display sync button 
-	document.querySelector("button[name=SyncButton]").style.visibility = "visible"
+	await SP.build()	
+
+	writeDebugMessage("Sound loaded...")
+		
 
 	//================== AWAIT CONNECT TO BLE ==================//
 	document.querySelector("button[name=connectble]").style.display = "block"
@@ -208,6 +227,7 @@ document.querySelector("button[name=SyncButton]").addEventListener(
 	document.querySelector("button[name=noble]").style.display = "block"
 	document.querySelector("button[name=noble]").style.visibility = "visible"
 	await connectBLEButtonPromise()
+	writeDebugMessage("Bluetooth loaded...")
 
 	document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	document.querySelector("button[name=noble]").style.display = "none"
@@ -216,10 +236,10 @@ document.querySelector("button[name=SyncButton]").addEventListener(
 	subjectdialog.showModal()
 	await subjectIDPromise()
 	ParamFilePath = PARAM_DIRPATH + SESSION.Subject + "_params.txt";
-	_funcreturn = await DW.loadParametersfromDropbox(ParamFilePath)
-	TASK = _funcreturn[0]
-	ParamFileRev = _funcreturn[1]
-	
+
+	TASK_buffer = new TwoWayFileBuffer(DW, ParamFilePath)
+	TASK = await TASK_buffer.read()
+	console.log(TASK)
 	
 	
 	//========= Start in TEST mode =======//
@@ -234,30 +254,30 @@ document.querySelector("button[name=SyncButton]").addEventListener(
 // ============ MAIN LOOP ==================================================================================== // 
 __initial_load_TASK = TASK
 __initial_load_TASK_ARCHIVE = TASK_ARCHIVE // Reset to this once you transition from debug to test mode
+document.querySelector("button[name=SyncButton]").style.visibility = "visible"
+
+FixationRewardMap = new RewardMap()
+ChoiceRewardMap = new RewardMap()
 
 if (TASK.Automator == 1){
+	writeDebugMessage("Building automator...")
 	AM = new Automator("uniform_with_replacement")
 	await AM.build(5)
+	writeDebugMessage("Automator built...")
 }
 
 INITIALIZE = true
 
 // Start in testing mode
+writeDebugMessage("Running debug mode...")
 while(FLAGS.debug_mode == 1){
 	await runtrial()
 }
 
-progressbar_names = [
-'AutomatorLoadBar',
-'ImageLoadBar',
-'EpochBar',]
+writeDebugMessage("Ended debug mode...")
 
 transition_from_debug_to_science_trials()
-
-for (var _p in progressbar_names){
-	toggleProgressbar(0, progressbar_names[_p])
-}
-
+toggleElement(0, "DebugMessageTextBox")
 // Science mode
 while(true){
 	await runtrial()

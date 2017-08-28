@@ -8,8 +8,59 @@ function getAccessTokenFromUrl(){
 	return utils.parseQueryString(window.location.hash).access_token
 }
 
-//================== LIST FILES ==================//
-// Asynchronous: Get file list from dropbox directory
+class TwoWayFileBuffer{
+	constructor(DW, filepath){
+		this.DW = DW
+		this.filepath = filepath 
+		this.data_raw = undefined 
+		this.data_json = undefined 
+		this.rev = undefined
+		this._file_changed_on_disk = true
+		
+	}
+
+	async read(){
+		
+		if(this._file_changed_on_disk == false){
+			return this.data_json
+		}
+
+		try{ 
+			var datastring = await this.DW.loadTextFilefromDropbox(this.DW.dbx, this.filepath)
+			var filemeta = await this.DW.dbx.filesGetMetadata({path: this.filepath})
+			this.data_raw = datastring 
+			this.data_json = JSON.parse(datastring)
+			this.rev = filemeta.rev
+
+			return this.data_json
+		}
+		catch(error){
+			console.error('TwoWayFileBuffer.read() error: ' + error)
+			return undefined; 
+		}
+	}
+
+	async check_if_changed_on_disk(){
+		var filemeta = await this.DW.dbx.filesGetMetadata({path: this.filepath})
+		if(this.rev != filemeta.rev){
+			this._file_changed_on_disk = true 
+		}
+		else{
+			this._file_changed_on_disk = false 
+		}
+	}
+
+	async write_object_as_json(dataobj){
+		var datastr = JSON.stringify(TASK ,null,' ');
+		var response = await this.DW.dbx.filesUpload({
+				path: this.filepath,
+				contents: datastr,
+				mode: {[".tag"]: "overwrite"} })
+		var filemeta = await this.DW.dbx.filesGetMetadata({path:this.filepath})
+		this.rev = filemeta.rev
+	}
+
+}
 
 class DropboxWriter{
 
@@ -196,21 +247,6 @@ class DropboxWriter{
 	}
 
 	//================== LOAD JSON ==================//
-	async loadParametersfromDropbox(paramfile_path){
-		try{ 
-			var datastring = await this.loadTextFilefromDropbox(this.dbx, paramfile_path)
-			var filemeta = await this.dbx.filesGetMetadata({path: paramfile_path})
-			var data = JSON.parse(datastring)
-
-			var TASK_entry = data
-			var ParamFileRev = filemeta.rev
-			return [TASK_entry, ParamFileRev]; 
-		}
-		catch(error){
-			console.error('loadParametersfromDropbox() error: ' + error)
-			return undefined; 
-		}
-	}
 
 
 	async parseAutomatorFilefromDropbox(jsontxt_filepath){
@@ -433,7 +469,7 @@ class DropboxWriter{
 	}
 
 	//================== WRITE JSON ==================//
-	async saveTrialDatatoDropbox(SESSION, DEVICE, TASK_ARCHIVE, CANVAS, TRIAL, EVENT_TIMESTAMPS, save_to_debug_directory){
+	async saveTrialDatatoDropbox(save_to_debug_directory){
 		// Add request to queue 
 
 		var dataobj = [] 
@@ -489,7 +525,14 @@ class DropboxWriter{
 			
 			var starttime = SESSION.UnixTimestampAtStart
 
-			var header = 'x_pixels_left2right,y_pixels_top2bottom,touch_number,unix_timestamp_delta_from__'+starttime+',Tap_or_Drag\n'
+
+			var header='pageX,pageY'
+			header+=',clientXdelta_from_pageX,clientYdelta_from_pageY'
+			header+=',screenXdelta_from_pageX,screenYdelta_from_pageY'
+			header+=',radiusX,radiusY'
+			header+=',touch_update_number'
+			header+=',unix_timestamp_delta_from__'+starttime
+			header+=',Tap_or_Drag\n'
 
 			var response = await this.dbx.filesUpload({
 				path: savepath,
@@ -512,76 +555,9 @@ class DropboxWriter{
 		}
 	}
 
-	async saveParameterTexttoDropbox(parameter_text){
-		try{
-		    datastr = parameter_text
-
-		    var success = false 
-		    var i = 1; 
-		    var timeout_seed =  1000; 
-		    var max_retries = 10; 
-
-		    while(!success && i < max_retries){
-		    	try{
-					var response = await this.dbx.filesUpload({
-						path: ParamFilePath,
-						contents: datastr,
-						mode: {[".tag"]: "overwrite"} })
-							console.log("Successful parameter text upload. Size: " + response.size)
-							FLAGS.need2saveParameters = 0;
-				}
-				catch(error){
-					console.log(error)
-					console.log('Trying to write in '+(timeout_seed*i)+'ms...on try '+ i)
-					sleep(timeout_seed * i)
-					i++
-					continue; 
-				}
-				success = true
-			}
-		}
-		catch (error){
-			console.error(error)
-		}
-
-		try{
-			var filemeta = await this.dbx.filesGetMetadata({path: ParamFilePath})
-				if (ParamFileRev != filemeta.rev){
-					ParamFileRev = filemeta.rev
-
-					//console.log('Parameter file was updated. Rev=' + ParamFileRev)
-				}
-		}
-		catch(error) {
-			console.error(error)
-		}
-	}
 
 
-	async saveParameterstoDropbox() {
-		try{
-			var savepath = ParamFilePath
-		    var datastr = JSON.stringify(TASK ,null,' ');
-
-			var response = await this.dbx.filesUpload({
-				path: savepath,
-				contents: datastr,
-				mode: {[".tag"]: "overwrite"} })
-			
-			var filemeta = await this.dbx.filesGetMetadata({path: savepath})
-			if (ParamFileRev != filemeta.rev){
-				ParamFileRev = filemeta.rev
-			}
-			console.log("TASK written to disk as "+ParamFilePath+". Size: " + response.size)
-			return 0; //need2saveParameters
-		}
-		catch (error){
-			console.error(error)
-			return 1 //need2saveParameters
-		}
-	}
 	
-
 
 }
 

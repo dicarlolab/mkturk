@@ -15,11 +15,12 @@ TRIAL_NUMBER_FROM_TASKSTREAM_START = 0
 RewardDuration = 0 
 
 var ParamFilePath = ''; 
-var ParamFileRev = ''; // Tracks revision number of the TASK file on disk. 
 
 TASK_ARCHIVE_COUNTER = 0 // attached to trial data
 var TASK_ARCHIVE = []; // Array whose entries are objects that encapsulates state of the current task, read from Subject's Params file
 var TASK // Current 
+
+
 
 
 var EVENT_TIMESTAMPS = {}
@@ -35,25 +36,14 @@ EVENT_TIMESTAMPS.reinforcement_end = []
 
 
 var TRIAL = {} // Global that contains data variables that are incremented every trial, and are dumped to disk for scientific purposes.
-TRIAL.FixationGridIndex = []
-TRIAL.Sample = []
-TRIAL.Test = []
-TRIAL.Response = []
-TRIAL.CorrectItem = []
-TRIAL.Juice = []
-TRIAL.NReward = []
-TRIAL.AutomatorStage = []
-TRIAL.trial_num_Session = []
-TRIAL.trial_num_TaskStream = []
-TRIAL.reward_duration = []
-TRIAL.TASK_ARCHIVE_counter = []
+initialize_TRIAL()
 
 var DEVICE = {} // Does not change during a session on a particular device 
 DEVICE.BatteryLDT = []
 DEVICE.DevicePixelRatio = 1
 DEVICE.CanvasRatio = 
-DEVICE.XGridCenter = []
-DEVICE.YGridCenter = []
+DEVICE.XGridCenter = undefined
+DEVICE.YGridCenter = undefined
 DEVICE.source_ImageHeightPixels = NaN; 
 DEVICE.source_ImageWidthPixels = NaN;
 
@@ -90,7 +80,7 @@ CANVAS.offsettop= 0
 CANVAS.obj= []
 
 for (var i in CANVAS.names){
-	CANVAS.obj[CANVAS.names[i]]=document.getElementById("canvas" + CANVAS.names[i])
+	CANVAS.obj[CANVAS.names[i]]=document.getElementById(CANVAS.names[i])
 }
 
 
@@ -107,8 +97,6 @@ var datafiles=[];
 var displayoutofboundsstr=""
 
 
-FixationRewardMap = new RewardMap()
-ChoiceRewardMap = new RewardMap()
 
 
 //================ UPDATE VARIABLE FUNCTIONS ================//
@@ -134,23 +122,37 @@ function transition_from_debug_to_science_trials(){
 	TOUCHSTRING = ""
 	TOUCHSTRING_UDPATECOUNTER = 0
 	
+	initialize_TRIAL()
+	
+	TRIAL_NUMBER_FROM_SESSION_START = 0
+	CANVAS.TRIAL_NUMBER_FROM_TASKSTREAM_START = 0 // todo= read from dis
+	progressbar_names = [
+						'AutomatorLoadBar',
+						'ImageLoadBar',
+						'EpochBar',]
 
-	TRIAL.EventTimestamps = []
+	for (var _p in progressbar_names){
+		toggleProgressbar(0, progressbar_names[_p])
+	}
+
+	//toggleTextBox(0)
+
+
+	return 
+}
+
+function initialize_TRIAL(){
 	TRIAL.FixationGridIndex = []
 	TRIAL.Sample = []
 	TRIAL.Test = []
 	TRIAL.Response = []
 	TRIAL.CorrectItem = []
+	TRIAL.Juice = []
 	TRIAL.NReward = []
 	TRIAL.AutomatorStage = []
 	TRIAL.trial_num_Session = []
 	TRIAL.trial_num_TaskStream = []
 	TRIAL.reward_duration = []
 	TRIAL.TASK_ARCHIVE_counter = []
-
-	TRIAL_NUMBER_FROM_SESSION_START = 0
-	CANVAS.TRIAL_NUMBER_FROM_TASKSTREAM_START = 0 // todo= read from dis
-
-
-	return 
+	TRIAL.StartTime = []
 }

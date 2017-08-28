@@ -1,113 +1,83 @@
 
 
-class ScreenStateMachine{
-    constructor(){
-    }
-
-    get_initial_screen(){
-        return initial_screen
-    }
-
-    async monitor_subject_input(){
-
-        var emission = {}
-
-        var meaningful_xy = await this.current_screen.WaitForMeaningfulXY()
-        var meaningful_x = meaningful_xy[0]
-        var meaningful_y = meaningful_xy[1]
-
-
-
-        emission['juice'] = 0 
-        emission['next_screen'] = undefined 
-        emission['is_terminal'] = true
-
-        return emission
-
-    }
-
-}
-
 class RewardMap{
     constructor(){        
-        this._listener = {}
-        this._currentlylistening = false
+        this._touch_promise
+        this.boundingBoxes = []
+        this.reward_amounts = []
+
+        this._resolveFunc
+        this._errFunc
+
+        this.x = undefined
+        var _this = this
+
+
+        var boundingBoxes = this.boundingBoxes // 
+        var reward_amounts = this.reward_amounts // upon this._listener construction, does it point to the reference or is it constructed with a copy of the initiial (undefined) value?
+
+        this._listener = function(event){
+            _this.handleTouchEvent(event)
+        }  
+
+        this.add_event_listener()
     } 
 
-    create_reward_map_with_bounding_boxes(boundingBoxes, reward_amounts){
-        if (this._currentlylistening == true){
-            this.close_listener()
+    handleTouchEvent(event){
+        console.log(event)
+        var t = performance.now()
+        var x = event.targetTouches[0].pageX
+        var y = event.targetTouches[0].pageY
+        for (var box_index = 0; box_index<this.boundingBoxes.length; box_index++){
+            if (x <= this.boundingBoxes[box_index].x[1] 
+                && x >= this.boundingBoxes[box_index].x[0]
+                && y <= this.boundingBoxes[box_index].y[1] 
+                && y >= this.boundingBoxes[box_index].y[0]){
+                    
+                console.log(box_index, x, y, t)
+                var outcome = {
+                    "x":x, 
+                    "y":y, 
+                    "timestamp":t, 
+                    "juice":this.reward_amounts[box_index], 
+                    "region_index":box_index}
+
+                this._resolveFunc(outcome)
+            }
         }
+    }   
+
+
+
+    create_reward_map_with_bounding_boxes(boundingBoxes, reward_amounts){
+        this.boundingBoxes = boundingBoxes
+        this.reward_amounts = reward_amounts
         
-        var boundingBoxes = boundingBoxes
-        var reward_amounts = reward_amounts
-        var resolveFunc 
-        var errFunc 
-
-        this._touch_promise = new Promise(function(resolve, reject){
-            resolveFunc = resolve
-            errFunc = reject
-        })
-        this._listener['_touch_listener'] = function(event){
-                                            var t = performance.now()
-                                            var x = event.targetTouches[0].pageX
-                                            var y = event.targetTouches[0].pageY
-                                            for (var box_index = 0; box_index<boundingBoxes.length; box_index++){
-                                                if (x <= boundingBoxes[box_index].x[1] 
-                                                    && x >= boundingBoxes[box_index].x[0]
-                                                    && y <= boundingBoxes[box_index].y[1] 
-                                                    && y >= boundingBoxes[box_index].y[0]){
-                                                        
-                                                        //console.log(box_index, x, y, t)
-                                                        var outcome = {
-                                                            "x":x, 
-                                                            "y":y, 
-                                                            "timestamp":t, 
-                                                            "juice":reward_amounts[box_index], 
-                                                            "region_index":box_index}
-
-                                                        resolveFunc(outcome)
-                                                    }
-                                            }
-                                        }  
     }
 
 
 
-    async Promise_wait_until_active_response_then_return_juice(timeout_period){
-        // add timeout here 
-        this.add_event_listener()
+    async Promise_wait_until_active_response_then_return_juice(listener_id){
+        //this.add_event_listener()
+        var _this = this
+        this._touch_promise = new Promise(function(resolve, reject){
+            _this._resolveFunc = resolve
+            _this._errFunc = reject
+        })
         var outcome = this._touch_promise
         return outcome
     }
     add_event_listener(){
-        if (this._currentlylistening == true){
-            this.close_listener()
-        }
-        window.addEventListener('touchmove', this._listener._touch_listener)
-        window.addEventListener('touchstart', this._listener._touch_listener)
-        this._currentlylistening = true
+        console.log("ADDED event listener")
+        window.addEventListener('touchmove', this._listener, {passive: true})
+        window.addEventListener('touchstart', this._listener, {passive: true})
     }
 
     close_listener(){
-        window.removeEventListener('touchmove', this._listener._touch_listener)
-        window.removeEventListener('touchstart', this._listener._touch_listener)
-        this._currentlylistening = false 
+        window.removeEventListener('touchmove', this._listener)
+        window.removeEventListener('touchstart', this._listener)
     }
 
     
 
-}
-
-class Screen{
-    constructor(){
-        this.html_element_name
-        this.screen_name 
-        this.length
-        this.meaningful_locations = undefined // boolean image of meaningful screen regions; or bounding box
-    }
-
-    async buffer(){
-        return 
-    }
 }

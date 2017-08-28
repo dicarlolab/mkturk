@@ -41,4 +41,7 @@ var last_touch_save = performance.now()
 var TRIALDATA_SAVE_TIMEOUT_PERIOD_IN_SECONDS = 5 // 
 var TRIALDATA_SAVE_TIMEOUT_PERIOD = TRIALDATA_SAVE_TIMEOUT_PERIOD_IN_SECONDS * 1000 
 var last_trial_data_save = performance.now()
+
+var PARAMFILE_CHECK_TIMEOUT_PERIOD = 5000 // Check at most every five seconds 
+var last_paramfile_check = performance.now()
 // ------ todo: move into params file -

@@ -4,7 +4,12 @@
 
 // A value passed to next() will be treated as the result of the last yield expression that paused the generator.
 
+function resize_event_listener(){
+	// https://stackoverflow.com/questions/1664785/resize-html5-canvas-to-fit-window
+	
 
+	console.log('Resized body...')
+}
 
 function on_touchmove(event){
     response = touchgen.next(event)
@@ -190,11 +195,6 @@ function touchend_listener(event){
 	}
 } //touchend_listener
 
-function doneEditingParams_listener(event){
-	waitforClick.next(1);
-	return
-}
-
 function doneTestingTask_listener(event){
 	event.preventDefault()
 	//console.log("User is done testing. Start saving data");
@@ -215,8 +215,10 @@ function subjectlist_listener(event){
 
 async function sync_data_listener(event){
 	console.log("Called data save from sync button")
-	await DW.saveTrialDatatoDropbox(TASK_ARCHIVE, CANVAS, TRIAL, EVENT_TIMESTAMPS, FLAGS.debug_mode)
+	document.querySelector("button[name=SyncButton]").innerHTML = '....'
+	await DW.saveTrialDatatoDropbox(FLAGS.debug_mode)
 	await DW.saveTouchestoDropbox(FLAGS.debug_mode)
+	document.querySelector("button[name=SyncButton]").innerHTML = 'Save'
 
 	return 
 }
