@@ -3,6 +3,7 @@ async function runtrial(){
 
 writeTextToBox(TRIAL_NUMBER_FROM_SESSION_START)
 
+
 windowHeight = window.innerHeight
 || document.documentElement.clientHeight
 || document.body.clientHeight;
@@ -15,18 +16,16 @@ windowWidth = window.innerWidth
 
 
 console.log('windowWidth', windowWidth, 'windowHeight', windowHeight)
-
-
 // Reference: https://www.w3schools.com/js/js_window.asp
 
 
-if (TASK.Automator !=0){    
+if (TASK.Automator == 1){    
     TASK = await AM.monitorStage_State_and_Transition(TASK);
 }
 
 // Check if parameters need to be reloaded (e.g. because they changed on disk or because of the automator)
 if (FLAGS.need2loadParameters == 1 || INITIALIZE == true){
-
+    FLAGS.need2loadParameters = 0
     var old_ImageBagsSample = TASK.ImageBagsSample
     var old_ImageBagsTest = TASK.ImageBagsTest
     TASK = await TASK_buffer.read()
@@ -57,9 +56,8 @@ if (FLAGS.need2loadParameters == 1 || INITIALIZE == true){
     }
 } 
 
-// Check if images need to be reloaded. 
 
-if(TASK.Automator != 1){
+if(TASK.Automator == 0){
     if (FLAGS.need2loadImages == 1){
         var samplingStrategy = 'uniform_with_replacement'
         TQ = new TrialQueue(samplingStrategy, TASK.ImageBagsSample, TASK.ImageBagsTest, TASK.ObjectGridMapping, TASK.samplingRNGseed, TRIAL_NUMBER_FROM_TASKSTREAM_START)
@@ -70,6 +68,7 @@ else if(TASK.Automator == 1){
     console.log("TASK.CurrentAutomatorStage", TASK.CurrentAutomatorStage)
     TQ = AM.AutomatorPreBuffer.TrialQueue[TASK.CurrentAutomatorStage]
 } 
+
 
 if (INITIALIZE == true){
     INITIALIZE = false // todo: remove this 
@@ -85,10 +84,12 @@ if (INITIALIZE == true){
     DEVICE.source_ImageWidthPixels = representative_image.width
     DEVICE.source_ImageHeightPixels = representative_image.height
 
+    FixationRadius=(DEVICE.source_ImageWidthPixels/2)*TASK.FixationScale*DEVICE.CanvasRatio
+
+
     FLAGS.need2loadImages = 0;
 }
 
-FixationRadius=(DEVICE.source_ImageWidthPixels/2)*TASK.FixationScale*DEVICE.CanvasRatio
 funcreturn = defineImageGrid(TASK.NGridPoints, 
     DEVICE.source_ImageWidthPixels, 
     DEVICE.source_ImageHeightPixels, 
@@ -112,7 +113,8 @@ renderBlank(CANVAS.obj.blank);
      test_images, 
      testbag_indices, 
      test_correct_grid_index, 
-     test_grid_index_placements] = await TQ.get_trial(TRIAL_NUMBER_FROM_TASKSTREAM_START);
+     test_grid_index_placements, 
+     choice_reward_amounts] = await TQ.get_trial(TRIAL_NUMBER_FROM_TASKSTREAM_START);
 
 
 //============ AWAIT BUFFER CANVASES WITH SAMPLE & TEST IMAGES ============//
@@ -124,20 +126,6 @@ boundingBoxesChoice = await bufferChoiceScreen(test_images, test_grid_index_plac
 
 
 FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxesFixation, [0])
-
-
-var choice_reward_amounts = []
-for (var _r = 0; _r < boundingBoxesChoice.length; _r++){
-    // boundingBoxesChoice is in the same order as 
-    // test_grid_index_placements
-    if(test_grid_index_placements[_r] != test_correct_grid_index){
-        choice_reward_amounts[_r] = 0
-    }
-    else{
-        console.log("correct choice:", test_correct_grid_index)
-        choice_reward_amounts[_r] = 1
-    }
-}
 ChoiceRewardMap.create_reward_map_with_bounding_boxes(boundingBoxesChoice, choice_reward_amounts)
 
 var fixation_onset_timestamps = await displayScreenSequence(CANVAS.sequencepre,CANVAS.tsequencepre);
@@ -146,9 +134,6 @@ console.log('Awaiting fixation...')
 var fixation_outcome = await FixationRewardMap.Promise_wait_until_active_response_then_return_juice()
 console.log('Fixation reached')
 
-var fixation_x = fixation_outcome['x']
-var fixation_y = fixation_outcome['y']
-var fixation_juice = fixation_outcome['juice']
 
 //============== SHOW SAMPLE THEN TEST ==============//
 
@@ -159,10 +144,6 @@ var stimulus_timestamps = await displayScreenSequence(CANVAS.sequence,CANVAS.tse
 var outcome_from_touch_response_promise = ChoiceRewardMap.Promise_wait_until_active_response_then_return_juice()
 var timeout_promise = choiceTimeOut(TASK.ChoiceTimeOut)
 var choice_outcome = await Promise.race([outcome_from_touch_response_promise, timeout_promise])
-
-var choice_x = choice_outcome['x']
-var choice_y = choice_outcome['y']
-var choice_juice = choice_outcome['juice']
 
 
 //========= AWAIT TOUCH RESPONSE =========//
@@ -229,18 +210,31 @@ EVENT_TIMESTAMPS.choice_touch.push(choice_outcome['timestamp'])
 EVENT_TIMESTAMPS.reinforcement_onset.push(reinforcement_onset)
 EVENT_TIMESTAMPS.reinforcement_end.push(reinforcement_end)
 
-TRIAL.StartTime.push(fixation_outcome['timestamp'])
+
+
+var fixation_x = fixation_outcome['x']
+var fixation_y = fixation_outcome['y']
+var fixation_juice = fixation_outcome['juice']
+var choice_x = choice_outcome['x']
+var choice_y = choice_outcome['y']
+var choice_juice = choice_outcome['juice']
+
+
+
+TRIAL.FixationXYT.push([fixation_outcome['x'], fixation_outcome['y'], fixation_outcome['timestamp']])
+TRIAL.ChoiceXYT.push([choice_outcome['x'], choice_outcome['y'], choice_outcome['timestamp']])
+TRIAL.StartTime.push(Math.round(fixation_outcome['timestamp']))
 TRIAL.FixationGridIndex.push(TASK.StaticFixationGridIndex)
-TRIAL.Sample.push(samplebag_index)
+TRIAL.SampleBagIndex.push(samplebag_index)
 TRIAL.Test.push(testbag_indices)
 TRIAL.Response.push(chosen_grid_index)
 TRIAL.CorrectItem.push(test_correct_grid_index)
-TRIAL.Juice.push(choice_juice)
+TRIAL.Juice.push(choice_outcome['juice'])
 TRIAL.NReward.push(nreward)
 TRIAL.AutomatorStage.push(TASK.CurrentAutomatorStage)
 TRIAL.trial_num_Session.push(TRIAL_NUMBER_FROM_SESSION_START)
 TRIAL.trial_num_TaskStream.push(TRIAL_NUMBER_FROM_TASKSTREAM_START)
-TRIAL.reward_duration.push(RewardDuration)
+TRIAL.reward_duration.push(Math.round(1000*RewardDuration)/1000)
 TRIAL.TASK_ARCHIVE_counter.push(TASK_ARCHIVE_COUNTER)
 
 
@@ -273,9 +267,10 @@ if (_ms_since_last_touch_data_save > TOUCHSTRING_SAVE_TIMEOUT_PERIOD){
 }
 
 if(_ms_since_last_paramfile_check > PARAMFILE_CHECK_TIMEOUT_PERIOD){
-    console.log(_ms_since_last_touch_data_save/1000 +'s since last TOUCHSTRING save. '+TOUCHSTRING.length+' length TOUCHSTRING save requested.')
     TASK_buffer.check_if_changed_on_disk()
     last_paramfile_check = performance.now()
+    console.log(_ms_since_last_touch_data_save/1000 +'s since last paramfile check.')
+
 }
 
 

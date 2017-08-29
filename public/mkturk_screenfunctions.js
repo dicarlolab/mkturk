@@ -47,12 +47,12 @@ function refreshCanvasSettings(TASK_entry){
 
 	// Adjust length / toggle presence of gray screen between sample and test screens
 	if (TASK_entry.t_SampleOFF > 0){
-		CANVAS.sequence = ["blank", "sample","blank","test"]
-		CANVAS.tsequence = [0,100,100+TASK_entry.t_SampleON,100+TASK_entry.t_SampleON+TASK_entry.t_SampleOFF]; 
+		CANVAS.sequence = ["sample","blank","test"]
+		CANVAS.tsequence = [TASK_entry.t_SampleON,TASK_entry.t_SampleON+TASK_entry.t_SampleOFF, TASK_entry.t_SampleON+TASK_entry.t_SampleOFF]; 
 	}
 	else if (TASK_entry.t_SampleOFF <= 0 ){
 		CANVAS.sequence = ["blank","sample","test"]
-		CANVAS.tsequence = [0,100,100+TASK_entry.t_SampleON]; 
+		CANVAS.tsequence = [0,50,50+TASK_entry.t_SampleON]; 
 	}
 	
 	// Adjust length of reward screen based on reward amount 

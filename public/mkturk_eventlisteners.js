@@ -11,53 +11,7 @@ function resize_event_listener(){
 	console.log('Resized body...')
 }
 
-function on_touchmove(event){
-    response = touchgen.next(event)
-    console.log(event.type, response.value.x, response.value.y)
-    // response.value.{whatever}, not response.value["whatever"] for some reason
 
-    if (response.value.x > 200){
-    	console.log('DONE. Removing event listener...')
-    	window.removeEventListener('touchmove', on_touchmove)
-    }
-}
-
-
-function* SubjectXYGenerator(){
-	var touchevent 
-	var x = undefined
-	var y = undefined
-	var response = {}
-
-	var counter = 0
-
-	touchevent = yield {}
-
-	while(true){		
-		var t = Math.round(performance.now())
-		if (touchevent.type == "touchstart" || touchevent.type == "touchmove"){
-			x = touchevent.targetTouches[0].pageX;
-			y = touchevent.targetTouches[0].pageY;
-			response['is_waiting_for_response'] = false 
-			response['x'] = x
-			response['y'] = y
-
-			touchevent = yield response // the subsequent call of .next() will feed the LHS for the next iteration of the while loop					
-		}
-		else if (touchevent.type == "mousedown" || touchevent.type == "mousemove"){
-			x = touchevent.clientX
-			y = touchevent.clientY
-			response['is_waiting_for_response'] = false 
-			response['x'] = x
-			response['y'] = y
-			touchevent = yield response			
-		}
-
-		
-
-		
-	}
-}
 
 
 // function touchhold_promise(touchduration,boundingBoxes){
@@ -216,8 +170,13 @@ function subjectlist_listener(event){
 async function sync_data_listener(event){
 	console.log("Called data save from sync button")
 	document.querySelector("button[name=SyncButton]").innerHTML = '....'
+
+	var original_color = document.querySelector("button[name=SyncButton]").style['background-color']
+	document.querySelector("button[name=SyncButton]").style['background-color'] = '#ADFF97'
 	await DW.saveTrialDatatoDropbox(FLAGS.debug_mode)
 	await DW.saveTouchestoDropbox(FLAGS.debug_mode)
+	await SP.playSound(5) // Chime
+	document.querySelector("button[name=SyncButton]").style['background-color'] = original_color
 	document.querySelector("button[name=SyncButton]").innerHTML = 'Save'
 
 	return 

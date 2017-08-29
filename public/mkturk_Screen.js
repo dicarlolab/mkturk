@@ -24,7 +24,6 @@ class RewardMap{
     } 
 
     handleTouchEvent(event){
-        console.log(event)
         var t = performance.now()
         var x = event.targetTouches[0].pageX
         var y = event.targetTouches[0].pageY

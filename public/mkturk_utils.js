@@ -1,3 +1,8 @@
+function reloadPage(){
+  writeDebugMessage("RELOADING PAGE...")
+  location.reload(true)
+}
+
 (function(window){
   window.utils = {
     parseQueryString: function(str) {

@@ -137,14 +137,22 @@ function transition_from_debug_to_science_trials(){
 
 	//toggleTextBox(0)
 
+	// Remove reload button
+	document.querySelector("button[name=ReloadButton]").style.visibility = "hidden"
+
+	// Dim save button
+	document.querySelector("button[name=SyncButton]").style['background-color'] = "#808080"
+	document.querySelector("button[name=SyncButton]").style.opacity = 0.3
+
+
 
 	return 
 }
 
 function initialize_TRIAL(){
 	TRIAL.FixationGridIndex = []
-	TRIAL.Sample = []
-	TRIAL.Test = []
+	TRIAL.SampleBagIndex = []
+	TRIAL.TestBagIndices = []
 	TRIAL.Response = []
 	TRIAL.CorrectItem = []
 	TRIAL.Juice = []
@@ -155,4 +163,5 @@ function initialize_TRIAL(){
 	TRIAL.reward_duration = []
 	TRIAL.TASK_ARCHIVE_counter = []
 	TRIAL.StartTime = []
+	TRIAL.FixationXYT = []
 }

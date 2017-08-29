@@ -4,7 +4,7 @@ class SoundPlayer{
     // write playSound(filename)
 
       this.sounds = {
-        soundfile_suffixes: [0,1,2,3,4],
+        soundfile_suffixes: [0,1,2,3,4,5],
         buffer: [],
       }
 

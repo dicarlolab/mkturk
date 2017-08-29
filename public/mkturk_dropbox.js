@@ -44,9 +44,12 @@ class TwoWayFileBuffer{
 		var filemeta = await this.DW.dbx.filesGetMetadata({path: this.filepath})
 		if(this.rev != filemeta.rev){
 			this._file_changed_on_disk = true 
+			FLAGS.need2loadParameters = 1
+			console.log('Need 2 load new PARAMETERS!')
 		}
 		else{
 			this._file_changed_on_disk = false 
+			console.log('NO need to load new PARAMETERS!')
 		}
 	}
 
@@ -497,12 +500,7 @@ class DropboxWriter{
 				contents: datastr,
 				mode: {[".tag"]: "overwrite"} })
 				console.log(TASK.CurrentAutomatorStage+" BEHAVIOR FILE UPLOADED at "+savepath)
-			
-
 			}
-
-			
-
 		catch(error){
 			console.error(error)
 		}

@@ -6,6 +6,7 @@ class Automator{
 		this.trialhistory = []
 		this.samplingStrategy = samplingStrategy
 		this.__initial_trial_history_on_load = undefined
+		this.loop_automator = true // todo: move into settings
 
 	}
 
@@ -47,7 +48,13 @@ class Automator{
 			this.AutomatorPreBuffer['TrialQueue'] = {}; 
 
 
-			for (var a = TASK.CurrentAutomatorStage; a < this.automator_data.length; a++){
+			if(this.loop_automator == false){
+				var starting_load_stage = TASK.CurrentAutomatorStage
+			}
+			else{
+				var starting_load_stage = 0
+			}
+			for (var a = starting_load_stage; a < this.automator_data.length; a++){
 				writeDebugMessage("Loading stage"+a)
 				updateProgressbar((a+1)/this.automator_data.length * 100, "AutomatorLoadBar")
 				console.time('Stage '+a)
@@ -124,7 +131,6 @@ class Automator{
 
 		// ---------- CHANGE TASK.STUFF TO AUTOMATOR DATA [ NEXT_STAGE ] --------------------------------------- 
 
-		var loop_automator = true // todo: move into settings
 
 		if(pctcorrect >= MinPercentCriterion && ntrials >= MinTrialsCriterion){
 			TRIAL_NUMBER_FROM_TASKSTREAM_START = 0 // todo: read from disk 
@@ -137,15 +143,16 @@ class Automator{
 				// Stay in current stage settings, and 
 				// either turn off automator, or start over from beginning
 
-				if(loop_automator == false){ 
+				if(this.loop_automator == false){ 
 					TASK.Automator = 0; 
 					TASK.CurrentAutomatorStage = 'off';
 					console.log('COMPLETED FINAL STAGE, TURNING AUTOMATOR OFF')
 					console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject completed the final stage '+(i_current_stage)+' of '+(this.automator_data.length-1)+' (zero indexing) of automator.')
 					return TASK
 				}
-				else if(loop_automator == true){
+				else if(this.loop_automator == true){
 					TASK.CurrentAutomatorStage = 0
+					i_current_stage = -1
 					console.log("COMPLETED FINAL STAGE, LOOPING AUTOMATOR:")
 					
 				}

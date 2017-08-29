@@ -130,13 +130,26 @@ async get_trial(i){
 		test_images.push(await this.IB.get_by_name(test_filenames[i]))
 	}
 
+
+	var choice_reward_amounts = []
+	for (var _r = 0; _r < test_grid_index_placements.length; _r++){
+	    if(test_grid_index_placements[_r] != test_correct_grid_index){
+	        choice_reward_amounts[_r] = 0
+	    }
+	    else{
+	        console.log("correct choice:", test_correct_grid_index)
+	        choice_reward_amounts[_r] = 1
+    	}
+    }
+
 	return [sample_image,
 	 samplebag_index, 
 	 sample_grid_index_placement, 
 	 test_images, 
 	 testbag_indices, 
 	 test_correct_grid_index, 
-	 test_grid_index_placements]
+	 test_grid_index_placements, 
+	 choice_reward_amounts]
 }
 
 selectSampleImage(samplebag_labels, SamplingStrategy, _RNGseed){
