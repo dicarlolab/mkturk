@@ -161,11 +161,24 @@ function doneTestingTask_listener(event){
 
 function subjectlist_listener(event){
 	//console.log("subject selected");
-	SESSION.Subject = subjectlist[this.value];
+
+	SESSION.SubjectFilePath = subject_filepath_list[this.value]
+	
 	subjectdialog.close();
 	waitforClick.next(1);
 	return
 }
+
+function experimentlist_listener(event){
+
+	SESSION.ExperimentFilePath = experiment_file_list[this.value]
+	
+	experiment_dialog.close();
+	waitforClick.next(1);
+	return
+}
+
+
 
 async function sync_data_listener(event){
 	console.log("Called data save from sync button")
@@ -173,8 +186,8 @@ async function sync_data_listener(event){
 
 	var original_color = document.querySelector("button[name=SyncButton]").style['background-color']
 	document.querySelector("button[name=SyncButton]").style['background-color'] = '#ADFF97'
-	await DW.saveTrialDatatoDropbox(FLAGS.debug_mode)
-	await DW.saveTouchestoDropbox(FLAGS.debug_mode)
+	await DWr.saveTrialData(FLAGS.debug_mode)
+	await DWr.saveTouches(FLAGS.debug_mode)
 	await SP.playSound(5) // Chime
 	document.querySelector("button[name=SyncButton]").style['background-color'] = original_color
 	document.querySelector("button[name=SyncButton]").innerHTML = 'Save'
@@ -185,6 +198,32 @@ async function sync_data_listener(event){
 //================== PROMISE STATES ==================//
 // Promise: Select Subject
 function subjectIDPromise(){
+	var resolveFunc
+	var errFunc
+	p = new Promise(
+		function(resolve,reject){
+			resolveFunc = resolve;
+			errFunc = reject;
+		}).then(
+		function(resolveval){
+			//console.log('User selected ' + resolveval)
+		});
+	
+	function *waitforclickGenerator(){
+		var imclicked =[-1];
+		while (true){
+			imclicked = yield imclicked;
+			resolveFunc(imclicked);
+		}
+	}
+
+	waitforClick = waitforclickGenerator(); // start async function
+	waitforClick.next(); //move out of default state
+	return p;
+}
+
+// Select Experiment file
+function ExperimentFile_Promise(){
 	var resolveFunc
 	var errFunc
 	p = new Promise(

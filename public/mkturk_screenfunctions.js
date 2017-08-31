@@ -1,12 +1,13 @@
 
 
 
-function writeTextToBox(s){
+function writeToTrialCounterDisplay(s){
 	var elem = document.getElementById('TrialCounter')
 	elem.innerHTML = s; // text
 }
 
-function writeDebugMessage(s){
+function wdm(s){
+	console.log(s)
 	var elem = document.getElementById('DebugMessageTextBox')
 	elem.innerHTML = s; // text
 }
@@ -21,12 +22,12 @@ function toggleElement(on_or_off, element_id){
 	}
 }
 
-function updateProgressbar(pct, bar_id) {
+function updateProgressbar(pct, bar_id, text_prefix) {
 	var max_bar_width = 30
     var elem = document.getElementById(bar_id); 
 
 	elem.style.width = max_bar_width*pct/100+"%" // pct + '%'; 
-	elem.innerHTML = Math.round(pct) + '%'; // text
+	elem.innerHTML = text_prefix + ' ' + Math.round(pct) + '%'; // text
 }
 
 function toggleProgressbar(on_or_off, bar_id){
@@ -42,17 +43,17 @@ function toggleProgressbar(on_or_off, bar_id){
 
 
 //================== LOAD STATUS DISPLAY ==================//
-function refreshCanvasSettings(TASK_entry){
+function refreshCanvasSettings(EXPERIMENT_entry){
 	// TODO: cleanup CANVAS; separate canvas ID from sequence logic; 'tsequence' variables coded by length rather than absolute time
 
 	// Adjust length / toggle presence of gray screen between sample and test screens
-	if (TASK_entry.t_SampleOFF > 0){
+	if (EXPERIMENT_entry.t_SampleOFF > 0){
 		CANVAS.sequence = ["sample","blank","test"]
-		CANVAS.tsequence = [TASK_entry.t_SampleON,TASK_entry.t_SampleON+TASK_entry.t_SampleOFF, TASK_entry.t_SampleON+TASK_entry.t_SampleOFF]; 
+		CANVAS.tsequence = [EXPERIMENT_entry.t_SampleON,TASK_entry.t_SampleON+EXPERIMENT_entry.t_SampleOFF, EXPERIMENT_entry.t_SampleON+EXPERIMENT_entry.t_SampleOFF]; 
 	}
-	else if (TASK_entry.t_SampleOFF <= 0 ){
+	else if (EXPERIMENT_entry.t_SampleOFF <= 0 ){
 		CANVAS.sequence = ["blank","sample","test"]
-		CANVAS.tsequence = [0,50,50+TASK_entry.t_SampleON]; 
+		CANVAS.tsequence = [0,50,50+EXPERIMENT_entry.t_SampleON]; 
 	}
 	
 	// Adjust length of reward screen based on reward amount 
@@ -202,6 +203,8 @@ function defineImageGrid(ngridpoints, source_image_width, source_image_height, g
 	var xgridcent =[] 
 	var ygridcent =[]
 
+	console.log('defineImageGrid')
+	console.log(ngridpoints, source_image_width, source_image_height, gridscale)
 	var cnt=0;
 	for (var i=1; i<=ngridpoints; i++){
 		for (var j=1; j<=ngridpoints; j++){
@@ -210,7 +213,8 @@ function defineImageGrid(ngridpoints, source_image_width, source_image_height, g
 			cnt++;
 		}
 	}
-
+	console.log(windowWidth, windowHeight, CANVAS.offsetleft, CANVAS.offsettop, DEVICE.CanvasRatio, 
+		DEVICE.DevicePixelRatio)
 	//center x & y grid within canvas
 	var canvas_center_x = (windowWidth - CANVAS.offsetleft)*DEVICE.CanvasRatio*DEVICE.DevicePixelRatio/2
 	var dx = canvas_center_x - DEVICE.CanvasRatio*ngridpoints/2*source_image_width*gridscale; //left side of grid
@@ -220,7 +224,6 @@ function defineImageGrid(ngridpoints, source_image_width, source_image_height, g
 		xgridcent[i]=Math.round(unitgrid_x[i]*source_image_width*gridscale*DEVICE.CanvasRatio + dx);
 		ygridcent[i]=Math.round(unitgrid_y[i]*source_image_height*gridscale*DEVICE.CanvasRatio + dy);
 	}
-
 	return [canvas_center_x, canvas_center_y, xgridcent, ygridcent]
 }
 
@@ -229,7 +232,7 @@ async function bufferChoiceScreen(test_images, test_image_grid_indices){
 	var boundingBoxesChoice = [] // todo: move out of here
 	for (i = 0; i<test_images.length; i++){
 		boundingBoxesChoice.push({"x":[], "y":[]})
-		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], TASK.TestScale, CANVAS.obj.test); 
+		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], SubjectSettings['TestScale'], CANVAS.obj.test); 
 		boundingBoxesChoice[i].x = funcreturn[0]
 		boundingBoxesChoice[i].y = funcreturn[1]
 	}
@@ -244,7 +247,7 @@ async function bufferStimulusScreen(sample_image, sample_image_grid_index){
 	context.fillStyle="#7F7F7F";  // Gray out before buffering sample
 	
 	var boundingBoxesSample = [{"x":[], "y":[]}]
-	funcreturn = await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, CANVAS.obj.sample)
+	funcreturn = await renderImageOnCanvas(sample_image, sample_image_grid_index, SubjectSettings['SampleScale'], CANVAS.obj.sample)
 	boundingBoxesSample[0].x = funcreturn[0]
 	boundingBoxesSample[0].y = funcreturn[1]
 	return boundingBoxesSample
@@ -302,7 +305,6 @@ function displayScreenSequence(sequence,tsequence){
 	var frames_left_to_animate = sequence.length
 
 	function updateCanvas(timestamp){
-
 		// If start has not been set to a float timestamp, set it now.
 		if (!start) start = timestamp;
 
@@ -381,7 +383,7 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 	if (outofbounds == 1){
 		outofbounds_str = outofbounds_str + "<br>" + "Fixation dot is out of bounds"
 	}
-	displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
+	displayPhysicalSize(SubjectSettings['Tablet'],displaycoord,canvasobj)
 
 	
 	//Sample Image Bounding Box
@@ -396,7 +398,7 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 	if (outofbounds == 1){
 		outofbounds_str = outofbounds_str + "<br>" + "Sample Image is out of bounds"
 	}
-	displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
+	displayPhysicalSize(SubjectSettings['Tablet'],displaycoord,canvasobj)
 
 
 	//Test Image Bounding Box(es)
@@ -412,7 +414,7 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 		if (outofbounds == 1){
 			outofbounds_str = outofbounds_str + "<br>" + "Test Image" + i + " is out of bounds"
 		}
-		displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
+		displayPhysicalSize(SubjectSettings['Tablet'],displaycoord,canvasobj)
 	}
 	if (outofbounds_str == ''){
 		outofbounds_str = 'All display elements are fully visible'

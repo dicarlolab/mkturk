@@ -1,12 +1,5 @@
 //return whether user was redirected here after authenticating
-function isAuthenticated(){
-	return !!getAccessTokenFromUrl()
-}
 
-//parse access token from url if in urls hash
-function getAccessTokenFromUrl(){
-	return utils.parseQueryString(window.location.hash).access_token
-}
 
 class TwoWayFileBuffer{
 	constructor(DW, filepath){
@@ -26,7 +19,7 @@ class TwoWayFileBuffer{
 		}
 
 		try{ 
-			var datastring = await this.DW.loadTextFilefromDropbox(this.DW.dbx, this.filepath)
+			var datastring = await this.DW.loadTextFilefromDropbox(this.filepath)
 			var filemeta = await this.DW.dbx.filesGetMetadata({path: this.filepath})
 			this.data_raw = datastring 
 			this.data_json = JSON.parse(datastring)
@@ -69,44 +62,6 @@ class DropboxWriter{
 
 	constructor(dbx){
 		this.dbx = dbx
-
-		var datestr = SESSION.CurrentDate.toISOString();
-		datestr = datestr.slice(0,datestr.indexOf("."))
-
-		this._touch_filename_suffix = '_touch_'+datestr+'__0.txt'
-	}
-
-	async getMostRecentBehavioralFilePathsFromDropbox(num_files_to_get, subject_id, save_directory){
-		var file_list = []
-		try{
-
-
-			// If folder does not end with /, add it. 
-			if (save_directory.endsWith('/') == false){ 
-				save_directory = save_directory + '/'
-			}
-			var response = await this.dbx.filesListFolder({path: save_directory})
-			//console.log("Success: read directory "+save_directory)
-
-			var q2=0;
-			for (var q = 0; q <= response.entries.length-1; q++){
-				if (response.entries[q][".tag"] == "file" && response.entries[q].name.indexOf(subject_id) != -1){
-					file_list[q2] = response.entries[q].path_display
-					q2++;
-				}
-			}
-
-			// [oldest,...,most recent]
-			file_list.sort();
-
-			// Return most recent files 
-			var num_files = file_list.length
-			return file_list.slice(num_files - num_files_to_get, num_files)
-		}
-		catch (error) {
-			console.error(error)
-		}
-
 	}
 
 	async loadImageBagPathsParallel(imagebagroot_s){
@@ -127,7 +82,52 @@ class DropboxWriter{
 		} //for i labels
 		return [bagitems_paths, bagitems_labels] 
 	}
+	async listdir(directory_path){
+		var iteration_limit = 100
 
+		var file_list = []
+
+		try{
+			var entries = []
+			var response = await dbx.filesListFolder({path: directory_path, 
+												  recursive: true}) 
+			entries.push(... response.entries)
+
+			// Use response.has_more to propagate 
+			var num_iterations = 0
+			
+			while(response.has_more == true){
+				response = await dbx.filesListFolderContinue(response.cursor)
+				entries.push(... response.entries)
+
+				num_iterations = num_iterations + 1 
+				if(num_iterations > iteration_limit)
+					{throw 'Hit iteration limit of '+iteration_limit+'. Check your imagebag directory is not insanely large.'}
+			}
+
+			
+			for (var q = 0; q <= entries.length-1; q++){
+				if (entries[q][".tag"] == "file") {
+					file_list.push(entries[q].path_display) //'/'+entries[q].name)
+				}
+			}
+
+			datafiles.sort(function (a,b){
+				if (a > b){
+					return -1;
+				}
+				if (a < b){
+					return 1;
+				}
+				return 0;
+			}); //sort in descending order
+
+			return file_list
+		}
+		catch (error) {
+			console.error(error)
+		}
+	}
 
 	async loadImageBagPaths(dbx, getImageListDropboxRecursive, imagebagroot_s,idx) //(imagebagroot_s)
 	{
@@ -229,46 +229,30 @@ class DropboxWriter{
 		}
 	}
 
-	//================== CHECK FILE REV ==================//
-	async checkIfFileChangedOnDisk(_Filepath, _FileRevisionHash){
-		try{
-			var filemeta = await this.dbx.filesGetMetadata({path: _Filepath})
-			if (_FileRevisionHash != filemeta.rev){
-				_FileRevisionHash = filemeta.rev
-				console.log('File '+_Filepath+ ' on disk was changed. New rev =' + _FileRevisionHash)
-				console.log('checkIfFileChangedOnDisk', 1)
-				return 1
-			}
-			else{
-				return 0
-			}
-		}
-		catch(error) {
-			console.error(error)
-			return 1
-		}
-	}
+
 
 	//================== LOAD JSON ==================//
 
 
-	async parseAutomatorFilefromDropbox(jsontxt_filepath){
+	async readJSONfromDropbox(jsontxt_filepath){
 		// From a JSON.txt of the format: 
 		// [{param:val, param:val}, {param:val, param:val}]
 
 		// Returns an array of identical format
-		console.log('Starting load of automator file from Dropbox:'+jsontxt_filepath)
-		var datastring = await this.loadTextFilefromDropbox(this.dbx, jsontxt_filepath)
+		console.time('Loaded text file from Dropbox:'+jsontxt_filepath)
+		var datastring = await this.loadTextFilefromDropbox(jsontxt_filepath)
 
 		var data = JSON.parse(datastring);
-		console.log('Successfully loaded automator file from Dropbox:'+jsontxt_filepath)
+		console.timeEnd('Loaded text file from Dropbox:'+jsontxt_filepath)
 		return data
 	}
 
 
-	loadTextFilefromDropbox(dbx, textfile_path){
+	loadTextFilefromDropbox(textfile_path){
+		var _this = this
 		return new Promise(function(resolve,reject){
-			dbx.filesDownload({path: textfile_path}).then(function(data){
+			_this.dbx.filesDownload({path: textfile_path})
+			.then(function(data){
 				console.log("Read textfile "+textfile_path+" of size " + data.size)
 
 				var reader = new FileReader()
@@ -278,198 +262,57 @@ class DropboxWriter{
 				}
 				reader.readAsText(data.fileBlob)
 			})
-		.catch(function(error){
+			.catch(function(error){
+				console.error(error)
+			})
+		})
+	}
+
+
+
+	
+
+
+	
+	
+		
+
+	async write_string(datastr, filepath){
+		try{
+			var response = await this.dbx.filesUpload({
+					path: filepath,
+					contents: datastr,
+					mode: {[".tag"]: "overwrite"} })
+		}
+		catch(error){
+			console.log('DW.write_string:', error)
+		}
+	}
+	async checkpointTaskStreamState(TaskStreamState, save_to_debug_directory){
+		var checkpoint_filename = this.checkpoint_namehash(SUBJECT.SubjectID, EXPERIMENT)
+		var checkpoint_string = JSON.stringify(TaskStreamState)
+		
+		try{
+			if (save_to_debug_directory == 0){
+				var dirpath = CHECKPOINT_DIRPATH
+			}
+			else { // In debug mode
+				var dirpath = _debug_CHECKPOINT_DIRPATH
+			}
+			var savepath = join([dirpath,checkpoint_filename])
+			var response = await this.dbx.filesUpload({
+				path: savepath,
+				contents: checkpoint_string,
+				mode: {[".tag"]: "overwrite"} })
+				console.log(checkpoint_filename+" CHECKPOINT UPLOADED at "+savepath)
+			}
+		catch(error){
 			console.error(error)
-		})
-		})
+		}
 	}
 
 
 
-	// MDN using files from web applications -->
-	//   https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
-	// Why createObjectUrl and advantages of blob urls --> 
-	//   http://stackoverflow.com/questions/20950791/html5s-file-api-blob-usages
-
-	//================== LOAD AUDIO ==================//
-
-
-
-	//================== LOAD IMAGE ==================//
-	async loadBagfromDropbox(imagebags_parameter){
-
-		// Locate all .png in directory and subdirectories specified in imagebags_parameter
-		// Return in ONE 1-dimensional array, along with label vector that indexes given imagbags_order
-		try{
-			var funcreturn = await this.loadImageBagPaths(this.dbx, this.getImageListDropboxRecursive, imagebags_parameter); 
-		}
-		catch(error){
-			console.log('Path loading failed', error)
-		}
-		var imagebag_paths = funcreturn[0]
-		var imagebag_labels = funcreturn[1] 
-
-		// Load all .png blobs into an array. 
-		// Todo: fix array load (promises elements aren't actually fulfilled)
-		try{
-			var imagebag = await this.loadImageArrayfromDropbox(imagebag_paths)
-		}
-		catch(error){
-			console.log('Image array load failed', error)
-		}
-
-		console.log('Done loading bag: '+imagebag.length+' out of '+imagebag_paths.length+ ' images loaded successfully.')
-		return [imagebag, imagebag_labels, imagebag_paths]
-	}
-
-
-	async loadImageArrayfromDropbox(imagepathlist){
-		try{
-			var MAX_SIMULTANEOUS_REQUESTS = 500 // Empirically chosen based on our guess of Dropbox API's download request limit in a "short" amount of time.
-			var MAX_TOTAL_REQUESTS = 3000 // Empirically chosen
-
-			if (imagepathlist.length > MAX_TOTAL_REQUESTS) {
-				throw "Under the Dropbox API, cannot load more than "+MAX_TOTAL_REQUESTS+" images at a short time period. You have requested "
-				+imagepathlist.length+". Consider using an image loading strategy that reduces the request rate on Dropbox."
-				return 
-			}
-
-			if (imagepathlist.length > MAX_SIMULTANEOUS_REQUESTS){
-				console.log('Chunking your '+ imagepathlist.length+' image requests into '+Math.ceil(imagepathlist.length / MAX_SIMULTANEOUS_REQUESTS)+' chunks of (up to) '+MAX_SIMULTANEOUS_REQUESTS+' each. ')
-				var image_array = []
-
-				for (var i = 0; i < Math.ceil(imagepathlist.length / MAX_SIMULTANEOUS_REQUESTS); i++){
-
-					var lb = i*MAX_SIMULTANEOUS_REQUESTS; 
-					var ub = i*MAX_SIMULTANEOUS_REQUESTS + MAX_SIMULTANEOUS_REQUESTS; 
-					var partial_pathlist = imagepathlist.slice(lb, ub);
-
-					// var partial_image_requests = partial_pathlist.map(loadImagefromDropbox);
-					var partial_image_requests = []
-					for (var j = 0; j<partial_pathlist.length; j++){
-						partial_image_requests.push(this.loadImagefromDropbox(partial_pathlist[j]))
-					}
-
-					var partial_image_array = await Promise.all(partial_image_requests)
-					image_array.push(... partial_image_array); 
-				}
-				
-			}
-			else { 
-				var image_requests = imagepathlist.map(this.loadImagefromDropbox); 
-				var image_array = await Promise.all(image_requests)
-			}
-			return image_array
-		}
-		catch(err){
-			console.log(err)
-		}
-
-	}
-
-
-	async loadImagefromDropbox(imagepath){
-		// Loads and returns a single image located at imagepath into an Image()
-		// Upon failure (e.g. from Dropbox API limit), will retry up to MAX_RETRIES. 
-		// Will wait between retries with linear increase in waittime between tries. 
-		return new Promise(
-			function(resolve, reject){
-				try{
-					var MAX_RETRIES = 5 
-					var backoff_time_seed = 500 // ms; is multiplied by retry number. 
-					var retry_number = 0; 
-					try{
-						dbx.filesDownload({path: imagepath}).then( 
-							function(data){
-								var data_src = window.URL.createObjectURL(data.fileBlob); 	
-								var image = new Image(); 
-
-								image.onload = function(){
-									//console.log('Loaded: ' + (imagepath));
-									resolve(image)
-									}
-								image.src = data_src
-							}
-						)
-					}
-					catch(error){
-						retry_number = retry_number + 1; 
-						console.log(error)
-						console.log('On retry '+retry_number)
-						sleep(backoff_time_seed * retry_number)
-						//continue
-					}	
-				}
-				catch(error){
-					console.log(error)
-					resolve(0)
-				}
-			}
-		)
-	}
-	async readTrialHistoryFromDropbox(ndatafiles2read){
-		var subject_behavior_save_directory = TRIAL_DATA_SAVEPATH + SESSION.Subject
-		
-		try{
-				await dbx.filesGetMetadata({"path":subject_behavior_save_directory, "include_deleted":false})
-			}
-		catch(error){
-			console.log(error)
-			console.log("Subject save directory does not exist...making one at "+subject_behavior_save_directory)
-			await dbx.filesCreateFolder({"path":subject_behavior_save_directory})
-		}
-
-		 var filepaths = await this.getMostRecentBehavioralFilePathsFromDropbox(ndatafiles2read, SESSION.Subject, subject_behavior_save_directory)
-		
-
-		var trialhistory = {}
-		trialhistory.trainingstage = []
-		trialhistory.starttime = []
-		trialhistory.response = []
-		trialhistory.correct = []
-		trialhistory.trialnumber = []
-
-		if (typeof filepaths == "string"){
-			filepaths = [filepaths]
-		}
-
-		// Sort in ascending order, such that the OLDEST file is FIRST in trialhistory 
-		// trialhistory: [oldest TRIALs... most recent TRIALs]
-		filepaths.sort()
-
-		// Iterate over files and add relevant variables
-		for (var i = 0; i< filepaths.length; i++){
-			var datastring = await DW.loadTextFilefromDropbox(dbx, filepaths[i])
-			var data = JSON.parse(datastring)
-
-		
-
-
-			var session_data = data[0]
-			var UnixTimeStampAtStart = session_data.UnixTimeStampAtStart
-			var task_archive_data = data[2]
-			var trial_data = data[4]
-
-			var numTRIALs = trial_data.Response.length; 
-			// Iterate over TRIALs
-			for (var i_trial = 0; i_trial<numTRIALs; i_trial++){
-				// Correct/incorrect TRIAL
-				var correct = Number(trial_data.Response[i_trial] == trial_data.CorrectItem[i_trial])
-				trialhistory.correct.push(correct)
-
-				// Current automator stage 
-				var current_stage = stageHash(task_archive_data[task_archive_data.length-1])
-				trialhistory.trainingstage.push(current_stage)
-
-				// Start time (fixation dot appears) of trial 
-				var starttime = UnixTimeStampAtStart + trial_data.StartTime[i_trial]
-				trialhistory.starttime.push(starttime)
-
-			}
-		}
-		console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
-		return trialhistory
-	}
 
 	//================== WRITE JSON ==================//
 	async saveTrialDatatoDropbox(save_to_debug_directory){
@@ -480,7 +323,7 @@ class DropboxWriter{
 		dataobj.push(DEVICE)
 		dataobj.push(TASK_ARCHIVE)
 		dataobj.push(CANVAS)
-		dataobj.push(TRIAL)
+		dataobj.push(TRIAL_BEHAVIOR)
 		dataobj.push(EVENT_TIMESTAMPS)
 		var datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
 
@@ -508,6 +351,11 @@ class DropboxWriter{
 
 	async saveTouchestoDropbox(save_to_debug_directory) {
 		try{
+			var datestr = SESSION.CurrentDate.toISOString();
+			datestr = datestr.slice(0,datestr.indexOf("."))
+			this._touch_filename_suffix = '_touch_'+datestr+'__0.txt'
+
+
 			
 			if (save_to_debug_directory == 0){
 				var root_savedir = TOUCH_DATA_SAVEPATH+SESSION.Subject+'/'

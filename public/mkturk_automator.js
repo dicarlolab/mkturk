@@ -1,62 +1,45 @@
 
 
+
 class Automator{
-	constructor(samplingStrategy){
-		writeDebugMessage("Initializing automator...")
-		this.trialhistory = []
+	constructor(automator_data, samplingStrategy, DIO){
+		wdm("Initializing automator...")
+		this.automator_data = automator_data
+		this.TaskStreamState = undefined
 		this.samplingStrategy = samplingStrategy
-		this.__initial_trial_history_on_load = undefined
+		this.__initial_TaskStreamState = undefined
 		this.loop_automator = true // todo: move into settings
+		this.DIO = DIO // Disk I/O
 
+		this.TASKARCHIVE = []
+		this.TASK_ARCHIVE_COUNTER = 0
+	
+		this.TQs = []
 	}
 
-	_populate_default(a, property){
-		if (this.automator_data[a].hasOwnProperty(property)){
-			//console.log('Found '+property+' in automator data')
-			var _property = this.automator_data[a][property]
-		}
-		else if(property == 'trial_num_TaskStream'){
-			//console.log('Reverting to 0 for trial_num_TaskStream')
-			var _property = 0
-		}
-		else{
-			//console.log('Reverting to TASK setting for '+property)
-			var _property = TASK[property]
-		}
-		return _property
-	}
-
-	async check_if_changed_on_disk(){
-
-	}
 	async build(num_prebuffer_trials){
 		try{
 
-			this.trialhistory = await DW.readTrialHistoryFromDropbox(ndatafiles2read);
-			writeDebugMessage("Read trial history")
-			this.__initial_trial_history_on_load = JSON.parse(JSON.stringify(this.trialhistory));
+			this.TaskStreamState = await this.DIO.read_textfile()
+			wdm("Read TaskStream checkpoint.")
+			this.__initial_TaskStreamState = JSON.parse(JSON.stringify(this.TaskStreamState));
 
-			// trialhistory.trainingstage 
-			// trialhistory.starttime
-			// trialhistory.response 
-			// trialhistory.correct 
-			// trialhistory.trialnumber 		
-			this.automator_data = await DW.parseAutomatorFilefromDropbox(TASK.AutomatorFilePath)
-			writeDebugMessage("Read automator file")
+			//this.automator_data = await this.DW.readJSONfromDropbox(TASK.AutomatorFilePath)
+			//wdm("Read automator file")
 
 			this.AutomatorPreBuffer = {}
 			this.AutomatorPreBuffer['TrialQueue'] = {}; 
 
 
 			if(this.loop_automator == false){
-				var starting_load_stage = TASK.CurrentAutomatorStage
+				var starting_load_stage = this.TaskStreamState['current_stage_index']
 			}
 			else{
 				var starting_load_stage = 0
 			}
 			for (var a = starting_load_stage; a < this.automator_data.length; a++){
-				writeDebugMessage("Loading stage"+a)
-				updateProgressbar((a+1)/this.automator_data.length * 100, "AutomatorLoadBar")
+				wdm("Loading stage"+a)
+				updateProgressbar((a+1)/this.automator_data.length * 100, "AutomatorLoadBar", 'Stages loaded:')
 				console.time('Stage '+a)
 
 
@@ -78,27 +61,175 @@ class Automator{
 				this.AutomatorPreBuffer['TrialQueue'][a].nickname = 'stage'+a+' trial queue'
 				console.timeEnd('Loaded stage '+a)
 			}
-			writeDebugMessage("Done constructing automator")
+			wdm("Done constructing automator")
 			console.log('Done prebuffering automator stages.')
+
+			return 
 		}
 		catch(error){
-			writeDebugMessage(error)
+			wdm(error)
 			console.error(error)
 		}
 	}
 
-	async resetToInitialLoadState(){
-		this.trialhistory = this.__initial_trial_history_on_load
-		this.__initial_trial_history_on_load = undefined
-	}
-	async monitorStage_State_and_Transition(TASK){
+	get_trial(trial_number_from_session_start){
+		var trial = {}
 
+		var sample_grid_index_placement
+		var test_images
+		var testbag_indices
+		var test_correct_grid_index
+		var test_grid_index_placements
+		var choice_reward_amounts
+
+		[sample_grid_index_placement,
+		test_images,
+		testbag_indices,
+		test_correct_grid_index,
+		test_grid_index_placements,
+		choice_reward_amounts] = this.TQs[this.current_stage].get_trial(this.current_taskstream_number)
+
+
+		trial['sample_image']=sample_image // image actual =
+		trial['samplebag_index']=samplebag_index // image in sampelbag paths=
+		trial['sample_grid_index_placement']=sample_grid_index_placement // =
+		trial['test_images']=test_images
+		trial['testbag_indices']=testbag_indices
+		trial['test_correct_grid_index']=test_correct_grid_index
+		trial['test_grid_index_placements']=test_grid_index_placements
+		trial['choice_reward_amounts']=choice_reward_amounts
+
+		return trial 
+	}
+
+	update_state(TRIAL_BEHAVIOR){
+		var met_transition_criterion = check_transition_criterion(TRIAL_BEHAVIOR)
+		
+
+		return 
+	}
+
+	async checkpoint(){
+
+		function _savecheckpoint(){
+			console.log('hi')
+		}
+
+		while(true){
+			setTimeout(10000)
+			_savecheckpoint()
+		}
+
+	}
+	
+	_populate_default(a, property){
+		if (this.automator_data[a].hasOwnProperty(property)){
+			//console.log('Found '+property+' in automator data')
+			var _property = this.automator_data[a][property]
+		}
+		else if(property == 'trial_num_TaskStream'){
+			//console.log('Reverting to 0 for trial_num_TaskStream')
+			var _property = 0
+		}
+		else{
+			//console.log('Reverting to TASK setting for '+property)
+			var _property = TASK[property]
+		}
+		return _property
+	}
+
+	check_transition_criterion(TRIAL_BEHAVIOR){
+		var nextTASK = undefined
+		// todo: make it more general; high performance for many kinds of Tasks 
+		var i_current_stage = this.TaskStreamState['current_stage_index']
+
+		var MinPercentCriterion = this.automator_data[i_current_stage].MinPercentCriterion;
+		var MinTrialsCriterion = this.automator_data[i_current_stage].MinTrialsCriterion; 
+		var CurrentAutomatorStageName = this.automator_data[i_current_stage].CurrentAutomatorStageName;
+
+		
+		var ntrials = this.TaskStreamState['last_ntrial_reinforcement_amounts'].length
+		var pctcorrect = 100 * (this.TaskStreamState['last_ntrial_reinforcement_amounts'].reduce(add, 0) / ntrials)
+
+		console.log('For '+ntrials+' trials, pctcorrect='+Math.round(10*pctcorrect)/10)
+		updateProgressbar((i_current_stage+1)/this.automator_data.length * 100, 'EpochBar', 'Stage '+this.TaskStreamState['current_stage_index']+':')
+		var transition_criterion_met = pctcorrect >= MinPercentCriterion && ntrials >= MinTrialsCriterion
+
+		return transition_criterion_met 
+
+		if (transition_criterion_met == true){
+			nextTASK = JSON.parse(JSON.stringify(TASK))
+			// Ready to move to next stage
+			if(this.TaskStreamState['current_stage_index']+1 >= this.automator_data.length){
+				this.TaskStreamState['current_stage_index']++
+				i_current_stage = this.TaskStreamState['current_stage_index']
+				for (var property in this.automator_data[i_current_stage]){
+					if (property === 'MinPercentCriterion' || property === 'MinTrialsCriterion' ||
+						property === 'CurrentAutomatorStageName'){
+						continue 
+					}
+					if (this.automator_data[i_current_stage].hasOwnProperty(property)){ 
+						if (!(nextTASK[property].toString() == this.automator_data[i_current_stage][property].toString())){
+							console.log('\"'+property+'\" changing from '+nextTASK[property]+' to '+this.automator_data[i_current_stage][property])
+							nextTASK[property] = this.automator_data[i_current_stage+1][property]
+							
+						}
+					}			
+				}
+			}
+
+			// Reached last stage
+			else{
+				if(this.loop_automator == false){ 
+					nextTASK.Automator = 0; 
+					// this.TaskStreamState['current_stage_index'] = 'off';
+					console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject completed the final stage '+(i_current_stage)+' of '+(this.automator_data.length-1)+' (zero indexing) of automator.')
+				}
+
+				else if(this.loop_automator == true){
+					this.TaskStreamState['current_stage_index'] = 0
+					for (var property in this.automator_data[0]){
+						if (property === 'MinPercentCriterion' || property === 'MinTrialsCriterion' ||
+							property === 'CurrentAutomatorStageName'){
+							continue 
+						}
+						if (this.automator_data[0].hasOwnProperty(property)){ 
+							if (!(nextTASK[property].toString() == this.automator_data[0][property].toString())){
+								console.log('\"'+property+'\" changed from '+nextTASK[property]+' to '+this.automator_data[0][property])
+
+								nextTASK[property] = this.automator_data[0][property]
+								
+							}
+						}			
+					}
+					console.log("COMPLETED FINAL STAGE, LOOPING AUTOMATOR:")					
+				}
+			}
+
+		}
+
+		else if(transition_criterion_met == false){
+			nextTASK = TASK
+		}
+
+
+		
+		return [nextTASK, transition_criterion_met]
+	}
+	
+
+	async resetToInitialLoadState(){
+		this.TaskStreamState = this.__initial_TaskStreamState
+		this.__initial_TaskStreamState = undefined
+	}
+
+	async monitorStage_State_and_Transition(TASK){
 		// Call this at the beginning of each trial. 
 		// Check for stage transitions, and if necessary, change TASK. 
 		// Enforce adherence to the automator file if user has changed paramfile.
 
 		var current_stage_hash = stageHash(TASK); 
-		var i_current_stage = TASK.CurrentAutomatorStage
+		var i_current_stage = this.TaskStreamState['current_stage_index']
 
 		// Overwrite any user-generated changes to TASK to adhere to i_current_stage
 		for (var property in this.automator_data[i_current_stage]){
@@ -117,50 +248,16 @@ class Automator{
 
 		// ---------- CHECK IF STAGE TRANSITION CRITERIA HAS BEEN MET: -----------------------------------------
 		// Read transition criteria from automator_data
-		var MinPercentCriterion = this.automator_data[i_current_stage].MinPercentCriterion;
-		var MinTrialsCriterion = this.automator_data[i_current_stage].MinTrialsCriterion; 
-		var CurrentAutomatorStageName = this.automator_data[i_current_stage].CurrentAutomatorStageName;
-
-		// Calculate current pctcorrect and ntrials
-		var funcreturn = computeRunningHistory(MinTrialsCriterion, current_stage_hash, this.trialhistory.trainingstage, this.trialhistory.correct)
-		var pctcorrect = funcreturn[0]
-		var ntrials = funcreturn[1]
-
-		console.log('For '+ntrials+' trials, pctcorrect='+pctcorrect)
-		updateProgressbar((i_current_stage + 1)/this.automator_data.length * 100, 'EpochBar')
-
+		var transition_criterion_met = undefined
+		[TASK, transition_criterion_met] = this.check_transition_criterion()
 		// ---------- CHANGE TASK.STUFF TO AUTOMATOR DATA [ NEXT_STAGE ] --------------------------------------- 
+		if(transition_criterion_met == true){
+			
+			this.TASK_ARCHIVE.push(TASK) // Archive current TASK state
+			this.TASK_ARCHIVE_COUNTER++
 
 
-		if(pctcorrect >= MinPercentCriterion && ntrials >= MinTrialsCriterion){
-			TRIAL_NUMBER_FROM_TASKSTREAM_START = 0 // todo: read from disk 
-			console.log('TASK_ARCHIVE.push @ stage transition')
-			TASK_ARCHIVE.push(TASK) // Archive current TASK state
-			TASK_ARCHIVE_COUNTER++
-			// If finished final stage of automator,
-
-			if(TASK.CurrentAutomatorStage+1 >= this.automator_data.length){
-				// Stay in current stage settings, and 
-				// either turn off automator, or start over from beginning
-
-				if(this.loop_automator == false){ 
-					TASK.Automator = 0; 
-					TASK.CurrentAutomatorStage = 'off';
-					console.log('COMPLETED FINAL STAGE, TURNING AUTOMATOR OFF')
-					console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject completed the final stage '+(i_current_stage)+' of '+(this.automator_data.length-1)+' (zero indexing) of automator.')
-					return TASK
-				}
-				else if(this.loop_automator == true){
-					TASK.CurrentAutomatorStage = 0
-					i_current_stage = -1
-					console.log("COMPLETED FINAL STAGE, LOOPING AUTOMATOR:")
-					
-				}
-			}
-			else{
-				// Otherwise, advance to the next stage.
-				TASK.CurrentAutomatorStage = TASK.CurrentAutomatorStage + 1; 
-			}
+			TRIAL_NUMBER_FROM_TASKSTREAM_START = TASK.initial_TaskStream_trial_number || 0  			
 
 			FLAGS.need2saveParameters=1
 			console.log('SUBJECT ADVANCED TO STAGE ' + (i_current_stage+1) + ' of '+(this.automator_data.length-1) + ' with ' + pctcorrect+'\% performance on n='+ntrials)
@@ -170,26 +267,11 @@ class Automator{
 			var old_imageBagsSample = TASK.ImageBagsSample
 			var old_imageBagsTest = TASK.ImageBagsTest
 
-			for (var property in this.automator_data[i_current_stage+1]){
-				if (property === 'MinPercentCriterion' || property === 'MinTrialsCriterion' ||
-					property === 'CurrentAutomatorStageName'){
-					continue 
-				}
-				if (this.automator_data[i_current_stage+1].hasOwnProperty(property)){ 
-					if (!(TASK[property].toString() == this.automator_data[i_current_stage+1][property].toString())){
-						console.log('\"'+property+'\" changed from '+TASK[property]+' to '+this.automator_data[i_current_stage+1][property])
-
-						TASK[property] = this.automator_data[i_current_stage+1][property]
-						
-					}
-				}			
-			}
-
+			
 			// If imagebags are changed by automator, load images at beginning of next trial. 
 			if(!old_imageBagsTest.equals(TASK.ImageBagsTest) || !old_imageBagsSample.equals(TASK.ImageBagsSample)){
 				FLAGS.need2loadImages = 1; 
 			}
-			
 		}
 
 		return TASK  
@@ -220,74 +302,3 @@ function stageHash(task){
 
 
 
-function computeRunningHistory(mintrials, current_stage, history_trainingstage, history_corrects){
-	// todo: 
-	// should trials that are performed with the automator off, but with the SAME settings as an automator stage, 
-	// be counted as being part of the automator? (nope, explicit is always better. -MLee. )
-
-	if (history_trainingstage.length!=history_corrects.length){
-	 	console.log('trainingstage vec. length'+history_trainingstage.length)
-	 	console.log('corrects vec. length '+history_corrects.length)
- 		throw('The history arrays are of different length. Check what went wrong; cannot compute performance history.')
-	}
-
-	// returns 
-	// The at most current-mintrials trial which starts a contiguous sequence to current trial with the same trainingstage/automatorfilepath as the current state,  
-
-	// trialhistory is assumed to include all trials except the current one
-	// It is arranged in [oldest, ..., current-1] order
-
-
-	// Starting from the most recent trial, move backwards until you hit either 1) mintrials or 2) another automatorstage
-	var startingindex = history_trainingstage.length;
-	for (var i = history_trainingstage.length-1; i >= 0; i--){
-		if (history_trainingstage[i] == current_stage){
-			if(history_trainingstage.length - i <= mintrials){
-				startingindex = i;
-			}
-			else if(history_trainingstage.length - i > mintrials){
-				break; 
-			}
-			else{throw "Something went wrong"}
-		}
-
-		else if (history_trainingstage[i] != current_stage){
-			break
-		}
-		else{
-			console.log(history_trainingstage[i])
-			console.log(current_stage)
-			throw "Something went wrong 2"
-		}
-	}
-
-	var ndiscrepancy = 0
-	var ncountedtrials = 0
-	for (var i = startingindex; i<history_trainingstage.length; i++){
-		if (history_trainingstage[i] != current_stage){
-			ndiscrepancy = ndiscrepancy+1
-			console.log(history_trainingstage[i])
-			console.log(current_stage)
-			throw "Something went wrong 3"
-		}
-		ncountedtrials = ncountedtrials+1
-	}
-
-	var ntrial=0;
-	var ncorrect=0;
-	var pctcorrect = NaN
-	if (startingindex == history_corrects.length){
-		pctcorrect = 0;
-		return [pctcorrect, ntrial]
-	}
-
-	for (var i=startingindex; i<history_corrects.length; i++){
-		if (history_corrects[i]==1){
-			ncorrect = ncorrect+1;
-		}
-		
-		ntrial++;
-	}
-	pctcorrect = 100 * ncorrect/ntrial;
-	return [pctcorrect, ntrial]
-}

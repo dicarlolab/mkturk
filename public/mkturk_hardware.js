@@ -16,7 +16,7 @@ class SoundPlayer{
 
   loadSoundfromDropbox2(src,audiocontext, sounds, idx){
          return new Promise(function(resolve,reject){
-          dbx.filesDownload({path: SOUND_FILEPREFIX + src + ".wav"}).then(function(data){
+          DIO.dbx.filesDownload({path: SOUND_FILEPREFIX + src + ".wav"}).then(function(data){
           var reader = new FileReader()
           reader.onload = function(e){
             audiocontext.decodeAudioData(reader.result).then(function(buffer){
@@ -65,27 +65,27 @@ class SoundPlayer{
       this.audiocontext.resume()
       var oscillator = this.audiocontext.createOscillator();
       this.gainNode.gain.value=1;
-      if (TASK.Pump == 1){
+      if (SubjectSettings['Pump'] == 1){
         oscillator.type='square'; //Square wave
         oscillator.frequency.value=25; //frequency in hertz       
       } //peristaltic (adafruit)
-      else if (TASK.Pump==2){
+      else if (SubjectSettings['Pump']==2){
         oscillator.type='square'; //Square wave
         oscillator.frequency.value=0.1; //frequency in hertz
       } //submersible (TCS)
-      else if (TASK.Pump==3){
+      else if (SubjectSettings['Pump']==3){
         oscillator.type='square'; //Square wave
         oscillator.frequency.value=10; //frequency in hertz   
       } //diaphragm (TCS)
-      else if (TASK.Pump==4){
+      else if (SubjectSettings['Pump']==4){
         oscillator.type='square'; //Square wave
         oscillator.frequency.value=0.1; //frequency in hertz        
       } //piezoelectric (takasago)
-      else if (TASK.Pump==5){
+      else if (SubjectSettings['Pump']==5){
         oscillator.type='square';
         oscillator.frequency.value=0.1;
       } //diaphragm new (TCS)
-      else if (TASK.Pump==6){
+      else if (SubjectSettings['Pump']==6){
         oscillator.type='square'; //Square wave
         oscillator.frequency.value=0.1; //frequency in hertz        
       } //piezoelectric 7ml/min (takasago)

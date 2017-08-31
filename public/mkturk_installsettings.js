@@ -8,12 +8,6 @@ var DBX_CLIENT_ID = "jufvjpyt19d4eh7"
 var DBX_REDIRECT_URI_ROOT = "https://dicarlo5.mit.edu/~mil/MonkeyTurk/mkturk/public/"
 
 
-// ------ Subject settings ------ 
-var subjectlist = [
-"Michaelo","Zico",
-"Crypto","Chromeo"
-];
-
 // ------ Save location settings ------
 // Make sure to include the forward slash for the savepaths 
 
@@ -25,10 +19,20 @@ var _debug_TOUCH_DATA_SAVEPATH = "/Behavior/debug/debug_touch_logfiles/"
 
 var PARAM_DIRPATH = "/Tasks/SubjectParameters/"
 var SOUND_FILEPREFIX = "/Resources/sounds/au"
-var AUTOMATOR_FILEPATH
+
+
+// New 
+var SUBJECT_DIRPATH = "/Subjects/SubjectSettings/" // SubjectID; tablet; pump; liquid; species
+var CHECKPOINT_DIRPATH = "/Subjects/SubjectCheckpoints/" // Used to revivify the state of a TaskStream
+var _debug_CHECKPOINT_DIRPATH = "/Subjects/debug/SubjectCheckpoints/"
+
+
+var EXPERIMENT_DIRPATH = "/Tasks/ExperimentDefinitions/" // Used to define the TaskStream trial generator
+
+
+
 
 // ------ Misc. -----------------------
-var ndatafiles2read=5; // todo: change to trials. and use as upper bound (stop reading once you hit the first discrepancy). maybe this is effectively synonymous with mintrials
 var num_preload_images=0; // how long can you/the NHP bother waiting at each imageload? 400 images ~ 30 seconds. Recommended to keep = 0 with good internet connection and automator on
 var max_save_rate = 1/5 // times per second; i.e. once every five seconds
 
@@ -44,4 +48,6 @@ var last_trial_data_save = performance.now()
 
 var PARAMFILE_CHECK_TIMEOUT_PERIOD = 5000 // Check at most every five seconds 
 var last_paramfile_check = performance.now()
+
+var CHECKPOINT_SAVE_TIMEOUT_PERIOD = 7500 // Save at most every n milliseconds
 // ------ todo: move into params file -

@@ -1,5 +1,5 @@
 function reloadPage(){
-  writeDebugMessage("RELOADING PAGE...")
+  wdm("RELOADING PAGE...")
   location.reload(true)
 }
 
@@ -251,32 +251,56 @@ String.prototype.hashCode = function(){
 function setReward(){
   var m = 0;
   var b = 0;
-  if (TASK.Pump == 1){
+  if (SubjectSettings['Pump'] == 1){
     // m = 1.13; b = 15.04;
     m = 0.99; b = 14.78;
   } //peristaltic (adafruit)
-  else if (TASK.Pump == 2){
+  else if (SubjectSettings['Pump'] == 2){
     // m = 3.20; b = -15.47;
     m = 1.40; b = -58.77;
   } //submersible (tcs)
-  else if (TASK.Pump == 3){
+  else if (SubjectSettings['Pump'] == 3){
     // m = 0.80; b = -3.00;
     m=0.91; b = -15;
   } //diaphragm (tcs)
-  else if (TASK.Pump == 4){
+  else if (SubjectSettings['Pump'] == 4){
     m = 0.0531; b=-1.2594;
   } //piezoelectric (takasago)
-  else if (TASK.Pump == 5){
+  else if (SubjectSettings['Pump'] == 5){
     m = 2.4463; b=53.6418;
   } //new diaphragm (tcs)
-  else if (TASK.Pump == 6){
-    if (TASK.Liquid==1 || TASK.Liquid==3){
+  else if (SubjectSettings['Pump'] == 6){
+    if (SubjectSettings['Liquid']==1 || SubjectSettings['Liquid']==3){
       m=0.1251; b=-0.0833; //1=water 2=water-condensed milk 3=marshmallow slurry (4/30mL)
     }
-    else if (TASK.Liquid==2){
+    else if (SubjectSettings['Liquid']==2){
       m=0.0550; b=0.6951; //water-condensed milk (50/50)
     }
   } //piezoelectric 7mL/min (takasago)
-  return (TASK.RewardPer1000Trials - b)/m/1000;
+  return (SubjectSettings['RewardPer1000Trials'] - b)/m/1000;
   
+}
+
+function join(parts, sep){
+   var separator = sep || '/';
+   var replace   = new RegExp(separator+'{1,}', 'g');
+   return parts.join(separator).replace(replace, separator);
+}
+
+function add(a, b) {
+    // For use in .reduce
+    // See 
+    // https://stackoverflow.com/questions/1230233/how-to-find-the-sum-of-an-array-of-numbers
+    
+    // var sum = [1, 2, 3].reduce(add, 0);
+    // console.log(sum); // 6
+
+    return a + b;
+}
+
+function splitFilename(s){
+  // https://stackoverflow.com/questions/423376/how-to-get-the-file-name-from-a-full-path-using-javascript
+  // Takes full path and returns filename only
+  var filename = s.replace(/^.*[\\\/]/, '')
+  return filename
 }

@@ -12,7 +12,6 @@ class RewardMap{
         this.x = undefined
         var _this = this
 
-
         var boundingBoxes = this.boundingBoxes // 
         var reward_amounts = this.reward_amounts // upon this._listener construction, does it point to the reference or is it constructed with a copy of the initiial (undefined) value?
 
@@ -32,7 +31,7 @@ class RewardMap{
                 && x >= this.boundingBoxes[box_index].x[0]
                 && y <= this.boundingBoxes[box_index].y[1] 
                 && y >= this.boundingBoxes[box_index].y[0]){
-                    
+
                 console.log(box_index, x, y, t)
                 var outcome = {
                     "x":x, 
@@ -46,15 +45,11 @@ class RewardMap{
         }
     }   
 
-
-
     create_reward_map_with_bounding_boxes(boundingBoxes, reward_amounts){
         this.boundingBoxes = boundingBoxes
         this.reward_amounts = reward_amounts
         
     }
-
-
 
     async Promise_wait_until_active_response_then_return_juice(listener_id){
         //this.add_event_listener()
@@ -67,7 +62,6 @@ class RewardMap{
         return outcome
     }
     add_event_listener(){
-        console.log("ADDED event listener")
         window.addEventListener('touchmove', this._listener, {passive: true})
         window.addEventListener('touchstart', this._listener, {passive: true})
     }

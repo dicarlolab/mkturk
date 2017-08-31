@@ -21,6 +21,17 @@
 </style>
 
 <script type="text/javascript">
+
+function isAuthenticated(){
+	return !!getAccessTokenFromUrl()
+}
+
+//parse access token from url if in urls hash
+function getAccessTokenFromUrl(){
+	return utils.parseQueryString(window.location.hash).access_token
+}
+
+
 // Flow: 
 // loadGoogleCharts --> getFileListDropbox
 // checkFileStatus -- wait 1 second -- if new data -->

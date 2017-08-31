@@ -10,13 +10,15 @@ class ImageBuffer {
 	// Todo: make this Dropbox independent - make this usable with local disk, or in-lab server, for example
 	// Todo:  
 
-constructor(){
+constructor(DIO){
 	// future: some "generator" object that can take queries 
 	
 	// Buffer: 
-	this.cache_dict = {}; // filename:
+	this.DIO = DIO 
 
-	// Todo: double buffer
+	this.cache_dict = {}; // image_path:image_actual
+
+	// Todo: double buffer. Currently do not do anything.
 	this.num_elements_in_cache = 0; // tracking variable
 	this.max_buffer_size = 10; // (for now, arbitrary) number of unique images to keep in buffer
 }
@@ -59,7 +61,7 @@ async cache_these_images(imagenames){
 		if (typeof(imagenames) == "string"){
 			var filename = imagenames; 
 			if (!(filename in this.cache_dict)){
-				var image = await DW.loadImagefromDropbox(filename); 
+				var image = await this.DIO.load_image(filename); 
 				this.cache_dict[filename] = image; 
 				this.num_elements_in_cache++
 				return 
@@ -73,7 +75,7 @@ async cache_these_images(imagenames){
 		else if (typeof(imagenames) == "object"){
 			var requested_imagenames = []
 			for (var i = 0; i < imagenames.length; i ++){
-				updateProgressbar((i+1)/imagenames.length*100, 'ImageLoadBar')
+				updateProgressbar((i+1)/imagenames.length*100, 'ImageLoadBar', 'Image loading progress:')
 				var filename = imagenames[i]
 				if(!(filename in this.cache_dict) && (requested_imagenames.indexOf(filename) == -1)){
 					requested_imagenames.push(filename)
@@ -87,7 +89,7 @@ async cache_these_images(imagenames){
 					continue
 				}
 			}
-			var image_array = await DW.loadImageArrayfromDropbox(requested_imagenames)
+			var image_array = await this._loadImageArray(requested_imagenames)
 			for (var i = 0; i < image_array.length; i++){
 				this.cache_dict[requested_imagenames[i]] = image_array[i]; 
 				this.num_elements_in_cache++; 
@@ -105,4 +107,49 @@ async cache_these_images(imagenames){
 		console.error("cache_these_images failed with error:", error)
 	}
 }
+
+async _loadImageArray(imagepathlist){
+		try{
+			var MAX_SIMULTANEOUS_REQUESTS = 500 // Empirically chosen based on our guess of Dropbox API's download request limit in a "short" amount of time.
+			var MAX_TOTAL_REQUESTS = 3000 // Empirically chosen
+
+			if (imagepathlist.length > MAX_TOTAL_REQUESTS) {
+				throw "Under the Dropbox API, cannot load more than "+MAX_TOTAL_REQUESTS+" images at a short time period. You have requested "
+				+imagepathlist.length+". Consider using an image loading strategy that reduces the request rate on Dropbox."
+				return 
+			}
+
+			if (imagepathlist.length > MAX_SIMULTANEOUS_REQUESTS){
+				console.log('Chunking your '+ imagepathlist.length+' image requests into '+Math.ceil(imagepathlist.length / MAX_SIMULTANEOUS_REQUESTS)+' chunks of (up to) '+MAX_SIMULTANEOUS_REQUESTS+' each. ')
+				var image_array = []
+
+				for (var i = 0; i < Math.ceil(imagepathlist.length / MAX_SIMULTANEOUS_REQUESTS); i++){
+
+					var lb = i*MAX_SIMULTANEOUS_REQUESTS; 
+					var ub = i*MAX_SIMULTANEOUS_REQUESTS + MAX_SIMULTANEOUS_REQUESTS; 
+					var partial_pathlist = imagepathlist.slice(lb, ub);
+
+					// var partial_image_requests = partial_pathlist.map(loadImagefromDropbox);
+					var partial_image_requests = []
+					for (var j = 0; j<partial_pathlist.length; j++){
+						partial_image_requests.push(this.DIO.load_image(partial_pathlist[j]))
+					}
+
+					var partial_image_array = await Promise.all(partial_image_requests)
+					image_array.push(... partial_image_array); 
+				}
+				
+			}
+			else { 
+				var image_requests = imagepathlist.map(this.DIO.load_image); 
+				var image_array = await Promise.all(image_requests)
+			}
+			return image_array
+		}
+		catch(err){
+			console.log(err)
+		}
+
+	}
+
 }

@@ -18,7 +18,7 @@ var ParamFilePath = '';
 
 TASK_ARCHIVE_COUNTER = 0 // attached to trial data
 var TASK_ARCHIVE = []; // Array whose entries are objects that encapsulates state of the current task, read from Subject's Params file
-var TASK // Current 
+//var TASK // Current 
 
 
 
@@ -35,13 +35,13 @@ EVENT_TIMESTAMPS.reinforcement_onset = []
 EVENT_TIMESTAMPS.reinforcement_end = []
 
 
-var TRIAL = {} // Global that contains data variables that are incremented every trial, and are dumped to disk for scientific purposes.
+var TRIAL_BEHAVIOR = {} // Global that contains data variables that are incremented every trial, and are dumped to disk for scientific purposes.
 initialize_TRIAL()
 
 var DEVICE = {} // Does not change during a session on a particular device 
 DEVICE.BatteryLDT = []
 DEVICE.DevicePixelRatio = 1
-DEVICE.CanvasRatio = 
+DEVICE.CanvasRatio = undefined 
 DEVICE.XGridCenter = undefined
 DEVICE.YGridCenter = undefined
 DEVICE.source_ImageHeightPixels = NaN; 
@@ -77,7 +77,7 @@ CANVAS.sequencepost= ["blank","reward","blank"], // blank, rewar
 CANVAS.tsequencepost= [0,50,100]
 CANVAS.offsetleft= 0
 CANVAS.offsettop= 0
-CANVAS.obj= []
+CANVAS.obj= {}
 
 for (var i in CANVAS.names){
 	CANVAS.obj[CANVAS.names[i]]=document.getElementById(CANVAS.names[i])
@@ -104,32 +104,22 @@ var displayoutofboundsstr=""
 
 function transition_from_debug_to_science_trials(){
 
-	// Reset TASK to initial load state 
-	TASK_ARCHIVE = __initial_load_TASK_ARCHIVE
-	__initial_load_TASK_ARCHIVE = undefined
-	TASK = __initial_load_TASK
-	__initial_load_TASK = undefined
 	TASK_ARCHIVE_COUNTER = 0
 
-	// Reset automator 
-	if(TASK.Automator == 1){
-		console.log("Reset AM")
-		AM.resetToInitialLoadState()
-	}
+	// Revert TaskStreamer
+	TS.transition_from_debug_to_science_mode()
 
-	//Used to transition from test to experimental mode 
-	
 	TOUCHSTRING = ""
 	TOUCHSTRING_UDPATECOUNTER = 0
 	
+		
 	initialize_TRIAL()
 	
 	TRIAL_NUMBER_FROM_SESSION_START = 0
-	CANVAS.TRIAL_NUMBER_FROM_TASKSTREAM_START = 0 // todo= read from dis
 	progressbar_names = [
 						'AutomatorLoadBar',
 						'ImageLoadBar',
-						'EpochBar',]
+						'StageBar',]
 
 	for (var _p in progressbar_names){
 		toggleProgressbar(0, progressbar_names[_p])
@@ -150,18 +140,23 @@ function transition_from_debug_to_science_trials(){
 }
 
 function initialize_TRIAL(){
-	TRIAL.FixationGridIndex = []
-	TRIAL.SampleBagIndex = []
-	TRIAL.TestBagIndices = []
-	TRIAL.Response = []
-	TRIAL.CorrectItem = []
-	TRIAL.Juice = []
-	TRIAL.NReward = []
-	TRIAL.AutomatorStage = []
-	TRIAL.trial_num_Session = []
-	TRIAL.trial_num_TaskStream = []
-	TRIAL.reward_duration = []
-	TRIAL.TASK_ARCHIVE_counter = []
-	TRIAL.StartTime = []
-	TRIAL.FixationXYT = []
+	TRIAL_BEHAVIOR.FixationGridIndex = []
+	TRIAL_BEHAVIOR.SampleBagIndex = []
+	TRIAL_BEHAVIOR.TestBagIndices = []
+	TRIAL_BEHAVIOR.Response = []
+	TRIAL_BEHAVIOR.CorrectItem = []
+	TRIAL_BEHAVIOR.Juice = []
+	TRIAL_BEHAVIOR.Return = []
+	TRIAL_BEHAVIOR.NReward = []
+	TRIAL_BEHAVIOR.CurrentStageIndex = []
+	TRIAL_BEHAVIOR.trial_num_Session = []
+	TRIAL_BEHAVIOR.trial_num_TaskStream = []
+	TRIAL_BEHAVIOR.reward_duration = []
+	TRIAL_BEHAVIOR.TASK_ARCHIVE_counter = []
+	TRIAL_BEHAVIOR.StartTime = []
+	TRIAL_BEHAVIOR.FixationXYT = []
+	TRIAL_BEHAVIOR.ChoiceXYT = []
+	TRIAL_BEHAVIOR.BoundingBoxesChoiceImages = []
+	TRIAL_BEHAVIOR.BoundingBoxSampleImage = []
+	TRIAL_BEHAVIOR.BoundingBoxFixationImage = []
 }

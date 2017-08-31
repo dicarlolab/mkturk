@@ -1,17 +1,13 @@
 class TrialQueue { 
 
-constructor(samplingStrategy, ImageBagsSample, ImageBagsTest, _ObjectGridMapping, samplingRNGseed, trial_num_TaskStream){
+constructor(DIO, IB, stage_start_number, trial_constructor_parameters){
 	// Sampling properties
 	this.nickname = ''
-	
-	this.samplingStrategy = samplingStrategy; 
-	this.trialStartNumber = trial_num_TaskStream; 
-	this.samplingRNGseed = samplingRNGseed; 
+	this.samplingStrategy = "uniform_with_replacement";
 
-	// Resource properties
-	this.ImageBagsSample = ImageBagsSample; 
-	this.ImageBagsTest = ImageBagsTest; 
-	this.ObjectGridMapping = _ObjectGridMapping; 
+
+	this.tk = trial_constructor_parameters	 
+	this.trialStartNumber = stage_start_number; 
 
 	// Queues
 	this.sampleq = {}
@@ -28,23 +24,122 @@ constructor(samplingStrategy, ImageBagsSample, ImageBagsTest, _ObjectGridMapping
 	this.trialNumber_q = []
 
 	// ImageBuffer
-	this.IB = new ImageBuffer(); 
+	this.IB = IB // new ImageBuffer(); 
+	this.DIO = DIO
 
 	// Settings 
 	this.max_queue_size = 500; // Max number of trials (and their images) to have prepared from now; to improve browser performance
+	console.log('TrialQueue', this)
 }
 
-async build(trial_cushion_size){
+async build(trial_cushion_size, samplingStrategy){
 	// Call after construction
-	var funcreturn = await DW.loadImageBagPathsParallel(this.ImageBagsSample); 
+	var funcreturn = await this.loadImageBagPathsParallel(this.tk['ImageBagsSample']); 
 	this.samplebag_labels = funcreturn[1];
 	this.samplebag_paths = funcreturn[0]; 
-	var funcreturn = await DW.loadImageBagPathsParallel(this.ImageBagsTest); 
+	var funcreturn = await this.loadImageBagPathsParallel(this.tk['ImageBagsTest']); 
 	this.testbag_labels = funcreturn[1]; 
 	this.testbag_paths = funcreturn[0]; 
 
 	await this.buffer_trials(trial_cushion_size); 
 }
+
+
+async loadImageBagPathsParallel(imagebagroot_s){
+	var imagepath_promises = []
+	for (var i = 0; i < imagebagroot_s.length; i++){
+		imagepath_promises.push(this.loadImageBagPaths(imagebagroot_s[i], i))
+	}
+
+	var funcreturn = await Promise.all(imagepath_promises);
+	//Assemble images and add labels
+	var bagitems_paths = [] // Can also be paths to a single .png file. 
+	var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
+	for (var i=0; i<=funcreturn.length-1; i++){
+		bagitems_paths.push(... funcreturn[i][0])
+		for (var j=0; j<= funcreturn[i][0].length-1; j++){
+			bagitems_labels.push(i)
+		}
+	}
+	return [bagitems_paths, bagitems_labels] 
+}
+async loadImageBagPaths(imagebagroot_s,idx){
+	try{
+		var bagitems_paths = [] // Can also be paths to a single .png file. 
+		var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
+
+		// Case 1: input = string. output = array of .png imagenames
+		if (typeof(imagebagroot_s) == "string"){
+			bagitems_paths = await this.list_images(imagebagroot_s)
+			for(var i_item = 0; i_item < bagitems_paths.length; i_item++){
+				bagitems_labels.push(0)
+			}
+			return [bagitems_paths, bagitems_labels]
+		}
+
+		// Case 2: input = array of (array of) paths. output = array of arrays of .png imagenames 	
+		for (var i = 0; i<imagebagroot_s.length; i++){
+			// If this class's imagebag consists of one (1) root. 
+			if (typeof(imagebagroot_s[i]) == "string"){
+				var i_itempaths = await this.list_images(imagebagroot_s[i])
+				bagitems_paths.push(... i_itempaths); 
+
+				for(var i_item = 0; i_item < i_itempaths.length; i_item++){
+					bagitems_labels.push(i)
+				}
+			}
+			// If this class's imagebag consists of multiple roots.
+			else if(typeof(imagebagroot_s[i]) == "object"){
+				var i_itempaths = []
+				for (var j = 0; j<imagebagroot_s[i].length; j++){
+					i_itempaths.push(... await this.list_images(imagebagroot_s[i][j])); 
+				}
+				bagitems_paths.push(... i_itempaths)
+
+				for(var i_item = 0; i_item < i_itempaths.length; i_item++){
+					bagitems_labels.push(i)
+				}	
+			}
+		}
+	}
+	catch(error){
+		console.log(error)
+	}
+
+	return [bagitems_paths, bagitems_labels] 
+}
+async list_images(dirpath){
+	var file_list = []
+
+	if(dirpath.endsWith('.png')){
+		return [dirpath]
+	}
+
+	try{
+		var entries = []
+		var response = await this.DIO.listdir(dirpath)
+
+		entries.push(... response)
+		file_list = []
+		var fname = ''
+		for (var i = 0; i<entries.length; i++){
+			fname = entries[i]
+			if(fname.endsWith('.png') || fname.endsWith('.jpg')){
+				file_list.push(entries[i])
+			}
+			else{
+				wdm('fname'+fname+'not supported (.png and .jpg supported')
+				console.log('fname', fname, 'not supported (.png and .jpg supported')
+			}
+		}
+		return file_list
+	}
+	catch (error) {
+		console.error(error)
+	}
+}
+
+
 
 async buffer_trials(num_trials_to_buffer){
 	var max_trial_number = Math.max(Math.max(... this.trialNumber_q), -1)
@@ -68,7 +163,7 @@ async generate_trial(i){
 		}
 
 		var trialnumber = i 
-		var _RNGseed = cantor(this.samplingRNGseed, trialnumber)
+		var _RNGseed = cantor(this.tk['samplingRNGseed'], trialnumber)
 		
 		var funcreturn = this.selectSampleImage(this.samplebag_labels, this.samplingStrategy, _RNGseed)
 		var sample_index = funcreturn[0]
@@ -142,14 +237,17 @@ async get_trial(i){
     	}
     }
 
-	return [sample_image,
-	 samplebag_index, 
-	 sample_grid_index_placement, 
-	 test_images, 
-	 testbag_indices, 
-	 test_correct_grid_index, 
-	 test_grid_index_placements, 
-	 choice_reward_amounts]
+    var trial = {}
+    trial['sample_image'] = sample_image
+	trial['samplebag_index'] = samplebag_index
+	trial['sample_grid_index_placement'] = sample_grid_index_placement
+	trial['test_images'] = test_images
+	trial['testbag_indices'] = testbag_indices
+	trial['test_correct_grid_index'] = test_correct_grid_index
+	trial['test_grid_index_placements'] = test_grid_index_placements
+	trial['choice_reward_amounts'] = choice_reward_amounts
+
+	return trial
 }
 
 selectSampleImage(samplebag_labels, SamplingStrategy, _RNGseed){
@@ -164,7 +262,7 @@ selectSampleImage(samplebag_labels, SamplingStrategy, _RNGseed){
 	else {
 		throw SamplingStrategy + " not implemented in selectSampleImage."
 	}
-	var sample_image_grid_index_placement = TASK.SampleGridIndex
+	var sample_image_grid_index_placement = this.tk['SampleGridIndex']
 	return [samplebag_index, sample_image_grid_index_placement]
 }
 
@@ -177,17 +275,17 @@ selectTestImages(correct_label, testbag_labels, _RNGseed){
 	var grid_index_placements = []
 
 	// If SR is on, 
-	if (this.ObjectGridMapping.length == this.ImageBagsTest.length){ // Is this a robust SR check?
+	if (this.tk['ObjectGridMapping'].length == this.tk['ImageBagsTest'].length){ // Is this a robust SR check?
 	
 		// For each object, 
-		for (var i = 0; i<this.ObjectGridMapping.length; i++){
+		for (var i = 0; i<this.tk['ObjectGridMapping'].length; i++){
 			
 			var object_test_indices = getAllInstancesIndexes(testbag_labels, i)
 
 			var test_image_index = object_test_indices[Math.floor((object_test_indices.length)*Math.random())]; 
 			testbag_Indices.push(test_image_index)
 
-			var object_grid_index = this.ObjectGridMapping[i] 
+			var object_grid_index = this.tk['ObjectGridMapping'][i] 
 			grid_index_placements.push(object_grid_index)
 
 			if(i == correct_label){
@@ -214,7 +312,7 @@ selectTestImages(correct_label, testbag_labels, _RNGseed){
 	// Randomly select n-1 labels to serve as distractors 
 	var distractors = []
 	labelspace = shuffle(labelspace)
-	for (var i=0; i <= TASK.TestGridIndex.length-2; i++){
+	for (var i=0; i <= this.tk['TestGridIndex'].length-2; i++){
 		distractors[i] = labelspace[i]
 	}
 

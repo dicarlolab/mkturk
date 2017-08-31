@@ -45,19 +45,14 @@ var ble = {
   statustext: "",
 }
 
-function test_listener(){
-  console.log('yo yo yo')
-}
 //==================== CONNECT BLE ====================//
 function connectBLEButtonPromise(){
   var resolveFunc
   var errFunc
-  console.log('Entered connect ble')
   p = new Promise(function(resolve,reject){
     resolveFunc = resolve;
     errFunc = reject;
   }).then(function(resolveval){console.log('User clicked ' + resolveval)});
-  console.log('hello')
   function *waitforclickGenerator(){
     var buttonclicked =[-1];
     while (true){
@@ -65,11 +60,8 @@ function connectBLEButtonPromise(){
       resolveFunc(buttonclicked);
     }
   }
-  console.log('hello2')
   waitforClick = waitforclickGenerator(); // start async function
-  console.log('hello3')
   waitforClick.next(); //move out of default state
-  console.log('hello4')
   return p;
 }
 
