@@ -56,6 +56,7 @@ async function change_juice_listener(event){
         var JUICE_REQUESTED = parseInt(document.getElementById('juice_amount').value)
         console.log("JUICE_REQUESTED per 1000", JUICE_REQUESTED)
 
+        var existing_flags = {}
         existing_flags["RewardPer1000Trials"] = JUICE_REQUESTED // edit existing flags
         existing_flags["FlagFulfilled"] = 0
         
