@@ -85,7 +85,7 @@ class TaskStreamer{
         }
 
         // Prebuffer stages of EXPERIMENT
-        for (var i_stage = this.state['current_stage_index']; i_stage < EXPERIMENT.length; i_stage++){
+        for (var i_stage = 0; i_stage < EXPERIMENT.length; i_stage++){
 
             var _tk = EXPERIMENT[i_stage]
             if(i_stage == this.state['current_stage_index']){

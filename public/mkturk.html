@@ -155,6 +155,7 @@ wdm("Initialized")
 
 DIO = new DropboxIO()
 DWr = new DataWriter(DIO)
+UX = new UX_poller(DIO)
 
 setupDragTracker() // Writes to TOUCHSTRING and TOUCHSTRING_UPDATECOUNTER
 setupTapTracker() // Writes to TOUCHSTRING and TOUCHSTRING_UPDATECOUNTER
