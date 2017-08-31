@@ -5,7 +5,7 @@
 // MKTURK
 
 var DBX_CLIENT_ID = "jufvjpyt19d4eh7"
-var DBX_REDIRECT_URI_ROOT = "https://dicarlo5.mit.edu/~mil/MonkeyTurk/mkturk/public/"
+var DBX_REDIRECT_URI_ROOT = "https://s3.amazonaws.com/monkeyturk/"
 
 
 // ------ Save location settings ------

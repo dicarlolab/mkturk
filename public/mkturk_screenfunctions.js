@@ -53,7 +53,7 @@ function refreshCanvasSettings(EXPERIMENT_entry){
 	}
 	else if (EXPERIMENT_entry.t_SampleOFF <= 0 ){
 		CANVAS.sequence = ["blank","sample","test"]
-		CANVAS.tsequence = [0,50,50+EXPERIMENT_entry.t_SampleON]; 
+		CANVAS.tsequence = [0,100,100+EXPERIMENT_entry.t_SampleON]; 
 	}
 	
 	// Adjust length of reward screen based on reward amount 
@@ -290,6 +290,7 @@ async function renderImageOnCanvas(image, grid_index, scale, canvasobj){
 
 
 function displayScreenSequence(sequence,tsequence){
+	console.log('displayScreenSequence', sequence, tsequence)
 	var resolveFunc
 	var errFunc
 	p = new Promise(function(resolve,reject){
@@ -310,7 +311,7 @@ function displayScreenSequence(sequence,tsequence){
 
 		// If time to show new frame, 
 		if (timestamp - start > tsequence[current_frame_index]){
-			//console.log('Frame =' + current_frame_index+'. Duration ='+(timestamp-start)+'. Timestamp = ' + timestamp)
+			console.log('Frame =' + current_frame_index+'. ms elapsed from start: ='+(timestamp-start)+'. Timestamp = ' + timestamp)
 			frame_unix_timestamps[current_frame_index] = performance.now() //in milliseconds, rounded to nearest hundredth of a millisecond
 			// Move canvas in front
 			var prev_canvasobj=CANVAS.obj[CANVAS.front]
@@ -334,9 +335,12 @@ function displayScreenSequence(sequence,tsequence){
 			window.requestAnimationFrame(updateCanvas);
 		}
 		else{
+			console.log(frame_unix_timestamps)
+	
 			resolveFunc(frame_unix_timestamps);
 		}
 	}
+
 	//requestAnimationFrame advantages: goes on next screen refresh and syncs to browsers refresh rate on separate clock (not js clock)
 	window.requestAnimationFrame(updateCanvas); // kick off async work
 	return p
