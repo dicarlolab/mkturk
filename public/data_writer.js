@@ -32,12 +32,12 @@ class DataWriter{
             if (save_to_debug_directory == 1){
                 var savepath = join([this._debug_trial_data_savepath,
                     SESSION.Subject,
-                    SESSION.Subject +'_'+SESSION.TrialDataFileName_suffix])
+                    "debug__"+SESSION.Subject +'_'+SESSION.TrialDataFileName_suffix])
             }
             else { 
                 var savepath = join([this.trial_data_savepath,
                     SESSION.Subject,
-                     "debug__"+SESSION.Subject +'_'+SESSION.TrialDataFileName_suffix])
+                    SESSION.Subject +'_'+SESSION.TrialDataFileName_suffix])
             }
 
             await this.DIO.write_string(datastr, savepath)             

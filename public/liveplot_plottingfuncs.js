@@ -344,9 +344,9 @@ function addVitalsText(){
     lineOptions.title =
         vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.trials + 
         ", r=" + vitals.nrewards + "=" + vitals.rewardestimate + "mL, " + vitals.time + "min)     " + 
-        "Automator: " + vitals.automator +  ", Stage " + vitals.currentautomatorstage + "_" + vitals.currentautomatorstagename + "     " + 
-        "Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  " + 
-        "Last Trial:" + file.dateSaved.toLocaleTimeString('en-US')
+        "\nCurrent stage:   " + file.data.CurrentStageIndex.slice(-1)+ 
+        "\nBattery:   " + vitals.batteryleft + "% (" + -1*vitals.batteryused + "% change from start) " + 
+        "\nLast Trial:   " + file.dateSaved.toLocaleTimeString('en-US')
     titleobj.innerHTML = vitals.subject;
 }
 // Synchronous

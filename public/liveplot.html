@@ -9,6 +9,8 @@
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script src="liveplot_googlecharts.js" type="text/javascript"></script>
 <script src="mkturk_installsettings.js"></script>
+<script src="liveplot_globals.js"></script>
+
 <script src="liveplot_eventlisteners.js"></script>
 <script src="disk_template.js"></script>
 
@@ -50,20 +52,23 @@
 </head>
 
 <body>
-
-	<button class="button" name="SyncButton" style="position: absolute; margin-top:4px; left: 92%; font-size: 6px; color: #A6A6A6; padding:10px 10px; border:0px solid #959595; z-index:101; background-color: #E6E6E6; text-align:center; opacity: 1">Request tablet save</button>
-
-	<form>
-	  Change juice reward per 1000:<br>
-	  <input type="text" name="Change juice reward per 1000"><br>
-  </form>
-
-
-  <h1>liveplot_mkturk</h1>
+	<h1>liveplot_mkturk</h1>
   <div id="filelist_div">
 	  <select id="file_list"></select> <!--Pull down menu that will hold file list-->
 	</div>
-  <div id="dashboard1_div">
+
+	<button class="button" name="SyncButton" style=" margin-top:30px; font-size: 12px; color: #A6A6A6; padding:10px 10px; border:0px solid #959595; z-index:101; background-color: #E6E6E6; text-align:center; opacity: 1">Request tablet save</button>
+
+	
+	<div id='juice_form_header' style = "margin-top:50px">Change juice per 1000 (current = ):</div>
+	<form id='juiceform' style="font-size:12;margin-top:0px">
+	  <input id ='juice_amount' type="text" name="Juice per 1000" style="margin-top:5px"><br>
+  	</form>
+
+  	<button class="button" name="ChangeJuiceButton" style=" margin-top:10px; font-size: 12px; color: #A6A6A6; padding:10px 10px; border:0px solid #959595; z-index:101; background-color: #E6E6E6; text-align:center; opacity: 1">Request change in juice amount</button>
+
+  
+  <div id="dashboard1_div" style="margin-top:30px">
   	<div id="line_div"></div> <!--Div that will hold the line chart-->
   	<div id="filtertrial_div"></div>
   </div>
@@ -80,7 +85,10 @@
 DIO = new DropboxIO()
 
 document.querySelector("button[name=SyncButton]").addEventListener(
-	'touchend',sync_data_listener,false)
+	'mouseup',sync_data_listener,false)
+
+document.querySelector("button[name=ChangeJuiceButton]").addEventListener(
+	'mouseup',change_juice_listener,false)
 
 
 var file={
