@@ -146,7 +146,7 @@ class TaskStreamer{
             return false 
         }
 
-        var average_return_for_last_min_trials = this.state['return_sequence_in_stage'].slice(-1 * min_trials).reduce(add, 0) 
+        var average_return_for_last_min_trials = (this.state['return_sequence_in_stage'].slice(-1 * min_trials).reduce(add, 0)) / min_trials
         wdm('Average return for last '+min_trials+': '+average_return_for_last_min_trials)
         if(average_return_for_last_min_trials >= average_return_criterion){
             return true
@@ -160,7 +160,6 @@ class TaskStreamer{
         console.log("called update_state")
         // trial_behavior: the just-finished trial's behavior. 
         // called at the end of every trial. 
-
 
         Math.seedrandom(repeat_rng_seed)
 

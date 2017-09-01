@@ -139,7 +139,6 @@ current_trial_outcome['CurrentStageIndex'] = TS.state.current_stage_index
 current_trial_outcome['trial_num_Session'] = TRIAL_NUMBER_FROM_SESSION_START
 //current_trial_outcome['trial_num_TaskStream'] = TRIAL_NUMBER_FROM_TASKSTREAM_START
 current_trial_outcome['reward_duration'] = Math.round(1000*RewardDuration)/1000
-current_trial_outcome['TASK_ARCHIVE_counter'] = TASK_ARCHIVE_COUNTER
 current_trial_outcome['BoundingBoxFixationImage'] = boundingBoxesFixation[0]
 current_trial_outcome['BoundingBoxSampleImage'] = boundingBoxesSample[0]
 current_trial_outcome['BoundingBoxesChoiceImages'] = boundingBoxesChoice
@@ -165,7 +164,6 @@ for (var _property in current_trial_outcome){
 // TRIAL_BEHAVIOR.trial_num_Session.push(TRIAL_NUMBER_FROM_SESSION_START)
 // TRIAL_BEHAVIOR.trial_num_TaskStream.push(TRIAL_NUMBER_FROM_TASKSTREAM_START)
 // TRIAL_BEHAVIOR.reward_duration.push(Math.round(1000*RewardDuration)/1000)
-// TRIAL_BEHAVIOR.TASK_ARCHIVE_counter.push(TASK_ARCHIVE_COUNTER)
 // TRIAL_BEHAVIOR.BoundingBoxFixationImage.push(boundingBoxesFixation[0])
 // TRIAL_BEHAVIOR.BoundingBoxSampleImage.push(boundingBoxesSample[0])
 // TRIAL_BEHAVIOR.BoundingBoxesChoiceImages.push(boundingBoxesChoice)
