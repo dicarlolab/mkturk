@@ -2,6 +2,12 @@ function reloadPage(){
   wdm("RELOADING PAGE...")
   location.reload(true)
 }
+function wdm(s){
+  console.log(s)
+  var elem = document.getElementById('DebugMessageTextBox')
+  elem.innerHTML = s; // text
+}
+
 
 (function(window){
   window.utils = {

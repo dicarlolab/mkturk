@@ -13,11 +13,7 @@ function writeToTrialCounterDisplay(s){
 	elem.innerHTML = s; // text
 }
 
-function wdm(s){
-	console.log(s)
-	var elem = document.getElementById('DebugMessageTextBox')
-	elem.innerHTML = s; // text
-}
+
 
 function toggleElement(on_or_off, element_id){
 		var elem = document.getElementById(element_id)
