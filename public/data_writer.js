@@ -25,6 +25,7 @@ class DataWriter{
         dataobj['CANVAS'] = CANVAS
         dataobj['TRIAL_BEHAVIOR'] = TRIAL_BEHAVIOR
         dataobj['EVENT_TIMESTAMPS'] = EVENT_TIMESTAMPS
+        dataobj['SubjectSettings'] = SubjectSettings
         var datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
 
 

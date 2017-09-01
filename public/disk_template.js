@@ -38,6 +38,10 @@ class DiskIO{
         return changed 
     }
 
+    async get_rev(filepath){
+        // get the version hash
+    }
+
 }   
 
 
@@ -74,6 +78,7 @@ class DropboxIO{
         this.read_textfile = this._read_textfile.bind(this)
         this.load_image = this._load_image.bind(this)
         this.changed_on_disk = this._changed_on_disk.bind(this)
+        this.get_rev = this._get_rev(this)
         // Need to .bind, because "this" changes its meaning depending on the context in which 
         // a DIO function (or any function) is called. Binding makes it so that "this"
         // always refers to the DIO object, not the "this" of the particular moment (context). 
@@ -230,6 +235,17 @@ class DropboxIO{
         catch(error){
             console.log(error)
             wdm('DIO.changed_on_disk error', error)
+        }
+    }
+
+    async _get_rev(filepath){
+        try{
+            var filemeta = await this.dbx.filesGetMetadata({path: filepath})
+            return filemeta.rev
+        }
+        catch(error){
+            console.log(error)
+            wdm('DIO.get_rev error', error)
         }
     }
 

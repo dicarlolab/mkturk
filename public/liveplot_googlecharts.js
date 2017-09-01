@@ -1,6 +1,6 @@
 //======== Performance Line Plot =======//
 var lineOptions={
-	smooth: 5,
+	smooth: 25,
   	width: 900,
   	height: 400,
 	hAxis: {title: 'Trial#'},

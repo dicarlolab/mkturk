@@ -73,6 +73,8 @@
     <div id="filtertrial_div"></div>
   </div>
 
+  <div id="bar_div"></div> <!--Div that will hold the bar chart-->
+  <div id="table_div"></div> <!--Div that will hold the table chart-->
   <p id="task_text"></p>
 
 <script type="text/javascript">
@@ -98,7 +100,9 @@ var file={
             datahasChanged: false,
             filehasChanged: false,
         };
+var titleobj = document.getElementById("page_title");
 var menuobj = document.getElementById("file_list");
+var tasktextobj = document.getElementById("task_text");
 menuobj.addEventListener("change",filelist_listener,false);
 //_____________ LABELS (begin)
 
@@ -127,9 +131,11 @@ var task={
     objectlist: [],
 }
 var dataPerformance=null;
+var dataCumulative=null;
 var dataConfusion=null;
 var dataConfusionView=null;
 var liveline=null;
+var livetable=null;
 var formatterDigits=null;
 var formatterColor=null;
 var trialrange=[0,0]

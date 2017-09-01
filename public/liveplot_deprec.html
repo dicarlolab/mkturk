@@ -1,0 +1,157 @@
+<!doctype html>
+<html>
+<head>
+    <title id="page_title">liveplot_mkturk</title>
+
+<script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+<script src="liveplot_utils.js"></script>
+
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script src="liveplot_googlecharts.js" type="text/javascript"></script>
+<script src="mkturk_installsettings.js"></script>
+<script src="liveplot_globals.js"></script>
+
+<script src="liveplot_eventlisteners.js"></script>
+<script src="disk_template.js"></script>
+
+
+<style type='text/css'>
+	.small-font{
+		font-size: 8px;
+	}
+	.medium-font{
+		font-size: 10px;
+	}
+
+	.button {
+	  display: inline-block;
+	  padding: 15px 25px;
+	  font-size: 24px;
+	  cursor: pointer;
+	  text-align: center;
+	  text-decoration: none;
+	  outline: none;
+	  color: #fff;
+	  background-color: #4CAF50;
+	  border: none;
+	  border-radius: 15px;
+	  box-shadow: 0 9px #999;
+	}
+
+	.button:hover {background-color: #3e8e41}
+
+	.button:active {
+	  background-color: #3e8e41;
+	  box-shadow: 0 5px #666;
+	  transform: translateY(4px);
+	}
+
+</style>
+<script src="liveplot_plottingfuncs.js"></script>
+
+</head>
+
+<body>
+	<h1>liveplot_mkturk</h1>
+  <div id="filelist_div">
+	  <select id="file_list"></select> <!--Pull down menu that will hold file list-->
+	</div>
+
+	<button class="button" name="SyncButton" style=" margin-top:30px; font-size: 12px; color: #A6A6A6; padding:10px 10px; border:0px solid #959595; z-index:101; background-color: #E6E6E6; text-align:center; opacity: 1">Request tablet save</button>
+
+	
+	<div id='juice_form_header' style = "margin-top:50px">Change juice per 1000 (current = ):</div>
+	<form id='juiceform' style="font-size:12;margin-top:0px">
+	  <input id ='juice_amount' type="text" name="Juice per 1000" style="margin-top:5px"><br>
+  	</form>
+
+  	<button class="button" name="ChangeJuiceButton" style=" margin-top:10px; font-size: 12px; color: #A6A6A6; padding:10px 10px; border:0px solid #959595; z-index:101; background-color: #E6E6E6; text-align:center; opacity: 1">Request change in juice amount</button>
+
+  
+  <div id="dashboard1_div" style="margin-top:30px">
+  	<div id="line_div"></div> <!--Div that will hold the line chart-->
+  	<div id="filtertrial_div"></div>
+  </div>
+  <div id="dashboard2_div">
+  	<div id="area_div"></div> <!--Div that will hold the area chart-->
+  	<div id="filtertime_div"></div>
+  </div>
+  <div id="bar_div"></div> <!--Div that will hold the bar chart-->
+  <div id="table_div"></div> <!--Div that will hold the table chart-->
+  <p id="task_text"></p>
+
+<script type="text/javascript">
+
+DIO = new DropboxIO()
+
+document.querySelector("button[name=SyncButton]").addEventListener(
+	'mouseup',sync_data_listener,false)
+
+document.querySelector("button[name=ChangeJuiceButton]").addEventListener(
+	'mouseup',change_juice_listener,false)
+
+
+var file={
+			dir: TRIAL_DATA_SAVEPATH, // from mkturk_installsettings.js
+			list: [],
+			pathlist: [],
+			name: "",
+			data: null,
+			ver: null,
+			date: null,
+			dateCreated: null,
+			datahasChanged: false,
+			filehasChanged: false,
+		};
+var titleobj = document.getElementById("page_title");
+var menuobj = document.getElementById("file_list");
+var tasktextobj = document.getElementById("task_text");
+menuobj.addEventListener("change",filelist_listener,false);
+//_____________ LABELS (begin)
+
+var vitals={
+	subject: null,
+	pctcorrect: 0,
+	trials: 0,
+	time: 0,
+	batteryleft: 0,
+	batteryused: 0,
+	rewardestimate: 0,
+	automator: "",
+	currentautomatorstage: 0,
+	currentautomatorstagename: "",
+	nrewards: 0,
+}
+var task={
+	rewardstage: 0,
+	rewardper1000: 0,
+	imagefoldersample: 0,
+	imagefoldertest: 0,
+	sampleon: 0,
+	sampleoff: 0,
+	nway: 0,
+	nobj: 0,
+	objectlist: [],
+}
+var dataPerformance=null;
+var dataCumulative=null;
+var dataConfusion=null;
+var dataConfusionView=null;
+var liveline=null;
+var livetable=null;
+var formatterDigits=null;
+var formatterColor=null;
+var trialrange=[0,0]
+if (isAuthenticated()){
+	//Create an instance of Dropbox with the access token
+	var dbx = new Dropbox({accessToken: getAccessTokenFromUrl()})
+	loadGoogleCharts();
+}
+else {
+	var dbx = new Dropbox({clientId: DBX_CLIENT_ID});
+	var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
+	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
+}
+</script>
+</body>
+</html>

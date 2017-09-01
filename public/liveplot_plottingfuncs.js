@@ -27,10 +27,7 @@ function loadGoogleCharts(){
         dataPerformance = new google.visualization.DataTable()
         dataPerformance.addColumn('number','currentTrial')
         dataPerformance.addColumn('number','currentPerformance')
-        dataCumulative = new google.visualization.DataTable()
-        dataCumulative.addColumn('datetime','time')
-        dataCumulative.addColumn('number','cumulativeTrials')
-        dataCumulative.addColumn('number','cumulativePerformance')
+
         
         
         // Create a dashboard.
@@ -48,8 +45,7 @@ function loadGoogleCharts(){
             'chartType': 'LineChart',
             'containerId': 'line_div'
         })
-        dashboard2 = new google.visualization.Dashboard(
-            document.getElementById('dashboard2_div'));
+
         livesliderTime = new google.visualization.ControlWrapper({
             'controlType': 'ChartRangeFilter',
             'containerId': 'filtertime_div',
@@ -64,9 +60,6 @@ function loadGoogleCharts(){
         // so that data will only display for entries that are let through
         // given the chosen slider range.
         dashboard1.bind(livesliderTrial, liveline)
-        dashboard2.bind(livesliderTime, livearea)
-        livebar = new google.visualization.ColumnChart(document.getElementById('bar_div'));
-        livetable = new google.visualization.Table(document.getElementById('table_div'));
         // data formatters
         formatterDate = new google.visualization.DateFormat({pattern: 'h aa'})
         formatterDigits = new google.visualization.NumberFormat({fractionDigits: 2})
@@ -92,33 +85,23 @@ function getAccessTokenFromUrl(){
     return utils.parseQueryString(window.location.hash).access_token
 }
 // Asynchronous: Get file list from dropbox directory
-function getFileListDropbox2(){
-    dbx.filesListFolder({path: file.dir, recursive:true}).then(function(response){
-        console.log("success: read directory ");
-//FilesFileMetadata: tag/name/id/rev/size/...
-//   http://dropbox.github.io/dropbox-sdk-js/global.html#FilesFileMetadata
-        var menuobj = document.getElementById("file_list");
-        for (var q = response.entries.length-1; q>=0; q--){
-            if (response.entries[q][".tag"] == "file" && response.entries[q].name.endsWith(".txt")){
-                console.log("found ", response.entries[q].name)
-                file.list[q] = response.entries[q].name
-                file.pathlist[q] = response.entries[q].path_display
-                //add to menu as option
-                var opt = document.createElement('option')
-                opt.value = q
-                opt.innerHTML = file.list[q]
-                menuobj.appendChild(opt)
-            }
+async function getFileListDropbox2(){
+    var filelist = await DIO.listdir(file.dir)
+    var menuobj = document.getElementById("file_list");
+    for (var q = filelist.length-1; q>=0; q--){
+        if (filelist[q].endsWith(".txt")){
+            console.log("found ", filelist[q])
+            file.list[q] = filelist[q]
+            file.pathlist[q] = join([file.dir, filelist[q]])
+            var opt = document.createElement('option')
+            opt.value = q
+            opt.innerHTML = file.list[q]
+            menuobj.appendChild(opt)
         }
-        // file.name = file.dir + file.list[file.list.length-1]
-        file.name = file.pathlist[file.pathlist.length-1]
-        file.filehasChanged = true
-        readDatafromDropbox2()
-    })
-    .catch(function(error){
-        console.error(error)
-    })
-    return false
+    }
+    file.name = file.pathlist[file.pathlist.length-1]
+    file.filehasChanged = true
+    readDatafromDropbox2()
 }
 // Asynchronous: Check for file updates
 function checkFileStatus2(){
@@ -143,8 +126,16 @@ function checkFileStatus2(){
     })
     return false
 }
+
+var datajson
+
 //Asynchronous: Read data from selected file in dropbox
-function readDatafromDropbox2(){
+async function readDatafromDropbox2(){
+
+    var text = await DIO.read_textfile(file.name)
+    var datajson = JSON.parse(text)
+    file.rev = await DIO.get_rev(file.name)
+    
     dbx.filesDownload({path: file.name}).then(function(data){
         console.log("success: loaded file size " + data.size);
         file.rev = data.rev
@@ -156,20 +147,21 @@ function readDatafromDropbox2(){
         file.dateCreated = new Date(datestr)
         var reader = new FileReader()
         reader.onload = function(e){
-            var datajson
             datajson = JSON.parse(reader.result)
             console.log(datajson)
             file.data = {}; 
-            for(var struct in datajson){
-                if(datajson.hasOwnProperty(struct)){
-                    console.log(struct)
-                    for (var prop in struct){
-                        if (struct.hasOwnProperty(prop)){
-                            file.data[prop] = datajson[struct][prop]
-                        }
-                    }                           
-                }
-            }
+            file.data.Response = datajson['TRIAL_BEHAVIOR']['Response']
+            file.data.CorrectItem = datajson['TRIAL_BEHAVIOR']['CorrectItem']
+            file.data.StartTime = datajson['TRIAL_BEHAVIOR']['StartTime']
+            file.data.CurrentStageIndex = datajson['TRIAL_BEHAVIOR']['CurrentStageIndex']
+            file.data.Subject = datajson['SESSION']['SubjectID']
+            
+            file.data.BatteryLDT = datajson['DEVICE']['BatteryLDT']
+            file.data.StartTime = datajson['TRIAL_BEHAVIOR']['CorrectItem']
+            //file.data.StartTime = datajson['TRIAL_BEHAVIOR']['RewardPer1000Trials']
+            //file.data.StartTime = datajson['TRIAL_BEHAVIOR']['StartTime']
+            //file.data.StartTime = datajson['TRIAL_BEHAVIOR']['StartTime']
+
             parseImageInfo()
         }
         reader.readAsText(data.fileBlob)
@@ -195,15 +187,10 @@ function parseImageInfo(){
 function initializeChartData(){
     dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
     dataPerformance.removeColumns(0,dataPerformance.getNumberOfColumns());
-    dataCumulative.removeRows(0,dataCumulative.getNumberOfRows());
-    dataCumulative.removeColumns(0,dataCumulative.getNumberOfColumns());
-
+  
     dataPerformance.addColumn('number','currentTrial')
     dataPerformance.addColumn('number','currentPerformance')
-    dataCumulative.addColumn('datetime','time') //0
-    dataCumulative.addColumn('number','cumulativeTrials') //1
-    dataCumulative.addColumn('number','cumulativePerformance') //2
-        
+   
     updatePlots()
     file.filehasChanged=false
 }
@@ -292,7 +279,6 @@ vitals["automator"]
 // Synchronous
 function toPerformanceData(){
     dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
-    dataCumulative.removeRows(0,dataCumulative.getNumberOfRows());
     //Create the data table
     var xdata = []
     var ydata = []
@@ -321,9 +307,7 @@ for (var i=0; i<=ydata.length-1; i++){
     var tfix = file.data.StartTime[i] //in milliseconds
     var t = new Date(file.dateSaved)
     t.setTime(t.getTime() -  tfix)
-    dataCumulative.addRows([[new Date(t),ntotal[i],ncorrect[i]]])
 }
-formatterDate.format(dataCumulative,0)
 }
 
 //================== DATA HANDLING (end) ==================//
@@ -335,7 +319,6 @@ function updatePlots() {
     toPerformanceData();
     addVitalsText();
     drawLine() //current
-    drawArea() //cumulative
     file.datahasChanged=false
     checkFileStatus2();
 }
@@ -347,7 +330,7 @@ function addVitalsText(){
         "\nCurrent stage:   " + file.data.CurrentStageIndex.slice(-1)+ 
         "\nBattery:   " + vitals.batteryleft + "% (" + -1*vitals.batteryused + "% change from start) " + 
         "\nLast Trial:   " + file.dateSaved.toLocaleTimeString('en-US')
-    titleobj.innerHTML = vitals.subject;
+    document.getElementById("page_title").innerHTML = vitals.subject;
 }
 // Synchronous
 
@@ -381,48 +364,6 @@ function drawLine(){
     liveline.setOptions(lineOptions)
     //move slider which will drive replotting
     livesliderTrial.setState({'range': {'start': sliderstate.range.start,'end': sliderstate.range.end}})
-    dashboard1.draw(dataPerformance)
+    dashboard1.draw(dataPerformance, {curveType: 'function'})
     ntrials = nrows //new trial range
 }
-//Synchronous
-function drawArea(){
-    var sliderstate = livesliderTime.getState()
-    var tmin = new Date(dataCumulative.getColumnRange(0).min)
-    var tmax = new Date(dataCumulative.getColumnRange(0).max)
-    var trange = tmax.getTime() - tmin.getTime()
-    var onehr = 60*60*1000
-    //updating slider
-    if (file.datahasChanged == true && file.filehasChanged == false){
-        // if (trange < onehr){
-            // expand window size automatically up to 100
-            sliderstate.range.start = tmin
-            sliderstate.range.end = tmax
-        // }
-        // else {
-        //  //shift slider over
-        //  var dt = tmax.getTime() - tlast.getTime()
-        //  sliderstate.range.start.setTime(sliderstate.range.start.getTime() + dt)
-        //  sliderstate.range.end.setTime(sliderstate.range.end.getTime() + dt)
-        // }
-    }
-    else if (file.filehasChanged == true){
-            sliderstate.range.start = tmin
-            sliderstate.range.end = tmax
-        // //shift slider to end
-        // sliderstate.range.start = new Date(tmax.getTime() - onehr)
-        // sliderstate.range.end = tmax
-        // if (sliderstate.range.start.getTime() < tmin.getTime()){
-        //  sliderstate.range.start = new Date(tmin.getTime())
-        // }
-    }
-    tlast = new Date(dataCumulative.getColumnRange(0).max)
-    //move slider which will drive replotting
-    livesliderTime.setState({'range': {'start': sliderstate.range.start,'end': sliderstate.range.end}})
-    livearea.setOptions(areaOptions)
-    dashboard2.draw(dataCumulative)
-}
-// Synchronous
-
-// Synchronous
-
-//================== PLOTTING (end) ==================//
