@@ -121,7 +121,8 @@ async function updatePlot(i){
 
     var options = {
         hAxis: {
-          title: '# times'
+          title: '# times',
+          minValue:'0'
         },
       };
 
