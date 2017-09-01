@@ -51,7 +51,6 @@
 
 }
 
-
 </style>
 
 </head>
@@ -64,20 +63,26 @@
   <select id="file_selection_dropdown_menu"></select> 
 </div>
 
-    <button class="button" name="SyncButton" style=" margin-top:30px; font-size: 12px; color: #A6A6A6; padding:10px 10px; border:0px solid #959595; z-index:101; background-color: #E6E6E6; text-align:center; opacity: 1">Request tablet save</button>
+<button class="button" name="SyncButton" style=" margin-top:30px; font-size: 12px; color: #A6A6A6; padding:10px 10px; border:0px solid #959595; z-index:101; background-color: #E6E6E6; text-align:center; opacity: 1">Request tablet save</button>
 
-    
-    <div id='juice_form_header' style = "margin-top:50px">Change juice per 1000 (current = ):</div>
-    <form id='juiceform' style="font-size:12;margin-top:0px">
-      <input id ='juice_amount' type="text" name="Juice per 1000" style="margin-top:5px"><br>
-    </form>
 
-    <button class="button" name="ChangeJuiceButton" style=" margin-top:10px; font-size: 12px; color: #A6A6A6; padding:10px 10px; border:0px solid #959595; z-index:101; background-color: #E6E6E6; text-align:center; opacity: 1">Request change in juice amount</button>
+<div id='juice_form_header' style = "margin-top:50px">Change juice per 1000 (current = ):</div>
+<form id='juiceform' style="font-size:12;margin-top:0px">
+  <input id ='juice_amount' type="text" name="Juice per 1000" style="margin-top:5px"><br>
+</form>
 
-  
-  <div style = "margin-top:50px; width:700px; height:500px" id="chart_div"></div>
+<button class="button" name="ChangeJuiceButton" style=" margin-top:10px; font-size: 12px; color: #A6A6A6; padding:10px 10px; border:0px solid #959595; z-index:101; background-color: #E6E6E6; text-align:center; opacity: 1">Request change in juice amount</button>
 
-  <p id="task_text"></p>
+<div id='circle' style="margin-top:10px">
+<svg height="40" width="40">
+  <circle cx ="20" cy = "20" r="5" fill="green" fill-opacity = 0.3>
+</svg>
+</div>
+
+<div style = "margin-top:5px" id="chart_header">Hello</div>
+<div style = "margin-top:0px; width:700px; height:500px" id="chart_div"></div>
+
+<p id="task_text"></p>
 
 <script type="text/javascript">
 
@@ -92,6 +97,9 @@ document.querySelector("button[name=ChangeJuiceButton]").addEventListener(
 DIO = new DropboxIO()
 CURRENT_VIEW = {}
 DISK_STATE = {}; 
+
+CURRENT_VIEW['last_updated'] = performance.now()
+
 
 var menuobj = document.getElementById("file_selection_dropdown_menu");
 
@@ -113,8 +121,10 @@ var menuobj = document.getElementById("file_selection_dropdown_menu");
 	
 	var i = 0
 	while(true){
+		document.getElementById('circle').style.visibility = 'hidden'
 		await updatePlot(i)
 		i++
+		document.getElementById('circle').style.visibility = 'visible'
 		await choiceTimeOut(1000) // Every 30 seconds; or on event listener
 	}
 })()

@@ -70,8 +70,27 @@ function _base64ToArrayBuffer(base64){
   return bytes.buffer;
 }
 
-//================== UTILS ==================//
-// Synchronous
+
+function getTimeElapsedString(unix_start_timestamp){
+  var min_elapsed = Math.round((Date.now() / 1000  - unix_start_timestamp/1000 )/ 60 )
+  if (min_elapsed >= 60){
+        var min_elapsed_string = Math.floor(min_elapsed/60)+':' + min_elapsed % 60 +' h'
+    }
+    else{
+        var min_elapsed_string = min_elapsed+' min'
+    }
+  return min_elapsed_string
+}
+
+function unix_timestamp_in_seconds_to_string(sec){
+  var t = new Date(sec * 1000);
+  var hours = t.getHours()
+  var minutes = t.getMinutes()
+  var seconds = t.getSeconds()
+  console.log(hours, minutes, seconds) 
+  return 
+}
+
 function smooth(data,n){
   var smoothed_data=[];
   for (var i=0; i<=data.length-1; i++){
@@ -86,7 +105,18 @@ function smooth(data,n){
   return smoothed_data;
 }
 
+function mean(data){
+  var sum = data.reduce(function(a, b) { return a + b; });
+  var avg = sum / data.length;
+  return avg 
 
+}
+
+function sum(data){
+  var sum = data.reduce(function(a, b) { return a + b; });
+  
+  return sum 
+}
 
 //polyfill for array.prototype.fill
 if (!Array.prototype.fill) {
