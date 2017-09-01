@@ -159,17 +159,16 @@ function readDatafromDropbox2(){
             var datajson
             datajson = JSON.parse(reader.result)
             console.log(datajson)
-            if (Array.isArray(datajson)){
-                file.data = {}; 
-                for(var elem = 0; elem < datajson.length; elem++){
-                    for(var prop in datajson[elem]){
-                        file.data[prop] = datajson[elem][prop]
-                    }
+            file.data = {}; 
+            for(var struct in datajson){
+                if(datajson.hasOwnProperty(struct)){
+                    console.log(struct)
+                    for (var prop in struct){
+                        if (struct.hasOwnProperty(prop)){
+                            file.data[prop] = datajson[struct][prop]
+                        }
+                    }                           
                 }
-                                
-            }
-            else{
-                file.data = datajson
             }
             parseImageInfo()
         }
@@ -180,6 +179,7 @@ function readDatafromDropbox2(){
     })
     return false
 }
+
 function parseImageInfo(){
     
     if (file.filehasChanged==true){
