@@ -18,26 +18,26 @@ class DataWriter{
 
     async saveTrialData(save_to_debug_directory){
 
-        var dataobj = [] 
-        dataobj.push(SESSION)
-        dataobj.push(DEVICE)
-        dataobj.push(TS.EXPERIMENT)
-        dataobj.push(CANVAS)
-        dataobj.push(TRIAL_BEHAVIOR)
-        dataobj.push(EVENT_TIMESTAMPS)
+        var dataobj = {}
+        dataobj['SESSION'] = SESSION
+        dataobj['DEVICE'] = DEVICE
+        dataobj['EXPERIMENT'] = TS.EXPERIMENT
+        dataobj['CANVAS'] = CANVAS
+        dataobj['TRIAL_BEHAVIOR'] = TRIAL_BEHAVIOR
+        dataobj['EVENT_TIMESTAMPS'] = EVENT_TIMESTAMPS
         var datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
 
 
         try{// In debug mode
             if (save_to_debug_directory == 1){
                 var savepath = join([this._debug_trial_data_savepath,
-                    SESSION.Subject,
-                    "debug__"+SESSION.Subject +'_'+SESSION.TrialDataFileName_suffix])
+                    SESSION.SubjectID,
+                    "debug__"+SESSION.SubjectID +'_'+SESSION.TrialDataFileName_suffix])
             }
             else { 
                 var savepath = join([this.trial_data_savepath,
-                    SESSION.Subject,
-                    SESSION.Subject +'_'+SESSION.TrialDataFileName_suffix])
+                    SESSION.SubjectID,
+                    SESSION.SubjectID +'_'+SESSION.TrialDataFileName_suffix])
             }
 
             await this.DIO.write_string(datastr, savepath)             
@@ -53,11 +53,11 @@ class DataWriter{
         try{
 
             if (save_to_debug_directory == 0){
-                var savepath = join([this.touch_data_savepath, SESSION.Subject, SESSION.Subject+this._touch_filename_suffix ])
+                var savepath = join([this.touch_data_savepath, SESSION.SubjectID, SESSION.SubjectID+this._touch_filename_suffix ])
             }
             else { // In debug mode
 
-                var savepath = join([this._debug_touch_data_savepath, SESSION.Subject, 'debug__'+SESSION.Subject+this._touch_filename_suffix ])
+                var savepath = join([this._debug_touch_data_savepath, SESSION.SubjectID, 'debug__'+SESSION.SubjectID+this._touch_filename_suffix ])
             }
 
 

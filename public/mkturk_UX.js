@@ -52,10 +52,10 @@ class UX_poller{
     }
 
     get_saveRequest_filepath(){
-        return "/UserUX/"+SESSION.Subject+"_saverequest.txt"
+        return "/UserUX/"+SESSION.SubjectID+"_saverequest.txt"
     }
     get_juiceRequest_filepath(){
-        return "/UserUX/"+SESSION.Subject+'_juicerequest.txt'
+        return "/UserUX/"+SESSION.SubjectID+'_juicerequest.txt'
     }
 
 }

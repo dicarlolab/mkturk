@@ -19,8 +19,6 @@ var ParamFilePath = '';
 //var TASK // Current 
 
 
-
-
 var EVENT_TIMESTAMPS = {}
 EVENT_TIMESTAMPS.fixation_onset = [] // todo: move to control of task / screen state machine
 EVENT_TIMESTAMPS.fixation_touch = []
@@ -46,11 +44,11 @@ DEVICE.source_ImageHeightPixels = NaN;
 DEVICE.source_ImageWidthPixels = NaN;
 
 var SESSION = {}
-SESSION.Subject = ''
+SESSION.SubjectID = ''
 SESSION.UnixTimestampAtStart = window.performance.timing.navigationStart
 SESSION.CurrentDate = new Date;
 var __datestr = SESSION.CurrentDate.toISOString();
-SESSION.TrialDataFileName_suffix = __datestr.slice(0, __datestr.indexOf(".")) + "_" + SESSION.Subject + ".txt";
+SESSION.TrialDataFileName_suffix = __datestr.slice(0, __datestr.indexOf(".")) + "_" + SESSION.SubjectID + ".txt";
 
 
 
@@ -150,8 +148,15 @@ function initialize_TRIAL(){
 	TRIAL_BEHAVIOR.trial_num_Stage = []
 	TRIAL_BEHAVIOR.reward_duration = []
 	TRIAL_BEHAVIOR.StartTime = []
-	TRIAL_BEHAVIOR.FixationXYT = []
-	TRIAL_BEHAVIOR.ChoiceXYT = []
+
+	TRIAL_BEHAVIOR.FixationX = []
+	TRIAL_BEHAVIOR.FixationY = []
+	TRIAL_BEHAVIOR.FixationT = []
+
+	TRIAL_BEHAVIOR.ChoiceX = []
+	TRIAL_BEHAVIOR.ChoiceY = []
+	TRIAL_BEHAVIOR.ChoiceT = []
+
 	TRIAL_BEHAVIOR.BoundingBoxesChoiceImages = []
 	TRIAL_BEHAVIOR.BoundingBoxSampleImage = []
 	TRIAL_BEHAVIOR.BoundingBoxFixationImage = []

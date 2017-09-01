@@ -104,8 +104,14 @@ reinforcement_end = performance.now()
 
 
 var current_trial_outcome = {}
-current_trial_outcome['FixationXYT'] = [fixation_outcome['x'], fixation_outcome['y'], Math.round(fixation_outcome['timestamp']*1000)/1000]
-current_trial_outcome['ChoiceXYT'] = [choice_outcome['x'], choice_outcome['y'], Math.round(choice_outcome['timestamp']*1000)/1000]
+current_trial_outcome['FixationX'] = fixation_outcome['x']
+current_trial_outcome['FixationY'] = fixation_outcome['y']
+current_trial_outcome['FixationT'] = Math.round(fixation_outcome['timestamp']*1000)/1000
+
+current_trial_outcome['ChoiceX'] = choice_outcome['x']
+current_trial_outcome['ChoiceY'] = choice_outcome['y']
+current_trial_outcome['ChoiceT'] = Math.round(choice_outcome['timestamp']*1000)/1000
+
 current_trial_outcome['StartTime'] = Math.round(fixation_outcome['timestamp']*1000)/1000
 current_trial_outcome['FixationGridIndex'] = TS.EXPERIMENT[TS.state.current_stage_index]['StaticFixationGridIndex']
 current_trial_outcome['SampleBagIndex'] = samplebag_index

@@ -257,9 +257,8 @@ function saysHello(){
 	console.log(SubjectSettings)
 	wdm("Subject settings loaded...")
 
-	SESSION.Subject = SubjectSettings['SubjectID'];
-	
-  updateSessionTextbox(SESSION.Subject, '')
+	SESSION.SubjectID = SubjectSettings['SubjectID'];
+  updateSessionTextbox(SESSION.SubjectID, '')
 
   //================== AWAIT LOAD Experiment Filepath ==================//
   experiment_file_list = await DIO.listdir(EXPERIMENT_DIRPATH)
@@ -274,9 +273,9 @@ function saysHello(){
   experimentfile_obj.addEventListener("change",experimentlist_listener,false);
   experiment_dialog.showModal()
   await ExperimentFile_Promise() // sets SESSION.ExperimentFilePath
-  updateSessionTextbox(SESSION.Subject, splitFilename(SESSION.ExperimentFilePath))
+  updateSessionTextbox(SESSION.SubjectID, splitFilename(SESSION.ExperimentFilePath))
 
-  TS = new TaskStreamer(DIO, SESSION.ExperimentFilePath, SESSION.Subject) 
+  TS = new TaskStreamer(DIO, SESSION.ExperimentFilePath, SESSION.SubjectID) 
   await TS.build()
   wdm('TaskStreamer built')
 
