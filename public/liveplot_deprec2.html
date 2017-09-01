@@ -13,6 +13,7 @@
 
 <script src="liveplot_eventlisteners.js"></script>
 <script src="disk_template.js"></script>
+<script src="mkturk_utils.js"></script>
 
 
 <style type='text/css'>
@@ -46,12 +47,28 @@
       transform: translateY(4px);
     }
 
+    #DebugMessageTextBox {
+   position: fixed;
+   margin-top: 51px;
+   left: 30%;
+   height: 30px;
+   color:black;
+   font-size: 8px; 
+   z-index:102;
+   font-family: 'Helvetica Neue';
+   color:white;
+
+}
+
+
 </style>
 <script src="liveplot_plottingfuncs.js"></script>
 
 </head>
 
 <body>
+<div id="DebugMessageTextBox">0</div>
+
     <h1>liveplot_mkturk</h1>
   <div id="filelist_div">
       <select id="file_list"></select> <!--Pull down menu that will hold file list-->
@@ -73,12 +90,10 @@
     <div id="filtertrial_div"></div>
   </div>
 
-  <div id="bar_div"></div> <!--Div that will hold the bar chart-->
-  <div id="table_div"></div> <!--Div that will hold the table chart-->
   <p id="task_text"></p>
 
 <script type="text/javascript">
-
+(async function(){
 DIO = new DropboxIO()
 
 document.querySelector("button[name=SyncButton]").addEventListener(
@@ -100,9 +115,7 @@ var file={
             datahasChanged: false,
             filehasChanged: false,
         };
-var titleobj = document.getElementById("page_title");
 var menuobj = document.getElementById("file_list");
-var tasktextobj = document.getElementById("task_text");
 menuobj.addEventListener("change",filelist_listener,false);
 //_____________ LABELS (begin)
 
@@ -131,24 +144,22 @@ var task={
     objectlist: [],
 }
 var dataPerformance=null;
-var dataCumulative=null;
 var dataConfusion=null;
 var dataConfusionView=null;
 var liveline=null;
-var livetable=null;
 var formatterDigits=null;
 var formatterColor=null;
 var trialrange=[0,0]
 if (isAuthenticated()){
     //Create an instance of Dropbox with the access token
     var dbx = new Dropbox({accessToken: getAccessTokenFromUrl()})
-    loadGoogleCharts();
+    await loadGoogleCharts();
 }
 else {
     var dbx = new Dropbox({clientId: DBX_CLIENT_ID});
     var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
     window.location.href = dbx_authUrl //send to Dropbox sign-in screen
-}
+}})
 </script>
 </body>
 </html>

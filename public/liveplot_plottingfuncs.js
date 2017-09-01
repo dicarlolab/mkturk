@@ -20,7 +20,9 @@ function getAccessTokenFromUrl(){
 //================== PLOTTING ==================//
 //================== GOOGLE CHARTS LOADING ==================//
 // Asynchronous: Live plotting using google charts
-function loadGoogleCharts(){
+async function loadGoogleCharts(){
+    console.log('hello')
+    return 
     // Load the Visualization API and the piechart package.
     google.charts.load('current', {'packages':['corechart', 'bar','table','controls']});
     google.charts.setOnLoadCallback(function(){
@@ -32,7 +34,7 @@ function loadGoogleCharts(){
         
         // Create a dashboard.
         dashboard1 = new google.visualization.Dashboard(
-            document.getElementById('dashboard1_div'));
+            document.getElementById('dashboardPerf_div'));
         // Initialize plotting elements
         // See for chartrange example: https://google-developers.appspot.com/chart/interactive/docs/gallery/controls_5cece98b344aa0b1575282db7d34d5f4.frame
         livesliderTrial = new google.visualization.ControlWrapper({
@@ -87,24 +89,24 @@ function getAccessTokenFromUrl(){
 // Asynchronous: Get file list from dropbox directory
 async function getFileListDropbox2(){
     var filelist = await DIO.listdir(file.dir)
-    var menuobj = document.getElementById("file_list");
-    for (var q = filelist.length-1; q>=0; q--){
+
+    for (var q = 0; q<filelist.length; q++){
         if (filelist[q].endsWith(".txt")){
-            console.log("found ", filelist[q])
-            file.list[q] = filelist[q]
-            file.pathlist[q] = join([file.dir, filelist[q]])
+            console.log("found ", splitFilename(filelist[q]))
+            file.list[q] = splitFilename(filelist[q])
+            file.pathlist[q] = filelist[q]
             var opt = document.createElement('option')
             opt.value = q
             opt.innerHTML = file.list[q]
             menuobj.appendChild(opt)
         }
     }
-    file.name = file.pathlist[file.pathlist.length-1]
+    file.name = file.pathlist[0]
     file.filehasChanged = true
-    readDatafromDropbox2()
+    await readDatafromDropbox2(file.name)
 }
 // Asynchronous: Check for file updates
-function checkFileStatus2(){
+async function checkFileStatus2(){
     dbx.filesGetMetadata({path: file.name}).then(function(filemeta){
         if (file.rev != filemeta.rev){
             file.rev = filemeta.rev
@@ -115,7 +117,8 @@ function checkFileStatus2(){
             file.datahasChanged=false
         }
         if (file.filehasChanged == true || file.datahasChanged == true){
-            readDatafromDropbox2()
+            console.log('hello0', file)
+            readDatafromDropbox2(file.name)
         }
         else {
             setTimeout(function(){checkFileStatus2()},1000)
@@ -130,45 +133,29 @@ function checkFileStatus2(){
 var datajson
 
 //Asynchronous: Read data from selected file in dropbox
-async function readDatafromDropbox2(){
+async function readDatafromDropbox2(filepath){
 
-    var text = await DIO.read_textfile(file.name)
+    var text = await DIO.read_textfile(filepath)
     var datajson = JSON.parse(text)
-    file.rev = await DIO.get_rev(file.name)
-    
-    dbx.filesDownload({path: file.name}).then(function(data){
-        console.log("success: loaded file size " + data.size);
-        file.rev = data.rev
-        file.dateSaved = new Date(data.client_modified)
-        //Parse date
-        var ind1 = file.name.indexOf("/2")
-        var ind2 = file.name.indexOf('_')
-        var datestr = file.name.substring(ind1+1,ind2)
-        file.dateCreated = new Date(datestr)
-        var reader = new FileReader()
-        reader.onload = function(e){
-            datajson = JSON.parse(reader.result)
-            console.log(datajson)
-            file.data = {}; 
-            file.data.Response = datajson['TRIAL_BEHAVIOR']['Response']
-            file.data.CorrectItem = datajson['TRIAL_BEHAVIOR']['CorrectItem']
-            file.data.StartTime = datajson['TRIAL_BEHAVIOR']['StartTime']
-            file.data.CurrentStageIndex = datajson['TRIAL_BEHAVIOR']['CurrentStageIndex']
-            file.data.Subject = datajson['SESSION']['SubjectID']
-            
-            file.data.BatteryLDT = datajson['DEVICE']['BatteryLDT']
-            file.data.StartTime = datajson['TRIAL_BEHAVIOR']['CorrectItem']
-            //file.data.StartTime = datajson['TRIAL_BEHAVIOR']['RewardPer1000Trials']
-            //file.data.StartTime = datajson['TRIAL_BEHAVIOR']['StartTime']
-            //file.data.StartTime = datajson['TRIAL_BEHAVIOR']['StartTime']
 
-            parseImageInfo()
-        }
-        reader.readAsText(data.fileBlob)
-    })
-    .catch(function(error){
-        console.error(error)
-    })
+    console.log(filepath)
+    file.rev = await DIO.get_rev(filepath)
+    console.log(datajson)
+    
+    var datestr = datajson['SESSION']['CurrentDate']
+    file.datajson = datajson
+    file.dateCreated = new Date(datestr)
+    file.data = {}; 
+    file.data.UnixTimestampAtStart = datajson['SESSION']['UnixTimestampAtStart']
+    file.data.Response = datajson['TRIAL_BEHAVIOR']['Response']
+    file.data.CorrectItem = datajson['TRIAL_BEHAVIOR']['CorrectItem']
+    file.data.StartTime = datajson['TRIAL_BEHAVIOR']['StartTime']
+    file.data.CurrentStageIndex = datajson['TRIAL_BEHAVIOR']['CurrentStageIndex']
+    file.data.Subject = datajson['SESSION']['SubjectID']
+    
+    file.data.BatteryLDT = datajson['DEVICE']['BatteryLDT']
+
+    parseImageInfo()
     return false
 }
 
@@ -324,12 +311,20 @@ function updatePlots() {
 }
 // Synchronous
 function addVitalsText(){
+    var last_trial_unix_timestamp = file.data.UnixTimestampAtStart + file.data.StartTime.slice(-1)[0]/1000
+    console.log(last_trial_unix_timestamp)
+    var last_trial_date = new Date(1000*last_trial_unix_timestamp)
+    var hours = last_trial_date.getHours(); 
+    var minutes = "0"+last_trial_date.getMinutes()
+    var seconds = "0"+last_trial_date.getSeconds()
+    var formattedTimeString = hours+':'+minutes.substr(-2)+':'+seconds.substr(-2)
+
     lineOptions.title =
         vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.trials + 
         ", r=" + vitals.nrewards + "=" + vitals.rewardestimate + "mL, " + vitals.time + "min)     " + 
         "\nCurrent stage:   " + file.data.CurrentStageIndex.slice(-1)+ 
-        "\nBattery:   " + vitals.batteryleft + "% (" + -1*vitals.batteryused + "% change from start) " + 
-        "\nLast Trial:   " + file.dateSaved.toLocaleTimeString('en-US')
+        "\nBattery: " + vitals.batteryleft + "% (" + -1*vitals.batteryused + "% change from start) " + 
+        "\nLast Trial: " + formattedTimeString //https://stackoverflow.com/questions/847185/convert-a-unix-timestamp-to-time-in-javascript
     document.getElementById("page_title").innerHTML = vitals.subject;
 }
 // Synchronous

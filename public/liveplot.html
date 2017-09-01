@@ -13,6 +13,9 @@
 
 <script src="liveplot_eventlisteners.js"></script>
 <script src="disk_template.js"></script>
+<script src="mkturk_utils.js"></script>
+<script src="liveplot_plottingfuncs.js"></script>
+<script src="liveplot_plotter.js"></script>
 
 
 <style type='text/css'>
@@ -46,16 +49,20 @@
       transform: translateY(4px);
     }
 
+}
+
+
 </style>
-<script src="liveplot_plottingfuncs.js"></script>
 
 </head>
 
 <body>
-    <h1>liveplot_mkturk</h1>
-  <div id="filelist_div">
-      <select id="file_list"></select> <!--Pull down menu that will hold file list-->
-    </div>
+
+<h1>liveplot_mkturk</h1>
+<div id="file_dropdown_menu_div">
+<p>Select file:</p>
+  <select id="file_selection_dropdown_menu"></select> 
+</div>
 
     <button class="button" name="SyncButton" style=" margin-top:30px; font-size: 12px; color: #A6A6A6; padding:10px 10px; border:0px solid #959595; z-index:101; background-color: #E6E6E6; text-align:center; opacity: 1">Request tablet save</button>
 
@@ -68,16 +75,11 @@
     <button class="button" name="ChangeJuiceButton" style=" margin-top:10px; font-size: 12px; color: #A6A6A6; padding:10px 10px; border:0px solid #959595; z-index:101; background-color: #E6E6E6; text-align:center; opacity: 1">Request change in juice amount</button>
 
   
-  <div id="dashboard1_div" style="margin-top:30px">
-    <div id="line_div"></div> <!--Div that will hold the line chart-->
-    <div id="filtertrial_div"></div>
-  </div>
+  <div style = "margin-top:50px; width:700px; height:500px" id="chart_div"></div>
 
   <p id="task_text"></p>
 
 <script type="text/javascript">
-
-DIO = new DropboxIO()
 
 document.querySelector("button[name=SyncButton]").addEventListener(
     'mouseup',sync_data_listener,false)
@@ -86,63 +88,36 @@ document.querySelector("button[name=ChangeJuiceButton]").addEventListener(
     'mouseup',change_juice_listener,false)
 
 
-var file={
-            dir: TRIAL_DATA_SAVEPATH, // from mkturk_installsettings.js
-            list: [],
-            pathlist: [],
-            name: "",
-            data: null,
-            ver: null,
-            date: null,
-            dateCreated: null,
-            datahasChanged: false,
-            filehasChanged: false,
-        };
-var menuobj = document.getElementById("file_list");
-menuobj.addEventListener("change",filelist_listener,false);
-//_____________ LABELS (begin)
 
-var vitals={
-    subject: null,
-    pctcorrect: 0,
-    trials: 0,
-    time: 0,
-    batteryleft: 0,
-    batteryused: 0,
-    rewardestimate: 0,
-    automator: "",
-    currentautomatorstage: 0,
-    currentautomatorstagename: "",
-    nrewards: 0,
-}
-var task={
-    rewardstage: 0,
-    rewardper1000: 0,
-    imagefoldersample: 0,
-    imagefoldertest: 0,
-    sampleon: 0,
-    sampleoff: 0,
-    nway: 0,
-    nobj: 0,
-    objectlist: [],
-}
-var dataPerformance=null;
-var dataConfusion=null;
-var dataConfusionView=null;
-var liveline=null;
-var formatterDigits=null;
-var formatterColor=null;
-var trialrange=[0,0]
-if (isAuthenticated()){
-    //Create an instance of Dropbox with the access token
-    var dbx = new Dropbox({accessToken: getAccessTokenFromUrl()})
-    loadGoogleCharts();
-}
-else {
-    var dbx = new Dropbox({clientId: DBX_CLIENT_ID});
-    var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
-    window.location.href = dbx_authUrl //send to Dropbox sign-in screen
-}
+DIO = new DropboxIO()
+CURRENT_VIEW = {}
+DISK_STATE = {}; 
+
+var menuobj = document.getElementById("file_selection_dropdown_menu");
+
+(async function(){
+	var file_list = await DIO.listdir(TRIAL_DATA_SAVEPATH)
+	DISK_STATE['filepaths'] = file_list
+	for(var i = 0; i < file_list.length; i ++){
+		var opt = document.createElement('option')
+		opt.value = i 
+		opt.innerHTML = splitFilename(file_list[i])
+		menuobj.appendChild(opt)
+	}; 
+	CURRENT_VIEW['filepath'] = DISK_STATE['filepaths'][0] // latest file is default selection on page load
+	CURRENT_VIEW['filename'] = splitFilename(DISK_STATE['filepaths'][0]) 
+	menuobj.addEventListener("change",filelist_listener,false);
+	
+	await google.charts.load('current', {packages:['corechart', 'line']})
+	await google.charts.setOnLoadCallback(updatePlot(0))
+	
+	var i = 0
+	while(true){
+		await updatePlot(i)
+		i++
+		await choiceTimeOut(1000) // Every 30 seconds; or on event listener
+	}
+})()
 </script>
 </body>
 </html>

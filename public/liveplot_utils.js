@@ -86,11 +86,7 @@ function smooth(data,n){
   return smoothed_data;
 }
 
-function filelist_listener(event){
-  console.log("new file");
-  file.name = file.pathlist[this.value]
-  file.filehasChanged=true;
-}
+
 
 //polyfill for array.prototype.fill
 if (!Array.prototype.fill) {

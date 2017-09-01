@@ -35,6 +35,13 @@ function get_juiceRequest_filepath(){
 }
 
 
+function filelist_listener(event){
+  console.log("Selected new file")
+  CURRENT_VIEW['filepath'] = DISK_STATE['filepaths'][this.value]
+  CURRENT_VIEW['filename'] = splitFilename(DISK_STATE['filepaths'][this.value])
+  console.log("filelist listener", CURRENT_VIEW)
+  CURRENT_VIEW['filehasChanged']=true;
+}
 
 async function change_juice_listener(event){
     if(FLAGS.juiceChange_request_in_progress == false){
