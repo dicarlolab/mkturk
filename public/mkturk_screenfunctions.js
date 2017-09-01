@@ -1,6 +1,3 @@
-
-
-
 function writeToTrialCounterDisplay(s){
 	var elem = document.getElementById('TrialCounter')
 	elem.innerHTML = s; // text
@@ -290,7 +287,6 @@ async function renderImageOnCanvas(image, grid_index, scale, canvasobj){
 
 
 function displayScreenSequence(sequence,tsequence){
-	console.log('displayScreenSequence', sequence, tsequence)
 	var resolveFunc
 	var errFunc
 	p = new Promise(function(resolve,reject){
@@ -311,7 +307,6 @@ function displayScreenSequence(sequence,tsequence){
 
 		// If time to show new frame, 
 		if (timestamp - start > tsequence[current_frame_index]){
-			console.log('Frame =' + current_frame_index+'. ms elapsed from start: ='+(timestamp-start)+'. Timestamp = ' + timestamp)
 			frame_unix_timestamps[current_frame_index] = performance.now() //in milliseconds, rounded to nearest hundredth of a millisecond
 			// Move canvas in front
 			var prev_canvasobj=CANVAS.obj[CANVAS.front]
@@ -335,7 +330,6 @@ function displayScreenSequence(sequence,tsequence){
 			window.requestAnimationFrame(updateCanvas);
 		}
 		else{
-			console.log(frame_unix_timestamps)
 	
 			resolveFunc(frame_unix_timestamps);
 		}
@@ -352,81 +346,6 @@ function renderBlank(canvasobj){
 	context.fillRect(0,0,canvasobj.width,canvasobj.height);
 }
 
-function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,fixationscale,samplescale,testscale,imwidth,canvasratio,canvasobj)
-{
-	var outofbounds_str = ''
-	var context=canvasobj.getContext('2d');
-	context.fillStyle="#7F7F7F";
-	context.fillRect(0,0,canvasobj.width,canvasobj.height);
-
-	//Show image positions & display grid
-	//Display grid
-	for (var i = 0; i <= gridx.length-1; i++){
-		rad = 10
-		context.beginPath()
-		context.arc(gridx[i],gridy[i],rad,0*Math.PI,2*Math.PI)
-		context.fillStyle="red"
-		context.fill();
-
-		var displaycoord = [gridx[i]-rad,gridy[i]-rad,gridx[i]+rad,gridy[i]+rad]
-		var outofbounds=checkDisplayBounds(displaycoord)
-		if (outofbounds == 1){
-			outofbounds_str = outofbounds_str + "<br>" + "gridpoint" + i + " is out of bounds"
-		}
-	}
-
-	//Fixation Image Bounding Box
-	var wd = imwidth*fixationscale*canvasratio
-	var xcent = gridx[fixationgridindex]
-	var ycent = gridy[fixationgridindex]
-	context.strokeStyle="white"
-	context.strokeRect(xcent-wd/2,ycent-wd/2,wd+1,wd+1)
-
-	var displaycoord = [xcent-wd/2,ycent-wd/2,xcent+wd/2,ycent+wd/2]
-	var outofbounds=checkDisplayBounds(displaycoord)
-	if (outofbounds == 1){
-		outofbounds_str = outofbounds_str + "<br>" + "Fixation dot is out of bounds"
-	}
-	displayPhysicalSize(SubjectSettings['Tablet'],displaycoord,canvasobj)
-
-	
-	//Sample Image Bounding Box
-	var wd = imwidth*samplescale*canvasratio
-	var xcent = gridx[samplegridindex]
-	var ycent = gridy[samplegridindex]
-	context.strokeStyle="green"
-	context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
-
-	var displaycoord = [xcent-wd/2,ycent-wd/2,xcent+wd/2,ycent+wd/2]
-	var outofbounds=checkDisplayBounds(displaycoord)
-	if (outofbounds == 1){
-		outofbounds_str = outofbounds_str + "<br>" + "Sample Image is out of bounds"
-	}
-	displayPhysicalSize(SubjectSettings['Tablet'],displaycoord,canvasobj)
-
-
-	//Test Image Bounding Box(es)
-	for (var i = 0; i <= testgridindex.length-1; i++){
-		var wd = imwidth*testscale*canvasratio
-		var xcent = gridx[testgridindex[i]]
-		var ycent = gridy[testgridindex[i]]
-		context.strokeStyle="black"
-		context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
-
-		displaycoord = [xcent-wd/2,ycent-wd/2,xcent+wd/2,ycent+wd/2]
-		var outofbounds=checkDisplayBounds(displaycoord)
-		if (outofbounds == 1){
-			outofbounds_str = outofbounds_str + "<br>" + "Test Image" + i + " is out of bounds"
-		}
-		displayPhysicalSize(SubjectSettings['Tablet'],displaycoord,canvasobj)
-	}
-	if (outofbounds_str == ''){
-		outofbounds_str = 'All display elements are fully visible'
-	}
-
-	displayoutofboundsstr = outofbounds_str
-	updateImageLoadingAndDisplayText(' ')
-}
 
 function renderReward(canvasobj){
 	var context=canvasobj.getContext('2d');
@@ -462,44 +381,5 @@ async function bufferFixationScreenUsingDot(color, gridindex, dot_pixelradius){
 	return boundingBoxesFixation
 }
 
-function checkDisplayBounds(displayobject_coord){
-	var outofbounds=0
-	if (displayobject_coord[0] < CANVAS.workspace[0] ||
-		displayobject_coord[1] < CANVAS.workspace[1] ||
-		displayobject_coord[2] > CANVAS.workspace[2] ||
-		displayobject_coord[3] > CANVAS.workspace[3]){
-		outofbounds=1
-	}
-	return outofbounds
-}
 
 
-
-function displayPhysicalSize(tabletname,displayobject_coord,canvasobj){
-	if (tabletname == "nexus9"){
-		var dpi = 281
-	}
-	else if (tabletname == "samsung10"){
-		var dpi = 287
-	}
-	else if (tabletname == "samsung8"){
-		var dpi = 359
-	}
-	else if (tabletname == "pixelc"){
-		var dpi = 308
-	}
-	else {
-		var dpi = -1
-	}
-	var visible_ctxt = canvasobj.getContext('2d');
-	visible_ctxt.textBaseline = "hanging";
-	visible_ctxt.fillStyle = "white";
-	visible_ctxt.font = "16px Verdana";
-	visible_ctxt.fillText( 
-		Math.round(100*(displayobject_coord[2]-displayobject_coord[0])/dpi/DEVICE.CanvasRatio)/100 +
-		' x ' +
-		Math.round(100*(displayobject_coord[3]-displayobject_coord[1])/dpi/DEVICE.CanvasRatio)/100 + 
-		' in', 
-		displayobject_coord[0],displayobject_coord[1]-16
-	);
-}

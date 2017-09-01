@@ -92,7 +92,7 @@ async function requestBLEDevice(){
   let result = Promise.resolve()
   if (ble.connected == false){
     console.log('Requesting ble device...')
-    //writeTextonBlankCanvas('Requesting bluetooth device list',25.5,20.5)
+    wdm('Requesting bluetooth device list')
     // let options = {filters: [ {name: ble.name}, {services:[ ble.customserviceUUID ]} ]}
     let options = {filters: [ {namePrefix: ble.namePrefix}, {services:[ ble.customserviceUUID ]} ]}
 
@@ -238,7 +238,7 @@ async function writepumpdurationtoBLE(num){
       console.log(textstr)
       ble.statustext = textstr
       // 
-      // writeTextonBlankCanvas(textstr,25.5,20.5)
+      wdm(textstr)
   }
   catch(error) {
       var textstr = 'Could not write pump duration to ble device'
@@ -267,7 +267,7 @@ function onPumpNotificationFromBLE(event){
   console.log(textstr)
   ble.statustext = ble.statustext + "  <---->  " + textstr
   // 
-  // writeTextonBlankCanvas(textstr,400,20.5)
+  wdm(textstr)
 
   let value = event.target.value
   value = value.buffer ? value : new DataView(value)

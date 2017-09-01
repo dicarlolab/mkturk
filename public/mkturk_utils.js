@@ -281,6 +281,35 @@ function setReward(){
   
 }
 
+function displayPhysicalSize(tabletname,displayobject_coord,canvasobj){
+  if (tabletname == "nexus9"){
+    var dpi = 281
+  }
+  else if (tabletname == "samsung10"){
+    var dpi = 287
+  }
+  else if (tabletname == "samsung8"){
+    var dpi = 359
+  }
+  else if (tabletname == "pixelc"){
+    var dpi = 308
+  }
+  else {
+    var dpi = -1
+  }
+  var visible_ctxt = canvasobj.getContext('2d');
+  visible_ctxt.textBaseline = "hanging";
+  visible_ctxt.fillStyle = "white";
+  visible_ctxt.font = "16px Verdana";
+  visible_ctxt.fillText( 
+    Math.round(100*(displayobject_coord[2]-displayobject_coord[0])/dpi/DEVICE.CanvasRatio)/100 +
+    ' x ' +
+    Math.round(100*(displayobject_coord[3]-displayobject_coord[1])/dpi/DEVICE.CanvasRatio)/100 + 
+    ' in', 
+    displayobject_coord[0],displayobject_coord[1]-16
+  );
+}
+
 function join(parts, sep){
    var separator = sep || '/';
    var replace   = new RegExp(separator+'{1,}', 'g');

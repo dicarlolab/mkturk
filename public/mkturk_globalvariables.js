@@ -16,8 +16,6 @@ RewardDuration = 0
 
 var ParamFilePath = ''; 
 
-TASK_ARCHIVE_COUNTER = 0 // attached to trial data
-var TASK_ARCHIVE = []; // Array whose entries are objects that encapsulates state of the current task, read from Subject's Params file
 //var TASK // Current 
 
 
@@ -104,7 +102,6 @@ var displayoutofboundsstr=""
 
 function transition_from_debug_to_science_trials(){
 
-	TASK_ARCHIVE_COUNTER = 0
 
 	// Revert TaskStreamer
 	TS.transition_from_debug_to_science_mode()
@@ -152,7 +149,6 @@ function initialize_TRIAL(){
 	TRIAL_BEHAVIOR.trial_num_Session = []
 	TRIAL_BEHAVIOR.trial_num_TaskStream = []
 	TRIAL_BEHAVIOR.reward_duration = []
-	TRIAL_BEHAVIOR.TASK_ARCHIVE_counter = []
 	TRIAL_BEHAVIOR.StartTime = []
 	TRIAL_BEHAVIOR.FixationXYT = []
 	TRIAL_BEHAVIOR.ChoiceXYT = []

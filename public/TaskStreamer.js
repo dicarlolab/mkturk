@@ -166,19 +166,14 @@ class TaskStreamer{
         var _repeat_if_wrong_probability = this.EXPERIMENT[this.state.current_stage_index]['probability_repeat_trial_if_wrong'] || 0
         if(current_trial_outcome['Return'] == 0){
 
-            console.log('\n\n\n\n')
-            console.log(current_trial_outcome)
             var repeat_rng_seed = cantor(this.state['current_stage_index'], this.EXPERIMENT[this.state.current_stage_index]['samplingRNGseed'])
 
-            console.log(current_trial_outcome)
-            console.log('STICKY TRIAL RNG SEED', repeat_rng_seed)
 
             if(Math.random() < _repeat_if_wrong_probability){
-                console.log('repeating TRIAL')
+                console.log('repeating TRIAL because of wrong response')
                 this.state['current_stage_trial_number'] = this.state['current_stage_trial_number'] // Repeat trial
             }
             else{
-                console.log('continuing in taskstream!!')
                 this.state['current_stage_trial_number']++
             }
         }
