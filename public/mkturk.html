@@ -68,6 +68,22 @@
 
 }
 
+#SessionTextBox {
+   position: fixed;
+   margin-top: 15px;
+   left: 40%; /* space between top of browser and annoying box */
+   height: 34px;
+   width:20%;
+   color:white;
+   font-size:14px; 
+   z-index:102;
+   font-family: 'Helvetica Neue';
+   vertical-align:middle;
+   color:#4B4B4B;
+   background-color:#E4E4E4;
+   border-radius:3px;
+
+}
 </style>
 
 <head>
@@ -98,6 +114,8 @@
 
 <div id="TrialCounter">0</div>
 <div id="DebugMessageTextBox">0</div>
+<div id="SessionTextBox"><b>Subject:</b> <br><b>Experiment:</b></div>
+
 
 <button name="doneTestingTask" style="visibility:hidden; position: absolute; top: 55%; left: 70%; height: 75px; width: 200px; border-radius: 20px; z-index:101">Done with testing trials</button>
 
@@ -241,7 +259,29 @@ function saysHello(){
 
 	SESSION.Subject = SubjectSettings['SubjectID'];
 	
+  updateSessionTextbox(SESSION.Subject, '')
 
+  //================== AWAIT LOAD Experiment Filepath ==================//
+  experiment_file_list = await DIO.listdir(EXPERIMENT_DIRPATH)
+  experiment_dialog = document.getElementById("ExperimentFile_dialog");
+  experimentfile_obj = document.getElementById("ExperimentFile_list");
+  for (var i=experiment_file_list.length-1; i>=0; i--){
+    var opt = document.createElement('option');
+    opt.value = i;
+    opt.innerHTML = splitFilename(experiment_file_list[i]) // subject_filepath_list[i];
+    experimentfile_obj.appendChild(opt);
+  }
+  experimentfile_obj.addEventListener("change",experimentlist_listener,false);
+  experiment_dialog.showModal()
+  await ExperimentFile_Promise() // sets SESSION.ExperimentFilePath
+  updateSessionTextbox(SESSION.Subject, splitFilename(SESSION.ExperimentFilePath))
+
+  TS = new TaskStreamer(DIO, SESSION.ExperimentFilePath, SESSION.Subject) 
+  await TS.build()
+  wdm('TaskStreamer built')
+
+
+  // Write to HUD
 
 
 	//================== await create SoundPlayer ==================// 
@@ -262,23 +302,9 @@ function saysHello(){
 	document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	document.querySelector("button[name=noble]").style.display = "none"
 	
-	//================== AWAIT LOAD Experiment Filepath ==================//
-	experiment_file_list = await DIO.listdir(EXPERIMENT_DIRPATH)
-	experiment_dialog = document.getElementById("ExperimentFile_dialog");
-	experimentfile_obj = document.getElementById("ExperimentFile_list");
-	for (var i=experiment_file_list.length-1; i>=0; i--){
-		var opt = document.createElement('option');
-		opt.value = i;
-		opt.innerHTML = splitFilename(experiment_file_list[i]) // subject_filepath_list[i];
-		experimentfile_obj.appendChild(opt);
-	}
-	experimentfile_obj.addEventListener("change",experimentlist_listener,false);
-	experiment_dialog.showModal()
-	await ExperimentFile_Promise() // sets SESSION.ExperimentFilePath
+	
 
-	TS = new TaskStreamer(DIO, SESSION.ExperimentFilePath, SESSION.Subject) 
-	await TS.build()
-	wdm('TaskStreamer built')
+
 
 	//========= Start in TEST mode =======//
 	document.querySelector("button[name=doneTestingTask]").style.display = "block"
@@ -366,7 +392,6 @@ while(FLAGS.debug_mode == 1){
 }
 
 transition_from_debug_to_science_trials()
-toggleElement(0, "DebugMessageTextBox")
 
 // Science mode
 while(true){

@@ -1,3 +1,13 @@
+function updateSessionTextbox(SubjectID, ExperimentName){
+	  var sess_textbox = document.getElementById("SessionTextBox")
+
+	  var line1_prefix = "<b>Subject:</b> "
+	  var linebreak = "<br>"
+	  var line2_prefix = "<b>Experiment:</b> "
+
+	  sess_textbox.innerHTML = line1_prefix + SubjectID + linebreak + line2_prefix + ExperimentName
+}
+
 function writeToTrialCounterDisplay(s){
 	var elem = document.getElementById('TrialCounter')
 	elem.innerHTML = s; // text

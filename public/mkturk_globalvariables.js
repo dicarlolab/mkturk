@@ -123,6 +123,8 @@ function transition_from_debug_to_science_trials(){
 	}
 
 	//toggleTextBox(0)
+	toggleElement(0, "DebugMessageTextBox")
+	toggleElement(0, "SessionTextBox")
 
 	// Remove reload button
 	document.querySelector("button[name=ReloadButton]").style.visibility = "hidden"
