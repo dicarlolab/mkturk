@@ -55,8 +55,8 @@ async function updatePlot(i){
     document.getElementById('chart_header').innerHTML = header_string
 
     
-    // Plot data
-    var data = new google.visualization.DataTable()
+    // Plot dataPerf
+    var dataPerf = new google.visualization.DataTable()
     var data_array = []
 
     for (var j = 0; j<trial_behavior['Return'].length; j++){
@@ -67,12 +67,12 @@ async function updatePlot(i){
             ]) 
     }
 
-    data.addColumn('number', 'Session trial number');
-    data.addColumn('number', 'Trial reward');
-    data.addColumn('number', 'Smoothed (n='+window_size+') reward');
-    //data.addColumn({type:'string', role:'tooltip'})
+    dataPerf.addColumn('number', 'Session trial number');
+    dataPerf.addColumn('number', 'Trial reward');
+    dataPerf.addColumn('number', 'Smoothed (n='+window_size+') reward');
+    //dataPerf.addColumn({type:'string', role:'tooltip'})
 
-    data.addRows(data_array);
+    dataPerf.addRows(data_array);
     var options = {
         hAxis: {
           title: 'Session trial number'
@@ -87,7 +87,48 @@ async function updatePlot(i){
 
 
       var chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
-      chart.draw(data, options);
+      chart.draw(dataPerf, options);
+
+
+      // Draw action data 
+      var dataAction = new google.visualization.DataTable()
+      var action_array = {}
+
+
+    for (var j = 0; j<trial_behavior['Response'].length; j++){
+        var resp = trial_behavior['Response'][j]
+        if(action_array[resp] == undefined){
+            action_array[resp] = 0
+        }
+        action_array[resp]+=1
+    }
+
+    var action_numtimes = []
+    dataAction.addColumn('string', 'Action');
+    dataAction.addColumn('number', 'subject choice');
+    for(var prop in action_array){
+        if(action_array.hasOwnProperty(prop)){
+            if(prop == "null"){
+                dataAction.addRow([ 'timeout', action_array[prop]])
+            }
+            else{
+                dataAction.addRow(['Grid chosen:'+prop, action_array[prop]])
+            }
+            console.log(prop, action_array[prop])
+            
+        }
+    }
+
+    var options = {
+        hAxis: {
+          title: '# times'
+        },
+      };
+
+    console.log(action_array)
+    var chart = new google.visualization.BarChart(document.getElementById('actionChart_div'));
+    chart.draw(dataAction, options);
+
 }
 
 
