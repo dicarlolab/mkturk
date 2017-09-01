@@ -61,3 +61,53 @@
         console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
         return trialhistory
     }
+
+    // Promise: dispense reward (through audio control)
+  _legacy_driveJuicer_via_Audio(){
+    console.log('Legacy dispense reward')
+    return 
+    return new Promise(function(resolve,reject){
+      this.audiocontext.resume()
+      var oscillator = this.audiocontext.createOscillator();
+      this.gainNode.gain.value=1;
+      if (SubjectSettings['Pump'] == 1){
+        oscillator.type='square'; //Square wave
+        oscillator.frequency.value=25; //frequency in hertz       
+      } //peristaltic (adafruit)
+      else if (SubjectSettings['Pump']==2){
+        oscillator.type='square'; //Square wave
+        oscillator.frequency.value=0.1; //frequency in hertz
+      } //submersible (TCS)
+      else if (SubjectSettings['Pump']==3){
+        oscillator.type='square'; //Square wave
+        oscillator.frequency.value=10; //frequency in hertz   
+      } //diaphragm (TCS)
+      else if (SubjectSettings['Pump']==4){
+        oscillator.type='square'; //Square wave
+        oscillator.frequency.value=0.1; //frequency in hertz        
+      } //piezoelectric (takasago)
+      else if (SubjectSettings['Pump']==5){
+        oscillator.type='square';
+        oscillator.frequency.value=0.1;
+      } //diaphragm new (TCS)
+      else if (SubjectSettings['Pump']==6){
+        oscillator.type='square'; //Square wave
+        oscillator.frequency.value=0.1; //frequency in hertz        
+      } //piezoelectric 7ml/min (takasago)
+      // oscillator.connect(audiocontext.destination); //Connect sound to output
+      // //var gainNode = audiocontext.createGainNode(); //Create boost pedal
+      // //gainNode.gain.value=0.3; //set boost pedal to 30% volume
+      oscillator.connect(gainNode);
+      // //gainNode.connect(audiocontext.destination); //Connect boost pedal to output
+      // // oscillator.onended=function(){
+      // //   console.log('done with reward pulse');
+      // //   resolve(1);
+      // // }
+      var currentTime= this.audiocontext.currentTime;
+
+
+      oscillator.start(currentTime);
+      oscillator.stop(currentTime + ENV.RewardDuration);
+      setTimeout(function(){console.log('sound done'); resolve(1);},ENV.RewardDuration*1000);
+    }).then();
+  }

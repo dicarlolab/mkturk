@@ -37,7 +37,7 @@ class RewardMap{
                     "x":x, 
                     "y":y, 
                     "timestamp":t, 
-                    "juice":this.reward_amounts[box_index], 
+                    "reinforcement":this.reward_amounts[box_index], 
                     "region_index":box_index}
 
                 this._resolveFunc(outcome)
@@ -51,7 +51,7 @@ class RewardMap{
         
     }
 
-    async Promise_wait_until_active_response_then_return_juice(listener_id){
+    async Promise_wait_until_active_response_then_return_reinforcement(listener_id){
         //this.add_event_listener()
         var _this = this
         this._touch_promise = new Promise(function(resolve, reject){
