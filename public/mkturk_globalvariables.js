@@ -53,7 +53,6 @@ SESSION.TrialDataFileName_suffix = __datestr.slice(0, __datestr.indexOf(".")) + 
 
 
 var FLAGS = {} 
-FLAGS.need2loadImages = 1; 
 FLAGS.need2loadParameters = 0; 
 FLAGS.debug_mode = 1; 
 
