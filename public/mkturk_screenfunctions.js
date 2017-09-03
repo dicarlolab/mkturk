@@ -230,31 +230,6 @@ function defineImageGrid(ngridpoints, source_image_width, source_image_height, g
 	return [canvas_center_x, canvas_center_y, xgridcent, ygridcent]
 }
 
-async function bufferChoiceScreen(test_images, test_image_grid_indices){
-
-	var boundingBoxesChoice = [] // todo: move out of here
-	for (i = 0; i<test_images.length; i++){
-		boundingBoxesChoice.push({"x":[], "y":[]})
-		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], SubjectSettings['TestScale'], CANVAS.obj.test); 
-		boundingBoxesChoice[i].x = funcreturn[0]
-		boundingBoxesChoice[i].y = funcreturn[1]
-	}
-
-	return boundingBoxesChoice
-}
-async function bufferStimulusScreen(sample_image, sample_image_grid_index){
-
-	//========== BUFFER SAMPLE CANVAS ==========//
-	var canvasobj=CANVAS.obj.sample
-	var context=CANVAS.obj.sample.getContext('2d'); 
-	context.fillStyle="#7F7F7F";  // Gray out before buffering sample
-	
-	var boundingBoxesSample = [{"x":[], "y":[]}]
-	funcreturn = await renderImageOnCanvas(sample_image, sample_image_grid_index, SubjectSettings['SampleScale'], CANVAS.obj.sample)
-	boundingBoxesSample[0].x = funcreturn[0]
-	boundingBoxesSample[0].y = funcreturn[1]
-	return boundingBoxesSample
-}
 
 
 async function renderImageOnCanvas(image, grid_index, scale, canvasobj){
@@ -291,101 +266,135 @@ async function renderImageOnCanvas(image, grid_index, scale, canvasobj){
 	return [xbound, ybound]
 }
 
+class ScreenDisplayer{
 
-function displayScreenSequence(sequence,tsequence){
-	var resolveFunc
-	var errFunc
-	p = new Promise(function(resolve,reject){
-		resolveFunc = resolve;
-		errFunc = reject;
-	}).then();
-	//console.log('seq', sequence, 'tseq', tsequence)
+	constructor(){
 
-	var start = null;
-	var frame_unix_timestamps = []
-
-	var current_frame_index = 0
-	var frames_left_to_animate = sequence.length
-
-	function updateCanvas(timestamp){
-		// If start has not been set to a float timestamp, set it now.
-		if (!start) start = timestamp;
-
-		// If time to show new frame, 
-		if (timestamp - start > tsequence[current_frame_index]){
-			frame_unix_timestamps[current_frame_index] = performance.now() //in milliseconds, rounded to nearest hundredth of a millisecond
-			// Move canvas in front
-			var prev_canvasobj=CANVAS.obj[CANVAS.front]
-			var curr_canvasobj=CANVAS.obj[sequence[current_frame_index]]
-			if (CANVAS.front != "blank"){
-				// Move to back
-				prev_canvasobj.style.zIndex="0";
-			} 
-			if (sequence[current_frame_index] != "blank"){
-				curr_canvasobj.style.zIndex="100";
-				CANVAS.front = sequence[current_frame_index];
-			} // move to front
-			else{
-				CANVAS.front = "blank";
-			}
-			frames_left_to_animate--
-			current_frame_index++;
-		}; 
-		// continue if not all frames shown
-		if (frames_left_to_animate>0){
-			window.requestAnimationFrame(updateCanvas);
-		}
-		else{
-	
-			resolveFunc(frame_unix_timestamps);
-		}
 	}
 
-	//requestAnimationFrame advantages: goes on next screen refresh and syncs to browsers refresh rate on separate clock (not js clock)
-	window.requestAnimationFrame(updateCanvas); // kick off async work
-	return p
-} 
+	displayScreenSequence(sequence,tsequence){
+		var resolveFunc
+		var errFunc
+		p = new Promise(function(resolve,reject){
+			resolveFunc = resolve;
+			errFunc = reject;
+		}).then();
+		//console.log('seq', sequence, 'tseq', tsequence)
 
-function renderBlank(canvasobj){
-	var context=canvasobj.getContext('2d');
-	context.fillStyle="#7F7F7F";
-	context.fillRect(0,0,canvasobj.width,canvasobj.height);
+		var start = null;
+		var frame_unix_timestamps = []
+
+		var current_frame_index = 0
+		var frames_left_to_animate = sequence.length
+
+		function updateCanvas(timestamp){
+			// If start has not been set to a float timestamp, set it now.
+			if (!start) start = timestamp;
+
+			// If time to show new frame, 
+			if (timestamp - start > tsequence[current_frame_index]){
+				frame_unix_timestamps[current_frame_index] = performance.now() //in milliseconds, rounded to nearest hundredth of a millisecond
+				// Move canvas in front
+				var prev_canvasobj=CANVAS.obj[CANVAS.front]
+				var curr_canvasobj=CANVAS.obj[sequence[current_frame_index]]
+				if (CANVAS.front != "blank"){
+					// Move to back
+					prev_canvasobj.style.zIndex="0";
+				} 
+				if (sequence[current_frame_index] != "blank"){
+					curr_canvasobj.style.zIndex="100";
+					CANVAS.front = sequence[current_frame_index];
+				} // move to front
+				else{
+					CANVAS.front = "blank";
+				}
+				frames_left_to_animate--
+				current_frame_index++;
+			}; 
+			// continue if not all frames shown
+			if (frames_left_to_animate>0){
+				window.requestAnimationFrame(updateCanvas);
+			}
+			else{
+		
+				resolveFunc(frame_unix_timestamps);
+			}
+		}
+
+		//requestAnimationFrame advantages: goes on next screen refresh and syncs to browsers refresh rate on separate clock (not js clock)
+		window.requestAnimationFrame(updateCanvas); // kick off async work
+		return p
+	} 
+	renderBlank(canvasobj){
+		var context=canvasobj.getContext('2d');
+		context.fillStyle="#7F7F7F";
+		context.fillRect(0,0,canvasobj.width,canvasobj.height);
+	}
+
+
+	renderReward(canvasobj){
+		var context=canvasobj.getContext('2d');
+		context.fillStyle="green";
+		context.fillRect(xcanvascenter-200,ycanvascenter-200,400,400);
+	}
+
+	renderPunish(canvasobj){
+		var context=canvasobj.getContext('2d');
+		context.rect(xcanvascenter-200,ycanvascenter-200,400,400);
+		context.fillStyle="black";
+		context.fill();
+	}
+	async bufferFixationScreenUsingDot(color, gridindex, dot_pixelradius){
+		var context=CANVAS.obj.touchfix.getContext('2d');
+		context.clearRect(0,0,CANVAS.obj.touchfix.width,CANVAS.obj.touchfix.height);
+
+		// Draw fixation dot
+		var rad = dot_pixelradius;
+		var xcent = DEVICE.XGridCenter[gridindex];
+		var ycent = DEVICE.YGridCenter[gridindex];
+		context.beginPath();
+		context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
+		context.fillStyle=color; 
+		context.fill();
+
+		// Define (rectangular) boundaries of fixation
+		boundingBoxesFixation = [{}] // todo: move out of here 
+		boundingBoxesFixation[0]['x']= [xcent-rad+CANVAS.offsetleft, xcent+rad+CANVAS.offsetleft]
+		boundingBoxesFixation[0]['y']= [ycent-rad+CANVAS.offsettop, ycent+rad+CANVAS.offsettop]
+		return boundingBoxesFixation
+	}
+
+	async bufferStimulusScreen(sample_image, sample_image_grid_index){
+
+		//========== BUFFER SAMPLE CANVAS ==========//
+		var canvasobj=CANVAS.obj.sample
+		var context=CANVAS.obj.sample.getContext('2d'); 
+		context.fillStyle="#7F7F7F";  // Gray out before buffering sample
+		
+		var boundingBoxesSample = [{"x":[], "y":[]}]
+		funcreturn = await renderImageOnCanvas(sample_image, sample_image_grid_index, SubjectSettings['SampleScale'], CANVAS.obj.sample)
+		boundingBoxesSample[0].x = funcreturn[0]
+		boundingBoxesSample[0].y = funcreturn[1]
+		return boundingBoxesSample
+	}
+
+	async bufferChoiceScreen(test_images, test_image_grid_indices){
+
+		var boundingBoxesChoice = [] 
+		for (i = 0; i<test_images.length; i++){
+			boundingBoxesChoice.push({"x":[], "y":[]})
+			funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], SubjectSettings['TestScale'], CANVAS.obj.test); 
+			boundingBoxesChoice[i].x = funcreturn[0]
+			boundingBoxesChoice[i].y = funcreturn[1]
+		}
+
+		return boundingBoxesChoice
+	}
+
 }
 
 
-function renderReward(canvasobj){
-	var context=canvasobj.getContext('2d');
-	context.fillStyle="green";
-	context.fillRect(xcanvascenter-200,ycanvascenter-200,400,400);
-}
 
-function renderPunish(canvasobj){
-	var context=canvasobj.getContext('2d');
-	context.rect(xcanvascenter-200,ycanvascenter-200,400,400);
-	context.fillStyle="black";
-	context.fill();
-}
-
-
-async function bufferFixationScreenUsingDot(color, gridindex, dot_pixelradius){
-	var context=CANVAS.obj.touchfix.getContext('2d');
-	context.clearRect(0,0,CANVAS.obj.touchfix.width,CANVAS.obj.touchfix.height);
-
-	// Draw fixation dot
-	var rad = dot_pixelradius;
-	var xcent = DEVICE.XGridCenter[gridindex];
-	var ycent = DEVICE.YGridCenter[gridindex];
-	context.beginPath();
-	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
-	context.fillStyle=color; 
-	context.fill();
-
-	// Define (rectangular) boundaries of fixation
-	boundingBoxesFixation = [{}] // todo: move out of here 
-	boundingBoxesFixation[0]['x']= [xcent-rad+CANVAS.offsetleft, xcent+rad+CANVAS.offsetleft]
-	boundingBoxesFixation[0]['y']= [ycent-rad+CANVAS.offsettop, ycent+rad+CANVAS.offsettop]
-	return boundingBoxesFixation
-}
 
 
 

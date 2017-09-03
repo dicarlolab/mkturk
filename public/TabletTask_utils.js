@@ -1,3 +1,23 @@
+async function initializeSetupButtons(){
+  // Button callbacks
+  document.querySelector("button[name=connectble]").addEventListener(
+    'touchend',findBLEDevice,false)
+  document.querySelector("button[name=connectble]").addEventListener(
+    'mouseup',findBLEDevice,false)
+  document.querySelector("button[name=noble]").addEventListener(
+    'touchend',skipBLEDevice,false)
+  document.querySelector("button[name=noble]").addEventListener(
+    'mouseup',skipBLEDevice,false)
+  document.querySelector("button[name=doneTestingTask]").addEventListener(
+    'touchend',doneTestingTask_listener,false)
+  document.querySelector("button[name=doneTestingTask]").addEventListener(
+    'mouseup',doneTestingTask_listener,false)
+  //document.querySelector("button[name=SyncButton]").addEventListener(
+  //  'mouseup',sync_data_listener,false)
+  document.querySelector("button[name=SyncButton]").addEventListener(
+    'touchend',sync_data_listener,false)
+}
+
 async function setupTabletTask(){
   DIO = new DropboxIO()
   subject_filepath_list = await DIO.listdir(SUBJECT_DIRPATH)

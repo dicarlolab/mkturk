@@ -167,48 +167,21 @@
 <script src="mkturk_UX.js" type="text/javascript"></script>
 <script src="Amazon_utils.js" type="text/javascript"></script>
 <script src="TabletTask_utils.js" type="text/javascript"></script>
-
 <script>
 
 
-wdm("Initialized")
-//================== AUTHENTICATE ==================//
-SIO = new URL_IO()
-var s = SIO.read_textfile('https://s3.amazonaws.com/monkeyturk/ExperimentFiles/ExperimentDefinitions/CanonicalTraining.txt')
+wdm("Initialized webpage")
 
+SIO = new URL_IO()
 DIO = new DropboxIO()
 
-console.log(s)
-//DIO = new DropboxIO()
 DWr = new DataWriter(DIO)
 UX = new UX_poller(DIO)
 
 setupDragTracker() // Writes to TOUCHSTRING and TOUCHSTRING_UPDATECOUNTER
 setupTapTracker() // Writes to TOUCHSTRING and TOUCHSTRING_UPDATECOUNTER
 
-
-
-// Populate subject settings
-
-
-
-// Button callbacks
-document.querySelector("button[name=connectble]").addEventListener(
-	'touchend',findBLEDevice,false)
-document.querySelector("button[name=connectble]").addEventListener(
-	'mouseup',findBLEDevice,false)
-document.querySelector("button[name=noble]").addEventListener(
-	'touchend',skipBLEDevice,false)
-document.querySelector("button[name=noble]").addEventListener(
-	'mouseup',skipBLEDevice,false)
-document.querySelector("button[name=doneTestingTask]").addEventListener(
-	'touchend',doneTestingTask_listener,false)
-document.querySelector("button[name=doneTestingTask]").addEventListener(
-	'mouseup',doneTestingTask_listener,false)
-//document.querySelector("button[name=SyncButton]").addEventListener(
-//	'mouseup',sync_data_listener,false)
-document.querySelector("button[name=SyncButton]").addEventListener(
-	'touchend',sync_data_listener,false)
+initializeSetupButtons()
 
 //============= Initialize Audio & Battery Objects ==================//	
 DEVICE.DevicePixelRatio = window.devicePixelRatio || 1;
@@ -230,26 +203,17 @@ navigator.getBattery().then(function(batteryobj){
 });
 
 
-
-counter = 0 
-function saysHello(){
-	console.log('hello'+counter)
-	wdm('hello'+counter)
-	counter++
-}
-
-
 (async function(){
 
 
-	await setupTabletTask()
+await setupTabletTask()
 
 // ============ MAIN LOOP ==================================================================================== // 
 document.querySelector("button[name=SyncButton]").style.visibility = "visible"
 
 FixationRewardMap = new RewardMap()
 ChoiceRewardMap = new RewardMap()
-
+SD = new ScreenDisplayer()
 
 console.log('initialized hellothere')
 
@@ -329,7 +293,6 @@ while(true){
 }
 
 
-submit_to_turk()
 
 } ())
 

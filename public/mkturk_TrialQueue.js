@@ -45,6 +45,7 @@ async build(trial_cushion_size, samplingStrategy){
 }
 
 
+
 async loadImageBagPathsParallel(imagebagroot_s){
 	var imagepath_promises = []
 	for (var i = 0; i < imagebagroot_s.length; i++){

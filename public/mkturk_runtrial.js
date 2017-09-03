@@ -8,9 +8,9 @@ _TRIAL = await TS.get_trial()
 // Check if parameters need to be reloaded (e.g. because they changed on disk or because of the automator)
 
 // Render various screens 
-renderReward(CANVAS.obj.reward);
-renderPunish(CANVAS.obj.punish);
-renderBlank(CANVAS.obj.blank);
+SD.renderReward(CANVAS.obj.reward);
+SD.renderPunish(CANVAS.obj.punish);
+SD.renderBlank(CANVAS.obj.blank);
 
 //============ SELECT SAMPLE & TEST IMAGES ============//
 var sample_image = _TRIAL['sample_image']
@@ -24,16 +24,16 @@ var choice_reward_amounts = _TRIAL['choice_reward_amounts']
 
 
 //============ AWAIT BUFFER CANVASES WITH SAMPLE & TEST IMAGES ============//
-boundingBoxesFixation = await bufferFixationScreenUsingDot("white", TS.EXPERIMENT[TS.state.current_stage_index]['StaticFixationGridIndex'], FixationRadius);
-boundingBoxesSample = await bufferStimulusScreen(sample_image, sample_grid_index_placement)
-boundingBoxesChoice = await bufferChoiceScreen(test_images, test_grid_index_placements)
+boundingBoxesFixation = await SD.bufferFixationScreenUsingDot("white", TS.EXPERIMENT[TS.state.current_stage_index]['StaticFixationGridIndex'], FixationRadius);
+boundingBoxesSample = await SD.bufferStimulusScreen(sample_image, sample_grid_index_placement)
+boundingBoxesChoice = await SD.bufferChoiceScreen(test_images, test_grid_index_placements)
 
 //============ FIXATION SCREEN ============//
 
 FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxesFixation, [0])
 ChoiceRewardMap.create_reward_map_with_bounding_boxes(boundingBoxesChoice, choice_reward_amounts)
 
-var fixation_onset_timestamps = await displayScreenSequence(CANVAS.sequencepre,CANVAS.tsequencepre);
+var fixation_onset_timestamps = await SD.displayScreenSequence(CANVAS.sequencepre,CANVAS.tsequencepre);
 
 
 if(FLAGS.debug_mode == 1){
@@ -52,7 +52,7 @@ if(FLAGS.debug_mode == 1){
     wdm('Awaiting choice...')
 }
 
-var stimulus_timestamps = await displayScreenSequence(CANVAS.sequence,CANVAS.tsequence);
+var stimulus_timestamps = await SD.displayScreenSequence(CANVAS.sequence,CANVAS.tsequence);
 
 var outcome_from_touch_response_promise = ChoiceRewardMap.Promise_wait_until_active_response_then_return_reinforcement()
 var timeout_promise = choiceTimeOut(TS.EXPERIMENT[TS.state.current_stage_index]['ChoiceTimeOut'])
@@ -81,7 +81,7 @@ if (correct == 1){
 
     reinforcement_onset = performance.now()
     SP.playSound(2);
-    var p1 = displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost)
+    var p1 = SD.displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost)
     if (ble.connected == false){
         await Promise.all([p1])
     }
@@ -97,7 +97,7 @@ else{
     CANVAS.sequencepost[1] = "punish";
     CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+TS.EXPERIMENT[TS.state.current_stage_index]['PunishTimeOut'];
     SP.playSound(3);
-    var p1 = await displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost);
+    var p1 = await SD.displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost);
 }
 reinforcement_end = performance.now()
 
