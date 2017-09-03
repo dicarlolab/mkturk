@@ -344,7 +344,10 @@ class ScreenDisplayer{
 		context.fillStyle="black";
 		context.fill();
 	}
-	async bufferFixationScreenUsingDot(color, gridindex, dot_pixelradius){
+	async bufferFixationScreenUsingDot(gridindex){
+		var dot_pixelradius = CANVAS.FixationRadius
+		var color = "white"
+
 		var context=CANVAS.obj.touchfix.getContext('2d');
 		context.clearRect(0,0,CANVAS.obj.touchfix.width,CANVAS.obj.touchfix.height);
 

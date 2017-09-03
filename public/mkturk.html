@@ -259,7 +259,7 @@ windowWidth = window.innerWidth
     DEVICE.source_ImageWidthPixels = representative_image.width
     DEVICE.source_ImageHeightPixels = representative_image.height
 
-    FixationRadius=(DEVICE.source_ImageWidthPixels/2)*SubjectSettings['FixationScale']*DEVICE.CanvasRatio
+    CANVAS.FixationRadius=(DEVICE.source_ImageWidthPixels/2)*SubjectSettings['FixationScale']*DEVICE.CanvasRatio
 
 console.log(DEVICE)
 funcreturn = defineImageGrid(TS.EXPERIMENT[0]['NGridPoints'], 

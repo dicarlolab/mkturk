@@ -1,13 +1,11 @@
 //============= AWAIT LOAD PARAMS =============//
 async function runtrial(){
-// Slavish function that does the dirty work of displaying, getting user inputs, and delivering reinforcemnet 
 
 writeToTrialCounterDisplay(TRIAL_NUMBER_FROM_SESSION_START)
 _TRIAL = await TS.get_trial()
 
-// Check if parameters need to be reloaded (e.g. because they changed on disk or because of the automator)
 
-// Render various screens 
+
 SD.renderReward(CANVAS.obj.reward);
 SD.renderPunish(CANVAS.obj.punish);
 SD.renderBlank(CANVAS.obj.blank);
@@ -24,7 +22,7 @@ var choice_reward_amounts = _TRIAL['choice_reward_amounts']
 
 
 //============ AWAIT BUFFER CANVASES WITH SAMPLE & TEST IMAGES ============//
-boundingBoxesFixation = await SD.bufferFixationScreenUsingDot("white", TS.EXPERIMENT[TS.state.current_stage_index]['StaticFixationGridIndex'], FixationRadius);
+boundingBoxesFixation = await SD.bufferFixationScreenUsingDot(TS.EXPERIMENT[TS.state.current_stage_index]['StaticFixationGridIndex']);
 boundingBoxesSample = await SD.bufferStimulusScreen(sample_image, sample_grid_index_placement)
 boundingBoxesChoice = await SD.bufferChoiceScreen(test_images, test_grid_index_placements)
 
@@ -36,9 +34,8 @@ ChoiceRewardMap.create_reward_map_with_bounding_boxes(boundingBoxesChoice, choic
 var fixation_onset_timestamps = await SD.displayScreenSequence(CANVAS.sequencepre,CANVAS.tsequencepre);
 
 
-if(FLAGS.debug_mode == 1){
-    wdm('Awaiting fixation...')
-}
+wdm('Awaiting fixation...')
+
 
 console.log('Awaiting fixation...')
 var fixation_outcome = await FixationRewardMap.Promise_wait_until_active_response_then_return_reinforcement()
@@ -48,12 +45,10 @@ console.log('Fixation reached')
 
 //============== SHOW SAMPLE THEN TEST ==============//
 
-if(FLAGS.debug_mode == 1){
-    wdm('Awaiting choice...')
-}
+wdm('Awaiting choice...')
+
 
 var stimulus_timestamps = await SD.displayScreenSequence(CANVAS.sequence,CANVAS.tsequence);
-
 var outcome_from_touch_response_promise = ChoiceRewardMap.Promise_wait_until_active_response_then_return_reinforcement()
 var timeout_promise = choiceTimeOut(TS.EXPERIMENT[TS.state.current_stage_index]['ChoiceTimeOut'])
 var choice_outcome = await Promise.race([outcome_from_touch_response_promise, timeout_promise])

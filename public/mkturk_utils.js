@@ -4,8 +4,10 @@ function reloadPage(){
 }
 function wdm(s){
   console.log(s)
-  var elem = document.getElementById('DebugMessageTextBox')
-  elem.innerHTML = s; // text
+  if(FLAGS.debug_mode == 1){
+    var elem = document.getElementById('DebugMessageTextBox')
+    elem.innerHTML = s; // text
+  }
 }
 
 

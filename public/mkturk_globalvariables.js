@@ -4,8 +4,6 @@
 
 
 
-FixationRadius = 0
-acquiredTouch = 0 
 
 TOUCHSTRING = ""
 TOUCHSTRING_UDPATECOUNTER = 0
