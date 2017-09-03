@@ -2,8 +2,8 @@
 async function runtrial(){
 
 writeToTrialCounterDisplay(TRIAL_NUMBER_FROM_SESSION_START)
-_TRIAL = await TS.get_trial()
-
+_TRIAL = await TS_finite.get_trial()
+console.log(_TRIAL)
 
 
 SD.renderReward(CANVAS.obj.reward);

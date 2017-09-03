@@ -172,7 +172,7 @@
 
 wdm("Initialized webpage")
 
-SIO = new URL_IO()
+SIO = new S3_IO()
 DIO = new DropboxIO()
 
 DWr = new DataWriter(DIO)
@@ -206,7 +206,7 @@ navigator.getBattery().then(function(batteryobj){
 (async function(){
 
 
-await setupTabletTask()
+await setupTurkTask()
 
 // ============ MAIN LOOP ==================================================================================== // 
 document.querySelector("button[name=SyncButton]").style.visibility = "visible"

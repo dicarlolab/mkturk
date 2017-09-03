@@ -1,8 +1,11 @@
-class URL_IO{
+class S3_IO{
     constructor(){
-        return 
+
+        this.read_textfile = this._read_textfile.bind(this)
+        this.load_image = this._load_image.bind(this)
+
     }
-    async load_image(blob_url){
+    async _load_image(blob_url){
         
         var resolvefunc 
         var rejectfunc 
@@ -11,19 +14,19 @@ class URL_IO{
             rejectfunc = reject
         })
 
-        img =  new Image();
+        var img =  new Image();
         img.onload = function() {
             console.log('loaded '+blob_url)
             console.log('img', img)
             console.log(this)
             resolvefunc(this)
         }; 
-        img.src = imgurl
+        img.src = blob_url
 
         var img_loaded = await p
         return img_loaded
     }
-    async read_textfile(text_url){
+    async _read_textfile(text_url){
         // https://www.w3schools.com/xml/ajax_intro.asp
 
         // Configuring S3: to accept xhttp requests:
@@ -49,15 +52,15 @@ class URL_IO{
         catch(error){
             console.log(error)
         }
-
         
         xhttp.open("GET", text_url, true);
         xhttp.send();
         var s = await p
         return s
     }
-
 }
+
+
 
 function submit_to_turk(submit_to_sandbox){
     if(submit_to_sandbox == true){

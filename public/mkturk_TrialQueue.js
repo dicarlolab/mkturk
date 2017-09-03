@@ -24,7 +24,7 @@ constructor(DIO, IB, stage_start_number, trial_constructor_parameters){
 	this.trialNumber_q = []
 
 	// ImageBuffer
-	this.IB = IB // new ImageBuffer(); 
+	this.IB = IB 
 	this.DIO = DIO
 
 	// Settings 
