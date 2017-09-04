@@ -1,6 +1,83 @@
 // Functions for recording scientific data to disk. 
 
-class DataWriter{
+class DataWriterTemplate{
+    constructor(){
+
+    }
+
+    async writeout(){
+        // live writeout (e.g. to dropbox)
+    }
+
+    async saveTrialData(debug_mode){
+
+    }
+    async saveTouches(debug_mode){
+
+    }
+
+    async concludeSession(){
+        // Called at end
+    }
+
+}
+class OfflineDataWriter{
+    // Where there can be no live writing / reading
+    constructor(){
+
+    }
+
+    async writeout(){
+        console.log('No live writeout')
+    }
+    async saveTrialData(debug_mode){
+        console.log('No saveTrialData until concludeSession()')
+    }
+    async saveTouches(debug_mode){
+        console.log('No saveTouches until concludeSession()')
+    }
+
+    async concludeSession(){
+        // Upload to turk
+        submit_to_sandbox = true 
+
+        if(submit_to_sandbox == true){
+            var submit_url = "https://workersandbox.mturk.com/mturk/externalSubmit" 
+        }
+        else if(submit_to_sandbox == false){
+            var submit_url = "https://www.mturk.com/mturk/externalSubmit"
+        }
+
+        document.getElementById("postdata").action = submit_url
+        console.log(document.getElementById('postdata'))
+
+        var url_string = window.location.href 
+        var aID = getURLParameter('assignmentId')
+
+
+        var dataobj = {}
+        dataobj['SESSION'] = SESSION
+        dataobj['DEVICE'] = DEVICE
+        dataobj['EXPERIMENT'] = TS.EXPERIMENT
+        dataobj['CANVAS'] = CANVAS
+        dataobj['TRIAL_BEHAVIOR'] = TRIAL_BEHAVIOR
+        dataobj['EVENT_TIMESTAMPS'] = EVENT_TIMESTAMPS
+        dataobj['SubjectSettings'] = SubjectSettings
+
+
+        var result_str = {'TOUCH_DATA':TOUCHSTRING, 
+                          'TASK_DATA':dataobj}
+
+        result_str = JSON.stringify(result_str)
+        //document.getElementById("assignmentId").value = aID;
+        //document.getElementById("data").value = resultstr;
+        //document.getElementById("postdata").submit();
+        console.log('SIMULATED SUBMISSION TO TURK')
+
+    }
+}
+
+class DropboxDataWriter{
     constructor(DIO){
         this.DIO = DIO
         this.min_write_timeout_period = TRIALDATA_SAVE_TIMEOUT_PERIOD // ms
@@ -69,7 +146,7 @@ class DataWriter{
             last_touch_save = performance.now()
         }
     }
-    
+
     async saveTouches(save_to_debug_directory){
         try{
 
@@ -116,6 +193,10 @@ class DataWriter{
         datestr = datestr.slice(0,datestr.indexOf("."))
         var _touch_filename_suffix = '_touch_'+datestr+'__'+TOUCHSTRING_UDPATECOUNTER+'.txt' // Initial name
         return _touch_filename_suffix
+    }
+
+    async concludeSession(){
+        console.log("Nothing to concludeSession() in Dropbox writer")
     }
 
 }

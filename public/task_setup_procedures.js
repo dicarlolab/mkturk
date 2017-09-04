@@ -1,3 +1,8 @@
+async function setupTaskFunctionTemplate(){
+  // Responsible for: 
+}
+
+
 async function initializeSetupButtons(){
   // Button callbacks
   document.querySelector("button[name=connectble]").addEventListener(
@@ -171,4 +176,81 @@ async function setupTabletTask(){
 
     TRIAL_NUMBER_FROM_SESSION_START = 0
     FLAGS.debug_mode = 1 
+
+    // Make sync button visible 
+    document.querySelector("button[name=SyncButton]").style.visibility = "visible"
+
+
+    // Initialize components of task
+    FixationRewardMap = new RewardMap()
+    ChoiceRewardMap = new RewardMap()
+    SD = new ScreenDisplayer()
+    R = new JuiceReinforcer()
+
+
+
+  windowHeight = window.innerHeight
+  || document.documentElement.clientHeight
+  || document.body.clientHeight;
+
+
+  windowWidth = window.innerWidth
+  || document.documentElement.clientWidth
+  || document.body.clientWidth;
+
+
+  // Reference: https://www.w3schools.com/js/js_window.asp
+
+
+  refreshCanvasSettings(TS.EXPERIMENT[TS.state.current_stage_index]); 
+
+  for (var i = 0; i <= CANVAS.names.length-1; i++) {
+      setupCanvas(CANVAS.obj[CANVAS.names[i]]);
+  }
+  if (DEVICE.DevicePixelRatio !== 1){
+      scaleCanvasforHiDPI(CANVAS.obj.sample);
+      scaleCanvasforHiDPI(CANVAS.obj.test);
+  }
+
+  CANVAS.workspace = [
+      0,
+      0,
+      CANVAS.obj["touchfix"].width,
+      CANVAS.obj["touchfix"].height
+  ]
+
+
+  // Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image.
+  var representative_trial = await TS.get_trial()
+  console.log('representative_trial', representative_trial)
+
+  var representative_image = representative_trial['sample_image']
+  DEVICE.source_ImageWidthPixels = representative_image.width
+  DEVICE.source_ImageHeightPixels = representative_image.height
+
+  CANVAS.FixationRadius=(DEVICE.source_ImageWidthPixels/2)*SubjectSettings['FixationScale']*DEVICE.CanvasRatio
+
+  funcreturn = defineImageGrid(TS.EXPERIMENT[0]['NGridPoints'], 
+      DEVICE.source_ImageWidthPixels, 
+      DEVICE.source_ImageHeightPixels, 
+      SubjectSettings['GridScale']);
+
+  xcanvascenter = funcreturn[0]
+  ycanvascenter = funcreturn[1]
+
+  DEVICE.XGridCenter = funcreturn[2]
+  DEVICE.YGridCenter = funcreturn[3]
+
+  console.log('windowWidth', windowWidth, 'windowHeight', windowHeight)
+
+
+  // Start in testing mode
+  wdm("Running debug mode...")
+  while(FLAGS.debug_mode == 1){
+    await runtrial()
+    UX.poll()
+  }
+
+  transition_from_debug_to_science_trials()
+
 }

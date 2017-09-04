@@ -92,7 +92,6 @@ current_trial_outcome['CorrectItem'] = test_correct_grid_index
 current_trial_outcome['CurrentStageIndex'] = TS.state.current_stage_index
 current_trial_outcome['trial_num_Stage'] = TS.state.current_stage_trial_number
 current_trial_outcome['trial_num_Session'] = TRIAL_NUMBER_FROM_SESSION_START
-//current_trial_outcome['trial_num_TaskStream'] = TRIAL_NUMBER_FROM_TASKSTREAM_START
 current_trial_outcome['reward_duration'] = Math.round(1000*RewardDuration)/1000
 current_trial_outcome['BoundingBoxFixationImage'] = boundingBoxesFixation[0]
 current_trial_outcome['BoundingBoxSampleImage'] = boundingBoxesSample[0]
