@@ -66,6 +66,7 @@ if (correct == 1){
 else if (correct == 0){
     nreward = 0;
 } 
+
 reinforcement_onset = performance.now()
 await R.deliver_reinforcement(nreward)
 reinforcement_end = performance.now()
@@ -99,8 +100,10 @@ current_trial_outcome['BoundingBoxesChoiceImages'] = boundingBoxesChoice
 current_trial_outcome['Return'] = choice_outcome['reinforcement']
 
 TS.update_state(current_trial_outcome)
+TRIAL_NUMBER_FROM_SESSION_START++
 
-//================= Record results of trial =================//
+
+//================= Update tracking variables =================//
 EVENT_TIMESTAMPS.fixation_onset.push(fixation_onset_timestamps[0])
 EVENT_TIMESTAMPS.fixation_touch.push(fixation_outcome['timestamp'])
 
@@ -126,26 +129,7 @@ for (var _property in current_trial_outcome){
 }
 
 
-
-
-TRIAL_NUMBER_FROM_SESSION_START++
-
-// Asynchronous save at most every T seconds
-var _ms_since_last_trial_data_save = performance.now() - last_trial_data_save
-var _ms_since_last_touch_data_save = performance.now() - last_touch_save
-var _ms_since_last_paramfile_check = performance.now() - last_paramfile_check 
-
-if ( _ms_since_last_trial_data_save > TRIALDATA_SAVE_TIMEOUT_PERIOD){ 
-    console.log(_ms_since_last_trial_data_save/1000+'s since last trial data save. At trial'+ 
-        TRIAL_NUMBER_FROM_SESSION_START +'. Epoch stage:'+TS.state.current_stage_index)
-    DWr.saveTrialData(FLAGS.debug_mode)
-    last_trial_data_save = performance.now()
-}
-
-if (_ms_since_last_touch_data_save > TOUCHSTRING_SAVE_TIMEOUT_PERIOD){
-    console.log(_ms_since_last_touch_data_save/1000 +'s since last TOUCHSTRING save. '+TOUCHSTRING.length+' length TOUCHSTRING save requested.')
-    DWr.saveTouches(FLAGS.debug_mode)
-    last_touch_save = performance.now()
-}
+// Writeout (e.g. live to dropbox)
+DWr.writeout()
 
 }

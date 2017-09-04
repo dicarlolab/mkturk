@@ -45,6 +45,7 @@ class DiskIO{
 }   
 
 
+
 class DropboxIO{
 
     
@@ -213,7 +214,7 @@ class DropboxIO{
                     }   
                 }
                 catch(error){
-                    console.log(error)
+                    console.log('_load_image', error)
                     resolve(0)
                 }
             }

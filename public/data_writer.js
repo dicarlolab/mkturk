@@ -49,6 +49,26 @@ class DataWriter{
         }
     }
 
+    async writeout(){
+
+        // Asynchronous save at most every T seconds
+        var _ms_since_last_trial_data_save = performance.now() - last_trial_data_save
+        var _ms_since_last_touch_data_save = performance.now() - last_touch_save
+        var _ms_since_last_paramfile_check = performance.now() - last_paramfile_check 
+
+        if ( _ms_since_last_trial_data_save > TRIALDATA_SAVE_TIMEOUT_PERIOD){ 
+            console.log(_ms_since_last_trial_data_save/1000+'s since last trial data save. At trial'+ 
+                TRIAL_NUMBER_FROM_SESSION_START +'. Epoch stage:'+TS.state.current_stage_index)
+            DWr.saveTrialData(FLAGS.debug_mode)
+            last_trial_data_save = performance.now()
+        }
+
+        if (_ms_since_last_touch_data_save > TOUCHSTRING_SAVE_TIMEOUT_PERIOD){
+            console.log(_ms_since_last_touch_data_save/1000 +'s since last TOUCHSTRING save. '+TOUCHSTRING.length+' length TOUCHSTRING save requested.')
+            DWr.saveTouches(FLAGS.debug_mode)
+            last_touch_save = performance.now()
+        }
+    }
     
     async saveTouches(save_to_debug_directory){
         try{
