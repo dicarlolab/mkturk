@@ -92,8 +92,8 @@ async function setupMechanicalTurkTask(){
 
 
     // Initialize components of task
-    FixationRewardMap = new MouseRewardMap()
-    ChoiceRewardMap = new MouseRewardMap()
+    FixationRewardMap = new MouseMoveRewardMap()
+    ChoiceRewardMap = new MouseMoveRewardMap()
     SD = new ScreenDisplayer()
     R = new MonetaryReinforcer()
 
