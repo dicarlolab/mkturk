@@ -80,35 +80,15 @@ async function setupMechanicalTurkTask(){
   wdm('TaskStreamer built')
 
   //================== await create SoundPlayer ==================// 
-    SP = new SoundPlayer(SIO, "https://s3.amazonaws.com/monkeyturk/Resources/sounds/au")
+    SP = new SoundPlayer()
     await SP.build()    
 
     wdm("Sounds loaded...")
-    
-    //================== AWAIT CONNECT TO BLE ==================//
-    document.querySelector("button[name=connectble]").style.display = "block"
-    document.querySelector("button[name=connectble]").style.visibility = "visible"
-    document.querySelector("button[name=noble]").style.display = "block"
-    document.querySelector("button[name=noble]").style.visibility = "visible"
-    wdm("Waiting for Bluetooth preferences...")
-    await connectBLEButtonPromise()
-    wdm("Bluetooth connection handled...")
 
-    document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
-    document.querySelector("button[name=noble]").style.display = "none"
     
     
-
-    //========= Start in TEST mode =======//
-    document.querySelector("button[name=doneTestingTask]").style.display = "block"
-    document.querySelector("button[name=doneTestingTask]").style.visibility = "visible"
-    
-
     
     FLAGS.debug_mode = 1 
-
-    // Make sync button visible 
-    document.querySelector("button[name=SyncButton]").style.visibility = "visible"
 
 
     // Initialize components of task
@@ -276,7 +256,7 @@ async function setupTabletTask(){
   wdm('TaskStreamer built')
 
   //================== await create SoundPlayer ==================// 
-    SP = new SoundPlayer(DIO, SOUND_FILEPREFIX)
+    SP = new SoundPlayer()
     await SP.build()    
 
     wdm("Sounds loaded...")

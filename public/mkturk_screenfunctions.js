@@ -303,7 +303,7 @@ class ScreenDisplayer{
 	displayScreenSequence(sequence,tsequence){
 		var resolveFunc
 		var errFunc
-		p = new Promise(function(resolve,reject){
+		var p = new Promise(function(resolve,reject){
 			resolveFunc = resolve;
 			errFunc = reject;
 		}).then();
