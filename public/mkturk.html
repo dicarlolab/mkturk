@@ -169,46 +169,20 @@
 <script src="task_setup_procedures.js" type="text/javascript"></script>
 <script src="mkturk_reinforcement.js" type="text/javascript"></script>
 
-
-
 <script>
-
-
-
-
-//============= Initialize Audio & Battery Objects ==================//	
-DEVICE.DevicePixelRatio = window.devicePixelRatio || 1;
-var visiblecanvasobj = CANVAS.obj[CANVAS.front];
-var visiblecontext = visiblecanvasobj.getContext("2d");
-var backingStoreRatio = visiblecontext.webkitBackingStorePixelRatio ||
-                            visiblecontext.mozBackingStorePixelRatio ||
-                            visiblecontext.msBackingStorePixelRatio ||
-                            visiblecontext.oBackingStorePixelRatio ||
-                            visiblecontext.backingStorePixelRatio || 1;
-DEVICE.CanvasRatio = backingStoreRatio/DEVICE.DevicePixelRatio
-
-//Monitor Battery - from: http://www.w3.org/TR/battery-status/
-navigator.getBattery().then(function(batteryobj){
-	DEVICE.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
-	batteryobj.addEventListener('levelchange',function(){
-		DEVICE.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
-	})
-});
 
 
 (async function(){
 
 await setupTabletTask()
 
-// Science mode
-while(true){
+TERMINAL_STATE = false 
+while(TERMINAL_STATE == false){
 	await runtrial()
   UX.poll()
 }
 
 await DWr.conclude_session()
-
-
 } ())
 
 </script>

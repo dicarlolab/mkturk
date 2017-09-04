@@ -1,7 +1,7 @@
 async function setupTaskFunctionTemplate(){
   // Responsible for setting the following global objects: 
 
-  // DWr: Disk writer 
+  // DWr: Disk writer (inc. Effector tracker (e.g. drag and tap or mouse move))
   // R: Reinforcer
   // SD: ScreenDisplayer
   // UX: UX poller 
@@ -9,7 +9,8 @@ async function setupTaskFunctionTemplate(){
   // Experiment file 
   // SubjectSettings
 
-  // Effector tracker (e.g. drag and tap or mouse move)
+
+  // backing store ratio
 }
 
 
@@ -103,6 +104,27 @@ async function setupTabletTask(){
   SIO = new S3_IO() 
   DWr = new DropboxDataWriter(DIO)
   UX = new UX_poller(DIO)
+
+
+  DEVICE.DevicePixelRatio = window.devicePixelRatio || 1;
+  var visiblecanvasobj = CANVAS.obj[CANVAS.front];
+  var visiblecontext = visiblecanvasobj.getContext("2d");
+  backingStoreRatio = visiblecontext.webkitBackingStorePixelRatio ||
+                              visiblecontext.mozBackingStorePixelRatio ||
+                              visiblecontext.msBackingStorePixelRatio ||
+                              visiblecontext.oBackingStorePixelRatio ||
+                              visiblecontext.backingStorePixelRatio || 1;
+  DEVICE.CanvasRatio = backingStoreRatio/DEVICE.DevicePixelRatio
+
+  //Monitor Battery - from: http://www.w3.org/TR/battery-status/
+  navigator.getBattery().then(function(batteryobj){
+    DEVICE.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
+    batteryobj.addEventListener('levelchange',function(){
+      DEVICE.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
+    })
+  });
+
+
 
   // Button callbacks
   document.querySelector("button[name=connectble]").addEventListener(

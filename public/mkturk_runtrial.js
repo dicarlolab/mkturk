@@ -131,4 +131,7 @@ for (var _property in current_trial_outcome){
 // Writeout (e.g. live to dropbox)
 DWr.writeout()
 
+// Check if reached terminal state
+TERMINAL_STATE = false
+
 }
