@@ -45,6 +45,25 @@ function toggleProgressbar(on_or_off, bar_id){
 }
 
 
+function updateCashInButtonText(s){
+	var elem = document.querySelector("button[name=WorkerCashInButton]")
+	elem.innerHTML = s
+
+}	
+function toggleCashInButtonClickability(on_or_off){
+	var elem = document.querySelector("button[name=WorkerCashInButton]")
+	if(on_or_off == 0){
+		elem.disabled = true
+		elem.style["background-color"] = "#DBDDDF"
+		elem.style["color"] = "#767373"
+	}
+	else{
+		elem.disabled = false
+	}
+	return
+}
+
+
 //================== LOAD STATUS DISPLAY ==================//
 function refreshCanvasSettings(EXPERIMENT_entry){
 	// TODO: cleanup CANVAS; separate canvas ID from sequence logic; 'tsequence' variables coded by length rather than absolute time
@@ -82,6 +101,7 @@ function setupMouseTracker(){
 	// https://stackoverflow.com/questions/7790725/javascript-track-mouse-position
 	document.onmousemove = handleMouseMove;
 	function handleMouseMove(event){
+		t = Math.round(performance.now())
 		var dot, eventDoc, doc, body, pageX, pageY;
 
         event = event || window.event; // IE-ism
@@ -102,7 +122,13 @@ function setupMouseTracker(){
               (doc && doc.clientTop  || body && body.clientTop  || 0 );
         }
 
-        // Use event.pageX / event.pageY here
+        // Use event.pageX / event.pageY her
+
+        MOUSESTRING+=Math.round(event.pageX)
+        MOUSESTRING+=','+Math.round(event.pageY)
+        MOUSESTRING+=','+t+'\n'
+        MOUSESTRING_UPDATE_COUNTER+=1
+
 	}
 }
 

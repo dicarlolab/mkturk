@@ -60,7 +60,8 @@ async function setupMechanicalTurkTask(){
     "GridScale": 0.6262,
     "FixationScale": 0.6262,
     "SampleScale": 0.6262,
-    "TestScale": 0.6262
+    "TestScale": 0.6262, 
+    "MinimumTrialsForCashIn":15, // todo: move to a place that makes sense? programatically define
     }
 
   console.log(SubjectSettings)
@@ -161,6 +162,12 @@ async function setupMechanicalTurkTask(){
     }
   }
   transition_from_debug_to_science_trials()
+
+  // Add cash in button 
+  document.querySelector("button[name=WorkerCashInButton]").addEventListener(
+    'mouseup',cash_in_listener,false)
+  updateCashInButtonText('Trials left: '+SubjectSettings['MinimumTrialsForCashIn']+'<br>Earned: $0.00')
+  toggleCashInButtonClickability(0)
 
 }
 

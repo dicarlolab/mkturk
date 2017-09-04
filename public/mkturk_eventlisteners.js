@@ -81,6 +81,26 @@ function experimentlist_listener(event){
 }
 
 
+async function cash_in_listener(event){
+	console.log('Worker called cash in')
+	var original_text = document.querySelector("button[name=WorkerCashInButton]").innerHTML
+	var original_color = document.querySelector("button[name=WorkerCashInButton]").style['background-color']
+
+	document.querySelector("button[name=WorkerCashInButton]").innerHTML = 'Submitting...'
+
+	document.querySelector("button[name=WorkerCashInButton]").style['background-color'] = '#ADFF97'
+	
+	await SP.playSound(5) // Chime
+	
+	TERMINAL_STATE = true // end on next trial
+
+	document.querySelector("button[name=WorkerCashInButton]").style['background-color'] = original_color
+	document.querySelector("button[name=WorkerCashInButton]").innerHTML = original_text
+
+
+
+	return 
+}
 
 async function sync_data_listener(event){
 	console.log("Called data save from sync button")

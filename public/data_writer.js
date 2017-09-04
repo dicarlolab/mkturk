@@ -66,7 +66,7 @@ class MechanicalTurkDataWriter{
         dataobj['SubjectSettings'] = SubjectSettings
 
 
-        var result_str = {'TOUCH_DATA':TOUCHSTRING, 
+        var result_str = {'MOUSE_DATA':MOUSESTRING, 
                           'TASK_DATA':dataobj}
 
         result_str = JSON.stringify(result_str)
