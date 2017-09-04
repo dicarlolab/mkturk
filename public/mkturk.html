@@ -174,18 +174,9 @@
 <script>
 
 
-wdm("Initialized webpage")
-
 SIO = new S3_IO()
-DIO = new DropboxIO()
 
-DWr = new DropboxDataWriter(DIO)
-UX = new UX_poller(DIO)
 
-setupDragTracker() // Writes to TOUCHSTRING and TOUCHSTRING_UPDATECOUNTER
-setupTapTracker() // Writes to TOUCHSTRING and TOUCHSTRING_UPDATECOUNTER
-
-initializeSetupButtons()
 
 //============= Initialize Audio & Battery Objects ==================//	
 DEVICE.DevicePixelRatio = window.devicePixelRatio || 1;
@@ -209,10 +200,7 @@ navigator.getBattery().then(function(batteryobj){
 
 (async function(){
 
-
 await setupTabletTask()
-
-
 
 // Science mode
 while(true){

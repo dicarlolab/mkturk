@@ -91,6 +91,12 @@ class DropboxDataWriter{
         this._last_trialbehavior_save = performance.now()
 
         this._touch_filename_suffix = this._generate_touch_filename_suffix()
+
+        setupDragTracker() // Writes to TOUCHSTRING and TOUCHSTRING_UPDATECOUNTER
+        setupTapTracker() // Writes to TOUCHSTRING and TOUCHSTRING_UPDATECOUNTER
+
+
+
     }
 
     async saveTrialData(save_to_debug_directory){

@@ -1,29 +1,24 @@
 async function setupTaskFunctionTemplate(){
-  // Responsible for: 
+  // Responsible for setting the following global objects: 
+
+  // DWr: Disk writer 
+  // R: Reinforcer
+  // SD: ScreenDisplayer
+  // UX: UX poller 
+  // DIO: Disk I/O
+  // Experiment file 
+  // SubjectSettings
+
+  // Effector tracker (e.g. drag and tap or mouse move)
 }
 
 
 async function initializeSetupButtons(){
-  // Button callbacks
-  document.querySelector("button[name=connectble]").addEventListener(
-    'touchend',findBLEDevice,false)
-  document.querySelector("button[name=connectble]").addEventListener(
-    'mouseup',findBLEDevice,false)
-  document.querySelector("button[name=noble]").addEventListener(
-    'touchend',skipBLEDevice,false)
-  document.querySelector("button[name=noble]").addEventListener(
-    'mouseup',skipBLEDevice,false)
-  document.querySelector("button[name=doneTestingTask]").addEventListener(
-    'touchend',doneTestingTask_listener,false)
-  document.querySelector("button[name=doneTestingTask]").addEventListener(
-    'mouseup',doneTestingTask_listener,false)
-  //document.querySelector("button[name=SyncButton]").addEventListener(
-  //  'mouseup',sync_data_listener,false)
-  document.querySelector("button[name=SyncButton]").addEventListener(
-    'touchend',sync_data_listener,false)
+  
 }
 
 async function setupTurkTask(){
+
   TS_finite = new TaskStream_FinitePrebuilt(SIO)
   await TS_finite.build()
 
@@ -103,7 +98,29 @@ async function setupTurkTask(){
 }
 
 async function setupTabletTask(){
+
   DIO = new DropboxIO()
+  DWr = new DropboxDataWriter(DIO)
+  UX = new UX_poller(DIO)
+
+  // Button callbacks
+  document.querySelector("button[name=connectble]").addEventListener(
+    'touchend',findBLEDevice,false)
+  document.querySelector("button[name=connectble]").addEventListener(
+    'mouseup',findBLEDevice,false)
+  document.querySelector("button[name=noble]").addEventListener(
+    'touchend',skipBLEDevice,false)
+  document.querySelector("button[name=noble]").addEventListener(
+    'mouseup',skipBLEDevice,false)
+  document.querySelector("button[name=doneTestingTask]").addEventListener(
+    'touchend',doneTestingTask_listener,false)
+  document.querySelector("button[name=doneTestingTask]").addEventListener(
+    'mouseup',doneTestingTask_listener,false)
+  //document.querySelector("button[name=SyncButton]").addEventListener(
+  //  'mouseup',sync_data_listener,false)
+  document.querySelector("button[name=SyncButton]").addEventListener(
+    'touchend',sync_data_listener,false)
+
   subject_filepath_list = await DIO.listdir(SUBJECT_DIRPATH)
 
   // GET PARAMFILE NAME
