@@ -13,13 +13,14 @@ class ReinforcerTemplate{
 
 class MonetaryReinforcer{
     constructor(){
+        this.payment_minimum = 0.1 // todo: move to place where it makes sense
         this.bonus_total = 0
         this.bonus_per_correct = 0.001 // one extra dollar for every 1000 correct 
     }
 
     async deliver_reinforcement(nreward){
         if(nreward >=1){
-            this.bonus_amount = this.bonus_amount + this.bonus_per_correct
+            this.bonus_total = this.bonus_total + this.bonus_per_correct
             console.log('Running monetary bonus amount', this.bonus_amount)
             CANVAS.sequencepost[1]="reward";
             CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]

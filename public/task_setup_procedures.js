@@ -31,7 +31,7 @@ async function setupMechanicalTurkTask(){
 
   SIO = new S3_IO() 
   DWr = new MechanicalTurkDataWriter()
-  UX = new Dummy_UX_poller()
+  UX = new MechanicalTurk_UX_poller()
 
 
   DEVICE.DevicePixelRatio = window.devicePixelRatio || 1;
@@ -61,7 +61,7 @@ async function setupMechanicalTurkTask(){
     "FixationScale": 0.6262,
     "SampleScale": 0.6262,
     "TestScale": 0.6262, 
-    "MinimumTrialsForCashIn":15, // todo: move to a place that makes sense? programatically define
+    "MinimumTrialsForCashIn":5, // todo: move to a place that makes sense? programatically define
     }
 
   console.log(SubjectSettings)
@@ -166,7 +166,8 @@ async function setupMechanicalTurkTask(){
   // Add cash in button 
   document.querySelector("button[name=WorkerCashInButton]").addEventListener(
     'mouseup',cash_in_listener,false)
-  updateCashInButtonText('Trials left: '+SubjectSettings['MinimumTrialsForCashIn']+'<br>Earned: $0.00')
+  document.querySelector("button[name=WorkerCashInButton]").style.visibility = 'visible'
+  updateCashInButtonText(SubjectSettings["MinimumTrialsForCashIn"], 0, false)
   toggleCashInButtonClickability(0)
 
 }

@@ -60,13 +60,24 @@ class UX_poller{
 
 }
 
-class Dummy_UX_poller{
+class MechanicalTurk_UX_poller{
     constructor(){
 
     }
 
     async poll(){
-        console.log('using dummy UX poller')
+        
+        var minimum_trials_left = Math.max(SubjectSettings["MinimumTrialsForCashIn"] - TRIAL_NUMBER_FROM_SESSION_START, 0)
+        if(minimum_trials_left > 0){
+            var bonus_earned = R.bonus_total
+            updateCashInButtonText(minimum_trials_left, bonus_earned, false)
+        }
+        else{
+            toggleCashInButtonClickability(1)
+            var bonus_earned = R.bonus_total
+            var num_bonus_trials_performed = TRIAL_NUMBER_FROM_SESSION_START-SubjectSettings["MinimumTrialsForCashIn"]
+            updateCashInButtonText(num_bonus_trials_performed, bonus_earned, true)
+        }
     }
 
 }

@@ -45,9 +45,16 @@ function toggleProgressbar(on_or_off, bar_id){
 }
 
 
-function updateCashInButtonText(s){
+function updateCashInButtonText(trials, bonus_earned, cash_in_option){
 	var elem = document.querySelector("button[name=WorkerCashInButton]")
-	elem.innerHTML = s
+
+	if(cash_in_option == false){
+		var button_string = 'Trials left: '+trials+'<br>Bonus: $'+bonus_earned.toFixed(3)
+	}
+	else if(cash_in_option == true){
+		var button_string = 'CLICK TO SUBMIT<br>Bonus trials: '+trials+'<br>Bonus: $'+bonus_earned.toFixed(3)
+	}
+	elem.innerHTML = button_string
 
 }	
 function toggleCashInButtonClickability(on_or_off){
@@ -59,6 +66,10 @@ function toggleCashInButtonClickability(on_or_off){
 	}
 	else{
 		elem.disabled = false
+		elem.style["background-color"] = "#00cc66"
+		elem.style["color"] = "#f7fcf8"
+
+
 	}
 	return
 }
