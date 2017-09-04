@@ -59,3 +59,14 @@ class UX_poller{
     }
 
 }
+
+class Dummy_UX_poller{
+    constructor(){
+
+    }
+
+    async poll(){
+        console.log('using dummy UX poller')
+    }
+
+}

@@ -1,5 +1,13 @@
 class TaskStreamer{
     constructor(DIO, DIO_images, ExperimentFilePath, SubjectID){
+
+        // DIO calls: 
+        // this.DIO.read_textfile(this.ExperimentFilePath)
+        // this.DIO.exists(this.taskstream_checkpoint_path)
+        // this.DIO.read_textfile(this.taskstream_checkpoint_path)
+        // this.DIO.read_textfile(_tk['ImageBagsSampleMetaPaths'][i_samplebag]
+        // this.DIO.write_string(datastring, savepath) - checkpoint 
+        
         this.DIO = DIO // For checkpointing and reading imagebag definitions
         this.DIO_images = DIO_images // For loading images at paths stated in imagebag definitions
         this.ExperimentFilePath = ExperimentFilePath

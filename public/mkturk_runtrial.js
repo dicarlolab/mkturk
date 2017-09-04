@@ -1,7 +1,21 @@
 //============= AWAIT LOAD PARAMS =============//
 async function runtrial(){
+// Global references: 
+// TRIAL_NUMBER_FROM_SESSION_START
+// TS 
+// CANVAS
+// SD 
+// FixationRewardMap
+// ChoiceRewardMap
+// R
+// EVENT_TIMESTAMPS
+// TRIAL_BEHAVIOR
+// DWr
+// TERMINAL_STATE
 
 writeToTrialCounterDisplay(TRIAL_NUMBER_FROM_SESSION_START)
+
+
 _TRIAL = await TS.get_trial()
 console.log(_TRIAL)
 
@@ -70,7 +84,6 @@ else if (correct == 0){
 reinforcement_onset = performance.now()
 await R.deliver_reinforcement(nreward)
 reinforcement_end = performance.now()
-
 
 
 

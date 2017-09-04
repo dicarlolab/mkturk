@@ -56,7 +56,7 @@ function doneTestingTask_listener(event){
 	//console.log("User is done testing. Start saving data");
 	FLAGS.debug_mode = 0
 	
-	renderBlank(CANVAS.obj.blank)
+	SD.renderBlank(CANVAS.obj.blank)
 	document.querySelector("button[name=doneTestingTask]").style.display = "none"
 	return
 }
