@@ -21,10 +21,11 @@ class DataWriterTemplate{
     }
 
 }
-class OfflineDataWriter{
+class MechanicalTurkDataWriter{
     // Where there can be no live writing / reading
     constructor(){
 
+        setupMouseTracker()
     }
 
     async writeout(){

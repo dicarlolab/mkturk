@@ -11,7 +11,37 @@ class ReinforcerTemplate{
 
 }
 
+class MonetaryReinforcer{
+    constructor(){
+        this.bonus_total = 0
+        this.bonus_per_correct = 0.001 // one extra dollar for every 1000 correct 
+    }
 
+    async deliver_reinforcement(nreward){
+        if(nreward >=1){
+            this.bonus_amount = this.bonus_amount + this.bonus_per_correct
+            console.log('Running monetary bonus amount', this.bonus_amount)
+            CANVAS.sequencepost[1]="reward";
+            CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]
+
+            reinforcement_onset = performance.now()
+            SP.playSound(2);
+            var p1 = SD.displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost)
+
+            var p1 = SD.displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost)
+            await Promise.all([p1])
+            
+        }
+        else if(nreward == 0){
+            //punish
+            CANVAS.sequencepost[1] = "punish";
+            CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+TS.EXPERIMENT[TS.state.current_stage_index]['PunishTimeOut'];
+            SP.playSound(3);
+            var p1 = await SD.displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost);
+        }
+    }
+
+}
 class JuiceReinforcer{
     constructor(reinforcement_type){
 

@@ -14,7 +14,7 @@ async function setupTaskFunctionTemplate(){
 }
 
 
-async function setupTurkTask(){
+async function setupMechanicalTurkTask(){
 
   // Global references for runtrial
   // TRIAL_NUMBER_FROM_SESSION_START
@@ -30,8 +30,8 @@ async function setupTurkTask(){
   // TERMINAL_STATE
 
   SIO = new S3_IO() 
-  DWr = new OfflineDataWriter()
-  UX = new Dummy_UX_poller(DIO)
+  DWr = new MechanicalTurkDataWriter()
+  UX = new Dummy_UX_poller()
 
 
   DEVICE.DevicePixelRatio = window.devicePixelRatio || 1;
@@ -71,10 +71,11 @@ async function setupTurkTask(){
 
   // TODO: specify experimentfilepath programatically @ upload interface
   SESSION.ExperimentFilePath = "https://s3.amazonaws.com/monkeyturk/ExperimentFiles/ExperimentDefinitions/NuevoToy.txt"
-
   updateSessionTextbox(SESSION.SubjectID, splitFilename(SESSION.ExperimentFilePath))
 
-  TS = new TaskStreamer(DIO, SIO, SESSION.ExperimentFilePath, SESSION.SubjectID) 
+  var Experiment = await SIO.read_textfile(SESSION.ExperimentFilePath)
+  Experiment = JSON.parse(Experiment)
+  TS = new TaskStreamer(undefined, SIO, Experiment, SESSION.SubjectID, false) 
   await TS.build()
   wdm('TaskStreamer built')
 
@@ -98,8 +99,6 @@ async function setupTurkTask(){
     
     
 
-
-
     //========= Start in TEST mode =======//
     document.querySelector("button[name=doneTestingTask]").style.display = "block"
     document.querySelector("button[name=doneTestingTask]").style.visibility = "visible"
@@ -113,12 +112,10 @@ async function setupTurkTask(){
 
 
     // Initialize components of task
-    FixationRewardMap = new RewardMap()
-    ChoiceRewardMap = new RewardMap()
+    FixationRewardMap = new MouseRewardMap()
+    ChoiceRewardMap = new MouseRewardMap()
     SD = new ScreenDisplayer()
-    R = new JuiceReinforcer()
-
-
+    R = new MonetaryReinforcer()
 
   windowHeight = window.innerHeight
   || document.documentElement.clientHeight
@@ -174,14 +171,15 @@ async function setupTurkTask(){
 
   console.log('windowWidth', windowWidth, 'windowHeight', windowHeight)
 
-
   // Start in testing mode
-  wdm("Running debug mode...")
-  while(FLAGS.debug_mode == 1){
-    await runtrial()
-    UX.poll()
-  }
+  wdm("Running test mode...")
 
+  if(getURLParameter('assigmentId')=='ASSIGNMENT_ID_NOT_AVAILABLE'){
+    wdm('RUNNING IN PREVIEW MODE. ACCEPT THE HIT TO EARN MONEY FROM YOUR TRIALS')
+    while(FLAGS.debug_mode == 1){
+      await runtrial()
+    }
+  }
   transition_from_debug_to_science_trials()
 
 }
@@ -271,7 +269,9 @@ async function setupTabletTask(){
   await ExperimentFile_Promise() // sets SESSION.ExperimentFilePath
   updateSessionTextbox(SESSION.SubjectID, splitFilename(SESSION.ExperimentFilePath))
 
-  TS = new TaskStreamer(DIO, SIO, SESSION.ExperimentFilePath, SESSION.SubjectID) 
+  var Experiment = await DIO.read_textfile(SESSION.ExperimentFilePath)
+  Experiment = JSON.parse(Experiment)
+  TS = new TaskStreamer(DIO, DIO, Experiment, SESSION.SubjectID, true) 
   await TS.build()
   wdm('TaskStreamer built')
 
@@ -310,8 +310,8 @@ async function setupTabletTask(){
 
 
     // Initialize components of task
-    FixationRewardMap = new RewardMap()
-    ChoiceRewardMap = new RewardMap()
+    FixationRewardMap = new TouchRewardMap()
+    ChoiceRewardMap = new TouchRewardMap()
     SD = new ScreenDisplayer()
     R = new JuiceReinforcer()
 

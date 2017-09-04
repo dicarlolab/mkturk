@@ -1,42 +1,34 @@
 class TaskStreamer{
-    constructor(DIO, DIO_images, ExperimentFilePath, SubjectID){
+    constructor(DIO_checkpointing, DIO_images, Experiment, SubjectID, use_checkpointing){
 
-        // DIO calls: 
-        // this.DIO.read_textfile(this.ExperimentFilePath)
-        // this.DIO.exists(this.taskstream_checkpoint_path)
-        // this.DIO.read_textfile(this.taskstream_checkpoint_path)
-        // this.DIO.read_textfile(_tk['ImageBagsSampleMetaPaths'][i_samplebag]
-        // this.DIO.write_string(datastring, savepath) - checkpoint 
-        
-        this.DIO = DIO // For checkpointing and reading imagebag definitions
-        this.DIO_images = DIO_images // For loading images at paths stated in imagebag definitions
-        this.ExperimentFilePath = ExperimentFilePath
-        this.taskstream_checkpoint_fname = this._checkpoint_namehash(SubjectID)
-        this.taskstream_checkpoint_path = join([CHECKPOINT_DIRPATH, this.taskstream_checkpoint_fname])
-        
-        // Checkpoint info
+
+        this.DIO_checkpointing = DIO_checkpointing // For checkpointing 
+        this.DIO_images = DIO_images // for loading images and loading textfiles with imagebag definitions 
+        this.EXPERIMENT = Experiment
+        this.use_checkpointing = use_checkpointing
+        if(this.use_checkpointing == true){
+            this.taskstream_checkpoint_fname = this._checkpoint_namehash(SubjectID)
+            this.taskstream_checkpoint_path = join([CHECKPOINT_DIRPATH, this.taskstream_checkpoint_fname])
+            this._last_checkpoint_save = performance.now()
+            this._checkpoint_save_timeout_period = CHECKPOINT_SAVE_TIMEOUT_PERIOD
+            this._SubjectID = SubjectID
+            this._debug_mode = true
+            this._debug_taskstream_checkpoint_path = join([_debug_CHECKPOINT_DIRPATH, this.taskstream_checkpoint_fname])
+        }        
+
+        // State info
         this.state = {}        
         this.state['current_stage_index'] = undefined 
         this.state['current_stage_trial_number'] = undefined
         this.state['return_sequence_in_stage'] = undefined 
 
         
-        // EXPERIMENT info 
-        this.EXPERIMENT = undefined
 
         // TrialQueues for each stage  
         this.TQ_sequence = []
 
         // Image buffer
-        this.IB = new ImageBuffer(SIO)
-
-        // Save info
-        this._last_checkpoint_save = performance.now()
-        this._checkpoint_save_timeout_period = CHECKPOINT_SAVE_TIMEOUT_PERIOD
-        this._SubjectID = SubjectID
-        this._debug_mode = true
-        this._debug_taskstream_checkpoint_path = join([_debug_CHECKPOINT_DIRPATH, this.taskstream_checkpoint_fname])
-
+        this.IB = new ImageBuffer(DIO_images)        
 
         // Terminal state 
         this.loop_at_end = true
@@ -47,7 +39,7 @@ class TaskStreamer{
         return 'Checkpoint_'+SubjectID + '.ckpt'
     }
 
-    _generate_default_checkpoint(){
+    _generate_default_state(){
 
         this.state['current_stage_index'] = 0
         this.state['current_stage_trial_number'] = 0
@@ -62,34 +54,36 @@ class TaskStreamer{
         // taskstream_generative_params: an array of objects, wherein at least the first must contain:
         // and the following encode the parameters you would like to change in transitioning from the 
         // previous stage to the next 
-
-        var EXPERIMENT = await this.DIO.read_textfile(this.ExperimentFilePath)
-        EXPERIMENT = JSON.parse(EXPERIMENT)
-        this.EXPERIMENT = EXPERIMENT
+        var EXPERIMENT = this.EXPERIMENT
         this.EXPERIMENT_hash = JSON.stringify(EXPERIMENT).hashCode()
 
         console.log(this)
-        var generate_default = true        
-        if(await this.DIO.exists(this.taskstream_checkpoint_path)){
-            var checkpoint = await this.DIO.read_textfile(this.taskstream_checkpoint_path)
+        if(this.use_checkpointing == true){
+            // Try to load checkpoint from disk, if it exists      
+            if(await this.DIO_checkpointing.exists(this.taskstream_checkpoint_path)){
+                var checkpoint = await this.DIO_checkpointing.read_textfile(this.taskstream_checkpoint_path)
 
-            checkpoint = JSON.parse(checkpoint)
-            if(checkpoint['EXPERIMENT_hash'] != this.EXPERIMENT_hash){
-                generate_default = true
-                wdm('Checkpoint file on disk does not match current EXPERIMENT. Generating novel checkpoint...')
+                checkpoint = JSON.parse(checkpoint)
+                if(checkpoint['EXPERIMENT_hash'] != this.EXPERIMENT_hash){
+                    wdm('Checkpoint file on disk does not match current EXPERIMENT. Generating default state...')
+                    this._generate_default_state() 
+                    await this.save_ckpt()
+                }
+                else{
+                    wdm('Successfully loaded valid checkpoint '+ this.taskstream_checkpoint_path)
+                    this.state['current_stage_index'] = checkpoint["current_stage_index"]
+                    this.state['current_stage_trial_number'] = checkpoint["current_stage_index"]
+                    this.state['return_sequence_in_stage'] = checkpoint['return_sequence_in_stage']
+                }
             }
             else{
-                wdm('Loaded checkpoint '+ this.taskstream_checkpoint_path)
-                generate_default = false
-                this.state['current_stage_index'] = checkpoint["current_stage_index"]
-                this.state['current_stage_trial_number'] = checkpoint["current_stage_index"]
-                this.state['return_sequence_in_stage'] = checkpoint['return_sequence_in_stage']
+                this._generate_default_state()
+                await this.save_ckpt
             }
         }
-        if(generate_default == true){
-            this._generate_default_checkpoint() 
-            await this.save_ckpt()
-            wdm('Generated default checkpoint')
+        else{
+            this._generate_default_state()
+            wdm('Not using checkpointing...generated default state')
         }
 
         // Prebuffer stages of EXPERIMENT
@@ -109,7 +103,7 @@ class TaskStreamer{
             var samplebag_paths = []
             var samplebag_labels = []
             for (var i_samplebag = 0; i_samplebag < _tk['ImageBagsSampleMetaPaths'].length; i_samplebag++){
-                var _s_meta = await this.DIO.read_textfile(_tk['ImageBagsSampleMetaPaths'][i_samplebag])
+                var _s_meta = await this.DIO_images.read_textfile(_tk['ImageBagsSampleMetaPaths'][i_samplebag])
                 _s_meta = JSON.parse(_s_meta)
                 samplebag_paths.push(... _s_meta['path'])
                 samplebag_labels.push(... new Array(_s_meta['path'].length).fill(i_samplebag))
@@ -119,7 +113,7 @@ class TaskStreamer{
             var testbag_paths = []
             var testbag_labels = []
             for (var i_testbag = 0; i_testbag < _tk['ImageBagsTestMetaPaths'].length; i_testbag++){
-                var _t_meta = await this.DIO.read_textfile(_tk['ImageBagsTestMetaPaths'][i_testbag])
+                var _t_meta = await this.DIO_images.read_textfile(_tk['ImageBagsTestMetaPaths'][i_testbag])
                 _t_meta = JSON.parse(_t_meta)
                 testbag_paths.push(... _t_meta['path'])
                 testbag_labels.push(... new Array(_t_meta['path'].length).fill(i_testbag))
@@ -264,7 +258,7 @@ class TaskStreamer{
             var savepath = this._debug_taskstream_checkpoint_path
         }
 
-        await this.DIO.write_string(datastring, savepath)
+        await this.DIO_checkpointing.write_string(datastring, savepath)
         wdm('Wrote checkpoint file to '+savepath)
     }
 }
