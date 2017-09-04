@@ -104,8 +104,10 @@ class S3_IO{
         
         xhttp.open("GET", sound_url, true);
         xhttp.send();
-        var s = await p
-        return s
+        var sound_blob = await p
+        
+
+        return sound_blob
 
     }
     async _read_textfile(text_url){

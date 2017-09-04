@@ -45,9 +45,11 @@ class SoundPlayer{
 
         var reader = new FileReader()
         console.log(i_sound, sounddata)
+        var local_isound = i_sound // otherwise dependent on which promises download first...weird
         reader.onload = async function(e){
+          console.log(reader.result)
            var _soundbuffer = await _this.audiocontext.decodeAudioData(reader.result)
-           _this.sounds.buffer[i_sound] = _soundbuffer;
+           _this.sounds.buffer[local_isound] = _soundbuffer;
           }
         await reader.readAsArrayBuffer(sounddata)
         }
