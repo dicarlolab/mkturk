@@ -1,4 +1,3 @@
-// todo: remove DIO calls 
 
 // TQs are in charge of image ordering, image delivery, grid index delivery, and reward map delivery given || image (paths), their labels, and experiment details 
 
@@ -43,7 +42,6 @@ constructor(samplebag_paths, samplebag_labels, testbag_paths, testbag_labels, IB
 
 	// ImageBuffer
 	this.IB = IB 
-	this.DIO = DIO
 
 	// Settings 
 	this.max_queue_size = 500; // Max number of trials (and their images) to have prepared from now; to improve browser performance

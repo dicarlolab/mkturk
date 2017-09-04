@@ -100,6 +100,7 @@ async function setupTurkTask(){
 async function setupTabletTask(){
 
   DIO = new DropboxIO()
+  SIO = new S3_IO() 
   DWr = new DropboxDataWriter(DIO)
   UX = new UX_poller(DIO)
 
@@ -160,7 +161,7 @@ async function setupTabletTask(){
   await ExperimentFile_Promise() // sets SESSION.ExperimentFilePath
   updateSessionTextbox(SESSION.SubjectID, splitFilename(SESSION.ExperimentFilePath))
 
-  TS = new TaskStreamer(DIO, SESSION.ExperimentFilePath, SESSION.SubjectID) 
+  TS = new TaskStreamer(DIO, SIO, SESSION.ExperimentFilePath, SESSION.SubjectID) 
   await TS.build()
   wdm('TaskStreamer built')
 

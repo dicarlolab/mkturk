@@ -1,6 +1,7 @@
 class TaskStreamer{
-    constructor(DIO, ExperimentFilePath, SubjectID){
-        this.DIO = DIO
+    constructor(DIO, DIO_images, ExperimentFilePath, SubjectID){
+        this.DIO = DIO // For checkpointing and reading imagebag definitions
+        this.DIO_images = DIO_images // For loading images at paths stated in imagebag definitions
         this.ExperimentFilePath = ExperimentFilePath
         this.taskstream_checkpoint_fname = this._checkpoint_namehash(SubjectID)
         this.taskstream_checkpoint_path = join([CHECKPOINT_DIRPATH, this.taskstream_checkpoint_fname])
