@@ -167,6 +167,7 @@
 <script src="mkturk_UX.js" type="text/javascript"></script>
 <script src="Amazon_utils.js" type="text/javascript"></script>
 <script src="TabletTask_utils.js" type="text/javascript"></script>
+<script src="mkturk_reinforcement.js" type="text/javascript"></script>
 
 
 
@@ -217,8 +218,7 @@ document.querySelector("button[name=SyncButton]").style.visibility = "visible"
 FixationRewardMap = new RewardMap()
 ChoiceRewardMap = new RewardMap()
 SD = new ScreenDisplayer()
-
-console.log('initialized hellothere')
+R = new JuiceReinforcer()
 
 INITIALIZE = true
 
@@ -233,38 +233,37 @@ windowWidth = window.innerWidth
 || document.body.clientWidth;
 
 
-
-    //============= SET UP CANVAS =============//
-    // Update canvas based on latest TASK state: 
-    refreshCanvasSettings(TS.EXPERIMENT[TS.state.current_stage_index]); 
-    
-    for (var i = 0; i <= CANVAS.names.length-1; i++) {
-        setupCanvas(CANVAS.obj[CANVAS.names[i]]);
-    }
-    if (DEVICE.DevicePixelRatio !== 1){
-        scaleCanvasforHiDPI(CANVAS.obj.sample);
-        scaleCanvasforHiDPI(CANVAS.obj.test);
-    }
-
-    CANVAS.workspace = [
-        0,
-        0,
-        CANVAS.obj["touchfix"].width,
-        CANVAS.obj["touchfix"].height
-    ]
+// Reference: https://www.w3schools.com/js/js_window.asp
 
 
-    // Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image.
-    var representative_trial = await TS.get_trial()
-    console.log('representative_trial', representative_trial)
+refreshCanvasSettings(TS.EXPERIMENT[TS.state.current_stage_index]); 
 
-    var representative_image = representative_trial['sample_image']
-    DEVICE.source_ImageWidthPixels = representative_image.width
-    DEVICE.source_ImageHeightPixels = representative_image.height
+for (var i = 0; i <= CANVAS.names.length-1; i++) {
+    setupCanvas(CANVAS.obj[CANVAS.names[i]]);
+}
+if (DEVICE.DevicePixelRatio !== 1){
+    scaleCanvasforHiDPI(CANVAS.obj.sample);
+    scaleCanvasforHiDPI(CANVAS.obj.test);
+}
 
-    CANVAS.FixationRadius=(DEVICE.source_ImageWidthPixels/2)*SubjectSettings['FixationScale']*DEVICE.CanvasRatio
+CANVAS.workspace = [
+    0,
+    0,
+    CANVAS.obj["touchfix"].width,
+    CANVAS.obj["touchfix"].height
+]
 
-console.log(DEVICE)
+
+// Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image.
+var representative_trial = await TS.get_trial()
+console.log('representative_trial', representative_trial)
+
+var representative_image = representative_trial['sample_image']
+DEVICE.source_ImageWidthPixels = representative_image.width
+DEVICE.source_ImageHeightPixels = representative_image.height
+
+CANVAS.FixationRadius=(DEVICE.source_ImageWidthPixels/2)*SubjectSettings['FixationScale']*DEVICE.CanvasRatio
+
 funcreturn = defineImageGrid(TS.EXPERIMENT[0]['NGridPoints'], 
     DEVICE.source_ImageWidthPixels, 
     DEVICE.source_ImageHeightPixels, 
@@ -277,7 +276,6 @@ DEVICE.XGridCenter = funcreturn[2]
 DEVICE.YGridCenter = funcreturn[3]
 
 console.log('windowWidth', windowWidth, 'windowHeight', windowHeight)
-// Reference: https://www.w3schools.com/js/js_window.asp
 
 
 // Start in testing mode

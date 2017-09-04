@@ -1,65 +1,3 @@
-// That which delivers TaskStreams
-
-class TaskStream_FinitePrebuilt{
-    constructor(SIO){
-        this.SIO = SIO
-        this.IB = new ImageBuffer(SIO)
-
-    }
-    async build(){
-        this.sample_image_q = []
-        this.samplebag_index_q = []
-        this.sample_grid_index_placement_q = []
-        this.test_images_q = []
-        this.testbag_indices_q = []
-        this.test_correct_grid_index_q = []
-        this.test_grid_index_placements_q = []
-        this.choice_reward_amounts_q = []
-
-        
-        this.samplebag_urls = ['https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/A.png', 'https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/B.png']
-        this.testbag_urls = ['https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Atoken.png', 'https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Btoken.png']
-        
-        await this.IB.cache_these_images(this.samplebag_urls)
-        await this.IB.cache_these_images(this.testbag_urls)
-
-        this.current_trial_number = 0
-    }
-
-    get_trial(i){ // called at the beginning of each trial 
-        // returns images, reward maps, and other necessary things for runtrial()
-        
-        i = i || this.current_trial_number
-        this.current_trial_number ++ 
-
-        if(i >= this.sample_image_q.length){
-            console.log("REACHED END OF QUEUE")
-            return 
-        }
-        var trial = {}
-        trial['sample_image'] = this.sample_image_q[i]
-        trial['samplebag_index'] = 'samplebag_index_whatever'
-        trial['sample_grid_index_placement'] = 4
-        trial['test_images'] = this.test_images_q[i]
-        trial['testbag_indices'] = ['testbag_index_whatever1', 'testbag_index_whatever2']
-        trial['test_correct_grid_index'] = this.test_correct_grid_index_q[i]
-        trial['test_grid_index_placements'] = [2, 8]
-        var _choice_reward_amounts = []
-        for (var j in trial['test_grid_index_placements']){
-            if (trial['test_grid_index_placements'][j] == trial['test_correct_grid_index']){
-                _choice_reward_amounts.push(1)
-            }
-            else{
-                _choice_reward_amounts.push(0)
-            }
-        }
-        trial['choice_reward_amounts'] = _choice_reward_amounts
-        console.log("finite get_trial()", trial)
-        return trial    
-    }
-}
-
-
 class TaskStreamer{
     constructor(DIO, ExperimentFilePath, SubjectID){
         this.DIO = DIO
@@ -81,7 +19,7 @@ class TaskStreamer{
         this.TQ_sequence = []
 
         // Image buffer
-        this.IB = new ImageBuffer(this.DIO)
+        this.IB = new ImageBuffer(SIO)
 
         // Save info
         this._last_checkpoint_save = performance.now()
@@ -320,22 +258,6 @@ class TaskStreamer{
         await this.DIO.write_string(datastring, savepath)
         wdm('Wrote checkpoint file to '+savepath)
     }
-
-    // async build_literal(){
-    //     // TODO: pipe for ModelTurk-generated TaskStream constructor 
-
-    //     // Literally supply array of length(numtrials) each of which is an object with: 
-
-    //     var sample_grid_index_placement
-    //     var test_images
-    //     var testbag_indices
-    //     var test_correct_grid_index
-    //     var test_grid_index_placements
-    //     var choice_reward_amounts
-    //     return 
-    // }
-
-
 }
 
 

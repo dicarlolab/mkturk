@@ -66,35 +66,10 @@ if (correct == 1){
 else if (correct == 0){
     nreward = 0;
 } 
-
-RewardDuration = setReward();
-
-//============ DELIVER REWARD/PUNISH ============//
-if (correct == 1){
-    CANVAS.sequencepost[1]="reward";
-    CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+RewardDuration*1000;
-
-    reinforcement_onset = performance.now()
-    SP.playSound(2);
-    var p1 = SD.displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost)
-    if (ble.connected == false){
-        await Promise.all([p1])
-    }
-    else if (ble.connected == true){
-        var p2 = writepumpdurationtoBLE(Math.round(RewardDuration*1000))
-        await Promise.all([p1, p2])
-    }
-}
-
-//PUNISH
-else{
-    reinforcement_onset = performance.now()
-    CANVAS.sequencepost[1] = "punish";
-    CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+TS.EXPERIMENT[TS.state.current_stage_index]['PunishTimeOut'];
-    SP.playSound(3);
-    var p1 = await SD.displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost);
-}
+reinforcement_onset = performance.now()
+await R.deliver_reinforcement(nreward)
 reinforcement_end = performance.now()
+
 
 
 

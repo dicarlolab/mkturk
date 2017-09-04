@@ -3,7 +3,7 @@ class S3_IO{
 
         this.read_textfile = this._read_textfile.bind(this)
         this.load_image = this._load_image.bind(this)
-
+        this.exists = this._exists.bind(this)
 
     }
     async _load_image(blob_url){
@@ -58,6 +58,38 @@ class S3_IO{
         xhttp.send();
         var s = await p
         return s
+    }
+
+    async _exists(url){
+        var resolveFunc
+        var rejectFunc
+        var p = new Promise(function(resolve, reject){
+            resolveFunc = resolve
+            rejectFunc = reject
+        })
+
+        var xhttp = new XMLHttpRequest(); 
+
+
+        try{
+            xhttp.onreadystatechange = function(){
+                if (this.readyState == 4 && this.status == 200){
+                    resolveFunc(true)
+                }
+                else{
+                    resolveFunc(false)
+                }
+            }
+        }
+        catch(error){
+            console.log(error)
+        }
+        
+        xhttp.open("GET", url, true);
+        xhttp.send();
+        var s = await p
+        return s
+
     }
 
   
