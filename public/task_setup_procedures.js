@@ -70,7 +70,7 @@ async function setupMechanicalTurkTask(){
   updateSessionTextbox(SESSION.SubjectID, '')
 
   // TODO: specify experimentfilepath programatically @ upload interface
-  SESSION.ExperimentFilePath = "https://s3.amazonaws.com/monkeyturk/ExperimentFiles/ExperimentDefinitions/NuevoToy.txt"
+  SESSION.ExperimentFilePath = "https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt"
   updateSessionTextbox(SESSION.SubjectID, splitFilename(SESSION.ExperimentFilePath))
 
   var Experiment = await SIO.read_textfile(SESSION.ExperimentFilePath)
@@ -80,7 +80,7 @@ async function setupMechanicalTurkTask(){
   wdm('TaskStreamer built')
 
   //================== await create SoundPlayer ==================// 
-    SP = new SoundPlayer()
+    SP = new SoundPlayer(SIO, "https://s3.amazonaws.com/monkeyturk/Resources/sounds/au")
     await SP.build()    
 
     wdm("Sounds loaded...")
@@ -276,7 +276,7 @@ async function setupTabletTask(){
   wdm('TaskStreamer built')
 
   //================== await create SoundPlayer ==================// 
-    SP = new SoundPlayer()
+    SP = new SoundPlayer(DIO, SOUND_FILEPREFIX)
     await SP.build()    
 
     wdm("Sounds loaded...")

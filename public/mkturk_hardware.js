@@ -1,12 +1,14 @@
 class SoundPlayer{ 
-  constructor(){
+  constructor(DIO, sound_filepath_prefix){
     // todo: feed in explicit filepaths here and load; 
     // write playSound(filename)
-
+      this.DIO = DIO
       this.sounds = {
         soundfile_suffixes: [0,1,2,3,4,5],
-        buffer: [],
+        buffer: {},
       }
+
+      this.SOUND_FILEPREFIX = sound_filepath_prefix
 
       //Audio pulses for reward
       this.audiocontext = new (window.AudioContext || window.webkitAudioContext)();
@@ -15,8 +17,9 @@ class SoundPlayer{
   }
 
   loadSoundfromDropbox2(src,audiocontext, sounds, idx){
+    var _this = this
          return new Promise(function(resolve,reject){
-          DIO.dbx.filesDownload({path: SOUND_FILEPREFIX + src + ".wav"}).then(function(data){
+          _this.DIO.dbx.filesDownload({path:this.SOUND_FILEPREFIX + src + ".wav" }).then(function(data){
           var reader = new FileReader()
           reader.onload = function(e){
             audiocontext.decodeAudioData(reader.result).then(function(buffer){
@@ -33,12 +36,31 @@ class SoundPlayer{
   }
   async build(){
     var soundpromises = []
-    for (var i = 0; i < this.sounds.soundfile_suffixes.length; i ++){
-        soundpromises.push(this.loadSoundfromDropbox2(i, this.audiocontext, this.sounds, i))
+    var sound_data_array = []
+    var _this = this 
+    for (var i_sound = 0; i_sound < this.sounds.soundfile_suffixes.length; i_sound ++){
+      var soundpath = this.SOUND_FILEPREFIX + this.sounds.soundfile_suffixes[i_sound] + ".wav"
+      try{
+        var sounddata = await this.DIO.load_sound(soundpath)
+
+        var reader = new FileReader()
+        console.log(i_sound, sounddata)
+        reader.onload = async function(e){
+           var _soundbuffer = await _this.audiocontext.decodeAudioData(reader.result)
+           _this.sounds.buffer[i_sound] = _soundbuffer;
+          }
+        await reader.readAsArrayBuffer(sounddata)
+        }
+      
+      catch(error){
+        console.log('SP.build error', error)
+      }
+
     }
 
-    //this.sounds.soundfile_suffixes.map(this.loadSoundfromDropbox2); //create array of sound load Promises
-    await Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
+    console.log(this)
+    await SP.playSound(3)
+
   }
 
   async playSound(idx){

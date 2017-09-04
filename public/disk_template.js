@@ -32,6 +32,11 @@ class DiskIO{
         return blob
     }
 
+    async load_sound(soundpath){
+        var blob 
+        return blob 
+    }
+
     async changed_on_disk(filepath, rev){
         // "rev" is some hash that can be used to compare the in-memory version of the file and the disk version.
         var changed = false
@@ -48,6 +53,7 @@ class S3_IO{
     constructor(){
 
         this.read_textfile = this._read_textfile.bind(this)
+        this.load_sound = this._load_sound.bind(this)
         this.load_image = this._load_image.bind(this)
         this.exists = this._exists.bind(this)
 
@@ -71,6 +77,36 @@ class S3_IO{
 
         var img_loaded = await p
         return img_loaded
+    }
+
+    async _load_sound(sound_url){
+        var resolveFunc
+        var rejectFunc
+        var p = new Promise(function(resolve, reject){
+            resolveFunc = resolve
+            rejectFunc = reject
+        })
+
+        // https://stackoverflow.com/questions/33902299/using-jquery-ajax-to-download-a-binary-file
+        var xhttp = new XMLHttpRequest(); 
+        xhttp.responseType = "blob"
+        try{
+            xhttp.onreadystatechange = function(){
+                if (this.readyState == 4 && this.status == 200){
+                    console.log(sound_url, ' loaded')
+                    resolveFunc(this.response)
+                }
+            }
+        }
+        catch(error){
+            console.log(error)
+        }
+        
+        xhttp.open("GET", sound_url, true);
+        xhttp.send();
+        var s = await p
+        return s
+
     }
     async _read_textfile(text_url){
         // https://www.w3schools.com/xml/ajax_intro.asp
@@ -169,6 +205,7 @@ class DropboxIO{
         this.dbx = dbx
         this.exists = this._exists.bind(this)
         this.listdir = this._listdir.bind(this)
+        this.load_sound = this._load_sound.bind(this)
         this.write_string = this._write_string.bind(this)
         this.read_textfile = this._read_textfile.bind(this)
         this.load_image = this._load_image.bind(this)
@@ -180,6 +217,11 @@ class DropboxIO{
 
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind
 
+    }
+
+    async _load_sound(soundpath){
+        var sounddata = await this.dbx.filesDownload({path:soundpath})
+        return sounddata
     }
     async _exists(check_path){
         try{
