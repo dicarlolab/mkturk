@@ -4,6 +4,7 @@ class S3_IO{
         this.read_textfile = this._read_textfile.bind(this)
         this.load_image = this._load_image.bind(this)
 
+
     }
     async _load_image(blob_url){
         
@@ -58,6 +59,8 @@ class S3_IO{
         var s = await p
         return s
     }
+
+  
 }
 
 

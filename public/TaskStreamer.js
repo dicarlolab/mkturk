@@ -3,6 +3,8 @@
 class TaskStream_FinitePrebuilt{
     constructor(SIO){
         this.SIO = SIO
+        this.IB = new ImageBuffer(SIO)
+
     }
     async build(){
         this.sample_image_q = []
@@ -14,31 +16,13 @@ class TaskStream_FinitePrebuilt{
         this.test_grid_index_placements_q = []
         this.choice_reward_amounts_q = []
 
-        var sample_url_sequence = ['https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/A.png', 
-        'https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/A.png', 
-        'https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/B.png', 
-        'https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/B.png', 
-        'https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/A.png']
-        var test_image_url_sequence = [
-        ['https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Atoken.png', 'https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Btoken.png'], 
-        ['https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Atoken.png', 'https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Btoken.png'], 
-        ['https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Atoken.png', 'https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Btoken.png'], 
-        ['https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Atoken.png', 'https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Btoken.png'], 
-        ['https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Atoken.png', 'https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Btoken.png'], 
-        ]
-        this.test_correct_grid_index_q = [2, 2, 8, 8, 2]
+        
+        this.samplebag_urls = ['https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/A.png', 'https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/B.png']
+        this.testbag_urls = ['https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Atoken.png', 'https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Btoken.png']
+        
+        await this.IB.cache_these_images(this.samplebag_urls)
+        await this.IB.cache_these_images(this.testbag_urls)
 
-        for (var i in sample_url_sequence){
-            var image = await this.SIO.load_image(sample_url_sequence[i])
-            this.sample_image_q.push(image)
-            var trial_test_images = []
-            for (var j in test_image_url_sequence[i]){
-                var _timage = await this.SIO.load_image(test_image_url_sequence[i][j])
-                trial_test_images.push(_timage)
-            }
-            this.test_images_q.push(trial_test_images)
-        }
-        console.log(this)
         this.current_trial_number = 0
     }
 
@@ -62,7 +46,7 @@ class TaskStream_FinitePrebuilt{
         trial['test_grid_index_placements'] = [2, 8]
         var _choice_reward_amounts = []
         for (var j in trial['test_grid_index_placements']){
-            if (j == trial['test_correct_grid_index']){
+            if (trial['test_grid_index_placements'][j] == trial['test_correct_grid_index']){
                 _choice_reward_amounts.push(1)
             }
             else{
@@ -74,6 +58,7 @@ class TaskStream_FinitePrebuilt{
         return trial    
     }
 }
+
 
 class TaskStreamer{
     constructor(DIO, ExperimentFilePath, SubjectID){
@@ -122,10 +107,8 @@ class TaskStreamer{
         this.state['return_sequence_in_stage'] = []
     }
 
-
-
-
     async build(){
+        console.log('Constructing new trial queue')
         // For now, this is built with a stimulus - discrete choice task in mind, like MTS or SR, 
         // with a performance-gated, sequential, potentially looping series of tasks
 
@@ -138,7 +121,7 @@ class TaskStreamer{
         this.EXPERIMENT = EXPERIMENT
         this.EXPERIMENT_hash = JSON.stringify(EXPERIMENT).hashCode()
 
-
+        console.log(this)
         var generate_default = true        
         if(await this.DIO.exists(this.taskstream_checkpoint_path)){
             var checkpoint = await this.DIO.read_textfile(this.taskstream_checkpoint_path)
@@ -166,6 +149,8 @@ class TaskStreamer{
         for (var i_stage = 0; i_stage < EXPERIMENT.length; i_stage++){
 
             var _tk = EXPERIMENT[i_stage]
+
+
             if(i_stage == this.state['current_stage_index']){
                 var start_trial_number = this.state['current_stage_trial_number']                 
             }
@@ -173,10 +158,30 @@ class TaskStreamer{
                 var start_trial_number = 0
             }
             updateProgressbar((i_stage+1)/EXPERIMENT.length*100, 'AutomatorLoadBar', 'Stages loaded:')
-            console.log(_tk)
 
-            var _newTQ = new TrialQueue(this.DIO, this.IB, start_trial_number, _tk)
+            var samplebag_paths = []
+            var samplebag_labels = []
+            for (var i_samplebag = 0; i_samplebag < _tk['ImageBagsSampleMetaPaths'].length; i_samplebag++){
+                var _s_meta = await this.DIO.read_textfile(_tk['ImageBagsSampleMetaPaths'][i_samplebag])
+                _s_meta = JSON.parse(_s_meta)
+                samplebag_paths.push(... _s_meta['path'])
+                samplebag_labels.push(... new Array(_s_meta['path'].length).fill(i_samplebag))
+            }
+
+
+            var testbag_paths = []
+            var testbag_labels = []
+            for (var i_testbag = 0; i_testbag < _tk['ImageBagsTestMetaPaths'].length; i_testbag++){
+                var _t_meta = await this.DIO.read_textfile(_tk['ImageBagsTestMetaPaths'][i_testbag])
+                _t_meta = JSON.parse(_t_meta)
+                testbag_paths.push(... _t_meta['path'])
+                testbag_labels.push(... new Array(_t_meta['path'].length).fill(i_testbag))
+            }
+
+            var _newTQ = new TrialQueue(samplebag_paths, samplebag_labels, testbag_paths, testbag_labels, this.IB, start_trial_number, _tk)
+
             await _newTQ.build(5)
+
             _newTQ.nickname = _tk['StageNickname']
             this.TQ_sequence.push(_newTQ)
             wdm('Loaded stage '+(i_stage+1)+' of '+EXPERIMENT.length)
@@ -184,7 +189,6 @@ class TaskStreamer{
 
         this._initial_state = JSON.parse(JSON.stringify(this.state))
 
-        
         return 
     }
 

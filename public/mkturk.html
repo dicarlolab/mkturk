@@ -167,6 +167,9 @@
 <script src="mkturk_UX.js" type="text/javascript"></script>
 <script src="Amazon_utils.js" type="text/javascript"></script>
 <script src="TabletTask_utils.js" type="text/javascript"></script>
+
+
+
 <script>
 
 
@@ -206,7 +209,7 @@ navigator.getBattery().then(function(batteryobj){
 (async function(){
 
 
-await setupTurkTask()
+await setupTabletTask()
 
 // ============ MAIN LOOP ==================================================================================== // 
 document.querySelector("button[name=SyncButton]").style.visibility = "visible"
