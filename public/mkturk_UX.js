@@ -78,6 +78,10 @@ class MechanicalTurk_UX_poller{
             var num_bonus_trials_performed = TRIAL_NUMBER_FROM_SESSION_START-SubjectSettings["MinimumTrialsForCashIn"]
             updateCashInButtonText(num_bonus_trials_performed, bonus_earned, true)
         }
+
+        if(TRIAL_NUMBER_FROM_SESSION_START >= MAX_SESSION_TRIALS_MECHANICALTURK){
+            TERMINAL_STATE = true
+        }
     }
 
 }

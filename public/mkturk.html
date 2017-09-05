@@ -87,6 +87,12 @@
 </style>
 
 <head>
+
+<form style="display: none;" id="MechanicalTurk_SubmissionForm" action="https://www.mturk.com/mturk/externalSubmit" method="post">
+  <input type="text" name="submission_data" id="submission_data" value="">
+  <input type="text" name="assignmentId" id="assignmentId" value="">
+</form>
+
 <meta name="mobile-web-app-capable" content="yes"> <!-- full screen https://developer.chrome.com/multidevice/android/installtohomescreen -->
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"> <!-- do not allow window rescaling.  To avoid window rescaling in portrait mode, added with=device-width from http://stackoverflow.com/questions/22771523/ipad-w-retina-safari-reported-dimensions-in-landscape-make-no-sense. Also, removes 300-350ms tap delay (https://developers.google.com/web/updates/2013/12/300ms-tap-delay-gone-away) -->
 
@@ -115,6 +121,7 @@
 <div id="TrialCounter">0</div>
 <div id="DebugMessageTextBox">0</div>
 <div id="SessionTextBox"><b>Subject:</b> <br><b>Experiment:</b></div>
+
 
 
 <button name="doneTestingTask" style="visibility:hidden; position: absolute; top: 55%; left: 70%; height: 75px; width: 200px; border-radius: 20px; z-index:101">Done with testing trials</button>
@@ -187,7 +194,7 @@ while(TERMINAL_STATE == false){
 
 }
 
-await DWr.conclude_session()
+await DWr.concludeSession()
 } ())
 
 </script>

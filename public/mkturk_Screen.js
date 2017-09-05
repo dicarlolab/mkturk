@@ -101,7 +101,6 @@ class MouseMoveRewardMap{
         var reward_amounts = this.reward_amounts // upon this._listener construction, does it point to the reference or is it constructed with a copy of the initiial (undefined) value?
 
         this._listener = function(event){
-            console.log(event)
             _this.handleMouseEvent(event)
         }  
 
@@ -111,7 +110,7 @@ class MouseMoveRewardMap{
     handleMouseEvent(event){
         // mouse event properties
         // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent
-        console.log('handleMouseEvent', event)
+        //console.log('handleMouseEvent', event)
         var t = performance.now()
         var x = event.pageX
         var y = event.pageY

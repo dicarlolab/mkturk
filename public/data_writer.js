@@ -40,7 +40,8 @@ class MechanicalTurkDataWriter{
 
     async concludeSession(){
         // Upload to turk
-        submit_to_sandbox = true 
+        var submit_to_sandbox = true // todo: define programatically 
+
 
         if(submit_to_sandbox == true){
             var submit_url = "https://workersandbox.mturk.com/mturk/externalSubmit" 
@@ -49,12 +50,10 @@ class MechanicalTurkDataWriter{
             var submit_url = "https://www.mturk.com/mturk/externalSubmit"
         }
 
-        document.getElementById("postdata").action = submit_url
-        console.log(document.getElementById('postdata'))
+        document.getElementById("MechanicalTurk_SubmissionForm").action = submit_url
+        console.log(document.getElementById('MechanicalTurk_SubmissionForm'))
 
-        var url_string = window.location.href 
         var aID = getURLParameter('assignmentId')
-
 
         var dataobj = {}
         dataobj['SESSION'] = SESSION
@@ -70,9 +69,15 @@ class MechanicalTurkDataWriter{
                           'TASK_DATA':dataobj}
 
         result_str = JSON.stringify(result_str)
-        //document.getElementById("assignmentId").value = aID;
-        //document.getElementById("data").value = resultstr;
-        //document.getElementById("postdata").submit();
+
+
+        document.getElementById("MechanicalTurk_SubmissionForm").action = submit_url
+        // console.log(document.getElementById('MechanicalTurk_SubmissionForm'))
+
+
+        document.getElementById("assignmentId").value = aID;
+        document.getElementById("submission_data").value = result_str;
+        document.getElementById("MechanicalTurk_SubmissionForm").submit();
         console.log('SIMULATED SUBMISSION TO TURK')
 
     }
@@ -202,7 +207,7 @@ class DropboxDataWriter{
     }
 
     async concludeSession(){
-        console.log("Nothing to concludeSession() in Dropbox writer")
+        console.log("Nothing to concludeSession() in DropboxDataWriter; actively wrote out every trial")
     }
 
 }

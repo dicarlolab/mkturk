@@ -63,6 +63,7 @@ async function setupMechanicalTurkTask(){
     "TestScale": 0.6262, 
     "MinimumTrialsForCashIn":5, // todo: move to a place that makes sense? programatically define
     }
+    MAX_SESSION_TRIALS_MECHANICALTURK = 10 // todo: move to a place that makes sense 
 
   console.log(SubjectSettings)
   wdm("Subject settings loaded...")

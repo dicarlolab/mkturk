@@ -74,6 +74,13 @@ function toggleCashInButtonClickability(on_or_off){
 	return
 }
 
+function displayTerminalScreen(){
+	var terminal_text = 'Thank you for completing this HIT. Please wait while it is submitted...'
+	document.getElementById('terminal_splash_screen').style.zIndex = 100
+	document.getElementById('terminal_splash_screen').style.innerHTML = terminal_text
+
+}
+
 
 //================== LOAD STATUS DISPLAY ==================//
 function refreshCanvasSettings(EXPERIMENT_entry){
