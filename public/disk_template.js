@@ -69,8 +69,8 @@ class S3_IO{
 
         var img =  new Image();
         img.onload = function() {
-            console.log('loaded '+blob_url)
-            console.log(this)
+            //console.log('loaded '+blob_url)
+            //console.log(this)
             resolvefunc(this)
         }; 
         img.src = blob_url
@@ -105,7 +105,7 @@ class S3_IO{
         xhttp.open("GET", sound_url, true);
         xhttp.send();
         var sound_blob = await p
-        
+
 
         return sound_blob
 

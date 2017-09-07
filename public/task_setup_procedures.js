@@ -81,6 +81,9 @@ async function setupMechanicalTurkTask(){
   await TS.build()
   wdm('TaskStreamer built')
 
+  // Create tutorial 
+  TS_tutorial = new TaskStreamer(undefined, SIO, Experiment, SESSION.SubjectID, false) 
+
   //================== await create SoundPlayer ==================// 
     SP = new SoundPlayer()
     await SP.build()    
@@ -156,10 +159,18 @@ async function setupMechanicalTurkTask(){
   // Start in testing mode
   wdm("Running test mode...")
 
-  if(getURLParameter('assigmentId')=='ASSIGNMENT_ID_NOT_AVAILABLE'){
+  name = 'assignmentId'
+  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+  var regexS = "[\\?&]" + name + "=([^&#]*)";
+  var regex = new RegExp(regexS);
+  var results = regex.exec(window.location.href)[1];
+  console.log('raw regex', results) // because calling it in this function performs the regex on the amazon url, not the iframe url. why?
+
+  if(results == 'ASSIGNMENT_ID_NOT_AVAILABLE'){
     wdm('RUNNING IN PREVIEW MODE. ACCEPT THE HIT TO EARN MONEY FROM YOUR TRIALS')
-    while(FLAGS.debug_mode == 1){
-      await runtrial()
+    while(true){
+      console.log('RUNNING IN PREVIEW MODE')
+      await runtrial() // todo: preview rial
     }
   }
   transition_from_debug_to_science_trials()

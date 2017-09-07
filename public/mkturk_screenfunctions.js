@@ -439,6 +439,25 @@ class ScreenDisplayer{
 		return boundingBoxesFixation
 	}
 
+	async bufferFixationScreenUsingImage(image, gridindex){
+		var dot_pixelradius = CANVAS.FixationRadius
+		var color = "white"
+
+		var context=CANVAS.obj.touchfix.getContext('2d');
+		context.clearRect(0,0,CANVAS.obj.touchfix.width,CANVAS.obj.touchfix.height);
+
+		// Draw image 
+		funcreturn = await renderImageOnCanvas(sample_image, sample_image_grid_index, SubjectSettings['SampleScale'], CANVAS.obj.sample)
+		
+	
+
+		// Define (rectangular) boundaries of fixation
+		boundingBoxesFixation = [{}] // todo: move out of here 
+		boundingBoxesFixation[0]['x']= funcreturn[0]
+		boundingBoxesFixation[0]['y']= funcreturn[1]
+		return boundingBoxesFixation
+	}
+
 	async bufferStimulusScreen(sample_image, sample_image_grid_index){
 
 		//========== BUFFER SAMPLE CANVAS ==========//

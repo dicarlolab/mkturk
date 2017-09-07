@@ -1,5 +1,8 @@
 //============= AWAIT LOAD PARAMS =============//
 async function runtrial(){
+
+// todo: make into object so we can create a 'tutorial' state machine for previewing HITs
+
 // Global references: 
 // TRIAL_NUMBER_FROM_SESSION_START
 // TS 
@@ -145,6 +148,6 @@ for (var _property in current_trial_outcome){
 DWr.writeout()
 
 // Check if reached terminal state
-TERMINAL_STATE = false
+//TERMINAL_STATE = false
 
 }

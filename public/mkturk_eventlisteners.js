@@ -95,6 +95,8 @@ async function cash_in_listener(event){
 	TERMINAL_STATE = true // end on next trial
 
 	document.querySelector("button[name=WorkerCashInButton]").style['background-color'] = original_color
+	DWr.concludeSession()
+
 	//document.querySelector("button[name=WorkerCashInButton]").innerHTML = original_text
 
 

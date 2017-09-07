@@ -12,19 +12,7 @@ function getURLParameter(name) {
 };
 
 
-function extract_assignmentId_from_url(url){
-    var assignmentId
-    return assignmentId
-}
 
-function extract_workerId_from_url(url){
-    var workerId
-    return Id
-}
-function extract_hitId_from_url(url){
-    var hitId
-    return hitId
-}
 
 
 // Define task and imagebag

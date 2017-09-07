@@ -75,7 +75,8 @@ class MechanicalTurkDataWriter{
         // console.log(document.getElementById('MechanicalTurk_SubmissionForm'))
 
 
-        document.getElementById("assignmentId").value = aID;
+        document.getElementById("assignmentId").value = aID; 
+        console.log(aID) // todo: latency between pressing button and submissino 
         document.getElementById("submission_data").value = result_str;
         document.getElementById("MechanicalTurk_SubmissionForm").submit();
         console.log('SIMULATED SUBMISSION TO TURK')
