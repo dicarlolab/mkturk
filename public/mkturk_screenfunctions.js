@@ -440,17 +440,16 @@ class ScreenDisplayer{
 	}
 
 	async bufferFixationScreenUsingImage(image, gridindex){
-		var dot_pixelradius = CANVAS.FixationRadius
-		var color = "white"
 
 		var context=CANVAS.obj.touchfix.getContext('2d');
-		context.clearRect(0,0,CANVAS.obj.touchfix.width,CANVAS.obj.touchfix.height);
+		context.fillStyle="#7F7F7F"; 
 
 		// Draw image 
-		funcreturn = await renderImageOnCanvas(sample_image, sample_image_grid_index, SubjectSettings['SampleScale'], CANVAS.obj.sample)
+
+		// todo: make general 'buffer' functions without hardcoding canvas references
+		funcreturn = await renderImageOnCanvas(image, gridindex, SubjectSettings['SampleScale'], CANVAS.obj.touchfix)
 		
 	
-
 		// Define (rectangular) boundaries of fixation
 		boundingBoxesFixation = [{}] // todo: move out of here 
 		boundingBoxesFixation[0]['x']= funcreturn[0]
@@ -461,7 +460,6 @@ class ScreenDisplayer{
 	async bufferStimulusScreen(sample_image, sample_image_grid_index){
 
 		//========== BUFFER SAMPLE CANVAS ==========//
-		var canvasobj=CANVAS.obj.sample
 		var context=CANVAS.obj.sample.getContext('2d'); 
 		context.fillStyle="#7F7F7F";  // Gray out before buffering sample
 		

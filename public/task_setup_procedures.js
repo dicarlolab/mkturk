@@ -81,8 +81,6 @@ async function setupMechanicalTurkTask(){
   await TS.build()
   wdm('TaskStreamer built')
 
-  // Create tutorial 
-  TS_tutorial = new TaskStreamer(undefined, SIO, Experiment, SESSION.SubjectID, false) 
 
   //================== await create SoundPlayer ==================// 
     SP = new SoundPlayer()
@@ -170,7 +168,7 @@ async function setupMechanicalTurkTask(){
     wdm('RUNNING IN PREVIEW MODE. ACCEPT THE HIT TO EARN MONEY FROM YOUR TRIALS')
     while(true){
       console.log('RUNNING IN PREVIEW MODE')
-      await runtrial() // todo: preview rial
+      await run_MouseOver_TutorialTrial() 
     }
   }
   transition_from_debug_to_science_trials()
