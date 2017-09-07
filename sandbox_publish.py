@@ -17,13 +17,14 @@ def main(argv):
             update_s3 = False
 
         if(len(argv)>2): 
+            
             if(argv[1] in ['true', 'True', 'y']): 
 
                 upload_to_mechanical_turk_sandbox = True
             else: 
                 upload_to_mechanical_turk_sandbox = False
         else: 
-            upload_to_mechanical_turk_sandbox = False 
+            upload_to_mechanical_turk_sandbox = True 
     else: 
         update_s3 = True 
         upload_to_mechanical_turk_sandbox = True
