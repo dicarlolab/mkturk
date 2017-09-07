@@ -407,6 +407,7 @@ class ScreenDisplayer{
 	renderReward(canvasobj){
 		var context=canvasobj.getContext('2d');
 		context.fillStyle="green";
+		context.globalAlpha = 0.5
 		context.fillRect(xcanvascenter-200,ycanvascenter-200,400,400);
 	}
 
@@ -441,13 +442,16 @@ class ScreenDisplayer{
 
 	async bufferFixationScreenUsingImage(image, gridindex){
 
-		var context=CANVAS.obj.touchfix.getContext('2d');
+		// Gray out first 
+		var canvasobj = CANVAS.obj.touchfix
+		var context=canvasobj.getContext('2d');
 		context.fillStyle="#7F7F7F"; 
+		context.fillRect(0,0,canvasobj.width,canvasobj.height);
 
 		// Draw image 
 
 		// todo: make general 'buffer' functions without hardcoding canvas references
-		funcreturn = await renderImageOnCanvas(image, gridindex, SubjectSettings['SampleScale'], CANVAS.obj.touchfix)
+		funcreturn = await renderImageOnCanvas(image, gridindex, SubjectSettings['SampleScale'], canvasobj)
 		
 	
 		// Define (rectangular) boundaries of fixation

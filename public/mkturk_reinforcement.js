@@ -5,7 +5,7 @@ class ReinforcerTemplate{
     constructor(){
 
     }
-    async deliver_reinforcement(nrewards){
+    async deliver_reinforcement(nreward){
 
     }
 
@@ -25,9 +25,7 @@ class MonetaryReinforcer{
             CANVAS.sequencepost[1]="reward";
             CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]
 
-            reinforcement_onset = performance.now()
             SP.playSound(2);
-            var p1 = SD.displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost)
 
             var p1 = SD.displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost)
             await Promise.all([p1])
@@ -56,9 +54,7 @@ class JuiceReinforcer{
             CANVAS.sequencepost[1]="reward";
             CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+RewardDuration*1000;
 
-            reinforcement_onset = performance.now()
             SP.playSound(2);
-            var p1 = SD.displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost)
 
             var p1 = SD.displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost)
             if (ble.connected == false){

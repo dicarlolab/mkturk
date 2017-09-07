@@ -15,6 +15,18 @@ async function setupTaskFunctionTemplate(){
 
 
 async function setupMechanicalTurkTask(){
+  toggleElement(0, "SessionTextBox")
+  console.log(1)
+  toggleElement(0, "ReloadButton")
+  console.log(1)
+  toggleElement(0, 'DebugMessageTextBox')
+  console.log(1)
+  toggleElement(0, 'ImageLoadBar')
+  console.log(1)
+  toggleElement(0, 'StageBar')
+  console.log(1)
+  toggleElement(0, 'AutomatorLoadBar')
+
 
   // Global references for runtrial
   // TRIAL_NUMBER_FROM_SESSION_START
@@ -69,11 +81,12 @@ async function setupMechanicalTurkTask(){
   wdm("Subject settings loaded...")
 
   SESSION.SubjectID = SubjectSettings['SubjectID'];
-  updateSessionTextbox(SESSION.SubjectID, '')
+
+  //updateSessionTextbox(SESSION.SubjectID, '')
 
   // TODO: specify experimentfilepath programatically @ upload interface
   SESSION.ExperimentFilePath = "https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt"
-  updateSessionTextbox(SESSION.SubjectID, splitFilename(SESSION.ExperimentFilePath))
+  //updateSessionTextbox(SESSION.SubjectID, splitFilename(SESSION.ExperimentFilePath))
 
   var Experiment = await SIO.read_textfile(SESSION.ExperimentFilePath)
   Experiment = JSON.parse(Experiment)
@@ -161,14 +174,28 @@ async function setupMechanicalTurkTask(){
   name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
   var regexS = "[\\?&]" + name + "=([^&#]*)";
   var regex = new RegExp(regexS);
-  var results = regex.exec(window.location.href)[1];
+  console.log(results)
+  var results = regex.exec(window.location.href) || ["", ""] 
+  results = results[1];
+
   console.log('raw regex', results) // because calling it in this function performs the regex on the amazon url, not the iframe url. why?
 
-  if(results == 'ASSIGNMENT_ID_NOT_AVAILABLE'){
+  var tutorial_image = await SIO.load_image('tutorial_images/TutorialMouseOver.png')
+  if(results == 'ASSIGNMENT_ID_NOT_AVAILABLE' || results == ''){
     wdm('RUNNING IN PREVIEW MODE. ACCEPT THE HIT TO EARN MONEY FROM YOUR TRIALS')
+
+    var _last_gridindex = -1
+
     while(true){
       console.log('RUNNING IN PREVIEW MODE')
-      await run_MouseOver_TutorialTrial() 
+
+      var tutorial_grid_index = Math.floor(Math.random() * (DEVICE.XGridCenter.length))
+      while (tutorial_grid_index == _last_gridindex || tutorial_grid_index == 5){
+        // todo: i don't like while loops.... take out 
+        tutorial_grid_index = Math.floor(Math.random() * (DEVICE.XGridCenter.length))
+      }
+      await run_MouseOver_TutorialTrial(tutorial_image, tutorial_grid_index) 
+      _last_gridindex = tutorial_grid_index
     }
   }
   transition_from_debug_to_science_trials()

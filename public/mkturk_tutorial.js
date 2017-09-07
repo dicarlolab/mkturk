@@ -17,21 +17,21 @@ async function run_MouseOver_TutorialTrial(tutorial_image, tutoral_gridindex){
     // DWr
     // TERMINAL_STATE
 
-    writeToTrialCounterDisplay("Running tutorial")
-
-    _TRIAL = await TS.get_trial()
-    console.log(_TRIAL)
-
+    writeToTrialCounterDisplay("Tutorial")
 
     SD.renderReward(CANVAS.obj.reward);
     SD.renderPunish(CANVAS.obj.punish);
     SD.renderBlank(CANVAS.obj.blank);
 
+    boundingBoxFixation = await SD.bufferFixationScreenUsingDot(5)
+    FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxFixation, [0])
+    await SD.displayScreenSequence(CANVAS.sequencepre,CANVAS.tsequencepre);
+    var fixation_outcome = await FixationRewardMap.Promise_wait_until_active_response_then_return_reinforcement()
 
     //============ AWAIT BUFFER CANVASES WITH SAMPLE & TEST IMAGES ============//
-    boundingBoxFixation = await SD.bufferFixationScreenUsingImage(tutorial_image, Math.min(Math.random()*DEVICE.XGridCenter.length))
+    boundingBoxFixation = await SD.bufferFixationScreenUsingImage(tutorial_image, tutoral_gridindex)
 
-    //============ FIXATION SCREEN ============//
+    //============ Mouse over SCREEN ============//
     FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxFixation, [1])
 
     var fixation_onset_timestamps = await SD.displayScreenSequence(CANVAS.sequencepre,CANVAS.tsequencepre);
@@ -44,6 +44,8 @@ async function run_MouseOver_TutorialTrial(tutorial_image, tutoral_gridindex){
     var fixation_outcome = await FixationRewardMap.Promise_wait_until_active_response_then_return_reinforcement()
     console.log('Fixation reached')
     var correct = fixation_outcome['reinforcement']
+    correct = correct || 1
+
 
     //============ DETERMINE NUMBER OF REWARDS ============//
     if (correct == 1){
@@ -53,9 +55,8 @@ async function run_MouseOver_TutorialTrial(tutorial_image, tutoral_gridindex){
         nreward = 0;
     } 
 
-    reinforcement_onset = performance.now()
     await R.deliver_reinforcement(nreward)
-    reinforcement_end = performance.now()
+
 
 
 }
