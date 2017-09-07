@@ -16,15 +16,10 @@ async function setupTaskFunctionTemplate(){
 
 async function setupMechanicalTurkTask(){
   toggleElement(0, "SessionTextBox")
-  console.log(1)
   toggleElement(0, "ReloadButton")
-  console.log(1)
   toggleElement(0, 'DebugMessageTextBox')
-  console.log(1)
   toggleElement(0, 'ImageLoadBar')
-  console.log(1)
   toggleElement(0, 'StageBar')
-  console.log(1)
   toggleElement(0, 'AutomatorLoadBar')
 
 
@@ -182,7 +177,7 @@ async function setupMechanicalTurkTask(){
 
   var tutorial_image = await SIO.load_image('tutorial_images/TutorialMouseOver.png')
   if(results == 'ASSIGNMENT_ID_NOT_AVAILABLE' || results == ''){
-    wdm('RUNNING IN PREVIEW MODE. ACCEPT THE HIT TO EARN MONEY FROM YOUR TRIALS')
+    toggleElement(1, 'PreviewModeSplash')
 
     var _last_gridindex = -1
 
