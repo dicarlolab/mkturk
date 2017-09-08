@@ -112,6 +112,8 @@ current_trial_outcome['reward_duration'] = Math.round(1000*RewardDuration)/1000
 current_trial_outcome['BoundingBoxFixationImage'] = boundingBoxesFixation[0]
 current_trial_outcome['BoundingBoxSampleImage'] = boundingBoxesSample[0]
 current_trial_outcome['BoundingBoxesChoiceImages'] = boundingBoxesChoice
+current_trial_outcome['choice_reward_amounts'] = choice_reward_amounts
+
 current_trial_outcome['Return'] = choice_outcome['reinforcement']
 
 TS.update_state(current_trial_outcome)
