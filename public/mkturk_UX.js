@@ -67,7 +67,7 @@ class MechanicalTurk_UX_poller{
 
     async poll(){
         
-        var minimum_trials_left = Math.max(SubjectSettings["MinimumTrialsForCashIn"] - TRIAL_NUMBER_FROM_SESSION_START, 0)
+        var minimum_trials_left = Math.max(MechanicalTurkSettings["MinimumTrialsForCashIn"] - TRIAL_NUMBER_FROM_SESSION_START, 0)
         if(minimum_trials_left > 0){
             var bonus_earned = R.bonus_total
             updateCashInButtonText(minimum_trials_left, bonus_earned, false)
@@ -75,11 +75,11 @@ class MechanicalTurk_UX_poller{
         else{
             toggleCashInButtonClickability(1)
             var bonus_earned = R.bonus_total
-            var num_bonus_trials_performed = TRIAL_NUMBER_FROM_SESSION_START-SubjectSettings["MinimumTrialsForCashIn"]
+            var num_bonus_trials_performed = TRIAL_NUMBER_FROM_SESSION_START-MechanicalTurkSettings["MinimumTrialsForCashIn"]
             updateCashInButtonText(num_bonus_trials_performed, bonus_earned, true)
         }
 
-        if(TRIAL_NUMBER_FROM_SESSION_START >= MAX_SESSION_TRIALS_MECHANICALTURK){
+        if(TRIAL_NUMBER_FROM_SESSION_START >= MechanicalTurkSettings["MAX_SESSION_TRIALS_MECHANICALTURK"]){
             TERMINAL_STATE = true
         }
     }
