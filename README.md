@@ -33,3 +33,7 @@ Todo:
 * Heads up display
 * Option for ~~turning off consecutive reward~~
 * ModelTurk task -> task constructor file -> MonkeyTurk task pipeline
+* Movies 
+* {match/nonmatch stimulus -> match nonmatch buttons (SR-like) choice screen} task 
+* Integrate taskstreamer, taskqueue 
+* Pixel-based reward maps
