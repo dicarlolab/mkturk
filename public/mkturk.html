@@ -239,7 +239,7 @@
 
 <div id="MechanicalTurkInstructionsSplash">
   <span id='InstructionSplashText'> instructions text </span>
-  <button style="text-align:center; width:30%; height:6%; position:absolute; top: 93%; left:35%" onclick="toggleElement(0, 'MechanicalTurkInstructionsSplash'); toggleElement(1, 'MechanicalTurkCursorDeviceSelectionScreen')" id='CloseInstructionsButton'> Continue </button>
+  <button style="text-align:center; width:30%; height:6%; position:absolute; top: 93%; left:35%" onclick="toggleElement(0, 'MechanicalTurkInstructionsSplash'); FLAGS.clicked_close_instructions(true)" id='CloseInstructionsButton'> Continue </button>
 </div>
 
 <div id="MechanicalTurkCursorDeviceSelectionScreen">
@@ -251,7 +251,7 @@
   <input type="image"  class='DeviceButton' id = 'TabletImage' src="tutorial_images/tablet.png " alt="Tablet" onclick="setDeviceSelection(this, 'touchscreen')" />
 
   <span>
-  <button style="text-align:center; width:30%; height:6%; position:absolute; top: 93%; left:35%;"  onclick="toggleElement(0, 'MechanicalTurkCursorDeviceSelectionScreen');" id='CloseDeviceSelectionButton' disabled> <i>Make selection to continue</i> </button>
+  <button style="text-align:center; width:30%; height:6%; position:absolute; top: 93%; left:35%;"  onclick="toggleElement(0, 'MechanicalTurkCursorDeviceSelectionScreen'); FLAGS.clicked_device_selection(FLAGS._MechanicalTurk_DeviceSelected)" id='CloseDeviceSelectionButton' disabled> <i>Make selection to continue</i> </button>
   </span>
 </div>
 

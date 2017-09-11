@@ -172,8 +172,9 @@ async function setupMechanicalTurkTask(){
   var tutorial_image = await SIO.load_image('tutorial_images/TutorialMouseOver.png')
 
   console.log('hello')
-  showMechanicalTurkInstructions()
-
+  await showMechanicalTurkInstructions()
+  var device_selected = await showDeviceSelectionDialogue_and_getUserSelection()
+  console.log(device_selected)
   if(results == 'ASSIGNMENT_ID_NOT_AVAILABLE' || results == ''){
     toggleElement(1, 'PreviewModeSplash')
 

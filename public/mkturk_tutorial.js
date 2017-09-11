@@ -17,6 +17,23 @@ async function showMechanicalTurkInstructions(){
     var screen2_instructions = "Select which device you will be using to move your cursor."
 
     var screen3_instructions = 'Adjust your volume until you can hear the <text style="font-weight:bold">bell</text> after pressing this button:'
+    
+    
+    return new Promise(function(resolve, reject){
+        FLAGS.clicked_close_instructions = resolve
+    })
+}
+
+async function showDeviceSelectionDialogue_and_getUserSelection(){
+    // Turn on dialogue
+    FLAGS.clicked_device_selection = false
+    FLAGS._MechanicalTurk_DeviceSelected = 'not_selected'
+    document.getElementById("MechanicalTurkCursorDeviceSelectionScreen").style.visibility = 'visible'
+    return new Promise(function(resolve, reject){
+        FLAGS.clicked_device_selection = resolve
+
+    })
+
 
 }
 
