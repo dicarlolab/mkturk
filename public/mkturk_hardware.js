@@ -27,7 +27,7 @@ class SoundPlayer{
       this.sound_objects.push(audio)
     }
 
-    await SP.playSound(2)
+    //await SP.playSound(2)
     return 
   }
 
