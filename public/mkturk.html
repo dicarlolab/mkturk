@@ -177,17 +177,22 @@
   text-align:center;
   color:black;
 }
-#MouseImage:hover{
+
+.DeviceButton:hover{
   box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);
+}
+.DeviceButton{
+  border-radius:8px;
+  border-style:solid;
+  vertical-align:bottom; 
+  margin-top:5%; 
+  margin-left:10%;
+  border-radius:8px; 
+  border-color:#ddd;
+  max-width:20%; 
+  height:auto
 }
 
-#TrackPadImage:hover{
-  box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);
-}
-
-#TabletImage:hover{
-  box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);
-}
 
 </style>
 
@@ -234,17 +239,20 @@
 
 <div id="MechanicalTurkInstructionsSplash">
   <span id='InstructionSplashText'> instructions text </span>
-  <button style="text-align:center; width:30%; height:6%; position:absolute; top: 93%; left:35%" onclick="toggleElement(0, 'InstructionSplashText'); toggleElement(1, 'MechanicalTurkCursorDeviceSelectionScreen')" id='CloseInstructionsButton'> Continue </button>
+  <button style="text-align:center; width:30%; height:6%; position:absolute; top: 93%; left:35%" onclick="toggleElement(0, 'MechanicalTurkInstructionsSplash'); toggleElement(1, 'MechanicalTurkCursorDeviceSelectionScreen')" id='CloseInstructionsButton'> Continue </button>
 </div>
 
 <div id="MechanicalTurkCursorDeviceSelectionScreen">
   <div id='DeviceSelectionSplashText'> Select which device you are using to move the cursor. </div>
 
-  
-  <input type="image" id='MouseImage'  style="vertical-align:bottom; margin-top:5%; margin-left:10%; border-radius:8px; border:1px solid #ddd; max-width:20%; height:auto" id="MouseImage" src="tutorial_images/mouse.png " alt="Mouse" />
-  <input type="image"  id='TrackPadImage' style="vertical-align:bottom; margin-top:5%; margin-left:10%; border-radius:8px; border:1px solid #ddd; max-width:20%; height:auto id="TrackpadImage" src="tutorial_images/trackpad.png " alt="Trackpad" />
-  <input type="image"  id = 'TabletImage' style="vertical-align:bottom; margin-top:5%; margin-left:10%; border-radius:8px; border:1px solid #ddd; max-width:20%; height:auto id="TabletImage" src="tutorial_images/tablet.png " alt="Tablet" />
 
+  <input type="image" class='DeviceButton' id='MouseImage'  style="" id="MouseImage" src="tutorial_images/mouse.png " alt="Mouse" onclick="setDeviceSelection(this, 'mouse')" />
+  <input type="image"  class='DeviceButton' id='TrackPadImage' src="tutorial_images/trackpad.png " alt="Trackpad" onclick="setDeviceSelection(this, 'trackpad')" />
+  <input type="image"  class='DeviceButton' id = 'TabletImage' src="tutorial_images/tablet.png " alt="Tablet" onclick="setDeviceSelection(this, 'touchscreen')" />
+
+  <span>
+  <button style="text-align:center; width:30%; height:6%; position:absolute; top: 93%; left:35%;"  onclick="toggleElement(0, 'MechanicalTurkCursorDeviceSelectionScreen');" id='CloseDeviceSelectionButton' disabled> <i>Make selection to continue</i> </button>
+  </span>
 </div>
 
 
