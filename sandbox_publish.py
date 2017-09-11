@@ -55,9 +55,9 @@ def main(argv):
     if(upload_to_mechanical_turk_sandbox): 
         print 'UPLOADING TO SANDBOX'
         url = 'https://s3.amazonaws.com/monkeyturksandbox/public/mkturk.html'
-        frame_height_pix = 1200 
+        frame_height_pix = 700 
         lifetime = 1209600 # In seconds, I think 
-        reward_amount = 0.01 # in dollars?
+        reward_amount = 0.01 # in dollars
 
         MTURK_SANDBOX_HOST = 'mechanicalturk.sandbox.amazonaws.com'
         conn = boto.connect_mturk(host = MTURK_SANDBOX_HOST)

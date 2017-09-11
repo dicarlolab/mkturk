@@ -294,8 +294,6 @@ function defineImageGrid(ngridpoints, source_image_width, source_image_height, g
 	var xgridcent =[] 
 	var ygridcent =[]
 
-	console.log('defineImageGrid')
-	console.log(ngridpoints, source_image_width, source_image_height, gridscale)
 	var cnt=0;
 	for (var i=1; i<=ngridpoints; i++){
 		for (var j=1; j<=ngridpoints; j++){
@@ -304,8 +302,6 @@ function defineImageGrid(ngridpoints, source_image_width, source_image_height, g
 			cnt++;
 		}
 	}
-	console.log(windowWidth, windowHeight, CANVAS.offsetleft, CANVAS.offsettop, DEVICE.CanvasRatio, 
-		DEVICE.DevicePixelRatio)
 	//center x & y grid within canvas
 	var canvas_center_x = (windowWidth - CANVAS.offsetleft)*DEVICE.CanvasRatio*DEVICE.DevicePixelRatio/2
 	var dx = canvas_center_x - DEVICE.CanvasRatio*ngridpoints/2*source_image_width*gridscale; //left side of grid
