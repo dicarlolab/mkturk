@@ -10,23 +10,11 @@ from time import ctime
 
 def main(argv):
 
-    if(len(argv)>1): 
-        if(argv[0] in ['true', 'True', 'y']):  
-            update_s3 = True
-        else: 
-            update_s3 = False
-
-        if(len(argv)>2): 
-            
-            if(argv[1] in ['true', 'True', 'y']): 
-
-                upload_to_mechanical_turk_sandbox = True
-            else: 
-                upload_to_mechanical_turk_sandbox = False
-        else: 
-            upload_to_mechanical_turk_sandbox = True 
+    if(len(argv)>0): 
+        update_s3 = True
+        upload_to_mechanical_turk_sandbox = False
     else: 
-        update_s3 = True 
+        update_s3 = True
         upload_to_mechanical_turk_sandbox = True
 
     HIT_title = 'hello_mil'+ctime()

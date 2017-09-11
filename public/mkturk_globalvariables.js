@@ -160,5 +160,5 @@ function initialize_TRIAL(){
 	TRIAL_BEHAVIOR.BoundingBoxesChoiceImages = []
 	TRIAL_BEHAVIOR.BoundingBoxSampleImage = []
 	TRIAL_BEHAVIOR.BoundingBoxFixationImage = []
-	TRIAL_BEHAVIOR.choice_reward_amounts = choice_reward_amounts
+	TRIAL_BEHAVIOR.choice_reward_amounts = []
 }

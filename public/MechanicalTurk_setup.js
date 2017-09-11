@@ -9,7 +9,9 @@ async function showMechanicalTurkInstructions(){
     screen1_instructions += "<li>For additional reward, you can continue working after the button turns green."
     screen1_instructions += "<li>If you cannot meet these requirements or if doing so could cause discomfort or injury, do not accept this HIT. You will not be penalized in any way."
     screen1_instructions += "</ul>"
-    console.log("document.getElementById()", document.getElementById("InstructionSplashText"))
+
+    document.getElementById("MechanicalTurkInstructionsSplash").style.visibility = 'visible'
+
     document.getElementById("InstructionSplashText").innerHTML = screen1_instructions
 
     var screen2_instructions = "Select which device you will be using to move your cursor."
@@ -214,7 +216,7 @@ async function setupMechanicalTurkTask(){
 
   console.log('hello')
   
-  console.log(device_selected)
+  
   if(results == 'ASSIGNMENT_ID_NOT_AVAILABLE' || results == ''){
     toggleElement(1, 'PreviewModeSplash')
 
@@ -236,7 +238,7 @@ async function setupMechanicalTurkTask(){
   }
   await showMechanicalTurkInstructions()
   var device_selected = await showDeviceSelectionDialogue_and_getUserSelection()
-
+  console.log(device_selected)
   transition_from_debug_to_science_trials()
 
 
