@@ -31,7 +31,6 @@ async function showDeviceSelectionDialogue_and_getUserSelection(){
     document.getElementById("MechanicalTurkCursorDeviceSelectionScreen").style.visibility = 'visible'
     return new Promise(function(resolve, reject){
         FLAGS.clicked_device_selection = resolve
-
     })
 
 
@@ -68,6 +67,15 @@ async function run_MouseOver_TutorialTrial(tutorial_image, tutoral_gridindex){
     //============ AWAIT BUFFER CANVASES WITH SAMPLE & TEST IMAGES ============//
     boundingBoxFixation = await SD.bufferFixationScreenUsingImage(tutorial_image, tutoral_gridindex)
 
+
+    // Make smaller
+    var original_x_width = boundingBoxFixation[0].x[1] - boundingBoxFixation[0].x[0]
+    var original_y_width = boundingBoxFixation[0].y[1] - boundingBoxFixation[0].y[0]
+
+    boundingBoxFixation[0].x[0] += original_x_width * 0.3
+    boundingBoxFixation[0].x[1] -= original_x_width * 0.3
+    boundingBoxFixation[0].y[0] += original_y_width * 0.3
+    boundingBoxFixation[0].y[1] -= original_y_width * 0.3
     //============ Mouse over SCREEN ============//
     FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxFixation, [1])
 
