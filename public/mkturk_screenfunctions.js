@@ -248,6 +248,19 @@ function setupTapTracker(){
 
 function setupCanvas(canvasobj){
 	// center in page
+
+	var windowHeight = window.innerHeight
+	  || document.documentElement.clientHeight
+	  || document.body.clientHeight;
+
+
+	var windowWidth = window.innerWidth
+	  || document.documentElement.clientWidth
+	  || document.body.clientWidth;
+
+    // Reference: https://www.w3schools.com/js/js_window.asp
+	console.log('windowWidth', windowWidth, 'windowHeight', windowHeight)
+
 	canvasobj.style.top=CANVAS.offsettop + "px";
 	canvasobj.style.left=CANVAS.offsetleft + "px";
 	canvasobj.width=windowWidth - CANVAS.offsetleft;

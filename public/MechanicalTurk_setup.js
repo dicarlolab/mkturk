@@ -145,17 +145,9 @@ async function setupMechanicalTurkTask(){
     SD = new ScreenDisplayer()
     R = new MonetaryReinforcer()
 
-  windowHeight = window.innerHeight
-  || document.documentElement.clientHeight
-  || document.body.clientHeight;
 
 
-  windowWidth = window.innerWidth
-  || document.documentElement.clientWidth
-  || document.body.clientWidth;
 
-
-  // Reference: https://www.w3schools.com/js/js_window.asp
 
 
   refreshCanvasSettings(TS.EXPERIMENT[TS.state.current_stage_index]); 
@@ -197,7 +189,6 @@ async function setupMechanicalTurkTask(){
   DEVICE.XGridCenter = funcreturn[2]
   DEVICE.YGridCenter = funcreturn[3]
 
-  console.log('windowWidth', windowWidth, 'windowHeight', windowHeight)
 
   // Start in testing mode
   wdm("Running test mode...")

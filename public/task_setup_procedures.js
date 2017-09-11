@@ -149,19 +149,6 @@ async function setupTabletTask(){
 
 
 
-  windowHeight = window.innerHeight
-  || document.documentElement.clientHeight
-  || document.body.clientHeight;
-
-
-  windowWidth = window.innerWidth
-  || document.documentElement.clientWidth
-  || document.body.clientWidth;
-
-
-  // Reference: https://www.w3schools.com/js/js_window.asp
-
-
   refreshCanvasSettings(TS.EXPERIMENT[TS.state.current_stage_index]); 
 
   for (var i = 0; i <= CANVAS.names.length-1; i++) {
@@ -201,7 +188,6 @@ async function setupTabletTask(){
   DEVICE.XGridCenter = funcreturn[2]
   DEVICE.YGridCenter = funcreturn[3]
 
-  console.log('windowWidth', windowWidth, 'windowHeight', windowHeight)
 
 
   // Start in testing mode
