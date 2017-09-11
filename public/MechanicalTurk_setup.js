@@ -41,7 +41,20 @@ async function showDeviceSelectionDialogue_and_getUserSelection(){
 
 
 async function setupMechanicalTurkTask(){
-  console.log('TOUCHSTRING', TOUCHSTRING)
+
+  var windowHeight = window.innerHeight
+    || document.documentElement.clientHeight
+    || document.body.clientHeight;
+
+
+  var windowWidth = window.innerWidth
+    || document.documentElement.clientWidth
+    || document.body.clientWidth;
+
+  console.log(window)
+  console.log('dimensions', windowWidth, windowHeight)
+
+
   toggleElement(0, "SessionTextBox")
   toggleElement(0, "ReloadButton")
   toggleElement(0, 'DebugMessageTextBox')
@@ -122,6 +135,9 @@ async function setupMechanicalTurkTask(){
 
   var Experiment = await SIO.read_textfile(SESSION.ExperimentFilePath)
   Experiment = JSON.parse(Experiment)
+  var test = await SIO.read_textfile("https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyAtoken.txt")
+  var test = await SIO.read_textfile("https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyA2.txt")
+
   TS = new TaskStreamer(undefined, SIO, Experiment, SESSION.SubjectID, false) 
   await TS.build()
   wdm('TaskStreamer built')
@@ -208,25 +224,32 @@ async function setupMechanicalTurkTask(){
   console.log('hello')
   
   
-  if(results == 'ASSIGNMENT_ID_NOT_AVAILABLE' || results == ''){
-    toggleElement(1, 'PreviewModeSplash')
+  var skip_preview_mode = true
 
-    var _last_gridindex = -1
+  if(skip_preview_mode != true){
+    if(results == 'ASSIGNMENT_ID_NOT_AVAILABLE' || results == '' ){
+      // If in preview mode on MechanicalTurk
+      toggleElement(1, 'PreviewModeSplash')
 
-    while(true){
-      
+      var _last_gridindex = -1
 
-      console.log('RUNNING IN PREVIEW MODE')
+      while(true){
+        
 
-      var tutorial_grid_index = Math.floor(Math.random() * (DEVICE.XGridCenter.length))
-      while (tutorial_grid_index == _last_gridindex || tutorial_grid_index == 5){
-        // todo: i don't like while loops.... take out 
-        tutorial_grid_index = Math.floor(Math.random() * (DEVICE.XGridCenter.length))
+        console.log('RUNNING IN PREVIEW MODE')
+
+        var tutorial_grid_index = Math.floor(Math.random() * (DEVICE.XGridCenter.length))
+        while (tutorial_grid_index == _last_gridindex || tutorial_grid_index == 5){
+          // todo: i don't like while loops.... take out 
+          tutorial_grid_index = Math.floor(Math.random() * (DEVICE.XGridCenter.length))
+        }
+        await run_MouseOver_TutorialTrial(tutorial_image, tutorial_grid_index) 
+        _last_gridindex = tutorial_grid_index
       }
-      await run_MouseOver_TutorialTrial(tutorial_image, tutorial_grid_index) 
-      _last_gridindex = tutorial_grid_index
     }
   }
+
+  document.querySelector("button[name=WorkerCashInButton]").style.visibility = 'visible'
   await showMechanicalTurkInstructions()
   var device_selected = await showDeviceSelectionDialogue_and_getUserSelection()
   console.log(device_selected)
@@ -238,7 +261,7 @@ async function setupMechanicalTurkTask(){
   // Add cash in button 
   document.querySelector("button[name=WorkerCashInButton]").addEventListener(
     'mouseup',cash_in_listener,false)
-  document.querySelector("button[name=WorkerCashInButton]").style.visibility = 'visible'
+  
   updateCashInButtonText(MechanicalTurkSettings["MinimumTrialsForCashIn"], 0, false)
   toggleCashInButtonClickability(0)
 

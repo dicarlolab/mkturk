@@ -283,6 +283,15 @@ function setupCanvas(canvasobj){
 // Sync: Adjust canvas for the device pixel ratio & browser backing store size
 // from http://www.html5rocks.com/en/tutorials/canvas/hidpi/#disqus_thread
 function scaleCanvasforHiDPI(canvasobj){
+	var windowHeight = window.innerHeight
+	  || document.documentElement.clientHeight
+	  || document.body.clientHeight;
+
+
+	var windowWidth = window.innerWidth
+	  || document.documentElement.clientWidth
+	  || document.body.clientWidth;
+
 	if (DEVICE.DevicePixelRatio !== backingStoreRatio){
 		context=canvasobj.getContext("2d");
 		var oldWidth = canvasobj.width;
@@ -302,6 +311,17 @@ function scaleCanvasforHiDPI(canvasobj){
 //================== IMAGE RENDERING ==================//
 
 function defineImageGrid(ngridpoints, source_image_width, source_image_height, gridscale){
+
+	var windowHeight = window.innerHeight
+	  || document.documentElement.clientHeight
+	  || document.body.clientHeight;
+
+
+	var windowWidth = window.innerWidth
+	  || document.documentElement.clientWidth
+	  || document.body.clientWidth;
+
+	  
 	var unitgrid_x =[]
 	var unitgrid_y =[]
 	var xgridcent =[] 
