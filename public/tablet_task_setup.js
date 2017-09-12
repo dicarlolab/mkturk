@@ -149,7 +149,7 @@ async function setupTabletTask(){
 
 
 
-  refreshCanvasSettings(TS.EXPERIMENT[TS.state.current_stage_index]); 
+  refreshScreenTSequenceSettings(TS.EXPERIMENT[TS.state.current_stage_index]); 
 
   for (var i = 0; i <= CANVAS.names.length-1; i++) {
       setupCanvas(CANVAS.obj[CANVAS.names[i]]);

@@ -3,7 +3,10 @@
 // For certain things, globals make sense and may even be required, like event listeners and async processes.
 
 
+WORKSPACE_WIDTH_HEIGHT_RATIO = 1 // width divided by height
+WORKSPACE_MARGIN = 10 // in percent; on whichever dimension is shorter (usually height); on each side
 
+PLAYSPACE = {}
 
 TOUCHSTRING = ""
 TOUCHSTRING_UDPATECOUNTER = 0

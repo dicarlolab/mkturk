@@ -125,7 +125,6 @@ async function setupMechanicalTurkTask(){
 
   SESSION.SubjectID = SubjectSettings['SubjectID'];
 
-  //updateSessionTextbox(SESSION.SubjectID, '')
 
   // TODO: specify experimentfilepath programatically @ upload interface
   SESSION.ExperimentFilePath = "https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt"
@@ -158,17 +157,12 @@ async function setupMechanicalTurkTask(){
 
 
 
+    setupPlayspace()
 
-
-
-  refreshCanvasSettings(TS.EXPERIMENT[TS.state.current_stage_index]); 
+  refreshScreenTSequenceSettings(TS.EXPERIMENT[TS.state.current_stage_index]); 
 
   for (var i = 0; i <= CANVAS.names.length-1; i++) {
       setupCanvas(CANVAS.obj[CANVAS.names[i]]);
-  }
-  if (DEVICE.DevicePixelRatio !== 1){
-      scaleCanvasforHiDPI(CANVAS.obj.sample);
-      scaleCanvasforHiDPI(CANVAS.obj.test);
   }
 
   CANVAS.workspace = [
@@ -214,12 +208,12 @@ async function setupMechanicalTurkTask(){
 
   console.log('raw regex', results) // because calling it in this function performs the regex on the amazon url, not the iframe url. why?
 
-  var tutorial_image = await SIO.load_image('tutorial_images/TutorialMouseOver.png')
+  var tutorial_image = await SIO.load_image('tutorial_images/whitenoise_256x256.png')
 
   console.log('hello')
   
   
-  var skip_preview_mode = true
+  var skip_preview_mode = false
 
   if(skip_preview_mode != true){
     if(results == 'ASSIGNMENT_ID_NOT_AVAILABLE' || results == '' ){

@@ -5,7 +5,7 @@
 
 
 <canvas id="hello_canvas" width="256" height="256" src=""> </canvas>
-<canvas id="canvas_literal" width="256" height="256" src=""> </canvas>
+<canvas id="canvas_literal" width="512" height="512" src=""> </canvas>
 <canvas id="canvas_invariant" width="256" height="256" src=""> </canvas>
 
 <div id='hello_text'></div>
@@ -42,6 +42,7 @@ console.log(image)
 // Literal pixels: canvasobj
 
 
+
 function draw_literal_image_regardless_of_hidpi() {
   var canvasobj = document.getElementById('canvas_literal')
   var context = canvasobj.getContext('2d')
@@ -51,7 +52,7 @@ function draw_literal_image_regardless_of_hidpi() {
 
 
   image.addEventListener('load', function() {
-    context.drawImage(image, 0, 0)
+    context.drawImage(image, 128, 128)
     console.log('hello')
   }, false);
   image.src = 'tutorial_images/whitenoise_256x256.png'
@@ -65,13 +66,21 @@ function draw_literal_image_regardless_of_hidpi() {
 
 }
 
-function draw_image_at_size_regardless_of_hidpi() {
 
 
+
+
+
+
+
+
+
+
+
+function draw_image_at_set_size_regardless_of_hidpi() {
   var canvasobj = document.getElementById('canvas_invariant')
+  console.log('canvas_invariant', canvasobj)
   var context = canvasobj.getContext('2d')
-
-
   var original_canvas_width = canvasobj.width
   var original_canvas_height = canvasobj.height
 
@@ -82,20 +91,34 @@ function draw_image_at_size_regardless_of_hidpi() {
   canvasobj.style.width = original_canvas_width + 'px' // Scales canvas to this size before multiplying by devicepixelratio
   canvasobj.style.height = original_canvas_height + 'px'
 
-  context.scale(_ratio, _ratio) // Scales image up
-    // with or without smoothing 
+
 
   context.imageSmoothingEnabled = false // then nearest neighbor?
 
   image.addEventListener('load', function() {
-    context.drawImage(image, 0, 0)
+
+    var cell_width = 64 
+    var cell_height = 64
+
+    
+    var image_width = image.width
+    var image_height = image.height
+
+    context.scale(_ratio* cell_width/image_width, _ratio * cell_height/image_height) // Scales image up
+      // with or without smoothing 
+
+    var start_left = 64 *image_width/cell_width 
+    var start_top = 64 * image_height/cell_height 
+    console.log(start_left)
+    console.log(start_top)
+    context.drawImage(image, start_left, start_top)
     console.log('hello')
   }, false);
   image.src = 'tutorial_images/whitenoise_256x256.png'
 }
 
-draw_literal_image_regardless_of_hidpi()
-draw_image_at_size_regardless_of_hidpi()
+//draw_literal_image_regardless_of_hidpi()
+draw_image_at_set_size_regardless_of_hidpi()
 </script>
 </body>
 </html>
