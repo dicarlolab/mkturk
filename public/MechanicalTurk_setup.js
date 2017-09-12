@@ -3,10 +3,9 @@ async function showMechanicalTurkInstructions(){
 
     var screen1_instructions = "<ul>"
     screen1_instructions +=  "<li>Thank you for your interest and contributing to research at at M.I.T.!"
-    screen1_instructions += "<li>You will look at rapidly flashed images and be required to have a working mouse, touchscreen, or touchpad."
-    screen1_instructions += '<li>You will sometimes <text style="font-weight:bold">hear a bell</text> and see a <text style="font-weight:bold; color:green">green flash</text>. This means you earned a small CASH BONUS.'
-    screen1_instructions += '<li>The HIT takes around 10 minutes. When the top right button turns  <text style="font-weight:bold; color:green">GREEN</text> you can press it to submit the HIT.'
-    screen1_instructions += "<li>For additional reward, you can continue working after the button turns green."
+    screen1_instructions += "<li>You will look at rapidly flashed images and be required to have a working mouse, touchscreen, or touchpad. The HIT is supported on Google Chrome, though it may work on other browsers."
+    screen1_instructions += '<li>You will sometimes <text style="font-weight:bold">hear a bell</text> and see a <text style="font-weight:bold; color:green">green flash</text>. This means you received a small bonus reward.'
+    screen1_instructions += '<li>The HIT takes around 10 minutes. When the top right button turns  <text style="font-weight:bold; color:green">GREEN</text> you can press it to submit, though we encourage you to continue working for bonus rewards.'
     screen1_instructions += "<li>If you cannot meet these requirements or if doing so could cause discomfort or injury, do not accept this HIT. You will not be penalized in any way."
     screen1_instructions += "</ul>"
 
@@ -16,7 +15,7 @@ async function showMechanicalTurkInstructions(){
 
     var screen2_instructions = "Select which device you will be using to move your cursor."
 
-    var screen3_instructions = 'Adjust your volume until you can hear the <text style="font-weight:bold">bell</text> after pressing this button:'
+    var screen3_instructions = 'Adjust your volume until you can comfortably hear the <text style="font-weight:bold">bell</text> after pressing this button:'
     
     var btn = document.getElementById('CloseInstructionsButton')
     btn.disabled = false 
@@ -122,7 +121,6 @@ async function setupMechanicalTurkTask(){
     "TestScale": 0.6262, 
     }
 
-  console.log(SubjectSettings)
   wdm("Subject settings loaded...")
 
   SESSION.SubjectID = SubjectSettings['SubjectID'];
@@ -131,13 +129,10 @@ async function setupMechanicalTurkTask(){
 
   // TODO: specify experimentfilepath programatically @ upload interface
   SESSION.ExperimentFilePath = "https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt"
-  //updateSessionTextbox(SESSION.SubjectID, splitFilename(SESSION.ExperimentFilePath))
 
   var Experiment = await SIO.read_textfile(SESSION.ExperimentFilePath)
   Experiment = JSON.parse(Experiment)
-  var test = await SIO.read_textfile("https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyAtoken.txt")
-  var test = await SIO.read_textfile("https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyA2.txt")
-
+ 
   TS = new TaskStreamer(undefined, SIO, Experiment, SESSION.SubjectID, false) 
   await TS.build()
   wdm('TaskStreamer built')
@@ -249,7 +244,10 @@ async function setupMechanicalTurkTask(){
     }
   }
 
+  // Show user the cash-in button, which is referenced in the instructions
   document.querySelector("button[name=WorkerCashInButton]").style.visibility = 'visible'
+  toggleCashInButtonClickability(0)
+
   await showMechanicalTurkInstructions()
   var device_selected = await showDeviceSelectionDialogue_and_getUserSelection()
   console.log(device_selected)
@@ -263,7 +261,7 @@ async function setupMechanicalTurkTask(){
     'mouseup',cash_in_listener,false)
   
   updateCashInButtonText(MechanicalTurkSettings["MinimumTrialsForCashIn"], 0, false)
-  toggleCashInButtonClickability(0)
+  
 
 
 
