@@ -17,8 +17,8 @@ function setupPlayspace(){
 
     PLAYSPACE.leftbound = (windowWidth - PLAYSPACE.width)/2
     PLAYSPACE.rightbound = windowWidth-(windowWidth - PLAYSPACE.width)/2
-    PLAYSPACE.upperbound = (windowHeight - PLAYSPACE.height)/2
-    PLAYSPACE.lowerbound = windowHeight-(windowHeight - PLAYSPACE.height)/2
+    PLAYSPACE.topbound = (windowHeight - PLAYSPACE.height)/2
+    PLAYSPACE.bottombound = windowHeight-(windowHeight - PLAYSPACE.height)/2
 
 
     console.log('setupCanvas', 'windowWidth', windowWidth, 'windowHeight', windowHeight)
@@ -80,34 +80,24 @@ function setupCanvas(canvasobj){
 
 
 function defineImageGrid(ngridpoints, source_image_width, source_image_height, gridscale){
-  var screen_height = window.innerHeight
-    || document.documentElement.clientHeight
-    || document.body.clientHeight;
-  var screen_width = window.innerWidth
-    || document.documentElement.clientWidth
-    || document.body.clientWidth;
+  // Inside of PLAYSPACE, define a grid system for easy references to task logic 
 
-  var WORKSPACE_WIDTH_HEIGHT_RATIO = 1 
 
-  var min_dimension_length = Math.min(screen_height, screen_width)
-
-  var workspace_height = min_dimension_length
-  var workspace_width = min_dimension_length
+  var workspace_height = PLAYSPACE.height
+  var workspace_width =  PLAYSPACE.width
 
   var gridwidth = Math.round(workspace_width / ngridpoints)
   var gridheight = Math.round(workspace_height / ngridpoints)
-  DEVICE.gridwidth = gridwidth
-  DEVICE.gridheight = gridheight 
-  DEVICE.source_image_height = source_image_height
-  DEVICE.source_image_width = source_image_width
+  
+  var canvas_center_x = Math.round(PLAYSPACE.width / 2)
+  var canvas_center_y = Math.round(PLAYSPACE.height / 2)
 
-  var canvas_center_x = Math.round(screen_width / 2)
-  var canvas_center_y = Math.round(screen_height / 2)
-
-  var dx = (screen_width - workspace_width)/2
-  var dy = (screen_height - workspace_height)/2
+  var dx = PLAYSPACE.leftbound
+  var dy = PLAYSPACE.topbound
 
 
+  PLAYSPACE._xgridcent = []
+  PLAYSPACE._ygridcent = []
   var xgridcent =[] 
   var ygridcent =[]
   var i_counter = 0
@@ -117,32 +107,24 @@ function defineImageGrid(ngridpoints, source_image_width, source_image_height, g
       xgridcent[i_counter] = Math.round(dx + gridwidth/2 + i_x * gridwidth)
       ygridcent[i_counter] = Math.round(dy + gridheight/2 + i_y * gridheight)
       
+
+      PLAYSPACE._xgridcent[i_counter] = Math.round(gridwidth/2 + i_x * gridwidth)
+      PLAYSPACE._ygridcent[i_counter] = Math.round(gridheight/2 + i_y * gridheight)
+
       i_counter++
     }
   }
 
 
-  console.log(
-    '\ngridwidth', gridwidth, 
-    '\ngridheight', gridheight, 
-    '\nworkspace_height', workspace_height, 
-    '\nworkspace_width', workspace_width, 
-    '\nscreen_height', screen_height, 
-    '\nscreen_width', screen_width, 
-    '\ncanvas_center_x', canvas_center_x, 
-    '\ndx', dx, 
-    '\ndy', dy, 
-    '\nxgridcent', xgridcent, 
-    '\nygridcent', ygridcent)
+
   return [canvas_center_x, canvas_center_y, xgridcent, ygridcent]
 }
 
 
 async function drawGridDots(){
   canvasobj = document.getElementById('touchfix')
+  canvasobj.style['z-index'] = 5
 
-  console.log(canvasobj)
-  console.log(canvasobj.style)
   var context = canvasobj.getContext('2d')
 
 
@@ -153,9 +135,9 @@ async function drawGridDots(){
 
   // Draw grid dots
   var rad = dot_pixelradius;
-  for (var i = 0; i < DEVICE.XGridCenter.length; i++){
-    var xcent = DEVICE.XGridCenter[i];
-    var ycent = DEVICE.YGridCenter[i];
+  for (var i = 0; i < PLAYSPACE._xgridcent.length; i++){
+    var xcent = PLAYSPACE._xgridcent[i];
+    var ycent = PLAYSPACE._ygridcent[i];
     context.beginPath();
     context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
     context.fillStyle=color; 
