@@ -1,0 +1,92 @@
+<!doctype html>
+
+<!-- ************* BODY *************** -->
+<body style="overflow-y: hidden;background-color:#7F7F7F">
+
+
+<canvas id="hello_canvas" width="256" height="256" src=""> </canvas>
+<canvas id="canvas_literal" width="256" height="256" src=""> </canvas>
+<canvas id="canvas_invariant" width="256" height="256" src=""> </canvas>
+
+<div id='hello_text'></div>
+<script>
+var image = new Image(); 
+var canvasobj = document.getElementById('hello_canvas')
+console.log(canvasobj)
+var context = canvasobj.getContext('2d')
+
+var devicePixelRatio = window.devicePixelRatio || 1
+var backingStoreRatio = context.webkitBackingStorePixelRatio ||
+                            context.mozBackingStorePixelRatio ||
+                            context.msBackingStorePixelRatio ||
+                            context.oBackingStorePixelRatio ||
+                            context.backingStorePixelRatio || 1 // /1 by default for chrome?
+
+var _ratio = devicePixelRatio / backingStoreRatio
+
+
+
+textobj = document.getElementById('hello_text')
+textobj.innerHTML = 'devicePixelRatio='+window.devicePixelRatio+'<br>backingStoreRatio='+backingStoreRatio
+console.log(image)
+
+// accomplished: hidpi invariant size on screen w/automatic scaling of image
+
+// todo: draw literal pixels on screen invariant of screen hidpi 
+// Literal pixels: canvasobj
+
+
+function draw_literal_image_regardless_of_hidpi(){
+  var canvasobj = document.getElementById('canvas_literal')
+  var context = canvasobj.getContext('2d')
+
+var original_canvas_width = canvasobj.width 
+var original_canvas_height = canvasobj.height
+
+
+  image.addEventListener('load', function() {
+  context.drawImage(image, 0, 0)
+  console.log('hello')
+}, false);
+image.src = 'tutorial_images/whitenoise_256x256.png'
+
+canvasobj.width = original_canvas_width // Scales size of source canvas up
+canvasobj.height = original_canvas_height  
+canvasobj.style.width = original_canvas_width/_ratio+'px' // Scales canvas to this size before multiplying by devicepixelratio
+canvasobj.style.height = original_canvas_height/_ratio+'px'
+
+//context.scale(_ratio, _ratio) // Scales image up
+
+}
+
+function draw_image_at_size_regardless_of_hidpi(){
+var canvasobj = document.getElementById('canvas_invariant')
+var context = canvasobj.getContext('2d')
+
+var original_canvas_width = canvasobj.width 
+var original_canvas_height = canvasobj.height
+
+
+
+image.addEventListener('load', function() {
+  context.drawImage(image, 0, 0)
+  console.log('hello')
+}, false);
+image.src = 'tutorial_images/whitenoise_256x256.png'
+
+  canvasobj.width = original_canvas_width * _ratio // Scales size of source canvas up
+canvasobj.height = original_canvas_height * _ratio  
+canvasobj.style.width = original_canvas_width+'px' // Scales canvas to this size before multiplying by devicepixelratio
+canvasobj.style.height = original_canvas_height+'px'
+
+context.scale(_ratio, _ratio) // Scales image up
+
+
+}
+
+draw_literal_image_regardless_of_hidpi()
+draw_image_at_size_regardless_of_hidpi()
+
+</script>
+</body>
+</html>
