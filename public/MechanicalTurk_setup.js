@@ -221,7 +221,7 @@ async function setupMechanicalTurkTask(){
   console.log('hello')
   
   
-  var skip_preview_mode = false
+  var skip_preview_mode = true
 
   if(skip_preview_mode != true){
     if(results == 'ASSIGNMENT_ID_NOT_AVAILABLE' || results == '' ){

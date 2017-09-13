@@ -28,6 +28,16 @@ function onWindowResize(){
   console.log('onWindowResize', PLAYSPACE.leftbound, PLAYSPACE.topbound)
 }
 
+function toggleCanvasStealthMode(on_or_off, canvasobj){
+  if(on_or_off == 0){
+    canvasobj.style.border='1px dotted #E6E6E6' 
+  }
+  else{
+    canvasobj.style.border='2px solid blue' 
+  }
+  
+}
+
 function setupPlayspace(ngridpoints){
   var funcreturn = windowSize()
   var windowHeight = funcreturn[0]
@@ -128,7 +138,7 @@ function setupCanvas(canvasobj){
     canvasobj.style.bottom = 0
     canvasobj.style.left = 0  
     canvasobj.style.right = 0
-    canvasobj.style.border='1px solid blue' 
+    canvasobj.style.border='2px solid blue' 
     
     canvasobj.style.width=PLAYSPACE.width+'px'; // Set browser canvas display style to be workspace_width
     canvasobj.style.height=PLAYSPACE.height+'px';

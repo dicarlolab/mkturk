@@ -134,7 +134,9 @@ function transition_from_debug_to_science_trials(){
 	document.querySelector("button[name=SyncButton]").style['background-color'] = "#808080"
 	document.querySelector("button[name=SyncButton]").style.opacity = 0.3
 
-
+	for (var i = 0; i <= CANVAS.names.length-1; i++) {
+		toggleCanvasStealthMode(0, CANVAS.obj[CANVAS.names[i]])
+	}
 
 	return 
 }

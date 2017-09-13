@@ -345,7 +345,7 @@ class ScreenDisplayer{
 
 		// Draw fixation dot
 		var rad = dot_pixelradius;
-		var xcent = PLAYSPACE._xgridcent[gridindex];
+		var xcent = PLAYSPACE._xgridcent[gridindex]; // playspace units
 		var ycent = PLAYSPACE._ygridcent[gridindex];
 		context.beginPath();
 		context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
@@ -409,7 +409,7 @@ class ScreenDisplayer{
 		context.fillStyle="#7F7F7F";  // Gray out before buffering sample
 		
 		var boundingBoxesSample = [{"x":[], "y":[]}]
-		funcreturn = await renderImageOnCanvas(sample_image, sample_image_grid_index, SubjectSettings['SampleScale'], CANVAS.obj.sample)
+		funcreturn = await renderImageAndScaleIfNecessary(sample_image, sample_image_grid_index, CANVAS.obj.sample)
 		boundingBoxesSample[0].x = funcreturn[0]
 		boundingBoxesSample[0].y = funcreturn[1]
 		return boundingBoxesSample
@@ -420,7 +420,7 @@ class ScreenDisplayer{
 		var boundingBoxesChoice = [] 
 		for (i = 0; i<test_images.length; i++){
 			boundingBoxesChoice.push({"x":[], "y":[]})
-			funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], SubjectSettings['TestScale'], CANVAS.obj.test); 
+			funcreturn = await renderImageAndScaleIfNecessary(test_images[i], test_image_grid_indices[i], CANVAS.obj.test); 
 			boundingBoxesChoice[i].x = funcreturn[0]
 			boundingBoxesChoice[i].y = funcreturn[1]
 		}

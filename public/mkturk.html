@@ -119,7 +119,7 @@
 #MechanicalTurkInstructionsSplash{
   display: table;
   position: absolute;
-   margin-top: 10%;
+   margin-top: 20%;
    height: 40%; /* https://stackoverflow.com/questions/982054/how-to-center-html-element-in-browser-window*/
    width:40%;
    left: 50%;
@@ -149,7 +149,7 @@
 #MechanicalTurkCursorDeviceSelectionScreen{
   display: table;
   position: absolute;
-   margin-top: 10%;
+   margin-top: 20%;
    height: 30%; /* https://stackoverflow.com/questions/982054/how-to-center-html-element-in-browser-window*/
    width:40%;
    left: 50%;
@@ -171,9 +171,9 @@
 #DeviceSelectionSplashText{
   line-height: normal;
   vertical-align: bottom;
-  margin-left:30%;
+  margin-left:15%;
   margin-top:5%;
-  width:40%;
+  width:70%;
   text-align:center;
   color:black;
 }
@@ -182,7 +182,6 @@
   box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);
 }
 .DeviceButton{
-  border-radius:8px;
   border-style:solid;
   vertical-align:bottom; 
   margin-top:5%; 
@@ -243,7 +242,7 @@
 </div>
 
 <div id="MechanicalTurkCursorDeviceSelectionScreen">
-  <div id='DeviceSelectionSplashText'> Select which device you are using to move the cursor. </div>
+  <div id='DeviceSelectionSplashText'> Select which input device you are using: </div>
 
 
   <input type="image" class='DeviceButton' id='MouseImage'  style="" id="MouseImage" src="tutorial_images/mouse.png " alt="Mouse" onclick="setDeviceSelection(this, 'mouse')" />
@@ -251,7 +250,7 @@
   <input type="image"  class='DeviceButton' id = 'TabletImage' src="tutorial_images/tablet.png " alt="Tablet" onclick="setDeviceSelection(this, 'touchscreen')" />
 
   <span>
-  <button style="text-align:center; width:30%; height:6%; position:absolute; margin-top:5%; top: 93%; left:35%;"  onclick="toggleElement(0, 'MechanicalTurkCursorDeviceSelectionScreen'); FLAGS.clicked_device_selection(FLAGS._MechanicalTurk_DeviceSelected)" id='CloseDeviceSelectionButton' disabled> <i>Make selection to continue</i> </button>
+  <button style="text-align:center; width:30%; height:10%; position:absolute; margin-top:5%; top: 80%; left:35%;"  onclick="toggleElement(0, 'MechanicalTurkCursorDeviceSelectionScreen'); FLAGS.clicked_device_selection(FLAGS._MechanicalTurk_DeviceSelected)" id='CloseDeviceSelectionButton' disabled> <i>Make selection...</i> </button>
   </span>
 </div>
 
