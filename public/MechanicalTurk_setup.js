@@ -1,13 +1,16 @@
 async function showMechanicalTurkInstructions(){
-    //todo: allow arbitrary strings as input 
-
-    var screen1_instructions = "<ul>"
-    screen1_instructions +=  "<li>Thank you for your interest and contributing to research at at M.I.T.!"
-    screen1_instructions += "<li>You will look at rapidly flashed images and be required to have a working mouse, touchscreen, or touchpad. The HIT is supported on Google Chrome, though it may work on other browsers."
-    screen1_instructions += '<li>You will sometimes <text style="font-weight:bold">hear a bell</text> and see a <text style="font-weight:bold; color:green">green flash</text>. This means you received a small bonus reward.'
-    screen1_instructions += '<li>The HIT takes around 10 minutes. When the top right button turns  <text style="font-weight:bold; color:green">GREEN</text> you can press it to submit, though we encourage you to continue working for bonus rewards.'
-    screen1_instructions += "<li>If you cannot meet these requirements or if doing so could cause discomfort or injury, do not accept this HIT. You will not be penalized in any way."
+    //todo: allow arbitrary strings as input  
+    var screen1_instructions =  "" 
+    screen1_instructions += "<ul>"
+    screen1_instructions +='<p><text style="font-weight:bold; font-size:large">Thank you for your interest and contributing to research at at MIT!</text>'
+    screen1_instructions += "<pi><li>Please use <b>Google Chrome</b> to work on this HIT. It may not work correctly on other browsers."
+    screen1_instructions += "<p><li>You will look at rapidly flashed images and be required to have a working mouse, touchscreen, or touchpad."
+    screen1_instructions += '<p><li>The sound of a <text style="font-weight:bold">bell</text> means you received a small bonus reward.'
+    screen1_instructions += '<p><li>When the top right button turns  <text style="font-weight:bold; color:green">GREEN</text> you can press it to submit early, though we encourage you to continue working for bonus rewards.'
+    screen1_instructions += '<p><li>Highly productive workers may be contacted for exclusive, higher-paying HITs.' 
+            screen1_instructions += '<p><text style="color:#7A7A7A; font-size:smaller; font-style:italic">If you cannot meet these requirements or if doing so could cause discomfort or injury, do not accept this HIT. You will not be penalized in any way.</text>'
     screen1_instructions += "</ul>"
+
 
     document.getElementById("MechanicalTurkInstructionsSplash").style.visibility = 'visible'
 

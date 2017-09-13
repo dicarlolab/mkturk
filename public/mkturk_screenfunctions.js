@@ -65,10 +65,10 @@ function updateCashInButtonText(trials, bonus_earned, cash_in_option){
 	var elem = document.querySelector("button[name=WorkerCashInButton]")
 
 	if(cash_in_option == false){
-		var button_string = 'Trials left: '+trials+'<br>Bonus: $'+bonus_earned.toFixed(3)
+		var button_string = 'Bonus: $'+bonus_earned.toFixed(3)
 	}
 	else if(cash_in_option == true){
-		var button_string = 'CLICK TO SUBMIT<br>Bonus trials: '+trials+'<br>Bonus: $'+bonus_earned.toFixed(3)
+		var button_string = 'Bonus: $'+bonus_earned.toFixed(3)+'<br>Turn in early'
 	}
 	elem.innerHTML = button_string
 
