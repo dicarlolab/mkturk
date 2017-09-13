@@ -160,7 +160,7 @@ function scaleContext(context){
 
 async function drawGridDots(){
   canvasobj = document.getElementById('touchfix')
-  canvasobj.style['z-index'] = 5
+  //canvasobj.style['z-index'] = 5
   console.log(canvasobj)
 
   var context = canvasobj.getContext('2d')
@@ -170,7 +170,7 @@ async function drawGridDots(){
   var color = "white"
 
   //context.clearRect(0,0,CANVAS.obj.touchfix.width,CANVAS.obj.touchfix.height);
-
+  // https://www.w3schools.com/tags/canvas_clearrect.asp
   // Draw grid dots
   var rad = dot_pixelradius;
   for (var i = 0; i < PLAYSPACE._xgridcent.length; i++){

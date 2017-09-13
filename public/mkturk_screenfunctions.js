@@ -337,8 +337,11 @@ class ScreenDisplayer{
 		var dot_pixelradius = PLAYSPACE._gridwidth/2.5
 		var color = "white"
 
+		var canvasobj = CANVAS.obj.touchfix
 		var context=CANVAS.obj.touchfix.getContext('2d');
-		//context.clearRect(0,0,CANVAS.obj.touchfix.width,CANVAS.obj.touchfix.height);
+
+		context.clearRect(0,0,canvasobj.width,canvasobj.height);
+		context.fillStyle="#7F7F7F"; 
 
 		// Draw fixation dot
 		var rad = dot_pixelradius;

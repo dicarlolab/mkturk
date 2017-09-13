@@ -163,7 +163,7 @@ async function setupMechanicalTurkTask(){
       setupCanvas(CANVAS.obj[CANVAS.names[i]]);
   }
 
-  await drawGridDots()
+  //await drawGridDots()
 
   // Draw dots
 
