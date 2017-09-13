@@ -88,13 +88,11 @@
 #PreviewModeSplash{
   display: table;
   position: absolute;
-   margin-top: 15px;
    height: 14%; /* https://stackoverflow.com/questions/982054/how-to-center-html-element-in-browser-window*/
-   width:30%;
+   width:25%;
    left: 50%;
-   margin-left:-15%; /* -1 * width/2 */
-   line-height:14%; /* https://stackoverflow.com/questions/8865458/how-do-i-vertically-center-text-with-css */
-   font-size:14px; 
+   margin-left:-12.5%; /* -1 * width/2 */
+   font-size:12px; 
    z-index:102;
    font-family: 'Helvetica Neue';
    text-align: center;
@@ -113,6 +111,7 @@
   margin-left:10px;
   margin-right:10px;
   width:20%;
+  font-size:small;
   color:black;
 }
 
@@ -146,6 +145,14 @@
   margin-right:10px;
   width:20%;
   color:black;
+}
+
+#CloseInstructionsButton{
+   text-align:center;
+   width:30%; 
+   height:6%;
+   margin:0 auto; 
+   display:block;
 }
 
 #MechanicalTurkCursorDeviceSelectionScreen{
@@ -233,14 +240,14 @@
 <div id="DebugMessageTextBox">0</div>
 <div id="SessionTextBox"><b>Subject:</b> <br><b>Experiment:</b></div>
 <div id="PreviewModeSplash">
-  <span id='PreviewSplashText'><text style="color:red; font-weight:bold ">PREVIEW MODE</text><br>Thank you for your interest! This HIT takes at least 10 minutes to complete. Please make sure your browser is compatible by playing with the <text style="font-weight:bold">demo below before accepting the HIT</text>.
+  <span id='PreviewSplashText'><p style="color:red; font-size:large; font-weight:bold; text-align:center">PREVIEW MODE</p>Please use <b>Google Chrome</b> and turn your <b>sound on</b>. Test your computer is compatible by playing with the <text style="font-weight:bold">demo below</text>. The HIT will take around 10 minutes to complete. 
   </span>
 
 </div>
 
 <div id="MechanicalTurkInstructionsSplash">
   <span id='InstructionSplashText'> Loading instructions... </span>
-  <button style="text-align:center; width:30%; height:6%; position:absolute; margin-top:5%; top: 87%; left:35%" onclick="toggleElement(0, 'MechanicalTurkInstructionsSplash'); FLAGS.clicked_close_instructions(true)" id='CloseInstructionsButton' disabled> Loading... </button>
+  <button onclick="toggleElement(0, 'MechanicalTurkInstructionsSplash'); FLAGS.clicked_close_instructions(true)" id='CloseInstructionsButton' disabled> Loading... </button>
 </div>
 
 <div id="MechanicalTurkCursorDeviceSelectionScreen">
@@ -252,7 +259,7 @@
   <input type="image"  class='DeviceButton' id = 'TabletImage' src="tutorial_images/tablet.png " alt="Tablet" onclick="setDeviceSelection(this, 'touchscreen')" />
 
   <span>
-  <button style="text-align:center; width:30%; height:10%; position:absolute; margin-top:5%; top: 80%; left:35%;"  onclick="toggleElement(0, 'MechanicalTurkCursorDeviceSelectionScreen'); FLAGS.clicked_device_selection(FLAGS._MechanicalTurk_DeviceSelected)" id='CloseDeviceSelectionButton' disabled> <i>Make selection...</i> </button>
+  <button style="text-align:center; width:30%; height:10%; position:absolute; margin-top:5%; top: 80%; left:35%;"  onclick="toggleElement(0, 'MechanicalTurkCursorDeviceSelectionScreen'); FLAGS.clicked_device_selection(DEVICE.MechanicalTurk_DeviceSelected)" id='CloseDeviceSelectionButton' disabled> <i>Make selection...</i> </button>
   </span>
 </div>
 

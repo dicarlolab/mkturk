@@ -33,7 +33,7 @@ function toggleCanvasStealthMode(on_or_off, canvasobj){
     canvasobj.style.border='1px dotted #E6E6E6' 
   }
   else{
-    canvasobj.style.border='2px solid blue' 
+    canvasobj.style.border='3px solid #1B47E8'
   }
   
 }
@@ -138,7 +138,7 @@ function setupCanvas(canvasobj){
     canvasobj.style.bottom = 0
     canvasobj.style.left = 0  
     canvasobj.style.right = 0
-    canvasobj.style.border='2px solid blue' 
+    canvasobj.style.border='3px solid #1B47E8' 
     
     canvasobj.style.width=PLAYSPACE.width+'px'; // Set browser canvas display style to be workspace_width
     canvasobj.style.height=PLAYSPACE.height+'px';

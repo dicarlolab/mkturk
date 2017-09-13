@@ -1,5 +1,5 @@
 function setDeviceSelection(element, devicename){
-	FLAGS._MechanicalTurk_DeviceSelected = devicename 
+	DEVICE.MechanicalTurk_DeviceSelected = devicename 
 	var device_option_elements = document.querySelectorAll(".DeviceButton")
 	for(var i = 0; i<device_option_elements.length; i++){
 		device_option_elements[i].style['opacity'] = 0.5

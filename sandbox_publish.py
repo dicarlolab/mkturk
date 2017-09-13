@@ -6,7 +6,7 @@ from boto.mturk.question import ExternalQuestion
 from boto.s3.key import Key
 import sys 
 from time import ctime 
-
+import numpy as np
 
 def main(argv):
 
@@ -43,7 +43,8 @@ def main(argv):
     if(upload_to_mechanical_turk_sandbox): 
         print 'UPLOADING TO SANDBOX'
         url = 'https://s3.amazonaws.com/monkeyturksandbox/public/mkturk.html'
-        frame_height_pix = 730 # https://www.w3schools.com/browsers/browsers_display.asp 
+        MIN_REQUIRED_PIXELS = 768 # todo: move into experiment constructor 
+        frame_height_pix = int(np.round(MIN_REQUIRED_PIXELS*1.1))# https://www.w3schools.com/browsers/browsers_display.asp 
         lifetime = 1209600 # In seconds, I think 
         reward_amount = 0.01 # in dollars
 

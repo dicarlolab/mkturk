@@ -32,7 +32,7 @@ async function showMechanicalTurkInstructions(){
 async function showDeviceSelectionDialogue_and_getUserSelection(){
     // Turn on dialogue
     FLAGS.clicked_device_selection = false
-    FLAGS._MechanicalTurk_DeviceSelected = 'not_selected'
+    DEVICE.MechanicalTurk_DeviceSelected = 'not_selected'
     document.getElementById("MechanicalTurkCursorDeviceSelectionScreen").style.visibility = 'visible'
     return new Promise(function(resolve, reject){
         FLAGS.clicked_device_selection = resolve
@@ -224,7 +224,7 @@ async function setupMechanicalTurkTask(){
   console.log('hello')
   
   
-  var skip_preview_mode = true
+  var skip_preview_mode = false
 
   if(skip_preview_mode != true){
     if(results == 'ASSIGNMENT_ID_NOT_AVAILABLE' || results == '' ){
