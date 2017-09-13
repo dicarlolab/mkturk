@@ -158,7 +158,7 @@ async function setupMechanicalTurkTask(){
   refreshScreenTSequenceSettings(TS.EXPERIMENT[TS.state.current_stage_index]); 
 
 
-  setupPlayspace() // sets up PLAYSPACE based on window dimensions
+  setupPlayspace(TS.EXPERIMENT[0]['NGridPoints'] ) // sets up PLAYSPACE based on window dimensions
   for (var i = 0; i <= CANVAS.names.length-1; i++) {
       setupCanvas(CANVAS.obj[CANVAS.names[i]]);
   }

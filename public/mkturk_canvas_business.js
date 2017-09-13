@@ -14,28 +14,28 @@ function _dpr(){
   var devicePixelRatio = window.devicePixelRatio || 1
   return devicePixelRatio
 }
-function setupPlayspace(){
+function setupPlayspace(ngridpoints){
   var funcreturn = windowSize()
   var windowHeight = funcreturn[0]
   var windowWidth = funcreturn[1]
     // Reference: https://www.w3schools.com/js/js_window.asp
 
-    var min_dimension = Math.round(Math.min(windowHeight, windowWidth)*0.8)
+    var min_dimension = Math.round(Math.min(windowHeight, windowWidth))
 
 
 
     PLAYSPACE.height = min_dimension
     PLAYSPACE.width = min_dimension // WORKSPACE_WIDTH_HEIGHT_RATIO is 1 for now 
 
-    PLAYSPACE.leftbound = (windowWidth - PLAYSPACE.width)/2
-    PLAYSPACE.rightbound = windowWidth-(windowWidth - PLAYSPACE.width)/2
-    PLAYSPACE.topbound = (windowHeight - PLAYSPACE.height)/2
-    PLAYSPACE.bottombound = windowHeight-(windowHeight - PLAYSPACE.height)/2
+    PLAYSPACE.leftbound = Math.floor((windowWidth - PLAYSPACE.width)/2)
+    PLAYSPACE.rightbound = Math.floor(windowWidth-(windowWidth - PLAYSPACE.width)/2)
+    PLAYSPACE.topbound = Math.floor((windowHeight - PLAYSPACE.height)/2)
+    PLAYSPACE.bottombound = Math.floor(windowHeight-(windowHeight - PLAYSPACE.height)/2)
 
 
     console.log('windowWidth', windowWidth, 'windowHeight', windowHeight)
-    defineImageGrid(TS.EXPERIMENT[0]['NGridPoints'])
-    
+
+    defineImageGrid(ngridpoints)
 }
 
 
@@ -112,8 +112,8 @@ function setupCanvas(canvasobj){
     canvasobj.style.right = 0
     canvasobj.style.border='1px solid blue' 
     
-    canvasobj.style.width=PLAYSPACE.width; // Set browser canvas display style to be workspace_width
-    canvasobj.style.height=PLAYSPACE.height;
+    canvasobj.style.width=PLAYSPACE.width+'px'; // Set browser canvas display style to be workspace_width
+    canvasobj.style.height=PLAYSPACE.height+'px';
 
 
 
@@ -131,7 +131,6 @@ function setupCanvas(canvasobj){
     if(_ratio !== 1){
       scaleContext(context)
     }
-
 } 
 
 function scaleContext(context){
@@ -141,10 +140,10 @@ function scaleContext(context){
     context.msBackingStorePixelRatio ||
     context.oBackingStorePixelRatio ||
     context.backingStorePixelRatio || 1 // /1 by default for chrome?
-
+  console.log('devicePixelRatio', devicePixelRatio, 'backingStoreRatio', backingStoreRatio)
   var _ratio = devicePixelRatio / backingStoreRatio
 
-  context.scale(1/_ratio, 1/_ratio) 
+  context.scale(_ratio, _ratio) 
 }
 
 //================== IMAGE RENDERING ==================//
@@ -180,6 +179,7 @@ async function drawGridDots(){
   await renderImageAndScaleIfNecessary(tutorial_image, 2, canvasobj)
   await renderImageAndScaleIfNecessary(tutorial_image, 4, canvasobj)
   await renderImageAndScaleIfNecessary(tutorial_image, 8, canvasobj)
+  console.log(windowSize())
 }
 
 async function renderImageAndScaleIfNecessary(image, grid_index, canvasobj){
