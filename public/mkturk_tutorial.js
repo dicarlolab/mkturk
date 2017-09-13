@@ -33,20 +33,26 @@ async function run_MouseOver_TutorialTrial(tutorial_image, tutoral_gridindex){
     var fixation_outcome = await FixationRewardMap.Promise_wait_until_active_response_then_return_reinforcement()
 
     //============ AWAIT BUFFER CANVASES WITH SAMPLE & TEST IMAGES ============//
-    boundingBoxFixation = await SD.bufferFixationScreenUsingImage(tutorial_image, tutoral_gridindex)
+    //boundingBoxFixation = await SD.bufferFixationScreenUsingImage(tutorial_image, tutoral_gridindex)
 
+    
+    var dwidth = PLAYSPACE._gridheight*0.7
+    var dheight = PLAYSPACE._gridheight*0.7
+    var dx = (PLAYSPACE.width - dwidth) * Math.random() // [0, playspace width - one imagewidth]
+    var dy = (PLAYSPACE.width - dheight - boundingBoxFixation[0].y[1]+boundingBoxFixation[0].y[0]) * Math.random() // avoid overlapping with fixation dot
 
+    var boundingBoxMouseOver = await SD.bufferCanvasWithImage(tutorial_image, CANVAS.obj.touchfix, dx, dy, dwidth, dheight)
+    console.log(boundingBoxMouseOver)
     // Make smaller
-    var original_x_width = boundingBoxFixation[0].x[1] - boundingBoxFixation[0].x[0]
-    var original_y_width = boundingBoxFixation[0].y[1] - boundingBoxFixation[0].y[0]
+    var original_x_width = boundingBoxMouseOver[0].x[1] - boundingBoxMouseOver[0].x[0]
+    var original_y_width = boundingBoxMouseOver[0].y[1] - boundingBoxMouseOver[0].y[0]
 
-    boundingBoxFixation[0].x[0] += original_x_width * 0.3
-    boundingBoxFixation[0].x[1] -= original_x_width * 0.3
-    boundingBoxFixation[0].y[0] += original_y_width * 0.3
-    boundingBoxFixation[0].y[1] -= original_y_width * 0.3
+    boundingBoxMouseOver[0].x[0] += original_x_width * 0.2
+    boundingBoxMouseOver[0].x[1] -= original_x_width * 0.2
+    boundingBoxMouseOver[0].y[0] += original_y_width * 0.2
+    boundingBoxMouseOver[0].y[1] -= original_y_width * 0.2
     //============ Mouse over SCREEN ============//
-    console.log(boundingBoxFixation, 'hello10')
-    FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxFixation, [1])
+    FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxMouseOver, [1])
 
     var fixation_onset_timestamps = await SD.displayScreenSequence(CANVAS.sequencepre,CANVAS.tsequencepre);
 

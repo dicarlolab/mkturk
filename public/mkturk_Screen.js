@@ -120,7 +120,6 @@ class MouseMoveRewardMap{
         var t = performance.now()
         var x = event.pageX - PLAYSPACE.leftbound // In PLAYSPACE units. 
         var y = event.pageY - PLAYSPACE.topbound
-        console.log(x, y)
         for (var box_index = 0; box_index<this.boundingBoxes.length; box_index++){
             if (x <= this.boundingBoxes[box_index].x[1] 
                 && x >= this.boundingBoxes[box_index].x[0]

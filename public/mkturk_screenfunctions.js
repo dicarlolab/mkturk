@@ -360,8 +360,27 @@ class ScreenDisplayer{
 		return boundingBoxesFixation
 	}
 
+	async bufferCanvasWithImage(image, canvasobj, dx, dy, dwidth, dheight){
+		// In playspace units
+		var context = canvasobj.getContext('2d')
+		context.fillStyle="#7F7F7F"; 
+		context.fillRect(0,0,canvasobj.width,canvasobj.height);
+		  // ctx.drawImage(image, destination_x, destination_y, dWidth, dHeight);
+		  context.drawImage(image, dx, dy, dwidth, dheight)
+
+		  // todo: return bounding boxes
+
+		 
+
+		var boundingBoxFixation = [{}]
+		boundingBoxFixation[0].x = [dx,dx+dwidth]
+		boundingBoxFixation[0].y = [dy, dy+dheight]
+
+		return boundingBoxFixation// 'hello'
+	}
+
 	async bufferFixationScreenUsingImage(image, gridindex){
-		
+		// todo: remove dependence on fixation screen 
 		
 
 		// Gray out first 

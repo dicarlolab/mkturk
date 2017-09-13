@@ -203,6 +203,8 @@ async function drawGridDots(){
   console.log(windowSize())
 }
 
+
+
 async function renderImageAndScaleIfNecessary(image, grid_index, canvasobj){
   // Render image onto the playspace
 
