@@ -104,10 +104,10 @@ async function setupMechanicalTurkTask(){
 
   // todo: load subject settings from URL 
   MechanicalTurkSettings = {
-    'MinimumTrialsForCashIn':5, 
-    'MAX_SESSION_TRIALS_MECHANICALTURK':10
+    'MinimumTrialsForCashIn':10, 
+    'MAX_SESSION_TRIALS_MECHANICALTURK':100
   }
-  
+  console.log('window.location.href', window.location.href)
   var name = 'workerID'
   name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
   var regexS = "[\\?&]" + name + "=([^&#]*)";
