@@ -159,9 +159,12 @@ async function setupMechanicalTurkTask(){
 
   var ngridpoints = TS.EXPERIMENT[0]['NGridPoints'] 
   setupPlayspace(ngridpoints) // sets up PLAYSPACE based on window dimensions
+
   for (var i = 0; i <= CANVAS.names.length-1; i++) {
       setupCanvas(CANVAS.obj[CANVAS.names[i]]);
   }
+
+  window.addEventListener('resize', onWindowResize)
 
   //await drawGridDots()
 

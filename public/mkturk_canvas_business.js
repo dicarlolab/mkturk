@@ -15,6 +15,18 @@ function _dpr(){
   return devicePixelRatio
 }
 
+function onWindowResize(){
+  // on window resize 
+  var funcreturn = windowSize()
+  var windowHeight = funcreturn[0]
+  var windowWidth = funcreturn[1]
+  PLAYSPACE.leftbound = Math.floor((windowWidth - PLAYSPACE.width)/2) // as these are in units of the window, they should be updated when the window changes 
+  PLAYSPACE.rightbound = Math.floor(windowWidth-(windowWidth - PLAYSPACE.width)/2)
+  PLAYSPACE.topbound = Math.floor((windowHeight - PLAYSPACE.height)/2)
+  PLAYSPACE.bottombound = Math.floor(windowHeight-(windowHeight - PLAYSPACE.height)/2)
+
+  console.log('onWindowResize', PLAYSPACE.leftbound, PLAYSPACE.topbound)
+}
 
 function setupPlayspace(ngridpoints){
   var funcreturn = windowSize()
@@ -32,7 +44,7 @@ function setupPlayspace(ngridpoints){
     PLAYSPACE.height = min_dimension
     PLAYSPACE.width = min_dimension // WORKSPACE_WIDTH_HEIGHT_RATIO is 1 for now 
 
-    PLAYSPACE.leftbound = Math.floor((windowWidth - PLAYSPACE.width)/2)
+    PLAYSPACE.leftbound = Math.floor((windowWidth - PLAYSPACE.width)/2) // in units of window
     PLAYSPACE.rightbound = Math.floor(windowWidth-(windowWidth - PLAYSPACE.width)/2)
     PLAYSPACE.topbound = Math.floor((windowHeight - PLAYSPACE.height)/2)
     PLAYSPACE.bottombound = Math.floor(windowHeight-(windowHeight - PLAYSPACE.height)/2)
@@ -62,7 +74,7 @@ function defineImageGrid(ngridpoints){
   var dy = PLAYSPACE.topbound
 
 
-  PLAYSPACE._xgridcent = []
+  PLAYSPACE._xgridcent = [] // In units of playspace 
   PLAYSPACE._ygridcent = []
   var xgridcent =[] 
   var ygridcent =[]
@@ -227,10 +239,10 @@ async function renderImageAndScaleIfNecessary(image, grid_index, canvasobj){
   var xbound=[original_left_start, original_left_start+PLAYSPACE._gridwidth];
   var ybound=[original_top_start, original_top_start+PLAYSPACE._gridheight];
 
-  xbound[0]=xbound[0]+CANVAS.offsetleft+PLAYSPACE.leftbound;
-  xbound[1]=xbound[1]+CANVAS.offsetleft+PLAYSPACE.leftbound;
-  ybound[0]=ybound[0]+CANVAS.offsettop+PLAYSPACE.topbound;
-  ybound[1]=ybound[1]+CANVAS.offsettop+PLAYSPACE.topbound;
+  xbound[0]=xbound[0]+CANVAS.offsetleft
+  xbound[1]=xbound[1]+CANVAS.offsetleft
+  ybound[0]=ybound[0]+CANVAS.offsettop
+  ybound[1]=ybound[1]+CANVAS.offsettop
   return [xbound, ybound]
 }
 

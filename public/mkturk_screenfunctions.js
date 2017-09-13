@@ -354,8 +354,8 @@ class ScreenDisplayer{
 
 		// Define (rectangular) boundaries of fixation
 		var boundingBoxesFixation = [{}] // todo: move out of here 
-		boundingBoxesFixation[0]['x']= [xcent-rad+CANVAS.offsetleft+PLAYSPACE.leftbound, xcent+rad+CANVAS.offsetleft+PLAYSPACE.leftbound]
-		boundingBoxesFixation[0]['y']= [ycent-rad+CANVAS.offsettop+PLAYSPACE.topbound, ycent+rad+CANVAS.offsettop+PLAYSPACE.topbound]
+		boundingBoxesFixation[0]['x']= [xcent-rad+CANVAS.offsetleft, xcent+rad+CANVAS.offsetleft]
+		boundingBoxesFixation[0]['y']= [ycent-rad+CANVAS.offsettop, ycent+rad+CANVAS.offsettop]
 
 		return boundingBoxesFixation
 	}

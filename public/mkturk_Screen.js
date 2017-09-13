@@ -40,8 +40,8 @@ class MouseClickRewardMap{
         // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent
         console.log('handleMouseEvent', event)
         var t = performance.now()
-        var x = event.pageX
-        var y = event.pageY
+        var x = event.pageX - PLAYSPACE.leftbound
+        var y = event.pageY - PLAYSPACE.topbound
 
         for (var box_index = 0; box_index<this.boundingBoxes.length; box_index++){
             if (x <= this.boundingBoxes[box_index].x[1] 
@@ -118,8 +118,9 @@ class MouseMoveRewardMap{
         // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent
         //console.log('handleMouseEvent', event)
         var t = performance.now()
-        var x = event.pageX
-        var y = event.pageY
+        var x = event.pageX - PLAYSPACE.leftbound // In PLAYSPACE units. 
+        var y = event.pageY - PLAYSPACE.topbound
+        console.log(x, y)
         for (var box_index = 0; box_index<this.boundingBoxes.length; box_index++){
             if (x <= this.boundingBoxes[box_index].x[1] 
                 && x >= this.boundingBoxes[box_index].x[0]
@@ -139,6 +140,7 @@ class MouseMoveRewardMap{
     }   
 
     create_reward_map_with_bounding_boxes(boundingBoxes, reward_amounts){
+        // boundingBoxes in units of PLAYSPACE
         if(this.attached == false){
             console.log('Attached mouse move listener for rewardmap')
             this.add_event_listener()
@@ -191,8 +193,8 @@ class TouchRewardMap{
 
     handleTouchEvent(event){
         var t = performance.now()
-        var x = event.targetTouches[0].pageX
-        var y = event.targetTouches[0].pageY
+        var x = event.targetTouches[0].pageX - PLAYSPACE.leftbound
+        var y = event.targetTouches[0].pageY - PLAYSPACE.topbound
         for (var box_index = 0; box_index<this.boundingBoxes.length; box_index++){
             if (x <= this.boundingBoxes[box_index].x[1] 
                 && x >= this.boundingBoxes[box_index].x[0]
