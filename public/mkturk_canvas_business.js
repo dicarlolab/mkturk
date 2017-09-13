@@ -1,4 +1,4 @@
-function setupPlayspace(){
+function windowSize(){
   var windowHeight = window.innerHeight
       || document.documentElement.clientHeight
       || document.body.clientHeight;
@@ -7,8 +7,20 @@ function setupPlayspace(){
     var windowWidth = window.innerWidth
       || document.documentElement.clientWidth
       || document.body.clientWidth;
+    return [windowHeight, windowWidth]
+}
 
-    var min_dimension = Math.min(windowHeight, windowWidth)*0.8
+function _dpr(){
+  var devicePixelRatio = window.devicePixelRatio || 1
+  return devicePixelRatio
+}
+function setupPlayspace(){
+  var funcreturn = windowSize()
+  var windowHeight = funcreturn[0]
+  var windowWidth = funcreturn[1]
+    // Reference: https://www.w3schools.com/js/js_window.asp
+
+    var min_dimension = Math.round(Math.min(windowHeight, windowWidth)*0.8)
 
 
 
@@ -21,65 +33,13 @@ function setupPlayspace(){
     PLAYSPACE.bottombound = windowHeight-(windowHeight - PLAYSPACE.height)/2
 
 
-    console.log('setupCanvas', 'windowWidth', windowWidth, 'windowHeight', windowHeight)
-
-    // Reference: https://www.w3schools.com/js/js_window.asp
-
-
+    console.log('windowWidth', windowWidth, 'windowHeight', windowHeight)
+    defineImageGrid(TS.EXPERIMENT[0]['NGridPoints'])
+    
 }
-function setupCanvas(canvasobj){
-
-  
-    var context = canvasobj.getContext('2d')
-    
-    var devicePixelRatio = window.devicePixelRatio || 1
-    var backingStoreRatio = context.webkitBackingStorePixelRatio ||
-      context.mozBackingStorePixelRatio ||
-      context.msBackingStorePixelRatio ||
-      context.oBackingStorePixelRatio ||
-      context.backingStorePixelRatio || 1 // /1 by default for chrome?
-
-    var _ratio = devicePixelRatio / backingStoreRatio
-
-    //canvasobj.style.top=CANVAS.offsettop + "px";
-    //canvasobj.style.left=CANVAS.offsetleft + "px";
-    
-    canvasobj.width = PLAYSPACE.width * _ratio;
-    canvasobj.height = PLAYSPACE.height * _ratio;
-
-    // Center canvas 
-    // https://stackoverflow.com/questions/5127937/how-to-center-canvas-in-html5
-    canvasobj.style.padding = 0
-    canvasobj.style.margin = 'auto'
-    canvasobj.style.display="block"; //visible
-    canvasobj.style.position = 'absolute'
-    canvasobj.style.top = 0
-    canvasobj.style.bottom = 0
-    canvasobj.style.left = 0  
-    canvasobj.style.right = 0
-    canvasobj.style.border='1px solid blue' 
-    
-    canvasobj.style.width=PLAYSPACE.width; // Set browser canvas display style to be workspace_width
-    canvasobj.style.height=PLAYSPACE.height;
 
 
-
-    context.imageSmoothingEnabled = false // then nearest neighbor?
-    
-    //var image_scale_width = DEVICE.gridwidth / DEVICE.source_image_width * _ratio
-    //var image_scale_height = DEVICE.gridheight / DEVICE.source_image_height * _ratio
-
-    //context.scale(image_scale_width, image_scale_height) 
-
-    // Record details of playspace (canvas pixels)
-
-} 
-
-
-//================== IMAGE RENDERING ==================//
-
-
-function defineImageGrid(ngridpoints, source_image_width, source_image_height, gridscale){
+function defineImageGrid(ngridpoints){
   // Inside of PLAYSPACE, define a grid system for easy references to task logic 
 
 
@@ -88,7 +48,8 @@ function defineImageGrid(ngridpoints, source_image_width, source_image_height, g
 
   var gridwidth = Math.round(workspace_width / ngridpoints)
   var gridheight = Math.round(workspace_height / ngridpoints)
-  
+  PLAYSPACE._gridwidth = gridwidth
+  PLAYSPACE._gridheight = gridheight
   var canvas_center_x = Math.round(PLAYSPACE.width / 2)
   var canvas_center_y = Math.round(PLAYSPACE.height / 2)
 
@@ -119,11 +80,80 @@ function defineImageGrid(ngridpoints, source_image_width, source_image_height, g
 
   return [canvas_center_x, canvas_center_y, xgridcent, ygridcent]
 }
+function setupCanvas(canvasobj){
+
+    var context = canvasobj.getContext('2d')
+    
+    var devicePixelRatio = window.devicePixelRatio || 1
+    var backingStoreRatio = context.webkitBackingStorePixelRatio ||
+      context.mozBackingStorePixelRatio ||
+      context.msBackingStorePixelRatio ||
+      context.oBackingStorePixelRatio ||
+      context.backingStorePixelRatio || 1 // /1 by default for chrome?
+
+    var _ratio = devicePixelRatio / backingStoreRatio
+
+    console.log(devicePixelRatio, backingStoreRatio)
+    //canvasobj.style.top=CANVAS.offsettop + "px";
+    //canvasobj.style.left=CANVAS.offsetleft + "px";
+    
+    canvasobj.width = PLAYSPACE.width * _ratio;
+    canvasobj.height = PLAYSPACE.height * _ratio;
+
+    // Center canvas 
+    // https://stackoverflow.com/questions/5127937/how-to-center-canvas-in-html5
+    canvasobj.style.padding = 0
+    canvasobj.style.margin = 'auto'
+    canvasobj.style.display="block"; //visible
+    canvasobj.style.position = 'absolute'
+    canvasobj.style.top = 0
+    canvasobj.style.bottom = 0
+    canvasobj.style.left = 0  
+    canvasobj.style.right = 0
+    canvasobj.style.border='1px solid blue' 
+    
+    canvasobj.style.width=PLAYSPACE.width; // Set browser canvas display style to be workspace_width
+    canvasobj.style.height=PLAYSPACE.height;
+
+
+
+    context.imageSmoothingEnabled = false // then nearest neighbor?
+
+
+    console.log(_ratio, canvasobj)
+    //var image_scale_width = DEVICE.gridwidth / DEVICE.source_image_width * _ratio
+    //var image_scale_height = DEVICE.gridheight / DEVICE.source_image_height * _ratio
+
+    //context.scale(image_scale_width, image_scale_height) 
+
+    // Record details of playspace (canvas pixels)
+
+    if(_ratio !== 1){
+      scaleContext(context)
+    }
+
+} 
+
+function scaleContext(context){
+   var devicePixelRatio = window.devicePixelRatio || 1
+  var backingStoreRatio = context.webkitBackingStorePixelRatio ||
+    context.mozBackingStorePixelRatio ||
+    context.msBackingStorePixelRatio ||
+    context.oBackingStorePixelRatio ||
+    context.backingStorePixelRatio || 1 // /1 by default for chrome?
+
+  var _ratio = devicePixelRatio / backingStoreRatio
+
+  context.scale(1/_ratio, 1/_ratio) 
+}
+
+//================== IMAGE RENDERING ==================//
 
 
 async function drawGridDots(){
   canvasobj = document.getElementById('touchfix')
   canvasobj.style['z-index'] = 5
+  console.log(canvasobj)
 
   var context = canvasobj.getContext('2d')
 
@@ -138,17 +168,23 @@ async function drawGridDots(){
   for (var i = 0; i < PLAYSPACE._xgridcent.length; i++){
     var xcent = PLAYSPACE._xgridcent[i];
     var ycent = PLAYSPACE._ygridcent[i];
+    console.log(xcent, ycent)
     context.beginPath();
     context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
     context.fillStyle=color; 
     context.fill();
   }
-  var tutorial_image = await SIO.load_image('tutorial_images/whitenoise_256x256.png')
+  var tutorial_image = await SIO.load_image('tutorial_images/whitenoise_256x256.jpg')
+  await renderImageAndScaleIfNecessary(tutorial_image, 0, canvasobj)
+  await renderImageAndScaleIfNecessary(tutorial_image, 6, canvasobj)
+  await renderImageAndScaleIfNecessary(tutorial_image, 2, canvasobj)
   await renderImageAndScaleIfNecessary(tutorial_image, 4, canvasobj)
   await renderImageAndScaleIfNecessary(tutorial_image, 8, canvasobj)
 }
 
 async function renderImageAndScaleIfNecessary(image, grid_index, canvasobj){
+  // Render image onto the playspace
+
   var context = canvasobj.getContext('2d')
 
   var devicePixelRatio = window.devicePixelRatio || 1
@@ -160,21 +196,22 @@ async function renderImageAndScaleIfNecessary(image, grid_index, canvasobj){
 
   var _ratio = devicePixelRatio / backingStoreRatio
 
-  var original_left_start = DEVICE.XGridCenter[grid_index] - DEVICE.gridwidth/2// in virtual pixel coordinates
-  var original_top_start = DEVICE.YGridCenter[grid_index] - DEVICE.gridheight/2
+  var original_left_start = PLAYSPACE._xgridcent[grid_index] - PLAYSPACE._gridwidth/2// in virtual pixel coordinates
+  var original_top_start = PLAYSPACE._ygridcent[grid_index] - PLAYSPACE._gridheight/2
 
-  var scaled_left_start = original_left_start * image.width / DEVICE.gridwidth // in canvas coordinates, which may or may not be scaled 
-  var scaled_top_start = original_top_start * image.width / DEVICE.gridheight
+  //var scaled_left_start = original_left_start * image.width / PLAYSPACE._gridwidth // in canvas coordinates, which may or may not be scaled 
+  //var scaled_top_start = original_top_start * image.width / PLAYSPACE._gridheight
 
 
-  //canvasobj.width = original_canvas_width * _ratio // Scales size of source canvas up
-  //canvasobj.height = original_canvas_height * _ratio
+
   //canvasobj.style.width = original_canvas_width + 'px' // Scales canvas to this size before multiplying by devicepixelratio
   //canvasobj.style.height = original_canvas_height + 'px'
 
 
 
-  context.drawImage(image, scaled_left_start, scaled_top_start)
+
+  // ctx.drawImage(image, destination_x, destination_y, dWidth, dHeight);
+  context.drawImage(image, original_left_start, original_top_start, PLAYSPACE._gridwidth, PLAYSPACE._gridheight)
 
 }
 

@@ -334,7 +334,11 @@ class ScreenDisplayer{
 	}
 	async bufferFixationScreenUsingDot(gridindex){
 		funcreturn = await drawGridDots()
-		return
+		var boundingBoxesFixation = [{}] // todo: move out of here 
+		boundingBoxesFixation[0]['x']= [0, 2]
+		boundingBoxesFixation[0]['y'] = [0, 2]
+
+		return boundingBoxesFixation
 
 		var dot_pixelradius = 10
 		var color = "white"
@@ -369,9 +373,10 @@ class ScreenDisplayer{
 		context.fill();
 
 		// Define (rectangular) boundaries of fixation
-		boundingBoxesFixation = [{}] // todo: move out of here 
+		var boundingBoxesFixation = [{}] // todo: move out of here 
 		boundingBoxesFixation[0]['x']= [xcent-rad+CANVAS.offsetleft, xcent+rad+CANVAS.offsetleft]
 		boundingBoxesFixation[0]['y']= [ycent-rad+CANVAS.offsettop, ycent+rad+CANVAS.offsettop]
+
 		return boundingBoxesFixation
 	}
 

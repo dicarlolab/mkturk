@@ -25,7 +25,9 @@ async function run_MouseOver_TutorialTrial(tutorial_image, tutoral_gridindex){
     SD.renderPunish(CANVAS.obj.punish);
     SD.renderBlank(CANVAS.obj.blank);
 
+    
     boundingBoxFixation = await SD.bufferFixationScreenUsingDot(5)
+    console.log('hello9', boundingBoxFixation)
     FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxFixation, [0])
     await SD.displayScreenSequence(CANVAS.sequencepre,CANVAS.tsequencepre);
     var fixation_outcome = await FixationRewardMap.Promise_wait_until_active_response_then_return_reinforcement()
@@ -43,6 +45,7 @@ async function run_MouseOver_TutorialTrial(tutorial_image, tutoral_gridindex){
     boundingBoxFixation[0].y[0] += original_y_width * 0.3
     boundingBoxFixation[0].y[1] -= original_y_width * 0.3
     //============ Mouse over SCREEN ============//
+    console.log(boundingBoxFixation, 'hello10')
     FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxFixation, [1])
 
     var fixation_onset_timestamps = await SD.displayScreenSequence(CANVAS.sequencepre,CANVAS.tsequencepre);

@@ -155,15 +155,17 @@ async function setupMechanicalTurkTask(){
     SD = new ScreenDisplayer()
     R = new MonetaryReinforcer()
 
-
-
-    setupPlayspace()
-
   refreshScreenTSequenceSettings(TS.EXPERIMENT[TS.state.current_stage_index]); 
 
+
+  setupPlayspace() // sets up PLAYSPACE based on window dimensions
   for (var i = 0; i <= CANVAS.names.length-1; i++) {
       setupCanvas(CANVAS.obj[CANVAS.names[i]]);
   }
+
+  drawGridDots()
+
+  // Draw dots
 
   CANVAS.workspace = [
       0,
@@ -178,6 +180,9 @@ async function setupMechanicalTurkTask(){
   console.log('representative_trial', representative_trial)
 
   var representative_image = representative_trial['sample_image']
+  DEVICE.source_image_height = representative_image.height
+  DEVICE.source_image_width = representative_image.width
+
   DEVICE.source_ImageWidthPixels = representative_image.width
   DEVICE.source_ImageHeightPixels = representative_image.height
 

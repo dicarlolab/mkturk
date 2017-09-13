@@ -151,12 +151,13 @@ async function setupTabletTask(){
 
   refreshScreenTSequenceSettings(TS.EXPERIMENT[TS.state.current_stage_index]); 
 
+  var devicePixelRatio = window.devicePixelRatio || 1
+
   for (var i = 0; i <= CANVAS.names.length-1; i++) {
       setupCanvas(CANVAS.obj[CANVAS.names[i]]);
-  }
-  if (DEVICE.DevicePixelRatio !== 1){
-      scaleCanvasforHiDPI(CANVAS.obj.sample);
-      scaleCanvasforHiDPI(CANVAS.obj.test);
+      if(devicePixelRatio != 1){
+        scaleCanvasforHiDPI(CANVAS.obj[CANVAS.names[i]]);
+      }
   }
 
   CANVAS.workspace = [

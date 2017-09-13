@@ -31,8 +31,8 @@ class MouseClickRewardMap{
             console.log(event)
             _this.handleMouseEvent(event)
         }  
-
-        this.add_event_listener()
+        this.attached = false 
+        
     } 
 
     handleMouseEvent(event){
@@ -42,6 +42,7 @@ class MouseClickRewardMap{
         var t = performance.now()
         var x = event.pageX
         var y = event.pageY
+
         for (var box_index = 0; box_index<this.boundingBoxes.length; box_index++){
             if (x <= this.boundingBoxes[box_index].x[1] 
                 && x >= this.boundingBoxes[box_index].x[0]
@@ -61,6 +62,10 @@ class MouseClickRewardMap{
     }   
 
     create_reward_map_with_bounding_boxes(boundingBoxes, reward_amounts){
+        if(this.attached == false){
+            this.add_event_listener()
+            this.attached = true 
+        }
         this.boundingBoxes = boundingBoxes
         this.reward_amounts = reward_amounts
         
@@ -104,7 +109,8 @@ class MouseMoveRewardMap{
             _this.handleMouseEvent(event)
         }  
 
-        this.add_event_listener()
+        this.attached = false 
+        
     } 
 
     handleMouseEvent(event){
@@ -133,6 +139,11 @@ class MouseMoveRewardMap{
     }   
 
     create_reward_map_with_bounding_boxes(boundingBoxes, reward_amounts){
+        if(this.attached == false){
+            console.log('Attached mouse move listener for rewardmap')
+            this.add_event_listener()
+            this.attached = true 
+        }
         this.boundingBoxes = boundingBoxes
         this.reward_amounts = reward_amounts
         
@@ -149,7 +160,6 @@ class MouseMoveRewardMap{
         return outcome
     }
     add_event_listener(){
-        console.log('Attached event listener')
         window.addEventListener('mousemove', this._listener)
     }
 
