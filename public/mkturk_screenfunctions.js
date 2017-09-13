@@ -333,31 +333,8 @@ class ScreenDisplayer{
 		context.fill();
 	}
 	async bufferFixationScreenUsingDot(gridindex){
-		funcreturn = await drawGridDots()
-		var boundingBoxesFixation = [{}] // todo: move out of here 
-		boundingBoxesFixation[0]['x']= [0, 2]
-		boundingBoxesFixation[0]['y'] = [0, 2]
 
-		return boundingBoxesFixation
-
-		var dot_pixelradius = 10
-		var color = "white"
-		var context=CANVAS.obj.touchfix.getContext('2d');
-		context.clearRect(0,0,window.innerWidth, window.innerHeight);
-
-		// Draw fixation dot
-		var rad = dot_pixelradius;
-		for (var i = 0; i < DEVICE.XGridCenter.length; i++){
-			var xcent = DEVICE.XGridCenter[i];
-			var ycent = DEVICE.YGridCenter[i];
-			context.beginPath();
-			context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
-			context.fillStyle=color; 
-			context.fill();
-		}
-		
-
-		var dot_pixelradius = CANVAS.FixationRadius
+		var dot_pixelradius = PLAYSPACE._gridwidth/2.5
 		var color = "white"
 
 		var context=CANVAS.obj.touchfix.getContext('2d');
@@ -365,8 +342,8 @@ class ScreenDisplayer{
 
 		// Draw fixation dot
 		var rad = dot_pixelradius;
-		var xcent = DEVICE.XGridCenter[gridindex];
-		var ycent = DEVICE.YGridCenter[gridindex];
+		var xcent = PLAYSPACE._xgridcent[gridindex];
+		var ycent = PLAYSPACE._ygridcent[gridindex];
 		context.beginPath();
 		context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
 		context.fillStyle=color; 
@@ -374,8 +351,8 @@ class ScreenDisplayer{
 
 		// Define (rectangular) boundaries of fixation
 		var boundingBoxesFixation = [{}] // todo: move out of here 
-		boundingBoxesFixation[0]['x']= [xcent-rad+CANVAS.offsetleft, xcent+rad+CANVAS.offsetleft]
-		boundingBoxesFixation[0]['y']= [ycent-rad+CANVAS.offsettop, ycent+rad+CANVAS.offsettop]
+		boundingBoxesFixation[0]['x']= [xcent-rad+CANVAS.offsetleft+PLAYSPACE.leftbound, xcent+rad+CANVAS.offsetleft+PLAYSPACE.leftbound]
+		boundingBoxesFixation[0]['y']= [ycent-rad+CANVAS.offsettop+PLAYSPACE.topbound, ycent+rad+CANVAS.offsettop+PLAYSPACE.topbound]
 
 		return boundingBoxesFixation
 	}
@@ -393,10 +370,7 @@ class ScreenDisplayer{
 		// Draw image 
 
 		// todo: make general 'buffer' functions without hardcoding canvas references
-
-		funcreturn = await drawGridDots()
-		return
-		funcreturn = await renderImageOnCanvasLiterally(image, gridindex, canvasobj)
+		funcreturn = await renderImageAndScaleIfNecessary(image, gridindex, canvasobj)
 		
 	
 		// Define (rectangular) boundaries of fixation

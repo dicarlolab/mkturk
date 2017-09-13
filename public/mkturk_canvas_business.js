@@ -222,6 +222,16 @@ async function renderImageAndScaleIfNecessary(image, grid_index, canvasobj){
   // ctx.drawImage(image, destination_x, destination_y, dWidth, dHeight);
   context.drawImage(image, original_left_start, original_top_start, PLAYSPACE._gridwidth, PLAYSPACE._gridheight)
 
+  // todo: return bounding boxes
+
+  var xbound=[original_left_start, original_left_start+PLAYSPACE._gridwidth];
+  var ybound=[original_top_start, original_top_start+PLAYSPACE._gridheight];
+
+  xbound[0]=xbound[0]+CANVAS.offsetleft+PLAYSPACE.leftbound;
+  xbound[1]=xbound[1]+CANVAS.offsetleft+PLAYSPACE.leftbound;
+  ybound[0]=ybound[0]+CANVAS.offsettop+PLAYSPACE.topbound;
+  ybound[1]=ybound[1]+CANVAS.offsettop+PLAYSPACE.topbound;
+  return [xbound, ybound]
 }
 
 async function renderImageOnCanvasLiterally(image, grid_index, canvasobj){
@@ -272,7 +282,7 @@ async function renderImageOnCanvasLiterally(image, grid_index, canvasobj){
   // For drawing cropped regions of an image in the canvas, see alternate input argument structures,
   // See: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
   
-  // Bounding boxes of images on canvas
+  // Bounding boxes of images on canvas; in units of window
   xbound=[xleft, xleft+wd];
   ybound=[ytop, ytop+ht];
 

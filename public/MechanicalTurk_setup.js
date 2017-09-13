@@ -157,13 +157,13 @@ async function setupMechanicalTurkTask(){
 
   refreshScreenTSequenceSettings(TS.EXPERIMENT[TS.state.current_stage_index]); 
 
-
-  setupPlayspace(TS.EXPERIMENT[0]['NGridPoints'] ) // sets up PLAYSPACE based on window dimensions
+  var ngridpoints = TS.EXPERIMENT[0]['NGridPoints'] 
+  setupPlayspace(ngridpoints) // sets up PLAYSPACE based on window dimensions
   for (var i = 0; i <= CANVAS.names.length-1; i++) {
       setupCanvas(CANVAS.obj[CANVAS.names[i]]);
   }
 
-  drawGridDots()
+  await drawGridDots()
 
   // Draw dots
 
@@ -213,7 +213,7 @@ async function setupMechanicalTurkTask(){
 
   console.log('raw regex', results) // because calling it in this function performs the regex on the amazon url, not the iframe url. why?
 
-  var tutorial_image = await SIO.load_image('tutorial_images/whitenoise_256x256.png')
+  var tutorial_image = await SIO.load_image('tutorial_images/TutorialMouseOver.png')
 
   console.log('hello')
   
