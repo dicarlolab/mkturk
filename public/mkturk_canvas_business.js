@@ -14,13 +14,18 @@ function _dpr(){
   var devicePixelRatio = window.devicePixelRatio || 1
   return devicePixelRatio
 }
+
+
 function setupPlayspace(ngridpoints){
   var funcreturn = windowSize()
   var windowHeight = funcreturn[0]
   var windowWidth = funcreturn[1]
     // Reference: https://www.w3schools.com/js/js_window.asp
 
-    var min_dimension = Math.round(Math.min(windowHeight, windowWidth))
+  var MARGIN_PROPORTION= 0.1
+    var min_screen_dimension = Math.round(Math.min(windowHeight, windowWidth))*(1-MARGIN_PROPORTION)
+    var MIN_REQUIRED_PIXELS = 768 // todo: move into experimenter settings
+    var min_dimension = Math.max(min_screen_dimension, MIN_REQUIRED_PIXELS)
 
 
 
@@ -103,7 +108,8 @@ function setupCanvas(canvasobj){
     // Center canvas 
     // https://stackoverflow.com/questions/5127937/how-to-center-canvas-in-html5
     canvasobj.style.padding = 0
-    canvasobj.style.margin = 'auto'
+
+    canvasobj.style.margin = '0 auto'
     canvasobj.style.display="block"; //visible
     canvasobj.style.position = 'absolute'
     canvasobj.style.top = 0
@@ -116,6 +122,10 @@ function setupCanvas(canvasobj){
     canvasobj.style.height=PLAYSPACE.height+'px';
 
 
+
+    // Remove overflow?
+    canvasobj.style.overflow = 'hidden'
+    //https://www.w3schools.com/cssref/pr_pos_overflow.asp
 
     context.imageSmoothingEnabled = false // then nearest neighbor?
 
