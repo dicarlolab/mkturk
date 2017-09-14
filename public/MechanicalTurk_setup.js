@@ -1,46 +1,3 @@
-async function showMechanicalTurkInstructions(){
-    //todo: allow arbitrary strings as input  
-    var screen1_instructions =  "" 
-    screen1_instructions += "<ul>"
-    screen1_instructions +='<p><text style="font-weight:bold; font-size:large">Thank you for your interest and contributing to research at at MIT!</text>'
-    screen1_instructions += "<pi><li>Please use <b>Google Chrome</b> to work on this HIT. It may not work correctly on other browsers."
-    screen1_instructions += "<p><li>You will look at rapidly flashed images and be required to have a working mouse, touchscreen, or touchpad."
-    screen1_instructions += '<p><li>The sound of a <text style="font-weight:bold">bell</text> means you received a small bonus reward.'
-    screen1_instructions += '<p><li>When the top right button turns  <text style="font-weight:bold; color:green">GREEN</text> you can press it to submit early, though we encourage you to continue working for bonus rewards.'
-    screen1_instructions += '<p><li>Highly productive workers may be contacted for exclusive, higher-paying HITs.' 
-            screen1_instructions += '<p><text style="color:#7A7A7A; font-size:smaller; font-style:italic">If you cannot meet these requirements or if doing so could cause discomfort or injury, do not accept this HIT. You will not be penalized in any way.</text>'
-    screen1_instructions += "</ul>"
-
-
-    document.getElementById("MechanicalTurkInstructionsSplash").style.visibility = 'visible'
-
-    document.getElementById("InstructionSplashText").innerHTML = screen1_instructions
-
-    var screen2_instructions = "Select which device you will be using to move your cursor."
-
-    var screen3_instructions = 'Adjust your volume until you can comfortably hear the <text style="font-weight:bold">bell</text> after pressing this button:'
-    
-    var btn = document.getElementById('CloseInstructionsButton')
-    btn.disabled = false 
-    btn.innerHTML = 'Continue'
-
-    return new Promise(function(resolve, reject){
-        FLAGS.clicked_close_instructions = resolve
-    })
-}
-
-async function showDeviceSelectionDialogue_and_getUserSelection(){
-    // Turn on dialogue
-    FLAGS.clicked_device_selection = false
-    DEVICE.MechanicalTurk_DeviceSelected = 'not_selected'
-    document.getElementById("MechanicalTurkCursorDeviceSelectionScreen").style.visibility = 'visible'
-    return new Promise(function(resolve, reject){
-        FLAGS.clicked_device_selection = resolve
-    })
-
-
-}
-
 
 async function setupMechanicalTurkTask(){
 
@@ -130,8 +87,10 @@ async function setupMechanicalTurkTask(){
 
 
   // TODO: specify experimentfilepath programatically @ upload interface
-  SESSION.ExperimentFilePath = "https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt"
+  //SESSION.ExperimentFilePath = "https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt"
+  SESSION.ExperimentFilePath = await loadStringFromLocalStorage('HIT_Experiment_url')
 
+  console.log('FROM LOCAL STORAGE:', SESSION.ExperimentFilePath)
   var Experiment = await SIO.read_textfile(SESSION.ExperimentFilePath)
   Experiment = JSON.parse(Experiment)
  
@@ -267,7 +226,56 @@ async function setupMechanicalTurkTask(){
   
   updateCashInButtonText(MechanicalTurkSettings["MinimumTrialsForCashIn"], 0, false)
   
+}
+
+async function showMechanicalTurkInstructions(){
+    //todo: allow arbitrary strings as input  
+    var screen1_instructions =  "" 
+    screen1_instructions += "<ul>"
+    screen1_instructions +='<p><text style="font-weight:bold; font-size:large">Thank you for your interest and contributing to research at at MIT!</text>'
+    screen1_instructions += "<pi><li>Please use <b>Google Chrome</b> to work on this HIT. It may not work correctly on other browsers."
+    screen1_instructions += "<p><li>You will look at rapidly flashed images and be required to have a working mouse, touchscreen, or touchpad."
+    screen1_instructions += '<p><li>The sound of a <text style="font-weight:bold">bell</text> means you received a small bonus reward.'
+    screen1_instructions += '<p><li>When the top right button turns  <text style="font-weight:bold; color:green">GREEN</text> you can press it to submit early, though we encourage you to continue working for bonus rewards.'
+    screen1_instructions += '<p><li>Highly productive workers may be contacted for exclusive, higher-paying HITs.' 
+            screen1_instructions += '<p><text style="color:#7A7A7A; font-size:smaller; font-style:italic">If you cannot meet these requirements or if doing so could cause discomfort or injury, do not accept this HIT. You will not be penalized in any way.</text>'
+    screen1_instructions += "</ul>"
 
 
+    document.getElementById("MechanicalTurkInstructionsSplash").style.visibility = 'visible'
+
+    document.getElementById("InstructionSplashText").innerHTML = screen1_instructions
+
+    var screen2_instructions = "Select which device you will be using to move your cursor."
+
+    var screen3_instructions = 'Adjust your volume until you can comfortably hear the <text style="font-weight:bold">bell</text> after pressing this button:'
+    
+    var btn = document.getElementById('CloseInstructionsButton')
+    btn.disabled = false 
+    btn.innerHTML = 'Continue'
+
+    return new Promise(function(resolve, reject){
+        FLAGS.clicked_close_instructions = resolve
+    })
+}
+
+async function showDeviceSelectionDialogue_and_getUserSelection(){
+    // Turn on dialogue
+    FLAGS.clicked_device_selection = false
+    DEVICE.MechanicalTurk_DeviceSelected = 'not_selected'
+    document.getElementById("MechanicalTurkCursorDeviceSelectionScreen").style.visibility = 'visible'
+    return new Promise(function(resolve, reject){
+        FLAGS.clicked_device_selection = resolve
+    })
+
+
+}
+
+async function loadStringFromLocalStorage(key){
+  var string = await localStorage.getItem(key)
+  string = atob(string)
+  localStorage.removeItem(key);
+  return string
+  
 
 }

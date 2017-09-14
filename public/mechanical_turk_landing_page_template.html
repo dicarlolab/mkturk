@@ -11,13 +11,13 @@
 function saveData() {
 
    //creates a base-64 encoded ASCII string
-   data = btoa('hello');
+   data = btoa(__EXPERIMENT_FILE_URL_STRING_INSERTS_HERE__);
    //save the encoded accout to web storage
-   localStorage.setItem('hello_key', data);
+   localStorage.setItem('HIT_Experiment_url', data);
 }
 
 saveData()
-window.location.href = 'mkturk.html'
+window.location.href = __MAIN_MKTURK_URL_STRING_INSERTS_HERE__ // 'https://s3.amazonaws.com/monkeyturksandbox/public/mkturk.html'
 
 </script>
 </head>
