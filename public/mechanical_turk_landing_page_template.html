@@ -20,6 +20,8 @@ function saveData() {
 
    console.log(window.location.href)
    // Store information sent by Amazon via the current url 
+
+   // Extract workerId
     var name = 'workerId'
     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
     var regexS = "[\\?&]" + name + "=([^&#]*)";
@@ -27,6 +29,7 @@ function saveData() {
     var results = regex.exec(window.location.href) || ["", "workerId_notFound"] 
     workerId = results[1];
 
+    // Extract assignmentId
     name = 'assignmentId'
   name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
   var regexS = "[\\?&]" + name + "=([^&#]*)";
@@ -35,6 +38,7 @@ function saveData() {
   var results = regex.exec(window.location.href) || ["", ""] 
   assignmentId = results[1];
 
+  // Extract hitId
   name = 'hitId'
   name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
   var regexS = "[\\?&]" + name + "=([^&#]*)";
@@ -53,8 +57,6 @@ function saveData() {
     }
     console.log('Landing screen SubjectSettings', SubjectSettings)
     localStorage.setItem('SubjectSettings_string', btoa(JSON.stringify(SubjectSettings)))
-
-
 }
 
 
