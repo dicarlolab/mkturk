@@ -13,7 +13,10 @@ function saveData() {
    //creates a base-64 encoded ASCII string
    data = btoa(__EXPERIMENT_FILE_URL_STRING_INSERTS_HERE__);
    //save the encoded accout to web storage
-   localStorage.setItem('HIT_Experiment_url', data);
+   localStorage.setItem('Experiment_url', data);
+
+   mechanical_turk_data = btoa(__MECHANICALTURK_SETTINGS_STRING_INSERTS_HERE__, data);
+   localStorage.setItem('HIT_settings_string', mechanical_turk_data)
 }
 
 saveData()

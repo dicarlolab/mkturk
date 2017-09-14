@@ -58,14 +58,8 @@ async function setupMechanicalTurkTask(){
     })
   });
 
-
-  // todo: load subject settings from URL 
-  MechanicalTurkSettings = {
-    'MinimumTrialsForCashIn':10, 
-    'MAX_SESSION_TRIALS_MECHANICALTURK':100
-  }
   console.log('window.location.href', window.location.href)
-  var name = 'workerID'
+  var name = 'workerId'
   name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
   var regexS = "[\\?&]" + name + "=([^&#]*)";
   var regex = new RegExp(regexS);
@@ -75,24 +69,28 @@ async function setupMechanicalTurkTask(){
   SubjectSettings = {
     "SubjectID":results,
     "Species": "human",
-    "GridScale": 0.6262,
-    "FixationScale": 0.6262,
-    "SampleScale": 0.6262,
-    "TestScale": 0.6262, 
     }
 
   wdm("Subject settings loaded...")
 
   SESSION.SubjectID = SubjectSettings['SubjectID'];
 
-
-  // TODO: specify experimentfilepath programatically @ upload interface
   //SESSION.ExperimentFilePath = "https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt"
-  SESSION.ExperimentFilePath = await loadStringFromLocalStorage('HIT_Experiment_url')
+  SESSION.ExperimentFilePath = await loadStringFromLocalStorage('Experiment_url')
 
   console.log('FROM LOCAL STORAGE:', SESSION.ExperimentFilePath)
   var Experiment = await SIO.read_textfile(SESSION.ExperimentFilePath)
   Experiment = JSON.parse(Experiment)
+
+
+  MechanicalTurkSettings = await loadStringFromLocalStorage('HIT_settings_string')
+  MechanicalTurkSettings = JSON.parse(MechanicalTurkSettings)
+  console.log('FROM LOCAL STORAGE:', MechanicalTurkSettings)
+  // {
+  //  'MinimumTrialsForCashIn':10, 
+  //  'MAX_SESSION_TRIALS_MECHANICALTURK':100
+  // }
+
  
   TS = new TaskStreamer(undefined, SIO, Experiment, SESSION.SubjectID, false) 
   await TS.build()
@@ -151,12 +149,8 @@ async function setupMechanicalTurkTask(){
   DEVICE.source_ImageWidthPixels = representative_image.width
   DEVICE.source_ImageHeightPixels = representative_image.height
 
-  CANVAS.FixationRadius=(DEVICE.source_ImageWidthPixels/2)*SubjectSettings['FixationScale']*DEVICE.CanvasRatio
 
-  funcreturn = defineImageGrid(TS.EXPERIMENT[0]['NGridPoints'], 
-      DEVICE.source_ImageWidthPixels, 
-      DEVICE.source_ImageHeightPixels, 
-      SubjectSettings['GridScale']);
+  funcreturn = defineImageGrid(TS.EXPERIMENT[0]['NGridPoints']);
 
   xcanvascenter = funcreturn[0]
   ycanvascenter = funcreturn[1]

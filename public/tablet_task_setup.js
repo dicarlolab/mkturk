@@ -176,12 +176,8 @@ async function setupTabletTask(){
   DEVICE.source_ImageWidthPixels = representative_image.width
   DEVICE.source_ImageHeightPixels = representative_image.height
 
-  CANVAS.FixationRadius=(DEVICE.source_ImageWidthPixels/2)*SubjectSettings['FixationScale']*DEVICE.CanvasRatio
 
-  funcreturn = defineImageGrid(TS.EXPERIMENT[0]['NGridPoints'], 
-      DEVICE.source_ImageWidthPixels, 
-      DEVICE.source_ImageHeightPixels, 
-      SubjectSettings['GridScale']);
+  funcreturn = defineImageGrid(TS.EXPERIMENT[0]['NGridPoints']);
 
   xcanvascenter = funcreturn[0]
   ycanvascenter = funcreturn[1]

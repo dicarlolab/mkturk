@@ -57,7 +57,6 @@ class TaskStreamer{
         var EXPERIMENT = this.EXPERIMENT
         this.EXPERIMENT_hash = JSON.stringify(EXPERIMENT).hashCode()
 
-        console.log(this)
         if(this.use_checkpointing == true){
             // Try to load checkpoint from disk, if it exists      
             if(await this.DIO_checkpointing.exists(this.taskstream_checkpoint_path)){
@@ -144,7 +143,6 @@ class TaskStreamer{
         // returns images, reward maps, and other necessary things for runtrial()
         
         var trial_idx = i || this.state['current_stage_trial_number']
-        console.log(trial_idx)
         var trial = this.TQ_sequence[this.state['current_stage_index']].get_trial(trial_idx)
         return trial
     }
@@ -153,9 +151,8 @@ class TaskStreamer{
         var min_trials = this.EXPERIMENT[this.state['current_stage_index']]['MinTrialsCriterion']
         var average_return_criterion = this.EXPERIMENT[this.state['current_stage_index']]['AverageReturnCriterion']
         
-        console.log('transition criterion')
-        console.log(min_trials, average_return_criterion)
-        console.log(this.state['return_sequence_in_stage'])
+        console.log('transition criterion', min_trials, average_return_criterion, this.state['return_sequence_in_stage'])
+   
 
         if(min_trials == undefined 
             || min_trials <=0 
@@ -180,7 +177,6 @@ class TaskStreamer{
     }
 
     update_state(current_trial_outcome){
-        console.log("called update_state")
         // trial_behavior: the just-finished trial's behavior. 
         // called at the end of every trial. 
 

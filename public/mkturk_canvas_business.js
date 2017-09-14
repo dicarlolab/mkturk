@@ -151,7 +151,6 @@ function setupCanvas(canvasobj){
     context.imageSmoothingEnabled = false // then nearest neighbor?
 
 
-    console.log(_ratio, canvasobj)
     //var image_scale_width = DEVICE.gridwidth / DEVICE.source_image_width * _ratio
     //var image_scale_height = DEVICE.gridheight / DEVICE.source_image_height * _ratio
 
