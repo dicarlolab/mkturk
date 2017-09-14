@@ -45,7 +45,6 @@ boundingBoxesChoice = await SD.bufferChoiceScreen(test_images, test_grid_index_p
 
 //============ FIXATION SCREEN ============//
 
-console.log('hello1')
 FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxesFixation, [0])
 ChoiceRewardMap.create_reward_map_with_bounding_boxes(boundingBoxesChoice, choice_reward_amounts)
 

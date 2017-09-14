@@ -10,14 +10,53 @@
 
 function saveData() {
 
-   //creates a base-64 encoded ASCII string
+   // Store url to experiment file .txt
    data = btoa(__EXPERIMENT_FILE_URL_STRING_INSERTS_HERE__);
-   //save the encoded accout to web storage
    localStorage.setItem('Experiment_url', data);
 
+   // Store mechanical turk settings
    mechanical_turk_data = btoa(__MECHANICALTURK_SETTINGS_STRING_INSERTS_HERE__, data);
    localStorage.setItem('HIT_settings_string', mechanical_turk_data)
+
+   console.log(window.location.href)
+   // Store information sent by Amazon via the current url 
+    var name = 'workerId'
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regexS = "[\\?&]" + name + "=([^&#]*)";
+    var regex = new RegExp(regexS);
+    var results = regex.exec(window.location.href) || ["", "workerId_notFound"] 
+    workerId = results[1];
+
+    name = 'assignmentId'
+  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+  var regexS = "[\\?&]" + name + "=([^&#]*)";
+  var regex = new RegExp(regexS);
+  console.log(results)
+  var results = regex.exec(window.location.href) || ["", ""] 
+  assignmentId = results[1];
+
+  name = 'hitId'
+  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+  var regexS = "[\\?&]" + name + "=([^&#]*)";
+  var regex = new RegExp(regexS);
+  console.log(results)
+  var results = regex.exec(window.location.href) || ["", "hitId_not_found"] 
+  hitId = results[1];
+
+
+    SubjectSettings = {
+    "SubjectID":'MechanicalTurker_'+workerId,
+    "Species": "human",
+    "assignmentId": assignmentId,
+    'workerId': workerId,
+    'hitId':hitId
+    }
+    console.log('Landing screen SubjectSettings', SubjectSettings)
+    localStorage.setItem('SubjectSettings_string', btoa(JSON.stringify(SubjectSettings)))
+
+
 }
+
 
 saveData()
 window.location.href = __MAIN_MKTURK_URL_STRING_INSERTS_HERE__ // 'https://s3.amazonaws.com/monkeyturksandbox/public/mkturk.html'

@@ -58,19 +58,10 @@ async function setupMechanicalTurkTask(){
     })
   });
 
-  console.log('window.location.href', window.location.href)
-  var name = 'workerId'
-  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-  var regexS = "[\\?&]" + name + "=([^&#]*)";
-  var regex = new RegExp(regexS);
-  var results = regex.exec(window.location.href) || ["", "workerID_notFound"] 
-  results = results[1];
-
-  SubjectSettings = {
-    "SubjectID":results,
-    "Species": "human",
-    }
-
+  
+  SubjectSettings = await loadStringFromLocalStorage("SubjectSettings_string")
+  SubjectSettings = JSON.parse(SubjectSettings)
+  console.log('FROM LOCAL STORAGE:', SubjectSettings)
   wdm("Subject settings loaded...")
 
   SESSION.SubjectID = SubjectSettings['SubjectID'];
@@ -126,7 +117,6 @@ async function setupMechanicalTurkTask(){
 
   window.addEventListener('resize', onWindowResize)
 
-  //await drawGridDots()
 
   // Draw dots
 
@@ -162,34 +152,23 @@ async function setupMechanicalTurkTask(){
   // Start in testing mode
   wdm("Running test mode...")
 
-  name = 'assignmentId'
-  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-  var regexS = "[\\?&]" + name + "=([^&#]*)";
-  var regex = new RegExp(regexS);
-  console.log(results)
-  var results = regex.exec(window.location.href) || ["", ""] 
-  results = results[1];
-
-  console.log('raw regex', results) // because calling it in this function performs the regex on the amazon url, not the iframe url. why?
-
+  
   var tutorial_image = await SIO.load_image('tutorial_images/TutorialMouseOver.png')
 
   console.log('hello')
   
   
-  var skip_preview_mode = false
+  var skip_preview_mode = false // strictly for debugging purposes only 
 
   if(skip_preview_mode != true){
-    if(results == 'ASSIGNMENT_ID_NOT_AVAILABLE' || results == '' ){
+    if(SubjectSettings['assignmentId'] == 'ASSIGNMENT_ID_NOT_AVAILABLE' || SubjectSettings['assignmentId'] == '' ){
+      console.log('RUNNING IN PREVIEW MODE')
       // If in preview mode on MechanicalTurk
       toggleElement(1, 'PreviewModeSplash')
 
       var _last_gridindex = -1
 
       while(true){
-        
-
-        console.log('RUNNING IN PREVIEW MODE')
 
         var tutorial_grid_index = Math.floor(Math.random() * (DEVICE.XGridCenter.length))
         while (tutorial_grid_index == _last_gridindex || tutorial_grid_index == 5){
