@@ -120,11 +120,14 @@ class MouseMoveRewardMap{
         var t = performance.now()
         var x = event.pageX - PLAYSPACE.leftbound // In PLAYSPACE units. 
         var y = event.pageY - PLAYSPACE.topbound
+        console.log(x, y, t)
         for (var box_index = 0; box_index<this.boundingBoxes.length; box_index++){
+
             if (x <= this.boundingBoxes[box_index].x[1] 
                 && x >= this.boundingBoxes[box_index].x[0]
                 && y <= this.boundingBoxes[box_index].y[1] 
                 && y >= this.boundingBoxes[box_index].y[0]){
+                console.log('hit non null region')
 
                 var outcome = {
                     "x":x, 
@@ -139,6 +142,7 @@ class MouseMoveRewardMap{
     }   
 
     create_reward_map_with_bounding_boxes(boundingBoxes, reward_amounts){
+        console.log(boundingBoxes)
         // boundingBoxes in units of PLAYSPACE
         if(this.attached == false){
             console.log('Attached mouse move listener for rewardmap')

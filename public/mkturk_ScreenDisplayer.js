@@ -7,9 +7,18 @@ class ScreenDisplayer{
         this._epoch_canvases = [] // key: i_epoch. key: i_screen. values: canvas, 
         this.canvas_sequences = [] // key: i_epoch
         this.time_sequences = [] // key: i_epoch
-        this.canvas_front = this.createCanvas('canvas_blank')
-        this.renderBlank(this.canvas_front)
-        this.canvas_front.style['z-index'] = 3
+
+        this.canvas_blank = this.createCanvas('canvas_blank')
+        this.renderBlank(this.canvas_blank)
+        this.canvas_blank.style['z-index'] = 3
+
+        this.canvas_front = this.canvas_blank
+
+        this.canvas_reward = this.createCanvas('canvas_reward')
+        this.canvas_punish = this.createCanvas('canvas_punish')
+
+        this.renderReward(this.canvas_reward)
+        this.renderPunish(this.canvas_punish) 
     }
 
     getEpochCanvas(i_epoch, i_screen){
@@ -60,17 +69,30 @@ class ScreenDisplayer{
         this.time_sequences[i_epoch] = time_sequence
     }
 
-    async bufferRewardSequence(msec_duration){
-        // Prebaked sequence
 
+    async displayReward(msec_duration){
+        var frame_unix_timestamps = await this.displayScreenSequence([this.canvas_blank, this.canvas_reward, this.canvas_blank],[0, 50, 50+msec_duration,])
+        return frame_unix_timestamps
+    }
+    async displayPunish(msec_duration){
+        var frame_unix_timestamps = await this.displayScreenSequence([this.canvas_blank, this.canvas_punish, this.canvas_blank],[0, 50, 50+msec_duration])
+
+
+        return frame_unix_timestamps
     }
 
-    async bufferPunishSequence(msec_duration){
-        // Prebaked sequence
-    }
-
-    displayScreenSequence(i_epoch){
+    async displayEpoch(i_epoch){
         console.log('displayScreenSequence', i_epoch)
+        var sequence = this.canvas_sequences[i_epoch]
+        var tsequence = this.time_sequences[i_epoch]
+        var frame_unix_timestamps = await this.displayScreenSequence(sequence, tsequence)
+        return frame_unix_timestamps
+
+    }
+
+
+
+    displayScreenSequence(sequence, tsequence){
         var resolveFunc
         var errFunc
         var p = new Promise(function(resolve,reject){
@@ -82,10 +104,6 @@ class ScreenDisplayer{
         var start = null;
         var frame_unix_timestamps = []
 
-        
-
-        var sequence = this.canvas_sequences[i_epoch]
-        var tsequence = this.time_sequences[i_epoch]
 
         var prev_canvasobj = this.canvas_front
 
@@ -102,10 +120,10 @@ class ScreenDisplayer{
                 console.log(current_frame_index)
                 frame_unix_timestamps[current_frame_index] = performance.now() //in milliseconds, rounded to nearest hundredth of a millisecond
                 // Move canvas in front
-                var curr_canvasobj=sequence[current_frame_index]
+                var curr_canvasobj = sequence[current_frame_index]
                 prev_canvasobj.style.zIndex="0";
                 curr_canvasobj.style.zIndex="100";
-                _this.canvas_front = sequence[current_frame_index];
+                prev_canvasobj = curr_canvasobj;
 
                 frames_left_to_animate--
                 current_frame_index++;
@@ -133,14 +151,21 @@ class ScreenDisplayer{
 
     renderReward(canvasobj){
         var context=canvasobj.getContext('2d');
-        context.fillStyle="green";
+        context.fillStyle="#00cc00";
         context.globalAlpha = 0.5
-        context.fillRect(xcanvascenter-200,ycanvascenter-200,400,400);
+        var width = canvasobj.width
+        var height = canvasobj.height
+        context.fillRect(width/2 - 200,height/2 - 200, 400,400);
+
+        context.fill()
     }
 
     renderPunish(canvasobj){
         var context=canvasobj.getContext('2d');
-        context.rect(xcanvascenter-200,ycanvascenter-200,400,400);
+        var width = canvasobj.width
+        var height = canvasobj.height
+
+        context.fillRect(width/2 - 200,height/2 - 200, 400,400);
         context.fillStyle="black";
         context.fill();
     }

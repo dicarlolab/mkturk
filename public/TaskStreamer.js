@@ -137,13 +137,14 @@ class TaskStreamer{
         this._initial_state = undefined
         this._debug_mode = false
     }
-    makeEpoch(durations, images, grid_placements, reward_amounts, boundingBoxes){
+    makeEpoch(durations, images, grid_placements, boundingBoxes,reward_amounts, msec_timeout){
         var epoch = {}
         epoch['msec_on'] = durations // List of durations
         epoch['images'] = images // List of list of images
         epoch['grid_placements'] = grid_placements // list of lists
         epoch['reward_amounts'] = reward_amounts // list of award amounts
         epoch['boundingBoxes'] = boundingBoxes // list of bounding box objects
+        epoch['msec_timeout'] = msec_timeout
         return epoch 
     }
     async get_trial(i){
@@ -165,19 +166,22 @@ class TaskStreamer{
         var image2 = await this.IB.get_by_name("https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Btoken.png")
 
         var boundingBoxesFixation = [{}] // todo: move out of here 
-        boundingBoxesFixation[0]['x']= [PLAYSPACE._xgridcent[0], PLAYSPACE._xgridcent[0]+10]
-        boundingBoxesFixation[0]['y']= [PLAYSPACE._ygridcent[0], PLAYSPACE._ygridcent[0]+10]
+        boundingBoxesFixation[0]['x']= [PLAYSPACE._xgridcent[0], PLAYSPACE._xgridcent[0]+100]
+        boundingBoxesFixation[0]['y']= [PLAYSPACE._ygridcent[0], PLAYSPACE._ygridcent[0]+100]
 
         var trial = []
 
+        var msec_timeout = 5000
+
+
         trial[0] = this.makeEpoch([500], 
             [[image1, image1]], 
-            [[2, 8]],
-            [[boundingBoxesFixation]],
-            [[1]]
+            [[2, 0]],
+            boundingBoxesFixation,
+            [[1]], 
+            msec_timeout
             )
 
-        console.log('nutrial', trial)
         return trial
     }
 

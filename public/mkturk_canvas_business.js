@@ -143,7 +143,10 @@ function setupCanvas(canvasobj){
     canvasobj.style.width=PLAYSPACE.width+'px'; // Set browser canvas display style to be workspace_width
     canvasobj.style.height=PLAYSPACE.height+'px';
 
-
+    // Draw blank gray 
+    context.clearRect(0,0,canvasobj.width,canvasobj.height);
+    context.fillStyle="#7F7F7F"; 
+    context.fill()
 
     // Remove overflow?
     //https://www.w3schools.com/cssref/pr_pos_overflow.asp

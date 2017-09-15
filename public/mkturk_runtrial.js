@@ -35,7 +35,7 @@ var _boundingBoxes
 
 var RewardMaps = []
 for (var i_epoch = 0; i_epoch<_TRIAL.length; i_epoch++){
-    RewardMaps[i_epoch] = new MouseMoveRewardMap() // todo: move into mkturk construction
+    RewardMaps[i_epoch] = new MouseMoveRewardMap() // todo: move into mkturk construction so it is done once
 }
 
 
@@ -61,7 +61,7 @@ var _msec_timeout
 
 for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
     var _msec_timeout = _TRIAL[i_epoch]['msec_timeout']
-    display_timestamps[i_epoch] = await SD.displayScreenSequence(i_epoch)
+    display_timestamps[i_epoch] = await SD.displayEpoch(i_epoch)
     user_outcomes[i_epoch] = await Promise.race([
                                     RewardMaps[i_epoch].Promise_wait_until_active_response_then_return_reinforcement(), 
                                     choiceTimeOut(_msec_timeout)]) 
@@ -75,6 +75,7 @@ for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
 
 }
 
+
 // Record results of trial 
 var current_trial_outcome = []
 for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
@@ -82,6 +83,7 @@ for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
     current_trial_outcome[i_epoch]['display_timestamps'] = display_timestamps[i_epoch]
     current_trial_outcome[i_epoch]['user_outcomes'] = user_outcomes[i_epoch]
 }
+console.log('returning')
 return 
 //TS.update_state(current_trial_outcome)
 //TS.package_behavioral_data() // Handles packaging behavior data however way is intuitive for the task

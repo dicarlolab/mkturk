@@ -27,7 +27,7 @@ class MonetaryReinforcer{
 
             SP.playSound(2);
 
-            var p1 = SD.displayReward()// (CANVAS.sequencepost,CANVAS.tsequencepost)
+            var p1 = SD.displayReward(100)// (CANVAS.sequencepost,CANVAS.tsequencepost)
             await Promise.all([p1])
             
         }
@@ -36,7 +36,7 @@ class MonetaryReinforcer{
             //CANVAS.sequencepost[1] = "punish";
             //CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+TS.EXPERIMENT[TS.state.current_stage_index]['PunishTimeOut'];
             SP.playSound(3);
-            var p1 = await SD.displayPunish() // (CANVAS.sequencepost,CANVAS.tsequencepost);
+            var p1 = await SD.displayPunish(TS.EXPERIMENT[TS.state.current_stage_index]['PunishTimeOut']) // (CANVAS.sequencepost,CANVAS.tsequencepost);
         }
     }
 
