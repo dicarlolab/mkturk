@@ -62,9 +62,17 @@ var _msec_timeout
 for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
     var _msec_timeout = _TRIAL[i_epoch]['msec_timeout']
     display_timestamps[i_epoch] = await SD.displayEpoch(i_epoch)
-    user_outcomes[i_epoch] = await Promise.race([
-                                    RewardMaps[i_epoch].Promise_wait_until_active_response_then_return_reinforcement(), 
-                                    choiceTimeOut(_msec_timeout)]) 
+
+    if(_msec_timeout > 0){
+        var p = Promise.race([
+                            RewardMaps[i_epoch].Promise_wait_until_active_response_then_return_reinforcement(), 
+                            choiceTimeOut(_msec_timeout)]) 
+    }
+    else{
+        var p = RewardMaps[i_epoch].Promise_wait_until_active_response_then_return_reinforcement()
+    }
+
+    user_outcomes[i_epoch] = await p
     _nreward = user_outcomes[i_epoch]['reinforcement']
 
     reinforcement_onset = performance.now()

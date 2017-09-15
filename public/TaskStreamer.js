@@ -171,7 +171,7 @@ class TaskStreamer{
 
         var trial = []
 
-        var msec_timeout = 5000
+        var msec_timeout = 0
 
 
         trial[0] = this.makeEpoch([500], 

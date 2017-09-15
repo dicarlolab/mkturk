@@ -10,7 +10,7 @@ class ScreenDisplayer{
 
         this.canvas_blank = this.createCanvas('canvas_blank')
         this.renderBlank(this.canvas_blank)
-        this.canvas_blank.style['z-index'] = 3
+        this.canvas_blank.style['z-index'] = 10
 
         this.canvas_front = this.canvas_blank
 
@@ -133,7 +133,6 @@ class ScreenDisplayer{
                 window.requestAnimationFrame(updateCanvas);
             }
             else{
-        
                 resolveFunc(frame_unix_timestamps);
             }
         }
@@ -146,6 +145,7 @@ class ScreenDisplayer{
         var context=canvasobj.getContext('2d');
         context.fillStyle="#7F7F7F";
         context.fillRect(0,0,canvasobj.width,canvasobj.height);
+        context.fill()
     }
 
 

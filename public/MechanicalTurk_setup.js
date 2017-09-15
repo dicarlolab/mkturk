@@ -40,15 +40,6 @@ async function setupMechanicalTurkTask(){
   UX = new MechanicalTurk_UX_poller()
 
 
-  DEVICE.DevicePixelRatio = window.devicePixelRatio || 1;
-  var visiblecanvasobj = CANVAS.obj[CANVAS.front];
-  var visiblecontext = visiblecanvasobj.getContext("2d");
-  backingStoreRatio = visiblecontext.webkitBackingStorePixelRatio ||
-                              visiblecontext.mozBackingStorePixelRatio ||
-                              visiblecontext.msBackingStorePixelRatio ||
-                              visiblecontext.oBackingStorePixelRatio ||
-                              visiblecontext.backingStorePixelRatio || 1;
-  DEVICE.CanvasRatio = backingStoreRatio/DEVICE.DevicePixelRatio
 
   //Monitor Battery - from: http://www.w3.org/TR/battery-status/
   navigator.getBattery().then(function(batteryobj){
@@ -175,23 +166,13 @@ async function setupMechanicalTurkTask(){
   var ngridpoints = TS.EXPERIMENT[0]['NGridPoints'] 
   setupPlayspace(ngridpoints) // sets up PLAYSPACE based on window dimensions
 
-  for (var i = 0; i <= CANVAS.names.length-1; i++) {
-      setupCanvas(CANVAS.obj[CANVAS.names[i]]);
-  }
 
   SD = new ScreenDisplayer()
-
+  
   window.addEventListener('resize', onWindowResize)
 
 
   // Draw dots
-
-  CANVAS.workspace = [
-      0,
-      0,
-      CANVAS.obj["touchfix"].width,
-      CANVAS.obj["touchfix"].height
-  ]
 
 
   // Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image.
