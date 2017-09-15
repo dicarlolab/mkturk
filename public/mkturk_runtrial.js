@@ -1,7 +1,6 @@
 //============= AWAIT LOAD PARAMS =============//
 async function runtrial(){
 
-// todo: make into object so we can create a 'tutorial' state machine for previewing HITs
 
 // Global references: 
 // TRIAL_NUMBER_FROM_SESSION_START
@@ -16,11 +15,49 @@ async function runtrial(){
 // DWr
 // TERMINAL_STATE
 
+
+// todo: move all trial logic to TaskStreamer 
+
+
+
 writeToTrialCounterDisplay(TRIAL_NUMBER_FROM_SESSION_START)
 
 
 _TRIAL = await TS.get_trial()
-console.log(_TRIAL)
+// screen_name
+// msec_on
+// images
+// grid_placements
+// reward_amounts
+
+// Prebuffer 
+var _screen_name 
+var _msec_on
+var _images
+var _grid_placements
+var _reward_amounts 
+
+var _boundingBoxesTerminal
+for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
+    _msec_on = _TRIAL[i_epoch]['msec_on'] // Can be -1 for indefinitely; otherwise 
+    _images = _TRIAL[i_epoch]['images']
+    _grid_placements = _TRIAL[i_epoch]['grid_placements']
+    _reward_amounts = _TRIAL[i_epoch]['reward_amounts']
+
+    // Buffer canvas
+    _boundingBoxesTerminal = SD.bufferScreens(i_epoch, _images, _grid_placements, _msec_on)
+    
+    // Buffer reward maps
+    RewardMaps[i_epoch].create_reward_map_with_bounding_boxes(_boundingBoxesTerminal, _reward_amounts)
+}
+
+display_timestamps = []
+user_outcomes = []
+for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
+    display_timestamps[i_epoch] = await SD.displayScreenSequence(i_epoch)
+    user_outcomes[i_epoch] = await RewardMaps[i_epoch].Promise_wait_until_active_response_then_return_reinforcement()
+    await R.deliver_reinforcement(user_outcomes[i_epoch]['reinforcement'])
+}
 
 
 SD.renderReward(CANVAS.obj.reward);

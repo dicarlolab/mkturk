@@ -1,0 +1,13 @@
+[
+    {"StageNickname":"ExampleStage0",
+    "MinTrialsCriterion":0, 
+    "AverageReturnCriterion":0, 
+    "probability_repeat_trial_if_wrong":0,
+    "samplingRNGseed":0,
+    "ImageBagsSampleMetaPaths":["meta1.txt", "meta2.txt"],
+    "ImageBagsTestMetaPaths":["meta3.txt", "meta4.txt"], 
+    "SampleGridIndex":5, 
+    "TestGridIndex":[2, 8], 
+    "ObjectGridMapping":[2, 8], 
+    "NGridPoints":3}
+]
