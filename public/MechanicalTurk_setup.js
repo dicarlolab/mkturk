@@ -158,6 +158,7 @@ async function setupMechanicalTurkTask(){
     // Initialize components of task
     FixationRewardMap = new MouseMoveRewardMap()
     ChoiceRewardMap = new MouseMoveRewardMap()
+    RewardMap = new MouseMoveRewardMap(); 
     
     R = new MonetaryReinforcer()
 
@@ -168,7 +169,7 @@ async function setupMechanicalTurkTask(){
 
 
   SD = new ScreenDisplayer()
-  
+
   window.addEventListener('resize', onWindowResize)
 
 

@@ -1,4 +1,3 @@
-//============= AWAIT LOAD PARAMS =============//
 async function runtrial(){
 
 
@@ -16,10 +15,6 @@ async function runtrial(){
 // TERMINAL_STATE
 
 
-// todo: move all trial logic to TaskStreamer 
-
-
-
 writeToTrialCounterDisplay(TRIAL_NUMBER_FROM_SESSION_START)
 
 
@@ -33,23 +28,16 @@ var _grid_placements
 var _reward_amounts 
 var _boundingBoxes 
 
-var RewardMaps = []
-for (var i_epoch = 0; i_epoch<_TRIAL.length; i_epoch++){
-    RewardMaps[i_epoch] = new MouseMoveRewardMap() // todo: move into mkturk construction so it is done once
-}
+
 
 
 for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
     _msec_on = _TRIAL[i_epoch]['msec_on'] // Can be -1 for indefinitely; otherwise 
     _images = _TRIAL[i_epoch]['images'] // There are canonical references for certain kinds of images that html can generate, like a white dot
     _grid_placements = _TRIAL[i_epoch]['grid_placements']
-    _reward_amounts = _TRIAL[i_epoch]['reward_amounts']
-    _boundingBoxes = _TRIAL[i_epoch]['boundingBoxes']
+    
     // Buffer canvas
     await SD.bufferScreenSequence(i_epoch, _images, _grid_placements, _msec_on)
-    
-    // Buffer reward maps
-    RewardMaps[i_epoch].create_reward_map_with_bounding_boxes(_boundingBoxes, _reward_amounts)
 }
 
 var display_timestamps = []
@@ -63,20 +51,24 @@ for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
     var _msec_timeout = _TRIAL[i_epoch]['msec_timeout']
     display_timestamps[i_epoch] = await SD.displayEpoch(i_epoch)
 
+    _reward_amounts = _TRIAL[i_epoch]['reward_amounts']
+    _boundingBoxes = _TRIAL[i_epoch]['boundingBoxes']
+    RewardMap.create_reward_map_with_bounding_boxes(_boundingBoxes, _reward_amounts)
+
+
     if(_msec_timeout > 0){
         var p = Promise.race([
-                            RewardMaps[i_epoch].Promise_wait_until_active_response_then_return_reinforcement(), 
+                            RewardMap.Promise_wait_until_active_response_then_return_reinforcement(), 
                             choiceTimeOut(_msec_timeout)]) 
     }
     else{
-        var p = RewardMaps[i_epoch].Promise_wait_until_active_response_then_return_reinforcement()
+        var p = RewardMap.Promise_wait_until_active_response_then_return_reinforcement()
     }
 
     user_outcomes[i_epoch] = await p
     _nreward = user_outcomes[i_epoch]['reinforcement']
 
     reinforcement_onset = performance.now()
-
 
     reinforcement_timestamps[i_epoch] = await R.deliver_reinforcement(_nreward)
     reinforcement_end = performance.now()

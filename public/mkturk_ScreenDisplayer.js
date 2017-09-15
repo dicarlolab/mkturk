@@ -4,9 +4,9 @@
 class ScreenDisplayer{
 
     constructor(){
-        this._epoch_canvases = [] // key: i_epoch. key: i_screen. values: canvas, 
-        this.canvas_sequences = [] // key: i_epoch
-        this.time_sequences = [] // key: i_epoch
+        this._epoch_canvases = {} // key: i_epoch. key: i_screen. values: canvas, 
+        this.canvas_sequences = {} // key: i_epoch
+        this.time_sequences = {} // key: i_epoch
 
         this.canvas_blank = this.createCanvas('canvas_blank')
         this.renderBlank(this.canvas_blank)
@@ -21,15 +21,15 @@ class ScreenDisplayer{
         this.renderPunish(this.canvas_punish) 
     }
 
-    getEpochCanvas(i_epoch, i_screen){
-        if(this._epoch_canvases[i_epoch] == undefined){
-            this._epoch_canvases[i_epoch] = []
+    getEpochCanvas(epoch_name, i_screen){
+        if(this._epoch_canvases[epoch_name] == undefined){
+            this._epoch_canvases[epoch_name] = []
         }
-        if(this._epoch_canvases[i_epoch][i_screen] == undefined){
-            this._epoch_canvases[i_epoch][i_screen] = this.createCanvas('canvas_epoch'+i_epoch+'_screen'+i_screen)
+        if(this._epoch_canvases[epoch_name][i_screen] == undefined){
+            this._epoch_canvases[epoch_name][i_screen] = this.createCanvas('canvas_epoch'+i_epoch+'_screen'+i_screen)
         }
 
-        return this._epoch_canvases[i_epoch][i_screen]
+        return this._epoch_canvases[epoch_name][i_screen]
     }
     createCanvas(canvas_id){
         var canvasobj = document.createElement('canvas')
@@ -39,34 +39,41 @@ class ScreenDisplayer{
         return canvasobj 
     }
 
-    async bufferScreenSequence(i_epoch, _images, _grid_placements, _msec_on){
-        var num_screens = _images.length
-        
+    async bufferEpochFrames(
+        epoch_name, 
+        image_sequence,
+        grid_sequence,
+        msec_sequence){
+        // An epoch is a sequence of deterministic frames that is ended by the presence of a RewardMap, which transitions the user to the next epoch after an active response in a non-null region. 
+        // e.g.; a fixation screen is an epoch consisting of one frame, with a RewardMap centered on the fixation dot. 
 
+        var num_frames = image_sequence.length
+        
         var last_event_time = 0
         var time_sequence = []
         var canvas_sequence = []
 
 
 
-        for (var i_screen = 0; i_screen<num_screens; i_screen++){
-            var screen_grid_locs = _grid_placements[i_screen]
-            var screen_images = _images[i_screen]
-            var screen_msec_on = _msec_on[i_screen]
-            var canvasobj = this.getEpochCanvas(i_epoch, i_screen)
+        for (var i_frame = 0; i_frame<num_frames; i_frame++){
+            var frame_grid_locs = grid_sequence[i_frame]
+            var frame_images = image_sequence[i_frame]
+            var frame_msec_on = msec_sequence[i_frame]
+            var canvasobj = this.getEpochCanvas(epoch_name, i_frame)
 
-            for (var i_image = 0; i_image<screen_images.length; i_image++){
-                await renderImageAndScaleIfNecessary(screen_images[i_image], screen_grid_locs[i_image], canvasobj)
+            // Iterate over (potentially multiple) images in this frame
+            for (var i_image = 0; i_image<frame_images.length; i_image++){
+                await renderImageAndScaleIfNecessary(frame_images[i_image], frame_grid_locs[i_image], canvasobj)
             }
 
             
-            time_sequence.push(last_event_time+screen_msec_on)
+            time_sequence.push(last_event_time+frame_msec_on)
             last_event_time = time_sequence[time_sequence.length-1]
             canvas_sequence.push(canvasobj)
         }
 
-        this.canvas_sequences[i_epoch] = canvas_sequence
-        this.time_sequences[i_epoch] = time_sequence
+        this.canvas_sequences[epoch_name] = canvas_sequence
+        this.time_sequences[epoch_name] = time_sequence
     }
 
 
@@ -81,10 +88,10 @@ class ScreenDisplayer{
         return frame_unix_timestamps
     }
 
-    async displayEpoch(i_epoch){
-        console.log('displayScreenSequence', i_epoch)
-        var sequence = this.canvas_sequences[i_epoch]
-        var tsequence = this.time_sequences[i_epoch]
+    async displayEpoch(epoch_name){
+        console.log('displayScreenSequence', epoch_name)
+        var sequence = this.canvas_sequences[epoch_name]
+        var tsequence = this.time_sequences[epoch_name]
         var frame_unix_timestamps = await this.displayScreenSequence(sequence, tsequence)
         return frame_unix_timestamps
 
