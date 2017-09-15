@@ -21,6 +21,8 @@ writeToTrialCounterDisplay(TRIAL_NUMBER_FROM_SESSION_START)
 _TRIAL = await TS.get_trial()
 
 
+// epoch name: {}; image_sequence; grid_sequence; temporal_sequence; reward_sequence; 
+
 // Prebuffer 
 var _msec_on
 var _images
@@ -29,15 +31,13 @@ var _reward_amounts
 var _boundingBoxes 
 
 
-
-
 for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
     _msec_on = _TRIAL[i_epoch]['msec_on'] // Can be -1 for indefinitely; otherwise 
     _images = _TRIAL[i_epoch]['images'] // There are canonical references for certain kinds of images that html can generate, like a white dot
     _grid_placements = _TRIAL[i_epoch]['grid_placements']
     
     // Buffer canvas
-    await SD.bufferScreenSequence(i_epoch, _images, _grid_placements, _msec_on)
+    await SD.bufferEpochFrames(i_epoch, _images, _grid_placements, _msec_on)
 }
 
 var display_timestamps = []
@@ -47,8 +47,21 @@ var reinforcement_timestamps = []
 var _nreward
 var _msec_timeout 
 
+
+// Fixation
+
+var boundingBoxFixation = await SD.displayFixation(5)
+FixationRewardMap.create_reward_map_with_bounding_boxes([boundingBoxFixation], ['none'])
+
+console.log('Awaiting fixation...')
+var fixation_outcome = await FixationRewardMap.Promise_wait_until_active_response_then_return_reinforcement()
+SP.playSound(2)
+console.log('Hit fixation')
+
+// Screens 
 for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
-    var _msec_timeout = _TRIAL[i_epoch]['msec_timeout']
+    console.log('At epoch...'+i_epoch)
+
     display_timestamps[i_epoch] = await SD.displayEpoch(i_epoch)
 
     _reward_amounts = _TRIAL[i_epoch]['reward_amounts']
@@ -56,6 +69,7 @@ for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
     RewardMap.create_reward_map_with_bounding_boxes(_boundingBoxes, _reward_amounts)
 
 
+    var _msec_timeout = _TRIAL[i_epoch]['msec_timeout']
     if(_msec_timeout > 0){
         var p = Promise.race([
                             RewardMap.Promise_wait_until_active_response_then_return_reinforcement(), 

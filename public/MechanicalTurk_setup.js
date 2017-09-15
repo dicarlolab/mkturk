@@ -233,9 +233,14 @@ async function setupMechanicalTurkTask(){
   document.querySelector("button[name=WorkerCashInButton]").style.visibility = 'visible'
   toggleCashInButtonClickability(0)
 
-  await showMechanicalTurkInstructions()
-  var device_selected = await showDeviceSelectionDialogue_and_getUserSelection()
-  console.log(device_selected)
+  
+
+  var show_instructions = false
+  if(show_instructions == true){
+    await showMechanicalTurkInstructions()
+    var device_selected = await showDeviceSelectionDialogue_and_getUserSelection()
+    console.log(device_selected)
+  }
   transition_from_debug_to_science_trials()
 
 

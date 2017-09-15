@@ -9,24 +9,55 @@ class ScreenDisplayer{
         this.time_sequences = {} // key: i_epoch
 
         this.canvas_blank = this.createCanvas('canvas_blank')
-        this.renderBlank(this.canvas_blank)
-        this.canvas_blank.style['z-index'] = 10
+        this.canvas_blank.style['z-index'] = 50
 
         this.canvas_front = this.canvas_blank
 
         this.canvas_reward = this.createCanvas('canvas_reward')
         this.canvas_punish = this.createCanvas('canvas_punish')
 
+
+        this.canvas_fixation = this.createCanvas('canvas_fixation')
+
+
         this.renderReward(this.canvas_reward)
         this.renderPunish(this.canvas_punish) 
+        
+
     }
 
+    async displayFixation(gridindex){
+        var boundingBoxesFixation = this.renderFixationDot(gridindex, PLAYSPACE._gridwidth*0.5*0.5, 'white', this.canvas_fixation)
+        await this.displayScreenSequence([this.canvas_blank, this.canvas_fixation], [0, 10])
+        return boundingBoxesFixation
+    }
+
+    renderFixationDot( gridindex, dot_pixelradius, color, canvasobj){
+        var context=canvasobj.getContext('2d');
+        // do not clear in case user would like to draw multiple
+
+        // Draw fixation dot
+        var rad = dot_pixelradius;
+        var xcent = PLAYSPACE._xgridcent[gridindex]; // playspace units
+        var ycent = PLAYSPACE._ygridcent[gridindex];
+        context.beginPath();
+        context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
+        context.fillStyle=color; 
+        context.fill();
+
+        // Define (rectangular) boundaries of fixation
+        boundingBoxesFixation = PLAYSPACE._grid_boundingBox[gridindex]
+        console.log(boundingBoxesFixation)
+        return boundingBoxesFixation
+
+
+    }
     getEpochCanvas(epoch_name, i_screen){
         if(this._epoch_canvases[epoch_name] == undefined){
             this._epoch_canvases[epoch_name] = []
         }
         if(this._epoch_canvases[epoch_name][i_screen] == undefined){
-            this._epoch_canvases[epoch_name][i_screen] = this.createCanvas('canvas_epoch'+i_epoch+'_screen'+i_screen)
+            this._epoch_canvases[epoch_name][i_screen] = this.createCanvas('canvas_'+epoch_name+'_screen'+i_screen)
         }
 
         return this._epoch_canvases[epoch_name][i_screen]
@@ -49,7 +80,6 @@ class ScreenDisplayer{
 
         var num_frames = image_sequence.length
         
-        var last_event_time = 0
         var time_sequence = []
         var canvas_sequence = []
 
@@ -64,6 +94,9 @@ class ScreenDisplayer{
             // Iterate over (potentially multiple) images in this frame
             for (var i_image = 0; i_image<frame_images.length; i_image++){
                 await renderImageAndScaleIfNecessary(frame_images[i_image], frame_grid_locs[i_image], canvasobj)
+            }
+            if(i_frame == 0){
+                var last_event_time = -1 * frame_msec_on
             }
 
             
@@ -89,12 +122,13 @@ class ScreenDisplayer{
     }
 
     async displayEpoch(epoch_name){
-        console.log('displayScreenSequence', epoch_name)
+        console.log('displayEpoch', epoch_name)
         var sequence = this.canvas_sequences[epoch_name]
         var tsequence = this.time_sequences[epoch_name]
+        console.log(tsequence)
         var frame_unix_timestamps = await this.displayScreenSequence(sequence, tsequence)
-        return frame_unix_timestamps
 
+        return frame_unix_timestamps
     }
 
 
@@ -140,6 +174,7 @@ class ScreenDisplayer{
                 window.requestAnimationFrame(updateCanvas);
             }
             else{
+                _this.canvas_front = curr_canvasobj
                 resolveFunc(frame_unix_timestamps);
             }
         }

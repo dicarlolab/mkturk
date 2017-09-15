@@ -86,6 +86,12 @@ function defineImageGrid(ngridpoints){
 
   PLAYSPACE._xgridcent = [] // In units of playspace 
   PLAYSPACE._ygridcent = []
+  PLAYSPACE._xgridleft = []
+  PLAYSPACE._xgridright = []
+  PLAYSPACE._ygridtop = []
+  PLAYSPACE._ygridbottom = []
+  PLAYSPACE._grid_boundingBox = []
+
   var xgridcent =[] 
   var ygridcent =[]
   var i_counter = 0
@@ -98,6 +104,13 @@ function defineImageGrid(ngridpoints){
 
       PLAYSPACE._xgridcent[i_counter] = Math.round(gridwidth/2 + i_x * gridwidth)
       PLAYSPACE._ygridcent[i_counter] = Math.round(gridheight/2 + i_y * gridheight)
+      PLAYSPACE._xgridleft[i_counter] = Math.round(i_x*gridwidth)
+      PLAYSPACE._xgridright[i_counter] = Math.round(gridwidth+i_x*gridwidth)
+      PLAYSPACE._ygridtop[i_counter] = Math.round(i_y*gridheight)
+      PLAYSPACE._ygridbottom[i_counter] = Math.round(gridheight+i_y*gridheight)
+
+      PLAYSPACE._grid_boundingBox[i_counter] = {'x': [PLAYSPACE._xgridleft[i_counter],PLAYSPACE._xgridright[i_counter]], 
+                                                'y': [PLAYSPACE._ygridtop[i_counter],PLAYSPACE._ygridbottom[i_counter]]}
 
       i_counter++
     }
@@ -144,9 +157,9 @@ function setupCanvas(canvasobj){
     canvasobj.style.height=PLAYSPACE.height+'px';
 
     // Draw blank gray 
-    context.clearRect(0,0,canvasobj.width,canvasobj.height);
     context.fillStyle="#7F7F7F"; 
-    context.fill()
+    context.fillRect(0,0,canvasobj.width,canvasobj.height);
+    
 
     // Remove overflow?
     //https://www.w3schools.com/cssref/pr_pos_overflow.asp

@@ -165,22 +165,13 @@ class TaskStreamer{
         var image1 = await this.IB.get_by_name("https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Atoken.png")
         var image2 = await this.IB.get_by_name("https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Btoken.png")
 
-        var boundingBoxesFixation = [{}] // todo: move out of here 
-        boundingBoxesFixation[0]['x']= [PLAYSPACE._xgridcent[0], PLAYSPACE._xgridcent[0]+100]
-        boundingBoxesFixation[0]['y']= [PLAYSPACE._ygridcent[0], PLAYSPACE._ygridcent[0]+100]
 
         var trial = []
 
-        var msec_timeout = 0
+        var msec_timeout = 5000
 
+        trial[0] = this.makeEpoch([500, 0], [[image1], [image1, image2]], [[4], [2, 8]], [PLAYSPACE._grid_boundingBox[2], PLAYSPACE._grid_boundingBox[8]], [1, 0], msec_timeout)
 
-        trial[0] = this.makeEpoch([500], 
-            [[image1, image1]], 
-            [[2, 0]],
-            boundingBoxesFixation,
-            [[1]], 
-            msec_timeout
-            )
 
         return trial
     }

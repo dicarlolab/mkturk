@@ -38,6 +38,9 @@ class MonetaryReinforcer{
             SP.playSound(3);
             var p1 = await SD.displayPunish(TS.EXPERIMENT[TS.state.current_stage_index]['PunishTimeOut']) // (CANVAS.sequencepost,CANVAS.tsequencepost);
         }
+        else if(nreward == 'none'){
+          return 
+        }
     }
 
 }
