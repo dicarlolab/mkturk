@@ -38,7 +38,6 @@ for (var i_epoch = 0; i_epoch<_TRIAL.length; i_epoch++){
     RewardMaps[i_epoch] = new MouseMoveRewardMap() // todo: move into mkturk construction
 }
 
-console.log(RewardMaps)
 
 for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
     _msec_on = _TRIAL[i_epoch]['msec_on'] // Can be -1 for indefinitely; otherwise 
@@ -67,7 +66,13 @@ for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
                                     RewardMaps[i_epoch].Promise_wait_until_active_response_then_return_reinforcement(), 
                                     choiceTimeOut(_msec_timeout)]) 
     _nreward = user_outcomes[i_epoch]['reinforcement']
+
+    reinforcement_onset = performance.now()
+
+
     reinforcement_timestamps[i_epoch] = await R.deliver_reinforcement(_nreward)
+    reinforcement_end = performance.now()
+
 }
 
 // Record results of trial 
@@ -89,73 +94,9 @@ DWr.writeout()
 
 
 
-
-
 SD.renderReward(CANVAS.obj.reward);
 SD.renderPunish(CANVAS.obj.punish);
 SD.renderBlank(CANVAS.obj.blank);
-
-//============ SELECT SAMPLE & TEST IMAGES ============//
-var sample_image = _TRIAL['sample_image']
-var samplebag_index = _TRIAL['samplebag_index']
-var sample_grid_index_placement = _TRIAL['sample_grid_index_placement']
-var test_images = _TRIAL['test_images']
-var testbag_indices = _TRIAL['testbag_indices']
-var test_correct_grid_index = _TRIAL['test_correct_grid_index']
-var test_grid_index_placements = _TRIAL['test_grid_index_placements']
-var choice_reward_amounts = _TRIAL['choice_reward_amounts']
-
-
-//============ AWAIT BUFFER CANVASES WITH SAMPLE & TEST IMAGES ============//
-boundingBoxesFixation = await SD.bufferFixationScreenUsingDot(TS.EXPERIMENT[TS.state.current_stage_index]['StaticFixationGridIndex']);
-boundingBoxesSample = await SD.bufferStimulusScreen(sample_image, sample_grid_index_placement)
-boundingBoxesChoice = await SD.bufferChoiceScreen(test_images, test_grid_index_placements)
-
-//============ FIXATION SCREEN ============//
-
-FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxesFixation, [0])
-ChoiceRewardMap.create_reward_map_with_bounding_boxes(boundingBoxesChoice, choice_reward_amounts)
-
-var fixation_onset_timestamps = await SD.displayScreenSequence(CANVAS.sequencepre,CANVAS.tsequencepre);
-
-
-wdm('Awaiting fixation...')
-
-
-console.log('Awaiting fixation...')
-var fixation_outcome = await FixationRewardMap.Promise_wait_until_active_response_then_return_reinforcement()
-console.log('Fixation reached')
-
-
-
-//============== SHOW SAMPLE THEN TEST ==============//
-
-wdm('Awaiting choice...')
-
-
-var stimulus_timestamps = await SD.displayScreenSequence(CANVAS.sequence,CANVAS.tsequence);
-var outcome_from_touch_response_promise = ChoiceRewardMap.Promise_wait_until_active_response_then_return_reinforcement()
-var timeout_promise = choiceTimeOut(TS.EXPERIMENT[TS.state.current_stage_index]['ChoiceTimeOut'])
-var choice_outcome = await Promise.race([outcome_from_touch_response_promise, timeout_promise])
-
-
-//========= AWAIT TOUCH RESPONSE =========//
-var correct = choice_outcome['reinforcement']
-var chosen_grid_index = test_grid_index_placements[choice_outcome["region_index"]]
-
-
-//============ DETERMINE NUMBER OF REWARDS ============//
-if (correct == 1){
-    nreward = 1 
-}
-else if (correct == 0){
-    nreward = 0;
-} 
-
-reinforcement_onset = performance.now()
-await R.deliver_reinforcement(nreward)
-reinforcement_end = performance.now()
-
 
 
 var current_trial_outcome = {}

@@ -167,7 +167,7 @@ async function setupMechanicalTurkTask(){
     // Initialize components of task
     FixationRewardMap = new MouseMoveRewardMap()
     ChoiceRewardMap = new MouseMoveRewardMap()
-    SD = new ScreenDisplayer()
+    
     R = new MonetaryReinforcer()
 
   refreshScreenTSequenceSettings(TS.EXPERIMENT[TS.state.current_stage_index]); 
@@ -178,6 +178,8 @@ async function setupMechanicalTurkTask(){
   for (var i = 0; i <= CANVAS.names.length-1; i++) {
       setupCanvas(CANVAS.obj[CANVAS.names[i]]);
   }
+
+  SD = new ScreenDisplayer()
 
   window.addEventListener('resize', onWindowResize)
 

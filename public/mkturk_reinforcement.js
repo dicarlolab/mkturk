@@ -22,21 +22,21 @@ class MonetaryReinforcer{
         if(nreward >=1){
             this.bonus_total = this.bonus_total + this.bonus_per_correct
             console.log('Running monetary bonus amount', this.bonus_total)
-            CANVAS.sequencepost[1]="reward";
-            CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]
+            //CANVAS.sequencepost[1]="reward";
+            //CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]
 
             SP.playSound(2);
 
-            var p1 = SD.displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost)
+            var p1 = SD.displayReward()// (CANVAS.sequencepost,CANVAS.tsequencepost)
             await Promise.all([p1])
             
         }
         else if(nreward == 0){
             //punish
-            CANVAS.sequencepost[1] = "punish";
-            CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+TS.EXPERIMENT[TS.state.current_stage_index]['PunishTimeOut'];
+            //CANVAS.sequencepost[1] = "punish";
+            //CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+TS.EXPERIMENT[TS.state.current_stage_index]['PunishTimeOut'];
             SP.playSound(3);
-            var p1 = await SD.displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost);
+            var p1 = await SD.displayPunish() // (CANVAS.sequencepost,CANVAS.tsequencepost);
         }
     }
 

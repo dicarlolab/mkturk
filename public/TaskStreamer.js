@@ -170,11 +170,11 @@ class TaskStreamer{
 
         var trial = []
 
-        trial[0] = this.makeEpoch([500, 500, 500], 
-            [[image1, image1], [image2, image2], [image1, image2]], 
-            [[2, 8], [0, 3], [1, 4]],
-            [[boundingBoxesFixation], [boundingBoxesFixation], [boundingBoxesFixation]],
-            [[1], [1], [1]]
+        trial[0] = this.makeEpoch([500], 
+            [[image1, image1]], 
+            [[2, 8]],
+            [[boundingBoxesFixation]],
+            [[1]]
             )
 
         console.log('nutrial', trial)

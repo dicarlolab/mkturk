@@ -108,7 +108,7 @@ function defineImageGrid(ngridpoints){
   return [canvas_center_x, canvas_center_y, xgridcent, ygridcent]
 }
 function setupCanvas(canvasobj){
-
+  console.log(canvasobj)
     var context = canvasobj.getContext('2d')
     
     var devicePixelRatio = window.devicePixelRatio || 1
