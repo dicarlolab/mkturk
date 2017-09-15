@@ -24,40 +24,71 @@ writeToTrialCounterDisplay(TRIAL_NUMBER_FROM_SESSION_START)
 
 
 _TRIAL = await TS.get_trial()
-// screen_name
-// msec_on
-// images
-// grid_placements
-// reward_amounts
+
 
 // Prebuffer 
-var _screen_name 
 var _msec_on
 var _images
 var _grid_placements
 var _reward_amounts 
+var _boundingBoxes 
 
-var _boundingBoxesTerminal
+var RewardMaps = []
+for (var i_epoch = 0; i_epoch<_TRIAL.length; i_epoch++){
+    RewardMaps[i_epoch] = new MouseMoveRewardMap() // todo: move into mkturk construction
+}
+
+console.log(RewardMaps)
+
 for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
     _msec_on = _TRIAL[i_epoch]['msec_on'] // Can be -1 for indefinitely; otherwise 
-    _images = _TRIAL[i_epoch]['images']
+    _images = _TRIAL[i_epoch]['images'] // There are canonical references for certain kinds of images that html can generate, like a white dot
     _grid_placements = _TRIAL[i_epoch]['grid_placements']
     _reward_amounts = _TRIAL[i_epoch]['reward_amounts']
-
+    _boundingBoxes = _TRIAL[i_epoch]['boundingBoxes']
     // Buffer canvas
-    _boundingBoxesTerminal = SD.bufferScreens(i_epoch, _images, _grid_placements, _msec_on)
+    await SD.bufferScreenSequence(i_epoch, _images, _grid_placements, _msec_on)
     
     // Buffer reward maps
-    RewardMaps[i_epoch].create_reward_map_with_bounding_boxes(_boundingBoxesTerminal, _reward_amounts)
+    RewardMaps[i_epoch].create_reward_map_with_bounding_boxes(_boundingBoxes, _reward_amounts)
 }
 
-display_timestamps = []
-user_outcomes = []
+var display_timestamps = []
+var user_outcomes = []
+var reinforcement_timestamps = []
+
+var _nreward
+var _msec_timeout 
+
 for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
+    var _msec_timeout = _TRIAL[i_epoch]['msec_timeout']
     display_timestamps[i_epoch] = await SD.displayScreenSequence(i_epoch)
-    user_outcomes[i_epoch] = await RewardMaps[i_epoch].Promise_wait_until_active_response_then_return_reinforcement()
-    await R.deliver_reinforcement(user_outcomes[i_epoch]['reinforcement'])
+    user_outcomes[i_epoch] = await Promise.race([
+                                    RewardMaps[i_epoch].Promise_wait_until_active_response_then_return_reinforcement(), 
+                                    choiceTimeOut(_msec_timeout)]) 
+    _nreward = user_outcomes[i_epoch]['reinforcement']
+    reinforcement_timestamps[i_epoch] = await R.deliver_reinforcement(_nreward)
 }
+
+// Record results of trial 
+var current_trial_outcome = []
+for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
+    current_trial_outcome[i_epoch] = {}
+    current_trial_outcome[i_epoch]['display_timestamps'] = display_timestamps[i_epoch]
+    current_trial_outcome[i_epoch]['user_outcomes'] = user_outcomes[i_epoch]
+}
+return 
+//TS.update_state(current_trial_outcome)
+//TS.package_behavioral_data() // Handles packaging behavior data however way is intuitive for the task
+
+TRIAL_NUMBER_FROM_SESSION_START++
+
+// Writeout (e.g. live to dropbox)
+DWr.writeout()
+
+
+
+
 
 
 SD.renderReward(CANVAS.obj.reward);

@@ -138,6 +138,8 @@ class S3_IO{
         }
         
         xhttp.open("GET", text_url, true);
+        console.log("xhttp", xhttp)
+
         xhttp.send();
         var s = await p
         return s

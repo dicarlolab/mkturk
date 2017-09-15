@@ -137,13 +137,47 @@ class TaskStreamer{
         this._initial_state = undefined
         this._debug_mode = false
     }
-
-    get_trial(i){
+    makeEpoch(durations, images, grid_placements, reward_amounts, boundingBoxes){
+        var epoch = {}
+        epoch['msec_on'] = durations // List of durations
+        epoch['images'] = images // List of list of images
+        epoch['grid_placements'] = grid_placements // list of lists
+        epoch['reward_amounts'] = reward_amounts // list of award amounts
+        epoch['boundingBoxes'] = boundingBoxes // list of bounding box objects
+        return epoch 
+    }
+    async get_trial(i){
         // called at the beginning of each trial 
         // returns images, reward maps, and other necessary things for runtrial()
         
-        var trial_idx = i || this.state['current_stage_trial_number']
-        var trial = this.TQ_sequence[this.state['current_stage_index']].get_trial(trial_idx)
+        //var trial_idx = i || this.state['current_stage_trial_number']
+        //var trial = this.TQ_sequence[this.state['current_stage_index']].get_trial(trial_idx)
+        
+
+        //var _msec_on
+        //var _images
+        //var _grid_placements
+        //var _reward_amounts 
+        //var _boundingBoxes 
+
+
+        var image1 = await this.IB.get_by_name("https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Atoken.png")
+        var image2 = await this.IB.get_by_name("https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Btoken.png")
+
+        var boundingBoxesFixation = [{}] // todo: move out of here 
+        boundingBoxesFixation[0]['x']= [PLAYSPACE._xgridcent[0], PLAYSPACE._xgridcent[0]+10]
+        boundingBoxesFixation[0]['y']= [PLAYSPACE._ygridcent[0], PLAYSPACE._ygridcent[0]+10]
+
+        var trial = []
+
+        trial[0] = this.makeEpoch([500, 500, 500], 
+            [[image1, image1], [image2, image2], [image1, image2]], 
+            [[2, 8], [0, 3], [1, 4]],
+            [[boundingBoxesFixation], [boundingBoxesFixation], [boundingBoxesFixation]],
+            [[1], [1], [1]]
+            )
+
+        console.log('nutrial', trial)
         return trial
     }
 

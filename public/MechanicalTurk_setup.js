@@ -58,30 +58,94 @@ async function setupMechanicalTurkTask(){
     })
   });
 
-  
-  SubjectSettings = await loadStringFromLocalStorage("SubjectSettings_string")
-  SubjectSettings = JSON.parse(SubjectSettings)
-  console.log('FROM LOCAL STORAGE:', SubjectSettings)
-  wdm("Subject settings loaded...")
+  var use_local_storage = false
 
-  SESSION.SubjectID = SubjectSettings['SubjectID'];
+  if(use_local_storage == true){
+    SubjectSettings = await loadStringFromLocalStorage("SubjectSettings_string")
+    SubjectSettings = JSON.parse(SubjectSettings)
+    console.log('FROM LOCAL STORAGE:', SubjectSettings)
+    wdm("Subject settings loaded...")
 
-  //SESSION.ExperimentFilePath = "https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt"
-  SESSION.ExperimentFilePath = await loadStringFromLocalStorage('Experiment_url')
+    SESSION.SubjectID = SubjectSettings['SubjectID'];
 
-  console.log('FROM LOCAL STORAGE:', SESSION.ExperimentFilePath)
-  var Experiment = await SIO.read_textfile(SESSION.ExperimentFilePath)
-  Experiment = JSON.parse(Experiment)
+    //SESSION.ExperimentFilePath = "https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt"
+    SESSION.ExperimentFilePath = await loadStringFromLocalStorage('Experiment_url')
+
+    console.log('FROM LOCAL STORAGE:', SESSION.ExperimentFilePath)
+    var Experiment = await SIO.read_textfile(SESSION.ExperimentFilePath)
+    Experiment = JSON.parse(Experiment)
 
 
-  MechanicalTurkSettings = await loadStringFromLocalStorage('HIT_settings_string')
-  MechanicalTurkSettings = JSON.parse(MechanicalTurkSettings)
-  console.log('FROM LOCAL STORAGE:', MechanicalTurkSettings)
-  // {
-  //  'MinimumTrialsForCashIn':10, 
-  //  'MAX_SESSION_TRIALS_MECHANICALTURK':100
-  // }
+    MechanicalTurkSettings = await loadStringFromLocalStorage('HIT_settings_string')
+    MechanicalTurkSettings = JSON.parse(MechanicalTurkSettings)
+    console.log('FROM LOCAL STORAGE:', MechanicalTurkSettings)
+    // {
+    //  'MinimumTrialsForCashIn':10, 
+    //  'MAX_SESSION_TRIALS_MECHANICALTURK':100
+    // }
+  }
+  else{
+    MechanicalTurkSettings = {"MinimumTrialsForCashIn": 10, "MAX_SESSION_TRIALS_MECHANICALTURK": 100}
+    SESSION.SubjectID = 'Michaelo_debugger'
+    SESSION.ExperimentFilePath = 'https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt'
+    Experiment = [{
+            "StageNickname":"MILTEST",
+            "PunishTimeOut": 1000,
+            "ChoiceTimeOut": 5000,
+            "t_SampleON": 100,
+            "t_SampleOFF": 0,
+            "NGridPoints": 3,
+            "StaticFixationGridIndex": 5,
+            "SampleGridIndex": 4,
+            "TestGridIndex": [2,8],
+            "ObjectGridMapping": [2,8],
+            "initial_TaskStream_trial_number": 0,
+            "samplingRNGseed": 0,
+            "AverageReturnCriterion":0,
+            "MinTrialsCriterion":5, 
+            "probability_repeat_trial_if_wrong":1,
+             "ImageBagsSampleMetaPaths": [
+              "https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyA2.txt",
+              "https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyB.txt"
+             ],
+             "ImageBagsTestMetaPaths": [
+              "https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyAtoken.txt",
+              "https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyBtoken.txt"
+             ]
+            }, 
+            {
+            "StageNickname":"MILTEST2",
+            "RewardPer1000Trials": 300,
+            "PunishTimeOut": 1000,
+            "ChoiceTimeOut": 5000,
+            "t_SampleON": 100,
+            "t_SampleOFF": 0,
+            "NGridPoints": 3,
+            "StaticFixationGridIndex": 5,
+            "SampleGridIndex": 4,
+            "TestGridIndex": [2,8],
+            "ObjectGridMapping": [8,2],
+            "initial_TaskStream_trial_number": 0,
+            "samplingRNGseed": 0,
+            "GridScale": 0.6262,
+            "FixationScale": 0.6262,
+            "SampleScale": 0.6262,
+            "TestScale": 0.6262,
+            "AverageReturnCriterion":0,
+            "MinTrialsCriterion":5,
+            "probability_repeat_trial_if_wrong":1,
+             "ImageBagsSampleMetaPaths": [
+              "https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyA2.txt",
+              "https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyB.txt"
+             ],
+             "ImageBagsTestMetaPaths": [
+              "https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyAtoken.txt",
+              "https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyBtoken.txt"
+             ]
+            }
+            ]
 
+  }
  
   TS = new TaskStreamer(undefined, SIO, Experiment, SESSION.SubjectID, false) 
   await TS.build()
@@ -132,12 +196,12 @@ async function setupMechanicalTurkTask(){
   var representative_trial = await TS.get_trial()
   console.log('representative_trial', representative_trial)
 
-  var representative_image = representative_trial['sample_image']
-  DEVICE.source_image_height = representative_image.height
-  DEVICE.source_image_width = representative_image.width
+  // var representative_image = representative_trial['sample_image']
+  // DEVICE.source_image_height = representative_image.height
+  // DEVICE.source_image_width = representative_image.width
 
-  DEVICE.source_ImageWidthPixels = representative_image.width
-  DEVICE.source_ImageHeightPixels = representative_image.height
+  // DEVICE.source_ImageWidthPixels = representative_image.width
+  // DEVICE.source_ImageHeightPixels = representative_image.height
 
 
   funcreturn = defineImageGrid(TS.EXPERIMENT[0]['NGridPoints']);
@@ -158,7 +222,7 @@ async function setupMechanicalTurkTask(){
   console.log('hello')
   
   
-  var skip_preview_mode = false // strictly for debugging purposes only 
+  var skip_preview_mode = true // strictly for debugging purposes only 
 
   if(skip_preview_mode != true){
     if(SubjectSettings['assignmentId'] == 'ASSIGNMENT_ID_NOT_AVAILABLE' || SubjectSettings['assignmentId'] == '' ){

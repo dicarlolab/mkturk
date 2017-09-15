@@ -1,0 +1,75 @@
+<!doctype html>
+
+<head>
+<script>
+// https://stackoverflow.com/questions/17309199/how-to-send-variables-from-one-file-to-another-in-javascript
+
+// https://stackoverflow.com/questions/5411538/redirect-from-an-html-page
+
+
+
+async function saveData() {
+  console.log('hello')
+   // Store url to experiment file .txt
+   data = btoa("https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt");
+   localStorage.setItem('Experiment_url', data);
+
+   // Store mechanical turk settings
+   mechanical_turk_data = btoa('{"MinimumTrialsForCashIn": 10, "MAX_SESSION_TRIALS_MECHANICALTURK": 100}', data);
+   localStorage.setItem('HIT_settings_string', mechanical_turk_data)
+
+   console.log(window.location.href)
+   // Store information sent by Amazon via the current url 
+
+   // Extract workerId
+    var name = 'workerId'
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regexS = "[\\?&]" + name + "=([^&#]*)";
+    var regex = new RegExp(regexS);
+    var results = regex.exec(window.location.href) || ["", "workerId_notFound"] 
+    workerId = results[1];
+
+    // Extract assignmentId
+    name = 'assignmentId'
+  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+  var regexS = "[\\?&]" + name + "=([^&#]*)";
+  var regex = new RegExp(regexS);
+  console.log(results)
+  var results = regex.exec(window.location.href) || ["", ""] 
+  assignmentId = results[1];
+
+  // Extract hitId
+  name = 'hitId'
+  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+  var regexS = "[\\?&]" + name + "=([^&#]*)";
+  var regex = new RegExp(regexS);
+  console.log(results)
+  var results = regex.exec(window.location.href) || ["", "hitId_not_found"] 
+  hitId = results[1];
+
+
+    SubjectSettings = {
+    "SubjectID":'MechanicalTurker_'+workerId,
+    "Species": "human",
+    "assignmentId": assignmentId,
+    'workerId': workerId,
+    'hitId':hitId
+    }
+    console.log('Landing screen SubjectSettings', SubjectSettings)
+    localStorage.setItem('SubjectSettings_string', btoa(JSON.stringify(SubjectSettings)))
+}
+
+
+(async function(){
+  await saveData()
+})()
+
+window.location.href = "https://s3.amazonaws.com/monkeyturksandbox/public/mkturk.html" // 'https://s3.amazonaws.com/monkeyturksandbox/public/mkturk.html'
+
+</script>
+</head>
+
+<body>
+Loading HIT...
+</body>
+</html>
