@@ -22,13 +22,17 @@ class ScreenDisplayer{
         this.renderPunish(this.canvas_punish) 
     }
 
+    async displayBlank(){
+        await this.renderBlank(this.canvas_blank)
+        await this.displayScreenSequence(this.canvas_blank, 0)
+    }
 
     async displayFixation(gridindex){
         await this.renderBlank(this.canvas_fixation)
 
         var boundingBoxesFixation = this.renderFixationDot(gridindex, PLAYSPACE._gridwidth*0.5*0.5, 'white', this.canvas_fixation)
-        await this.displayScreenSequence([this.canvas_blank, this.canvas_fixation], [0, 10])
-        return boundingBoxesFixation
+        var frame_timestamps = await this.displayScreenSequence(this.canvas_fixation, 0)
+        return [boundingBoxesFixation, frame_timestamps]
     }
 
     async displayReward(msec_duration){

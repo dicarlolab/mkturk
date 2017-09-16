@@ -21,7 +21,9 @@ async function run_MouseOver_TutorialTrial(tutorial_image){
 
     writeToTrialCounterDisplay("")
 
-    var boundingBoxesFixation = await SD.displayFixation(5)
+    var funcreturn = await SD.displayFixation(5)
+    boundingBoxesFixation = funcreturn[0]
+    
     RewardMap.create_reward_map_with_bounding_boxes(boundingBoxesFixation, 1)
     var fixation_outcome = await RewardMap.Promise_wait_until_active_response_then_return_reinforcement()
 

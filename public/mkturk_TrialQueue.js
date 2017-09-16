@@ -99,7 +99,7 @@ async generate_trial(i){
 		this.sampleq.filename.push(sample_filename)
 		this.sampleq.samplebag_index.push(sample_index)
 		this.sampleq.grid_index_placement.push(sample_grid_index_placement)
-
+		
 		this.testq.filenames.push(test_filenames)
 		this.testq.testbag_indices.push(testbag_indices)
 		this.testq.correctGridIndex.push(correctGridIndex)
