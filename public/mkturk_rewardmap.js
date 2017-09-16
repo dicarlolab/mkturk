@@ -14,6 +14,7 @@ class RewardMapTemplate{
 }
 
 class MouseClickRewardMap{
+    // todo: update from mousemove
     constructor(){        
         this._mouse_promise
         this.boundingBoxes = []
@@ -162,7 +163,29 @@ class MouseMoveRewardMap{
 
         this.boundingBoxes = boundingBoxes
         this.reward_amounts = reward_amounts
-        
+    }
+
+    create_reward_map_with_grid_indices(grid_indices, reward_amounts){
+        console.log('making reward map from grid indices', grid_indices, reward_amounts)
+
+        if(this.attached == false){
+            console.log('Attached mouse move listener for rewardmap')
+            this.add_event_listener()
+            this.attached = true 
+        }
+        if(typeof(grid_indices) == "number"){
+            grid_indices = [grid_indices]
+        }
+        if(typeof(reward_amounts) == "number"){
+            reward_amounts = [reward_amounts]
+        }
+
+        var boundingBoxes = []
+        for (var i = 0; i < grid_indices.length; i++){
+            boundingBoxes.push(PLAYSPACE._grid_boundingBox[grid_indices[i]])
+        }   
+        this.boundingBoxes = boundingBoxes
+        this.reward_amounts = reward_amounts
     }
 
     async Promise_wait_until_active_response_then_return_reinforcement(){
@@ -238,6 +261,29 @@ class TouchRewardMap{
         this.boundingBoxes = boundingBoxes
         this.reward_amounts = reward_amounts
         
+    }
+
+    create_reward_map_with_grid_indices(grid_indices, reward_amounts){
+        console.log('making reward map from grid indices', grid_indices, reward_amounts)
+
+        if(this.attached == false){
+            console.log('Attached mouse move listener for rewardmap')
+            this.add_event_listener()
+            this.attached = true 
+        }
+        if(typeof(grid_indices) == "number"){
+            grid_indices = [grid_indices]
+        }
+        if(typeof(reward_amounts) == "number"){
+            reward_amounts = [reward_amounts]
+        }
+
+        var boundingBoxes = []
+        for (var i = 0; i < grid_indices.length; i++){
+            boundingBoxes.push(PLAYSPACE._grid_boundingBox[grid_indices[i]])
+        }   
+        this.boundingBoxes = boundingBoxes
+        this.reward_amounts = reward_amounts
     }
 
     async Promise_wait_until_active_response_then_return_reinforcement(){

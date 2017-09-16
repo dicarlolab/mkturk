@@ -143,35 +143,25 @@ class TaskStreamer{
         var sample_grid_index = _t['sample_grid_index_placement']
         var test_grid_indices = _t['test_grid_index_placements']
 
-        var trial = []
+        
 
         var msec_timeout = 5000
 
         var sample_image = _t['sample_image']
         var test_images = _t['test_images']
 
-        var boundingBoxes = []
-        for (var j = 0; j<_t['test_grid_index_placements'].length; j++){
-            var gidx = _t['test_grid_index_placements'][j]
-            boundingBoxes.push(PLAYSPACE._grid_boundingBox[gidx])
-        }
 
-        var epoch = []
-        epoch['msec_on'] = [100,0,0] // List of durations
-        epoch['images'] = [sample_image, [], test_images] // List of list of images
-        epoch['grid_placements'] = [sample_grid_index, [], test_grid_indices] // list of lists
-        epoch['frame_names'] = ['frame_stimulus', 'frame_delay', 'frame_choice']
 
-        epoch['reward_amounts'] = _t['choice_reward_amounts'] // list of award amounts
-        epoch['boundingBoxes'] = boundingBoxes // list of bounding box objects
-        epoch['msec_timeout'] = msec_timeout
 
-        // Optional fields
-        epoch['samplebag_index'] = _t['samplebag_index']
-        epoch['testbag_indices'] = _t['testbag_indices']
-        epoch['test_correct_grid_index'] = _t['test_correct_grid_index']
-     
-        trial[0] = epoch 
+        var trial = {}
+        trial['frame_durations'] = [100,0,0] // List of durations
+        trial['image_sequence'] = [sample_image, [], test_images] // List of {images, lists of images, or [] for blank}
+        trial['grid_placement_sequence'] = [sample_grid_index, [], test_grid_indices] // list of lists
+        trial['frame_names'] = ['frame_stimulus', 'frame_delay', 'frame_choice']
+
+        trial['choice_regions_rewardAmounts'] = _t['choice_reward_amounts'] // list of award amounts
+        trial['choice_regions_gridIndices'] = _t['test_grid_index_placements'] // list of bounding box objects
+        trial['timeout_msec'] = msec_timeout
 
         return trial
     }
@@ -206,6 +196,7 @@ class TaskStreamer{
     }
 
     update_state(current_trial_outcome){
+        return
         // trial_behavior: the just-finished trial's behavior. 
         // called at the end of every trial. 
 
