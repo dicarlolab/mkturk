@@ -1,4 +1,4 @@
-[
+{"Experiment":[
     {"StageNickname":"ExampleStage0",
     "MinTrialsCriterion":0, 
     "AverageReturnCriterion":0, 
@@ -10,4 +10,9 @@
     "TestGridIndex":[2, 8], 
     "ObjectGridMapping":[2, 8], 
     "NGridPoints":3}
-]
+], 
+"ImageBags":{
+    "bagName1":[], 
+    "bagName2":[],
+} 
+}

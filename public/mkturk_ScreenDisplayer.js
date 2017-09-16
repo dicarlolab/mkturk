@@ -129,7 +129,6 @@ class ScreenDisplayer{
         canvasobj.id = canvas_id
         setupCanvas(canvasobj, use_image_smoothing)
         document.body.appendChild(canvasobj)
-        console.log(canvasobj)
         return canvasobj 
     }
 

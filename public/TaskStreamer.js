@@ -64,7 +64,6 @@ class TaskStreamer{
         t['FixationX'] = []
         t['FixationY'] = []
         t['FixationT'] = []
-        t['FixationReturn'] =[]
 
         t['Sample_ImageBagIndex'] = []  
         t['Sample_GridIndex'] = [] 
@@ -73,56 +72,56 @@ class TaskStreamer{
         t['Choices_GridIndices'] = [] 
 
         t['Choices_RewardAmounts'] = [] 
-
-        
         
         return t
     }
 
     update_behavior_records(t, cto){
-        // todo: make data recording easier
-        // cto is current_trial_outcome 
-        var i_epoch = 0 
-        t['StartTime'].push(cto['fixation_outcome']['timestamp'])
+
+        // map the timestamps of the frames to your preferred field names 
+        // to save massive headache down the line 
+
+        // and save the various TRIAL fields of interest to your own fieldnames
+
+        // t: this.trial_behavior, cto: current_trial_outcome created at end of runtrial()
+        t['StartTime'] = cto['FixationT']
         t['TrialNumber_Session'].push(TRIAL_NUMBER_FROM_SESSION_START)
         t['TrialNumber_Stage'].push(this.state['current_stage_trial_number'])
         t['StageNumber'].push(this.state['current_stage_index'])
 
-        t['timestamp_FixationOnset'].push(cto['fixation_timestamps'][0])
+        t['timestamp_FixationOnset'].push(cto['timestamp_FixationOnset'])
         
-        t['timestamp_StimulusOn'].push(cto['epoch_timestamps'][i_epoch][0])
-        t['timestamp_StimulusOff'].push(cto['epoch_timestamps'][i_epoch][1])
-        t['timestamp_ChoiceOn'].push(cto['epoch_timestamps'][i_epoch][2])
-        t['timestamp_ReinforcementOn'].push(cto['epoch_reinforcement_timestamps'][i_epoch][0])
-        t['timestamp_ReinforcementOff'].push(cto['epoch_reinforcement_timestamps'][i_epoch][1])
+        t['timestamp_StimulusOn'].push(cto['frame_timestamps'][0])
+        t['timestamp_StimulusOff'].push(cto['frame_timestamps'][1])
+        t['timestamp_ChoiceOn'].push(cto['frame_timestamps'][2])
 
-        t['ChoiceX'].push(cto['epoch_outcomes'][i_epoch]['x'])
-        t['ChoiceY'].push(cto['epoch_outcomes'][i_epoch]['y'])
-        t['ChoiceT'].push(cto['epoch_outcomes'][i_epoch]['timestamp'])
-        t['Return'].push(cto['epoch_outcomes'][i_epoch]['reinforcement'])
+        t['timestamp_ReinforcementOn'].push(cto['timestamp_ReinforcementOn'])
+        t['timestamp_ReinforcementOff'].push(cto['timestamp_ReinforcementOff'])
 
-        t['FixationX'].push(cto['fixation_outcome']['x'])
-        t['FixationY'].push(cto['fixation_outcome']['y'])
-        t['FixationT'].push(cto['fixation_outcome']['timestamp'])
-        t['FixationReturn'].push(cto['fixation_outcome']['reinforcement'])
+        t['ChoiceX'].push(cto['ChoiceX'])
+        t['ChoiceY'].push(cto['ChoiceY'])
+        t['ChoiceT'].push(cto['ChoiceT'])
+        t['Return'].push(cto['Return'])
 
+        t['Response_GridIndex'].push(cto['Response_GridIndex'])
+        t['Correct_GridIndex'].push(cto['TRIAL']['correct_grid_index'])
 
-        var _t = cto['trial_constructor'][i_epoch]
-        var chosen_grid_index = _t['grid_placements'][2][cto['epoch_outcomes'][i_epoch]['region_index']]
-        t['Response_GridIndex'].push(chosen_grid_index)
-        t['Correct_GridIndex'].push(cto['trial_constructor'][i_epoch]['test_correct_grid_index'])
+        t['FixationX'].push(cto['FixationX'])
+        t['FixationY'].push(cto['FixationY'])
+        t['FixationT'].push(cto['FixationT'])
 
-        t['Sample_ImageBagIndex'].push(cto['trial_constructor'][i_epoch]['samplebag_index'])
-        t['Sample_GridIndex'].push(cto['trial_constructor'][i_epoch]['grid_placements'][0])
+        t['Sample_ImageBagIndex'] = []  
+        t['Choices_ImageBagIndices'] = [] 
 
-        t['Choices_ImageBagIndices'].push(cto['trial_constructor'][i_epoch]['testbag_indices'])
-        t['Choices_GridIndices'].push(cto['trial_constructor'][i_epoch]['grid_placements'][2])
-        t['Choices_RewardAmounts'].push(cto['trial_constructor'][i_epoch]['reward_amounts'])
+        t['Sample_GridIndex'].push(cto['TRIAL']['grid_placement_sequence'][0])
+        t['Choices_GridIndices'].push(cto['TRIAL']['grid_placement_sequence'][2])
 
-
+        t['Choices_RewardAmounts'].push(cto['TRIAL']['choice_regions_gridIndices'])
+        console.log(t)
         return t 
-
     }
+
+
     
 
 
@@ -163,6 +162,9 @@ class TaskStreamer{
         trial['choice_regions_gridIndices'] = _t['test_grid_index_placements'] // list of bounding box objects
         trial['timeout_msec'] = msec_timeout
 
+        // Optional
+        trial['correct_grid_index'] = _t['test_correct_grid_index']
+
         return trial
     }
 
@@ -196,11 +198,10 @@ class TaskStreamer{
     }
 
     update_state(current_trial_outcome){
-        return
-        // trial_behavior: the just-finished trial's behavior. 
+       // trial_behavior: the just-finished trial's behavior. 
         // called at the end of every trial. 
 
-        var Return = current_trial_outcome['epoch_outcomes'][0]['reinforcement']
+        var Return = current_trial_outcome['Return']
 
 
         var _repeat_if_wrong_probability = this.EXPERIMENT[this.state.current_stage_index]['probability_repeat_trial_if_wrong'] || 0
@@ -253,7 +254,7 @@ class TaskStreamer{
 
         // Update trial object 
         this.trial_behavior = this.update_behavior_records(this.trial_behavior, current_trial_outcome)
-
+        console.log('this.trial_behavior', this.trial_behavior)
         // Write checkpoint to disk if it's been a while
         if(performance.now() - this._last_checkpoint_save > this._checkpoint_save_timeout_period){
             this.save_ckpt()
@@ -350,7 +351,7 @@ class TaskStreamer{
             }
             updateProgressbar((i_stage+1)/EXPERIMENT.length*100, 'AutomatorLoadBar', 'Stages loaded:')
 
-            var samplebag_paths = []
+            var samplebag_paths = [] // todo: load literally
             var samplebag_labels = []
             for (var i_samplebag = 0; i_samplebag < _tk['ImageBagsSampleMetaPaths'].length; i_samplebag++){
                 var _s_meta = await this.DIO_images.read_textfile(_tk['ImageBagsSampleMetaPaths'][i_samplebag])

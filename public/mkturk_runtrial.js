@@ -10,7 +10,6 @@ writeToTrialCounterDisplay(TRIAL_NUMBER_FROM_SESSION_START)
 
 var TRIAL = await TS.get_trial()
 
-// Unpack TRIAL 
 var image_sequence = TRIAL['image_sequence']
 var grid_placement_sequence = TRIAL['grid_placement_sequence']
 var frame_durations = TRIAL['frame_durations']
@@ -22,11 +21,12 @@ var choice_regions_gridIndices = TRIAL['choice_regions_gridIndices']
 var sequence_id = 'stimulus_sequence'
 await SD.bufferSequenceFrames(sequence_id, image_sequence, grid_placement_sequence, frame_durations)
 
-// Blank out screen
+// BLANK SCREEN
 await SD.displayBlank()
 
-// Show fixation dot 
-var funcreturn = await SD.displayFixation(5)
+// FIXATION SCREEN
+var fixation_grid_index = 5 // todo: pull from params  
+var funcreturn = await SD.displayFixation(fixation_grid_index)
 var boundingBoxFixation = funcreturn[0]
 var fixation_timestamps = funcreturn[1]
 
@@ -34,14 +34,13 @@ var fixation_timestamps = funcreturn[1]
 RewardMap.create_reward_map_with_bounding_boxes(boundingBoxFixation, 'none')
 var fixation_outcome = await RewardMap.Promise_wait_until_active_response_then_return_reinforcement()
 
-// Show stimulus 
-await SD.displaySequence(sequence_id)
+// STIMULUS_SCREEN
+var frame_timestamps = await SD.displaySequence(sequence_id)
 
-// Construct choice
-
-RewardMap.create_reward_map_with_grid_indices(choice_regions_gridIndices, choice_regions_reward_amounts)
 
 // Wait for choice response, with optional timeout
+// todo: chaining markov reward maps for multi-response tasks (v3); chain stimulus / reward map periods (but why call it a trial?)
+RewardMap.create_reward_map_with_grid_indices(choice_regions_gridIndices, choice_regions_reward_amounts)
 if(timeout_msec > 0){
     var choice_promise = Promise.race([
                         RewardMap.Promise_wait_until_active_response_then_return_reinforcement(), 
@@ -53,6 +52,7 @@ else{
 
 choice_outcome = await choice_promise
 nreward = choice_outcome['reinforcement']
+var chosen_grid_index = choice_regions_gridIndices[choice_outcome['region_index']]
 
 // Deliver reinforcement
 var reinforcement_start = performance.now()
@@ -61,12 +61,27 @@ var reinforcement_end = performance.now()
 
 // Update taskstreamer with results of this trial 
 var current_trial_outcome = {}
+current_trial_outcome['frame_timestamps'] = frame_timestamps
+current_trial_outcome['timestamp_FixationOnset'] = fixation_timestamps[0]
+current_trial_outcome['timestamp_ReinforcementOn'] = reinforcement_start
+current_trial_outcome['timestamp_ReinforcementOff'] = reinforcement_end
+current_trial_outcome['FixationX'] = fixation_outcome['x']
+current_trial_outcome['FixationY'] = fixation_outcome['y']
+current_trial_outcome['FixationT'] = fixation_outcome['timestamp']
+current_trial_outcome['FixationGridIndex'] = fixation_grid_index
+current_trial_outcome['ChoiceX'] = choice_outcome['x']// todo: multiple response screens
+current_trial_outcome['ChoiceY'] = choice_outcome['y']
+current_trial_outcome['ChoiceT'] = choice_outcome['timestamp']
+current_trial_outcome['Response_GridIndex'] = chosen_grid_index
+
+current_trial_outcome['Return'] = nreward
+current_trial_outcome['TRIAL'] = TRIAL
+
 TS.update_state(current_trial_outcome)
 
 // Package data and writeout (e.g. live, to dropbox)
 dataobj = TS.package_behavioral_data() // However you'd like, specific to your TaskStreamer
 DWr.writeout(dataobj)
-
 
 TRIAL_NUMBER_FROM_SESSION_START++
 
