@@ -23,11 +23,9 @@ _TRIAL = await TS.get_trial()
 
 
 // Prebuffer 
-
-
 for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
-    var _msec_on = _TRIAL[i_epoch]['msec_on'] // Can be -1 for indefinitely; otherwise 
-    var _images = _TRIAL[i_epoch]['images'] // There are canonical references for certain kinds of images that html can generate, like a white dot
+    var _msec_on = _TRIAL[i_epoch]['msec_on'] 
+    var _images = _TRIAL[i_epoch]['images'] 
     var _grid_placements = _TRIAL[i_epoch]['grid_placements']
 
     // Buffer canvas
@@ -40,10 +38,10 @@ var reinforcement_timestamps = {}
 var user_outcomes = {}
 
 
-// Fixation
+// Show fixation dot 
 
 var boundingBoxFixation = await SD.displayFixation(5)
-RewardMap.create_reward_map_with_bounding_boxes([boundingBoxFixation], ['none'])
+RewardMap.create_reward_map_with_bounding_boxes(boundingBoxFixation, 'none')
 
 console.log('Awaiting fixation...')
 var fixation_outcome = await RewardMap.Promise_wait_until_active_response_then_return_reinforcement()
@@ -72,7 +70,6 @@ for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
 
     user_outcomes[i_epoch] = await p
     _nreward = user_outcomes[i_epoch]['reinforcement']
-
     var reinforcement_start = performance.now()
     await R.deliver_reinforcement(_nreward)
     var reinforcement_end = performance.now()
@@ -81,14 +78,12 @@ for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
 }
 
 // Record results of trial 
-var current_trial_outcome = []
-for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
-    current_trial_outcome[i_epoch] = {}
-    current_trial_outcome[i_epoch]['display_timestamps'] = display_timestamps[i_epoch]
-    current_trial_outcome[i_epoch]['user_outcomes'] = user_outcomes[i_epoch]
-    current_trial_outcome[i_epoch]['reinforcement_timestamps'] = reinforcement_timestamps[i_epoch]
-}
+var current_trial_outcome = {}
+current_trial_outcome['display_timestamps'] = display_timestamps
+current_trial_outcome['user_outcomes'] = user_outcomes
+current_trial_outcome['reinforcement_timestamps'] = reinforcement_timestamps
 
+console.log('current trial outcome', current_trial_outcome)
 //TS.update_state(current_trial_outcome)
 //TS.package_behavioral_data() // Handles packaging behavior data however way is intuitive for the task
 

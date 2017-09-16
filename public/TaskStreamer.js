@@ -137,16 +137,7 @@ class TaskStreamer{
         this._initial_state = undefined
         this._debug_mode = false
     }
-    makeEpoch(durations, images, grid_placements, boundingBoxes,reward_amounts, msec_timeout){
-        var epoch = {}
-        epoch['msec_on'] = durations // List of durations
-        epoch['images'] = images // List of list of images
-        epoch['grid_placements'] = grid_placements // list of lists
-        epoch['reward_amounts'] = reward_amounts // list of award amounts
-        epoch['boundingBoxes'] = boundingBoxes // list of bounding box objects
-        epoch['msec_timeout'] = msec_timeout
-        return epoch 
-    }
+
     async get_trial(i){
         // called at the beginning of each trial 
         // returns images, reward maps, and other necessary things for runtrial()
@@ -169,10 +160,15 @@ class TaskStreamer{
         var sample_image = _t['sample_image']
         var test_images = _t['test_images']
         // todo: entries can be singletons or arrays
-        trial[0] = this.makeEpoch([100, 0], [[sample_image], test_images], [[4], [2, 8]], 
-            [PLAYSPACE._grid_boundingBox[2], PLAYSPACE._grid_boundingBox[8]], 
-            _t['choice_reward_amounts'], msec_timeout)
-
+        var epoch = []
+        epoch['msec_on'] = [100,0] // List of durations
+        epoch['images'] = [sample_image, test_images] // List of list of images
+        epoch['grid_placements'] = [[4], [2, 8]] // list of lists
+        epoch['reward_amounts'] = _t['choice_reward_amounts'] // list of award amounts
+        epoch['boundingBoxes'] = [PLAYSPACE._grid_boundingBox[2], PLAYSPACE._grid_boundingBox[8]] // list of bounding box objects
+        epoch['msec_timeout'] = msec_timeout
+        epoch['frame_names'] = ['frame_stimulus', 'frame_choice']
+        trial[0] = epoch 
 
         return trial
     }

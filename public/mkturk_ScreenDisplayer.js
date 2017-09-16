@@ -22,8 +22,6 @@ class ScreenDisplayer{
 
         this.renderReward(this.canvas_reward)
         this.renderPunish(this.canvas_punish) 
-        
-
     }
 
 
@@ -84,8 +82,7 @@ class ScreenDisplayer{
 
         var num_frames = image_sequence.length
         
-        var last_event_time = 0
-        var time_sequence = [0]
+        var time_sequence = []
         var canvas_sequence = []
 
 
@@ -96,17 +93,21 @@ class ScreenDisplayer{
             var frame_msec_on = msec_sequence[i_frame]
             var canvasobj = this.getEpochCanvas(epoch_name, i_frame)
 
-            // Iterate over (potentially multiple) images in this frame
-            for (var i_image = 0; i_image<frame_images.length; i_image++){
-                console.log('hello1')
-                await renderImageAndScaleIfNecessary(frame_images[i_image], frame_grid_locs[i_image], canvasobj)
+
+            if(frame_images.constructor == Array){
+                // Iterate over (potentially multiple) images in this frame
+                for (var i_image = 0; i_image<frame_images.length; i_image++){
+                    console.log('hello1')
+                    await renderImageAndScaleIfNecessary(frame_images[i_image], frame_grid_locs[i_image], canvasobj)
+                }
+            }
+            else{
+                if(frame_grid_locs.constructor == Array){
+                    frame_grid_locs = frame_grid_locs[0]
+                }
+                await renderImageAndScaleIfNecessary(frame_images, frame_grid_locs, canvasobj)
             }
             
-            if(i_frame < num_frames-1){
-                time_sequence.push(last_event_time+frame_msec_on)
-                last_event_time = time_sequence[time_sequence.length-1]
-            }
-                
             canvas_sequence.push(canvasobj)
         
         }
@@ -114,16 +115,18 @@ class ScreenDisplayer{
 
 
         this.canvas_sequences[epoch_name] = canvas_sequence
-        this.time_sequences[epoch_name] = time_sequence
+        this.time_sequences[epoch_name] = msec_sequence
     }
 
 
     async displayReward(msec_duration){
-        var frame_unix_timestamps = await this.displayScreenSequence([this.canvas_blank, this.canvas_reward, this.canvas_blank],[0, 50, 50+msec_duration,])
+        var frame_unix_timestamps = await this.displayScreenSequence([this.canvas_blank, this.canvas_reward, this.canvas_blank],
+            [0, msec_duration, 0])
         return frame_unix_timestamps
     }
     async displayPunish(msec_duration){
-        var frame_unix_timestamps = await this.displayScreenSequence([this.canvas_blank, this.canvas_punish, this.canvas_blank],[0, 50, 50+msec_duration])
+        var frame_unix_timestamps = await this.displayScreenSequence([this.canvas_blank, this.canvas_punish, this.canvas_blank],
+            [0, msec_duration, 0])
 
 
         return frame_unix_timestamps
@@ -140,8 +143,7 @@ class ScreenDisplayer{
     }
 
 
-
-    displayScreenSequence(sequence, tsequence){
+    displayScreenSequence(sequence, t_durations){
         var resolveFunc
         var errFunc
         var p = new Promise(function(resolve,reject){
@@ -150,23 +152,22 @@ class ScreenDisplayer{
         }).then();
         //console.log('seq', sequence, 'tseq', tsequence)
 
-        var start = null;
+        var lastframe_timestamp = undefined;
         var frame_unix_timestamps = []
 
 
         var prev_canvasobj = this.canvas_front
 
-        var current_frame_index = 0
+        var current_frame_index = -1
         var frames_left_to_animate = sequence.length
 
         var _this = this
         function updateCanvas(timestamp){
-            // If start has not been set to a float timestamp, set it now.
-            if (!start) start = timestamp;
-
-            // If time to show new frame, 
-            if (timestamp - start > tsequence[current_frame_index]){
-                console.log(current_frame_index)
+        
+            // If time to show new frame OR first frame, 
+            if (timestamp - lastframe_timestamp >= t_durations[current_frame_index] || lastframe_timestamp == undefined){
+                current_frame_index++;
+                console.log(current_frame_index, performance.now() )
                 frame_unix_timestamps[current_frame_index] = performance.now() //in milliseconds, rounded to nearest hundredth of a millisecond
                 // Move canvas in front
                 var curr_canvasobj = sequence[current_frame_index]
@@ -174,8 +175,9 @@ class ScreenDisplayer{
                 curr_canvasobj.style.zIndex="100";
                 prev_canvasobj = curr_canvasobj;
 
+                lastframe_timestamp = timestamp
                 frames_left_to_animate--
-                current_frame_index++;
+                
             }; 
             // continue if not all frames shown
             if (frames_left_to_animate>0){

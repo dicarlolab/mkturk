@@ -217,6 +217,12 @@ class TouchRewardMap{
     }   
 
     create_reward_map_with_bounding_boxes(boundingBoxes, reward_amounts){
+        if(boundingBoxes.constructor != Array){
+            boundingBoxes = [boundingBoxes]
+        }
+        if(reward_amounts.constructor != Array){
+            reward_amounts = [reward_amounts]
+        }
         this.boundingBoxes = boundingBoxes
         this.reward_amounts = reward_amounts
         

@@ -159,6 +159,10 @@ function sleep(ms) {
 }
 
 
+function md5Hash(blob){
+  var hash = CryptoJS.MD5(CryptoJS.enc.Latin1.parse(blob));
+  return hash
+}
 // Promise: choice time-out
 function choiceTimeOut(timeout_length){
   return new Promise(
