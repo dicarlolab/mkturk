@@ -104,7 +104,15 @@ function displayTerminalScreen(){
 
 //================== CANVAS SETUP ==================//
 
-function setupMouseTracker(){
+function initializeMouseTracker(){
+	var header='pageX,pageY'
+    header+=',unix_timestamp_delta_from__'+SESSION.UnixTimestampAtStart
+    header+=',touch_update_number'
+    header+='\n'
+    
+    TOUCHSTRING = header 
+    TOUCHSTRING_UDPATECOUNTER = 0
+
 	console.log('setupmousetracker')
 	// https://stackoverflow.com/questions/7790725/javascript-track-mouse-position
 	document.onmousemove = handleMouseMove;
@@ -132,15 +140,25 @@ function setupMouseTracker(){
 
         // Use event.pageX / event.pageY her
 
-        MOUSESTRING+=Math.round(event.pageX)
-        MOUSESTRING+=','+Math.round(event.pageY)
-        MOUSESTRING+=','+t+'\n'
-        MOUSESTRING_UPDATE_COUNTER+=1
-
+        TOUCHSTRING+=Math.round(event.pageX)
+        TOUCHSTRING+=','+Math.round(event.pageY)
+        TOUCHSTRING+=','+TOUCHSTRING_UDPATECOUNTER
+        TOUCHSTRING+=','+t+'\n'
+        TOUCHSTRING_UDPATECOUNTER+=1
 	}
 }
 
-function setupDragTracker(){
+function initializeTouchTracker(){
+	var header='pageX,pageY'
+            header+=',clientXdelta_from_pageX,clientYdelta_from_pageY'
+            header+=',screenXdelta_from_pageX,screenYdelta_from_pageY'
+            header+=',radiusX,radiusY'
+            header+=',touch_update_number'
+            header+=',unix_timestamp_delta_from__'+SESSION.UnixTimestampAtStart
+            header+=',Tap_or_Drag\n'
+    
+    TOUCHSTRING = header 
+    TOUCHSTRING_UDPATECOUNTER = 0
 
 	window.addEventListener('touchmove', function(event){
 		// the user touched the screen
@@ -179,10 +197,7 @@ function setupDragTracker(){
 		//console.log(TOUCHSTRING_UDPATECOUNTER)
 		//console.log('drag', x, y, t)
 	},  {passive: true})
-}
-//passive event handlers: 
-//https://stackoverflow.com/questions/39152877/consider-marking-event-handler-as-passive-to-make-the-page-more-responsive
-function setupTapTracker(){
+
 	window.addEventListener('touchstart', function(event){
 
 		pageX = event.targetTouches[0].pageX
@@ -217,7 +232,10 @@ function setupTapTracker(){
 
 		TOUCHSTRING_UDPATECOUNTER+=1
 	},  {passive: true})
+
 }
+//passive event handlers: 
+//https://stackoverflow.com/questions/39152877/consider-marking-event-handler-as-passive-to-make-the-page-more-responsive
 
 
 

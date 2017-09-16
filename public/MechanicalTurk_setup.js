@@ -52,12 +52,12 @@ async function setupMechanicalTurkTask(){
   var use_local_storage = false
 
   if(use_local_storage == true){
-    SubjectSettings = await loadStringFromLocalStorage("SubjectSettings_string")
-    SubjectSettings = JSON.parse(SubjectSettings)
-    console.log('FROM LOCAL STORAGE:', SubjectSettings)
+    SUBJECT = await loadStringFromLocalStorage("SubjectSettings_string")
+    SUBJECT = JSON.parse(SUBJECT)
+    console.log('FROM LOCAL STORAGE:', SUBJECT)
     wdm("Subject settings loaded...")
 
-    SESSION.SubjectID = SubjectSettings['SubjectID'];
+    SESSION.SubjectID = SUBJECT['SubjectID'];
 
     //SESSION.ExperimentFilePath = "https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt"
     SESSION.ExperimentFilePath = await loadStringFromLocalStorage('Experiment_url')
@@ -78,9 +78,9 @@ async function setupMechanicalTurkTask(){
   else{
     MechanicalTurkSettings = {"MinimumTrialsForCashIn": 10, "MAX_SESSION_TRIALS_MECHANICALTURK": 100}
     SESSION.SubjectID = 'Michaelo_debugger'
-    var SubjectSettings = []
-    SubjectSettings['SubjectID'] = SESSION.SubjectID 
-    SubjectSettings['assignmentId'] = ''
+    var SUBJECT = []
+    SUBJECT['SubjectID'] = SESSION.SubjectID 
+    SUBJECT['assignmentId'] = ''
     SESSION.ExperimentFilePath = 'https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt'
     Experiment = [{
             "StageNickname":"MILTEST",
@@ -206,7 +206,7 @@ async function setupMechanicalTurkTask(){
   var skip_preview_mode = true // strictly for debugging purposes only 
 
   if(skip_preview_mode != true){
-    if(SubjectSettings['assignmentId'] == 'ASSIGNMENT_ID_NOT_AVAILABLE' || SubjectSettings['assignmentId'] == '' ){
+    if(SUBJECT['assignmentId'] == 'ASSIGNMENT_ID_NOT_AVAILABLE' || SUBJECT['assignmentId'] == '' ){
       console.log('RUNNING IN PREVIEW MODE')
       // If in preview mode on MechanicalTurk
       toggleElement(1, 'PreviewModeSplash')

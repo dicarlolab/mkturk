@@ -29,7 +29,7 @@ class UX_poller{
 
         if (juiceRequest_flag != undefined){
             if(juiceRequest_flag['FlagFulfilled'] == 0){
-                SubjectSettings['RewardPer1000Trials'] = juiceRequest_flag['RewardPer1000Trials']
+                SUBJECT['RewardPer1000Trials'] = juiceRequest_flag['RewardPer1000Trials']
                 juiceRequest_flag['FlagFulfilled'] = 1
                 await DIO.write_string(JSON.stringify(juiceRequest_flag), this.get_juiceRequest_filepath())
                 console.log('RECEIVED VALID JUICE REQUEST FORCED SAVE, wrote flag fulfilled to disk')       

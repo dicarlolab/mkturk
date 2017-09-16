@@ -1,23 +1,10 @@
 async function runtrial(){
-// Global references: 
-// TRIAL_NUMBER_FROM_SESSION_START
-// TS 
-// CANVAS
-// SD 
-// FixationRewardMap
-// ChoiceRewardMap
-// R
-// EVENT_TIMESTAMPS
-// TRIAL_BEHAVIOR
-// DWr
-// TERMINAL_STATE
 
 
 writeToTrialCounterDisplay(TRIAL_NUMBER_FROM_SESSION_START)
 
 
 _TRIAL = await TS.get_trial()
-
 
 
 // Prebuffer 
@@ -89,63 +76,5 @@ DWr.writeout(dataobj)
 TRIAL_NUMBER_FROM_SESSION_START++
 
 return 
-
-
-
-var current_trial_outcome = {}
-current_trial_outcome['FixationX'] = fixation_outcome['x']
-current_trial_outcome['FixationY'] = fixation_outcome['y']
-current_trial_outcome['FixationT'] = Math.round(fixation_outcome['timestamp']*1000)/1000
-
-current_trial_outcome['ChoiceX'] = choice_outcome['x']
-current_trial_outcome['ChoiceY'] = choice_outcome['y']
-current_trial_outcome['ChoiceT'] = Math.round(choice_outcome['timestamp']*1000)/1000
-
-current_trial_outcome['StartTime'] = Math.round(fixation_outcome['timestamp']*1000)/1000
-current_trial_outcome['FixationGridIndex'] = TS.EXPERIMENT[TS.state.current_stage_index]['StaticFixationGridIndex']
-current_trial_outcome['SampleBagIndex'] = samplebag_index
-current_trial_outcome['TestBagIndices'] = testbag_indices
-current_trial_outcome['Response'] = chosen_grid_index
-current_trial_outcome['CorrectItem'] = test_correct_grid_index
-current_trial_outcome['CurrentStageIndex'] = TS.state.current_stage_index
-current_trial_outcome['trial_num_Stage'] = TS.state.current_stage_trial_number
-current_trial_outcome['trial_num_Session'] = TRIAL_NUMBER_FROM_SESSION_START
-current_trial_outcome['reward_duration'] = Math.round(1000*RewardDuration)/1000
-current_trial_outcome['BoundingBoxFixationImage'] = boundingBoxesFixation[0]
-current_trial_outcome['BoundingBoxSampleImage'] = boundingBoxesSample[0]
-current_trial_outcome['BoundingBoxesChoiceImages'] = boundingBoxesChoice
-current_trial_outcome['choice_reward_amounts'] = choice_reward_amounts
-
-current_trial_outcome['Return'] = choice_outcome['reinforcement']
-
-TS.update_state(current_trial_outcome)
-TRIAL_NUMBER_FROM_SESSION_START++
-
-
-//================= Update tracking variables =================//
-EVENT_TIMESTAMPS.fixation_onset.push(fixation_onset_timestamps[0])
-EVENT_TIMESTAMPS.fixation_touch.push(fixation_outcome['timestamp'])
-
-EVENT_TIMESTAMPS.blank_onset.push(stimulus_timestamps[0])
-EVENT_TIMESTAMPS.stimulus_onset.push(stimulus_timestamps[1])
-
-if (TS.EXPERIMENT[TS.state.current_stage_index]['t_sampleOFF'] > 0) {
-    EVENT_TIMESTAMPS.delay_onset.push(stimulus_timestamps[2])
-    EVENT_TIMESTAMPS.choice_onset.push(stimulus_timestamps[3]) 
-}
-else{
-    EVENT_TIMESTAMPS.delay_onset.push(-1)
-    EVENT_TIMESTAMPS.choice_onset.push(stimulus_timestamps[2]) 
-}
-EVENT_TIMESTAMPS.choice_touch.push(choice_outcome['timestamp'])
-EVENT_TIMESTAMPS.reinforcement_onset.push(reinforcement_onset)
-EVENT_TIMESTAMPS.reinforcement_end.push(reinforcement_end)
-
-for (var _property in current_trial_outcome){
-    if(current_trial_outcome.hasOwnProperty(_property)){
-        TRIAL_BEHAVIOR[_property].push(current_trial_outcome[_property])
-    }
-}
-
 
 }

@@ -1,6 +1,7 @@
 class TaskStreamer{
     constructor(DIO_checkpointing, DIO_images, Experiment, SubjectID, use_checkpointing){
 
+        this.trial_behavior = this.initialize_behavior_records()
 
         this.DIO_checkpointing = DIO_checkpointing // For checkpointing 
         this.DIO_images = DIO_images // for loading images and loading textfiles with imagebag definitions 
@@ -35,6 +36,48 @@ class TaskStreamer{
         this._done_monitoring = false
     }
 
+    initialize_behavior_records(){
+        var t = {}
+
+        t['StartTime'] = []
+        t['TrialNumber_Session'] = []
+        t['TrialNumber_Stage'] = []
+        t['StageNumber'] = []
+
+        t['timestamp_FixationOnset'] = []
+        t['timestamp_StimulusOn'] = []
+        t['timestamp_StimulusOff'] = []
+        t['timestamp_ChoiceOn'] = []
+        t['timestamp_ReinforcementOn'] = []
+        t['timestamp_ReinforcementOff'] = []
+
+        t['ChoiceX'] = []
+        t['ChoiceY'] = []
+        t['ChoiceT'] = []
+        t['Return'] = [] 
+
+        t['Response_GridIndex'] = []
+        t['Correct_GridIndex'] = []
+
+        t['FixationX'] = []
+        t['FixationY'] = []
+        t['FixationT'] = []
+
+        t['Stimulus_ImageBagIndex'] = []  
+        t['Stimulus_ImageIndex'] = []
+        t['Stimulus_GridIndex'] = [] 
+
+        t['Choices_ImageBagIndices'] = [] 
+        t['Choices_GridIndices'] = [] 
+        t['Choices_RewardAmounts'] = [] 
+        
+        return t
+    }
+
+    update_behavior_records(current_trial_outcome){
+        this.trial_behavior
+
+    }
     _checkpoint_namehash(SubjectID){
         return 'Checkpoint_'+SubjectID + '.ckpt'
     }
@@ -136,7 +179,9 @@ class TaskStreamer{
         this.state = this._initial_state 
         this._initial_state = undefined
         this._debug_mode = false
+        this.trial_behavior = this.initialize_behavior_records()
     }
+
 
     async get_trial(i){
         // called at the beginning of each trial 
@@ -271,6 +316,10 @@ class TaskStreamer{
             }
         }
 
+
+        // Update trial object 
+        this.update_behavior_records(current_trial_outcome)
+
         // Write checkpoint to disk if it's been a while
         if(performance.now() - this._last_checkpoint_save > this._checkpoint_save_timeout_period){
             this.save_ckpt()
@@ -281,12 +330,15 @@ class TaskStreamer{
 
     package_behavioral_data(){
         var dataobj = {}
-        dataobj['SESSION'] = SESSION
+
         dataobj['DEVICE'] = DEVICE
+        dataobj['PLAYSPACE'] = PLAYSPACE
+        dataobj['TOUCHSTRING'] = TOUCHSTRING
+        dataobj['SUBJECT'] = SUBJECT
+        dataobj['SESSION'] = SESSION
+
         dataobj['EXPERIMENT'] = TS.EXPERIMENT
-        dataobj['TRIAL_BEHAVIOR'] = TRIAL_BEHAVIOR
-        dataobj['EVENT_TIMESTAMPS'] = EVENT_TIMESTAMPS
-        dataobj['SubjectSettings'] = SubjectSettings
+        dataobj['BEHAVIOR'] = this.trial_behavior
 
         return dataobj
     }

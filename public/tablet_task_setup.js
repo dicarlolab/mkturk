@@ -7,7 +7,7 @@ async function setupTaskFunctionTemplate(){
   // UX: UX poller 
   // DIO: Disk I/O
   // Experiment file 
-  // SubjectSettings
+  // SUBJECT
 
 
   // backing store ratio
@@ -23,7 +23,7 @@ async function setupTabletTask(){
   DWr = new DropboxDataWriter(DIO)
   UX = new UX_poller(DIO)
 
-
+  
   DEVICE.DevicePixelRatio = window.devicePixelRatio || 1;
   var visiblecanvasobj = CANVAS.obj[CANVAS.front];
   var visiblecontext = visiblecanvasobj.getContext("2d");
@@ -77,13 +77,13 @@ async function setupTabletTask(){
   subjectdialog.showModal()
   await subjectIDPromise() // sets SESSION.SubjectFilePath
 
-  SubjectSettings = await DIO.read_textfile(SESSION.SubjectFilePath)
-  SubjectSettings = JSON.parse(SubjectSettings)
+  SUBJECT = await DIO.read_textfile(SESSION.SubjectFilePath)
+  SUBJECT = JSON.parse(SUBJECT)
 
-  console.log(SubjectSettings)
+  console.log(SUBJECT)
   wdm("Subject settings loaded...")
 
-  SESSION.SubjectID = SubjectSettings['SubjectID'];
+  SESSION.SubjectID = SUBJECT['SubjectID'];
   updateSessionTextbox(SESSION.SubjectID, '')
 
   //================== AWAIT LOAD Experiment Filepath ==================//

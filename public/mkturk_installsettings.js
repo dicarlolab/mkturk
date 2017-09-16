@@ -22,7 +22,7 @@ var SOUND_FILEPREFIX = "/Resources/sounds/au"
 
 
 // New 
-var SUBJECT_DIRPATH = "/Subjects/SubjectSettings/" // SubjectID; tablet; pump; liquid; species
+var SUBJECT_DIRPATH = "/Subjects/SUBJECT/" // SubjectID; tablet; pump; liquid; species
 var CHECKPOINT_DIRPATH = "/Subjects/SubjectCheckpoints/" // Used to revivify the state of a TaskStream
 var _debug_CHECKPOINT_DIRPATH = "/Subjects/debug/SubjectCheckpoints/"
 

@@ -14,42 +14,8 @@ function resize_event_listener(){
 
 
 
-//================== MOUSE & TOUCH EVENTS ==================//
-function touchstart_listener(event){
-	event.preventDefault(); //prevents additional downstream call of click listener
-	if(typeof event === 'undefined'){
-		////console.log('no click, loading images, initializing responsepromise');
-		return
-	}
-	if (!FLAGS.touchGeneratorCreated){
-		//wait for touch generator promise to be created before registering new touches
-		////console.log("IGNORING TOUCH EVENT: no active touch generators")
-	} //if no click generator created
-	else {
-		////console.log('touchstart_listener called')
-		waitforEvent.next(event)
-	}
-} //touchstart_listener
 
-function touchmove_listener(event){
-	if (!FLAGS.touchGeneratorCreated){
-		//wait for touch generator promise to be created before registering new touches
-		////console.log("IGNORING TOUCH EVENT: no active touch generators")
-	} //if no click generator created
-	else {
-		waitforEvent.next(event)
-	}
-} //touchmove_listener
 
-function touchend_listener(event){
-	if (!FLAGS.touchGeneratorCreated){
-		//wait for touch generator promise to be created before registering new touches
-		////console.log("IGNORING TOUCH EVENT: no active touch generators")
-	} //if no click generator created
-	else {
-		waitforEvent.next(event)
-	}
-} //touchend_listener
 
 function doneTestingTask_listener(event){
 	event.preventDefault()

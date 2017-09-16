@@ -2,10 +2,6 @@
 // In the interest of code readability and spaghetti-minimization, the use of globals should be kept to a minimum, and instead explicit passage of variables into and out of functions is encouraged.
 // For certain things, globals make sense and may even be required, like event listeners and async processes.
 
-
-WORKSPACE_WIDTH_HEIGHT_RATIO = 1 // width divided by height
-WORKSPACE_MARGIN = 10 // in percent; on whichever dimension is shorter (usually height); on each side
-
 PLAYSPACE = {}
 
 TOUCHSTRING = ""
@@ -16,79 +12,40 @@ MOUSESTRING_UPDATE_COUNTER = 0
 
 TRIAL_NUMBER_FROM_SESSION_START = 0 
 TRIAL_NUMBER_FROM_TASKSTREAM_START = 0
-RewardDuration = 0 
 
-var ParamFilePath = ''; 
+var SUBJECT = {}
 
-//var TASK // Current 
-
-
-var EVENT_TIMESTAMPS = {}
-EVENT_TIMESTAMPS.fixation_onset = [] // todo: move to control of task / screen state machine
-EVENT_TIMESTAMPS.fixation_touch = []
-EVENT_TIMESTAMPS.blank_onset = []
-EVENT_TIMESTAMPS.stimulus_onset = []
-EVENT_TIMESTAMPS.delay_onset = []
-EVENT_TIMESTAMPS.choice_onset = []
-EVENT_TIMESTAMPS.choice_touch = []
-EVENT_TIMESTAMPS.reinforcement_onset = []
-EVENT_TIMESTAMPS.reinforcement_end = []
-
-
-var TRIAL_BEHAVIOR = {} // Global that contains data variables that are incremented every trial, and are dumped to disk for scientific purposes.
-initialize_TRIAL()
 
 var DEVICE = {} // Does not change during a session on a particular device 
 DEVICE.BatteryLDT = []
-DEVICE.DevicePixelRatio = 1
-
+DEVICE.DevicePixelRatio = window.devicePixelRatio || 1
+DEVICE.navigator_info = navigator
+DEVICE.window_info = window
 
 var SESSION = {}
 SESSION.SubjectID = ''
 SESSION.UnixTimestampAtStart = window.performance.timing.navigationStart
 SESSION.CurrentDate = new Date;
-var __datestr = SESSION.CurrentDate.toISOString();
-SESSION.TrialDataFileName_suffix = __datestr.slice(0, __datestr.indexOf(".")) + "_" + SESSION.SubjectID + ".txt";
+SESSION.url = window.location.href
 
+var __datestr = SESSION.CurrentDate.toISOString();
+TrialDataFileName_suffix = __datestr.slice(0, __datestr.indexOf(".")) + "_" + SESSION.SubjectID + ".txt"; // todo: move to dropbox data writer
 
 var FLAGS = {} 
-FLAGS.need2loadParameters = 0; 
 FLAGS.debug_mode = 1; 
 
-FLAGS.waitingforTouches = 0
-FLAGS.touchGeneratorCreated = 0
-
-
-var boundingBoxesFixation=[]; //where the fixation touch targets are on the canva
-var boundingBoxesChoice=[]; //where the choice touch targets are on the canva
-var waitforClick; //variable to hold generator
-var waitforEvent; //variable to hold generator
-var touchTimer; //variable to hold timer
-var xcanvascenter=[]
-var ycanvascenter=[]
-var curridx = null;
-var datafiles=[];
-var displayoutofboundsstr=""
-
-
-
-
-//================ UPDATE VARIABLE FUNCTIONS ================//
 
 
 function transition_from_debug_to_science_trials(){
 
-
 	// Revert TaskStreamer
 	TS.transition_from_debug_to_science_mode()
 
-	TOUCHSTRING = ""
-	TOUCHSTRING_UDPATECOUNTER = 0
-	
-		
-	initialize_TRIAL()
+	DWr.initialize()
 	
 	TRIAL_NUMBER_FROM_SESSION_START = 0
+
+	// Turn off certain HTML elements
 	progressbar_names = [
 						'AutomatorLoadBar',
 						'ImageLoadBar',
@@ -109,34 +66,5 @@ function transition_from_debug_to_science_trials(){
 	document.querySelector("button[name=SyncButton]").style['background-color'] = "#808080"
 	document.querySelector("button[name=SyncButton]").style.opacity = 0.3
 
-
-
 	return 
-}
-
-function initialize_TRIAL(){
-	TRIAL_BEHAVIOR.FixationGridIndex = []
-	TRIAL_BEHAVIOR.SampleBagIndex = []
-	TRIAL_BEHAVIOR.TestBagIndices = []
-	TRIAL_BEHAVIOR.Response = []
-	TRIAL_BEHAVIOR.CorrectItem = []
-	TRIAL_BEHAVIOR.Return = []
-	TRIAL_BEHAVIOR.CurrentStageIndex = []
-	TRIAL_BEHAVIOR.trial_num_Session = []
-	TRIAL_BEHAVIOR.trial_num_Stage = []
-	TRIAL_BEHAVIOR.reward_duration = []
-	TRIAL_BEHAVIOR.StartTime = []
-
-	TRIAL_BEHAVIOR.FixationX = []
-	TRIAL_BEHAVIOR.FixationY = []
-	TRIAL_BEHAVIOR.FixationT = []
-
-	TRIAL_BEHAVIOR.ChoiceX = []
-	TRIAL_BEHAVIOR.ChoiceY = []
-	TRIAL_BEHAVIOR.ChoiceT = []
-
-	TRIAL_BEHAVIOR.BoundingBoxesChoiceImages = []
-	TRIAL_BEHAVIOR.BoundingBoxSampleImage = []
-	TRIAL_BEHAVIOR.BoundingBoxFixationImage = []
-	TRIAL_BEHAVIOR.choice_reward_amounts = []
 }

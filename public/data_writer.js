@@ -25,7 +25,11 @@ class MechanicalTurkDataWriter{
     // Where there can be no live writing / reading
     constructor(){
         this.dataobj = undefined
-        setupMouseTracker()
+    }
+
+    initialize(){
+        this.dataobj = undefined
+        initializeMouseTracker()
     }
 
     async writeout(dataobj){
@@ -58,8 +62,8 @@ class MechanicalTurkDataWriter{
 
         var dataobj = this.dataobj
 
-        var result_str = {'MOUSE_DATA':MOUSESTRING, 
-                          'TASK_DATA':dataobj}
+        var result_str = {'TASK_DATA':dataobj}
+        
 
         result_str = JSON.stringify(result_str)
 
@@ -79,6 +83,9 @@ class MechanicalTurkDataWriter{
 
 class DropboxDataWriter{
     constructor(DIO){
+        this.dataobj =undefined 
+        initializeTouchTracker()
+
         this.DIO = DIO
         this.min_write_timeout_period = TRIALDATA_SAVE_TIMEOUT_PERIOD // ms
         this.touchstring_max_cache_size = TOUCHSTRING_MAX_CACHE_SIZE // defined in install_settings
@@ -92,11 +99,13 @@ class DropboxDataWriter{
 
         this._touch_filename_suffix = this._generate_touch_filename_suffix()
 
-        setupDragTracker() // Writes to TOUCHSTRING and TOUCHSTRING_UPDATECOUNTER
-        setupTapTracker() // Writes to TOUCHSTRING and TOUCHSTRING_UPDATECOUNTER
 
 
+    }
 
+    initialize(){
+        this.dataobj = undefined
+        initializeTouchTracker()
     }
 
     async saveTrialData(dataobj, save_to_debug_directory){
@@ -109,12 +118,12 @@ class DropboxDataWriter{
             if (save_to_debug_directory == 1){
                 var savepath = join([this._debug_trial_data_savepath,
                     SESSION.SubjectID,
-                    "debug__"+SESSION.SubjectID +'_'+SESSION.TrialDataFileName_suffix])
+                    "debug__"+SESSION.SubjectID +'_'+TrialDataFileName_suffix])
             }
             else { 
                 var savepath = join([this.trial_data_savepath,
                     SESSION.SubjectID,
-                    SESSION.SubjectID +'_'+SESSION.TrialDataFileName_suffix])
+                    SESSION.SubjectID +'_'+TrialDataFileName_suffix])
             }
 
             await this.DIO.write_string(datastr, savepath)             
@@ -161,15 +170,9 @@ class DropboxDataWriter{
             console.log(savepath, '  saveTouches does this look ok?')
 
 
-            var header='pageX,pageY'
-            header+=',clientXdelta_from_pageX,clientYdelta_from_pageY'
-            header+=',screenXdelta_from_pageX,screenYdelta_from_pageY'
-            header+=',radiusX,radiusY'
-            header+=',touch_update_number'
-            header+=',unix_timestamp_delta_from__'+SESSION.UnixTimestampAtStart
-            header+=',Tap_or_Drag\n'
+            
 
-            var datastring = header+TOUCHSTRING
+            var datastring = TOUCHSTRING
 
             this.DIO.write_string(datastring, savepath)
 
