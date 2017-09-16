@@ -231,33 +231,7 @@ class ScreenDisplayer{
         
         context.fill();
     }
-    async bufferFixationScreenUsingDot(gridindex){
 
-        var dot_pixelradius = PLAYSPACE._gridwidth/2.5
-        var color = "white"
-
-        var canvasobj = CANVAS.obj.touchfix
-        var context=CANVAS.obj.touchfix.getContext('2d');
-
-        context.clearRect(0,0,canvasobj.width,canvasobj.height);
-        context.fillStyle="#7F7F7F"; 
-
-        // Draw fixation dot
-        var rad = dot_pixelradius;
-        var xcent = PLAYSPACE._xgridcent[gridindex]; // playspace units
-        var ycent = PLAYSPACE._ygridcent[gridindex];
-        context.beginPath();
-        context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
-        context.fillStyle=color; 
-        context.fill();
-
-        // Define (rectangular) boundaries of fixation
-        var boundingBoxesFixation = [{}] // todo: move out of here 
-        boundingBoxesFixation[0]['x']= [xcent-rad+CANVAS.offsetleft, xcent+rad+CANVAS.offsetleft]
-        boundingBoxesFixation[0]['y']= [ycent-rad+CANVAS.offsettop, ycent+rad+CANVAS.offsettop]
-
-        return boundingBoxesFixation
-    }
 
     async bufferCanvasWithImage(image, canvasobj, dx, dy, dwidth, dheight){
         // In playspace units
@@ -278,54 +252,7 @@ class ScreenDisplayer{
         return _boundingBox
     }
 
-    async bufferFixationScreenUsingImage(image, gridindex){
-        // todo: remove dependence on fixation screen 
-        
 
-        // Gray out first 
-        var canvasobj = CANVAS.obj.touchfix
-        var context=canvasobj.getContext('2d');
-        context.fillStyle="#7F7F7F"; 
-        context.fillRect(0,0,canvasobj.width,canvasobj.height);
-
-        // Draw image 
-
-        // todo: make general 'buffer' functions without hardcoding canvas references
-        funcreturn = await renderImageAndScaleIfNecessary(image, gridindex, canvasobj)
-        
-    
-        // Define (rectangular) boundaries of fixation
-        boundingBoxesFixation = [{}] // todo: move out of here 
-        boundingBoxesFixation[0]['x']= funcreturn[0]
-        boundingBoxesFixation[0]['y']= funcreturn[1]
-        return boundingBoxesFixation
-    }
-
-    async bufferStimulusScreen(sample_image, sample_image_grid_index){
-
-        //========== BUFFER SAMPLE CANVAS ==========//
-        var context=CANVAS.obj.sample.getContext('2d'); 
-        context.fillStyle="#7F7F7F";  // Gray out before buffering sample
-        
-        var boundingBoxesSample = [{"x":[], "y":[]}]
-        funcreturn = await renderImageAndScaleIfNecessary(sample_image, sample_image_grid_index, CANVAS.obj.sample)
-        boundingBoxesSample[0].x = funcreturn[0]
-        boundingBoxesSample[0].y = funcreturn[1]
-        return boundingBoxesSample
-    }
-
-    async bufferChoiceScreen(test_images, test_image_grid_indices){
-
-        var boundingBoxesChoice = [] 
-        for (i = 0; i<test_images.length; i++){
-            boundingBoxesChoice.push({"x":[], "y":[]})
-            funcreturn = await renderImageAndScaleIfNecessary(test_images[i], test_image_grid_indices[i], CANVAS.obj.test); 
-            boundingBoxesChoice[i].x = funcreturn[0]
-            boundingBoxesChoice[i].y = funcreturn[1]
-        }
-
-        return boundingBoxesChoice
-    }
 
 }
 

@@ -165,7 +165,6 @@ async function setupMechanicalTurkTask(){
     
     R = new MonetaryReinforcer()
 
-  refreshScreenTSequenceSettings(TS.EXPERIMENT[TS.state.current_stage_index]); 
 
   var ngridpoints = TS.EXPERIMENT[0]['NGridPoints'] 
   setupPlayspace(ngridpoints) // sets up PLAYSPACE based on window dimensions
@@ -204,7 +203,7 @@ async function setupMechanicalTurkTask(){
   console.log('hello')
   
   
-  var skip_preview_mode = false // strictly for debugging purposes only 
+  var skip_preview_mode = true // strictly for debugging purposes only 
 
   if(skip_preview_mode != true){
     if(SubjectSettings['assignmentId'] == 'ASSIGNMENT_ID_NOT_AVAILABLE' || SubjectSettings['assignmentId'] == '' ){

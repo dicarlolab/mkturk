@@ -134,8 +134,6 @@ function setupCanvas(canvasobj, use_image_smoothing){
 
     var _ratio = devicePixelRatio / backingStoreRatio
 
-    //canvasobj.style.top=CANVAS.offsettop + "px";
-    //canvasobj.style.left=CANVAS.offsetleft + "px";
     
     canvasobj.width = PLAYSPACE.width * _ratio;
     canvasobj.height = PLAYSPACE.height * _ratio;
@@ -207,7 +205,6 @@ async function drawGridDots(){
   var dot_pixelradius = 10
   var color = "white"
 
-  //context.clearRect(0,0,CANVAS.obj.touchfix.width,CANVAS.obj.touchfix.height);
   // https://www.w3schools.com/tags/canvas_clearrect.asp
   // Draw grid dots
   var rad = dot_pixelradius;
@@ -267,10 +264,10 @@ async function renderImageAndScaleIfNecessary(image, grid_index, canvasobj){
   var xbound=[original_left_start, original_left_start+PLAYSPACE._gridwidth];
   var ybound=[original_top_start, original_top_start+PLAYSPACE._gridheight];
 
-  xbound[0]=xbound[0]+CANVAS.offsetleft
-  xbound[1]=xbound[1]+CANVAS.offsetleft
-  ybound[0]=ybound[0]+CANVAS.offsettop
-  ybound[1]=ybound[1]+CANVAS.offsettop
+  xbound[0]=xbound[0]
+  xbound[1]=xbound[1]
+  ybound[0]=ybound[0]
+  ybound[1]=ybound[1]
   return [xbound, ybound]
 }
 
@@ -324,10 +321,10 @@ async function renderImageOnCanvasLiterally(image, grid_index, canvasobj){
   xbound=[xleft, xleft+wd];
   ybound=[ytop, ytop+ht];
 
-  xbound[0]=xbound[0]+CANVAS.offsetleft;
-  xbound[1]=xbound[1]+CANVAS.offsetleft;
-  ybound[0]=ybound[0]+CANVAS.offsettop;
-  ybound[1]=ybound[1]+CANVAS.offsettop;
+  xbound[0]=xbound[0]
+  xbound[1]=xbound[1]
+  ybound[0]=ybound[0]
+  ybound[1]=ybound[1]
   return [xbound, ybound]
 }
 

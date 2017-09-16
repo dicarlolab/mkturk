@@ -58,26 +58,6 @@ FLAGS.debug_mode = 1;
 FLAGS.waitingforTouches = 0
 FLAGS.touchGeneratorCreated = 0
 
-var CANVAS = {};
-CANVAS.names= ["blank","sample","test","touchfix","eyefix","reward","photoreward","punish"]
-CANVAS.front= "blank"
-CANVAS.sequenceblank= ["blank","blank"],
-CANVAS.tsequenceblank= [0,50],
-CANVAS.sequencepre= ["touchfix"]
-CANVAS.tsequencepre= [0]
-CANVAS.sequence= ["blank","sample","blank","test"], // blank, sample, blank, tes
-CANVAS.tsequence= NaN,
-CANVAS.sequencepost= ["blank","reward","blank"], // blank, rewar
-CANVAS.tsequencepost= [0,50,100]
-CANVAS.offsetleft= 0
-CANVAS.offsettop= 0
-CANVAS.obj= {}
-
-for (var i in CANVAS.names){
-	CANVAS.obj[CANVAS.names[i]]=document.getElementById(CANVAS.names[i])
-}
-
-
 
 var boundingBoxesFixation=[]; //where the fixation touch targets are on the canva
 var boundingBoxesChoice=[]; //where the choice touch targets are on the canva
@@ -129,9 +109,7 @@ function transition_from_debug_to_science_trials(){
 	document.querySelector("button[name=SyncButton]").style['background-color'] = "#808080"
 	document.querySelector("button[name=SyncButton]").style.opacity = 0.3
 
-	for (var i = 0; i <= CANVAS.names.length-1; i++) {
-		//toggleCanvasStealthMode(0, CANVAS.obj[CANVAS.names[i]])
-	}
+
 
 	return 
 }

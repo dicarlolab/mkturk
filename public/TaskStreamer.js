@@ -284,7 +284,6 @@ class TaskStreamer{
         dataobj['SESSION'] = SESSION
         dataobj['DEVICE'] = DEVICE
         dataobj['EXPERIMENT'] = TS.EXPERIMENT
-        dataobj['CANVAS'] = CANVAS
         dataobj['TRIAL_BEHAVIOR'] = TRIAL_BEHAVIOR
         dataobj['EVENT_TIMESTAMPS'] = EVENT_TIMESTAMPS
         dataobj['SubjectSettings'] = SubjectSettings

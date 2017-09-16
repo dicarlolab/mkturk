@@ -28,7 +28,7 @@ async function run_MouseOver_TutorialTrial(tutorial_image){
     var dwidth = PLAYSPACE._gridwidth*0.7
     var dheight = PLAYSPACE._gridheight*0.7
     var dx = PLAYSPACE._gridwidth/2+(PLAYSPACE.width-PLAYSPACE._gridwidth) * Math.random() // [0, playspace width - one imagewidth]
-    var dy = PLAYSPACE._gridheight/2+(PLAYSPACE.height -PLAYSPACE._gridheight - PLAYSPACE._ygridtop[5]) * Math.random() // avoid overlapping with fixation dot
+    var dy = PLAYSPACE._gridheight/2+(PLAYSPACE.height - 2*PLAYSPACE._gridheight) * Math.random() // avoid overlapping with fixation dot
 
     var boundingBoxMouseOver = await SD.bufferCanvasWithImage(tutorial_image, SD.canvas_fixation, dx, dy, dwidth, dheight)
     // Make smaller
@@ -49,20 +49,8 @@ async function run_MouseOver_TutorialTrial(tutorial_image){
     console.log('Awaiting fixation...')
     var fixation_outcome = await RewardMap.Promise_wait_until_active_response_then_return_reinforcement()
     await SD.displayScreenSequence(SD.canvas_blank,0);
-    console.log('Fixation reached')
-    var correct = fixation_outcome['reinforcement']
-    correct = correct || 1
 
-
-    //============ DETERMINE NUMBER OF REWARDS ============//
-    if (correct == 1){
-        nreward = 1 
-    }
-    else if (correct == 0){
-        nreward = 0;
-    } 
-
-    await R.deliver_reinforcement(nreward)
+    await R.deliver_reinforcement(1)
 
 
 

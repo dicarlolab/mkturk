@@ -99,33 +99,7 @@ function displayTerminalScreen(){
 
 
 //================== LOAD STATUS DISPLAY ==================//
-function refreshScreenTSequenceSettings(EXPERIMENT_entry){
-	// TODO: cleanup CANVAS; separate canvas ID from sequence logic; 'tsequence' variables coded by length rather than absolute time
 
-	// Adjust length / toggle presence of gray screen between sample and test screens
-	if (EXPERIMENT_entry.t_SampleOFF > 0){
-		CANVAS.sequence = ["sample","blank","test"]
-		CANVAS.tsequence = [EXPERIMENT_entry.t_SampleON,TASK_entry.t_SampleON+EXPERIMENT_entry.t_SampleOFF, EXPERIMENT_entry.t_SampleON+EXPERIMENT_entry.t_SampleOFF]; 
-	}
-	else if (EXPERIMENT_entry.t_SampleOFF <= 0 ){
-		CANVAS.sequence = ["blank","sample","test"]
-		CANVAS.tsequence = [0,100,100+EXPERIMENT_entry.t_SampleON]; 
-	}
-	
-	// Adjust length of reward screen based on reward amount 
-	CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+RewardDuration*1000;
-
-
-}
-
-function writeTextonBlankCanvas(textstr,x,y){
-	var blank_canvasobj=CANVAS.obj.blank
-	var visible_ctxt = blank_canvasobj.getContext('2d')
-	visible_ctxt.textBaseline = "hanging"
-	visible_ctxt.fillStyle = "white"
-	visible_ctxt.font = "18px Verdana"
-	visible_ctxt.fillText(textstr,x,y)
-}
 
 
 //================== CANVAS SETUP ==================//
