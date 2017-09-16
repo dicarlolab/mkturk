@@ -17,7 +17,7 @@ class ScreenDisplayer{
         this.canvas_punish = this.createCanvas('canvas_punish')
 
 
-        this.canvas_fixation = this.createCanvas('canvas_fixation')
+        this.canvas_fixation = this.createCanvas('canvas_fixation', true)
 
 
         this.renderReward(this.canvas_reward)
@@ -25,6 +25,7 @@ class ScreenDisplayer{
         
 
     }
+
 
     async displayFixation(gridindex){
         var boundingBoxesFixation = this.renderFixationDot(gridindex, PLAYSPACE._gridwidth*0.5*0.5, 'white', this.canvas_fixation)
@@ -46,7 +47,9 @@ class ScreenDisplayer{
         context.fill();
 
         // Define (rectangular) boundaries of fixation
-        boundingBoxesFixation = PLAYSPACE._grid_boundingBox[gridindex]
+        var boundingBoxesFixation = {'x':[xcent-rad, xcent+rad], 'y':[ycent-rad, ycent+rad]}
+
+
         console.log(boundingBoxesFixation)
         return boundingBoxesFixation
 
@@ -62,10 +65,11 @@ class ScreenDisplayer{
 
         return this._epoch_canvases[epoch_name][i_screen]
     }
-    createCanvas(canvas_id){
+    createCanvas(canvas_id, use_image_smoothing){
+        use_image_smoothing = false || use_image_smoothing
         var canvasobj = document.createElement('canvas')
         canvasobj.id = canvas_id
-        setupCanvas(canvasobj)
+        setupCanvas(canvasobj, use_image_smoothing)
         document.body.appendChild(canvasobj)
         return canvasobj 
     }
@@ -80,7 +84,8 @@ class ScreenDisplayer{
 
         var num_frames = image_sequence.length
         
-        var time_sequence = []
+        var last_event_time = 0
+        var time_sequence = [0]
         var canvas_sequence = []
 
 
@@ -93,17 +98,20 @@ class ScreenDisplayer{
 
             // Iterate over (potentially multiple) images in this frame
             for (var i_image = 0; i_image<frame_images.length; i_image++){
+                console.log('hello1')
                 await renderImageAndScaleIfNecessary(frame_images[i_image], frame_grid_locs[i_image], canvasobj)
             }
-            if(i_frame == 0){
-                var last_event_time = -1 * frame_msec_on
-            }
-
             
-            time_sequence.push(last_event_time+frame_msec_on)
-            last_event_time = time_sequence[time_sequence.length-1]
+            if(i_frame < num_frames-1){
+                time_sequence.push(last_event_time+frame_msec_on)
+                last_event_time = time_sequence[time_sequence.length-1]
+            }
+                
             canvas_sequence.push(canvasobj)
+        
         }
+
+
 
         this.canvas_sequences[epoch_name] = canvas_sequence
         this.time_sequences[epoch_name] = time_sequence
@@ -207,8 +215,9 @@ class ScreenDisplayer{
         var width = canvasobj.width
         var height = canvasobj.height
 
-        context.fillRect(width/2 - 200,height/2 - 200, 400,400);
         context.fillStyle="black";
+        context.fillRect(width/2 - 200,height/2 - 200, 400,400);
+        
         context.fill();
     }
     async bufferFixationScreenUsingDot(gridindex){

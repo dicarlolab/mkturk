@@ -113,8 +113,7 @@ async generate_trial(i){
 }
 
 async get_trial(i){
-	console.log('hello get_trial')
-	return
+
 	
 	var idx = this.trialNumber_q.indexOf(i)
 	if (idx < 0){

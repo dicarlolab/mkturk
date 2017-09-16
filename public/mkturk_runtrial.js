@@ -21,41 +21,32 @@ writeToTrialCounterDisplay(TRIAL_NUMBER_FROM_SESSION_START)
 _TRIAL = await TS.get_trial()
 
 
-// epoch name: {}; image_sequence; grid_sequence; temporal_sequence; reward_sequence; 
 
 // Prebuffer 
-var _msec_on
-var _images
-var _grid_placements
-var _reward_amounts 
-var _boundingBoxes 
 
 
 for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
-    _msec_on = _TRIAL[i_epoch]['msec_on'] // Can be -1 for indefinitely; otherwise 
-    _images = _TRIAL[i_epoch]['images'] // There are canonical references for certain kinds of images that html can generate, like a white dot
-    _grid_placements = _TRIAL[i_epoch]['grid_placements']
-    
+    var _msec_on = _TRIAL[i_epoch]['msec_on'] // Can be -1 for indefinitely; otherwise 
+    var _images = _TRIAL[i_epoch]['images'] // There are canonical references for certain kinds of images that html can generate, like a white dot
+    var _grid_placements = _TRIAL[i_epoch]['grid_placements']
+
     // Buffer canvas
     await SD.bufferEpochFrames(i_epoch, _images, _grid_placements, _msec_on)
 }
 
-var display_timestamps = []
-var user_outcomes = []
-var reinforcement_timestamps = []
+var display_timestamps = {}
+var reinforcement_timestamps = {}
 
-var _nreward
-var _msec_timeout 
+var user_outcomes = {}
 
 
 // Fixation
 
 var boundingBoxFixation = await SD.displayFixation(5)
-FixationRewardMap.create_reward_map_with_bounding_boxes([boundingBoxFixation], ['none'])
+RewardMap.create_reward_map_with_bounding_boxes([boundingBoxFixation], ['none'])
 
 console.log('Awaiting fixation...')
-var fixation_outcome = await FixationRewardMap.Promise_wait_until_active_response_then_return_reinforcement()
-SP.playSound(2)
+var fixation_outcome = await RewardMap.Promise_wait_until_active_response_then_return_reinforcement()
 console.log('Hit fixation')
 
 // Screens 
@@ -64,8 +55,8 @@ for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
 
     display_timestamps[i_epoch] = await SD.displayEpoch(i_epoch)
 
-    _reward_amounts = _TRIAL[i_epoch]['reward_amounts']
-    _boundingBoxes = _TRIAL[i_epoch]['boundingBoxes']
+    var _reward_amounts = _TRIAL[i_epoch]['reward_amounts']
+    var _boundingBoxes = _TRIAL[i_epoch]['boundingBoxes']
     RewardMap.create_reward_map_with_bounding_boxes(_boundingBoxes, _reward_amounts)
 
 
@@ -82,13 +73,12 @@ for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
     user_outcomes[i_epoch] = await p
     _nreward = user_outcomes[i_epoch]['reinforcement']
 
-    reinforcement_onset = performance.now()
+    var reinforcement_start = performance.now()
+    await R.deliver_reinforcement(_nreward)
+    var reinforcement_end = performance.now()
 
-    reinforcement_timestamps[i_epoch] = await R.deliver_reinforcement(_nreward)
-    reinforcement_end = performance.now()
-
+    reinforcement_timestamps[i_epoch] = [reinforcement_start, reinforcement_end]
 }
-
 
 // Record results of trial 
 var current_trial_outcome = []
@@ -96,9 +86,9 @@ for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
     current_trial_outcome[i_epoch] = {}
     current_trial_outcome[i_epoch]['display_timestamps'] = display_timestamps[i_epoch]
     current_trial_outcome[i_epoch]['user_outcomes'] = user_outcomes[i_epoch]
+    current_trial_outcome[i_epoch]['reinforcement_timestamps'] = reinforcement_timestamps[i_epoch]
 }
-console.log('returning')
-return 
+
 //TS.update_state(current_trial_outcome)
 //TS.package_behavioral_data() // Handles packaging behavior data however way is intuitive for the task
 
@@ -106,13 +96,8 @@ TRIAL_NUMBER_FROM_SESSION_START++
 
 // Writeout (e.g. live to dropbox)
 DWr.writeout()
+return 
 
-
-
-
-SD.renderReward(CANVAS.obj.reward);
-SD.renderPunish(CANVAS.obj.punish);
-SD.renderBlank(CANVAS.obj.blank);
 
 
 var current_trial_outcome = {}

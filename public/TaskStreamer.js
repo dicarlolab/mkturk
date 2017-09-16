@@ -151,9 +151,9 @@ class TaskStreamer{
         // called at the beginning of each trial 
         // returns images, reward maps, and other necessary things for runtrial()
         
-        //var trial_idx = i || this.state['current_stage_trial_number']
-        //var trial = this.TQ_sequence[this.state['current_stage_index']].get_trial(trial_idx)
-        
+        var trial_idx = i || this.state['current_stage_trial_number']
+        var _t = await this.TQ_sequence[this.state['current_stage_index']].get_trial(trial_idx)
+        console.log(_t)
 
         //var _msec_on
         //var _images
@@ -162,15 +162,16 @@ class TaskStreamer{
         //var _boundingBoxes 
 
 
-        var image1 = await this.IB.get_by_name("https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Atoken.png")
-        var image2 = await this.IB.get_by_name("https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Btoken.png")
-
-
         var trial = []
 
         var msec_timeout = 5000
 
-        trial[0] = this.makeEpoch([500, 0], [[image1], [image1, image2]], [[4], [2, 8]], [PLAYSPACE._grid_boundingBox[2], PLAYSPACE._grid_boundingBox[8]], [1, 0], msec_timeout)
+        var sample_image = _t['sample_image']
+        var test_images = _t['test_images']
+        // todo: entries can be singletons or arrays
+        trial[0] = this.makeEpoch([100, 0], [[sample_image], test_images], [[4], [2, 8]], 
+            [PLAYSPACE._grid_boundingBox[2], PLAYSPACE._grid_boundingBox[8]], 
+            _t['choice_reward_amounts'], msec_timeout)
 
 
         return trial

@@ -120,7 +120,8 @@ function defineImageGrid(ngridpoints){
 
   return [canvas_center_x, canvas_center_y, xgridcent, ygridcent]
 }
-function setupCanvas(canvasobj){
+function setupCanvas(canvasobj, use_image_smoothing){
+  use_image_smoothing =  use_image_smoothing || false 
   console.log(canvasobj)
     var context = canvasobj.getContext('2d')
     
@@ -133,7 +134,6 @@ function setupCanvas(canvasobj){
 
     var _ratio = devicePixelRatio / backingStoreRatio
 
-    console.log(devicePixelRatio, backingStoreRatio)
     //canvasobj.style.top=CANVAS.offsettop + "px";
     //canvasobj.style.left=CANVAS.offsetleft + "px";
     
@@ -164,7 +164,8 @@ function setupCanvas(canvasobj){
     // Remove overflow?
     //https://www.w3schools.com/cssref/pr_pos_overflow.asp
 
-    context.imageSmoothingEnabled = false // then nearest neighbor?
+    console.log('Use image smoothing:', use_image_smoothing)
+    context.imageSmoothingEnabled = use_image_smoothing // then nearest neighbor?
 
 
     //var image_scale_width = DEVICE.gridwidth / DEVICE.source_image_width * _ratio
