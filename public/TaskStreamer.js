@@ -152,6 +152,8 @@ class TaskStreamer{
         //var _reward_amounts 
         //var _boundingBoxes 
 
+        var sample_grid_index = _t['sample_grid_index_placement']
+        var test_grid_indices = _t['test_grid_index_placements']
 
         var trial = []
 
@@ -159,15 +161,24 @@ class TaskStreamer{
 
         var sample_image = _t['sample_image']
         var test_images = _t['test_images']
-        // todo: entries can be singletons or arrays
+
+        var boundingBoxes = []
+        for (var j = 0; j<_t['test_grid_index_placements'].length; j++){
+            var gidx = _t['test_grid_index_placements'][j]
+            boundingBoxes.push(PLAYSPACE._grid_boundingBox[gidx])
+        }
+
         var epoch = []
         epoch['msec_on'] = [100,0] // List of durations
         epoch['images'] = [sample_image, test_images] // List of list of images
-        epoch['grid_placements'] = [[4], [2, 8]] // list of lists
-        epoch['reward_amounts'] = _t['choice_reward_amounts'] // list of award amounts
-        epoch['boundingBoxes'] = [PLAYSPACE._grid_boundingBox[2], PLAYSPACE._grid_boundingBox[8]] // list of bounding box objects
-        epoch['msec_timeout'] = msec_timeout
+        epoch['grid_placements'] = [sample_grid_index, test_grid_indices] // list of lists
         epoch['frame_names'] = ['frame_stimulus', 'frame_choice']
+
+
+        epoch['reward_amounts'] = _t['choice_reward_amounts'] // list of award amounts
+        epoch['boundingBoxes'] = boundingBoxes // list of bounding box objects
+        epoch['msec_timeout'] = msec_timeout
+        
         trial[0] = epoch 
 
         return trial
@@ -203,16 +214,21 @@ class TaskStreamer{
     }
 
     update_state(current_trial_outcome){
+
+
         // trial_behavior: the just-finished trial's behavior. 
         // called at the end of every trial. 
 
-        Math.seedrandom(repeat_rng_seed)
+        var Return = current_trial_outcome['user_outcomes'][0]['reinforcement']
+
+
+        
 
         var _repeat_if_wrong_probability = this.EXPERIMENT[this.state.current_stage_index]['probability_repeat_trial_if_wrong'] || 0
-        if(current_trial_outcome['Return'] == 0){
+        if(Return == 0){
 
             var repeat_rng_seed = cantor(this.state['current_stage_index'], this.EXPERIMENT[this.state.current_stage_index]['samplingRNGseed'])
-
+            Math.seedrandom(repeat_rng_seed)
 
             if(Math.random() < _repeat_if_wrong_probability){
                 console.log('repeating TRIAL because of wrong response')
@@ -227,7 +243,7 @@ class TaskStreamer{
         }
         
             
-        this.state['return_sequence_in_stage'].push(current_trial_outcome['Return']) 
+        this.state['return_sequence_in_stage'].push(Return) 
 
         // Check transition criterion, if monitoring 
         if(this._done_monitoring == false){

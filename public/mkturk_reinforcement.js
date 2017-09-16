@@ -21,7 +21,7 @@ class MonetaryReinforcer{
     async deliver_reinforcement(nreward){
         if(nreward >=1){
             this.bonus_total = this.bonus_total + this.bonus_per_correct
-            console.log('Running monetary bonus amount', this.bonus_total)
+            console.log('Running monetary bonus amount', Math.round(this.bonus_total))
             //CANVAS.sequencepost[1]="reward";
             //CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]
 

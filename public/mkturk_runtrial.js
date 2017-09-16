@@ -1,6 +1,4 @@
 async function runtrial(){
-
-
 // Global references: 
 // TRIAL_NUMBER_FROM_SESSION_START
 // TS 
@@ -49,7 +47,6 @@ console.log('Hit fixation')
 
 // Screens 
 for (var i_epoch = 0; i_epoch < _TRIAL.length; i_epoch++){
-    console.log('At epoch...'+i_epoch)
 
     display_timestamps[i_epoch] = await SD.displayEpoch(i_epoch)
 
@@ -83,8 +80,7 @@ current_trial_outcome['display_timestamps'] = display_timestamps
 current_trial_outcome['user_outcomes'] = user_outcomes
 current_trial_outcome['reinforcement_timestamps'] = reinforcement_timestamps
 
-console.log('current trial outcome', current_trial_outcome)
-//TS.update_state(current_trial_outcome)
+TS.update_state(current_trial_outcome)
 //TS.package_behavioral_data() // Handles packaging behavior data however way is intuitive for the task
 
 TRIAL_NUMBER_FROM_SESSION_START++
@@ -150,11 +146,5 @@ for (var _property in current_trial_outcome){
     }
 }
 
-
-// Writeout (e.g. live to dropbox)
-DWr.writeout()
-
-// Check if reached terminal state
-//TERMINAL_STATE = false
 
 }

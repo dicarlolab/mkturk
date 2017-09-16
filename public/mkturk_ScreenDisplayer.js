@@ -33,6 +33,7 @@ class ScreenDisplayer{
 
     renderFixationDot( gridindex, dot_pixelradius, color, canvasobj){
         var context=canvasobj.getContext('2d');
+        
         // do not clear in case user would like to draw multiple
 
         // Draw fixation dot
@@ -167,7 +168,6 @@ class ScreenDisplayer{
             // If time to show new frame OR first frame, 
             if (timestamp - lastframe_timestamp >= t_durations[current_frame_index] || lastframe_timestamp == undefined){
                 current_frame_index++;
-                console.log(current_frame_index, performance.now() )
                 frame_unix_timestamps[current_frame_index] = performance.now() //in milliseconds, rounded to nearest hundredth of a millisecond
                 // Move canvas in front
                 var curr_canvasobj = sequence[current_frame_index]

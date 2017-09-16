@@ -66,6 +66,12 @@ class MouseClickRewardMap{
             this.add_event_listener()
             this.attached = true 
         }
+        if(boundingBoxes.constructor != Array){
+            boundingBoxes = [boundingBoxes]
+        }
+        if(reward_amounts.constructor != Array){
+            reward_amounts = [reward_amounts]
+        }
         this.boundingBoxes = boundingBoxes
         this.reward_amounts = reward_amounts
         
@@ -126,7 +132,6 @@ class MouseMoveRewardMap{
                 && x >= this.boundingBoxes[box_index].x[0]
                 && y <= this.boundingBoxes[box_index].y[1] 
                 && y >= this.boundingBoxes[box_index].y[0]){
-                console.log('hit non null region')
 
                 var outcome = {
                     "x":x, 
@@ -148,6 +153,13 @@ class MouseMoveRewardMap{
             this.add_event_listener()
             this.attached = true 
         }
+        if(boundingBoxes.constructor != Array){
+            boundingBoxes = [boundingBoxes]
+        }
+        if(reward_amounts.constructor != Array){
+            reward_amounts = [reward_amounts]
+        }
+
         this.boundingBoxes = boundingBoxes
         this.reward_amounts = reward_amounts
         
