@@ -276,8 +276,6 @@ async function renderImageAndScaleIfNecessary(image, grid_index, canvasobj){
 
 async function renderImageOnCanvasLiterally(image, grid_index, canvasobj){
 
-
-  
   var devicePixelRatio = window.devicePixelRatio || 1
   var backingStoreRatio = context.webkitBackingStorePixelRatio ||
     context.mozBackingStorePixelRatio ||
@@ -308,8 +306,8 @@ async function renderImageOnCanvasLiterally(image, grid_index, canvasobj){
 
   wd = image.width
   ht = image.height
-  xleft = Math.round(DEVICE.XGridCenter[grid_index] - 0.5*wd)
-  ytop = Math.round(DEVICE.YGridCenter[grid_index] - 0.5*ht)
+  xleft = Math.round(PLAYSPACE._xgridleft[grid_index])
+  ytop = Math.round(PLAYSPACE._ygridtop[grid_index])
   console.log(canvasobj)
   console.log('_ratio', _ratio, 'xleft',xleft, 'ytop', ytop, 'wd', wd, 'ht', ht)
 
@@ -333,36 +331,4 @@ async function renderImageOnCanvasLiterally(image, grid_index, canvasobj){
   return [xbound, ybound]
 }
 
-async function renderImageOnCanvas(image, grid_index, scale, canvasobj){
-  var context=canvasobj.getContext('2d');
 
-  var xleft=NaN;
-  var ytop=NaN;
-  var xbound=[];
-  var ybound=[];
-
-  wd = image.width
-  ht = image.height
-  xleft = Math.round(DEVICE.XGridCenter[grid_index] - 0.5*wd*scale*DEVICE.CanvasRatio);
-  ytop = Math.round(DEVICE.YGridCenter[grid_index] - 0.5*ht*scale*DEVICE.CanvasRatio);
-  
-  context.drawImage(
-    image, // Image element
-    xleft, // dx: Canvas x-coordinate of image's top-left corner. 
-    ytop, // dy: Canvas y-coordinate of  image's top-left corner. 
-    image.width*scale*DEVICE.CanvasRatio, // dwidth. width of drawn image. 
-    image.height*scale*DEVICE.CanvasRatio); // dheight. height of drawn image.
-
-  // For drawing cropped regions of an image in the canvas, see alternate input argument structures,
-  // See: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
-  
-  // Bounding boxes of images on canvas
-  xbound=[xleft, xleft+wd*scale*DEVICE.CanvasRatio];
-  ybound=[ytop, ytop+ht*scale*DEVICE.CanvasRatio];
-
-  xbound[0]=xbound[0]+CANVAS.offsetleft;
-  xbound[1]=xbound[1]+CANVAS.offsetleft;
-  ybound[0]=ybound[0]+CANVAS.offsettop;
-  ybound[1]=ybound[1]+CANVAS.offsettop;
-  return [xbound, ybound]
-}

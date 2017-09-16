@@ -279,6 +279,19 @@ class TaskStreamer{
         }
     }
 
+    package_behavioral_data(){
+        var dataobj = {}
+        dataobj['SESSION'] = SESSION
+        dataobj['DEVICE'] = DEVICE
+        dataobj['EXPERIMENT'] = TS.EXPERIMENT
+        dataobj['CANVAS'] = CANVAS
+        dataobj['TRIAL_BEHAVIOR'] = TRIAL_BEHAVIOR
+        dataobj['EVENT_TIMESTAMPS'] = EVENT_TIMESTAMPS
+        dataobj['SubjectSettings'] = SubjectSettings
+
+        return dataobj
+    }
+
     async save_ckpt(){
         var ckpt = {}
         ckpt['SubjectID'] = this._SubjectID

@@ -5,11 +5,11 @@ class DataWriterTemplate{
 
     }
 
-    async writeout(){
+    async writeout(dataobj, ){
         // live writeout (e.g. to dropbox)
     }
 
-    async saveTrialData(debug_mode){
+    async saveTrialData(dataobj, debug_mode){
 
     }
     async saveTouches(debug_mode){
@@ -24,14 +24,15 @@ class DataWriterTemplate{
 class MechanicalTurkDataWriter{
     // Where there can be no live writing / reading
     constructor(){
-
+        this.dataobj = undefined
         setupMouseTracker()
     }
 
-    async writeout(){
+    async writeout(dataobj){
+        this.dataobj = dataobj
         console.log('No live writeout')
     }
-    async saveTrialData(debug_mode){
+    async saveTrialData(dataobj, debug_mode){
         console.log('No saveTrialData until concludeSession()')
     }
     async saveTouches(debug_mode){
@@ -55,15 +56,7 @@ class MechanicalTurkDataWriter{
 
         var aID = getURLParameter('assignmentId')
 
-        var dataobj = {}
-        dataobj['SESSION'] = SESSION
-        dataobj['DEVICE'] = DEVICE
-        dataobj['EXPERIMENT'] = TS.EXPERIMENT
-        dataobj['CANVAS'] = CANVAS
-        dataobj['TRIAL_BEHAVIOR'] = TRIAL_BEHAVIOR
-        dataobj['EVENT_TIMESTAMPS'] = EVENT_TIMESTAMPS
-        dataobj['SubjectSettings'] = SubjectSettings
-
+        var dataobj = this.dataobj
 
         var result_str = {'MOUSE_DATA':MOUSESTRING, 
                           'TASK_DATA':dataobj}
@@ -106,16 +99,9 @@ class DropboxDataWriter{
 
     }
 
-    async saveTrialData(save_to_debug_directory){
+    async saveTrialData(dataobj, save_to_debug_directory){
 
-        var dataobj = {}
-        dataobj['SESSION'] = SESSION
-        dataobj['DEVICE'] = DEVICE
-        dataobj['EXPERIMENT'] = TS.EXPERIMENT
-        dataobj['CANVAS'] = CANVAS
-        dataobj['TRIAL_BEHAVIOR'] = TRIAL_BEHAVIOR
-        dataobj['EVENT_TIMESTAMPS'] = EVENT_TIMESTAMPS
-        dataobj['SubjectSettings'] = SubjectSettings
+        
         var datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
 
 
@@ -139,7 +125,7 @@ class DropboxDataWriter{
         }
     }
 
-    async writeout(){
+    async writeout(dataobj){
 
         // Asynchronous save at most every T seconds
         var _ms_since_last_trial_data_save = performance.now() - last_trial_data_save
@@ -148,7 +134,7 @@ class DropboxDataWriter{
 
         if ( _ms_since_last_trial_data_save > TRIALDATA_SAVE_TIMEOUT_PERIOD){ 
             console.log(_ms_since_last_trial_data_save/1000+'s since last trial data save. Requesting save...')
-            this.saveTrialData(FLAGS.debug_mode)
+            this.saveTrialData(dataobj, FLAGS.debug_mode)
             last_trial_data_save = performance.now()
         }
 

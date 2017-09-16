@@ -81,12 +81,14 @@ current_trial_outcome['user_outcomes'] = user_outcomes
 current_trial_outcome['reinforcement_timestamps'] = reinforcement_timestamps
 
 TS.update_state(current_trial_outcome)
-//TS.package_behavioral_data() // Handles packaging behavior data however way is intuitive for the task
+dataobj = TS.package_behavioral_data() // Handles packaging behavior data however way is intuitive for the task
 
 TRIAL_NUMBER_FROM_SESSION_START++
 
+
+
 // Writeout (e.g. live to dropbox)
-DWr.writeout()
+DWr.writeout(dataobj)
 return 
 
 

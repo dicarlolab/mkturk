@@ -1,6 +1,4 @@
 
-
-
 class ScreenDisplayer{
 
     constructor(){
@@ -26,14 +24,28 @@ class ScreenDisplayer{
 
 
     async displayFixation(gridindex){
+        await this.renderBlank(this.canvas_fixation)
+
         var boundingBoxesFixation = this.renderFixationDot(gridindex, PLAYSPACE._gridwidth*0.5*0.5, 'white', this.canvas_fixation)
         await this.displayScreenSequence([this.canvas_blank, this.canvas_fixation], [0, 10])
         return boundingBoxesFixation
     }
 
+    async displayReward(msec_duration){
+        var frame_unix_timestamps = await this.displayScreenSequence([this.canvas_blank, this.canvas_reward, this.canvas_blank],
+            [0, msec_duration, 0])
+        return frame_unix_timestamps
+    }
+    async displayPunish(msec_duration){
+        var frame_unix_timestamps = await this.displayScreenSequence([this.canvas_blank, this.canvas_punish, this.canvas_blank],
+            [0, msec_duration, 0])
+
+
+        return frame_unix_timestamps
+    }
     renderFixationDot( gridindex, dot_pixelradius, color, canvasobj){
         var context=canvasobj.getContext('2d');
-        
+
         // do not clear in case user would like to draw multiple
 
         // Draw fixation dot
@@ -120,18 +132,7 @@ class ScreenDisplayer{
     }
 
 
-    async displayReward(msec_duration){
-        var frame_unix_timestamps = await this.displayScreenSequence([this.canvas_blank, this.canvas_reward, this.canvas_blank],
-            [0, msec_duration, 0])
-        return frame_unix_timestamps
-    }
-    async displayPunish(msec_duration){
-        var frame_unix_timestamps = await this.displayScreenSequence([this.canvas_blank, this.canvas_punish, this.canvas_blank],
-            [0, msec_duration, 0])
-
-
-        return frame_unix_timestamps
-    }
+    
 
     async displayEpoch(epoch_name){
         console.log('displayEpoch', epoch_name)
@@ -145,6 +146,12 @@ class ScreenDisplayer{
 
 
     displayScreenSequence(sequence, t_durations){
+        if(typeof(t_durations) == "number"){
+            t_durations = [t_durations]
+        }
+        if(sequence.constructor != Array){
+            sequence = [sequence]
+        }
         var resolveFunc
         var errFunc
         var p = new Promise(function(resolve,reject){
@@ -163,6 +170,8 @@ class ScreenDisplayer{
         var frames_left_to_animate = sequence.length
 
         var _this = this
+
+
         function updateCanvas(timestamp){
         
             // If time to show new frame OR first frame, 
@@ -262,11 +271,11 @@ class ScreenDisplayer{
 
          
 
-        var boundingBoxFixation = [{}]
-        boundingBoxFixation[0].x = [dx,dx+dwidth]
-        boundingBoxFixation[0].y = [dy, dy+dheight]
+        var _boundingBox = [{}]
+        _boundingBox[0].x = [dx,dx+dwidth]
+        _boundingBox[0].y = [dy, dy+dheight]
 
-        return boundingBoxFixation// 'hello'
+        return _boundingBox
     }
 
     async bufferFixationScreenUsingImage(image, gridindex){

@@ -41,11 +41,7 @@ initialize_TRIAL()
 var DEVICE = {} // Does not change during a session on a particular device 
 DEVICE.BatteryLDT = []
 DEVICE.DevicePixelRatio = 1
-DEVICE.CanvasRatio = undefined 
-DEVICE.XGridCenter = undefined
-DEVICE.YGridCenter = undefined
-DEVICE.source_ImageHeightPixels = NaN; 
-DEVICE.source_ImageWidthPixels = NaN;
+
 
 var SESSION = {}
 SESSION.SubjectID = ''
@@ -53,7 +49,6 @@ SESSION.UnixTimestampAtStart = window.performance.timing.navigationStart
 SESSION.CurrentDate = new Date;
 var __datestr = SESSION.CurrentDate.toISOString();
 SESSION.TrialDataFileName_suffix = __datestr.slice(0, __datestr.indexOf(".")) + "_" + SESSION.SubjectID + ".txt";
-
 
 
 var FLAGS = {} 

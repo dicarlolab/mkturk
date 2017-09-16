@@ -78,6 +78,9 @@ async function setupMechanicalTurkTask(){
   else{
     MechanicalTurkSettings = {"MinimumTrialsForCashIn": 10, "MAX_SESSION_TRIALS_MECHANICALTURK": 100}
     SESSION.SubjectID = 'Michaelo_debugger'
+    var SubjectSettings = []
+    SubjectSettings['SubjectID'] = SESSION.SubjectID 
+    SubjectSettings['assignmentId'] = ''
     SESSION.ExperimentFilePath = 'https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt'
     Experiment = [{
             "StageNickname":"MILTEST",
@@ -184,17 +187,12 @@ async function setupMechanicalTurkTask(){
   // DEVICE.source_image_height = representative_image.height
   // DEVICE.source_image_width = representative_image.width
 
-  // DEVICE.source_ImageWidthPixels = representative_image.width
-  // DEVICE.source_ImageHeightPixels = representative_image.height
-
 
   funcreturn = defineImageGrid(TS.EXPERIMENT[0]['NGridPoints']);
 
   xcanvascenter = funcreturn[0]
   ycanvascenter = funcreturn[1]
 
-  DEVICE.XGridCenter = funcreturn[2]
-  DEVICE.YGridCenter = funcreturn[3]
 
 
   // Start in testing mode
@@ -206,7 +204,7 @@ async function setupMechanicalTurkTask(){
   console.log('hello')
   
   
-  var skip_preview_mode = true // strictly for debugging purposes only 
+  var skip_preview_mode = false // strictly for debugging purposes only 
 
   if(skip_preview_mode != true){
     if(SubjectSettings['assignmentId'] == 'ASSIGNMENT_ID_NOT_AVAILABLE' || SubjectSettings['assignmentId'] == '' ){
@@ -214,17 +212,9 @@ async function setupMechanicalTurkTask(){
       // If in preview mode on MechanicalTurk
       toggleElement(1, 'PreviewModeSplash')
 
-      var _last_gridindex = -1
 
       while(true){
-
-        var tutorial_grid_index = Math.floor(Math.random() * (DEVICE.XGridCenter.length))
-        while (tutorial_grid_index == _last_gridindex || tutorial_grid_index == 5){
-          // todo: i don't like while loops.... take out 
-          tutorial_grid_index = Math.floor(Math.random() * (DEVICE.XGridCenter.length))
-        }
-        await run_MouseOver_TutorialTrial(tutorial_image, tutorial_grid_index) 
-        _last_gridindex = tutorial_grid_index
+        await run_MouseOver_TutorialTrial(tutorial_image) 
       }
     }
   }

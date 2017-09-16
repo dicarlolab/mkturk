@@ -2,7 +2,7 @@
 
 
 
-async function run_MouseOver_TutorialTrial(tutorial_image, tutoral_gridindex){
+async function run_MouseOver_TutorialTrial(tutorial_image){
 
     // todo: make into object so we can create a 'tutorial' state machine for previewing HITs
 
@@ -21,28 +21,16 @@ async function run_MouseOver_TutorialTrial(tutorial_image, tutoral_gridindex){
 
     writeToTrialCounterDisplay("")
 
-    SD.renderReward(CANVAS.obj.reward);
-    SD.renderPunish(CANVAS.obj.punish);
-    SD.renderBlank(CANVAS.obj.blank);
+    var boundingBoxesFixation = await SD.displayFixation(5)
+    RewardMap.create_reward_map_with_bounding_boxes(boundingBoxesFixation, 1)
+    var fixation_outcome = await RewardMap.Promise_wait_until_active_response_then_return_reinforcement()
 
-    
-    boundingBoxFixation = await SD.bufferFixationScreenUsingDot(5)
-    console.log('hello9', boundingBoxFixation)
-    FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxFixation, [0])
-    await SD.displayScreenSequence(CANVAS.sequencepre,CANVAS.tsequencepre);
-    var fixation_outcome = await FixationRewardMap.Promise_wait_until_active_response_then_return_reinforcement()
-
-    //============ AWAIT BUFFER CANVASES WITH SAMPLE & TEST IMAGES ============//
-    //boundingBoxFixation = await SD.bufferFixationScreenUsingImage(tutorial_image, tutoral_gridindex)
-
-    
-    var dwidth = PLAYSPACE._gridheight*0.7
+    var dwidth = PLAYSPACE._gridwidth*0.7
     var dheight = PLAYSPACE._gridheight*0.7
-    var dx = (PLAYSPACE.width - dwidth) * Math.random() // [0, playspace width - one imagewidth]
-    var dy = (PLAYSPACE.width - dheight - boundingBoxFixation[0].y[1]+boundingBoxFixation[0].y[0]) * Math.random() // avoid overlapping with fixation dot
+    var dx = PLAYSPACE._gridwidth/2+(PLAYSPACE.width-PLAYSPACE._gridwidth) * Math.random() // [0, playspace width - one imagewidth]
+    var dy = PLAYSPACE._gridheight/2+(PLAYSPACE.height -PLAYSPACE._gridheight - PLAYSPACE._ygridtop[5]) * Math.random() // avoid overlapping with fixation dot
 
-    var boundingBoxMouseOver = await SD.bufferCanvasWithImage(tutorial_image, CANVAS.obj.touchfix, dx, dy, dwidth, dheight)
-    console.log(boundingBoxMouseOver)
+    var boundingBoxMouseOver = await SD.bufferCanvasWithImage(tutorial_image, SD.canvas_fixation, dx, dy, dwidth, dheight)
     // Make smaller
     var original_x_width = boundingBoxMouseOver[0].x[1] - boundingBoxMouseOver[0].x[0]
     var original_y_width = boundingBoxMouseOver[0].y[1] - boundingBoxMouseOver[0].y[0]
@@ -52,16 +40,15 @@ async function run_MouseOver_TutorialTrial(tutorial_image, tutoral_gridindex){
     boundingBoxMouseOver[0].y[0] += original_y_width * 0.2
     boundingBoxMouseOver[0].y[1] -= original_y_width * 0.2
     //============ Mouse over SCREEN ============//
-    FixationRewardMap.create_reward_map_with_bounding_boxes(boundingBoxMouseOver, [1])
-
-    var fixation_onset_timestamps = await SD.displayScreenSequence(CANVAS.sequencepre,CANVAS.tsequencepre);
-
+    RewardMap.create_reward_map_with_bounding_boxes(boundingBoxMouseOver, 1)
+    var fixation_onset_timestamps = await SD.displayScreenSequence(SD.canvas_fixation,0);
 
     wdm('Awaiting fixation...')
 
 
     console.log('Awaiting fixation...')
-    var fixation_outcome = await FixationRewardMap.Promise_wait_until_active_response_then_return_reinforcement()
+    var fixation_outcome = await RewardMap.Promise_wait_until_active_response_then_return_reinforcement()
+    await SD.displayScreenSequence(SD.canvas_blank,0);
     console.log('Fixation reached')
     var correct = fixation_outcome['reinforcement']
     correct = correct || 1
