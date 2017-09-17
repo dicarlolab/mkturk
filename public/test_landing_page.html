@@ -6,20 +6,7 @@
 
 // https://stackoverflow.com/questions/5411538/redirect-from-an-html-page
 
-
-
-async function saveData() {
-  console.log('hello')
-   // Store url to experiment file .txt
-   data = btoa("ExampleExperiment.json");
-   localStorage.setItem('Experiment_url', data);
-
-   // Store mechanical turk settings
-   mechanical_turk_data = btoa('{"MinimumTrialsForCashIn": 10, "MAX_SESSION_TRIALS_MECHANICALTURK": 100}', data);
-   localStorage.setItem('HIT_settings_string', mechanical_turk_data)
-
-   console.log(window.location.href)
-   // Store information sent by Amazon via the current url 
+function extractURLdata(){
 
    // Extract workerId
     var name = 'workerId'
@@ -48,13 +35,30 @@ async function saveData() {
   hitId = results[1];
 
 
-    SubjectSettings = {
+    var SubjectSettings = {
     "SubjectID":'MechanicalTurker_'+workerId,
     "Species": "human",
     "assignmentId": assignmentId,
     'workerId': workerId,
     'hitId':hitId
     }
+    return SubjectSettings
+}
+
+async function saveData() {
+  console.log('hello')
+   // Store url to experiment file .txt
+   data = btoa("ExampleExperiment.json");
+   localStorage.setItem('Experiment_url', data);
+
+   // Store mechanical turk settings
+   mechanical_turk_data = btoa('{"MinimumTrialsForCashIn": 10, "MAX_SESSION_TRIALS_MECHANICALTURK": 100}', data);
+   localStorage.setItem('HIT_settings_string', mechanical_turk_data)
+
+   console.log(window.location.href)
+   
+   // Store information sent by Amazon via the current url 
+   SubjectSettings = extractURLdata()
     console.log('Landing screen SubjectSettings', SubjectSettings)
     localStorage.setItem('SubjectSettings_string', btoa(JSON.stringify(SubjectSettings)))
 }

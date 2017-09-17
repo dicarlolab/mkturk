@@ -67,12 +67,14 @@ class TaskStreamer{
         t['FixationY'] = []
         t['FixationT'] = []
 
-        t['Sample_ImageBagIndex'] = []  
-        t['SampleGridIndex'] = [] 
+        t['Sample_ImageIndex'] = []  
+        t['Sample_BagIndex'] = []
 
-        t['Choices_ImageBagIndices'] = [] 
-        t['ChoiceGridIndices'] = [] 
+        t['Choices_ImageIndices'] = [] 
+        t['Choices_BagIndices'] = [] 
 
+        t['SampleGridIndex'] = []
+        t['ChoiceGridIndices'] = []
         t['Choices_RewardAmounts'] = [] 
         
         return t
@@ -112,12 +114,14 @@ class TaskStreamer{
         t['FixationY'].push(cto['FixationY'])
         t['FixationT'].push(cto['FixationT'])
 
-        t['Sample_ImageBagIndex'] = []  
-        t['Choices_ImageBagIndices'] = [] 
+        t['Sample_ImageIndex'].push(cto['TRIAL']['sample_image_index'])
+        t['Sample_BagIndex'].push(cto['TRIAL']['sample_bag_index'])
+
+        t['Choices_ImageIndices'].push(cto['TRIAL']['test_image_indices'])
+        t['Choices_BagIndices'].push(cto['TRIAL']['test_bag_indices'])
 
         t['SampleGridIndex'].push(cto['TRIAL']['grid_placement_sequence'][0])
         t['ChoiceGridIndices'].push(cto['TRIAL']['grid_placement_sequence'][2])
-
         t['Choices_RewardAmounts'].push(cto['TRIAL']['choice_regions_gridIndices'])
         console.log(t)
         return t 
@@ -160,8 +164,13 @@ class TaskStreamer{
         trial['timeout_msec'] = this.EXPERIMENT[this.state['current_stage_index']]['ChoiceTimeOut']
 
         // Optional
-        trial['correct_grid_index'] = _t['test_correct_grid_index']
+        trial['correct_grid_index'] = test_grid_indices[_t['correct_test_selection']]
+        
+        trial['sample_bag_index'] = _t['sample_bag_index']
+        trial['sample_image_index'] = _t['sample_image_index']
 
+        trial['test_bag_indices'] = _t['test_bag_indices']
+        trial['test_image_indices'] = _t['test_image_indices']
 
         return trial
     }

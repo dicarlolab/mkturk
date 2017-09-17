@@ -117,9 +117,11 @@ async get_trial(i){
 
 	// Package meta info
 	trial['test_bag_names'] = test['bag_name']
-	trial['test_image_index'] = test['image_index']
+	trial['test_bag_indices'] = test['bag_index']
+	trial['test_image_indices'] = test['image_index']
 	
 	trial['sample_bag_name'] = sample['bag_name']
+	trial['sample_bag_index'] = sample['bag_index']
 	trial['sample_image_index'] = sample['image_index']
 
 	trial['correct_test_selection'] = correct_test_selection
@@ -134,7 +136,8 @@ selectSampleImage(_RNGseed){
 
 	// Select sample class 
 	var num_classes = this.SampleBagNames.length
-	var selected_bag_name = this.SampleBagNames[Math.floor(Math.random()*num_classes)]
+	var selected_bag_index = Math.floor(Math.random()*num_classes)
+	var selected_bag_name = this.SampleBagNames[selected_bag_index]
 
 	// Select image inside of that class
 	var num_bag_images = this.ImageBags[selected_bag_name].length
@@ -142,6 +145,7 @@ selectSampleImage(_RNGseed){
 	var selected_image_name = this.ImageBags[selected_bag_name][selected_image_index]
 
 	var sample = {'bag_name':selected_bag_name, 
+					'bag_index':selected_bag_index,
 					'image_index':selected_image_index, 
 					'image_name': selected_image_name}
 
@@ -158,6 +162,7 @@ selectTestImages(_RNGseed){
 
 	var test = {}
 	test['bag_name'] = []
+	test['bag_index'] = []
 	test['image_index'] = []
 	test['image_name'] = []
 
@@ -170,6 +175,7 @@ selectTestImages(_RNGseed){
 		var test_image_name = this.ImageBags[bag_name][test_image_index]
 
 		test['bag_name'].push(bag_name)
+		test['bag_index'].push(i_choice_class)
 		test['image_index'].push(test_image_index)
 		test['image_name'].push(test_image_name)
 	}
