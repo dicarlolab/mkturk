@@ -1,3 +1,14 @@
+# Running a task on Mechanical Turk 
+
+## HIT_settings_string
+```javascript
+{"on_finish":"terminate", bonus_usd_per_correct":0.0005, "MinimumTrialsForCashIn": 10, "MAX_SESSION_TRIALS_MECHANICALTURK": 100}
+```
+* on_finish: terminate, loop, and continue 
+* bonus_usd_per_correct: usd to add to SUBJECT['bonus_usd'] variable for every correct response, for giving bonuses
+* MinimumTrialsForCashIn: minimum number of trials before user can elect to turn in on his/her own 
+* MAX_SESSION_TRIALS_MECHANICALTURK: maximum number of trials before HIT submits automatically 
+
 # Writing your own task 
 
 The user needs to supply instances of the following classes to mkturk.html. In creating their own instances, they are defining the the task that will be run. 

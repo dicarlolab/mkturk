@@ -62,7 +62,7 @@ class TrialQueue{
 }
 
 class TaskStreamer{
-    constructor(DIO_checkpointing, DIO_images, Experiment, ImageBags, SubjectID){
+    constructor(DIO_checkpointing, DIO_images, Experiment, ImageBags, SubjectID, on_finish){
         // To save 
         this.trial_behavior = this.initialize_behavior_records()
 
@@ -96,7 +96,8 @@ class TaskStreamer{
         this.IB = new ImageBuffer(DIO_images)        
 
         // Terminal state 
-        this.loop_at_end = true
+        on_finish = on_finish || "loop" 
+        this.on_finish = on_finish // "loop", "terminate", "continue"
         this._done_monitoring = false
     }
 
@@ -323,13 +324,23 @@ class TaskStreamer{
                 
                 if(this.state['current_stage'] + 1 >= this.Experiment.length){
                     // Out of stages; start looping or continue current stage 
-                    if (this.loop_at_end = true){
+                    if (this.on_finish == 'loop'){
                         this.state['current_stage'] = 0 
                         this.state['current_stage_trial_number'] = 0
                         this.state['returns_in_stage'] = [] 
                     }
-                    else{
+                    else if(this.on_finish == 'terminate' ){
+                        TERMINAL_STATE = true
+                        return 
+                    }
+                    else if(this.on_finish == 'continue'){
                         this._done_monitoring = true
+                    }
+                    else{
+                        // just loop (default)
+                        this.state['current_stage'] = 0 
+                        this.state['current_stage_trial_number'] = 0
+                        this.state['returns_in_stage'] = [] 
                     }
                 }
                 else{

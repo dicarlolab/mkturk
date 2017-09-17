@@ -57,17 +57,16 @@ async function setupMechanicalTurkTask(){
     MechanicalTurkSettings = await loadStringFromLocalStorage('HIT_settings_string')
     MechanicalTurkSettings = JSON.parse(MechanicalTurkSettings)
     console.log('FROM LOCAL STORAGE:', MechanicalTurkSettings)
-
   }
   else{
-    MechanicalTurkSettings = {"MinimumTrialsForCashIn": 10, "MAX_SESSION_TRIALS_MECHANICALTURK": 100}
+    MechanicalTurkSettings = {"bonus_usd_per_correct":0.0005, "MinimumTrialsForCashIn": 10, "MAX_SESSION_TRIALS_MECHANICALTURK": 100}
     SESSION.SubjectID = 'Michaelo_debugger'
     SUBJECT['SubjectID'] = SESSION.SubjectID 
     SUBJECT['assignmentId'] = ''
     SESSION.ExperimentFilePath = 'debugging, manually written down'
     Experiment = {
   "Experiment":[{
-            "Task":"MTS",
+            "Task":"SR",
             "StageNickname":"mil_toy_test_stage0",
             "PunishTimeOut": 1000,
             "ChoiceTimeOut": 5000,
@@ -79,7 +78,7 @@ async function setupMechanicalTurkTask(){
             "initial_TaskStream_trial_number": 0,
             "samplingRNGseed": 0,
             "AverageReturnCriterion":0,
-            "MinTrialsCriterion":100, 
+            "MinTrialsCriterion":5, 
             "probability_repeat_trial_if_wrong":1,
              "SampleImageBagNames": [
               "ToyASample",
@@ -163,7 +162,8 @@ async function setupMechanicalTurkTask(){
     // Initialize components of task
     RewardMap = new MouseMoveRewardMap(); 
     
-    R = new MonetaryReinforcer()
+
+    R = new MonetaryReinforcer(MechanicalTurkSettings['bonus_usd_per_correct'])
 
 
   var ngridpoints = TS.Experiment[0]['NGridPoints'] 

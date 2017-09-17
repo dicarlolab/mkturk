@@ -12,10 +12,10 @@ class ReinforcerTemplate{
 }
 
 class MonetaryReinforcer{
-    constructor(){
+    constructor(bonus_usd_per_correct){
         this.payment_minimum = 0.1 // todo: move to place where it makes sense
         this.bonus_total = 0
-        this.bonus_per_correct = 0.001 // one extra dollar for every 1000 correct 
+        this.bonus_per_correct = bonus_usd_per_correct || 0.001 // one extra dollar for every 1000 correct 
     }
 
     async deliver_reinforcement(nreward){
@@ -37,9 +37,7 @@ class MonetaryReinforcer{
             SP.playSound(3);
             var p1 = await SD.displayPunish(TS.Experiment[TS.state.current_stage]['PunishTimeOut']) // (CANVAS.sequencepost,CANVAS.tsequencepost);
         }
-        else if(nreward == 'none'){
-          return 
-        }
+        SUBJECT['bonus_usd'] = this.bonus_total 
     }
 
 }
