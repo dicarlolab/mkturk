@@ -154,11 +154,16 @@ class TaskStreamer{
         var trial = {}
         var t_sample_on = this.EXPERIMENT[this.state['current_stage_index']]['t_SampleON']
         var t_sample_off = this.EXPERIMENT[this.state['current_stage_index']]['t_SampleOFF']
+        
+        // Construct trial
+        
+        // Stimulus
         trial['frame_durations'] = [t_sample_on,t_sample_off,0] // List of durations
-        trial['image_sequence'] = [sample_image, [], test_images] // List of {images, lists of images, or [] for blank}
+        trial['image_sequence'] = [sample_image, 'blank', ["dot", "dot"]] // List of {images, lists of images, or [] for blank}
         trial['grid_placement_sequence'] = [sample_grid_index, [], test_grid_indices] // list of lists
         trial['frame_names'] = ['frame_stimulus', 'frame_delay', 'frame_choice']
 
+        // Choice
         trial['choice_regions_rewardAmounts'] = choice_reward_amounts // list of award amounts
         trial['choice_regions_gridIndices'] = test_grid_indices // list of bounding box objects
         trial['timeout_msec'] = this.EXPERIMENT[this.state['current_stage_index']]['ChoiceTimeOut']

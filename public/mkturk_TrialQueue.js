@@ -1,13 +1,6 @@
 
-// TQs are in charge of image ordering, image delivery, grid index delivery, and reward map delivery given || image (paths), their labels, and experiment details 
-
-
-// trial_constructor_parameters: 
-// load imagebagssample paths
-// load imagebagstest paths 
-// samplingRNGseed
-// samplegridindex
-// objectgridmapping
+// TODO: remove this Object and combine with TaskStreamer, though some ideas like 
+// image pre-buffering should be preserved in a way that new TaskStreamers can utilize them without rewriting them
 
 class TrialQueue { 
 

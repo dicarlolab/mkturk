@@ -45,10 +45,10 @@ class ScreenDisplayer{
             if(frame_images.constructor == Array){
                 // Iterate over the images in this frame and draw them all
                 for (var i_image = 0; i_image<frame_images.length; i_image++){
-                    console.log('hello1')
-                    await renderImageAndScaleIfNecessary(frame_images[i_image], frame_grid_indices[i_image], canvasobj)
+                    await this.renderImageAndScaleIfNecessary(frame_images[i_image], frame_grid_indices[i_image], canvasobj)
                 }
             }
+
             else{
                 // Draw the single image in this frame 
 
@@ -56,7 +56,7 @@ class ScreenDisplayer{
                     frame_grid_indices = frame_grid_indices[0]
                 }
                 
-                await renderImageAndScaleIfNecessary(frame_images, frame_grid_indices, canvasobj)
+                await this.renderImageAndScaleIfNecessary(frame_images, frame_grid_indices, canvasobj)
             }
             
             canvas_sequence.push(canvasobj)
@@ -243,6 +243,60 @@ class ScreenDisplayer{
         return _boundingBox
     }
 
+    async renderImageAndScaleIfNecessary(image, grid_index, canvasobj){
+      // Render image onto the playspace
+
+      // Special cases for 'image'
+      if(image == 'dot'){
+        console.log('rendered special case dot')
+        await this.renderFixationDot(grid_index, PLAYSPACE._gridwidth/2, "white", canvasobj)
+        return
+      }
+      if(image == 'blank'){
+        console.log('rendered special case blank')
+        await this.renderBlank(canvasobj)
+        return
+      }
+
+      var context = canvasobj.getContext('2d')
+
+      var devicePixelRatio = window.devicePixelRatio || 1
+      var backingStoreRatio = context.webkitBackingStorePixelRatio ||
+        context.mozBackingStorePixelRatio ||
+        context.msBackingStorePixelRatio ||
+        context.oBackingStorePixelRatio ||
+        context.backingStorePixelRatio || 1 // /1 by default for chrome?
+
+      var _ratio = devicePixelRatio / backingStoreRatio
+
+      var original_left_start = PLAYSPACE._xgridcent[grid_index] - PLAYSPACE._gridwidth/2// in virtual pixel coordinates
+      var original_top_start = PLAYSPACE._ygridcent[grid_index] - PLAYSPACE._gridheight/2
+
+      //var scaled_left_start = original_left_start * image.width / PLAYSPACE._gridwidth // in canvas coordinates, which may or may not be scaled 
+      //var scaled_top_start = original_top_start * image.width / PLAYSPACE._gridheight
+
+
+
+      //canvasobj.style.width = original_canvas_width + 'px' // Scales canvas to this size before multiplying by devicepixelratio
+      //canvasobj.style.height = original_canvas_height + 'px'
+
+
+
+
+      // ctx.drawImage(image, destination_x, destination_y, dWidth, dHeight);
+      context.drawImage(image, original_left_start, original_top_start, PLAYSPACE._gridwidth, PLAYSPACE._gridheight)
+
+      // todo: return bounding boxes
+
+      var xbound=[original_left_start, original_left_start+PLAYSPACE._gridwidth];
+      var ybound=[original_top_start, original_top_start+PLAYSPACE._gridheight];
+
+      xbound[0]=xbound[0]
+      xbound[1]=xbound[1]
+      ybound[0]=ybound[0]
+      ybound[1]=ybound[1]
+      return [xbound, ybound]
+    }
 
 
 }

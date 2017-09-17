@@ -49,7 +49,7 @@ async function setupMechanicalTurkTask(){
     })
   });
 
-  var use_local_storage = true
+  var use_local_storage = false
 
   if(use_local_storage == true){
     SUBJECT = await loadStringFromLocalStorage("SubjectSettings_string")
