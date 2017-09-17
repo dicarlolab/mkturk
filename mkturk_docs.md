@@ -3,7 +3,7 @@
 The user needs to supply instances of the following classes to mkturk.html. In creating their own instances, they are defining the the task that will be run. 
 
 
-##TaskStreamer
+## TaskStreamer
 ```javascript
 class TaskStreamerTemplate{
     constructor(){
