@@ -7,7 +7,9 @@ class TaskStreamer{
 
         this.DIO_checkpointing = DIO_checkpointing // For checkpointing 
         this.DIO_images = DIO_images // for loading images and loading textfiles with imagebag definitions 
-        this.EXPERIMENT = Experiment
+        this.EXPERIMENT = Experiment["Experiment"]
+        this.ImageBags = Experiment["ImageBags"]
+
         this.use_checkpointing = use_checkpointing
         if(this.use_checkpointing == true){
             this.taskstream_checkpoint_fname = this._checkpoint_namehash(SubjectID)
@@ -66,10 +68,10 @@ class TaskStreamer{
         t['FixationT'] = []
 
         t['Sample_ImageBagIndex'] = []  
-        t['Sample_GridIndex'] = [] 
+        t['SampleGridIndex'] = [] 
 
         t['Choices_ImageBagIndices'] = [] 
-        t['Choices_GridIndices'] = [] 
+        t['ChoiceGridIndices'] = [] 
 
         t['Choices_RewardAmounts'] = [] 
         
@@ -84,7 +86,7 @@ class TaskStreamer{
         // and save the various TRIAL fields of interest to your own fieldnames
 
         // t: this.trial_behavior, cto: current_trial_outcome created at end of runtrial()
-        t['StartTime'] = cto['FixationT']
+        t['StartTime'].push(cto['FixationT'])
         t['TrialNumber_Session'].push(TRIAL_NUMBER_FROM_SESSION_START)
         t['TrialNumber_Stage'].push(this.state['current_stage_trial_number'])
         t['StageNumber'].push(this.state['current_stage_index'])
@@ -113,8 +115,8 @@ class TaskStreamer{
         t['Sample_ImageBagIndex'] = []  
         t['Choices_ImageBagIndices'] = [] 
 
-        t['Sample_GridIndex'].push(cto['TRIAL']['grid_placement_sequence'][0])
-        t['Choices_GridIndices'].push(cto['TRIAL']['grid_placement_sequence'][2])
+        t['SampleGridIndex'].push(cto['TRIAL']['grid_placement_sequence'][0])
+        t['ChoiceGridIndices'].push(cto['TRIAL']['grid_placement_sequence'][2])
 
         t['Choices_RewardAmounts'].push(cto['TRIAL']['choice_regions_gridIndices'])
         console.log(t)
@@ -131,39 +133,35 @@ class TaskStreamer{
         
         var trial_idx = i || this.state['current_stage_trial_number']
         var _t = await this.TQ_sequence[this.state['current_stage_index']].get_trial(trial_idx)
-        console.log(_t)
+        console.log('returned trial from TQ', _t)
 
-        //var _msec_on
-        //var _images
-        //var _grid_placements
-        //var _reward_amounts 
-        //var _boundingBoxes 
 
-        var sample_grid_index = _t['sample_grid_index_placement']
-        var test_grid_indices = _t['test_grid_index_placements']
+        var sample_grid_index = this.EXPERIMENT[this.state['current_stage_index']]['SampleGridIndex']
+        var test_grid_indices = this.EXPERIMENT[this.state['current_stage_index']]['ObjectGridMapping']
 
-        
-
-        var msec_timeout = 5000
+        var choice_reward_amounts = Array(test_grid_indices.length).fill(0)
+        choice_reward_amounts[_t['correct_test_selection']] = 1
 
         var sample_image = _t['sample_image']
         var test_images = _t['test_images']
 
 
 
-
         var trial = {}
-        trial['frame_durations'] = [100,0,0] // List of durations
+        var t_sample_on = this.EXPERIMENT[this.state['current_stage_index']]['t_SampleON']
+        var t_sample_off = this.EXPERIMENT[this.state['current_stage_index']]['t_SampleOFF']
+        trial['frame_durations'] = [t_sample_on,t_sample_off,0] // List of durations
         trial['image_sequence'] = [sample_image, [], test_images] // List of {images, lists of images, or [] for blank}
         trial['grid_placement_sequence'] = [sample_grid_index, [], test_grid_indices] // list of lists
         trial['frame_names'] = ['frame_stimulus', 'frame_delay', 'frame_choice']
 
-        trial['choice_regions_rewardAmounts'] = _t['choice_reward_amounts'] // list of award amounts
-        trial['choice_regions_gridIndices'] = _t['test_grid_index_placements'] // list of bounding box objects
-        trial['timeout_msec'] = msec_timeout
+        trial['choice_regions_rewardAmounts'] = choice_reward_amounts // list of award amounts
+        trial['choice_regions_gridIndices'] = test_grid_indices // list of bounding box objects
+        trial['timeout_msec'] = this.EXPERIMENT[this.state['current_stage_index']]['ChoiceTimeOut']
 
         // Optional
         trial['correct_grid_index'] = _t['test_correct_grid_index']
+
 
         return trial
     }
@@ -272,7 +270,8 @@ class TaskStreamer{
         dataobj['SUBJECT'] = SUBJECT
         dataobj['SESSION'] = SESSION
 
-        dataobj['EXPERIMENT'] = TS.EXPERIMENT
+        dataobj['EXPERIMENT'] = this.EXPERIMENT
+        dataobj["IMAGEBAGS"] = this.ImageBags
         dataobj['BEHAVIOR'] = this.trial_behavior
 
         return dataobj
@@ -351,27 +350,27 @@ class TaskStreamer{
             }
             updateProgressbar((i_stage+1)/EXPERIMENT.length*100, 'AutomatorLoadBar', 'Stages loaded:')
 
-            var samplebag_paths = [] // todo: load literally
-            var samplebag_labels = []
-            for (var i_samplebag = 0; i_samplebag < _tk['ImageBagsSampleMetaPaths'].length; i_samplebag++){
-                var _s_meta = await this.DIO_images.read_textfile(_tk['ImageBagsSampleMetaPaths'][i_samplebag])
-                _s_meta = JSON.parse(_s_meta)
-                samplebag_paths.push(... _s_meta['path'])
-                samplebag_labels.push(... new Array(_s_meta['path'].length).fill(i_samplebag))
+            var samplebags = {}
+            for (var i_samplebag = 0; i_samplebag < _tk['SampleImageBagNames'].length; i_samplebag++){
+                var samplebag_name = _tk["SampleImageBagNames"][i_samplebag]
+                samplebags[samplebag_name] = this.ImageBags[samplebag_name]
             }
 
 
 
-            var testbag_paths = []
-            var testbag_labels = []
-            for (var i_testbag = 0; i_testbag < _tk['ImageBagsTestMetaPaths'].length; i_testbag++){
-                var _t_meta = await this.DIO_images.read_textfile(_tk['ImageBagsTestMetaPaths'][i_testbag])
-                _t_meta = JSON.parse(_t_meta)
-                testbag_paths.push(... _t_meta['path'])
-                testbag_labels.push(... new Array(_t_meta['path'].length).fill(i_testbag))
+            var testbags = []
+            for (var i_testbag = 0; i_testbag < _tk['TestImageBagNames'].length; i_testbag++){
+
+                var testbag_name = _tk["TestImageBagNames"][i_testbag]
+                testbags[testbag_name] = this.ImageBags[testbag_name]
             }
 
-            var _newTQ = new TrialQueue(samplebag_paths, samplebag_labels, testbag_paths, testbag_labels, this.IB, start_trial_number, _tk)
+            var _newTQ = new TrialQueue(EXPERIMENT[i_stage]['SampleImageBagNames'], 
+                                        EXPERIMENT[i_stage]['TestImageBagNames'], 
+                                        this.ImageBags,
+                                        this.IB, 
+                                        start_trial_number, 
+                                        _tk['samplingRNGseed'])
 
             await _newTQ.build(5)
 

@@ -49,7 +49,7 @@ async function setupMechanicalTurkTask(){
     })
   });
 
-  var use_local_storage = true
+  var use_local_storage = false
 
   if(use_local_storage == true){
     SUBJECT = await loadStringFromLocalStorage("SubjectSettings_string")
@@ -82,62 +82,60 @@ async function setupMechanicalTurkTask(){
     SUBJECT['SubjectID'] = SESSION.SubjectID 
     SUBJECT['assignmentId'] = ''
     SESSION.ExperimentFilePath = 'https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt'
-    Experiment = [{
-            "StageNickname":"MILTEST",
+    Experiment = {
+  "Experiment":[{
+            "Task":"SR",
+            "StageNickname":"mil_toy_test_stage0",
             "PunishTimeOut": 1000,
             "ChoiceTimeOut": 5000,
             "t_SampleON": 100,
             "t_SampleOFF": 0,
-            "NGridPoints": 3,
-            "StaticFixationGridIndex": 5,
-            "SampleGridIndex": 4,
-            "TestGridIndex": [2,8],
+            "NGridPoints":3, 
+            "SampleGridIndex":4, 
             "ObjectGridMapping": [2,8],
             "initial_TaskStream_trial_number": 0,
             "samplingRNGseed": 0,
             "AverageReturnCriterion":0,
             "MinTrialsCriterion":5, 
             "probability_repeat_trial_if_wrong":1,
-             "ImageBagsSampleMetaPaths": [
-              "https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyA2.txt",
-              "https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyB.txt"
+             "SampleImageBagNames": [
+              "ToyASample",
+              "ToyBSample"
              ],
-             "ImageBagsTestMetaPaths": [
-              "https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyAtoken.txt",
-              "https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyBtoken.txt"
+             "TestImageBagNames": [
+              "ToyAtoken",
+              "ToyBtoken"
              ]
             }, 
             {
-            "StageNickname":"MILTEST2",
-            "RewardPer1000Trials": 300,
+            "Task":"SR", 
+            "StageNickname":"mil_toy_test_stage1",
             "PunishTimeOut": 1000,
             "ChoiceTimeOut": 5000,
             "t_SampleON": 100,
             "t_SampleOFF": 0,
-            "NGridPoints": 3,
-            "StaticFixationGridIndex": 5,
-            "SampleGridIndex": 4,
-            "TestGridIndex": [2,8],
+            "NGridPoints":3, 
+            "SampleGridIndex":4, 
             "ObjectGridMapping": [8,2],
             "initial_TaskStream_trial_number": 0,
             "samplingRNGseed": 0,
-            "GridScale": 0.6262,
-            "FixationScale": 0.6262,
-            "SampleScale": 0.6262,
-            "TestScale": 0.6262,
             "AverageReturnCriterion":0,
             "MinTrialsCriterion":5,
             "probability_repeat_trial_if_wrong":1,
-             "ImageBagsSampleMetaPaths": [
-              "https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyA2.txt",
-              "https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyB.txt"
+             "SampleImageBagNames": [
+              "ToyASample",
+              "ToyBSample"
              ],
-             "ImageBagsTestMetaPaths": [
-              "https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyAtoken.txt",
-              "https://s3.amazonaws.com/monkeyturk/Resources/ImageBagDefinitions/ToyBtoken.txt"
+             "TestImageBagNames": [
+              "ToyAtoken",
+              "ToyBtoken"
              ]
-            }
-            ]
+            }], 
+  "ImageBags":{"ToyASample":["https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/A.png"], 
+              "ToyBSample":["https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/B.png"], 
+              "ToyAtoken":["https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Atoken.png"], 
+              "ToyBtoken":["https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Btoken.png"]}
+}
 
   }
  
@@ -179,8 +177,7 @@ async function setupMechanicalTurkTask(){
 
 
   // Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image.
-  var representative_trial = await TS.get_trial()
-  console.log('representative_trial', representative_trial)
+
 
   // var representative_image = representative_trial['sample_image']
   // DEVICE.source_image_height = representative_image.height

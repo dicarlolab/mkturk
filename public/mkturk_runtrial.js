@@ -17,6 +17,7 @@ var timeout_msec = TRIAL['timeout_msec']
 var choice_regions_reward_amounts = TRIAL['choice_regions_rewardAmounts']
 var choice_regions_gridIndices = TRIAL['choice_regions_gridIndices']
 
+
 // Prebuffer 
 var sequence_id = 'stimulus_sequence'
 await SD.bufferSequenceFrames(sequence_id, image_sequence, grid_placement_sequence, frame_durations)
