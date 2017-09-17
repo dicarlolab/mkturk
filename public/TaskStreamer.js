@@ -172,8 +172,8 @@ class TaskStreamer{
        
 
 
-        var t_sample_on = this.Experiment[this.state['current_stage']]['t_SampleON']
-        var t_sample_off = this.Experiment[this.state['current_stage']]['t_SampleOFF']
+        var t_sample_on = E['t_SampleON']
+        var t_sample_off = E['t_SampleOFF']
         
          // Buffer image from disk 
         var sample_image = await this.IB.get_by_name(sample['image_name'])
@@ -184,14 +184,49 @@ class TaskStreamer{
         }
         test_images = await Promise.all(test_images)
 
-        var sample_grid_index = this.Experiment[this.state['current_stage']]['SampleGridIndex']
+        var sample_grid_index = E['SampleGridIndex']
 
-        if(this.Experiment[this.state['current_stage']]['Task'] == 'SR'){
-            var test_grid_indices = this.Experiment[this.state['current_stage']]['ObjectGridMapping']
-            var correct_test_selection = sample['bag_index']
+        if(E['Task'] == 'SR'){
+            var test_grid_indices = E['ObjectGridMapping']
+            var correct_test_selection = sample['bag_index'] // Indexes ObjectGridMapping
         }
-        else if(this.Experiment[this.state['current_stage']]['Task'] == 'MTS'){
-            console.log("Not yet implemented")
+        else if(E['Task'] == 'MTS'){
+            var correct_test_selection = test['bag_index'].indexOf(sample['bag_index'])
+
+            // Grid order 
+            var _order = [... Array(E['ObjectGridMapping'].length).keys()]
+            var choiceRNGseed = E['samplingRNGseed']+1 // If the same as samplingRNGseed, then correct is always on the right. todo:fix
+            var _orderRNGseed = cantor(trial_idx, choiceRNGseed) || Math.round(performance.now()/1000)
+            _order = shuffle(_order, _orderRNGseed)
+            console.log('order', _order)
+
+            var test_grid_indices = []
+            for (var i_order = 0; i_order <_order.length; i_order++){
+                test_grid_indices.push(E['ObjectGridMapping'][_order[i_order]])
+            }
+
+        }
+        else if(E['Task'] == 'nonMTS'){
+            // Assumes two-way task
+            var _matchindex = test['bag_index'].indexOf(sample['bag_index'])
+            if(_matchindex == 0){
+                var correct_test_selection = 1
+            }
+            else{
+                var correct_test_selection = 0
+            }
+
+            // Grid order 
+            var _order = [... Array(E['ObjectGridMapping'].length).keys()]
+            var choiceRNGseed = E['samplingRNGseed']+1 // If the same as samplingRNGseed, then correct is always on the right. todo:fix
+            var _orderRNGseed = cantor(trial_idx, choiceRNGseed) || Math.round(performance.now()/1000)
+            _order = shuffle(_order, _orderRNGseed)
+            console.log('order', _order)
+
+            var test_grid_indices = []
+            for (var i_order = 0; i_order <_order.length; i_order++){
+                test_grid_indices.push(E['ObjectGridMapping'][_order[i_order]])
+            }
         }
             
             
@@ -203,7 +238,7 @@ class TaskStreamer{
         // Stimulus
         var trial = {}
         trial['frame_durations'] = [t_sample_on,t_sample_off,0] // List of durations
-        trial['image_sequence'] = [sample_image, 'blank', ["dot", "dot"]] // List of {images, lists of images, or [] for blank}
+        trial['image_sequence'] = [sample_image, 'blank', test_images] // List of {images, lists of images, or [] for blank}
         trial['grid_placement_sequence'] = [sample_grid_index, [], test_grid_indices] // list of lists
         trial['frame_names'] = ['frame_stimulus', 'frame_delay', 'frame_choice']
 
@@ -329,7 +364,6 @@ class TaskStreamer{
         dataobj['Experiment'] = this.Experiment
         dataobj["IMAGEBAGS"] = this.ImageBags
         dataobj['BEHAVIOR'] = this.trial_behavior
-
         return dataobj
     }
 

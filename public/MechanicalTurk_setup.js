@@ -22,18 +22,6 @@ async function setupMechanicalTurkTask(){
   toggleElement(0, 'AutomatorLoadBar')
 
 
-  // Global references for runtrial
-  // TRIAL_NUMBER_FROM_SESSION_START
-  // TS 
-  // CANVAS
-  // SD 
-  // FixationRewardMap
-  // ChoiceRewardMap
-  // R
-  // EVENT_TIMESTAMPS
-  // TRIAL_BEHAVIOR
-  // DWr
-  // TERMINAL_STATE
 
   SIO = new S3_IO() 
   DWr = new MechanicalTurkDataWriter()
@@ -49,7 +37,7 @@ async function setupMechanicalTurkTask(){
     })
   });
 
-  var use_local_storage = false
+  var use_local_storage = false // for debugging purposes only
 
   if(use_local_storage == true){
     SUBJECT = await loadStringFromLocalStorage("SubjectSettings_string")
@@ -60,31 +48,26 @@ async function setupMechanicalTurkTask(){
     SESSION.SubjectID = SUBJECT['SubjectID'];
 
     //SESSION.ExperimentFilePath = "https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt"
-    SESSION.ExperimentFilePath = await loadStringFromLocalStorage('Experiment_url')
+    var Experiment = await loadStringFromLocalStorage('Experiment_string')
 
-    console.log('FROM LOCAL STORAGE:', SESSION.ExperimentFilePath)
-    var Experiment = await SIO.read_textfile(SESSION.ExperimentFilePath)
+    console.log('FROM LOCAL STORAGE:', Experiment)
     Experiment = JSON.parse(Experiment)
 
 
     MechanicalTurkSettings = await loadStringFromLocalStorage('HIT_settings_string')
     MechanicalTurkSettings = JSON.parse(MechanicalTurkSettings)
     console.log('FROM LOCAL STORAGE:', MechanicalTurkSettings)
-    // {
-    //  'MinimumTrialsForCashIn':10, 
-    //  'MAX_SESSION_TRIALS_MECHANICALTURK':100
-    // }
+
   }
   else{
     MechanicalTurkSettings = {"MinimumTrialsForCashIn": 10, "MAX_SESSION_TRIALS_MECHANICALTURK": 100}
     SESSION.SubjectID = 'Michaelo_debugger'
-    var SUBJECT = []
     SUBJECT['SubjectID'] = SESSION.SubjectID 
     SUBJECT['assignmentId'] = ''
-    SESSION.ExperimentFilePath = 'https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt'
+    SESSION.ExperimentFilePath = 'debugging, manually written down'
     Experiment = {
   "Experiment":[{
-            "Task":"SR",
+            "Task":"MTS",
             "StageNickname":"mil_toy_test_stage0",
             "PunishTimeOut": 1000,
             "ChoiceTimeOut": 5000,
@@ -96,7 +79,7 @@ async function setupMechanicalTurkTask(){
             "initial_TaskStream_trial_number": 0,
             "samplingRNGseed": 0,
             "AverageReturnCriterion":0,
-            "MinTrialsCriterion":5, 
+            "MinTrialsCriterion":100, 
             "probability_repeat_trial_if_wrong":1,
              "SampleImageBagNames": [
               "ToyASample",
@@ -130,7 +113,31 @@ async function setupMechanicalTurkTask(){
               "ToyAtoken",
               "ToyBtoken"
              ]
-            }], 
+            }, 
+            {
+              "Task":"MTS", 
+              "StageNickname":"mil_toy_test_stage2_MTS",
+              "PunishTimeOut": 1000,
+              "ChoiceTimeOut": 5000,
+              "t_SampleON": 100,
+              "t_SampleOFF": 0,
+              "NGridPoints":3, 
+              "SampleGridIndex":4, 
+              "ObjectGridMapping": [8,2],
+              "initial_TaskStream_trial_number": 0,
+              "samplingRNGseed": 0,
+              "AverageReturnCriterion":0,
+              "MinTrialsCriterion":5,
+              "probability_repeat_trial_if_wrong":1,
+               "SampleImageBagNames": [
+                "ToyASample",
+                "ToyBSample"
+               ],
+               "TestImageBagNames": [
+                "ToyAtoken",
+                "ToyBtoken"
+               ]
+              }], 
   "ImageBags":{"ToyASample":["https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/A.png"], 
               "ToyBSample":["https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/B.png"], 
               "ToyAtoken":["https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Atoken.png"], 
@@ -149,15 +156,11 @@ async function setupMechanicalTurkTask(){
 
     wdm("Sounds loaded...")
 
-    
-    
-    
+
     FLAGS.debug_mode = 1 
 
 
     // Initialize components of task
-    FixationRewardMap = new MouseMoveRewardMap()
-    ChoiceRewardMap = new MouseMoveRewardMap()
     RewardMap = new MouseMoveRewardMap(); 
     
     R = new MonetaryReinforcer()
@@ -172,33 +175,7 @@ async function setupMechanicalTurkTask(){
   window.addEventListener('resize', onWindowResize)
 
 
-  // Draw dots
 
-
-  // Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image.
-
-
-  // var representative_image = representative_trial['sample_image']
-  // DEVICE.source_image_height = representative_image.height
-  // DEVICE.source_image_width = representative_image.width
-
-
-  funcreturn = defineImageGrid(TS.Experiment[0]['NGridPoints']);
-
-  xcanvascenter = funcreturn[0]
-  ycanvascenter = funcreturn[1]
-
-
-
-  // Start in testing mode
-  wdm("Running test mode...")
-
-  
-  var tutorial_image = await SIO.load_image('tutorial_images/TutorialMouseOver.png')
-
-  console.log('hello')
-  
-  
   var skip_preview_mode = true // strictly for debugging purposes only 
 
   if(skip_preview_mode != true){
@@ -206,7 +183,7 @@ async function setupMechanicalTurkTask(){
       console.log('RUNNING IN PREVIEW MODE')
       // If in preview mode on MechanicalTurk
       toggleElement(1, 'PreviewModeSplash')
-
+      var tutorial_image = await SIO.load_image('tutorial_images/TutorialMouseOver.png')
 
       while(true){
         await run_MouseOver_TutorialTrial(tutorial_image) 
@@ -218,8 +195,6 @@ async function setupMechanicalTurkTask(){
   document.querySelector("button[name=WorkerCashInButton]").style.visibility = 'visible'
   toggleCashInButtonClickability(0)
 
-  
-
   var show_instructions = false
   if(show_instructions == true){
     await showMechanicalTurkInstructions()
@@ -228,8 +203,6 @@ async function setupMechanicalTurkTask(){
   }
   transition_from_debug_to_science_trials()
 
-
-  // Await clickthrough tutorial screen 
 
   // Add cash in button 
   document.querySelector("button[name=WorkerCashInButton]").addEventListener(
