@@ -274,7 +274,7 @@ async function showMechanicalTurkInstructions(){
 async function showDeviceSelectionDialogue_and_getUserSelection(){
     // Turn on dialogue
     FLAGS.clicked_device_selection = false
-    DEVICE.MechanicalTurk_DeviceSelected = 'not_selected'
+    DEVICE.MechanicalTurk_InputDeviceSelected = 'not_selected'
     document.getElementById("MechanicalTurkCursorDeviceSelectionScreen").style.visibility = 'visible'
     return new Promise(function(resolve, reject){
         FLAGS.clicked_device_selection = resolve

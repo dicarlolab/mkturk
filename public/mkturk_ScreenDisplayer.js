@@ -196,7 +196,10 @@ class ScreenDisplayer{
     renderBlank(canvasobj){
         var context=canvasobj.getContext('2d');
         context.fillStyle="#7F7F7F";
-        context.fillRect(0,0,canvasobj.width,canvasobj.height);
+        var width = parseFloat(canvasobj.style.width)
+        var height = parseFloat(canvasobj.style.height)
+
+        context.fillRect(0,0,width,height);
         context.fill()
     }
 
@@ -205,8 +208,10 @@ class ScreenDisplayer{
         var context=canvasobj.getContext('2d');
         context.fillStyle="#00cc00";
         context.globalAlpha = 0.5
-        var width = canvasobj.width
-        var height = canvasobj.height
+        var width = parseFloat(canvasobj.style.width)
+        var height = parseFloat(canvasobj.style.height)
+
+        console.log(canvasobj, 'renderReward', width/2-200, height/2 - 200)
         context.fillRect(width/2 - 200,height/2 - 200, 400,400);
 
         context.fill()
@@ -214,8 +219,8 @@ class ScreenDisplayer{
 
     renderPunish(canvasobj){
         var context=canvasobj.getContext('2d');
-        var width = canvasobj.width
-        var height = canvasobj.height
+        var width = parseFloat(canvasobj.style.width)
+        var height = parseFloat(canvasobj.style.height)
 
         context.fillStyle="black";
         context.fillRect(width/2 - 200,height/2 - 200, 400,400);
@@ -248,12 +253,10 @@ class ScreenDisplayer{
 
       // Special cases for 'image'
       if(image == 'dot'){
-        console.log('rendered special case dot')
         await this.renderFixationDot(grid_index, PLAYSPACE._gridwidth/2, "white", canvasobj)
         return
       }
       if(image == 'blank'){
-        console.log('rendered special case blank')
         await this.renderBlank(canvasobj)
         return
       }

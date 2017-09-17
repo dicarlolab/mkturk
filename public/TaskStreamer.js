@@ -123,12 +123,8 @@ class TaskStreamer{
         t['SampleGridIndex'].push(cto['TRIAL']['grid_placement_sequence'][0])
         t['ChoiceGridIndices'].push(cto['TRIAL']['grid_placement_sequence'][2])
         t['Choices_RewardAmounts'].push(cto['TRIAL']['choice_regions_gridIndices'])
-        console.log(t)
         return t 
     }
-
-
-    
 
 
     async get_trial(i){
@@ -137,7 +133,6 @@ class TaskStreamer{
         
         var trial_idx = i || this.state['current_stage_trial_number']
         var _t = await this.TQ_sequence[this.state['current_stage_index']].get_trial(trial_idx)
-        console.log('returned trial from TQ', _t)
 
 
         var sample_grid_index = this.EXPERIMENT[this.state['current_stage_index']]['SampleGridIndex']
@@ -184,7 +179,6 @@ class TaskStreamer{
         var min_trials = this.EXPERIMENT[this.state['current_stage_index']]['MinTrialsCriterion']
         var average_return_criterion = this.EXPERIMENT[this.state['current_stage_index']]['AverageReturnCriterion']
         
-        console.log('transition criterion', min_trials, average_return_criterion, this.state['return_sequence_in_stage'])
    
 
         if(min_trials == undefined 
@@ -266,7 +260,6 @@ class TaskStreamer{
 
         // Update trial object 
         this.trial_behavior = this.update_behavior_records(this.trial_behavior, current_trial_outcome)
-        console.log('this.trial_behavior', this.trial_behavior)
         // Write checkpoint to disk if it's been a while
         if(performance.now() - this._last_checkpoint_save > this._checkpoint_save_timeout_period){
             this.save_ckpt()
