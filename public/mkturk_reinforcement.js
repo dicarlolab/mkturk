@@ -35,7 +35,7 @@ class MonetaryReinforcer{
             //punish
 
             SP.playSound(3);
-            var p1 = await SD.displayPunish(TS.EXPERIMENT[TS.state.current_stage_index]['PunishTimeOut']) // (CANVAS.sequencepost,CANVAS.tsequencepost);
+            var p1 = await SD.displayPunish(TS.Experiment[TS.state.current_stage]['PunishTimeOut']) // (CANVAS.sequencepost,CANVAS.tsequencepost);
         }
         else if(nreward == 'none'){
           return 
@@ -70,7 +70,7 @@ class JuiceReinforcer{
         else if(nreward == 0){
             //punishs
             CANVAS.sequencepost[1] = "punish";
-            CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+TS.EXPERIMENT[TS.state.current_stage_index]['PunishTimeOut'];
+            CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+TS.Experiment[TS.state.current_stage]['PunishTimeOut'];
             SP.playSound(3);
             var p1 = await SD.displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost);
         }

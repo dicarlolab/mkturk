@@ -138,8 +138,7 @@ async function setupMechanicalTurkTask(){
 }
 
   }
- 
-  TS = new TaskStreamer(undefined, SIO, Experiment, SESSION.SubjectID, false) 
+  TS = new TaskStreamer(undefined, SIO, Experiment["Experiment"], Experiment["ImageBags"], SESSION.SubjectID) 
   await TS.build()
   wdm('TaskStreamer built')
 
@@ -164,7 +163,7 @@ async function setupMechanicalTurkTask(){
     R = new MonetaryReinforcer()
 
 
-  var ngridpoints = TS.EXPERIMENT[0]['NGridPoints'] 
+  var ngridpoints = TS.Experiment[0]['NGridPoints'] 
   setupPlayspace(ngridpoints) // sets up PLAYSPACE based on window dimensions
 
 
@@ -184,7 +183,7 @@ async function setupMechanicalTurkTask(){
   // DEVICE.source_image_width = representative_image.width
 
 
-  funcreturn = defineImageGrid(TS.EXPERIMENT[0]['NGridPoints']);
+  funcreturn = defineImageGrid(TS.Experiment[0]['NGridPoints']);
 
   xcanvascenter = funcreturn[0]
   ycanvascenter = funcreturn[1]

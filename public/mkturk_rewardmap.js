@@ -147,7 +147,6 @@ class MouseMoveRewardMap{
     }   
 
     create_reward_map_with_bounding_boxes(boundingBoxes, reward_amounts){
-        console.log(boundingBoxes)
         // boundingBoxes in units of PLAYSPACE
         if(this.attached == false){
             console.log('Attached mouse move listener for rewardmap')
@@ -166,7 +165,6 @@ class MouseMoveRewardMap{
     }
 
     create_reward_map_with_grid_indices(grid_indices, reward_amounts){
-        console.log('making reward map from grid indices', grid_indices, reward_amounts)
 
         if(this.attached == false){
             console.log('Attached mouse move listener for rewardmap')
