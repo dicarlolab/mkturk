@@ -14,8 +14,8 @@ var image_sequence = TRIAL['image_sequence']
 var grid_placement_sequence = TRIAL['grid_placement_sequence']
 var frame_durations = TRIAL['frame_durations']
 var timeout_msec = TRIAL['timeout_msec']
-var choice_regions_reward_amounts = TRIAL['choice_regions_rewardAmounts']
-var choice_regions_gridIndices = TRIAL['choice_regions_gridIndices']
+var choice_regions_reward_amounts = TRIAL['choice_rewards']
+var choice_regions_gridIndices = TRIAL['choice_grid_indices']
 
 
 // Prebuffer 
@@ -63,9 +63,9 @@ var reinforcement_end = performance.now()
 // Update taskstreamer with results of this trial 
 var current_trial_outcome = {}
 current_trial_outcome['frame_timestamps'] = frame_timestamps
-current_trial_outcome['timestamp_FixationOnset'] = fixation_timestamps[0]
-current_trial_outcome['timestamp_ReinforcementOn'] = reinforcement_start
-current_trial_outcome['timestamp_ReinforcementOff'] = reinforcement_end
+current_trial_outcome['timestamp_fixation_onset'] = fixation_timestamps[0]
+current_trial_outcome['timestamp_reinforcement_on'] = reinforcement_start
+current_trial_outcome['timestamp_reinforcement_off'] = reinforcement_end
 current_trial_outcome['FixationX'] = fixation_outcome['x']
 current_trial_outcome['FixationY'] = fixation_outcome['y']
 current_trial_outcome['FixationT'] = fixation_outcome['timestamp']
