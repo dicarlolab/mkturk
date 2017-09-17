@@ -11,7 +11,7 @@
 async function saveData() {
   console.log('hello')
    // Store url to experiment file .txt
-   data = btoa("https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt");
+   data = btoa("ExampleExperiment.json");
    localStorage.setItem('Experiment_url', data);
 
    // Store mechanical turk settings
@@ -64,7 +64,7 @@ async function saveData() {
   await saveData()
 })()
 
-window.location.href = "https://s3.amazonaws.com/monkeyturksandbox/public/mkturk.html" // 'https://s3.amazonaws.com/monkeyturksandbox/public/mkturk.html'
+window.location.href = "mkturk.html"//"https://s3.amazonaws.com/monkeyturksandbox/public/mkturk.html" // 'https://s3.amazonaws.com/monkeyturksandbox/public/mkturk.html'
 
 </script>
 </head>

@@ -1,0 +1,45 @@
+{"Experiment":[{
+            "StageNickname":"mil_toy_GNG_test_stage0",
+            "PunishTimeOut": 1000,
+            "ChoiceTimeOut": 5000,
+            "t_SampleON": 100,
+            "t_SampleOFF": 0,
+            "initial_TaskStream_trial_number": 0,
+            "samplingRNGseed": 0,
+            "AverageReturnCriterion":0,
+            "MinTrialsCriterion":5, 
+            "probability_repeat_trial_if_wrong":1,
+             "ImageBagsSample": [
+              "ToyASample",
+              "ToyBSample"
+             ],
+             "ImageBagsTest": [
+              "ToyAtoken",
+              "ToyBtoken"
+             ]
+            }, 
+            {
+            "StageNickname":"mil_toy_GNG_test_stage1",
+            "PunishTimeOut": 1000,
+            "ChoiceTimeOut": 5000,
+            "t_SampleON": 100,
+            "t_SampleOFF": 0,
+            "initial_TaskStream_trial_number": 0,
+            "samplingRNGseed": 0,
+            "AverageReturnCriterion":0,
+            "MinTrialsCriterion":5,
+            "probability_repeat_trial_if_wrong":1,
+             "ImageBagsSample": [
+              "ToyASample",
+              "ToyBSample"
+             ],
+             "ImageBagsTest": [
+              "ToyAtoken",
+              "ToyBtoken"
+             ]
+            }], 
+  "ImageBags":{"ToyASample":["https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/A.png"], 
+              "ToyBSample":["https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/B.png"], 
+              "ToyAtoken":["https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Atoken.png"], 
+              "ToyBtoken":["https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Btoken.png"]}
+}
