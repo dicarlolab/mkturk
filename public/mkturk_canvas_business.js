@@ -20,6 +20,10 @@ function onWindowResize(){
   var funcreturn = windowSize()
   var windowHeight = funcreturn[0]
   var windowWidth = funcreturn[1]
+
+  DEVICE.windowWidth = windowWidth
+  DEVICE.windowHeight = windowHeight 
+  
   PLAYSPACE.leftbound = Math.floor((windowWidth - PLAYSPACE.width)/2) // as these are in units of the window, they should be updated when the window changes 
   PLAYSPACE.rightbound = Math.floor(windowWidth-(windowWidth - PLAYSPACE.width)/2)
   PLAYSPACE.topbound = Math.floor((windowHeight - PLAYSPACE.height)/2)

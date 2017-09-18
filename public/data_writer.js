@@ -34,7 +34,7 @@ class MechanicalTurkDataWriter{
 
     async writeout(dataobj){
         this.dataobj = dataobj
-        console.log('No live writeout')
+        console.log(dataobj)
     }
     async saveTrialData(dataobj, debug_mode){
         console.log('No saveTrialData until concludeSession()')
@@ -60,10 +60,9 @@ class MechanicalTurkDataWriter{
 
         var aID = getURLParameter('assignmentId')
 
-        var dataobj = this.dataobj
 
-        var result_str = {'TASK_DATA':dataobj}
-        
+        var result_str = {'TASK_DATA':this.dataobj}
+
 
         result_str = JSON.stringify(result_str)
 

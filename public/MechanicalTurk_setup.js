@@ -37,7 +37,7 @@ async function setupMechanicalTurkTask(){
     })
   });
 
-  var use_local_storage = false // for debugging purposes only
+  var use_local_storage = true // for debugging purposes only
 
   if(use_local_storage == true){
     SUBJECT = await loadStringFromLocalStorage("SubjectSettings_string")
@@ -59,7 +59,7 @@ async function setupMechanicalTurkTask(){
     console.log('FROM LOCAL STORAGE:', MechanicalTurkSettings)
   }
   else{
-    MechanicalTurkSettings = {"bonus_usd_per_correct":0.0005, "MinimumTrialsForCashIn": 10, "MAX_SESSION_TRIALS_MECHANICALTURK": 100}
+    MechanicalTurkSettings = {"on_finish":"terminate", "bonus_usd_per_correct":0.0005, "MinimumTrialsForCashIn": 10, "MAX_SESSION_TRIALS_MECHANICALTURK": 100}
     SESSION.SubjectID = 'Michaelo_debugger'
     SUBJECT['SubjectID'] = SESSION.SubjectID 
     SUBJECT['assignmentId'] = ''
@@ -144,7 +144,7 @@ async function setupMechanicalTurkTask(){
 }
 
   }
-  TS = new TaskStreamer(undefined, SIO, Experiment["Experiment"], Experiment["ImageBags"], SESSION.SubjectID) 
+  TS = new TaskStreamer(undefined, SIO, Experiment["Experiment"], Experiment["ImageBags"], SESSION.SubjectID, MechanicalTurkSettings['on_finish']) 
   await TS.build()
   wdm('TaskStreamer built')
 
@@ -176,7 +176,7 @@ async function setupMechanicalTurkTask(){
 
 
 
-  var skip_preview_mode = true // strictly for debugging purposes only 
+  var skip_preview_mode = false // strictly for debugging purposes only 
 
   if(skip_preview_mode != true){
     if(SUBJECT['assignmentId'] == 'ASSIGNMENT_ID_NOT_AVAILABLE' || SUBJECT['assignmentId'] == '' ){
@@ -195,7 +195,7 @@ async function setupMechanicalTurkTask(){
   document.querySelector("button[name=WorkerCashInButton]").style.visibility = 'visible'
   toggleCashInButtonClickability(0)
 
-  var show_instructions = false
+  var show_instructions = true
   if(show_instructions == true){
     await showMechanicalTurkInstructions()
     var device_selected = await showDeviceSelectionDialogue_and_getUserSelection()
@@ -217,7 +217,7 @@ async function showMechanicalTurkInstructions(){
     var screen1_instructions =  "" 
     screen1_instructions += "<ul>"
     screen1_instructions +='<p><text style="font-weight:bold; font-size:large">Thank you for your interest and contributing to research at at MIT!</text>'
-    screen1_instructions += "<pi><li>Please use <b>Google Chrome</b> to work on this HIT. It may not work correctly on other browsers."
+    screen1_instructions += "<pi><li>Please use the latest version of <b>Google Chrome</b> to work on this HIT. It may not work correctly on other browsers."
     screen1_instructions += "<p><li>You will look at rapidly flashed images and be required to have a working mouse, touchscreen, or touchpad."
     screen1_instructions += '<p><li>The sound of a <text style="font-weight:bold">bell</text> means you received a small bonus reward.'
     screen1_instructions += '<p><li>When the top right button turns  <text style="font-weight:bold; color:green">GREEN</text> you can press it to submit early, though we encourage you to continue working for bonus rewards.'

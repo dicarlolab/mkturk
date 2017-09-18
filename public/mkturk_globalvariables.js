@@ -19,8 +19,25 @@ var SUBJECT = {}
 var DEVICE = {} // Does not change during a session on a particular device 
 DEVICE.BatteryLDT = []
 DEVICE.DevicePixelRatio = window.devicePixelRatio || 1
-DEVICE.navigator_info = navigator
-DEVICE.window_info = window
+DEVICE.navigator_appVersion = navigator.appVersion
+DEVICE.navigator_platform = navigator.platform
+DEVICE.navigator_userAgent = navigator.userAgent
+DEVICE.navigator_vendor = navigator.vendor
+DEVICE.navigator_language = navigator.language
+
+
+var windowHeight = window.innerHeight
+    || document.documentElement.clientHeight
+    || document.body.clientHeight;
+
+
+var windowWidth = window.innerWidth
+|| document.documentElement.clientWidth
+|| document.body.clientWidth;
+
+DEVICE.windowHeight = windowHeight
+DEVICE.windowWidth = windowWidth
+
 
 var SESSION = {}
 SESSION.SubjectID = ''
