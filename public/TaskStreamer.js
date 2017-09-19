@@ -156,19 +156,23 @@ class TaskStreamer{
     async get_trial(i){
         // called at the beginning of each trial 
         // returns images, reward maps, and other necessary things for runtrial()
-        
-
         var E = this.Experiment[this.state['current_stage']]
-
         var trial_idx = i || this.state['current_stage_trial_number']
 
-        var _RNGseed = cantor(trial_idx, E['samplingRNGseed'])
+        var sample_selection_RNGseed = cantor(trial_idx, E['samplingRNGseed'])
+        var test_selection_RNGseed = cantor(trial_idx, E['samplingRNGseed']+1)
+        var distractor_location_RNGseed = cantor(trial_idx, E['samplingRNGseed']+2)
+
+        
+
+        
+
         
         var SampleBagNames = E['SampleImageBagNames']
         var TestBagNames = E['TestImageBagNames']
 
-        var sample = this.selectSampleImage(SampleBagNames, _RNGseed)
-        var test = this.selectTestImages(TestBagNames, _RNGseed)
+        var sample = this.selectSampleImage(SampleBagNames, sample_selection_RNGseed)
+        var test = this.selectTestImages(TestBagNames, test_selection_RNGseed)
 
        
 
@@ -196,9 +200,7 @@ class TaskStreamer{
 
             // Grid order 
             var _order = [... Array(E['ObjectGridMapping'].length).keys()]
-            var choiceRNGseed = E['samplingRNGseed']+1 // If the same as samplingRNGseed, then correct is always on the right. todo:fix
-            var _orderRNGseed = cantor(trial_idx, choiceRNGseed) || Math.round(performance.now()/1000)
-            _order = shuffle(_order, _orderRNGseed)
+            _order = shuffle(_order, distractor_location_RNGseed)
             console.log('order', _order)
 
             var test_grid_indices = []
@@ -219,9 +221,7 @@ class TaskStreamer{
 
             // Grid order 
             var _order = [... Array(E['ObjectGridMapping'].length).keys()]
-            var choiceRNGseed = E['samplingRNGseed']+1 // If the same as samplingRNGseed, then correct is always on the right. todo:fix
-            var _orderRNGseed = cantor(trial_idx, choiceRNGseed) || Math.round(performance.now()/1000)
-            _order = shuffle(_order, _orderRNGseed)
+            _order = shuffle(_order, distractor_location_RNGseed)
             console.log('order', _order)
 
             var test_grid_indices = []

@@ -175,7 +175,7 @@ async function setupMechanicalTurkTask(){
 
 
 
-  var skip_preview_mode = false // strictly for debugging purposes only 
+  var skip_preview_mode = true // strictly for debugging purposes only 
 
   if(skip_preview_mode != true){
     if(SUBJECT['assignmentId'] == 'ASSIGNMENT_ID_NOT_AVAILABLE' || SUBJECT['assignmentId'] == '' ){
@@ -257,7 +257,7 @@ async function showDeviceSelectionDialogue_and_getUserSelection(){
 async function loadStringFromLocalStorage(key){
   var string = await localStorage.getItem(key)
   string = atob(string)
-  localStorage.removeItem(key);
+  //localStorage.removeItem(key);
   return string
   
 
