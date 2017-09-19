@@ -58,7 +58,7 @@ class MechanicalTurkDataWriter{
         document.getElementById("MechanicalTurk_SubmissionForm").action = submit_url
         console.log(document.getElementById('MechanicalTurk_SubmissionForm'))
 
-        var aID = getURLParameter('assignmentId')
+        var aID = SUBJECT['assignmentId']
 
 
         var result_str = {'TASK_DATA':this.dataobj}
@@ -71,7 +71,8 @@ class MechanicalTurkDataWriter{
         // console.log(document.getElementById('MechanicalTurk_SubmissionForm'))
 
 
-        document.getElementById("assignmentId").value = aID; 
+        document.getElementById("assignmentId").value = SUBJECT['assignmentId']; 
+        document.getElementById("hitId").value = SUBJECT['hitId']
         console.log(aID) // todo: latency between pressing button and submissino 
         document.getElementById("submission_data").value = result_str;
         document.getElementById("MechanicalTurk_SubmissionForm").submit();

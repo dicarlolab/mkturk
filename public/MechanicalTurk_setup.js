@@ -46,7 +46,6 @@ async function setupMechanicalTurkTask(){
     wdm("Subject settings loaded...")
 
     SESSION.SubjectID = SUBJECT['SubjectID'];
-
     //SESSION.ExperimentFilePath = "https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt"
     var Experiment = await loadStringFromLocalStorage('Experiment_string')
 
