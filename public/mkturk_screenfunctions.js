@@ -106,8 +106,8 @@ function displayTerminalScreen(){
 
 function initializeMouseTracker(){
 	var header='pageX,pageY'
-    header+=',unix_timestamp_delta_from__'+SESSION.UnixTimestampAtStart
     header+=',touch_update_number'
+    header+=',unix_timestamp_delta_from__'+SESSION.UnixTimestampAtStart
     header+='\n'
     
     TOUCHSTRING = header 
