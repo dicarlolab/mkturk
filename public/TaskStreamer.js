@@ -504,14 +504,14 @@ class TaskStreamer{
         t['TrialNumber_Stage'].push(this.state['current_stage_trial_number'])
         t['StageNumber'].push(this.state['current_stage'])
 
-        t['timestamp_FixationOnset'].push(cto['timestamp_FixationOnset'])
+        t['timestamp_FixationOnset'].push(cto['timestamp_fixation_onset'])
         
         t['timestamp_StimulusOn'].push(cto['frame_timestamps'][0])
         t['timestamp_StimulusOff'].push(cto['frame_timestamps'][1])
         t['timestamp_ChoiceOn'].push(cto['frame_timestamps'][2])
 
-        t['timestamp_ReinforcementOn'].push(cto['timestamp_ReinforcementOn'])
-        t['timestamp_ReinforcementOff'].push(cto['timestamp_ReinforcementOff'])
+        t['timestamp_ReinforcementOn'].push(cto['timestamp_reinforcement_on'])
+        t['timestamp_ReinforcementOff'].push(cto['timestamp_reinforcement_off'])
 
         t['ChoiceX'].push(cto['ChoiceX'])
         t['ChoiceY'].push(cto['ChoiceY'])
@@ -533,7 +533,7 @@ class TaskStreamer{
 
         t['SampleGridIndex'].push(cto['TRIAL']['grid_placement_sequence'][0])
         t['ChoiceGridIndices'].push(cto['TRIAL']['grid_placement_sequence'][2])
-        t['Choices_RewardAmounts'].push(cto['TRIAL']['choice_regions_gridIndices'])
+        t['Choices_RewardAmounts'].push(cto['TRIAL']['choice_rewards'])
         return t 
     }
     initialize_behavior_records(){
