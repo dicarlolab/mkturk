@@ -37,112 +37,27 @@ async function setupMechanicalTurkTask(){
     })
   });
 
-  var use_local_storage = true // for debugging purposes only
 
-  if(use_local_storage == true){
-    SUBJECT = await loadStringFromLocalStorage("SubjectSettings_string")
-    SUBJECT = JSON.parse(SUBJECT)
-    console.log('FROM LOCAL STORAGE:', SUBJECT)
-    wdm("Subject settings loaded...")
+  SUBJECT = await loadStringFromLocalStorage("SubjectSettings_string")
+  SUBJECT = JSON.parse(SUBJECT)
+  console.log('FROM LOCAL STORAGE:', SUBJECT)
+  wdm("Subject settings loaded...")
 
-    SESSION.SubjectID = SUBJECT['SubjectID'];
-    //SESSION.ExperimentFilePath = "https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt"
-    var Experiment = await loadStringFromLocalStorage('Experiment_string')
+  SESSION.SubjectID = SUBJECT['SubjectID'];
+  //SESSION.ExperimentFilePath = "https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt"
+  var Experiment = await loadStringFromLocalStorage('Experiment_string')
 
-    console.log('FROM LOCAL STORAGE:', Experiment)
-    Experiment = JSON.parse(Experiment)
+  console.log('FROM LOCAL STORAGE:', Experiment)
+  Experiment = JSON.parse(Experiment)
 
 
-    MechanicalTurkSettings = await loadStringFromLocalStorage('HIT_settings_string')
-    MechanicalTurkSettings = JSON.parse(MechanicalTurkSettings)
-    console.log('FROM LOCAL STORAGE:', MechanicalTurkSettings)
-  }
-  else{
-    MechanicalTurkSettings = {"on_finish":"terminate", "bonus_usd_per_correct":0.0005, "MinimumTrialsForCashIn": 10, "MAX_SESSION_TRIALS_MECHANICALTURK": 100}
-    SESSION.SubjectID = 'Michaelo_debugger'
-    SUBJECT['SubjectID'] = SESSION.SubjectID 
-    SUBJECT['assignmentId'] = ''
-    SESSION.ExperimentFilePath = 'debugging, manually written down'
-    Experiment = {
-  "Experiment":[{
-            "Task":"SR",
-            "StageNickname":"mil_toy_test_stage0",
-            "PunishTimeOut": 1000,
-            "ChoiceTimeOut": 5000,
-            "t_SampleON": 100,
-            "t_SampleOFF": 0,
-            "NGridPoints":3, 
-            "SampleGridIndex":4, 
-            "ObjectGridMapping": [2,8],
-            "initial_TaskStream_trial_number": 0,
-            "samplingRNGseed": 0,
-            "AverageReturnCriterion":0,
-            "MinTrialsCriterion":5, 
-            "probability_repeat_trial_if_wrong":1,
-             "SampleImageBagNames": [
-              "ToyASample",
-              "ToyBSample"
-             ],
-             "TestImageBagNames": [
-              "ToyAtoken",
-              "ToyBtoken"
-             ]
-            }, 
-            {
-            "Task":"SR", 
-            "StageNickname":"mil_toy_test_stage1",
-            "PunishTimeOut": 1000,
-            "ChoiceTimeOut": 5000,
-            "t_SampleON": 100,
-            "t_SampleOFF": 0,
-            "NGridPoints":3, 
-            "SampleGridIndex":4, 
-            "ObjectGridMapping": [8,2],
-            "initial_TaskStream_trial_number": 0,
-            "samplingRNGseed": 0,
-            "AverageReturnCriterion":0,
-            "MinTrialsCriterion":5,
-            "probability_repeat_trial_if_wrong":1,
-             "SampleImageBagNames": [
-              "ToyASample",
-              "ToyBSample"
-             ],
-             "TestImageBagNames": [
-              "ToyAtoken",
-              "ToyBtoken"
-             ]
-            }, 
-            {
-              "Task":"MTS", 
-              "StageNickname":"mil_toy_test_stage2_MTS",
-              "PunishTimeOut": 1000,
-              "ChoiceTimeOut": 5000,
-              "t_SampleON": 100,
-              "t_SampleOFF": 0,
-              "NGridPoints":3, 
-              "SampleGridIndex":4, 
-              "ObjectGridMapping": [8,2],
-              "initial_TaskStream_trial_number": 0,
-              "samplingRNGseed": 0,
-              "AverageReturnCriterion":0,
-              "MinTrialsCriterion":5,
-              "probability_repeat_trial_if_wrong":1,
-               "SampleImageBagNames": [
-                "ToyASample",
-                "ToyBSample"
-               ],
-               "TestImageBagNames": [
-                "ToyAtoken",
-                "ToyBtoken"
-               ]
-              }], 
-  "ImageBags":{"ToyASample":["https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/A.png"], 
-              "ToyBSample":["https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/B.png"], 
-              "ToyAtoken":["https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Atoken.png"], 
-              "ToyBtoken":["https://s3.amazonaws.com/monkeyturk/Resources/ImageBags/Btoken.png"]}
-}
+  MechanicalTurkSettings = await loadStringFromLocalStorage('HIT_settings_string')
+  MechanicalTurkSettings = JSON.parse(MechanicalTurkSettings)
+  console.log('FROM LOCAL STORAGE:', MechanicalTurkSettings)
+  
+  // Get IP address from local storage
+  SESSION['IP_address'] = await loadStringFromLocalStorage('IP_address')
 
-  }
   TS = new TaskStreamer(undefined, SIO, Experiment["Experiment"], Experiment["ImageBags"], SESSION.SubjectID, MechanicalTurkSettings['on_finish']) 
   await TS.build()
   wdm('TaskStreamer built')
@@ -174,8 +89,8 @@ async function setupMechanicalTurkTask(){
   window.addEventListener('resize', onWindowResize)
 
 
-
-  var skip_preview_mode = true // strictly for debugging purposes only 
+  var skip_preview_mode = false
+  
 
   if(skip_preview_mode != true){
     if(SUBJECT['assignmentId'] == 'ASSIGNMENT_ID_NOT_AVAILABLE' || SUBJECT['assignmentId'] == '' ){
