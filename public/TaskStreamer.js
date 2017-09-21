@@ -108,7 +108,10 @@ class TaskStreamer{
         // Select sample class 
         var num_classes = SampleBagNames.length
         var selected_bag_index = Math.floor(Math.random()*num_classes)
+
         var selected_bag_name = SampleBagNames[selected_bag_index]
+
+
 
         // Select image inside of that class
         var num_bag_images = this.ImageBags[selected_bag_name].length
@@ -123,7 +126,7 @@ class TaskStreamer{
         return sample
     }
 
-    selectTestImages(TestBagNames, _RNGseed){
+    selectTestImagesSR(TestBagNames, _RNGseed){
         
         Math.seedrandom(_RNGseed)
 
@@ -149,6 +152,62 @@ class TaskStreamer{
             test['image_index'].push(test_image_index)
             test['image_name'].push(test_image_name)
         }
+
+
+        return test 
+    }
+
+    selectTestImagesMTS(TestBagNames, sample_bag_index, nway, _RNGseed){
+        // Guarantees one of the images is from TestBagNames[sample_bag_index]
+        // returns nway images 
+
+        Math.seedrandom(_RNGseed)
+
+        // Select distractor (SR)
+        var num_distractors = nway - 1
+
+        var test = {}
+        test['bag_name'] = []
+        test['bag_index'] = []
+        test['image_index'] = []
+        test['image_name'] = []
+
+        // Randomly select the token for the sample class
+        var samplebag_name = TestBagNames[sample_bag_index]
+        console.log('TestBagNames', TestBagNames)
+        console.log('samplebag_name', samplebag_name)
+        console.log('sample_bag_index', sample_bag_index)
+        console.log('this.ImageBags', this.ImageBags)
+        console.log('this.ImageBags[samplebag_name]', this.ImageBags[samplebag_name])
+        console.log(this.ImageBags[samplebag_name].length)
+
+        var sample_image_index = Math.floor(Math.random()*this.ImageBags[samplebag_name].length)
+        test['bag_name'].push(TestBagNames[sample_bag_index])
+        test['bag_index'].push(sample_bag_index)
+        test['image_index'].push(sample_image_index)
+        test['image_name'].push(this.ImageBags[samplebag_name][sample_image_index])
+
+        // Randomly select distractors
+
+        var _TestBagNames = JSON.parse(JSON.stringify(TestBagNames))// so it doesn't overwrite input arg
+        var DistractorBagNames = _TestBagNames.splice(sample_bag_index, 1)
+        DistractorBagNames = shuffle(DistractorBagNames, _RNGseed)
+
+        for (var i_choice_class = 0; i_choice_class<num_distractors; i_choice_class++){
+
+            var bag_name = DistractorBagNames[i_choice_class]
+
+            // Select image inside of that class 
+            var test_image_index = Math.floor(Math.random()*this.ImageBags[bag_name].length)
+            var test_image_name = this.ImageBags[bag_name][test_image_index]
+
+            test['bag_name'].push(bag_name)
+            test['bag_index'].push(Object.keys(this.ImageBags).indexOf(bag_name)) // todo: possibly performance heavy with many imagebags
+            test['image_index'].push(test_image_index)
+            test['image_name'].push(test_image_name)
+        }
+
+
         return test 
     }
 
@@ -171,8 +230,8 @@ class TaskStreamer{
         var SampleBagNames = E['SampleImageBagNames']
         var TestBagNames = E['TestImageBagNames']
 
-        var sample = this.selectSampleImage(SampleBagNames, sample_selection_RNGseed)
-        var test = this.selectTestImages(TestBagNames, test_selection_RNGseed)
+        
+        
 
        
 
@@ -180,28 +239,29 @@ class TaskStreamer{
         var t_sample_on = E['t_SampleON']
         var t_sample_off = E['t_SampleOFF']
         
-         // Buffer image from disk 
-        var sample_image = await this.IB.get_by_name(sample['image_name'])
+         
 
-        var test_images = []
-        for (var i_test_image = 0; i_test_image < test['image_name'].length; i_test_image++){
-            test_images.push(this.IB.get_by_name(test['image_name'][i_test_image]))
-        }
-        test_images = await Promise.all(test_images)
+        var sample = this.selectSampleImage(SampleBagNames, sample_selection_RNGseed)
 
         var sample_grid_index = E['SampleGridIndex']
 
         if(E['Task'] == 'SR'){
+            var test = this.selectTestImagesSR(TestBagNames, test_selection_RNGseed)
+
             var test_grid_indices = E['ObjectGridMapping']
             var correct_test_selection = sample['bag_index'] // Indexes ObjectGridMapping
         }
         else if(E['Task'] == 'MTS'){
-            var correct_test_selection = test['bag_index'].indexOf(sample['bag_index'])
+            var Nway = E['Nway'] || 2
 
-            // Grid order 
+            console.log('SampleBagNames', SampleBagNames)
+            var test = this.selectTestImagesMTS(TestBagNames, sample['bag_index'], Nway, test_selection_RNGseed)
+            var correct_test_selection = test['bag_index'].indexOf(sample['bag_index']) 
+
+
+            // Set locations of images via grid indexes
             var _order = [... Array(E['ObjectGridMapping'].length).keys()]
             _order = shuffle(_order, distractor_location_RNGseed)
-            console.log('order', _order)
 
             var test_grid_indices = []
             for (var i_order = 0; i_order <_order.length; i_order++){
@@ -211,15 +271,18 @@ class TaskStreamer{
         }
         else if(E['Task'] == 'nonMTS'){
             // Assumes two-way task
-            var _matchindex = test['bag_index'].indexOf(sample['bag_index'])
-            if(_matchindex == 0){
-                var correct_test_selection = 1
-            }
-            else{
+            var Nway = 2
+
+            var test = this.selectTestImagesMTS(TestBagNames, sample['bag_index'], Nway, test_selection_RNGseed)
+            var _match_selection = test['bag_index'].indexOf(sample['bag_index']) 
+            if (_match_selection == 1){
                 var correct_test_selection = 0
             }
+            else if(_match_selection == 0){
+                var correct_test_selection = 1 
+            }
 
-            // Grid order 
+            // Set locations of images via grid indexes
             var _order = [... Array(E['ObjectGridMapping'].length).keys()]
             _order = shuffle(_order, distractor_location_RNGseed)
             console.log('order', _order)
@@ -229,8 +292,16 @@ class TaskStreamer{
                 test_grid_indices.push(E['ObjectGridMapping'][_order[i_order]])
             }
         }
-            
-            
+        
+        // Buffer image from disk 
+        var sample_image = await this.IB.get_by_name(sample['image_name'])
+
+        var test_images = []
+        for (var i_test_image = 0; i_test_image < test['image_name'].length; i_test_image++){
+            test_images.push(this.IB.get_by_name(test['image_name'][i_test_image]))
+        }
+        test_images = await Promise.all(test_images)
+
         var choice_reward_amounts = Array(test_grid_indices.length).fill(0)
         choice_reward_amounts[correct_test_selection] = 1
 
@@ -373,7 +444,7 @@ class TaskStreamer{
         dataobj['SESSION'] = SESSION
 
         dataobj['Experiment'] = this.Experiment
-        dataobj["IMAGEBAGS"] = this.ImageBags
+        //dataobj["IMAGEBAGS"] = this.ImageBags # potentially HUGE 
         dataobj['BEHAVIOR'] = this.trial_behavior
         return dataobj
     }
@@ -456,7 +527,16 @@ class TaskStreamer{
             for (var i_trial = start_trial_number; i_trial < start_trial_number + num_trials_per_stage_to_prebuffer; i_trial++){
                 var _RNGseed = cantor(i_trial, _tk['samplingRNGseed'])
                 var sample = this.selectSampleImage(_tk['SampleImageBagNames'], _RNGseed)
-                var test = this.selectTestImages(_tk['TestImageBagNames'], _RNGseed)
+
+                // SR or MTS 
+                if (_tk['Task'] == 'SR'){
+                    var test = this.selectTestImagesSR(_tk['TestImageBagNames'], _RNGseed)
+                }
+                else if(_tk['Task'] == 'MTS'){
+                    var nway = _tk['Nway'] || 2
+                    var test = this.selectTestImagesMTS(_tk['TestImageBagNames'], sample['bag_index'], nway, _RNGseed)
+                }
+                
                 image_requests.add(sample['image_name'])
                 for (var i_test = 0; i_test<test['image_name'].length; i_test++){
                     image_requests.add(test['image_name'][i_test])

@@ -47,7 +47,7 @@ async function setupMechanicalTurkTask(){
   //SESSION.ExperimentFilePath = "https://s3.amazonaws.com/monkeyturk/Tasks/ExperimentDefinitions/NuevoToy.txt"
   var Experiment = await loadStringFromLocalStorage('Experiment_string')
 
-  console.log('FROM LOCAL STORAGE:', Experiment)
+  //console.log('FROM LOCAL STORAGE:', Experiment)
   Experiment = JSON.parse(Experiment)
 
 
