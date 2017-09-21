@@ -90,9 +90,9 @@ async function setupMechanicalTurkTask(){
 
 
   var skip_preview_mode = false
-  
+  console.log(window.location.href.startsWith('http://localhost:7800'))
 
-  if(skip_preview_mode != true){
+  if(skip_preview_mode != true && window.location.href.startsWith('http://localhost:7800') == false){
     if(SUBJECT['assignmentId'] == 'ASSIGNMENT_ID_NOT_AVAILABLE' || SUBJECT['assignmentId'] == '' ){
       console.log('RUNNING IN PREVIEW MODE')
       // If in preview mode on MechanicalTurk

@@ -189,15 +189,22 @@ class TaskStreamer{
 
         // Randomly select distractors
 
-        var _TestBagNames = JSON.parse(JSON.stringify(TestBagNames))// so it doesn't overwrite input arg
-        var DistractorBagNames = _TestBagNames.splice(sample_bag_index, 1)
-        DistractorBagNames = shuffle(DistractorBagNames, _RNGseed)
+        var DistractorBagNames = JSON.parse(JSON.stringify(TestBagNames))// so it doesn't overwrite input arg
+        DistractorBagNames.splice(sample_bag_index, 1)
+        DistractorBagNames = shuffle(DistractorBagNames, _RNGseed) // random order
 
-        for (var i_choice_class = 0; i_choice_class<num_distractors; i_choice_class++){
-
+        var _cnt = 0 // num distractors added 
+        for (var i_choice_class = 0; i_choice_class<DistractorBagNames.length; i_choice_class++){
+            if(DistractorBagNames[i_choice_class] == samplebag_name){
+                continue 
+                // If test image the match of sample, continue.
+            }
+            if(_cnt == nway){
+                break 
+            }
             var bag_name = DistractorBagNames[i_choice_class]
 
-            // Select image inside of that class 
+            // Select image inside of that class that is not same as sample
             var test_image_index = Math.floor(Math.random()*this.ImageBags[bag_name].length)
             var test_image_name = this.ImageBags[bag_name][test_image_index]
 
@@ -205,6 +212,7 @@ class TaskStreamer{
             test['bag_index'].push(Object.keys(this.ImageBags).indexOf(bag_name)) // todo: possibly performance heavy with many imagebags
             test['image_index'].push(test_image_index)
             test['image_name'].push(test_image_name)
+            _cnt++
         }
 
 
@@ -444,7 +452,8 @@ class TaskStreamer{
         dataobj['SESSION'] = SESSION
 
         dataobj['Experiment'] = this.Experiment
-        //dataobj["IMAGEBAGS"] = this.ImageBags # potentially HUGE 
+        // dataobj["IMAGEBAGS"] = this.ImageBags # potentially HUGE 
+        // dataobj['IMAGEBAGS'] = // copy the ones that were used only 
         dataobj['BEHAVIOR'] = this.trial_behavior
         return dataobj
     }
@@ -541,6 +550,7 @@ class TaskStreamer{
                 for (var i_test = 0; i_test<test['image_name'].length; i_test++){
                     image_requests.add(test['image_name'][i_test])
                 }
+                
                 await this.IB.cache_these_images(image_requests)
             }
 
