@@ -10,7 +10,7 @@ writeToTrialCounterDisplay(TRIAL_NUMBER_FROM_SESSION_START)
 
 var TRIAL = await TS.get_trial()
 
-var image_sequence = TRIAL['image_sequence']
+var - = TRIAL['image_sequence']
 var grid_placement_sequence = TRIAL['grid_placement_sequence']
 var frame_durations = TRIAL['frame_durations']
 var timeout_msec = TRIAL['timeout_msec']

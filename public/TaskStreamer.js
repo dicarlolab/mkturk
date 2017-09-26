@@ -4,7 +4,6 @@ class TaskStreamerTemplate{
     }
 
     transition_from_debug_to_science_mode(){
-
     }
     update_state(trial_outcome){
         // Available information:
@@ -231,18 +230,12 @@ class TaskStreamer{
         var distractor_location_RNGseed = cantor(trial_idx, E['samplingRNGseed']+2)
 
         
-
-        
-
         
         var SampleBagNames = E['SampleImageBagNames']
         var TestBagNames = E['TestImageBagNames']
 
         
         
-
-       
-
 
         var t_sample_on = E['t_SampleON']
         var t_sample_off = E['t_SampleOFF']
