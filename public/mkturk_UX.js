@@ -66,13 +66,24 @@ class MechanicalTurk_UX_poller{
     }
 
     async poll(){
+
+
         
+
         var minimum_trials_left = Math.max(MechanicalTurkSettings["MinimumTrialsForCashIn"] - TRIAL_NUMBER_FROM_SESSION_START, 0)
         if(minimum_trials_left > 0){
+            updateProgressbar(TRIAL_NUMBER_FROM_SESSION_START/MechanicalTurkSettings["MinimumTrialsForCashIn"]*100, 'MechanicalTurk_TrialBar', '', 100, ' ')
+
             var bonus_earned = R.bonus_total
             updateCashInButtonText(minimum_trials_left, bonus_earned, false)
         }
         else{
+
+            document.getElementById('MechanicalTurk_TrialBar').style['background-color'] = '#00cc66'
+            document.getElementById('MechanicalTurk_TrialBar').style['opacity'] = 1
+            
+            updateProgressbar(TRIAL_NUMBER_FROM_SESSION_START/MechanicalTurkSettings["MinimumTrialsForCashIn"]*100, 'MechanicalTurk_TrialBar', '', 100)
+
             toggleCashInButtonClickability(1)
             var bonus_earned = R.bonus_total
             var num_bonus_trials_performed = TRIAL_NUMBER_FROM_SESSION_START-MechanicalTurkSettings["MinimumTrialsForCashIn"]

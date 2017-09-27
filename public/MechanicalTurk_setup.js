@@ -22,6 +22,9 @@ async function setupMechanicalTurkTask(){
   toggleElement(0, 'AutomatorLoadBar')
 
 
+  toggleElement(1, 'MechanicalTurk_TrialBar')
+
+
 
   SIO = new S3_IO() 
   DWr = new MechanicalTurkDataWriter()

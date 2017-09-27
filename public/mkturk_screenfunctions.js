@@ -58,12 +58,12 @@ function toggleElement(on_or_off, element_id){
 	}
 }
 
-function updateProgressbar(pct, bar_id, text_prefix) {
-	var max_bar_width = 30
+function updateProgressbar(pct, bar_id, text_prefix, max_bar_width, innerHTML) {
+	var max_bar_width = max_bar_width || 30
     var elem = document.getElementById(bar_id); 
 
 	elem.style.width = max_bar_width*pct/100+"%" // pct + '%'; 
-	elem.innerHTML = text_prefix + ' ' + Math.round(pct) + '%'; // text
+	elem.innerHTML = innerHTML || text_prefix + ' ' + Math.round(pct) + '%'; // text
 }
 
 function toggleProgressbar(on_or_off, bar_id){

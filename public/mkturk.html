@@ -1,6 +1,17 @@
 <!doctype html>
 <style>
-
+#MechanicalTurk_TrialBar{
+  width: 0.2%;
+  height: 100%;
+  background-color: #373737;
+  opacity: 0.85;
+  color:white;
+  font-size: 8px; 
+  font-family: 'Helvetica Neue';
+  z-index:101;
+  position: absolute;
+  overflow:hidden;
+}
 
 #AutomatorLoadBar {
   margin:;
@@ -114,6 +125,8 @@
   font-size:small;
   color:black;
 }
+
+
 
 #MechanicalTurkInstructionsSplash{
   display: table;
@@ -277,6 +290,11 @@
 		<div id="ImageLoadBar"></div>
 		<div id="StageBar"></div>
 </div>
+
+<div id="MechanicalTurk_ProgressBar", style="position: absolute; overflow:hidden; height: 3%; width:30%; margin-left:35%; margin-right:35%; border:1px solid #BDBDBD; background-color:#BDBDBD" >
+    <div id="MechanicalTurk_TrialBar"></div>
+</div>
+
 
 <button name="connectble" style="z-index:101; visibility:hidden; position: absolute; top: 45%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to Bluetooth juicer</button>
 
