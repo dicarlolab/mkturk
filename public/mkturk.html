@@ -201,6 +201,52 @@
   height:auto
 }
 
+#MechanicalTurkHandSelectionScreen{
+  display: table;
+  position: absolute;
+   margin-top: 20%;
+   height: 30%; /* https://stackoverflow.com/questions/982054/how-to-center-html-element-in-browser-window*/
+   width:40%;
+   left: 50%;
+   margin-left:-20%; /* -1 * width/2 */
+   line-height:40%; /* https://stackoverflow.com/questions/8865458/how-do-i-vertically-center-text-with-css */
+   font-size:14px; 
+   z-index:102;
+   font-family: 'Helvetica Neue';
+   text-align: left;
+   vertical-align:middle;
+   color:#4B4B4B;
+   background-color:#E4E4E4;
+   visibility:hidden;
+   border-radius:8px;
+   border-color:#E6E6E6;
+   border-style:solid;
+}
+
+#HandSelectionSplashText{
+  line-height: normal;
+  vertical-align: bottom;
+  margin-left:15%;
+  margin-top:5%;
+  width:70%;
+  text-align:center;
+  color:black;
+}
+
+.HandButton:hover{
+  box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);
+}
+.HandButton{
+  border-style:solid;
+  vertical-align:bottom; 
+  margin-top:5%; 
+  margin-left:10%;
+  border-radius:8px; 
+  border-color:#ddd;
+  max-width:35%; 
+  height:auto
+}
+
 
 </style>
 
@@ -264,6 +310,16 @@
   </span>
 </div>
 
+<div id="MechanicalTurkHandSelectionScreen">
+  <div id='HandSelectionSplashText'> Select which hand you are using: </div>
+
+  <input type="image" class='HandButton' id='LeftHandImage'  style="" id="MouseImage" src="tutorial_images/left_hand.png " alt="Lefthanded" onclick="setHandSelection(this, 'left')" />
+  <input type="image"  class='HandButton' id = 'RightHandImage' src="tutorial_images/right_hand.png " alt="Righthanded" onclick="setHandSelection(this, 'right')" />
+
+  <span>
+  <button style="text-align:center; width:30%; height:10%; position:absolute; margin-top:5%; top: 80%; left:35%;"  onclick="toggleElement(0, 'MechanicalTurkHandSelectionScreen'); FLAGS.clicked_hand_selection(DEVICE.MechanicalTurk_Handedness)" id='CloseHandSelectionButton' disabled> <i>Make selection...</i> </button>
+  </span>
+</div>
 
 <button name="doneTestingTask" style="visibility:hidden; position: absolute; top: 55%; left: 70%; height: 75px; width: 200px; border-radius: 20px; z-index:101">Done with testing trials</button>
 

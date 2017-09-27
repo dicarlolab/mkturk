@@ -14,6 +14,23 @@ function setDeviceSelection(element, devicename){
 
 }
 
+function setHandSelection(element, handedness){
+    DEVICE.MechanicalTurk_Handedness = handedness 
+    var hand_option_elements = document.querySelectorAll(".HandButton")
+    for(var i = 0; i<hand_option_elements.length; i++){
+        hand_option_elements[i].style['opacity'] = 0.5
+        hand_option_elements[i].style['border-color'] = '#ddd'
+    }
+    element.style['border-color'] = 'green'
+    element.style['opacity'] = 1
+
+    var continue_button = document.getElementById('CloseHandSelectionButton')
+    continue_button.innerHTML = 'Continue'
+    continue_button.disabled = false
+
+}
+
+
 function updateSessionTextbox(SubjectID, ExperimentName){
 	  var sess_textbox = document.getElementById("SessionTextBox")
 

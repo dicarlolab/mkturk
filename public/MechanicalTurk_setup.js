@@ -109,10 +109,17 @@ async function setupMechanicalTurkTask(){
   document.querySelector("button[name=WorkerCashInButton]").style.visibility = 'visible'
   toggleCashInButtonClickability(0)
 
+
   var show_instructions = true
   if(show_instructions == true){
     await showMechanicalTurkInstructions()
+    // Ask for handedness 
+    
+    // Show device selection
+    var hand_used = await showHandSelectionDialogue_and_getUserSelection()
     var device_selected = await showDeviceSelectionDialogue_and_getUserSelection()
+    
+    console.log(hand_used)
     console.log(device_selected)
   }
   transition_from_debug_to_science_trials()
@@ -159,15 +166,22 @@ async function showMechanicalTurkInstructions(){
 
 async function showDeviceSelectionDialogue_and_getUserSelection(){
     // Turn on dialogue
-    FLAGS.clicked_device_selection = false
     DEVICE.MechanicalTurk_DeviceSelected = 'not_selected'
     document.getElementById("MechanicalTurkCursorDeviceSelectionScreen").style.visibility = 'visible'
     return new Promise(function(resolve, reject){
         FLAGS.clicked_device_selection = resolve
     })
-
-
 }
+
+async function showHandSelectionDialogue_and_getUserSelection(){
+    // Turn on dialogue
+    DEVICE.MechanicalTurk_Handedness = 'not_selected'
+    document.getElementById("MechanicalTurkHandSelectionScreen").style.visibility = 'visible'
+    return new Promise(function(resolve, reject){
+        FLAGS.clicked_hand_selection = resolve
+    })
+}
+
 
 async function loadStringFromLocalStorage(key){
   var string = await localStorage.getItem(key)
