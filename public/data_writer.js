@@ -45,13 +45,13 @@ class MechanicalTurkDataWriter{
 
     async concludeSession(){
         // Upload to turk
-        var submit_to_sandbox = true // todo: define programatically 
+        
 
 
-        if(submit_to_sandbox == true){
+        if(SUBMIT_TO_SANDBOX == true){
             var submit_url = "https://workersandbox.mturk.com/mturk/externalSubmit" 
         }
-        else if(submit_to_sandbox == false){
+        else if(SUBMIT_TO_SANDBOX == false){
             var submit_url = "https://www.mturk.com/mturk/externalSubmit"
         }
 

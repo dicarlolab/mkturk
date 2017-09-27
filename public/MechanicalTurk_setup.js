@@ -56,6 +56,9 @@ async function setupMechanicalTurkTask(){
 
   MechanicalTurkSettings = await loadStringFromLocalStorage('HIT_settings_string')
   MechanicalTurkSettings = JSON.parse(MechanicalTurkSettings)
+
+  SUBMIT_TO_SANDBOX = MechanicalTurkSettings['sandbox'] || false
+
   console.log('FROM LOCAL STORAGE:', MechanicalTurkSettings)
   
   // Get IP address from local storage

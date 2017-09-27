@@ -173,12 +173,7 @@ class TaskStreamer{
 
         // Randomly select the token for the sample class
         var samplebag_name = TestBagNames[sample_bag_index]
-        console.log('TestBagNames', TestBagNames)
-        console.log('samplebag_name', samplebag_name)
-        console.log('sample_bag_index', sample_bag_index)
-        console.log('this.ImageBags', this.ImageBags)
-        console.log('this.ImageBags[samplebag_name]', this.ImageBags[samplebag_name])
-        console.log(this.ImageBags[samplebag_name].length)
+
 
         var sample_image_index = Math.floor(Math.random()*this.ImageBags[samplebag_name].length)
         test['bag_name'].push(TestBagNames[sample_bag_index])
