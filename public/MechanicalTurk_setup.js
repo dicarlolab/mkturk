@@ -22,8 +22,7 @@ async function setupMechanicalTurkTask(){
   toggleElement(0, 'AutomatorLoadBar')
 
 
-  toggleElement(1, 'MechanicalTurk_TrialBar')
-
+  
 
 
   SIO = new S3_IO() 
@@ -116,6 +115,8 @@ async function setupMechanicalTurkTask(){
   toggleCashInButtonClickability(0)
 
 
+
+
   var show_instructions = true
   if(show_instructions == true){
     await showMechanicalTurkInstructions()
@@ -130,6 +131,8 @@ async function setupMechanicalTurkTask(){
   }
   transition_from_debug_to_science_trials()
 
+  // Show trial progress counter
+  toggleElement(1, 'MechanicalTurk_TrialBar')
 
   // Add cash in button 
   document.querySelector("button[name=WorkerCashInButton]").addEventListener(

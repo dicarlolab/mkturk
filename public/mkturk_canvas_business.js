@@ -48,7 +48,7 @@ function setupPlayspace(ngridpoints){
   var windowWidth = funcreturn[1]
     // Reference: https://www.w3schools.com/js/js_window.asp
 
-  var MARGIN_PROPORTION= 0.3
+  var MARGIN_PROPORTION= 0.15
     var min_screen_dimension = Math.round(Math.min(windowHeight, windowWidth))*(1-MARGIN_PROPORTION)
     var MIN_REQUIRED_PIXELS = 768 // todo: move into experimenter settings
     var min_dimension = Math.max(min_screen_dimension, MIN_REQUIRED_PIXELS)
