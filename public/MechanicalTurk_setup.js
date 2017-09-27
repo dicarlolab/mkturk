@@ -132,6 +132,8 @@ async function setupMechanicalTurkTask(){
   transition_from_debug_to_science_trials()
 
   // Show trial progress counter
+  
+  toggleElement(1, 'MechanicalTurk_ProgressBar')
   toggleElement(1, 'MechanicalTurk_TrialBar')
 
   // Add cash in button 
