@@ -319,6 +319,7 @@ class TaskStreamer{
         trial['choice_rewards'] = choice_reward_amounts // list of award amounts
         trial['choice_grid_indices'] = test_grid_indices // list of bounding box objects
         trial['timeout_msec'] = this.Experiment[this.state['current_stage']]['ChoiceTimeOut']
+        trial['choice_area_scale_factor'] = 0.5 // scale the dimensions of choice regions 
 
         // Optional
         trial['correct_grid_index'] = test_grid_indices[correct_test_selection]
@@ -328,6 +329,7 @@ class TaskStreamer{
 
         trial['test_bag_indices'] = test['bag_index']
         trial['test_image_indices'] = test['image_index']
+
 
         return trial
     }

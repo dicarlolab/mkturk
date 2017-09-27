@@ -73,6 +73,8 @@ class MouseClickRewardMap{
         if(reward_amounts.constructor != Array){
             reward_amounts = [reward_amounts]
         }
+
+
         this.boundingBoxes = boundingBoxes
         this.reward_amounts = reward_amounts
         
@@ -159,12 +161,12 @@ class MouseMoveRewardMap{
         if(reward_amounts.constructor != Array){
             reward_amounts = [reward_amounts]
         }
-
+        
         this.boundingBoxes = boundingBoxes
         this.reward_amounts = reward_amounts
     }
 
-    create_reward_map_with_grid_indices(grid_indices, reward_amounts){
+    create_reward_map_with_grid_indices(grid_indices, reward_amounts, scale_factor){
 
         if(this.attached == false){
             console.log('Attached mouse move listener for rewardmap')
@@ -178,10 +180,34 @@ class MouseMoveRewardMap{
             reward_amounts = [reward_amounts]
         }
 
+        scale_factor = scale_factor || 1
         var boundingBoxes = []
+
+        
+        var base_width = 0 
+        var base_height = 0
+        var x_dim = 0 
+        var y_dim = 0 
+
         for (var i = 0; i < grid_indices.length; i++){
-            boundingBoxes.push(PLAYSPACE._grid_boundingBox[grid_indices[i]])
+            if(scale_factor == 1){
+                boundingBoxes.push(PLAYSPACE._grid_boundingBox[grid_indices[i]])
+                continue
+            }
+
+            base_width = PLAYSPACE._grid_boundingBox[grid_indices[i]].x[1] - PLAYSPACE._grid_boundingBox[grid_indices[i]].x[0]
+            base_height = PLAYSPACE._grid_boundingBox[grid_indices[i]].y[1] - PLAYSPACE._grid_boundingBox[grid_indices[i]].y[0]
+
+            x_dim = (base_width - scale_factor * (base_width)) /2
+            y_dim = (base_height - scale_factor * (base_height)) /2
+
+            var box = {}
+            box['x'] = [PLAYSPACE._grid_boundingBox[grid_indices[i]].x[0]+x_dim, PLAYSPACE._grid_boundingBox[grid_indices[i]].x[1]-x_dim]
+            box['y'] = [PLAYSPACE._grid_boundingBox[grid_indices[i]].y[0]+y_dim, PLAYSPACE._grid_boundingBox[grid_indices[i]].y[1]-y_dim]
+
+            boundingBoxes.push(box)
         }   
+
         this.boundingBoxes = boundingBoxes
         this.reward_amounts = reward_amounts
     }
@@ -256,6 +282,9 @@ class TouchRewardMap{
         if(reward_amounts.constructor != Array){
             reward_amounts = [reward_amounts]
         }
+
+
+
         this.boundingBoxes = boundingBoxes
         this.reward_amounts = reward_amounts
         

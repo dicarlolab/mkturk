@@ -16,6 +16,7 @@ var frame_durations = TRIAL['frame_durations']
 var timeout_msec = TRIAL['timeout_msec']
 var choice_regions_reward_amounts = TRIAL['choice_rewards']
 var choice_regions_gridIndices = TRIAL['choice_grid_indices']
+var choice_area_scale_factor = TRIAL['choice_area_scale_factor']
 
 
 // Prebuffer 
@@ -41,7 +42,7 @@ var frame_timestamps = await SD.displaySequence(sequence_id)
 
 // Wait for choice response, with optional timeout
 // todo: chaining markov reward maps for multi-response tasks (v3); chain stimulus / reward map periods (but why call it a trial?)
-RewardMap.create_reward_map_with_grid_indices(choice_regions_gridIndices, choice_regions_reward_amounts)
+RewardMap.create_reward_map_with_grid_indices(choice_regions_gridIndices, choice_regions_reward_amounts, choice_area_scale_factor)
 if(timeout_msec > 0){
     var choice_promise = Promise.race([
                         RewardMap.Promise_wait_until_active_response_then_return_reinforcement(), 
