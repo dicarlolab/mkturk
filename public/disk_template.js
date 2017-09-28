@@ -307,8 +307,6 @@ class DropboxIO{
                 var reader = new FileReader()
                 reader.onload = function(e){
                     resolve(reader.result)
-                    var data = JSON.parse(reader.result)
-                    resolve(reader.result)
                 }
                 reader.readAsText(data.fileBlob)
             })

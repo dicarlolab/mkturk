@@ -50,14 +50,13 @@ class JuiceReinforcer{
         if(nreward >=1){
 
             var RewardDuration = this.setJuicerRewardDuration();
-            CANVAS.sequencepost[1]="reward";
-            CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+RewardDuration*1000;
+            
 
             SP.playSound(2);
 
-            var p1 = SD.displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost)
+            var p1 = SD.displayReward(RewardDuration)
             if (ble.connected == false){
-            await Promise.all([p1])
+              await p1
             }
             else if (ble.connected == true){
                 var p2 = writepumpdurationtoBLE(Math.round(RewardDuration*1000))
@@ -65,13 +64,11 @@ class JuiceReinforcer{
             }
         }
         else if(nreward == 0){
-            //punishs
-            CANVAS.sequencepost[1] = "punish";
-            CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+TS.Experiment[TS.state.current_stage]['PunishTimeOut'];
+            // punish
+            
             SP.playSound(3);
-            var p1 = await SD.displayScreenSequence(CANVAS.sequencepost,CANVAS.tsequencepost);
+            var p1 = await SD.displayPunish(TS.Experiment[TS.state.current_stage]['PunishTimeOut']) 
         }
-
     }
 
     setJuicerRewardDuration(){

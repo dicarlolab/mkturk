@@ -88,7 +88,7 @@ async function setupTabletTask(){
 
   var Experiment = await DIO.read_textfile(SESSION.ExperimentFilePath)
   Experiment = JSON.parse(Experiment)
-  TS = new TaskStreamer(DIO, DIO, Experiment["Experiment"], Experiment["ImageBags"], SESSION.SubjectID, MechanicalTurkSettings['on_finish']) 
+  TS = new TaskStreamer(DIO, SIO, Experiment["Experiment"], Experiment["ImageBags"], SESSION.SubjectID, "loop") // todo: move terminal setting into experiment constructor 
   await TS.build()
   wdm('TaskStreamer built')
 

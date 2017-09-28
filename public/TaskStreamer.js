@@ -1,74 +1,10 @@
-class TaskStreamerTemplate{
-    constructor(){
-
-    }
-
-    transition_from_debug_to_science_mode(){
-    }
-    update_state(trial_outcome){
-        // Available information:
-        trial_outcome['frame_timestamps']
-        trial_outcome['timestamp_fixation_onset']
-        trial_outcome['timestamp_reinforcement_on']
-        trial_outcome['timestamp_reinforcement_off']
-        trial_outcome['FixationX']
-        trial_outcome['FixationY']
-        trial_outcome['timestamp_FixationAcquired']
-        trial_outcome['ChoiceX']
-        trial_outcome['ChoiceY']
-        trial_outcome['timestamp_Choice']
-        trial_outcome['FixationGridIndex']
-        trial_outcome['Response_GridIndex']
-        trial_outcome['Return']
-    }
-
-    get_trial(){   
-        // Required to be returned:
-        var TRIAL = {}
-        TRIAL['image_sequence']
-        TRIAL['grid_placement_sequence']
-        TRIAL['frame_durations']
-        TRIAL['timeout_msec']
-        TRIAL['choice_rewards']
-        TRIAL['choice_grid_indices']
-
-        return TRIAL
-
-    }
-    package_behavior_data(){
-        var dataobj 
-
-        dataobj['DEVICE'] = DEVICE
-        dataobj['PLAYSPACE'] = PLAYSPACE
-        dataobj['TOUCHSTRING'] = TOUCHSTRING
-        dataobj['SUBJECT'] = SUBJECT
-        dataobj['SESSION'] = SESSION
-
-
-        return dataobj
-    }
-
-}
-
-class TrialQueue{
-    constructor(IB){
-        this.IB = IB
-    }
-
-    get_trial(i){
-
-    }
-}
 
 class TaskStreamer{
     constructor(DIO_checkpointing, DIO_images, Experiment, ImageBags, SubjectID, on_finish){
         // To save 
         this.trial_behavior = this.initialize_behavior_records()
 
-
-
         this.DIO_checkpointing = DIO_checkpointing // For writing checkpoints 
-        this.DIO_images = DIO_images // for loading images 
 
         this.Experiment = Experiment
         this.ImageBags = ImageBags
