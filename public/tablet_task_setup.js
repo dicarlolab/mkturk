@@ -144,4 +144,8 @@ async function setupTabletTask(){
 
   transition_from_debug_to_science_trials()
 
+  // Turn off playspace boundary 
+  SD.togglePlayspaceBorder(0)
+
+
 }

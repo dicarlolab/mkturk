@@ -32,15 +32,6 @@ function onWindowResize(){
   console.log('onWindowResize', PLAYSPACE.leftbound, PLAYSPACE.topbound)
 }
 
-function toggleCanvasStealthMode(on_or_off, canvasobj){
-  if(on_or_off == 0){
-    canvasobj.style.border='1px dotted #E6E6E6' 
-  }
-  else{
-    canvasobj.style.border='3px solid #1B47E8'
-  }
-  
-}
 
 function setupPlayspace(ngridpoints){
   var funcreturn = windowSize()

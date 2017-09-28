@@ -41,7 +41,7 @@ class MonetaryReinforcer{
 
 }
 class JuiceReinforcer{
-    constructor(reinforcement_type){
+    constructor(){
 
 
     }

@@ -2,7 +2,7 @@
 class ScreenDisplayer{
 
     constructor(){
-        this._sequence_canvases = {} // key: i_epoch. key: i_screen. values: canvas, 
+        this._sequence_canvases = {} // key: sequence. key: frame. value: canvas 
         this.canvas_sequences = {} // key: sequence_id
         this.time_sequences = {} // key: sequence_id
 
@@ -28,6 +28,28 @@ class ScreenDisplayer{
         var frame_unix_timestamps = await this.displayScreenSequence(sequence, tsequence)
 
         return frame_unix_timestamps
+    }
+
+    togglePlayspaceBorder(on_or_off){
+        // Turns on / off the dotted PLAYSPACE border
+        if(on_or_off == 1){
+            var bs = '1px dotted #E6E6E6' // border style 
+        }
+        else{
+            var bs = '0px'
+        }
+        this.canvas_blank.style.border = bs
+        this.canvas_reward.style.border = bs
+        this.canvas_punish.style.border = bs
+        this.canvas_fixation.style.border = bs
+
+        for (var sequence in this._sequence_canvases){
+            if(this._sequence_canvases.hasOwnProperty(sequence)){
+                for (var i = 0; i<this._sequence_canvases[sequence].length; i ++){
+                    this._sequence_canvases[sequence][i].style.border = bs
+                }
+            }
+        }
     }
 
     async bufferSequenceFrames(sequence_id, image_sequence, grid_placement_sequence, frame_durations){
