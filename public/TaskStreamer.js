@@ -13,10 +13,10 @@ class TaskStreamerTemplate{
         trial_outcome['timestamp_reinforcement_off']
         trial_outcome['FixationX']
         trial_outcome['FixationY']
-        trial_outcome['FixationT']
+        trial_outcome['timestamp_FixationAcquired']
         trial_outcome['ChoiceX']
         trial_outcome['ChoiceY']
-        trial_outcome['ChoiceT']
+        trial_outcome['timestamp_Choice']
         trial_outcome['FixationGridIndex']
         trial_outcome['Response_GridIndex']
         trial_outcome['Return']
@@ -193,9 +193,11 @@ class TaskStreamer{
                 continue 
                 // If test image the match of sample, continue.
             }
-            if(_cnt == nway){
+            
+            if(_cnt == nway-1){
                 break 
             }
+
             var bag_name = DistractorBagNames[i_choice_class]
 
             // Select image inside of that class that is not same as sample
@@ -360,6 +362,9 @@ class TaskStreamer{
     update_state(current_trial_outcome){
        // trial_behavior: the just-finished trial's behavior. 
         // called at the end of every trial. 
+        // Update trial object 
+        this.trial_behavior = this.update_behavior_records(this.trial_behavior, current_trial_outcome)
+
 
         var Return = current_trial_outcome['Return']
 
@@ -422,8 +427,7 @@ class TaskStreamer{
         }
 
 
-        // Update trial object 
-        this.trial_behavior = this.update_behavior_records(this.trial_behavior, current_trial_outcome)
+        
         // Write checkpoint to disk if it's been a while
         if(performance.now() - this._last_checkpoint_save > this._checkpoint_save_timeout_period){
             this.save_ckpt()
@@ -442,8 +446,11 @@ class TaskStreamer{
         dataobj['SESSION'] = SESSION
 
         dataobj['Experiment'] = this.Experiment
+        
+        //dataobj['IMAGEMETA'] = this.image_meta
         // dataobj["IMAGEBAGS"] = this.ImageBags # potentially HUGE 
         // dataobj['IMAGEBAGS'] = // copy the ones that were used only 
+
         dataobj['BEHAVIOR'] = this.trial_behavior
         return dataobj
     }
@@ -579,7 +586,7 @@ class TaskStreamer{
         // and save the various TRIAL fields of interest to your own fieldnames
 
         // t: this.trial_behavior, cto: current_trial_outcome created at end of runtrial()
-        t['StartTime'].push(cto['FixationT'])
+        t['StartTime'].push(cto['timestamp_FixationAcquired'])
         t['TrialNumber_Session'].push(TRIAL_NUMBER_FROM_SESSION_START)
         t['TrialNumber_Stage'].push(this.state['current_stage_trial_number'])
         t['StageNumber'].push(this.state['current_stage'])
@@ -595,7 +602,7 @@ class TaskStreamer{
 
         t['ChoiceX'].push(cto['ChoiceX'])
         t['ChoiceY'].push(cto['ChoiceY'])
-        t['ChoiceT'].push(cto['ChoiceT'])
+        t['timestamp_Choice'].push(cto['timestamp_Choice'])
         t['Return'].push(cto['Return'])
 
         t['Response_GridIndex'].push(cto['Response_GridIndex'])
@@ -603,7 +610,7 @@ class TaskStreamer{
 
         t['FixationX'].push(cto['FixationX'])
         t['FixationY'].push(cto['FixationY'])
-        t['FixationT'].push(cto['FixationT'])
+        t['timestamp_FixationAcquired'].push(cto['timestamp_FixationAcquired'])
 
         t['Sample_ImageIndex'].push(cto['TRIAL']['sample_image_index'])
         t['Sample_BagIndex'].push(cto['TRIAL']['sample_bag_index'])
@@ -633,7 +640,7 @@ class TaskStreamer{
 
         t['ChoiceX'] = []
         t['ChoiceY'] = []
-        t['ChoiceT'] = []
+        t['timestamp_Choice'] = []
         t['Return'] = [] 
 
         t['Response_GridIndex'] = []
@@ -641,7 +648,7 @@ class TaskStreamer{
 
         t['FixationX'] = []
         t['FixationY'] = []
-        t['FixationT'] = []
+        t['timestamp_FixationAcquired'] = []
 
         t['Sample_ImageIndex'] = []  
         t['Sample_BagIndex'] = []
@@ -652,6 +659,8 @@ class TaskStreamer{
         t['SampleGridIndex'] = []
         t['ChoiceGridIndices'] = []
         t['Choices_RewardAmounts'] = [] 
+
+
         
         return t
     }

@@ -69,11 +69,11 @@ current_trial_outcome['timestamp_reinforcement_on'] = reinforcement_start
 current_trial_outcome['timestamp_reinforcement_off'] = reinforcement_end
 current_trial_outcome['FixationX'] = fixation_outcome['x']
 current_trial_outcome['FixationY'] = fixation_outcome['y']
-current_trial_outcome['FixationT'] = fixation_outcome['timestamp']
+current_trial_outcome['timestamp_FixationAcquired'] = fixation_outcome['timestamp']
 current_trial_outcome['FixationGridIndex'] = fixation_grid_index
 current_trial_outcome['ChoiceX'] = choice_outcome['x']// todo: multiple response screens
 current_trial_outcome['ChoiceY'] = choice_outcome['y']
-current_trial_outcome['ChoiceT'] = choice_outcome['timestamp']
+current_trial_outcome['timestamp_Choice'] = choice_outcome['timestamp']
 current_trial_outcome['Response_GridIndex'] = chosen_grid_index
 
 current_trial_outcome['Return'] = nreward

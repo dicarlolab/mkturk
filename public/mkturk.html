@@ -386,12 +386,17 @@
 <script src="MechanicalTurk_setup.js" type="text/javascript"></script>
 <script src="mkturk_canvas_business.js" type="text/javascript"></script>
 <script src="mkturk_ScreenDisplayer.js" type="text/javascript"></script>
+<script src="mkturk_setup.js" type="text/javascript"></script>
+
+<script language="javascript" src="lz-string.js"></script>
 
 <script>
 
 (async function(){
 console.log('hello')
-await setupMechanicalTurkTask() // await setupTabletTask()
+
+await setupTask()
+//await setupMechanicalTurkTask() // await setupTabletTask()
 
 console.log('ENTERING MAIN TRIAL STATE MACHINE')
 TERMINAL_STATE = false 

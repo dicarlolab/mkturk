@@ -107,6 +107,10 @@ async function saveData() {
   var IP = await getIP()
   console.log("landing screen public IP", IP)
   localStorage.setItem("IP_address", btoa(IP))
+
+  // Set setup function 
+  localStorage.setItem('setupFunction', btoa('setupMechanicalTurkTask()'))
+
 }
 
 

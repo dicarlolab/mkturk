@@ -1,22 +1,19 @@
-async function setupTaskFunctionTemplate(){
-  // Responsible for setting the following global objects: 
-
-  // DWr: Disk writer (inc. Effector tracker (e.g. drag and tap or mouse move))
-  // R: Reinforcer
-  // SD: ScreenDisplayer
-  // UX: UX poller 
-  // DIO: Disk I/O
-  // Experiment file 
-  // SUBJECT
-
-
-  // backing store ratio
-}
-
-
-
-
 async function setupTabletTask(){
+
+
+  var windowHeight = window.innerHeight
+    || document.documentElement.clientHeight
+    || document.body.clientHeight;
+
+
+  var windowWidth = window.innerWidth
+    || document.documentElement.clientWidth
+    || document.body.clientWidth;
+
+  console.log(window)
+  console.log('dimensions', windowWidth, windowHeight)
+
+
 
   DIO = new DropboxIO()
   SIO = new S3_IO() 
@@ -24,16 +21,6 @@ async function setupTabletTask(){
   UX = new UX_poller(DIO)
 
   
-  DEVICE.DevicePixelRatio = window.devicePixelRatio || 1;
-  var visiblecanvasobj = CANVAS.obj[CANVAS.front];
-  var visiblecontext = visiblecanvasobj.getContext("2d");
-  backingStoreRatio = visiblecontext.webkitBackingStorePixelRatio ||
-                              visiblecontext.mozBackingStorePixelRatio ||
-                              visiblecontext.msBackingStorePixelRatio ||
-                              visiblecontext.oBackingStorePixelRatio ||
-                              visiblecontext.backingStorePixelRatio || 1;
-  DEVICE.CanvasRatio = backingStoreRatio/DEVICE.DevicePixelRatio
-
   //Monitor Battery - from: http://www.w3.org/TR/battery-status/
   navigator.getBattery().then(function(batteryobj){
     DEVICE.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
@@ -41,8 +28,6 @@ async function setupTabletTask(){
       DEVICE.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
     })
   });
-
-
 
   // Button callbacks
   document.querySelector("button[name=connectble]").addEventListener(
@@ -103,16 +88,23 @@ async function setupTabletTask(){
 
   var Experiment = await DIO.read_textfile(SESSION.ExperimentFilePath)
   Experiment = JSON.parse(Experiment)
-  TS = new TaskStreamer(DIO, DIO, Experiment, SESSION.SubjectID, true) 
+  TS = new TaskStreamer(DIO, DIO, Experiment["Experiment"], Experiment["ImageBags"], SESSION.SubjectID, MechanicalTurkSettings['on_finish']) 
   await TS.build()
   wdm('TaskStreamer built')
+
+
+  var ngridpoints = TS.Experiment[0]['NGridPoints'] 
+  setupPlayspace(ngridpoints) // sets up PLAYSPACE based on window dimensions
+
 
   //================== await create SoundPlayer ==================// 
     SP = new SoundPlayer()
     await SP.build()    
 
     wdm("Sounds loaded...")
-    
+    FLAGS.debug_mode = 1 
+
+
     //================== AWAIT CONNECT TO BLE ==================//
     document.querySelector("button[name=connectble]").style.display = "block"
     document.querySelector("button[name=connectble]").style.visibility = "visible"
@@ -127,63 +119,19 @@ async function setupTabletTask(){
     
     
 
-
-
     //========= Start in TEST mode =======//
     document.querySelector("button[name=doneTestingTask]").style.display = "block"
     document.querySelector("button[name=doneTestingTask]").style.visibility = "visible"
-    
-
-    
-    FLAGS.debug_mode = 1 
+  
 
     // Make sync button visible 
     document.querySelector("button[name=SyncButton]").style.visibility = "visible"
 
 
     // Initialize components of task
-    FixationRewardMap = new TouchRewardMap()
-    ChoiceRewardMap = new TouchRewardMap()
+    RewardMap = new TouchRewardMap()
     SD = new ScreenDisplayer()
     R = new JuiceReinforcer()
-
-
-
-  refreshScreenTSequenceSettings(TS.EXPERIMENT[TS.state.current_stage_index]); 
-
-  var devicePixelRatio = window.devicePixelRatio || 1
-
-  for (var i = 0; i <= CANVAS.names.length-1; i++) {
-      setupCanvas(CANVAS.obj[CANVAS.names[i]]);
-      if(devicePixelRatio != 1){
-        scaleCanvasforHiDPI(CANVAS.obj[CANVAS.names[i]]);
-      }
-  }
-
-  CANVAS.workspace = [
-      0,
-      0,
-      CANVAS.obj["touchfix"].width,
-      CANVAS.obj["touchfix"].height
-  ]
-
-
-  // Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image.
-  var representative_trial = await TS.get_trial()
-  console.log('representative_trial', representative_trial)
-
-  var representative_image = representative_trial['sample_image']
-  DEVICE.source_ImageWidthPixels = representative_image.width
-  DEVICE.source_ImageHeightPixels = representative_image.height
-
-
-  funcreturn = defineImageGrid(TS.EXPERIMENT[0]['NGridPoints']);
-
-  xcanvascenter = funcreturn[0]
-  ycanvascenter = funcreturn[1]
-
-  DEVICE.XGridCenter = funcreturn[2]
-  DEVICE.YGridCenter = funcreturn[3]
 
 
 

@@ -66,6 +66,9 @@ class MechanicalTurkDataWriter{
 
         result_str = JSON.stringify(result_str)
 
+        alert('Size of uncompressed is '+ result_str.length)
+        result_str = LZString.compress(result_str)
+        alert('Size of compressed is '+ result_str.length)
 
         document.getElementById("MechanicalTurk_SubmissionForm").action = submit_url
         // console.log(document.getElementById('MechanicalTurk_SubmissionForm'))

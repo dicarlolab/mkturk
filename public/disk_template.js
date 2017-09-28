@@ -392,3 +392,10 @@ class DropboxIO{
 
 }
 
+
+async function loadStringFromLocalStorage(key){
+  var string = await localStorage.getItem(key)
+  string = atob(string)
+  //localStorage.removeItem(key);
+  return string
+}
