@@ -53,15 +53,14 @@ class JuiceReinforcer{
             
 
             SP.playSound(2);
+            // Async as to not slow the monkey down
+            var p1 = SD.displayReward(100)
 
-            var p1 = SD.displayReward(RewardDuration)
-            if (ble.connected == false){
-              await p1
-            }
-            else if (ble.connected == true){
+            if (ble.connected == true){
                 var p2 = writepumpdurationtoBLE(Math.round(RewardDuration*1000))
-                await Promise.all([p1, p2])
+                //await Promise.all([p1, p2])
             }
+            await p1
         }
         else if(nreward == 0){
             // punish

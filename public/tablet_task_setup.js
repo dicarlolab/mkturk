@@ -134,7 +134,6 @@ async function setupTabletTask(){
     R = new JuiceReinforcer()
 
 
-
   // Start in testing mode
   wdm("Running debug mode...")
   while(FLAGS.debug_mode == 1){

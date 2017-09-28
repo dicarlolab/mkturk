@@ -229,6 +229,7 @@ class DropboxIO{
     }
     async _exists(check_path){
         try{
+
             var filemeta = await this.dbx.filesGetMetadata({path: check_path})
             return true
         }
