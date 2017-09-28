@@ -185,26 +185,27 @@ class DropboxIO{
     
 
     constructor(){
-        function isAuthenticated(){
-            return !!getAccessTokenFromUrl()
-        }
-
-        //parse access token from url if in urls hash
-        function getAccessTokenFromUrl(){
-            return utils.parseQueryString(window.location.hash).access_token
-        }
+    }
+    async build(){
 
         var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "mkturk.html"
 
-        if (isAuthenticated()){
-            //Create an instance of Dropbox with the access token
-            var dbx = new Dropbox({accessToken: getAccessTokenFromUrl()})
+        if(window.location.href.split('access_token').length>1){
+            var accessToken = utils.parseQueryString(window.location.hash).access_token
+            localStorage.setItem('_dbxAccessToken', btoa(accessToken))
         }
-        else {
+
+        var accessToken = await loadStringFromLocalStorage('_dbxAccessToken')
+        
+        if(accessToken.length<4){ // need a better check for nonsense; add dialogue 
             var dbx = new Dropbox({clientId: DBX_CLIENT_ID});
-            var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
+            var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);    
             window.location.href = dbx_authUrl //send to Dropbox sign-in screen
         }
+        else{
+            var dbx = new Dropbox({accessToken: accessToken})
+        }
+        
 
         this.dbx = dbx
         this.exists = this._exists.bind(this)

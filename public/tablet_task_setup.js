@@ -16,6 +16,8 @@ async function setupTabletTask(){
 
 
   DIO = new DropboxIO()
+  await DIO.build()
+  
   SIO = new S3_IO() 
   DWr = new DropboxDataWriter(DIO)
   UX = new UX_poller(DIO)
@@ -49,18 +51,46 @@ async function setupTabletTask(){
 
   subject_filepath_list = await DIO.listdir(SUBJECT_DIRPATH)
 
-  // GET PARAMFILE NAME
-  subjectdialog = document.getElementById("subjectID_dialog");
-  subjectlistobj = document.getElementById("subjectID_list");
-  for (var i=subject_filepath_list.length-1; i>=0; i--){
+
+  // Load Subject and Experiment file from landing page if available, 
+  // otherwise run dialogue
+
+  var run_manual_setup = await loadStringFromLocalStorage("manualSetupFlag") || 'true'
+  var run_manual_setup = (run_manual_setup == 'true') 
+  if(run_manual_setup == true){
+    // USER INPUT: get Subject file
+    subjectdialog = document.getElementById("subjectID_dialog");
+    subjectlistobj = document.getElementById("subjectID_list");
+    for (var i=subject_filepath_list.length-1; i>=0; i--){
+        var opt = document.createElement('option');
+        opt.value = i;
+        opt.innerHTML = splitFilename(subject_filepath_list[i]) // subject_filepath_list[i];
+        subjectlistobj.appendChild(opt);
+    }
+    subjectlistobj.addEventListener("change",subjectlist_listener,false);
+    subjectdialog.showModal()
+
+
+    // USER INPUT: get Experiment file
+    experiment_file_list = await DIO.listdir(EXPERIMENT_DIRPATH)
+    experiment_dialog = document.getElementById("ExperimentFile_dialog");
+    experimentfile_obj = document.getElementById("ExperimentFile_list");
+    for (var i=experiment_file_list.length-1; i>=0; i--){
       var opt = document.createElement('option');
       opt.value = i;
-      opt.innerHTML = splitFilename(subject_filepath_list[i]) // subject_filepath_list[i];
-      subjectlistobj.appendChild(opt);
+      opt.innerHTML = splitFilename(experiment_file_list[i]) // subject_filepath_list[i];
+      experimentfile_obj.appendChild(opt);
+    }
+    experimentfile_obj.addEventListener("change",experimentlist_listener,false);
+    experiment_dialog.showModal()
+    await ExperimentFile_Promise() // sets SESSION.ExperimentFilePath
+    
   }
-  subjectlistobj.addEventListener("change",subjectlist_listener,false);
-  subjectdialog.showModal()
-  await subjectIDPromise() // sets SESSION.SubjectFilePath
+  else{
+    console.log('Loading from landing page')
+    SESSION.SubjectFilePath = await loadStringFromLocalStorage('SubjectFilePath')
+    SESSION.ExperimentFilePath = await loadStringFromLocalStorage('ExperimentFilePath')
+  }
 
   SUBJECT = await DIO.read_textfile(SESSION.SubjectFilePath)
   SUBJECT = JSON.parse(SUBJECT)
@@ -69,25 +99,18 @@ async function setupTabletTask(){
   wdm("Subject settings loaded...")
 
   SESSION.SubjectID = SUBJECT['SubjectID'];
+
   updateSessionTextbox(SESSION.SubjectID, '')
 
-  //================== AWAIT LOAD Experiment Filepath ==================//
-  experiment_file_list = await DIO.listdir(EXPERIMENT_DIRPATH)
-  experiment_dialog = document.getElementById("ExperimentFile_dialog");
-  experimentfile_obj = document.getElementById("ExperimentFile_list");
-  for (var i=experiment_file_list.length-1; i>=0; i--){
-    var opt = document.createElement('option');
-    opt.value = i;
-    opt.innerHTML = splitFilename(experiment_file_list[i]) // subject_filepath_list[i];
-    experimentfile_obj.appendChild(opt);
-  }
-  experimentfile_obj.addEventListener("change",experimentlist_listener,false);
-  experiment_dialog.showModal()
-  await ExperimentFile_Promise() // sets SESSION.ExperimentFilePath
   updateSessionTextbox(SESSION.SubjectID, splitFilename(SESSION.ExperimentFilePath))
-
   var Experiment = await DIO.read_textfile(SESSION.ExperimentFilePath)
   Experiment = JSON.parse(Experiment)
+
+
+
+
+
+  
   TS = new TaskStreamer(DIO, SIO, Experiment["Experiment"], Experiment["ImageBags"], SESSION.SubjectID, "loop") // todo: move terminal setting into experiment constructor 
   await TS.build()
   wdm('TaskStreamer built')
@@ -116,7 +139,6 @@ async function setupTabletTask(){
 
     document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
     document.querySelector("button[name=noble]").style.display = "none"
-    
     
 
     //========= Start in TEST mode =======//

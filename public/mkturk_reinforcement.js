@@ -1,6 +1,5 @@
 // Functions for delivering reinforcement
 
-
 class ReinforcerTemplate{
     constructor(){
 
@@ -8,7 +7,6 @@ class ReinforcerTemplate{
     async deliver_reinforcement(nreward){
 
     }
-
 }
 
 class MonetaryReinforcer{
@@ -102,7 +100,4 @@ class JuiceReinforcer{
       return (SUBJECT['RewardPer1000Trials'] - b)/m/1000;
       
     }
-
-
-
 }
