@@ -79,7 +79,7 @@ async function setupMechanicalTurkTask(){
 
 
     // Initialize components of task
-    RewardMap = new MouseMoveRewardMap(); 
+    RewardMap = new RewardMapGenerator('mousemove'); 
     
 
     R = new MonetaryReinforcer(MechanicalTurkSettings['bonus_usd_per_correct'])

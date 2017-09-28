@@ -17,7 +17,7 @@ async function setupTabletTask(){
 
   DIO = new DropboxIO()
   await DIO.build()
-  
+
   SIO = new S3_IO() 
   DWr = new DropboxDataWriter(DIO)
   UX = new UX_poller(DIO)
@@ -151,7 +151,7 @@ async function setupTabletTask(){
 
 
     // Initialize components of task
-    RewardMap = new TouchRewardMap()
+    RewardMap = new RewardMapGenerator(['touchmove', 'touchstart'])
     SD = new ScreenDisplayer()
     R = new JuiceReinforcer()
 
@@ -164,8 +164,8 @@ async function setupTabletTask(){
   }
 
   transition_from_debug_to_science_trials()
-
-  // Turn off playspace boundary 
+  toggleElement(0, 'SyncButton')
+  toggleElement(0, 'TrialCounter')
   SD.togglePlayspaceBorder(0)
 
 

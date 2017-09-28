@@ -67,7 +67,6 @@ class MechanicalTurkDataWriter{
 class DropboxDataWriter{
     constructor(DIO){
         this.dataobj =undefined 
-        initializeTouchTracker()
 
         this.DIO = DIO
         this.min_write_timeout_period = TRIALDATA_SAVE_TIMEOUT_PERIOD // ms
@@ -118,7 +117,7 @@ class DropboxDataWriter{
     }
 
     async writeout(dataobj){
-
+        return 
         // Asynchronous save at most every T seconds
         var _ms_since_last_trial_data_save = performance.now() - last_trial_data_save
         var _ms_since_last_touch_data_save = performance.now() - last_touch_save
