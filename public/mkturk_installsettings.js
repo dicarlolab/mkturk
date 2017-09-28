@@ -6,7 +6,7 @@
 
 var DBX_CLIENT_ID = "scx9xahpjofx5q0"
 var DBX_REDIRECT_URI_ROOT = "https://s3.amazonaws.com/monkeyturkupstairs/public/"
-var DBX_REDIRECT_URI_ROOT = "http://localhost:7800/"
+//var DBX_REDIRECT_URI_ROOT = "http://localhost:7800/"
 
 // ------ Save location settings ------
 // Make sure to include the forward slash for the savepaths 

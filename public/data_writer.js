@@ -1,26 +1,6 @@
 // Functions for recording scientific data to disk. 
 
-class DataWriterTemplate{
-    constructor(){
 
-    }
-
-    async writeout(dataobj, ){
-        // live writeout (e.g. to dropbox)
-    }
-
-    async saveTrialData(dataobj, debug_mode){
-
-    }
-    async saveTouches(debug_mode){
-
-    }
-
-    async concludeSession(){
-        // Called at end
-    }
-
-}
 class MechanicalTurkDataWriter{
     // Where there can be no live writing / reading
     constructor(){

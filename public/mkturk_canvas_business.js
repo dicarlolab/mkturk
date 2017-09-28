@@ -264,7 +264,7 @@ async function renderImageOnCanvasLiterally(image, grid_index, canvasobj){
   context.drawImage(
     image, // Image element
     xleft, // dx: Canvas x-coordinate of image's top-left corner. 
-    ytop, // dy: Canvas y-coordinate of  image's top-left corner. 
+    ytop // dy: Canvas y-coordinate of  image's top-left corner. 
     ); // dheight. height of drawn image.
 
   // For drawing cropped regions of an image in the canvas, see alternate input argument structures,

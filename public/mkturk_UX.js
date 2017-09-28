@@ -6,6 +6,7 @@ class UX_poller{
     }
 
     async poll(){
+        return
         console.log("Called UX_poller.poll()")
         if(performance.now() - this.last_poll < this.min_poll_period){
             console.log('not enough time has passed to poll again')
