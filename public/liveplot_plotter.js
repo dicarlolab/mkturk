@@ -38,10 +38,10 @@ async function updatePlot(i){
 
     
 
-    var behavior_json = await DIO.read_textfile(CURRENT_VIEW['filepath'])
+    behavior_json = await DIO.read_textfile(CURRENT_VIEW['filepath'])
     behavior_json = JSON.parse(behavior_json)
     console.log(behavior_json)
-    var trial_behavior = behavior_json['BEHAVIOR']
+    trial_behavior = behavior_json['BEHAVIOR']
     trial_returns = trial_behavior['Return']
     var smoothed_trial_returns = smooth(trial_returns, window_size)
     var tooltip = trial_behavior['StartTime']
@@ -165,6 +165,9 @@ async function updatePlot(i){
     console.log(action_array)
     var chart = new google.visualization.BarChart(document.getElementById('actionChart_div'));
     chart.draw(dataAction, options);
+
+
+
 
 }
 
