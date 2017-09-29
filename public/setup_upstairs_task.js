@@ -173,5 +173,6 @@ async function setupTabletTask(){
   toggleElement(0, 'SyncButton')
   toggleElement(0, 'TrialCounter')
   SD.togglePlayspaceBorder(0)
+  document.getElementById('drive_juice_button').style.visibility = "hidden"
 
 }

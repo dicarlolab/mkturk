@@ -63,7 +63,6 @@ function transition_from_debug_to_science_trials(){
 	// Turn off certain HTML elements
 	progressbar_names = [
 						'AutomatorLoadBar',
-						'ImageLoadBar',
 						'StageBar',]
 
 	for (var _p in progressbar_names){

@@ -52,7 +52,8 @@ function connectBLEButtonPromise(){
   document.querySelector("button[name=noble]").style.display = "block"
   document.querySelector("button[name=noble]").style.visibility = "visible"
   wdm("Waiting for Bluetooth preferences...")
-  
+
+
   var resolveFunc
   var errFunc
   p = new Promise(function(resolve,reject){
@@ -65,7 +66,7 @@ function connectBLEButtonPromise(){
       buttonclicked = yield buttonclicked;
       document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
       document.querySelector("button[name=noble]").style.display = "none"
-    
+      document.getElementById('drive_juice_button').style.visibility = "visible"
       resolveFunc(buttonclicked);
     }
   }
@@ -239,6 +240,7 @@ function time(text) {
 
 //============== READ NOTIFICATIONS & WRITES ==============//
 async function writepumpdurationtoBLE(num){
+  console.log('Attempting bluetooth write')
   var arrInt8 = toBytesInt16(num)
   ble.twrite_pumpduration=performance.now()
   try{
