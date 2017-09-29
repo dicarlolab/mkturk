@@ -122,7 +122,7 @@ var menuobj = document.getElementById("file_selection_dropdown_menu");
 		await updatePlot(i)
 		i++
 		document.getElementById('circle').style.visibility = 'hidden'
-		await choiceTimeOut(1000) // Every 30 seconds; or on event listener
+		await timeOut(1000) // Every 30 seconds; or on event listener
 	}
 })()
 </script>

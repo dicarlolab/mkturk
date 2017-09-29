@@ -45,8 +45,6 @@ SESSION.UnixTimestampAtStart = window.performance.timing.navigationStart
 SESSION.CurrentDate = new Date;
 SESSION.url = window.location.href
 
-var __datestr = SESSION.CurrentDate.toISOString();
-TrialDataFileName_suffix = __datestr.slice(0, __datestr.indexOf(".")) + "_" + SESSION.SubjectID + ".txt"; // todo: move to dropbox data writer
 
 var FLAGS = {} 
 FLAGS.debug_mode = 1; 

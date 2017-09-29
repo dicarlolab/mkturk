@@ -172,10 +172,10 @@ async function updatePlot(i){
 }
 
 
-function choiceTimeOut(timeout_length){
+function timeOut(timeout_length){
   return new Promise(
     function(resolve, reject){
-      var timeout_reinforcement = 0 // todo: move into task params
+      var timeout_reinforcement = 0 
       var timer_return = function(){resolve({
         "x":'timed_out', 
         "y":'timed_out', 

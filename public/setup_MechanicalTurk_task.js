@@ -119,7 +119,18 @@ async function setupMechanicalTurkTask(){
 
   var show_instructions = true
   if(show_instructions == true){
-    await showMechanicalTurkInstructions()
+    var screen1_instructions =  "" 
+    screen1_instructions += "<ul>"
+    screen1_instructions +='<p><text style="font-weight:bold; font-size:large">Thank you for your interest and contributing to research at at MIT!</text>'
+    screen1_instructions += "<pi><li>Please use the latest version of <b>Google Chrome</b> to work on this HIT. It may not work correctly on other browsers."
+    screen1_instructions += "<p><li>You will look at rapidly flashed images and be required to have a working mouse, touchscreen, or touchpad."
+    screen1_instructions += '<p><li>The sound of a <text style="font-weight:bold">bell</text> means you received a small bonus reward.'
+    screen1_instructions += '<p><li>When the top right button turns  <text style="font-weight:bold; color:green">GREEN</text> you can press it to submit early, though we encourage you to continue working for bonus rewards.'
+    screen1_instructions += '<p><li>Highly productive workers may be contacted for exclusive, higher-paying HITs.' 
+            screen1_instructions += '<p><text style="color:#7A7A7A; font-size:smaller; font-style:italic">If you cannot meet these requirements or if doing so could cause discomfort or injury, do not accept this HIT. You will not be penalized in any way.</text>'
+    screen1_instructions += "</ul>"
+
+    await showMechanicalTurkInstructions(screen1_instructions)
     // Ask for handedness 
     
     // Show device selection
@@ -144,27 +155,11 @@ async function setupMechanicalTurkTask(){
   
 }
 
-async function showMechanicalTurkInstructions(){
-    //todo: allow arbitrary strings as input  
-    var screen1_instructions =  "" 
-    screen1_instructions += "<ul>"
-    screen1_instructions +='<p><text style="font-weight:bold; font-size:large">Thank you for your interest and contributing to research at at MIT!</text>'
-    screen1_instructions += "<pi><li>Please use the latest version of <b>Google Chrome</b> to work on this HIT. It may not work correctly on other browsers."
-    screen1_instructions += "<p><li>You will look at rapidly flashed images and be required to have a working mouse, touchscreen, or touchpad."
-    screen1_instructions += '<p><li>The sound of a <text style="font-weight:bold">bell</text> means you received a small bonus reward.'
-    screen1_instructions += '<p><li>When the top right button turns  <text style="font-weight:bold; color:green">GREEN</text> you can press it to submit early, though we encourage you to continue working for bonus rewards.'
-    screen1_instructions += '<p><li>Highly productive workers may be contacted for exclusive, higher-paying HITs.' 
-            screen1_instructions += '<p><text style="color:#7A7A7A; font-size:smaller; font-style:italic">If you cannot meet these requirements or if doing so could cause discomfort or injury, do not accept this HIT. You will not be penalized in any way.</text>'
-    screen1_instructions += "</ul>"
-
-
+async function showMechanicalTurkInstructions(instructions_text){
+  
     document.getElementById("MechanicalTurkInstructionsSplash").style.visibility = 'visible'
+    document.getElementById("InstructionSplashText").innerHTML = instructions_text
 
-    document.getElementById("InstructionSplashText").innerHTML = screen1_instructions
-
-    var screen2_instructions = "Select which device you will be using to move your cursor."
-
-    var screen3_instructions = 'Adjust your volume until you can comfortably hear the <text style="font-weight:bold">bell</text> after pressing this button:'
     
     var btn = document.getElementById('CloseInstructionsButton')
     btn.disabled = false 

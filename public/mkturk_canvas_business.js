@@ -1,3 +1,43 @@
+function setupPlayspace(ngridpoints, estimated_eye_screen_distance_inches, estimated_screen_virtual_pixels_per_inch, estimated_grid_vertical_offset_inches, intended_grid_degrees_of_visual_angle){
+
+  // Determine how many pixels the image should be on the screen to have a desired viewing angle size at a given viewing distance
+  if(estimated_eye_screen_distance_inches != undefined){
+    var intended_radians = intended_grid_degrees_of_visual_angle * Math.PI / 180
+
+    var design_image_physical_inches = estimated_eye_screen_distance_inches * Math.atan(intended_radians + Math.tan(estimated_grid_vertical_offset_inches / estimated_eye_screen_distance_inches)) - estimated_grid_vertical_offset_inches
+
+    var design_image_virtual_pixels = estimated_screen_virtual_pixels_per_inch * design_image_physical_inches
+  }
+  else{
+    console.warn('User did not specify image viewing angle design parameters. Defaulting to PLAYSPACE dimensions = 85% of screen size...')
+    design_image_virtual_pixels = Infinity
+  }
+
+  // Get window size
+  var funcreturn = windowSize()
+  var windowHeight = funcreturn[0]
+  var windowWidth = funcreturn[1]
+  // Reference: https://www.w3schools.com/js/js_window.asp
+
+    var MARGIN_PROPORTION= 0.15
+    var max_screen_dimension = Math.round(Math.min(windowHeight, windowWidth))*(1-MARGIN_PROPORTION)
+    var min_dimension = Math.min(max_screen_dimension, design_image_virtual_pixels * ngridpoints)
+    var min_dimension = Math.ceil(min_dimension)
+
+
+    PLAYSPACE.height = min_dimension
+    PLAYSPACE.width = min_dimension // WORKSPACE_WIDTH_HEIGHT_RATIO is 1 for now 
+
+    PLAYSPACE.leftbound = Math.floor((windowWidth - PLAYSPACE.width)/2) // in units of window
+    PLAYSPACE.rightbound = Math.floor(windowWidth-(windowWidth - PLAYSPACE.width)/2)
+    PLAYSPACE.topbound = Math.floor((windowHeight - PLAYSPACE.height)/2)
+    PLAYSPACE.bottombound = Math.floor(windowHeight-(windowHeight - PLAYSPACE.height)/2)
+
+
+    console.log('windowWidth', windowWidth, 'windowHeight', windowHeight)
+
+    defineImageGrid(ngridpoints)
+}
 function windowSize(){
   var windowHeight = window.innerHeight
       || document.documentElement.clientHeight
@@ -33,47 +73,7 @@ function onWindowResize(){
 }
 
 
-function setupPlayspace(ngridpoints, estimated_eye_screen_distance_inches, estimated_screen_virtual_pixels_per_inch, estimated_grid_vertical_offset_inches, intended_grid_degrees_of_visual_angle){
 
-  // Determine how many pixels the image should be on the screen to have a desired viewing angle size at a given viewing distance
-  if(estimated_eye_screen_distance_inches != undefined){
-    var intended_radians = intended_grid_degrees_of_visual_angle * Math.PI / 180
-
-    var design_image_physical_inches = estimated_eye_screen_distance_inches * Math.atan(intended_radians + Math.tan(estimated_grid_vertical_offset_inches / estimated_eye_screen_distance_inches)) - estimated_grid_vertical_offset_inches
-
-    var design_image_virtual_pixels = estimated_screen_virtual_pixels_per_inch * design_image_physical_inches
-  }
-  else{
-    console.warn('User did not specify image viewing angle design parameters. Defaulting to PLAYSPACE dimensions = 85% of screen size...')
-    design_image_virtual_pixels = Infinity
-  }
-
-  // Get window size
-  var funcreturn = windowSize()
-  var windowHeight = funcreturn[0]
-  var windowWidth = funcreturn[1]
-  // Reference: https://www.w3schools.com/js/js_window.asp
-
-    var MARGIN_PROPORTION= 0.15
-    var max_screen_dimension = Math.round(Math.min(windowHeight, windowWidth))*(1-MARGIN_PROPORTION)
-    // var MIN_REQUIRED_PIXELS = 768 // todo: move into experimenter settings
-    var min_dimension = Math.min(max_screen_dimension, design_image_virtual_pixels * ngridpoints)
-    var min_dimension = Math.ceil(min_dimension)
-
-
-    PLAYSPACE.height = min_dimension
-    PLAYSPACE.width = min_dimension // WORKSPACE_WIDTH_HEIGHT_RATIO is 1 for now 
-
-    PLAYSPACE.leftbound = Math.floor((windowWidth - PLAYSPACE.width)/2) // in units of window
-    PLAYSPACE.rightbound = Math.floor(windowWidth-(windowWidth - PLAYSPACE.width)/2)
-    PLAYSPACE.topbound = Math.floor((windowHeight - PLAYSPACE.height)/2)
-    PLAYSPACE.bottombound = Math.floor(windowHeight-(windowHeight - PLAYSPACE.height)/2)
-
-
-    console.log('windowWidth', windowWidth, 'windowHeight', windowHeight)
-
-    defineImageGrid(ngridpoints)
-}
 
 
 function defineImageGrid(ngridpoints){
@@ -227,7 +227,7 @@ async function drawGridDots(){
     context.fillStyle=color; 
     context.fill();
   }
-  var tutorial_image = await SIO.load_image('tutorial_images/whitenoise_256x256.jpg')
+  var tutorial_image = await SIO.load_image('tutorial_images/trackpad.png')
   await renderImageAndScaleIfNecessary(tutorial_image, 0, canvasobj)
   await renderImageAndScaleIfNecessary(tutorial_image, 6, canvasobj)
   await renderImageAndScaleIfNecessary(tutorial_image, 2, canvasobj)

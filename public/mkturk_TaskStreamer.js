@@ -357,7 +357,6 @@ class TaskStreamer{
                     this.state['current_stage_trial_number'] = 0 
                     this.state['returns_in_stage'] = []
                 }            
-                //INITIALIZE = true // todo: remove (refreshes canvas settings)
             }
         }
 

@@ -51,13 +51,15 @@ class MechanicalTurkDataWriter{
         alert('Size of compressed is '+ result_str.length)
 
         document.getElementById("MechanicalTurk_SubmissionForm").action = submit_url
-        // console.log(document.getElementById('MechanicalTurk_SubmissionForm'))
 
 
         document.getElementById("assignmentId").value = SUBJECT['assignmentId']; 
         document.getElementById("hitId").value = SUBJECT['hitId']
-        console.log(aID) // todo: latency between pressing button and submissino 
+        console.log(aID) 
         document.getElementById("submission_data").value = result_str;
+
+        await timeOut(1500)
+
         document.getElementById("MechanicalTurk_SubmissionForm").submit();
         console.log('SIMULATED SUBMISSION TO TURK')
 
@@ -93,8 +95,9 @@ class DropboxDataWriter{
     async saveTrialData(dataobj, save_to_debug_directory){
 
         
-        var datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
-
+        var datastr = JSON.stringify(dataobj); 
+        var __datestr = SESSION.CurrentDate.toISOString();
+        var TrialDataFileName_suffix = __datestr.slice(0, __datestr.indexOf(".")) + "_" + SESSION.SubjectID + ".txt"; 
 
         try{// In debug mode
             if (save_to_debug_directory == 1){

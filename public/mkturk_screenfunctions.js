@@ -115,11 +115,6 @@ function displayTerminalScreen(){
 }
 
 
-//================== LOAD STATUS DISPLAY ==================//
-
-
-
-//================== CANVAS SETUP ==================//
 
 function initializeMouseTracker(){
 	var header='pageX,pageY'

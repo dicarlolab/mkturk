@@ -1,268 +1,8 @@
 <!doctype html>
-<style>
-#MechanicalTurk_TrialBar{
-  width: 0.2%;
-  height: 100%;
-  background-color: #373737;
-  opacity: 0.85;
-  color:white;
-  font-size: 8px; 
-  font-family: 'Helvetica Neue';
-  z-index:103;
-  position: absolute;
-  overflow:hidden;
-}
 
-#AutomatorLoadBar {
-  margin:;
-  width: 0.2%;
-  height: 15px;
-  background-color: #4CAF50;
-  color:white;
-  font-size: 8px; 
-  font-family: 'Helvetica Neue';
-  z-index:101;
-  position: absolute;
-  overflow:hidden;
-}
-
-#ImageLoadBar {
-  margin-top: 17px;
-  width: 0.2%;
-  height: 15px;
-  background-color: #4CAF50;
-  opacity: 0.5;
-  color:white;
-  font-size: 8px; 
-  font-family: 'Helvetica Neue';
-  z-index:101;
-  position: absolute;
-  overflow:hidden;
-}
-
-
-#StageBar {
-  margin-top: 34px;
-  width: 0.2%;
-  height: 15px;
-  background-color: #aed3f4;
-  color:white;
-  font-size: 8px; 
-  font-family: 'Helvetica Neue';
-  z-index:101;
-  position: absolute;
-  overflow:hidden;
-}
-
-#TrialCounter {
-   position: fixed;
-   margin-top: -5px;
-   left: 1px; /* space between top of browser and annoying box */
-   height: 30px;
-   color:white;
-   font-size: 8px; 
-   z-index:102;
-   font-family: 'Helvetica Neue';
-   color:white;
-}
-
-#DebugMessageTextBox {
-   position: fixed;
-   margin-top: 51px;
-   left: 1px; /* space between top of browser and annoying box */
-   height: 30px;
-   color:white;
-   font-size: 8px; 
-   z-index:102;
-   font-family: 'Helvetica Neue';
-   color:white;
-
-}
-
-#SessionTextBox {
-   position: fixed;
-   margin-top: 15px;
-   left: 40%; /* space between top of browser and annoying box */
-   height: 34px;
-   color:white;
-   font-size:14px; 
-   z-index:102;
-   font-family: 'Helvetica Neue';
-   vertical-align:middle;
-   color:#4B4B4B;
-   background-color:#E4E4E4;
-   border-radius:3px;
-
-}
-
-#PreviewModeSplash{
-  display: table;
-  position: absolute;
-   height: 14%; /* https://stackoverflow.com/questions/982054/how-to-center-html-element-in-browser-window*/
-   width:25%;
-   left: 50%;
-   margin-left:-12.5%; /* -1 * width/2 */
-   font-size:12px; 
-   z-index:102;
-   font-family: 'Helvetica Neue';
-   text-align: center;
-   vertical-align:middle;
-   color:#4B4B4B;
-   background-color:#E4E4E4;
-   visibility:hidden;
-   border-radius:8px;
-   border-color:#F51212;
-   border-style:solid;
-}
-#PreviewSplashText{
-  display: table-cell;
-  vertical-align: middle;
-  line-height: normal;
-  margin-left:10px;
-  margin-right:10px;
-  width:20%;
-  font-size:small;
-  color:black;
-}
-
-
-
-#MechanicalTurkInstructionsSplash{
-  display: table;
-  position: absolute;
-   margin-top: 20%;
-   height: 40%; /* https://stackoverflow.com/questions/982054/how-to-center-html-element-in-browser-window*/
-   width:40%;
-   left: 50%;
-   margin-left:-20%; /* -1 * width/2 */
-   line-height:40%; /* https://stackoverflow.com/questions/8865458/how-do-i-vertically-center-text-with-css */
-   font-size:14px; 
-   z-index:102;
-   font-family: 'Helvetica Neue';
-   text-align: left;
-   vertical-align:middle;
-   color:#4B4B4B;
-   background-color:#E4E4E4;
-   visibility:hidden;
-   border-radius:8px;
-   border-color:#E6E6E6;
-   border-style:solid;
-   padding-right:1%;
-   padding-left:1%;
-}
-#InstructionSplashText{
-  vertical-align: middle;
-  line-height: normal;
-  margin-left:10px;
-  margin-right:10px;
-  width:20%;
-  color:black;
-}
-
-#CloseInstructionsButton{
-   text-align:center;
-   width:30%; 
-   height:6%;
-   margin:0 auto; 
-   display:block;
-}
-
-#MechanicalTurkCursorDeviceSelectionScreen{
-  display: table;
-  position: absolute;
-   margin-top: 20%;
-   height: 30%; /* https://stackoverflow.com/questions/982054/how-to-center-html-element-in-browser-window*/
-   width:40%;
-   left: 50%;
-   margin-left:-20%; /* -1 * width/2 */
-   line-height:40%; /* https://stackoverflow.com/questions/8865458/how-do-i-vertically-center-text-with-css */
-   font-size:14px; 
-   z-index:102;
-   font-family: 'Helvetica Neue';
-   text-align: left;
-   vertical-align:middle;
-   color:#4B4B4B;
-   background-color:#E4E4E4;
-   visibility:hidden;
-   border-radius:8px;
-   border-color:#E6E6E6;
-   border-style:solid;
-}
-
-#DeviceSelectionSplashText{
-  line-height: normal;
-  vertical-align: bottom;
-  margin-left:15%;
-  margin-top:5%;
-  width:70%;
-  text-align:center;
-  color:black;
-}
-
-.DeviceButton:hover{
-  box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);
-}
-.DeviceButton{
-  border-style:solid;
-  vertical-align:bottom; 
-  margin-top:5%; 
-  margin-left:10%;
-  border-radius:8px; 
-  border-color:#ddd;
-  max-width:20%; 
-  height:auto
-}
-
-#MechanicalTurkHandSelectionScreen{
-  display: table;
-  position: absolute;
-   margin-top: 20%;
-   height: 30%; /* https://stackoverflow.com/questions/982054/how-to-center-html-element-in-browser-window*/
-   width:40%;
-   left: 50%;
-   margin-left:-20%; /* -1 * width/2 */
-   line-height:40%; /* https://stackoverflow.com/questions/8865458/how-do-i-vertically-center-text-with-css */
-   font-size:14px; 
-   z-index:102;
-   font-family: 'Helvetica Neue';
-   text-align: left;
-   vertical-align:middle;
-   color:#4B4B4B;
-   background-color:#E4E4E4;
-   visibility:hidden;
-   border-radius:8px;
-   border-color:#E6E6E6;
-   border-style:solid;
-}
-
-#HandSelectionSplashText{
-  line-height: normal;
-  vertical-align: bottom;
-  margin-left:15%;
-  margin-top:5%;
-  width:70%;
-  text-align:center;
-  color:black;
-}
-
-.HandButton:hover{
-  box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);
-}
-.HandButton{
-  border-style:solid;
-  vertical-align:bottom; 
-  margin-top:5%; 
-  margin-left:10%;
-  border-radius:8px; 
-  border-color:#ddd;
-  max-width:35%; 
-  height:auto
-}
-
-
-</style>
 
 <head>
+<link rel="stylesheet" type="text/css" href="mkturk_style.css">
 
 <form style="display: none;" id="MechanicalTurk_SubmissionForm" action="https://www.mturk.com/mturk/externalSubmit" method="post">
   <input type="text" name="submission_data" id="submission_data" value="">
@@ -270,8 +10,10 @@
   <input type="text" name="hitId" id="hitId" value="">
 </form>
 
-<meta name="mobile-web-app-capable" content="yes"> <!-- full screen https://developer.chrome.com/multidevice/android/installtohomescreen -->
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"> <!-- do not allow window rescaling.  To avoid window rescaling in portrait mode, added with=device-width from http://stackoverflow.com/questions/22771523/ipad-w-retina-safari-reported-dimensions-in-landscape-make-no-sense. Also, removes 300-350ms tap delay (https://developers.google.com/web/updates/2013/12/300ms-tap-delay-gone-away) -->
+<meta name="mobile-web-app-capable" content="yes"> 
+<!-- full screen https://developer.chrome.com/multidevice/android/installtohomescreen -->
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"> 
+<!-- do not allow window rescaling.  To avoid window rescaling in portrait mode, added with=device-width from http://stackoverflow.com/questions/22771523/ipad-w-retina-safari-reported-dimensions-in-landscape-make-no-sense. Also, removes 300-350ms tap delay (https://developers.google.com/web/updates/2013/12/300ms-tap-delay-gone-away) -->
 
 <link rel="manifest" href="mkturkmanifest.json">
 <link rel="icon" href="mkturklogo48.png">
@@ -294,19 +36,15 @@
     <div id="MechanicalTurk_TrialBar"></div>
 </div>
 
-
-<button name="connectble" style="z-index:101; visibility:hidden; position: absolute; top: 45%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to Bluetooth juicer</button>
-
-<button name="noble" style="z-index:101; visibility:hidden; position: absolute; top: 55%; left: 45%; height: 50px; width: 200px; border-radius: 20px">No Bluetooth juicer</button>
-
+<button id="connectble" name="connectble" >Connect to Bluetooth juicer</button>
+<button id="noble" name="noble">No Bluetooth juicer</button>
 
 <div id="TrialCounter">0</div>
 <div id="DebugMessageTextBox">0</div>
 <div id="SessionTextBox"><b>Subject:</b> <br><b>Experiment:</b></div>
 <div id="PreviewModeSplash">
-  <span id='PreviewSplashText'><p style="color:red; font-size:large; font-weight:bold; text-align:center">PREVIEW MODE</p>Please use <b>Google Chrome</b> and turn your <b>sound on</b>. Test your computer is compatible by playing with the <text style="font-weight:bold">demo below</text>. The HIT will take around 10 minutes to complete. 
+  <span id='PreviewSplashText'><p style="color:red; font-size:large; font-weight:bold; text-align:center">PREVIEW MODE</p>Please use <b>Google Chrome</b> and turn your <b>sound on</b>. Test your computer is compatible by playing with the <text style="font-weight:bold">demo below</text>. The HIT will take around 15 minutes to complete. 
   </span>
-
 </div>
 
 <div id="MechanicalTurkInstructionsSplash">
@@ -338,13 +76,13 @@
   </span>
 </div>
 
-<button name="doneTestingTask" style="visibility:hidden; position: absolute; top: 55%; left: 70%; height: 75px; width: 200px; border-radius: 20px; z-index:101">Done with testing trials</button>
+<button id="doneTestingTask" name="doneTestingTask">Done with testing trials</button>
 
-<button id = 'SyncButton', name="SyncButton" style="visibility:hidden; position: absolute; margin-top:4px; left: 97%; font-size: 6px; color: #A6A6A6; padding:10px 10px; border:0px solid #959595; z-index:101; background-color: #E6E6E6; text-align:center; opacity: 1">Save</button>
+<button id = 'SyncButton', name="SyncButton">Save</button>
 
-<button name="WorkerCashInButton" style="visibility:hidden; position: fixed; margin-top:4px; left: 89%; font-size: 12px; color: #f7fcf8;  border-radius:5px border:0px solid #959595; z-index:101; background-color: #00cc66 ; text-align:center; opacity: 0.8">Turn in</button>
+<button id = 'WorkerCashInButton' name="WorkerCashInButton">Turn in</button>
 
-<button onclick="reloadPage()" id = "ReloadButton" name="ReloadButton" style="visibility:visible; position: absolute; margin-top:4px; left: 93%; font-size: 6px; color: #000000; padding:10px 10px; border-radius:5px solid #000000; z-index:101; background-color: #66ccff; text-align:center;">Reload</button>
+<button onclick="reloadPage()" id = "ReloadButton" name="ReloadButton">Reload</button>
 
 
 
@@ -364,38 +102,34 @@
   </select>
 </dialog>
 
-<script src="seedrandom.js" type="text/javascript"></script>
+<script src="javascript_utils/seedrandom.js" type="text/javascript"></script>
 <script src="mkturk_globalvariables.js"></script>
 <script src="mkturk_rewardmap.js" type="text/javascript"></script>
 <script src="mkturk_eventlisteners.js" type="text/javascript"></script>
 <script src="mkturk_ImageBuffer.js" type="text/javascript"></script>
 <script src="mkturk_screenfunctions.js"></script>
+<script src="mkturk_canvas_business.js" type="text/javascript"></script>
 <script src="mkturk_bluetooth.js" type="text/javascript"></script>
 <script src="mkturk_utils.js" type="text/javascript"></script>
 <script src="mkturk_runtrial.js" type="text/javascript"></script>
-<script src="mkturk_hardware.js" type="text/javascript"></script>
-<script src="disk_template.js" type="text/javascript"></script>
-<script src="data_writer.js" type="text/javascript"></script>
-<script src="TaskStreamer.js" type="text/javascript"></script>
+<script src="mkturk_SoundPlayer.js" type="text/javascript"></script>
+<script src="mkturk_DiskIO.js" type="text/javascript"></script>
+<script src="mkturk_data_writer.js" type="text/javascript"></script>
+<script src="mkturk_TaskStreamer.js" type="text/javascript"></script>
 <script src="mkturk_UX.js" type="text/javascript"></script>
-<script src="Amazon_utils.js" type="text/javascript"></script>
-<script src="tablet_task_setup.js" type="text/javascript"></script>
 <script src="mkturk_reinforcement.js" type="text/javascript"></script>
 <script src="mkturk_tutorial.js" type="text/javascript"></script>
-<script src="MechanicalTurk_setup.js" type="text/javascript"></script>
-<script src="mkturk_canvas_business.js" type="text/javascript"></script>
 <script src="mkturk_ScreenDisplayer.js" type="text/javascript"></script>
 <script src="mkturk_setup.js" type="text/javascript"></script>
 
-<script language="javascript" src="lz-string.js"></script>
+<script src="setup_upstairs_task.js" type="text/javascript"></script>
+<script src="setup_MechanicalTurk_task.js" type="text/javascript"></script>
 
 <script>
 
 (async function(){
-console.log('hello')
 
 await setupTask()
-//await setupMechanicalTurkTask() // await setupTabletTask()
 
 console.log('ENTERING MAIN TRIAL STATE MACHINE')
 TERMINAL_STATE = false 

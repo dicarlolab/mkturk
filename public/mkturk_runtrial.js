@@ -45,7 +45,7 @@ var choiceBoundingBox = RewardMap.create_reward_map_with_grid_indices(choice_reg
 if(timeout_msec > 0){
     var choice_promise = Promise.race([
                         RewardMap.Promise_wait_until_active_response_then_return_reinforcement(), 
-                        choiceTimeOut(timeout_msec)]) 
+                        timeOut(timeout_msec)]) 
 }
 else{
     var choice_promise = RewardMap.Promise_wait_until_active_response_then_return_reinforcement()
@@ -63,16 +63,18 @@ var reinforcement_end = performance.now()
 // Update taskstreamer with results of this trial 
 var current_trial_outcome = {}
 current_trial_outcome['frame_timestamps'] = frame_timestamps
+
 current_trial_outcome['timestamp_fixation_onset'] = fixation_timestamps[0]
+current_trial_outcome['timestamp_FixationAcquired'] = fixation_outcome['timestamp']
 current_trial_outcome['timestamp_reinforcement_on'] = reinforcement_start
 current_trial_outcome['timestamp_reinforcement_off'] = reinforcement_end
+current_trial_outcome['timestamp_Choice'] = choice_outcome['timestamp']
+
 current_trial_outcome['FixationX'] = fixation_outcome['x']
 current_trial_outcome['FixationY'] = fixation_outcome['y']
-current_trial_outcome['timestamp_FixationAcquired'] = fixation_outcome['timestamp']
 current_trial_outcome['FixationGridIndex'] = fixation_grid_index
 current_trial_outcome['ChoiceX'] = choice_outcome['x']// todo: multiple response screens
 current_trial_outcome['ChoiceY'] = choice_outcome['y']
-current_trial_outcome['timestamp_Choice'] = choice_outcome['timestamp']
 current_trial_outcome['Response_GridIndex'] = chosen_grid_index
 current_trial_outcome['fixation_boundingBoxes'] = fixationBoundingBox
 current_trial_outcome['choice_boundingBoxes'] = choiceBoundingBox

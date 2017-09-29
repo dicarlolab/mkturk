@@ -262,10 +262,9 @@ class ScreenDisplayer{
         var context = canvasobj.getContext('2d')
         context.fillStyle="#7F7F7F"; 
         context.fillRect(0,0,canvasobj.width,canvasobj.height);
-          // ctx.drawImage(image, destination_x, destination_y, dWidth, dHeight);
-          context.drawImage(image, dx, dy, dwidth, dheight)
 
-          // todo: return bounding boxes
+        context.drawImage(image, dx, dy, dwidth, dheight)
+
 
          
 
@@ -303,21 +302,9 @@ class ScreenDisplayer{
       var original_left_start = PLAYSPACE._xgridcent[grid_index] - PLAYSPACE._gridwidth/2// in virtual pixel coordinates
       var original_top_start = PLAYSPACE._ygridcent[grid_index] - PLAYSPACE._gridheight/2
 
-      //var scaled_left_start = original_left_start * image.width / PLAYSPACE._gridwidth // in canvas coordinates, which may or may not be scaled 
-      //var scaled_top_start = original_top_start * image.width / PLAYSPACE._gridheight
 
-
-
-      //canvasobj.style.width = original_canvas_width + 'px' // Scales canvas to this size before multiplying by devicepixelratio
-      //canvasobj.style.height = original_canvas_height + 'px'
-
-
-
-
-      // ctx.drawImage(image, destination_x, destination_y, dWidth, dHeight);
       context.drawImage(image, original_left_start, original_top_start, PLAYSPACE._gridwidth, PLAYSPACE._gridheight)
 
-      // todo: return bounding boxes
 
       var xbound=[original_left_start, original_left_start+PLAYSPACE._gridwidth];
       var ybound=[original_top_start, original_top_start+PLAYSPACE._gridheight];

@@ -164,15 +164,14 @@ function md5Hash(blob){
   return hash
 }
 // Promise: choice time-out
-function choiceTimeOut(timeout_length){
+function timeOut(timeout_length){
   return new Promise(
     function(resolve, reject){
-      var timeout_reinforcement = 0 // todo: move into task params
       var timer_return = function(){resolve({
         "x":'timed_out', 
         "y":'timed_out', 
         'timestamp':performance.now(), 
-        'reinforcement':timeout_reinforcement, 
+        'reinforcement':0, 
         'region_index':'timed_out'})}
 
       setTimeout(timer_return,timeout_length)

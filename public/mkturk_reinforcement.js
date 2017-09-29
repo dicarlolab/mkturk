@@ -22,7 +22,7 @@ class MonetaryReinforcer{
             //CANVAS.sequencepost[1]="reward";
             //CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]
 
-            SP.playSound(2);
+            SP.playSound('reward_sound');
 
             var p1 = SD.displayReward(100)// (CANVAS.sequencepost,CANVAS.tsequencepost)
             await Promise.all([p1])
@@ -31,7 +31,7 @@ class MonetaryReinforcer{
         else if(nreward == 0){
             //punish
 
-            SP.playSound(3);
+            SP.playSound('punish_sound');
             var p1 = await SD.displayPunish(TS.Experiment[TS.state.current_stage]['PunishTimeOut']) // (CANVAS.sequencepost,CANVAS.tsequencepost);
         }
         SUBJECT['bonus_usd'] = this.bonus_total 
@@ -50,7 +50,7 @@ class JuiceReinforcer{
             var RewardDuration = this.setJuicerRewardDuration();
             
 
-            SP.playSound(2);
+            SP.playSound('reward_sound');
             // Async as to not slow the monkey down
             var p1 = SD.displayReward(100)
 
@@ -66,7 +66,7 @@ class JuiceReinforcer{
         else if(nreward == 0){
             // punish
             
-            SP.playSound(3);
+            SP.playSound('punish_sound');
             var p1 = await SD.displayPunish(TS.Experiment[TS.state.current_stage]['PunishTimeOut']) 
         }
     }

@@ -1,22 +1,4 @@
 
-// Continuously log x,y position until it hits a hotspot; then give juice and/or transition to the next canvas
-
-
-// A value passed to next() will be treated as the result of the last yield expression that paused the generator.
-
-function resize_event_listener(){
-	// https://stackoverflow.com/questions/1664785/resize-html5-canvas-to-fit-window
-	
-
-	console.log('Resized body...')
-}
-
-
-
-
-
-
-
 function doneTestingTask_listener(event){
 	event.preventDefault()
 	//console.log("User is done testing. Start saving data");
@@ -55,15 +37,12 @@ async function cash_in_listener(event){
 
 	document.querySelector("button[name=WorkerCashInButton]").style['background-color'] = '#ADFF97'
 	
-	await SP.playSound(5) // Chime
+	await SP.playSound('reward_sound') // Chime
 	
 	TERMINAL_STATE = true // end on next trial
 
 	document.querySelector("button[name=WorkerCashInButton]").style['background-color'] = original_color
 	DWr.concludeSession()
-
-	//document.querySelector("button[name=WorkerCashInButton]").innerHTML = original_text
-
 
 
 	return 
@@ -77,14 +56,13 @@ async function sync_data_listener(event){
 	document.querySelector("button[name=SyncButton]").style['background-color'] = '#ADFF97'
 	await DWr.saveTrialData(FLAGS.debug_mode)
 	await DWr.saveTouches(FLAGS.debug_mode)
-	await SP.playSound(5) // Chime
+	await SP.playSound('blip') 
 	document.querySelector("button[name=SyncButton]").style['background-color'] = original_color
 	document.querySelector("button[name=SyncButton]").innerHTML = 'Save'
 
 	return 
 }
 
-//================== PROMISE STATES ==================//
 // Promise: Select Subject
 function subjectIDPromise(){
 	var resolveFunc
