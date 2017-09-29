@@ -55,8 +55,8 @@ async function updatePlot(i){
 
     
 
-    batteryleft = Math.round(behavior_json['DEVICE']['BatteryLDT'].slice(-1)[0][0]*100);
-    batteryused = Math.round(batteryleft - behavior_json['DEVICE']['BatteryLDT'][0][0]*100);
+    batteryleft = Math.round(behavior_json['SESSION']['BatteryLDT'].slice(-1)[0][0]*100);
+    batteryused = Math.round(batteryleft - behavior_json['SESSION']['BatteryLDT'][0][0]*100);
 
     if(batteryused >0){
         batteryused = batteryused.toString()

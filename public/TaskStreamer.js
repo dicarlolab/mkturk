@@ -374,7 +374,7 @@ class TaskStreamer{
     package_behavioral_data(){
         var dataobj = {}
 
-        dataobj['DEVICE'] = DEVICE
+        dataobj['SESSION'] = SESSION
         dataobj['PLAYSPACE'] = PLAYSPACE
         dataobj['TOUCHSTRING'] = TOUCHSTRING
         dataobj['SUBJECT'] = SUBJECT

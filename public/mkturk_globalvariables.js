@@ -17,14 +17,14 @@ SUBMIT_TO_SANDBOX = false
 var SUBJECT = {}
 
 
-var DEVICE = {} // Does not change during a session on a particular device 
-DEVICE.BatteryLDT = []
-DEVICE.DevicePixelRatio = window.devicePixelRatio || 1
-DEVICE.navigator_appVersion = navigator.appVersion
-DEVICE.navigator_platform = navigator.platform
-DEVICE.navigator_userAgent = navigator.userAgent
-DEVICE.navigator_vendor = navigator.vendor
-DEVICE.navigator_language = navigator.language
+var SESSION = {} // Does not change during a session on a particular device 
+SESSION.BatteryLDT = []
+SESSION.DevicePixelRatio = window.devicePixelRatio || 1
+SESSION.navigator_appVersion = navigator.appVersion
+SESSION.navigator_platform = navigator.platform
+SESSION.navigator_userAgent = navigator.userAgent
+SESSION.navigator_vendor = navigator.vendor
+SESSION.navigator_language = navigator.language
 
 
 var windowHeight = window.innerHeight
@@ -36,11 +36,10 @@ var windowWidth = window.innerWidth
 || document.documentElement.clientWidth
 || document.body.clientWidth;
 
-DEVICE.windowHeight = windowHeight
-DEVICE.windowWidth = windowWidth
+SESSION.windowHeight = windowHeight
+SESSION.windowWidth = windowWidth
 
 
-var SESSION = {}
 SESSION.SubjectID = ''
 SESSION.UnixTimestampAtStart = window.performance.timing.navigationStart
 SESSION.CurrentDate = new Date;

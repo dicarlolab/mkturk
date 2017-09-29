@@ -1,5 +1,5 @@
 function setDeviceSelection(element, devicename){
-	DEVICE.MechanicalTurk_DeviceSelected = devicename 
+	SESSION.MechanicalTurk_DeviceSelected = devicename 
 	var device_option_elements = document.querySelectorAll(".DeviceButton")
 	for(var i = 0; i<device_option_elements.length; i++){
 		device_option_elements[i].style['opacity'] = 0.5
@@ -15,7 +15,7 @@ function setDeviceSelection(element, devicename){
 }
 
 function setHandSelection(element, handedness){
-    DEVICE.MechanicalTurk_Handedness = handedness 
+    SESSION.MechanicalTurk_Handedness = handedness 
     var hand_option_elements = document.querySelectorAll(".HandButton")
     for(var i = 0; i<hand_option_elements.length; i++){
         hand_option_elements[i].style['opacity'] = 0.5

@@ -33,9 +33,9 @@ async function setupMechanicalTurkTask(){
 
   //Monitor Battery - from: http://www.w3.org/TR/battery-status/
   navigator.getBattery().then(function(batteryobj){
-    DEVICE.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
+    SESSION.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
     batteryobj.addEventListener('levelchange',function(){
-      DEVICE.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
+      SESSION.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
     })
   });
 
@@ -177,7 +177,7 @@ async function showMechanicalTurkInstructions(){
 
 async function showDeviceSelectionDialogue_and_getUserSelection(){
     // Turn on dialogue
-    DEVICE.MechanicalTurk_DeviceSelected = 'not_selected'
+    SESSION.MechanicalTurk_DeviceSelected = 'not_selected'
     document.getElementById("MechanicalTurkCursorDeviceSelectionScreen").style.visibility = 'visible'
     return new Promise(function(resolve, reject){
         FLAGS.clicked_device_selection = resolve
@@ -186,7 +186,7 @@ async function showDeviceSelectionDialogue_and_getUserSelection(){
 
 async function showHandSelectionDialogue_and_getUserSelection(){
     // Turn on dialogue
-    DEVICE.MechanicalTurk_Handedness = 'not_selected'
+    SESSION.MechanicalTurk_Handedness = 'not_selected'
     document.getElementById("MechanicalTurkHandSelectionScreen").style.visibility = 'visible'
     return new Promise(function(resolve, reject){
         FLAGS.clicked_hand_selection = resolve

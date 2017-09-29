@@ -26,9 +26,9 @@ async function setupTabletTask(){
   
   //Monitor Battery - from: http://www.w3.org/TR/battery-status/
   navigator.getBattery().then(function(batteryobj){
-    DEVICE.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
+    SESSION.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
     batteryobj.addEventListener('levelchange',function(){
-      DEVICE.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
+      SESSION.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
     })
   });
 

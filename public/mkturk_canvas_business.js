@@ -21,8 +21,8 @@ function onWindowResize(){
   var windowHeight = funcreturn[0]
   var windowWidth = funcreturn[1]
 
-  DEVICE.windowWidth = windowWidth
-  DEVICE.windowHeight = windowHeight 
+  SESSION.windowWidth = windowWidth
+  SESSION.windowHeight = windowHeight 
   
   PLAYSPACE.leftbound = Math.floor((windowWidth - PLAYSPACE.width)/2) // as these are in units of the window, they should be updated when the window changes 
   PLAYSPACE.rightbound = Math.floor(windowWidth-(windowWidth - PLAYSPACE.width)/2)
@@ -176,8 +176,8 @@ function setupCanvas(canvasobj, use_image_smoothing){
     context.imageSmoothingEnabled = use_image_smoothing // then nearest neighbor?
 
 
-    //var image_scale_width = DEVICE.gridwidth / DEVICE.source_image_width * _ratio
-    //var image_scale_height = DEVICE.gridheight / DEVICE.source_image_height * _ratio
+    //var image_scale_width = SESSION.gridwidth / SESSION.source_image_width * _ratio
+    //var image_scale_height = SESSION.gridheight / SESSION.source_image_height * _ratio
 
     //context.scale(image_scale_width, image_scale_height) 
 
