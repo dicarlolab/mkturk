@@ -2,62 +2,46 @@ class SoundPlayer{
   constructor(){
     // todo: feed in explicit filepaths here and load; 
     // write playSound(filename)
+    
+      this.num_redundant_buffers = 4; 
 
-      this.sounds = {
-        soundfile_suffixes: [0,1,2,3,4,5],
-        buffer: [],
-      }
+      this.sound_filepaths = [ 
+      'sounds/au0.wav',
+      'sounds/au1.wav',
+      'sounds/au2.wav', // chime
+      'sounds/au3.wav', // punish sound
+      'sounds/au4.wav',
+      'sounds/au5.wav'] // hard coded; part of MonkeyTurk installation (path is relative to mkturk.html address)
 
-      //Audio pulses for reward
-      this.audiocontext = new (window.AudioContext || window.webkitAudioContext)();
-      this.gainNode = this.audiocontext.createGain()
-      this.gainNode.connect(this.audiocontext.destination)
-  }
+      this.sound_objects = []
+      this.current_sound_counter = 0
+}
 
-  loadSoundfromDropbox2(src,audiocontext, sounds, idx){
-         return new Promise(function(resolve,reject){
-          DIO.dbx.filesDownload({path: SOUND_FILEPREFIX + src + ".wav"}).then(function(data){
-          var reader = new FileReader()
-          reader.onload = function(e){
-            audiocontext.decodeAudioData(reader.result).then(function(buffer){
-              sounds.buffer[idx] = buffer;
-              resolve(idx)
-            })
-          }
-          reader.readAsArrayBuffer(data.fileBlob)
-        })
-        .catch(function(error){
-          console.error(error)
-        })
-        })
-  }
   async build(){
-    var soundpromises = []
-    for (var i = 0; i < this.sounds.soundfile_suffixes.length; i ++){
-        soundpromises.push(this.loadSoundfromDropbox2(i, this.audiocontext, this.sounds, i))
+    for (var i = 0; i < this.sound_filepaths.length; i++){
+      this.sound_objects[i] = []
+      for (var j = 0; j<this.num_redundant_buffers; j++){
+        var audio = new Audio(this.sound_filepaths[i])
+        if (i==0){
+          audio.volume=0.15; //set boost pedal to 15% volume
+        }
+        else if (i==2 | i==3){
+          audio.volume=0.15; //set boost pedal to 5% volume
+        }
+        
+        this.sound_objects[i].push(audio)
+      }
     }
 
-    //this.sounds.soundfile_suffixes.map(this.loadSoundfromDropbox2); //create array of sound load Promises
-    await Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
+    //await SP.playSound(2)
+    return 
   }
 
   async playSound(idx){
-    this.audiocontext.resume()
-    var source = this.audiocontext.createBufferSource(); // creates a sound source
-    source.buffer = this.sounds.buffer[idx];                    // tell the source which sound to play
-    if (idx==0){
-      this.gainNode.gain.value=0.15; //set boost pedal to 15% volume
-    }
-    else if (idx==2 | idx==3){
-      this.gainNode.gain.value=0.15; //set boost pedal to 5% volume
-    }
-    source.connect(this.gainNode);
-    // gainNode.connect(audiocontext.destination); //Connect boost pedal to output
-    // source.connect(audiocontext.destination);       // connect the source to the context's destination (the speakers)
-    source.start(0);                        // play the source now
+    this.sound_objects[idx][this.current_sound_counter].play() // because sounds do not get played if requested to be played before they are over from a previous call 
+    this.current_sound_counter = (this.current_sound_counter+1) % this.num_redundant_buffers
+    return 
   }
-
-  
 }
 
 

@@ -2,115 +2,68 @@
 // In the interest of code readability and spaghetti-minimization, the use of globals should be kept to a minimum, and instead explicit passage of variables into and out of functions is encouraged.
 // For certain things, globals make sense and may even be required, like event listeners and async processes.
 
-
-
-FixationRadius = 0
-acquiredTouch = 0 
+PLAYSPACE = {}
 
 TOUCHSTRING = ""
 TOUCHSTRING_UDPATECOUNTER = 0
 
+MOUSESTRING = "" 
+MOUSESTRING_UPDATE_COUNTER = 0
+
 TRIAL_NUMBER_FROM_SESSION_START = 0 
 TRIAL_NUMBER_FROM_TASKSTREAM_START = 0
-RewardDuration = 0 
 
-var ParamFilePath = ''; 
+SUBMIT_TO_SANDBOX = false 
+var SUBJECT = {}
 
-//var TASK // Current 
-
-
-var EVENT_TIMESTAMPS = {}
-EVENT_TIMESTAMPS.fixation_onset = [] // todo: move to control of task / screen state machine
-EVENT_TIMESTAMPS.fixation_touch = []
-EVENT_TIMESTAMPS.blank_onset = []
-EVENT_TIMESTAMPS.stimulus_onset = []
-EVENT_TIMESTAMPS.delay_onset = []
-EVENT_TIMESTAMPS.choice_onset = []
-EVENT_TIMESTAMPS.choice_touch = []
-EVENT_TIMESTAMPS.reinforcement_onset = []
-EVENT_TIMESTAMPS.reinforcement_end = []
-
-
-var TRIAL_BEHAVIOR = {} // Global that contains data variables that are incremented every trial, and are dumped to disk for scientific purposes.
-initialize_TRIAL()
 
 var DEVICE = {} // Does not change during a session on a particular device 
 DEVICE.BatteryLDT = []
-DEVICE.DevicePixelRatio = 1
-DEVICE.CanvasRatio = undefined 
-DEVICE.XGridCenter = undefined
-DEVICE.YGridCenter = undefined
-DEVICE.source_ImageHeightPixels = NaN; 
-DEVICE.source_ImageWidthPixels = NaN;
+DEVICE.DevicePixelRatio = window.devicePixelRatio || 1
+DEVICE.navigator_appVersion = navigator.appVersion
+DEVICE.navigator_platform = navigator.platform
+DEVICE.navigator_userAgent = navigator.userAgent
+DEVICE.navigator_vendor = navigator.vendor
+DEVICE.navigator_language = navigator.language
+
+
+var windowHeight = window.innerHeight
+    || document.documentElement.clientHeight
+    || document.body.clientHeight;
+
+
+var windowWidth = window.innerWidth
+|| document.documentElement.clientWidth
+|| document.body.clientWidth;
+
+DEVICE.windowHeight = windowHeight
+DEVICE.windowWidth = windowWidth
+
 
 var SESSION = {}
 SESSION.SubjectID = ''
 SESSION.UnixTimestampAtStart = window.performance.timing.navigationStart
 SESSION.CurrentDate = new Date;
+SESSION.url = window.location.href
+
 var __datestr = SESSION.CurrentDate.toISOString();
-SESSION.TrialDataFileName_suffix = __datestr.slice(0, __datestr.indexOf(".")) + "_" + SESSION.SubjectID + ".txt";
-
-
+TrialDataFileName_suffix = __datestr.slice(0, __datestr.indexOf(".")) + "_" + SESSION.SubjectID + ".txt"; // todo: move to dropbox data writer
 
 var FLAGS = {} 
-FLAGS.need2loadImages = 1; 
-FLAGS.need2loadParameters = 0; 
 FLAGS.debug_mode = 1; 
 
-FLAGS.waitingforTouches = 0
-FLAGS.touchGeneratorCreated = 0
-
-var CANVAS = {};
-CANVAS.names= ["blank","sample","test","touchfix","eyefix","reward","photoreward","punish"]
-CANVAS.front= "blank"
-CANVAS.sequenceblank= ["blank","blank"],
-CANVAS.tsequenceblank= [0,50],
-CANVAS.sequencepre= ["touchfix"]
-CANVAS.tsequencepre= [0]
-CANVAS.sequence= ["blank","sample","blank","test"], // blank, sample, blank, tes
-CANVAS.tsequence= NaN,
-CANVAS.sequencepost= ["blank","reward","blank"], // blank, rewar
-CANVAS.tsequencepost= [0,50,100]
-CANVAS.offsetleft= 0
-CANVAS.offsettop= 0
-CANVAS.obj= {}
-
-for (var i in CANVAS.names){
-	CANVAS.obj[CANVAS.names[i]]=document.getElementById(CANVAS.names[i])
-}
-
-
-
-var boundingBoxesFixation=[]; //where the fixation touch targets are on the canva
-var boundingBoxesChoice=[]; //where the choice touch targets are on the canva
-var waitforClick; //variable to hold generator
-var waitforEvent; //variable to hold generator
-var touchTimer; //variable to hold timer
-var xcanvascenter=[]
-var ycanvascenter=[]
-var curridx = null;
-var datafiles=[];
-var displayoutofboundsstr=""
-
-
-
-
-//================ UPDATE VARIABLE FUNCTIONS ================//
 
 
 function transition_from_debug_to_science_trials(){
 
-
 	// Revert TaskStreamer
 	TS.transition_from_debug_to_science_mode()
 
-	TOUCHSTRING = ""
-	TOUCHSTRING_UDPATECOUNTER = 0
-	
-		
-	initialize_TRIAL()
+	DWr.initialize()
 	
 	TRIAL_NUMBER_FROM_SESSION_START = 0
+
+	// Turn off certain HTML elements
 	progressbar_names = [
 						'AutomatorLoadBar',
 						'ImageLoadBar',
@@ -131,33 +84,5 @@ function transition_from_debug_to_science_trials(){
 	document.querySelector("button[name=SyncButton]").style['background-color'] = "#808080"
 	document.querySelector("button[name=SyncButton]").style.opacity = 0.3
 
-
-
 	return 
-}
-
-function initialize_TRIAL(){
-	TRIAL_BEHAVIOR.FixationGridIndex = []
-	TRIAL_BEHAVIOR.SampleBagIndex = []
-	TRIAL_BEHAVIOR.TestBagIndices = []
-	TRIAL_BEHAVIOR.Response = []
-	TRIAL_BEHAVIOR.CorrectItem = []
-	TRIAL_BEHAVIOR.Return = []
-	TRIAL_BEHAVIOR.CurrentStageIndex = []
-	TRIAL_BEHAVIOR.trial_num_Session = []
-	TRIAL_BEHAVIOR.trial_num_Stage = []
-	TRIAL_BEHAVIOR.reward_duration = []
-	TRIAL_BEHAVIOR.StartTime = []
-
-	TRIAL_BEHAVIOR.FixationX = []
-	TRIAL_BEHAVIOR.FixationY = []
-	TRIAL_BEHAVIOR.FixationT = []
-
-	TRIAL_BEHAVIOR.ChoiceX = []
-	TRIAL_BEHAVIOR.ChoiceY = []
-	TRIAL_BEHAVIOR.ChoiceT = []
-
-	TRIAL_BEHAVIOR.BoundingBoxesChoiceImages = []
-	TRIAL_BEHAVIOR.BoundingBoxSampleImage = []
-	TRIAL_BEHAVIOR.BoundingBoxFixationImage = []
 }

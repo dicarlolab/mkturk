@@ -56,6 +56,8 @@ async clear_cache(){
 }
 
 async cache_these_images(imagenames){
+	//console.log('at cache_these_images')
+	//console.log(imagenames)
 	try{
 
 		if (typeof(imagenames) == "string"){

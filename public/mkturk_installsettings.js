@@ -4,30 +4,30 @@
 // ------ Dropbox WebApp settings ------ 
 // MKTURK
 
-var DBX_CLIENT_ID = "jufvjpyt19d4eh7"
-var DBX_REDIRECT_URI_ROOT = "https://s3.amazonaws.com/monkeyturk/"
-var DBX_REDIRECT_URI_ROOT = "http://localhost:7800/"
+var DBX_CLIENT_ID = "scx9xahpjofx5q0"
+var DBX_REDIRECT_URI_ROOT = "https://s3.amazonaws.com/monkeyturkupstairs/public/"
+//var DBX_REDIRECT_URI_ROOT = "http://localhost:7800/"
 
 // ------ Save location settings ------
 // Make sure to include the forward slash for the savepaths 
 
-var TRIAL_DATA_SAVEPATH = "/Behavior/trial_logfiles/"
-var TOUCH_DATA_SAVEPATH = "/Behavior/touch_logfiles/"
-var _debug_TRIAL_DATA_SAVEPATH = "/Behavior/debug/debug_trial_logfiles/"
-var _debug_TOUCH_DATA_SAVEPATH = "/Behavior/debug/debug_touch_logfiles/"
+var TRIAL_DATA_SAVEPATH = "/MonkeyTurk_upstairs/Behavior/trial_logfiles/"
+var TOUCH_DATA_SAVEPATH = "/MonkeyTurk_upstairs/Behavior/touch_logfiles/"
+var _debug_TRIAL_DATA_SAVEPATH = "/MonkeyTurk_upstairs/Behavior/debug/debug_trial_logfiles/"
+var _debug_TOUCH_DATA_SAVEPATH = "/MonkeyTurk_upstairs/Behavior/debug/debug_touch_logfiles/"
 
 
-var PARAM_DIRPATH = "/Tasks/SubjectParameters/"
-var SOUND_FILEPREFIX = "/Resources/sounds/au"
+var PARAM_DIRPATH = "/MonkeyTurk_upstairs/Tasks/SubjectParameters/"
+var SOUND_FILEPREFIX = "/MonkeyTurk_upstairs/Resources/sounds/au"
 
 
 // New 
-var SUBJECT_DIRPATH = "/Subjects/SubjectSettings/" // SubjectID; tablet; pump; liquid; species
-var CHECKPOINT_DIRPATH = "/Subjects/SubjectCheckpoints/" // Used to revivify the state of a TaskStream
-var _debug_CHECKPOINT_DIRPATH = "/Subjects/debug/SubjectCheckpoints/"
+var SUBJECT_DIRPATH = "/MonkeyTurk_upstairs/Subjects/SubjectSettings/" // SubjectID; tablet; pump; liquid; species
+var CHECKPOINT_DIRPATH = "/MonkeyTurk_upstairs/Subjects/SubjectCheckpoints/" // Used to revivify the state of a TaskStream
+var _debug_CHECKPOINT_DIRPATH = "/MonkeyTurk_upstairs/Subjects/debug/SubjectCheckpoints/"
 
 
-var EXPERIMENT_DIRPATH = "/Tasks/ExperimentDefinitions/" // Used to define the TaskStream trial generator
+var EXPERIMENT_DIRPATH = "/MonkeyTurk_upstairs/Tasks/ExperimentDefinitions/" // Used to define the TaskStream trial generator
 
 
 

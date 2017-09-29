@@ -1,6 +1,17 @@
 <!doctype html>
 <style>
-
+#MechanicalTurk_TrialBar{
+  width: 0.2%;
+  height: 100%;
+  background-color: #373737;
+  opacity: 0.85;
+  color:white;
+  font-size: 8px; 
+  font-family: 'Helvetica Neue';
+  z-index:103;
+  position: absolute;
+  overflow:hidden;
+}
 
 #AutomatorLoadBar {
   margin:;
@@ -73,7 +84,6 @@
    margin-top: 15px;
    left: 40%; /* space between top of browser and annoying box */
    height: 34px;
-   width:20%;
    color:white;
    font-size:14px; 
    z-index:102;
@@ -84,9 +94,182 @@
    border-radius:3px;
 
 }
+
+#PreviewModeSplash{
+  display: table;
+  position: absolute;
+   height: 14%; /* https://stackoverflow.com/questions/982054/how-to-center-html-element-in-browser-window*/
+   width:25%;
+   left: 50%;
+   margin-left:-12.5%; /* -1 * width/2 */
+   font-size:12px; 
+   z-index:102;
+   font-family: 'Helvetica Neue';
+   text-align: center;
+   vertical-align:middle;
+   color:#4B4B4B;
+   background-color:#E4E4E4;
+   visibility:hidden;
+   border-radius:8px;
+   border-color:#F51212;
+   border-style:solid;
+}
+#PreviewSplashText{
+  display: table-cell;
+  vertical-align: middle;
+  line-height: normal;
+  margin-left:10px;
+  margin-right:10px;
+  width:20%;
+  font-size:small;
+  color:black;
+}
+
+
+
+#MechanicalTurkInstructionsSplash{
+  display: table;
+  position: absolute;
+   margin-top: 20%;
+   height: 40%; /* https://stackoverflow.com/questions/982054/how-to-center-html-element-in-browser-window*/
+   width:40%;
+   left: 50%;
+   margin-left:-20%; /* -1 * width/2 */
+   line-height:40%; /* https://stackoverflow.com/questions/8865458/how-do-i-vertically-center-text-with-css */
+   font-size:14px; 
+   z-index:102;
+   font-family: 'Helvetica Neue';
+   text-align: left;
+   vertical-align:middle;
+   color:#4B4B4B;
+   background-color:#E4E4E4;
+   visibility:hidden;
+   border-radius:8px;
+   border-color:#E6E6E6;
+   border-style:solid;
+   padding-right:1%;
+   padding-left:1%;
+}
+#InstructionSplashText{
+  vertical-align: middle;
+  line-height: normal;
+  margin-left:10px;
+  margin-right:10px;
+  width:20%;
+  color:black;
+}
+
+#CloseInstructionsButton{
+   text-align:center;
+   width:30%; 
+   height:6%;
+   margin:0 auto; 
+   display:block;
+}
+
+#MechanicalTurkCursorDeviceSelectionScreen{
+  display: table;
+  position: absolute;
+   margin-top: 20%;
+   height: 30%; /* https://stackoverflow.com/questions/982054/how-to-center-html-element-in-browser-window*/
+   width:40%;
+   left: 50%;
+   margin-left:-20%; /* -1 * width/2 */
+   line-height:40%; /* https://stackoverflow.com/questions/8865458/how-do-i-vertically-center-text-with-css */
+   font-size:14px; 
+   z-index:102;
+   font-family: 'Helvetica Neue';
+   text-align: left;
+   vertical-align:middle;
+   color:#4B4B4B;
+   background-color:#E4E4E4;
+   visibility:hidden;
+   border-radius:8px;
+   border-color:#E6E6E6;
+   border-style:solid;
+}
+
+#DeviceSelectionSplashText{
+  line-height: normal;
+  vertical-align: bottom;
+  margin-left:15%;
+  margin-top:5%;
+  width:70%;
+  text-align:center;
+  color:black;
+}
+
+.DeviceButton:hover{
+  box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);
+}
+.DeviceButton{
+  border-style:solid;
+  vertical-align:bottom; 
+  margin-top:5%; 
+  margin-left:10%;
+  border-radius:8px; 
+  border-color:#ddd;
+  max-width:20%; 
+  height:auto
+}
+
+#MechanicalTurkHandSelectionScreen{
+  display: table;
+  position: absolute;
+   margin-top: 20%;
+   height: 30%; /* https://stackoverflow.com/questions/982054/how-to-center-html-element-in-browser-window*/
+   width:40%;
+   left: 50%;
+   margin-left:-20%; /* -1 * width/2 */
+   line-height:40%; /* https://stackoverflow.com/questions/8865458/how-do-i-vertically-center-text-with-css */
+   font-size:14px; 
+   z-index:102;
+   font-family: 'Helvetica Neue';
+   text-align: left;
+   vertical-align:middle;
+   color:#4B4B4B;
+   background-color:#E4E4E4;
+   visibility:hidden;
+   border-radius:8px;
+   border-color:#E6E6E6;
+   border-style:solid;
+}
+
+#HandSelectionSplashText{
+  line-height: normal;
+  vertical-align: bottom;
+  margin-left:15%;
+  margin-top:5%;
+  width:70%;
+  text-align:center;
+  color:black;
+}
+
+.HandButton:hover{
+  box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);
+}
+.HandButton{
+  border-style:solid;
+  vertical-align:bottom; 
+  margin-top:5%; 
+  margin-left:10%;
+  border-radius:8px; 
+  border-color:#ddd;
+  max-width:35%; 
+  height:auto
+}
+
+
 </style>
 
 <head>
+
+<form style="display: none;" id="MechanicalTurk_SubmissionForm" action="https://www.mturk.com/mturk/externalSubmit" method="post">
+  <input type="text" name="submission_data" id="submission_data" value="">
+  <input type="text" name="assignmentId" id="assignmentId" value="">
+  <input type="text" name="hitId" id="hitId" value="">
+</form>
+
 <meta name="mobile-web-app-capable" content="yes"> <!-- full screen https://developer.chrome.com/multidevice/android/installtohomescreen -->
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"> <!-- do not allow window rescaling.  To avoid window rescaling in portrait mode, added with=device-width from http://stackoverflow.com/questions/22771523/ipad-w-retina-safari-reported-dimensions-in-landscape-make-no-sense. Also, removes 300-350ms tap delay (https://developers.google.com/web/updates/2013/12/300ms-tap-delay-gone-away) -->
 
@@ -99,13 +282,18 @@
 </head>
 
 <!-- ************* BODY *************** -->
-<body style="overflow-y: hidden;background-color:#7F7F7F">
+<body style="overflow-y: hidden; overflow-x:hidden; background-color:#7F7F7F">
 
 <div id="myProgress", style="overflow:hidden">
 		<div id="AutomatorLoadBar"></div>
 		<div id="ImageLoadBar"></div>
 		<div id="StageBar"></div>
 </div>
+
+<div id="MechanicalTurk_ProgressBar", style="position: absolute; overflow:hidden; height: 3%; width:30%; margin-left:35%; margin-right:35%; border:1px solid #BDBDBD; background-color:#BDBDBD; z-index:102; visibility:hidden"; ; >
+    <div id="MechanicalTurk_TrialBar"></div>
+</div>
+
 
 <button name="connectble" style="z-index:101; visibility:hidden; position: absolute; top: 45%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to Bluetooth juicer</button>
 
@@ -115,23 +303,49 @@
 <div id="TrialCounter">0</div>
 <div id="DebugMessageTextBox">0</div>
 <div id="SessionTextBox"><b>Subject:</b> <br><b>Experiment:</b></div>
+<div id="PreviewModeSplash">
+  <span id='PreviewSplashText'><p style="color:red; font-size:large; font-weight:bold; text-align:center">PREVIEW MODE</p>Please use <b>Google Chrome</b> and turn your <b>sound on</b>. Test your computer is compatible by playing with the <text style="font-weight:bold">demo below</text>. The HIT will take around 10 minutes to complete. 
+  </span>
 
+</div>
+
+<div id="MechanicalTurkInstructionsSplash">
+  <span id='InstructionSplashText'> Loading instructions... </span>
+  <button onclick="toggleElement(0, 'MechanicalTurkInstructionsSplash'); FLAGS.clicked_close_instructions(true)" id='CloseInstructionsButton' disabled> Loading... </button>
+</div>
+
+<div id="MechanicalTurkCursorDeviceSelectionScreen">
+  <div id='DeviceSelectionSplashText'> Select which input device you are using: </div>
+
+
+  <input type="image" class='DeviceButton' id='MouseImage'  style="" id="MouseImage" src="tutorial_images/mouse.png " alt="Mouse" onclick="setDeviceSelection(this, 'mouse')" />
+  <input type="image"  class='DeviceButton' id='TrackPadImage' src="tutorial_images/trackpad.png " alt="Trackpad" onclick="setDeviceSelection(this, 'trackpad')" />
+  <input type="image"  class='DeviceButton' id = 'TabletImage' src="tutorial_images/tablet.png " alt="Tablet" onclick="setDeviceSelection(this, 'touchscreen')" />
+
+  <span>
+  <button style="text-align:center; width:30%; height:10%; position:absolute; margin-top:5%; top: 80%; left:35%;"  onclick="toggleElement(0, 'MechanicalTurkCursorDeviceSelectionScreen'); FLAGS.clicked_device_selection(DEVICE.MechanicalTurk_DeviceSelected)" id='CloseDeviceSelectionButton' disabled> <i>Make selection...</i> </button>
+  </span>
+</div>
+
+<div id="MechanicalTurkHandSelectionScreen">
+  <div id='HandSelectionSplashText'> Select which hand you are using: </div>
+
+  <input type="image" class='HandButton' id='LeftHandImage'  style="" id="MouseImage" src="tutorial_images/left_hand.png " alt="Lefthanded" onclick="setHandSelection(this, 'left')" />
+  <input type="image"  class='HandButton' id = 'RightHandImage' src="tutorial_images/right_hand.png " alt="Righthanded" onclick="setHandSelection(this, 'right')" />
+
+  <span>
+  <button style="text-align:center; width:30%; height:10%; position:absolute; margin-top:5%; top: 80%; left:35%;"  onclick="toggleElement(0, 'MechanicalTurkHandSelectionScreen'); FLAGS.clicked_hand_selection(DEVICE.MechanicalTurk_Handedness)" id='CloseHandSelectionButton' disabled> <i>Make selection...</i> </button>
+  </span>
+</div>
 
 <button name="doneTestingTask" style="visibility:hidden; position: absolute; top: 55%; left: 70%; height: 75px; width: 200px; border-radius: 20px; z-index:101">Done with testing trials</button>
 
-<button name="SyncButton" style="visibility:hidden; position: absolute; margin-top:4px; left: 97%; font-size: 6px; color: #A6A6A6; padding:10px 10px; border:0px solid #959595; z-index:101; background-color: #E6E6E6; text-align:center; opacity: 1">Save</button>
+<button id = 'SyncButton', name="SyncButton" style="visibility:hidden; position: absolute; margin-top:4px; left: 97%; font-size: 6px; color: #A6A6A6; padding:10px 10px; border:0px solid #959595; z-index:101; background-color: #E6E6E6; text-align:center; opacity: 1">Save</button>
 
-<button onclick="reloadPage()" name="ReloadButton" style="visibility:visible; position: absolute; margin-top:4px; left: 93%; font-size: 6px; color: #000000; padding:10px 10px; border-radius:5px solid #000000; z-index:101; background-color: #66ccff; text-align:center;">Reload</button>
+<button name="WorkerCashInButton" style="visibility:hidden; position: fixed; margin-top:4px; left: 89%; font-size: 12px; color: #f7fcf8;  border-radius:5px border:0px solid #959595; z-index:101; background-color: #00cc66 ; text-align:center; opacity: 0.8">Turn in</button>
 
+<button onclick="reloadPage()" id = "ReloadButton" name="ReloadButton" style="visibility:visible; position: absolute; margin-top:4px; left: 93%; font-size: 6px; color: #000000; padding:10px 10px; border-radius:5px solid #000000; z-index:101; background-color: #66ccff; text-align:center;">Reload</button>
 
-<canvas id="blank" width="0" height="0" src="" style="z-index:99; position: absolute; left: 0px; top: 0px;width:100%; height:100%; padding:0px; margin:0px;"> </canvas>
-<canvas id="sample" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;width:100%; height:100%; padding:0px; margin:0px;"> </canvas>
-<canvas id="test" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;width:100%; height:100%; padding:0px; margin:0px;"> </canvas>
-<canvas id="touchfix" width="0" height="0" src="" style="z-index:3; position: absolute; left: 0px; top: 0px;width:100%; height:100%; padding:0px; margin:0px;"> </canvas>
-<canvas id="eyefix" width="0" height="0" src="" style="z-index:4; position: absolute; left: 0px; top: 0px;width:100%; height:100%; padding:0px; margin:0px;"> </canvas>
-<canvas id="reward" width="0" height="0" src="" style="z-index:5; position: absolute; left: 0px; top: 0px;width:100%; height:100%; padding:0px; margin:0px;"> </canvas>
-<canvas id="photoreward" width="0" height="0" src="" style="z-index:6; position: absolute; left: 0px; top: 0px;width:100%; height:100%; padding:0px; margin:0px;"> </canvas>
-<canvas id="punish" width="0" height="0" src="" style="z-index:7; position: absolute; left: 0px; top: 0px;width:100%; height:100%; padding:0px; margin:0px;"> </canvas>
 
 
 <dialog id="subjectID_dialog">
@@ -151,11 +365,10 @@
 </dialog>
 
 <script src="seedrandom.js" type="text/javascript"></script>
-<script src="mkturk_Screen.js" type="text/javascript"></script>
 <script src="mkturk_globalvariables.js"></script>
+<script src="mkturk_rewardmap.js" type="text/javascript"></script>
 <script src="mkturk_eventlisteners.js" type="text/javascript"></script>
 <script src="mkturk_ImageBuffer.js" type="text/javascript"></script>
-<script src="mkturk_TrialQueue.js" type="text/javascript"></script>
 <script src="mkturk_screenfunctions.js"></script>
 <script src="mkturk_bluetooth.js" type="text/javascript"></script>
 <script src="mkturk_utils.js" type="text/javascript"></script>
@@ -165,235 +378,34 @@
 <script src="data_writer.js" type="text/javascript"></script>
 <script src="TaskStreamer.js" type="text/javascript"></script>
 <script src="mkturk_UX.js" type="text/javascript"></script>
+<script src="Amazon_utils.js" type="text/javascript"></script>
+<script src="tablet_task_setup.js" type="text/javascript"></script>
+<script src="mkturk_reinforcement.js" type="text/javascript"></script>
+<script src="mkturk_tutorial.js" type="text/javascript"></script>
+<script src="MechanicalTurk_setup.js" type="text/javascript"></script>
+<script src="mkturk_canvas_business.js" type="text/javascript"></script>
+<script src="mkturk_ScreenDisplayer.js" type="text/javascript"></script>
+<script src="mkturk_setup.js" type="text/javascript"></script>
+
+<script language="javascript" src="lz-string.js"></script>
 
 <script>
 
-
-wdm("Initialized")
-//================== AUTHENTICATE ==================//
-
-DIO = new DropboxIO()
-DWr = new DataWriter(DIO)
-UX = new UX_poller(DIO)
-
-setupDragTracker() // Writes to TOUCHSTRING and TOUCHSTRING_UPDATECOUNTER
-setupTapTracker() // Writes to TOUCHSTRING and TOUCHSTRING_UPDATECOUNTER
-
-
-
-// Populate subject settings
-
-
-
-// Button callbacks
-document.querySelector("button[name=connectble]").addEventListener(
-	'touchend',findBLEDevice,false)
-document.querySelector("button[name=connectble]").addEventListener(
-	'mouseup',findBLEDevice,false)
-document.querySelector("button[name=noble]").addEventListener(
-	'touchend',skipBLEDevice,false)
-document.querySelector("button[name=noble]").addEventListener(
-	'mouseup',skipBLEDevice,false)
-document.querySelector("button[name=doneTestingTask]").addEventListener(
-	'touchend',doneTestingTask_listener,false)
-document.querySelector("button[name=doneTestingTask]").addEventListener(
-	'mouseup',doneTestingTask_listener,false)
-//document.querySelector("button[name=SyncButton]").addEventListener(
-//	'mouseup',sync_data_listener,false)
-document.querySelector("button[name=SyncButton]").addEventListener(
-	'touchend',sync_data_listener,false)
-
-//============= Initialize Audio & Battery Objects ==================//	
-DEVICE.DevicePixelRatio = window.devicePixelRatio || 1;
-var visiblecanvasobj = CANVAS.obj[CANVAS.front];
-var visiblecontext = visiblecanvasobj.getContext("2d");
-var backingStoreRatio = visiblecontext.webkitBackingStorePixelRatio ||
-                            visiblecontext.mozBackingStorePixelRatio ||
-                            visiblecontext.msBackingStorePixelRatio ||
-                            visiblecontext.oBackingStorePixelRatio ||
-                            visiblecontext.backingStorePixelRatio || 1;
-DEVICE.CanvasRatio = backingStoreRatio/DEVICE.DevicePixelRatio
-
-//Monitor Battery - from: http://www.w3.org/TR/battery-status/
-navigator.getBattery().then(function(batteryobj){
-	DEVICE.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
-	batteryobj.addEventListener('levelchange',function(){
-		DEVICE.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
-	})
-});
-
-
-
-counter = 0 
-function saysHello(){
-	console.log('hello'+counter)
-	wdm('hello'+counter)
-	counter++
-}
-
-//setInterval(saysHello,1000); 
-
 (async function(){
+console.log('hello')
 
+await setupTask()
+//await setupMechanicalTurkTask() // await setupTabletTask()
 
-	subject_filepath_list = await DIO.listdir(SUBJECT_DIRPATH)
-
-	// GET PARAMFILE NAME
-	subjectdialog = document.getElementById("subjectID_dialog");
-	subjectlistobj = document.getElementById("subjectID_list");
-	for (var i=subject_filepath_list.length-1; i>=0; i--){
-		var opt = document.createElement('option');
-		opt.value = i;
-		opt.innerHTML = splitFilename(subject_filepath_list[i]) // subject_filepath_list[i];
-		subjectlistobj.appendChild(opt);
-	}
-	subjectlistobj.addEventListener("change",subjectlist_listener,false);
-	subjectdialog.showModal()
-	await subjectIDPromise() // sets SESSION.SubjectFilePath
-
-	SubjectSettings = await DIO.read_textfile(SESSION.SubjectFilePath)
-	SubjectSettings = JSON.parse(SubjectSettings)
-
-	console.log(SubjectSettings)
-	wdm("Subject settings loaded...")
-
-	SESSION.SubjectID = SubjectSettings['SubjectID'];
-  updateSessionTextbox(SESSION.SubjectID, '')
-
-  //================== AWAIT LOAD Experiment Filepath ==================//
-  experiment_file_list = await DIO.listdir(EXPERIMENT_DIRPATH)
-  experiment_dialog = document.getElementById("ExperimentFile_dialog");
-  experimentfile_obj = document.getElementById("ExperimentFile_list");
-  for (var i=experiment_file_list.length-1; i>=0; i--){
-    var opt = document.createElement('option');
-    opt.value = i;
-    opt.innerHTML = splitFilename(experiment_file_list[i]) // subject_filepath_list[i];
-    experimentfile_obj.appendChild(opt);
-  }
-  experimentfile_obj.addEventListener("change",experimentlist_listener,false);
-  experiment_dialog.showModal()
-  await ExperimentFile_Promise() // sets SESSION.ExperimentFilePath
-  updateSessionTextbox(SESSION.SubjectID, splitFilename(SESSION.ExperimentFilePath))
-
-  TS = new TaskStreamer(DIO, SESSION.ExperimentFilePath, SESSION.SubjectID) 
-  await TS.build()
-  wdm('TaskStreamer built')
-
-  //================== await create SoundPlayer ==================// 
-	SP = new SoundPlayer()
-	await SP.build()	
-
-	wdm("Sounds loaded...")
-	
-	//================== AWAIT CONNECT TO BLE ==================//
-	document.querySelector("button[name=connectble]").style.display = "block"
-	document.querySelector("button[name=connectble]").style.visibility = "visible"
-	document.querySelector("button[name=noble]").style.display = "block"
-	document.querySelector("button[name=noble]").style.visibility = "visible"
-	wdm("Waiting for Bluetooth preferences...")
-	await connectBLEButtonPromise()
-	wdm("Bluetooth connection handled...")
-
-	document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
-	document.querySelector("button[name=noble]").style.display = "none"
-	
-	
-
-
-
-	//========= Start in TEST mode =======//
-	document.querySelector("button[name=doneTestingTask]").style.display = "block"
-	document.querySelector("button[name=doneTestingTask]").style.visibility = "visible"
-	
-
-	TRIAL_NUMBER_FROM_SESSION_START = 0
-	FLAGS.need2loadImages = 1
-	FLAGS.debug_mode = 1 
-
-// ============ MAIN LOOP ==================================================================================== // 
-document.querySelector("button[name=SyncButton]").style.visibility = "visible"
-
-FixationRewardMap = new RewardMap()
-ChoiceRewardMap = new RewardMap()
-
-
-console.log('initialized hellothere')
-
-INITIALIZE = true
-
-
-windowHeight = window.innerHeight
-|| document.documentElement.clientHeight
-|| document.body.clientHeight;
-
-
-windowWidth = window.innerWidth
-|| document.documentElement.clientWidth
-|| document.body.clientWidth;
-
-
-
-    //============= SET UP CANVAS =============//
-    // Update canvas based on latest TASK state: 
-    refreshCanvasSettings(TS.EXPERIMENT[TS.state.current_stage_index]); 
-    
-    for (var i = 0; i <= CANVAS.names.length-1; i++) {
-        setupCanvas(CANVAS.obj[CANVAS.names[i]]);
-    }
-    if (DEVICE.DevicePixelRatio !== 1){
-        scaleCanvasforHiDPI(CANVAS.obj.sample);
-        scaleCanvasforHiDPI(CANVAS.obj.test);
-    }
-
-    CANVAS.workspace = [
-        0,
-        0,
-        CANVAS.obj["touchfix"].width,
-        CANVAS.obj["touchfix"].height
-    ]
-
-
-    // Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image.
-    var representative_trial = await TS.get_trial()
-    console.log('representative_trial', representative_trial)
-
-    var representative_image = representative_trial['sample_image']
-    DEVICE.source_ImageWidthPixels = representative_image.width
-    DEVICE.source_ImageHeightPixels = representative_image.height
-
-    FixationRadius=(DEVICE.source_ImageWidthPixels/2)*SubjectSettings['FixationScale']*DEVICE.CanvasRatio
-
-console.log(DEVICE)
-funcreturn = defineImageGrid(TS.EXPERIMENT[0]['NGridPoints'], 
-    DEVICE.source_ImageWidthPixels, 
-    DEVICE.source_ImageHeightPixels, 
-   	SubjectSettings['GridScale']);
-
-xcanvascenter = funcreturn[0]
-ycanvascenter = funcreturn[1]
-
-DEVICE.XGridCenter = funcreturn[2]
-DEVICE.YGridCenter = funcreturn[3]
-
-console.log('windowWidth', windowWidth, 'windowHeight', windowHeight)
-// Reference: https://www.w3schools.com/js/js_window.asp
-
-
-// Start in testing mode
-wdm("Running debug mode...")
-while(FLAGS.debug_mode == 1){
+console.log('ENTERING MAIN TRIAL STATE MACHINE')
+TERMINAL_STATE = false 
+while(TERMINAL_STATE == false){
 	await runtrial()
   UX.poll()
+
 }
 
-transition_from_debug_to_science_trials()
-
-// Science mode
-while(true){
-	await runtrial()
-  UX.poll()
-}
-
+await DWr.concludeSession()
 } ())
 
 </script>

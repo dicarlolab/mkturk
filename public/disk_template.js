@@ -32,6 +32,11 @@ class DiskIO{
         return blob
     }
 
+    async load_sound(soundpath){
+        var blob 
+        return blob 
+    }
+
     async changed_on_disk(filepath, rev){
         // "rev" is some hash that can be used to compare the in-memory version of the file and the disk version.
         var changed = false
@@ -44,36 +49,167 @@ class DiskIO{
 
 }   
 
+class S3_IO{
+    constructor(){
+
+        this.read_textfile = this._read_textfile.bind(this)
+        this.load_sound = this._load_sound.bind(this)
+        this.load_image = this._load_image.bind(this)
+        this.exists = this._exists.bind(this)
+
+    }
+    async _load_image(blob_url){
+        
+        var resolvefunc 
+        var rejectfunc 
+        var p = new Promise(function(resolve, reject){
+            resolvefunc = resolve
+            rejectfunc = reject
+        })
+
+        var img =  new Image();
+        img.onload = function() {
+            //console.log('loaded '+blob_url)
+            //console.log(this)
+            resolvefunc(this)
+        }; 
+        img.src = blob_url
+
+        var img_loaded = await p
+        return img_loaded
+    }
+
+    async _load_sound(sound_url){
+        var resolveFunc
+        var rejectFunc
+        var p = new Promise(function(resolve, reject){
+            resolveFunc = resolve
+            rejectFunc = reject
+        })
+
+        // https://stackoverflow.com/questions/33902299/using-jquery-ajax-to-download-a-binary-file
+        var xhttp = new XMLHttpRequest(); 
+        xhttp.responseType = "blob"
+        try{
+            xhttp.onreadystatechange = function(){
+                if (this.readyState == 4 && this.status == 200){
+                    console.log(sound_url, ' loaded')
+                    resolveFunc(this.response)
+                }
+            }
+        }
+        catch(error){
+            console.log(error)
+        }
+        
+        xhttp.open("GET", sound_url, true);
+        xhttp.send();
+        var sound_blob = await p
+
+
+        return sound_blob
+
+    }
+    async _read_textfile(text_url){
+        // https://www.w3schools.com/xml/ajax_intro.asp
+
+        // Configuring S3: to accept xhttp requests:
+        // https://stackoverflow.com/questions/17533888/s3-access-control-allow-origin-header
+        var resolveFunc
+        var rejectFunc
+        var p = new Promise(function(resolve, reject){
+            resolveFunc = resolve
+            rejectFunc = reject
+        })
+
+        var xhttp = new XMLHttpRequest(); 
+
+
+        try{
+            xhttp.onreadystatechange = function(){
+                if (this.readyState == 4 && this.status == 200){
+                    console.log(text_url, ' loaded')
+                    resolveFunc(this.responseText)
+                }
+            }
+        }
+        catch(error){
+            console.log(error)
+        }
+        
+        xhttp.open("GET", text_url, true);
+        console.log("xhttp", xhttp)
+
+        xhttp.send();
+        var s = await p
+        return s
+    }
+
+    async _exists(url){
+        var resolveFunc
+        var rejectFunc
+        var p = new Promise(function(resolve, reject){
+            resolveFunc = resolve
+            rejectFunc = reject
+        })
+
+        var xhttp = new XMLHttpRequest(); 
+
+
+        try{
+            xhttp.onreadystatechange = function(){
+                if (this.readyState == 4 && this.status == 200){
+                    resolveFunc(true)
+                }
+                else{
+                    resolveFunc(false)
+                }
+            }
+        }
+        catch(error){
+            console.log(error)
+        }
+        
+        xhttp.open("GET", url, true);
+        xhttp.send();
+        var s = await p
+        return s
+
+    }
+
+  
+}
 
 class DropboxIO{
 
-    
 
     constructor(){
-        function isAuthenticated(){
-            return !!getAccessTokenFromUrl()
+    }
+    async build(DBX_REDIRECT_URI){
+
+        
+
+        if(window.location.href.split('access_token').length>1){
+            var accessToken = utils.parseQueryString(window.location.hash).access_token
+            localStorage.setItem('_dbxAccessToken', btoa(accessToken))
         }
 
-        //parse access token from url if in urls hash
-        function getAccessTokenFromUrl(){
-            return utils.parseQueryString(window.location.hash).access_token
-        }
-
-        var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "mkturk.html"
-
-        if (isAuthenticated()){
-            //Create an instance of Dropbox with the access token
-            var dbx = new Dropbox({accessToken: getAccessTokenFromUrl()})
-        }
-        else {
+        var accessToken = await loadStringFromLocalStorage('_dbxAccessToken')
+        
+        if(accessToken.length<4){ // need a better check for nonsense; add dialogue 
             var dbx = new Dropbox({clientId: DBX_CLIENT_ID});
-            var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
+            var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);    
             window.location.href = dbx_authUrl //send to Dropbox sign-in screen
         }
+        else{
+            var dbx = new Dropbox({accessToken: accessToken})
+        }
+        
 
         this.dbx = dbx
         this.exists = this._exists.bind(this)
         this.listdir = this._listdir.bind(this)
+        this.load_sound = this._load_sound.bind(this)
         this.write_string = this._write_string.bind(this)
         this.read_textfile = this._read_textfile.bind(this)
         this.load_image = this._load_image.bind(this)
@@ -86,8 +222,14 @@ class DropboxIO{
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind
 
     }
+
+    async _load_sound(soundpath){
+        var sounddata = await this.dbx.filesDownload({path:soundpath})
+        return sounddata
+    }
     async _exists(check_path){
         try{
+
             var filemeta = await this.dbx.filesGetMetadata({path: check_path})
             return true
         }
@@ -166,8 +308,6 @@ class DropboxIO{
                 var reader = new FileReader()
                 reader.onload = function(e){
                     resolve(reader.result)
-                    var data = JSON.parse(reader.result)
-                    resolve(reader.result)
                 }
                 reader.readAsText(data.fileBlob)
             })
@@ -213,7 +353,7 @@ class DropboxIO{
                     }   
                 }
                 catch(error){
-                    console.log(error)
+                    console.log('_load_image', error)
                     resolve(0)
                 }
             }
@@ -251,3 +391,10 @@ class DropboxIO{
 
 }
 
+
+async function loadStringFromLocalStorage(key){
+  var string = await localStorage.getItem(key)
+  string = atob(string)
+  //localStorage.removeItem(key);
+  return string
+}

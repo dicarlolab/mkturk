@@ -10,46 +10,81 @@ async function updatePlot(i){
     
 
     
-    if(CURRENT_VIEW['rev'] == disk_rev){
+    if(CURRENT_VIEW['rev'] == disk_rev && i!=0){
         
-        console.log(i+ '. No change')
+        console.log(i+ '. Refreshing timestring')
 
-        // Update time elapsed string 
+        // Update page title 
+        var page_title = subjectname +' ('+getTimeElapsedString(last_trial_timestamp).toString()+' ago)'
+        document.getElementById('page_title').innerHTML = page_title
+        // Update page header 
+        var title_header = 'liveplot: '+subjectname 
+        document.getElementById('title_header').innerHTML = title_header
+        // Update plot header 
+        var header_string = subjectname+': '+Math.round(mean(trial_returns)*100*10)/10+'%'
+        header_string+=' (n='+trial_returns.length+' trials'
+        header_string+=', r='+sum(trial_returns)
+        header_string+=', '+getTimeElapsedString(unix_start_timestamp)+' since start'
+        header_string+=')<br>'
+        header_string+='Battery: '+batteryleft+'% ('+batteryused+'%)<br>'
+        header_string+='Last trial: '+last_trial_string+' ('+getTimeElapsedString(last_trial_timestamp)+' ago)'
+
+        document.getElementById('chart_header').innerHTML = header_string
         return 
     }
 
-    console.log(i+'. Updating')
+    console.log(i+'. Updating plot')
     CURRENT_VIEW['rev'] = disk_rev
 
     
 
-    var behavior_json = await DIO.read_textfile(CURRENT_VIEW['filepath'])
+    behavior_json = await DIO.read_textfile(CURRENT_VIEW['filepath'])
     behavior_json = JSON.parse(behavior_json)
     console.log(behavior_json)
-    var trial_behavior = behavior_json['TRIAL_BEHAVIOR']
-    var trial_returns = trial_behavior['Return']
+    trial_behavior = behavior_json['BEHAVIOR']
+    trial_returns = trial_behavior['Return']
     var smoothed_trial_returns = smooth(trial_returns, window_size)
     var tooltip = trial_behavior['StartTime']
 
-    // Update header 
-    var subjectname = behavior_json['SESSION']['SubjectID']
-    var unix_start_timestamp = behavior_json['SESSION']['UnixTimestampAtStart'] // sec
-    var last_trial_timestamp_delta = behavior_json['TRIAL_BEHAVIOR']['StartTime'].slice(-1)[0] // sec
-    var last_trial_timestamp = Math.round(unix_start_timestamp + last_trial_timestamp_delta) // in seconds
-    var last_trial_string = new Date(last_trial_timestamp).toLocaleTimeString('en-US')
+    // Extract meta info
+    subjectname = behavior_json['SESSION']['SubjectID']
+    unix_start_timestamp = behavior_json['SESSION']['UnixTimestampAtStart'] // sec
+    last_trial_timestamp_delta = behavior_json['BEHAVIOR']['StartTime'].slice(-1)[0] // sec
+    last_trial_timestamp = Math.round(unix_start_timestamp + last_trial_timestamp_delta) // in seconds
+    last_trial_string = new Date(last_trial_timestamp).toLocaleTimeString('en-US')
 
     
 
-    var batteryleft = Math.round(behavior_json['DEVICE']['BatteryLDT'].slice(-1)[0][0]*100);
-    var batteryused = Math.round(batteryleft - behavior_json['DEVICE']['BatteryLDT'][0][0]*100);
+    batteryleft = Math.round(behavior_json['DEVICE']['BatteryLDT'].slice(-1)[0][0]*100);
+    batteryused = Math.round(batteryleft - behavior_json['DEVICE']['BatteryLDT'][0][0]*100);
+
+    if(batteryused >0){
+        batteryused = batteryused.toString()
+        batteryused = '+'+ batteryused
+    }
+    else if(batteryused <0){
+        batteryused = batteryused.toString()
+        batteryused = '-'+ batteryused
+    }
+    else{
+        batteryused = batteryused.toString()
+    }
+    
 
 
+    // Update page title 
+    var page_title = subjectname +' ('+getTimeElapsedString(last_trial_timestamp).toString()+' ago)'
+    document.getElementById('page_title').innerHTML = page_title
+    // Update page header 
+    var title_header = 'liveplot: '+subjectname 
+    document.getElementById('title_header').innerHTML = title_header
+    // Update plot header 
     var header_string = subjectname+': '+Math.round(mean(trial_returns)*100*10)/10+'%'
     header_string+=' (n='+trial_returns.length+' trials'
     header_string+=', r='+sum(trial_returns)
     header_string+=', '+getTimeElapsedString(unix_start_timestamp)+' since start'
     header_string+=')<br>'
-    header_string+='Battery: '+batteryleft+'% ('+batteryused+'% change)<br>'
+    header_string+='Battery: '+batteryleft+'% ('+batteryused+'%)<br>'
     header_string+='Last trial: '+last_trial_string+' ('+getTimeElapsedString(last_trial_timestamp)+' ago)'
 
     document.getElementById('chart_header').innerHTML = header_string
@@ -61,7 +96,7 @@ async function updatePlot(i){
 
     for (var j = 0; j<trial_behavior['Return'].length; j++){
         data_array.push([
-            trial_behavior['trial_num_Session'][j], 
+            trial_behavior['TrialNumber_Session'][j], 
             trial_behavior['Return'][j], 
             smoothed_trial_returns[j], 
             ]) 
@@ -95,8 +130,8 @@ async function updatePlot(i){
       var action_array = {}
 
 
-    for (var j = 0; j<trial_behavior['Response'].length; j++){
-        var resp = trial_behavior['Response'][j]
+    for (var j = 0; j<trial_behavior['Response_GridIndex'].length; j++){
+        var resp = trial_behavior['Response_GridIndex'][j]
         if(action_array[resp] == undefined){
             action_array[resp] = 0
         }
@@ -120,6 +155,7 @@ async function updatePlot(i){
     }
 
     var options = {
+        title:"Trial outcomes",
         hAxis: {
           title: '# times',
           minValue:'0'
@@ -129,6 +165,9 @@ async function updatePlot(i){
     console.log(action_array)
     var chart = new google.visualization.BarChart(document.getElementById('actionChart_div'));
     chart.draw(dataAction, options);
+
+
+
 
 }
 

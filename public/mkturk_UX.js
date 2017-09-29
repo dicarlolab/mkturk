@@ -6,6 +6,7 @@ class UX_poller{
     }
 
     async poll(){
+        return
         console.log("Called UX_poller.poll()")
         if(performance.now() - this.last_poll < this.min_poll_period){
             console.log('not enough time has passed to poll again')
@@ -29,7 +30,7 @@ class UX_poller{
 
         if (juiceRequest_flag != undefined){
             if(juiceRequest_flag['FlagFulfilled'] == 0){
-                SubjectSettings['RewardPer1000Trials'] = juiceRequest_flag['RewardPer1000Trials']
+                SUBJECT['RewardPer1000Trials'] = juiceRequest_flag['RewardPer1000Trials']
                 juiceRequest_flag['FlagFulfilled'] = 1
                 await DIO.write_string(JSON.stringify(juiceRequest_flag), this.get_juiceRequest_filepath())
                 console.log('RECEIVED VALID JUICE REQUEST FORCED SAVE, wrote flag fulfilled to disk')       
@@ -52,10 +53,47 @@ class UX_poller{
     }
 
     get_saveRequest_filepath(){
-        return "/UserUX/"+SESSION.SubjectID+"_saverequest.txt"
+        return "/MonkeyTurk_upstairs/UserUX/"+SESSION.SubjectID+"_saverequest.txt"
     }
     get_juiceRequest_filepath(){
-        return "/UserUX/"+SESSION.SubjectID+'_juicerequest.txt'
+        return "/MonkeyTurk_upstairs/UserUX/"+SESSION.SubjectID+'_juicerequest.txt'
+    }
+
+}
+
+class MechanicalTurk_UX_poller{
+    constructor(){
+
+    }
+
+    async poll(){
+
+
+        
+
+        var minimum_trials_left = Math.max(MechanicalTurkSettings["MinimumTrialsForCashIn"] - TRIAL_NUMBER_FROM_SESSION_START, 0)
+        if(minimum_trials_left > 0){
+            updateProgressbar(TRIAL_NUMBER_FROM_SESSION_START/MechanicalTurkSettings["MinimumTrialsForCashIn"]*100, 'MechanicalTurk_TrialBar', '', 100, ' ')
+
+            var bonus_earned = R.bonus_total
+            updateCashInButtonText(minimum_trials_left, bonus_earned, false)
+        }
+        else{
+
+            document.getElementById('MechanicalTurk_TrialBar').style['background-color'] = '#00cc66'
+            document.getElementById('MechanicalTurk_TrialBar').style['opacity'] = 1
+            
+            updateProgressbar(TRIAL_NUMBER_FROM_SESSION_START/MechanicalTurkSettings["MinimumTrialsForCashIn"]*100, 'MechanicalTurk_TrialBar', '', 100)
+
+            toggleCashInButtonClickability(1)
+            var bonus_earned = R.bonus_total
+            var num_bonus_trials_performed = TRIAL_NUMBER_FROM_SESSION_START-MechanicalTurkSettings["MinimumTrialsForCashIn"]
+            updateCashInButtonText(num_bonus_trials_performed, bonus_earned, true)
+        }
+
+        if(TRIAL_NUMBER_FROM_SESSION_START >= MechanicalTurkSettings["MAX_SESSION_TRIALS_MECHANICALTURK"]){
+            TERMINAL_STATE = true
+        }
     }
 
 }

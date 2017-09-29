@@ -2,10 +2,14 @@ function reloadPage(){
   wdm("RELOADING PAGE...")
   location.reload(true)
 }
+
 function wdm(s){
+  // Write debug message
   console.log(s)
-  var elem = document.getElementById('DebugMessageTextBox')
-  elem.innerHTML = s; // text
+  if(FLAGS.debug_mode == 1){
+    var elem = document.getElementById('DebugMessageTextBox')
+    elem.innerHTML = s; // text
+  }
 }
 
 
@@ -51,35 +55,7 @@ function wdm(s){
   };
 })(window);
 
-/* Randomize array element order in-place.  Using Fisher-Yates shuffle algorithm. http://bost.ocks.org/mike/shuffle/ */
-// To test your shuffling algorithm: go to http://bost.ocks.org/mike/shuffle/compare.html
-function shuffleArray(array){
-  // Expand to index vector if needed
-  if (array.length==1){
-    var len=array[0];
-    for (var i = 0; i<=len-1; i++){array[i]=i;}
-  }
-    for (var i = array.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var temp = array[i];
-        array[i] = array[j];
-        array[j] = temp;
-    }
-    return array
-}
 
-// convert base64 to buffer array (from: http://stackoverflow.com.80bola.com/questions/27524283/save-image-to-dropbox-with-data-from-canvas?rq=1)
-function _base64ToArrayBuffer(base64){
-  base64 = base64.split('data:image/png;base64,').join('');
-  var binary_string =  window.atob(base64),
-  len = binary_string.length,
-  bytes = new Uint8Array( len ),
-  i;
-  for (i = 0; i < len; i++){
-    bytes[i] = binary_string.charCodeAt(i);
-  }
-  return bytes.buffer;
-}
 
 // ----- Array equality ---- 
 if(Array.prototype.equals)
@@ -112,11 +88,6 @@ Array.prototype.equals = function (array) {
 Object.defineProperty(Array.prototype, "equals", {enumerable: false});
 
 
-// Gets "filename.ext" from some /.../path/filename.ext
-function get_filename_from_pathstring(pathstring){
-  var filename = pathstring.replace(/^.*[\\\/]/, '')
-  return filename
-}
 
 // Return all indices of val in arr
 function getAllInstancesIndexes(arr, val){
@@ -171,36 +142,7 @@ function cantor(k1, k2){
   return hash
 }
 
-/* Randomize array element order in-place.  Using Fisher-Yates shuffle algorithm. http://bost.ocks.org/mike/shuffle/ */
-// To test your shuffling algorithm: go to http://bost.ocks.org/mike/shuffle/compare.html
-function shuffleArray(array){
-  // Expand to index vector if needed
-  if (array.length==1){
-    var len=array[0];
-    for (var i = 0; i<=len-1; i++){array[i]=i;}
-  }
-    for (var i = array.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var temp = array[i];
-        array[i] = array[j];
-        array[j] = temp;
-    }
-    return array
-}
 
-
-// convert base64 to buffer array (from: http://stackoverflow.com.80bola.com/questions/27524283/save-image-to-dropbox-with-data-from-canvas?rq=1)
-function _base64ToArrayBuffer(base64){
-  base64 = base64.split('data:image/png;base64,').join('');
-  var binary_string =  window.atob(base64),
-  len = binary_string.length,
-  bytes = new Uint8Array( len ),
-  i;
-  for (i = 0; i < len; i++){
-    bytes[i] = binary_string.charCodeAt(i);
-  }
-  return bytes.buffer;
-}
 
 
 function toBytesInt16(num){
@@ -217,6 +159,10 @@ function sleep(ms) {
 }
 
 
+function md5Hash(blob){
+  var hash = CryptoJS.MD5(CryptoJS.enc.Latin1.parse(blob));
+  return hash
+}
 // Promise: choice time-out
 function choiceTimeOut(timeout_length){
   return new Promise(
@@ -233,13 +179,6 @@ function choiceTimeOut(timeout_length){
     })
 }
 
-// Promise: punish time-out
-function dispensePunish(){
-  return new Promise(function(resolve,reject){
-    setTimeout(function(){resolve(1);},TASK.PunishTimeOut); //milliseconds
-  }).then();
-}
-
 
 String.prototype.hashCode = function(){
     var hash = 0;
@@ -254,67 +193,9 @@ String.prototype.hashCode = function(){
 
 
 //================== UTILITIES ==================//
-function setReward(){
-  var m = 0;
-  var b = 0;
-  if (SubjectSettings['Pump'] == 1){
-    // m = 1.13; b = 15.04;
-    m = 0.99; b = 14.78;
-  } //peristaltic (adafruit)
-  else if (SubjectSettings['Pump'] == 2){
-    // m = 3.20; b = -15.47;
-    m = 1.40; b = -58.77;
-  } //submersible (tcs)
-  else if (SubjectSettings['Pump'] == 3){
-    // m = 0.80; b = -3.00;
-    m=0.91; b = -15;
-  } //diaphragm (tcs)
-  else if (SubjectSettings['Pump'] == 4){
-    m = 0.0531; b=-1.2594;
-  } //piezoelectric (takasago)
-  else if (SubjectSettings['Pump'] == 5){
-    m = 2.4463; b=53.6418;
-  } //new diaphragm (tcs)
-  else if (SubjectSettings['Pump'] == 6){
-    if (SubjectSettings['Liquid']==1 || SubjectSettings['Liquid']==3){
-      m=0.1251; b=-0.0833; //1=water 2=water-condensed milk 3=marshmallow slurry (4/30mL)
-    }
-    else if (SubjectSettings['Liquid']==2){
-      m=0.0550; b=0.6951; //water-condensed milk (50/50)
-    }
-  } //piezoelectric 7mL/min (takasago)
-  return (SubjectSettings['RewardPer1000Trials'] - b)/m/1000;
-  
-}
 
-function displayPhysicalSize(tabletname,displayobject_coord,canvasobj){
-  if (tabletname == "nexus9"){
-    var dpi = 281
-  }
-  else if (tabletname == "samsung10"){
-    var dpi = 287
-  }
-  else if (tabletname == "samsung8"){
-    var dpi = 359
-  }
-  else if (tabletname == "pixelc"){
-    var dpi = 308
-  }
-  else {
-    var dpi = -1
-  }
-  var visible_ctxt = canvasobj.getContext('2d');
-  visible_ctxt.textBaseline = "hanging";
-  visible_ctxt.fillStyle = "white";
-  visible_ctxt.font = "16px Verdana";
-  visible_ctxt.fillText( 
-    Math.round(100*(displayobject_coord[2]-displayobject_coord[0])/dpi/DEVICE.CanvasRatio)/100 +
-    ' x ' +
-    Math.round(100*(displayobject_coord[3]-displayobject_coord[1])/dpi/DEVICE.CanvasRatio)/100 + 
-    ' in', 
-    displayobject_coord[0],displayobject_coord[1]-16
-  );
-}
+
+
 
 function join(parts, sep){
    var separator = sep || '/';
