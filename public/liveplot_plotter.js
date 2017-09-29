@@ -26,7 +26,7 @@ async function updatePlot(i){
         header_string+=', r='+sum(trial_returns)
         header_string+=', '+getTimeElapsedString(unix_start_timestamp)+' since start'
         header_string+=')<br>'
-        header_string+='Battery: '+batteryleft+'% ('+batteryused+'% change)<br>'
+        header_string+='Battery: '+batteryleft+'% ('+batteryused+'%)<br>'
         header_string+='Last trial: '+last_trial_string+' ('+getTimeElapsedString(last_trial_timestamp)+' ago)'
 
         document.getElementById('chart_header').innerHTML = header_string
@@ -58,6 +58,19 @@ async function updatePlot(i){
     batteryleft = Math.round(behavior_json['DEVICE']['BatteryLDT'].slice(-1)[0][0]*100);
     batteryused = Math.round(batteryleft - behavior_json['DEVICE']['BatteryLDT'][0][0]*100);
 
+    if(batteryused >0){
+        batteryused = batteryused.toString()
+        batteryused = '+'+ batteryused
+    }
+    else if(batteryused <0){
+        batteryused = batteryused.toString()
+        batteryused = '-'+ batteryused
+    }
+    else{
+        batteryused = batteryused.toString()
+    }
+    
+
 
     // Update page title 
     var page_title = subjectname +' ('+getTimeElapsedString(last_trial_timestamp).toString()+' ago)'
@@ -71,7 +84,7 @@ async function updatePlot(i){
     header_string+=', r='+sum(trial_returns)
     header_string+=', '+getTimeElapsedString(unix_start_timestamp)+' since start'
     header_string+=')<br>'
-    header_string+='Battery: '+batteryleft+'% ('+batteryused+'% change)<br>'
+    header_string+='Battery: '+batteryleft+'% ('+batteryused+'%)<br>'
     header_string+='Last trial: '+last_trial_string+' ('+getTimeElapsedString(last_trial_timestamp)+' ago)'
 
     document.getElementById('chart_header').innerHTML = header_string
