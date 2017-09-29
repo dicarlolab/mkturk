@@ -18,7 +18,6 @@ var choice_regions_reward_amounts = TRIAL['choice_rewards']
 var choice_regions_gridIndices = TRIAL['choice_grid_indices']
 var choice_area_scale_factor = TRIAL['choice_area_scale_factor']
 
-
 // Prebuffer 
 var sequence_id = 'stimulus_sequence'
 await SD.bufferSequenceFrames(sequence_id, image_sequence, grid_placement_sequence, frame_durations)

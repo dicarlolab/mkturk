@@ -188,7 +188,6 @@ class TaskStreamer{
         else if(E['Task'] == 'MTS'){
             var Nway = E['Nway'] || 2
 
-            console.log('SampleBagNames', SampleBagNames)
             var test = this.selectTestImagesMTS(TestBagNames, sample['bag_index'], Nway, test_selection_RNGseed)
             var correct_test_selection = test['bag_index'].indexOf(sample['bag_index']) 
 

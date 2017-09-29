@@ -159,6 +159,7 @@ class ScreenDisplayer{
 
 
     displayScreenSequence(sequence, t_durations){
+        console.log('calling sequence', sequence, 't_durations', t_durations)
         if(typeof(t_durations) == "number"){
             t_durations = [t_durations]
         }
@@ -198,6 +199,7 @@ class ScreenDisplayer{
                 prev_canvasobj = curr_canvasobj;
 
                 lastframe_timestamp = timestamp
+                console.log('lastframe_timestamp', lastframe_timestamp)
                 frames_left_to_animate--
                 
             }; 

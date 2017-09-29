@@ -2,7 +2,7 @@ class RewardMapGenerator{
     constructor(event_types){
 
         this.event_types = event_types        
-        this._mouse_promise
+        this._response_promise
         this.boundingBoxes = []
         this.reward_amounts = []
 
@@ -14,11 +14,18 @@ class RewardMapGenerator{
         var boundingBoxes = this.boundingBoxes // 
         var reward_amounts = this.reward_amounts 
 
+        this.listening = false
+        this.attached = false 
+
+
         this.handleTouchEvent = function(event){
             var t = performance.now()
             var x = event.targetTouches[0].pageX - PLAYSPACE.leftbound
             var y = event.targetTouches[0].pageY - PLAYSPACE.topbound
-            _this.check_if_interior(x, y, t)
+            if(_this.listening == true){
+                _this.check_if_interior(x, y, t)
+            }
+            
         }  
 
         this.handleMouseEvent = function(event){
@@ -27,17 +34,16 @@ class RewardMapGenerator{
             var x = event.pageX - PLAYSPACE.leftbound // In PLAYSPACE units. 
             var y = event.pageY - PLAYSPACE.topbound
 
-            _this.check_if_interior(x, y, t)
+            if(_this.listening == true){
+                _this.check_if_interior(x, y, t)
+            }
         }
 
-        this.attached = false 
+        
         
     } 
 
-
-
     check_if_interior(x, y, t){
-        console.log(x, y, t)
         for (var box_index = 0; box_index<this.boundingBoxes.length; box_index++){
 
             if (x <= this.boundingBoxes[box_index].x[1] 
@@ -51,7 +57,7 @@ class RewardMapGenerator{
                     "timestamp":t, 
                     "reinforcement":this.reward_amounts[box_index], 
                     "region_index":box_index}
-
+                this.listening = false
                 this._resolveFunc(outcome)
             }
         }
@@ -74,6 +80,7 @@ class RewardMapGenerator{
         
         this.boundingBoxes = boundingBoxes
         this.reward_amounts = reward_amounts
+        this.listening = true
     }
 
     create_reward_map_with_grid_indices(grid_indices, reward_amounts, scale_factor){
@@ -120,16 +127,17 @@ class RewardMapGenerator{
 
         this.boundingBoxes = boundingBoxes
         this.reward_amounts = reward_amounts
+        this.listening = true
     }
 
     async Promise_wait_until_active_response_then_return_reinforcement(){
         //this.add_event_listener()
         var _this = this
-        this._mouse_promise = new Promise(function(resolve, reject){
+        this._response_promise = new Promise(function(resolve, reject){
             _this._resolveFunc = resolve
             _this._errFunc = reject
         })
-        var outcome = this._mouse_promise
+        var outcome = this._response_promise
         return outcome
     }
     add_event_listener(){
@@ -163,7 +171,14 @@ class RewardMapGenerator{
         }
 
         for(var i = 0; i < event_types.length; i++){
-            window.removeEventListener(event_types[i], this._listener)
+            if(event_types[i] == 'touchmove' || 'touchstart' || 'touchend'){
+                window.removeEventListener(event_types[i], this.handleTouchEvent, {passive:true})
+            }
+            else{
+                window.removeEventListener(event_types[i], this.handleMouseEvent)
+            }
+            
+            console.log('Removed ', event_types[i])
         }
     }
 }
