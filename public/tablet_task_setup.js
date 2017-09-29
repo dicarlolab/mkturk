@@ -16,7 +16,8 @@ async function setupTabletTask(){
 
 
   DIO = new DropboxIO()
-  await DIO.build()
+  var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "mkturk.html"
+  await DIO.build(DBX_REDIRECT_URI)
 
   SIO = new S3_IO() 
   DWr = new DropboxDataWriter(DIO)

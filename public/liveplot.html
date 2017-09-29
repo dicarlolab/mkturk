@@ -106,6 +106,9 @@ CURRENT_VIEW['last_updated'] = performance.now()
 var menuobj = document.getElementById("file_selection_dropdown_menu");
 
 (async function(){
+  var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "liveplot.html"
+  await DIO.build(DBX_REDIRECT_URI)
+
 	var file_list = await DIO.listdir(TRIAL_DATA_SAVEPATH)
 	DISK_STATE['filepaths'] = file_list
 	for(var i = 0; i < file_list.length; i ++){

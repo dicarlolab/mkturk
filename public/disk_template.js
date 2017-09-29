@@ -182,13 +182,12 @@ class S3_IO{
 
 class DropboxIO{
 
-    
 
     constructor(){
     }
-    async build(){
+    async build(DBX_REDIRECT_URI){
 
-        var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "mkturk.html"
+        
 
         if(window.location.href.split('access_token').length>1){
             var accessToken = utils.parseQueryString(window.location.hash).access_token

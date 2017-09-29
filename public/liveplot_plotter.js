@@ -26,7 +26,7 @@ async function updatePlot(i){
     var behavior_json = await DIO.read_textfile(CURRENT_VIEW['filepath'])
     behavior_json = JSON.parse(behavior_json)
     console.log(behavior_json)
-    var trial_behavior = behavior_json['TRIAL_BEHAVIOR']
+    var trial_behavior = behavior_json['BEHAVIOR']
     var trial_returns = trial_behavior['Return']
     var smoothed_trial_returns = smooth(trial_returns, window_size)
     var tooltip = trial_behavior['StartTime']
@@ -34,7 +34,7 @@ async function updatePlot(i){
     // Update header 
     var subjectname = behavior_json['SESSION']['SubjectID']
     var unix_start_timestamp = behavior_json['SESSION']['UnixTimestampAtStart'] // sec
-    var last_trial_timestamp_delta = behavior_json['TRIAL_BEHAVIOR']['StartTime'].slice(-1)[0] // sec
+    var last_trial_timestamp_delta = behavior_json['BEHAVIOR']['StartTime'].slice(-1)[0] // sec
     var last_trial_timestamp = Math.round(unix_start_timestamp + last_trial_timestamp_delta) // in seconds
     var last_trial_string = new Date(last_trial_timestamp).toLocaleTimeString('en-US')
 
@@ -61,7 +61,7 @@ async function updatePlot(i){
 
     for (var j = 0; j<trial_behavior['Return'].length; j++){
         data_array.push([
-            trial_behavior['trial_num_Session'][j], 
+            trial_behavior['TrialNumber_Session'][j], 
             trial_behavior['Return'][j], 
             smoothed_trial_returns[j], 
             ]) 
