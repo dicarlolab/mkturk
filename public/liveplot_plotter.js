@@ -10,15 +10,23 @@ async function updatePlot(i){
     
 
     
-    if(CURRENT_VIEW['rev'] == disk_rev){
+    if(CURRENT_VIEW['rev'] == disk_rev && i!=0){
         
-        console.log(i+ '. No change')
+        console.log(i+ '. Refreshing timestring')
 
         // Update time elapsed string 
+        var header_string = subjectname+': '+Math.round(mean(trial_returns)*100*10)/10+'%'
+        header_string+=' (n='+trial_returns.length+' trials'
+        header_string+=', r='+sum(trial_returns)
+        header_string+=', '+getTimeElapsedString(unix_start_timestamp)+' since start'
+        header_string+=')<br>'
+        header_string+='Battery: '+batteryleft+'% ('+batteryused+'% change)<br>'
+        header_string+='Last trial: '+last_trial_string+' ('+getTimeElapsedString(last_trial_timestamp)+' ago)'
+        document.getElementById('chart_header').innerHTML = header_string
         return 
     }
 
-    console.log(i+'. Updating')
+    console.log(i+'. Updating plot')
     CURRENT_VIEW['rev'] = disk_rev
 
     
@@ -27,16 +35,16 @@ async function updatePlot(i){
     behavior_json = JSON.parse(behavior_json)
     console.log(behavior_json)
     var trial_behavior = behavior_json['BEHAVIOR']
-    var trial_returns = trial_behavior['Return']
+    trial_returns = trial_behavior['Return']
     var smoothed_trial_returns = smooth(trial_returns, window_size)
     var tooltip = trial_behavior['StartTime']
 
     // Update header 
-    var subjectname = behavior_json['SESSION']['SubjectID']
-    var unix_start_timestamp = behavior_json['SESSION']['UnixTimestampAtStart'] // sec
-    var last_trial_timestamp_delta = behavior_json['BEHAVIOR']['StartTime'].slice(-1)[0] // sec
-    var last_trial_timestamp = Math.round(unix_start_timestamp + last_trial_timestamp_delta) // in seconds
-    var last_trial_string = new Date(last_trial_timestamp).toLocaleTimeString('en-US')
+    subjectname = behavior_json['SESSION']['SubjectID']
+    unix_start_timestamp = behavior_json['SESSION']['UnixTimestampAtStart'] // sec
+    last_trial_timestamp_delta = behavior_json['BEHAVIOR']['StartTime'].slice(-1)[0] // sec
+    last_trial_timestamp = Math.round(unix_start_timestamp + last_trial_timestamp_delta) // in seconds
+    last_trial_string = new Date(last_trial_timestamp).toLocaleTimeString('en-US')
 
     
 
@@ -95,8 +103,8 @@ async function updatePlot(i){
       var action_array = {}
 
 
-    for (var j = 0; j<trial_behavior['Response'].length; j++){
-        var resp = trial_behavior['Response'][j]
+    for (var j = 0; j<trial_behavior['Response_GridIndex'].length; j++){
+        var resp = trial_behavior['Response_GridIndex'][j]
         if(action_array[resp] == undefined){
             action_array[resp] = 0
         }
