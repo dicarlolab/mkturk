@@ -116,8 +116,16 @@ async function setupTabletTask(){
   wdm('TaskStreamer built')
 
 
+
+  var estimated_eye_screen_distance_inches = SUBJECT['estimated_eye_screen_distance_inches']
+  var estimated_screen_virtual_pixels_per_inch = SUBJECT['estimated_screen_virtual_pixels_per_inch']
+  var estimated_grid_vertical_offset_inches = SUBJECT['estimated_grid_vertical_offset_inches']
+  var intended_grid_degrees_of_visual_angle = SUBJECT['intended_grid_degrees_of_visual_angle']
+  
+  
+
   var ngridpoints = TS.Experiment[0]['NGridPoints'] 
-  setupPlayspace(ngridpoints) // sets up PLAYSPACE based on window dimensions
+  setupPlayspace(ngridpoints, estimated_eye_screen_distance_inches, estimated_screen_virtual_pixels_per_inch, estimated_grid_vertical_offset_inches, intended_grid_degrees_of_visual_angle) // sets up PLAYSPACE based on window dimensions
 
 
   //================== await create SoundPlayer ==================// 

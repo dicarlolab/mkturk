@@ -33,17 +33,32 @@ function onWindowResize(){
 }
 
 
-function setupPlayspace(ngridpoints){
+function setupPlayspace(ngridpoints, estimated_eye_screen_distance_inches, estimated_screen_virtual_pixels_per_inch, estimated_grid_vertical_offset_inches, intended_grid_degrees_of_visual_angle){
+
+  // Determine how many pixels the image should be on the screen to have a desired viewing angle size at a given viewing distance
+  if(estimated_eye_screen_distance_inches != undefined){
+    var intended_radians = intended_grid_degrees_of_visual_angle * Math.PI / 180
+
+    var design_image_physical_inches = estimated_eye_screen_distance_inches * Math.atan(intended_radians + Math.tan(estimated_grid_vertical_offset_inches / estimated_eye_screen_distance_inches)) - estimated_grid_vertical_offset_inches
+
+    var design_image_virtual_pixels = estimated_screen_virtual_pixels_per_inch * design_image_physical_inches
+  }
+  else{
+    console.warn('User did not specify image viewing angle design parameters. Defaulting to PLAYSPACE dimensions = 85% of screen size...')
+    design_image_virtual_pixels = Infinity
+  }
+
+  // Get window size
   var funcreturn = windowSize()
   var windowHeight = funcreturn[0]
   var windowWidth = funcreturn[1]
-    // Reference: https://www.w3schools.com/js/js_window.asp
+  // Reference: https://www.w3schools.com/js/js_window.asp
 
-  var MARGIN_PROPORTION= 0.15
-    var min_screen_dimension = Math.round(Math.min(windowHeight, windowWidth))*(1-MARGIN_PROPORTION)
-    var MIN_REQUIRED_PIXELS = 768 // todo: move into experimenter settings
-    var min_dimension = Math.max(min_screen_dimension, MIN_REQUIRED_PIXELS)
-
+    var MARGIN_PROPORTION= 0.15
+    var max_screen_dimension = Math.round(Math.min(windowHeight, windowWidth))*(1-MARGIN_PROPORTION)
+    // var MIN_REQUIRED_PIXELS = 768 // todo: move into experimenter settings
+    var min_dimension = Math.min(max_screen_dimension, design_image_virtual_pixels * ngridpoints)
+    var min_dimension = Math.ceil(min_dimension)
 
 
     PLAYSPACE.height = min_dimension

@@ -81,6 +81,8 @@ class RewardMapGenerator{
         this.boundingBoxes = boundingBoxes
         this.reward_amounts = reward_amounts
         this.listening = true
+
+        return boundingBoxes
     }
 
     create_reward_map_with_grid_indices(grid_indices, reward_amounts, scale_factor){
@@ -128,6 +130,8 @@ class RewardMapGenerator{
         this.boundingBoxes = boundingBoxes
         this.reward_amounts = reward_amounts
         this.listening = true
+
+        return boundingBoxes
     }
 
     async Promise_wait_until_active_response_then_return_reinforcement(){

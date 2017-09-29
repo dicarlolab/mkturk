@@ -117,7 +117,6 @@ class DropboxDataWriter{
     }
 
     async writeout(dataobj){
-        return 
         // Asynchronous save at most every T seconds
         var _ms_since_last_trial_data_save = performance.now() - last_trial_data_save
         var _ms_since_last_touch_data_save = performance.now() - last_touch_save

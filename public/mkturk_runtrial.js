@@ -32,7 +32,7 @@ var boundingBoxFixation = funcreturn[0]
 var fixation_timestamps = funcreturn[1]
 
 // Wait for fixation response
-RewardMap.create_reward_map_with_bounding_boxes(boundingBoxFixation, 'none')
+var fixationBoundingBox = RewardMap.create_reward_map_with_bounding_boxes(boundingBoxFixation, 'none')
 var fixation_outcome = await RewardMap.Promise_wait_until_active_response_then_return_reinforcement()
 
 // STIMULUS_SCREEN
@@ -41,7 +41,7 @@ var frame_timestamps = await SD.displaySequence(sequence_id)
 
 // Wait for choice response, with optional timeout
 // todo: chaining markov reward maps for multi-response tasks (v3); chain stimulus / reward map periods (but why call it a trial?)
-RewardMap.create_reward_map_with_grid_indices(choice_regions_gridIndices, choice_regions_reward_amounts, choice_area_scale_factor)
+var choiceBoundingBox = RewardMap.create_reward_map_with_grid_indices(choice_regions_gridIndices, choice_regions_reward_amounts, choice_area_scale_factor)
 if(timeout_msec > 0){
     var choice_promise = Promise.race([
                         RewardMap.Promise_wait_until_active_response_then_return_reinforcement(), 
@@ -74,6 +74,8 @@ current_trial_outcome['ChoiceX'] = choice_outcome['x']// todo: multiple response
 current_trial_outcome['ChoiceY'] = choice_outcome['y']
 current_trial_outcome['timestamp_Choice'] = choice_outcome['timestamp']
 current_trial_outcome['Response_GridIndex'] = chosen_grid_index
+current_trial_outcome['fixation_boundingBoxes'] = fixationBoundingBox
+current_trial_outcome['choice_boundingBoxes'] = choiceBoundingBox
 
 current_trial_outcome['Return'] = nreward
 current_trial_outcome['TRIAL'] = TRIAL

@@ -556,6 +556,10 @@ class TaskStreamer{
         t['SampleGridIndex'].push(cto['TRIAL']['grid_placement_sequence'][0])
         t['ChoiceGridIndices'].push(cto['TRIAL']['grid_placement_sequence'][2])
         t['Choices_RewardAmounts'].push(cto['TRIAL']['choice_rewards'])
+
+        t['Choices_BoundingBoxes'].push(cto['fixation_boundingBoxes'][0])
+        t['Fixation_BoundingBox'].push(cto['choice_boundingBoxes'])
+        
         return t 
     }
     initialize_behavior_records(){
@@ -595,7 +599,8 @@ class TaskStreamer{
         t['ChoiceGridIndices'] = []
         t['Choices_RewardAmounts'] = [] 
 
-
+        t['Choices_BoundingBoxes'] = []
+        t['Fixation_BoundingBox'] = [] 
         
         return t
     }

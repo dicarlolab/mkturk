@@ -97,7 +97,7 @@ class ScreenDisplayer{
     async displayFixation(gridindex){
         await this.renderBlank(this.canvas_fixation)
 
-        var boundingBoxesFixation = this.renderFixationDot(gridindex, PLAYSPACE._gridwidth*0.5*0.5, 'white', this.canvas_fixation)
+        var boundingBoxesFixation = this.renderFixationDot(gridindex, PLAYSPACE._gridwidth*0.4, 'white', this.canvas_fixation)
         var frame_timestamps = await this.displayScreenSequence(this.canvas_fixation, 0)
         return [boundingBoxesFixation, frame_timestamps]
     }
@@ -235,8 +235,10 @@ class ScreenDisplayer{
         var width = parseFloat(canvasobj.style.width)
         var height = parseFloat(canvasobj.style.height)
 
-        console.log(canvasobj, 'renderReward', width/2-200, height/2 - 200)
-        context.fillRect(width/2 - 200,height/2 - 200, 400,400);
+
+        var square_width = PLAYSPACE._gridwidth * 2
+        var square_height = PLAYSPACE._gridheight * 2
+        context.fillRect(width/2 - square_width/2,height/2 - square_width/2, square_width,square_height);
 
         context.fill()
     }
@@ -247,7 +249,9 @@ class ScreenDisplayer{
         var height = parseFloat(canvasobj.style.height)
 
         context.fillStyle="black";
-        context.fillRect(width/2 - 200,height/2 - 200, 400,400);
+        var square_width = PLAYSPACE._gridwidth * 2
+        var square_height = PLAYSPACE._gridheight * 2
+        context.fillRect(width/2 - square_width/2,height/2 - square_width/2, square_width,square_height);
         
         context.fill();
     }
@@ -277,7 +281,7 @@ class ScreenDisplayer{
 
       // Special cases for 'image'
       if(image == 'dot'){
-        await this.renderFixationDot(grid_index, PLAYSPACE._gridwidth/2, "white", canvasobj)
+        await this.renderFixationDot(grid_index, PLAYSPACE._gridwidth*0.45, "white", canvasobj)
         return
       }
       if(image == 'blank'){
