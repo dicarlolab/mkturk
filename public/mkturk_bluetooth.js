@@ -47,6 +47,12 @@ var ble = {
 
 //==================== CONNECT BLE ====================//
 function connectBLEButtonPromise(){
+  document.querySelector("button[name=connectble]").style.display = "block"
+  document.querySelector("button[name=connectble]").style.visibility = "visible"
+  document.querySelector("button[name=noble]").style.display = "block"
+  document.querySelector("button[name=noble]").style.visibility = "visible"
+  wdm("Waiting for Bluetooth preferences...")
+  
   var resolveFunc
   var errFunc
   p = new Promise(function(resolve,reject){
@@ -57,6 +63,9 @@ function connectBLEButtonPromise(){
     var buttonclicked =[-1];
     while (true){
       buttonclicked = yield buttonclicked;
+      document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+      document.querySelector("button[name=noble]").style.display = "none"
+    
       resolveFunc(buttonclicked);
     }
   }

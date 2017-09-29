@@ -1,4 +1,29 @@
 async function setupTabletTask(){
+  // Button callbacks
+  document.querySelector("button[name=connectble]").addEventListener(
+    'touchend',findBLEDevice,false)
+  document.querySelector("button[name=connectble]").addEventListener(
+    'mouseup',findBLEDevice,false)
+  document.querySelector("button[name=noble]").addEventListener(
+    'touchend',skipBLEDevice,false)
+  document.querySelector("button[name=noble]").addEventListener(
+    'mouseup',skipBLEDevice,false)
+  document.querySelector("button[name=doneTestingTask]").addEventListener(
+    'touchend',doneTestingTask_listener,false)
+  document.querySelector("button[name=doneTestingTask]").addEventListener(
+    'mouseup',doneTestingTask_listener,false)
+  //document.querySelector("button[name=SyncButton]").addEventListener(
+  //  'mouseup',sync_data_listener,false)
+  document.querySelector("button[name=SyncButton]").addEventListener(
+    'touchend',sync_data_listener,false)
+
+  
+
+
+   //================== AWAIT CONNECT TO BLE ==================//
+    
+    connectBLEButtonPromise()
+    wdm("Bluetooth connection handled...")
 
 
   var windowHeight = window.innerHeight
@@ -32,26 +57,7 @@ async function setupTabletTask(){
     })
   });
 
-  // Button callbacks
-  document.querySelector("button[name=connectble]").addEventListener(
-    'touchend',findBLEDevice,false)
-  document.querySelector("button[name=connectble]").addEventListener(
-    'mouseup',findBLEDevice,false)
-  document.querySelector("button[name=noble]").addEventListener(
-    'touchend',skipBLEDevice,false)
-  document.querySelector("button[name=noble]").addEventListener(
-    'mouseup',skipBLEDevice,false)
-  document.querySelector("button[name=doneTestingTask]").addEventListener(
-    'touchend',doneTestingTask_listener,false)
-  document.querySelector("button[name=doneTestingTask]").addEventListener(
-    'mouseup',doneTestingTask_listener,false)
-  //document.querySelector("button[name=SyncButton]").addEventListener(
-  //  'mouseup',sync_data_listener,false)
-  document.querySelector("button[name=SyncButton]").addEventListener(
-    'touchend',sync_data_listener,false)
-
-  subject_filepath_list = await DIO.listdir(SUBJECT_DIRPATH)
-
+  
 
   // Load Subject and Experiment file from landing page if available, 
   // otherwise run dialogue
@@ -59,6 +65,7 @@ async function setupTabletTask(){
   var run_manual_setup = await loadStringFromLocalStorage("manualSetupFlag") || 'true'
   var run_manual_setup = (run_manual_setup == 'true') 
   if(run_manual_setup == true){
+    subject_filepath_list = await DIO.listdir(SUBJECT_DIRPATH)
     // USER INPUT: get Subject file
     subjectdialog = document.getElementById("subjectID_dialog");
     subjectlistobj = document.getElementById("subjectID_list");
@@ -137,18 +144,8 @@ async function setupTabletTask(){
     FLAGS.debug_mode = 1 
 
 
-    //================== AWAIT CONNECT TO BLE ==================//
-    document.querySelector("button[name=connectble]").style.display = "block"
-    document.querySelector("button[name=connectble]").style.visibility = "visible"
-    document.querySelector("button[name=noble]").style.display = "block"
-    document.querySelector("button[name=noble]").style.visibility = "visible"
-    wdm("Waiting for Bluetooth preferences...")
-    await connectBLEButtonPromise()
-    wdm("Bluetooth connection handled...")
+   
 
-    document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
-    document.querySelector("button[name=noble]").style.display = "none"
-    
 
     //========= Start in TEST mode =======//
     document.querySelector("button[name=doneTestingTask]").style.display = "block"
@@ -176,6 +173,5 @@ async function setupTabletTask(){
   toggleElement(0, 'SyncButton')
   toggleElement(0, 'TrialCounter')
   SD.togglePlayspaceBorder(0)
-
 
 }

@@ -97,20 +97,6 @@
   overflow:hidden;
 }
 
-#ImageLoadBar {
-  margin-top: 17px;
-  width: 0.2%;
-  height: 15px;
-  background-color: #4CAF50;
-  opacity: 0.5;
-  color:white;
-  font-size: 8px; 
-  font-family: 'Helvetica Neue';
-  z-index:101;
-  position: absolute;
-  overflow:hidden;
-}
-
 
 #StageBar {
   margin-top: 34px;
