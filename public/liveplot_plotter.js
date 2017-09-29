@@ -14,7 +14,13 @@ async function updatePlot(i){
         
         console.log(i+ '. Refreshing timestring')
 
-        // Update time elapsed string 
+        // Update page title 
+        var page_title = subjectname +' ('+getTimeElapsedString(last_trial_timestamp).toString()+' ago)'
+        document.getElementById('page_title').innerHTML = page_title
+        // Update page header 
+        var title_header = 'liveplot: '+subjectname 
+        document.getElementById('title_header').innerHTML = title_header
+        // Update plot header 
         var header_string = subjectname+': '+Math.round(mean(trial_returns)*100*10)/10+'%'
         header_string+=' (n='+trial_returns.length+' trials'
         header_string+=', r='+sum(trial_returns)
@@ -22,6 +28,7 @@ async function updatePlot(i){
         header_string+=')<br>'
         header_string+='Battery: '+batteryleft+'% ('+batteryused+'% change)<br>'
         header_string+='Last trial: '+last_trial_string+' ('+getTimeElapsedString(last_trial_timestamp)+' ago)'
+
         document.getElementById('chart_header').innerHTML = header_string
         return 
     }
@@ -39,7 +46,7 @@ async function updatePlot(i){
     var smoothed_trial_returns = smooth(trial_returns, window_size)
     var tooltip = trial_behavior['StartTime']
 
-    // Update header 
+    // Extract meta info
     subjectname = behavior_json['SESSION']['SubjectID']
     unix_start_timestamp = behavior_json['SESSION']['UnixTimestampAtStart'] // sec
     last_trial_timestamp_delta = behavior_json['BEHAVIOR']['StartTime'].slice(-1)[0] // sec
@@ -48,10 +55,17 @@ async function updatePlot(i){
 
     
 
-    var batteryleft = Math.round(behavior_json['DEVICE']['BatteryLDT'].slice(-1)[0][0]*100);
-    var batteryused = Math.round(batteryleft - behavior_json['DEVICE']['BatteryLDT'][0][0]*100);
+    batteryleft = Math.round(behavior_json['DEVICE']['BatteryLDT'].slice(-1)[0][0]*100);
+    batteryused = Math.round(batteryleft - behavior_json['DEVICE']['BatteryLDT'][0][0]*100);
 
 
+    // Update page title 
+    var page_title = subjectname +' ('+getTimeElapsedString(last_trial_timestamp).toString()+' ago)'
+    document.getElementById('page_title').innerHTML = page_title
+    // Update page header 
+    var title_header = 'liveplot: '+subjectname 
+    document.getElementById('title_header').innerHTML = title_header
+    // Update plot header 
     var header_string = subjectname+': '+Math.round(mean(trial_returns)*100*10)/10+'%'
     header_string+=' (n='+trial_returns.length+' trials'
     header_string+=', r='+sum(trial_returns)
@@ -128,6 +142,7 @@ async function updatePlot(i){
     }
 
     var options = {
+        title:"Trial outcomes",
         hAxis: {
           title: '# times',
           minValue:'0'
