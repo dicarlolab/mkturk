@@ -89,6 +89,7 @@
   z-index:101; 
   background-color: #66ccff; 
   text-align:center;
+  visibility:hidden;
 }
 #MechanicalTurk_TrialBar{
   width: 0.2%;
@@ -114,6 +115,7 @@
   z-index:101;
   position: absolute;
   overflow:hidden;
+  visibility:hidden;
 }
 
 
@@ -128,6 +130,7 @@
   z-index:101;
   position: absolute;
   overflow:hidden;
+  visibility:hidden;
 }
 
 #TrialCounter {
@@ -152,7 +155,7 @@
    z-index:102;
    font-family: 'Helvetica Neue';
    color:white;
-
+   visibility:hidden;
 }
 
 #SessionTextBox {
@@ -168,6 +171,7 @@
    color:#4B4B4B;
    background-color:#E4E4E4;
    border-radius:3px;
+   visibility:hidden;
 
 }
 

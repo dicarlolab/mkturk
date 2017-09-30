@@ -29,6 +29,7 @@ class TaskStreamer{
     
         // Image buffer
         this.IB = new ImageBuffer(DIO_images)        
+
         // Terminal state 
         on_finish = on_finish || "loop" 
         this.on_finish = on_finish // "loop", "terminate", "continue"

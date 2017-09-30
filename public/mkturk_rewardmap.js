@@ -38,9 +38,6 @@ class RewardMapGenerator{
                 _this.check_if_interior(x, y, t)
             }
         }
-
-        
-        
     } 
 
     check_if_interior(x, y, t){
@@ -154,7 +151,7 @@ class RewardMapGenerator{
         }
 
         for(var i = 0; i < event_types.length; i++){
-            if(event_types[i] == 'touchmove' || 'touchstart' || 'touchend'){
+            if(event_types[i] == 'touchmove' || event_types[i] == 'touchstart' || event_types[i] == 'touchend'){
                 window.addEventListener(event_types[i], this.handleTouchEvent, {passive:true})
             }
             else{

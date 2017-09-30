@@ -14,12 +14,7 @@ async function setupMechanicalTurkTask(){
   console.log('dimensions', windowWidth, windowHeight)
 
 
-  toggleElement(0, "SessionTextBox")
-  toggleElement(0, "ReloadButton")
-  toggleElement(0, 'DebugMessageTextBox')
-  toggleElement(0, 'ImageLoadBar')
-  toggleElement(0, 'StageBar')
-  toggleElement(0, 'AutomatorLoadBar')
+
 
 
   
@@ -79,7 +74,7 @@ async function setupMechanicalTurkTask(){
 
 
     // Initialize components of task
-    RewardMap = new RewardMapGenerator('mousemove'); 
+    RewardMap = new RewardMapGenerator(['mousemove', 'touchmove', 'touchstart']); 
     
 
     R = new MonetaryReinforcer(MechanicalTurkSettings['bonus_usd_per_correct'])

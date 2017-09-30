@@ -1,4 +1,11 @@
 async function setupTabletTask(){
+
+  toggleElement(1, "SessionTextBox")
+  toggleElement(1, "ReloadButton")
+  toggleElement(1, 'DebugMessageTextBox')
+  toggleElement(1, 'StageBar')
+  toggleElement(1, 'AutomatorLoadBar')
+
   // Button callbacks
   document.querySelector("button[name=connectble]").addEventListener(
     'touchend',findBLEDevice,false)
