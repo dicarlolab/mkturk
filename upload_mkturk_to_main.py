@@ -12,7 +12,7 @@ import numpy as np
 
 def upload_public_to_sandbox():
 
-    bucket_name = 'monkeyturkupstairs'
+    bucket_name = 'monkeyturk'
     conn = boto.connect_s3()
     bucket = conn.get_bucket(bucket_name)
     k = Key(bucket)

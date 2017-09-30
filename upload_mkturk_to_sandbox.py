@@ -21,6 +21,8 @@ def upload_public_to_sandbox():
 
     for root, subdir, files in os.walk(MKTURK_PUBLIC_DIRECTORY_PATH): 
         for fname in files: 
+            if fname.startswith('.DS'): 
+                continue
             fpath = os.path.join(root,fname)
             fkey = fpath.split(split_start)[1]
             k.key = fkey 

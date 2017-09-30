@@ -59,7 +59,7 @@ async function setupMechanicalTurkTask(){
   SESSION['IP_address'] = await loadStringFromLocalStorage('IP_address')
 
   TS = new TaskStreamer(undefined, SIO, Experiment["Experiment"], Experiment["ImageBags"], SESSION.SubjectID, MechanicalTurkSettings['on_finish']) 
-  await TS.build()
+  await TS.build(MechanicalTurkSettings['MinimumTrialsForCashIn'])
   wdm('TaskStreamer built')
 
 
