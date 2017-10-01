@@ -7,7 +7,7 @@ function refreshCanvasSettings(TASK){
 		CANVAS.sequence = ["blank", "sample","blank","test"]
 		CANVAS.tsequence = [0,100,100+TASK.SampleON,100+TASK.SampleON+TASK.SampleOFF]; 
 	}
-	else if (TASK.SampleOFF <= 0 ){
+	else {
 		CANVAS.sequence = ["blank","sample","test"]
 		CANVAS.tsequence = [0,100,100+TASK.SampleON]; 
 	}
