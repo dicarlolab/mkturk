@@ -1,4 +1,26 @@
 
+
+function update_status_strings(){
+    // Update page title 
+    var percentage_perf = Math.round(mean(trial_returns)*100*10)/10
+    var page_title = subjectname +' ('+percentage_perf.toString()+'%, '+getTimeElapsedString(last_trial_timestamp).toString()+' ago)'
+    document.getElementById('page_title').innerHTML = page_title
+    // Update page header 
+    var title_header = 'liveplot: '+subjectname 
+    document.getElementById('title_header').innerHTML = title_header
+    // Update plot header 
+    var header_string = subjectname+': '+percentage_perf+'%'
+    header_string+=' (n='+trial_returns.length+' trials'
+    header_string+=', r='+sum(trial_returns)
+    header_string+=', '+getTimeElapsedString(unix_start_timestamp)+' since start'
+    header_string+=')<br>'
+    header_string+='Battery: '+batteryleft+'% ('+batteryused+'%)<br>'
+    header_string+='Last trial: '+last_trial_string+' ('+getTimeElapsedString(last_trial_timestamp)+' ago)'
+
+    document.getElementById('chart_header').innerHTML = header_string
+
+
+}
 async function updatePlot(i){
 
     var window_size = 25 
@@ -14,22 +36,7 @@ async function updatePlot(i){
         
         console.log(i+ '. Refreshing timestring')
 
-        // Update page title 
-        var page_title = subjectname +' ('+getTimeElapsedString(last_trial_timestamp).toString()+' ago)'
-        document.getElementById('page_title').innerHTML = page_title
-        // Update page header 
-        var title_header = 'liveplot: '+subjectname 
-        document.getElementById('title_header').innerHTML = title_header
-        // Update plot header 
-        var header_string = subjectname+': '+Math.round(mean(trial_returns)*100*10)/10+'%'
-        header_string+=' (n='+trial_returns.length+' trials'
-        header_string+=', r='+sum(trial_returns)
-        header_string+=', '+getTimeElapsedString(unix_start_timestamp)+' since start'
-        header_string+=')<br>'
-        header_string+='Battery: '+batteryleft+'% ('+batteryused+'%)<br>'
-        header_string+='Last trial: '+last_trial_string+' ('+getTimeElapsedString(last_trial_timestamp)+' ago)'
-
-        document.getElementById('chart_header').innerHTML = header_string
+        update_status_strings()
         return 
     }
 
@@ -73,21 +80,7 @@ async function updatePlot(i){
 
 
     // Update page title 
-    var page_title = subjectname +' ('+getTimeElapsedString(last_trial_timestamp).toString()+' ago)'
-    document.getElementById('page_title').innerHTML = page_title
-    // Update page header 
-    var title_header = 'liveplot: '+subjectname 
-    document.getElementById('title_header').innerHTML = title_header
-    // Update plot header 
-    var header_string = subjectname+': '+Math.round(mean(trial_returns)*100*10)/10+'%'
-    header_string+=' (n='+trial_returns.length+' trials'
-    header_string+=', r='+sum(trial_returns)
-    header_string+=', '+getTimeElapsedString(unix_start_timestamp)+' since start'
-    header_string+=')<br>'
-    header_string+='Battery: '+batteryleft+'% ('+batteryused+'%)<br>'
-    header_string+='Last trial: '+last_trial_string+' ('+getTimeElapsedString(last_trial_timestamp)+' ago)'
-
-    document.getElementById('chart_header').innerHTML = header_string
+    update_status_strings()
 
     
     // Plot dataPerf
