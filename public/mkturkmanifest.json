@@ -19,5 +19,5 @@
     }
   ],
   "start_url": "mkturk.html",
-  "display": "standalone"
+  "display": "fullscreen"
 }

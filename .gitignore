@@ -1,2 +1,14 @@
 .fuse_hidden*
 public/.fuse_hidden*
+
+analyze movie.ipynb
+
+*.pyc
+
+example_dat.txt
+
+juicebox_debugger/bluetooth.html
+
+juicebox_debugger/bluetooth.js
+
+hellodropbox.html

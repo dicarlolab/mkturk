@@ -1,3 +1,18 @@
+function reloadPage(){
+  wdm("RELOADING PAGE...")
+  location.reload(true)
+}
+
+function wdm(s){
+  // Write debug message
+  console.log(s)
+  if(FLAGS.debug_mode == 1){
+    var elem = document.getElementById('DebugMessageTextBox')
+    elem.innerHTML = s; // text
+  }
+}
+
+
 (function(window){
   window.utils = {
     parseQueryString: function(str) {
@@ -40,35 +55,7 @@
   };
 })(window);
 
-/* Randomize array element order in-place.  Using Fisher-Yates shuffle algorithm. http://bost.ocks.org/mike/shuffle/ */
-// To test your shuffling algorithm: go to http://bost.ocks.org/mike/shuffle/compare.html
-function shuffleArray(array){
-  // Expand to index vector if needed
-  if (array.length==1){
-    var len=array[0];
-    for (var i = 0; i<=len-1; i++){array[i]=i;}
-  }
-    for (var i = array.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var temp = array[i];
-        array[i] = array[j];
-        array[j] = temp;
-    }
-    return array
-}
 
-// convert base64 to buffer array (from: http://stackoverflow.com.80bola.com/questions/27524283/save-image-to-dropbox-with-data-from-canvas?rq=1)
-function _base64ToArrayBuffer(base64){
-  base64 = base64.split('data:image/png;base64,').join('');
-  var binary_string =  window.atob(base64),
-  len = binary_string.length,
-  bytes = new Uint8Array( len ),
-  i;
-  for (i = 0; i < len; i++){
-    bytes[i] = binary_string.charCodeAt(i);
-  }
-  return bytes.buffer;
-}
 
 // ----- Array equality ---- 
 if(Array.prototype.equals)
@@ -101,11 +88,6 @@ Array.prototype.equals = function (array) {
 Object.defineProperty(Array.prototype, "equals", {enumerable: false});
 
 
-// Gets "filename.ext" from some /.../path/filename.ext
-function get_filename_from_pathstring(pathstring){
-  var filename = pathstring.replace(/^.*[\\\/]/, '')
-  return filename
-}
 
 // Return all indices of val in arr
 function getAllInstancesIndexes(arr, val){
@@ -116,8 +98,10 @@ function getAllInstancesIndexes(arr, val){
     return indexes;
 }
 
-// Shuffles an array...in place?
-function shuffle(array) {
+// Shuffles an array
+function shuffle(array, RNGseed) {
+  Math.seedrandom(RNGseed)
+
   var currentIndex = array.length, temporaryValue, randomIndex;
 
   // While there remain elements to shuffle...
@@ -136,36 +120,29 @@ function shuffle(array) {
   return array;
 }
 
-/* Randomize array element order in-place.  Using Fisher-Yates shuffle algorithm. http://bost.ocks.org/mike/shuffle/ */
-// To test your shuffling algorithm: go to http://bost.ocks.org/mike/shuffle/compare.html
-function shuffleArray(array){
-  // Expand to index vector if needed
-  if (array.length==1){
-    var len=array[0];
-    for (var i = 0; i<=len-1; i++){array[i]=i;}
+function cantor(k1, k2){
+  // Cantor hash function maps two nonnegative integers into another nonnegative integer 
+  // https://stackoverflow.com/questions/919612/mapping-two-integers-to-one-in-a-unique-and-deterministic-way
+  
+  if (k1 < 0){
+    k1 = -1 * k1 * 2 - 1
   }
-    for (var i = array.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var temp = array[i];
-        array[i] = array[j];
-        array[j] = temp;
-    }
-    return array
+  else{
+    k1 = 2 * k1
+  }
+  if (k2 < 0){
+    k2 = -1 * k2 * 2 - 1
+  }
+  else{
+    k2 = 2 * k2
+  }
+
+  hash = (k1 + k2) * (k1 + k2 + 1) /  2 + k2
+
+  return hash
 }
 
 
-// convert base64 to buffer array (from: http://stackoverflow.com.80bola.com/questions/27524283/save-image-to-dropbox-with-data-from-canvas?rq=1)
-function _base64ToArrayBuffer(base64){
-  base64 = base64.split('data:image/png;base64,').join('');
-  var binary_string =  window.atob(base64),
-  len = binary_string.length,
-  bytes = new Uint8Array( len ),
-  i;
-  for (i = 0; i < len; i++){
-    bytes[i] = binary_string.charCodeAt(i);
-  }
-  return bytes.buffer;
-}
 
 
 function toBytesInt16(num){
@@ -182,119 +159,63 @@ function sleep(ms) {
 }
 
 
-// Async: play sound
-async function playSound(idx){
-  audiocontext.resume()
-  var source = audiocontext.createBufferSource(); // creates a sound source
-  source.buffer = sounds.buffer[idx];                    // tell the source which sound to play
-  if (idx==0){
-    gainNode.gain.value=0.15; //set boost pedal to 15% volume
-  }
-  else if (idx==2 | idx==3){
-    gainNode.gain.value=0.15; //set boost pedal to 5% volume
-  }
-  source.connect(gainNode);
-  // gainNode.connect(audiocontext.destination); //Connect boost pedal to output
-  // source.connect(audiocontext.destination);       // connect the source to the context's destination (the speakers)
-  source.start(0);                        // play the source now
+function md5Hash(blob){
+  var hash = CryptoJS.MD5(CryptoJS.enc.Latin1.parse(blob));
+  return hash
 }
-// Promise: dispense reward (through audio control)
-function dispenseReward(){
-  console.log('Legacy dispense reward')
-  return 
-  return new Promise(function(resolve,reject){
-    audiocontext.resume()
-    var oscillator = audiocontext.createOscillator();
-    gainNode.gain.value=1;
-    if (TASK.Pump == 1){
-      oscillator.type='square'; //Square wave
-      oscillator.frequency.value=25; //frequency in hertz       
-    } //peristaltic (adafruit)
-    else if (TASK.Pump==2){
-      oscillator.type='square'; //Square wave
-      oscillator.frequency.value=0.1; //frequency in hertz
-    } //submersible (TCS)
-    else if (TASK.Pump==3){
-      oscillator.type='square'; //Square wave
-      oscillator.frequency.value=10; //frequency in hertz   
-    } //diaphragm (TCS)
-    else if (TASK.Pump==4){
-      oscillator.type='square'; //Square wave
-      oscillator.frequency.value=0.1; //frequency in hertz        
-    } //piezoelectric (takasago)
-    else if (TASK.Pump==5){
-      oscillator.type='square';
-      oscillator.frequency.value=0.1;
-    } //diaphragm new (TCS)
-    else if (TASK.Pump==6){
-      oscillator.type='square'; //Square wave
-      oscillator.frequency.value=0.1; //frequency in hertz        
-    } //piezoelectric 7ml/min (takasago)
-    // oscillator.connect(audiocontext.destination); //Connect sound to output
-    // //var gainNode = audiocontext.createGainNode(); //Create boost pedal
-    // //gainNode.gain.value=0.3; //set boost pedal to 30% volume
-    oscillator.connect(gainNode);
-    // //gainNode.connect(audiocontext.destination); //Connect boost pedal to output
-    // // oscillator.onended=function(){
-    // //   console.log('done with reward pulse');
-    // //   resolve(1);
-    // // }
-    var currentTime=audiocontext.currentTime;
-
-
-    oscillator.start(currentTime);
-    oscillator.stop(currentTime + ENV.RewardDuration);
-    setTimeout(function(){console.log('sound done'); resolve(1);},ENV.RewardDuration*1000);
-  }).then();
-}
-
 // Promise: choice time-out
-function choiceTimeOut(timeout){
+function timeOut(timeout_length){
   return new Promise(
     function(resolve, reject){
-      var timer_return = {type: "TimeOut", cxyt: [-1,-1,-1,-1]}
-      setTimeout(function(){resolve(timer_return)},timeout)
+      var timer_return = function(){resolve({
+        "x":'timed_out', 
+        "y":'timed_out', 
+        'timestamp':performance.now(), 
+        'reinforcement':0, 
+        'region_index':'timed_out'})}
+
+      setTimeout(timer_return,timeout_length)
     })
 }
 
-// Promise: punish time-out
-function dispensePunish(){
-  return new Promise(function(resolve,reject){
-    setTimeout(function(){resolve(1);},TASK.PunishTimeOut); //milliseconds
-  }).then();
+
+String.prototype.hashCode = function(){
+    var hash = 0;
+    if (this.length == 0) return hash;
+    for (i = 0; i < this.length; i++) {
+        char = this.charCodeAt(i);
+        hash = ((hash<<5)-hash)+char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash;
 }
 
 
 //================== UTILITIES ==================//
-function setReward(){
-  var m = 0;
-  var b = 0;
-  if (TASK.Pump == 1){
-    // m = 1.13; b = 15.04;
-    m = 0.99; b = 14.78;
-  } //peristaltic (adafruit)
-  else if (TASK.Pump == 2){
-    // m = 3.20; b = -15.47;
-    m = 1.40; b = -58.77;
-  } //submersible (tcs)
-  else if (TASK.Pump == 3){
-    // m = 0.80; b = -3.00;
-    m=0.91; b = -15;
-  } //diaphragm (tcs)
-  else if (TASK.Pump == 4){
-    m = 0.0531; b=-1.2594;
-  } //piezoelectric (takasago)
-  else if (TASK.Pump == 5){
-    m = 2.4463; b=53.6418;
-  } //new diaphragm (tcs)
-  else if (TASK.Pump == 6){
-    if (TASK.Liquid==1 || TASK.Liquid==3){
-      m=0.1251; b=-0.0833; //1=water 2=water-condensed milk 3=marshmallow slurry (4/30mL)
-    }
-    else if (TASK.Liquid==2){
-      m=0.0550; b=0.6951; //water-condensed milk (50/50)
-    }
-  } //piezoelectric 7mL/min (takasago)
-  return (TASK.RewardPer1000Trials - b)/m/1000;
-  ENV.RewardDuration = (TASK.RewardPer1000Trials - b)/m/1000;
+
+
+
+
+function join(parts, sep){
+   var separator = sep || '/';
+   var replace   = new RegExp(separator+'{1,}', 'g');
+   return parts.join(separator).replace(replace, separator);
+}
+
+function add(a, b) {
+    // For use in .reduce
+    // See 
+    // https://stackoverflow.com/questions/1230233/how-to-find-the-sum-of-an-array-of-numbers
+    
+    // var sum = [1, 2, 3].reduce(add, 0);
+    // console.log(sum); // 6
+
+    return a + b;
+}
+
+function splitFilename(s){
+  // https://stackoverflow.com/questions/423376/how-to-get-the-file-name-from-a-full-path-using-javascript
+  // Takes full path and returns filename only
+  var filename = s.replace(/^.*[\\\/]/, '')
+  return filename
 }

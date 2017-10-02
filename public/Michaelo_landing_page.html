@@ -1,0 +1,29 @@
+<!doctype html>
+
+<head>
+<meta name="mobile-web-app-capable" content="yes"> <!-- full screen https://developer.chrome.com/multidevice/android/installtohomescreen -->
+
+<script>
+
+
+(async function(){
+  await localStorage.setItem("setupFunction", btoa("setupTabletTask()"))
+  await localStorage.setItem("manualSetupFlag", btoa(false))
+
+  await localStorage.setItem('SubjectFilePath', btoa('/MonkeyTurk_upstairs/Subjects/SubjectSettings/Michaelo_settings.txt'))
+  await localStorage.setItem('ExperimentFilePath', btoa('/MonkeyTurk_upstairs/Tasks/ExperimentDefinitions/2_RotationTrainingHoldoutSet.txt'))
+
+  window.location.href = "mkturk.html"
+
+})()
+
+
+</script>
+
+
+</head>
+
+<body>
+Loading monkey task...
+</body>
+</html>

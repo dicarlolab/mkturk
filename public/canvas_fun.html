@@ -1,0 +1,124 @@
+<!doctype html>
+
+<!-- ************* BODY *************** -->
+<body style="overflow-y: hidden;background-color:#7F7F7F">
+
+
+<canvas id="hello_canvas" width="256" height="256" src=""> </canvas>
+<canvas id="canvas_literal" width="512" height="512" src=""> </canvas>
+<canvas id="canvas_invariant" width="256" height="256" src=""> </canvas>
+
+<div id='hello_text'></div>
+<script>
+var image = new Image();
+var canvasobj = document.getElementById('hello_canvas')
+console.log(canvasobj)
+var context = canvasobj.getContext('2d')
+
+var devicePixelRatio = window.devicePixelRatio || 1
+var backingStoreRatio = context.webkitBackingStorePixelRatio ||
+  context.mozBackingStorePixelRatio ||
+  context.msBackingStorePixelRatio ||
+  context.oBackingStorePixelRatio ||
+  context.backingStorePixelRatio || 1 // /1 by default for chrome?
+
+var _ratio = devicePixelRatio / backingStoreRatio
+
+var windowHeight_virtual = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+
+
+var windowHeight_actual = windowHeight_virtual * devicePixelRatio
+
+var windowWidth_virtual = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+var windowWidth_actual = windowWidth_virtual * devicePixelRatio
+
+textobj = document.getElementById('hello_text')
+textobj.innerHTML = 'devicePixelRatio=' + window.devicePixelRatio + '<br>backingStoreRatio=' + backingStoreRatio +'<br>windowHeight (virtual)='+windowHeight_virtual+', windowWidth (virtual)='+windowWidth_virtual+'<br>windowHeight (actual)='+windowHeight_actual+', windowWidth (actual)='+windowWidth_actual
+console.log(image)
+
+// accomplished: hidpi invariant size on screen w/automatic scaling of image
+
+// todo: draw literal pixels on screen invariant of screen hidpi 
+// Literal pixels: canvasobj
+
+
+
+function draw_literal_image_regardless_of_hidpi() {
+  var canvasobj = document.getElementById('canvas_literal')
+  var context = canvasobj.getContext('2d')
+
+  var original_canvas_width = canvasobj.width
+  var original_canvas_height = canvasobj.height
+
+
+  image.addEventListener('load', function() {
+    context.drawImage(image, 128, 128)
+    console.log('hello')
+  }, false);
+  image.src = 'tutorial_images/whitenoise_256x256.png'
+
+  canvasobj.width = original_canvas_width // Scales size of source canvas up
+  canvasobj.height = original_canvas_height
+  canvasobj.style.width = original_canvas_width / _ratio + 'px' // Scales canvas to this size before multiplying by devicepixelratio
+  canvasobj.style.height = original_canvas_height / _ratio + 'px'
+
+  //context.scale(_ratio, _ratio) // Scales image up
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function draw_image_at_set_size_regardless_of_hidpi() {
+  var canvasobj = document.getElementById('canvas_invariant')
+  console.log('canvas_invariant', canvasobj)
+  var context = canvasobj.getContext('2d')
+  var original_canvas_width = canvasobj.width
+  var original_canvas_height = canvasobj.height
+
+
+
+  canvasobj.width = original_canvas_width * _ratio // Scales size of source canvas up
+  canvasobj.height = original_canvas_height * _ratio
+  canvasobj.style.width = original_canvas_width + 'px' // Scales canvas to this size before multiplying by devicepixelratio
+  canvasobj.style.height = original_canvas_height + 'px'
+
+
+
+  context.imageSmoothingEnabled = false // then nearest neighbor?
+
+  image.addEventListener('load', function() {
+
+    var cell_width = 64 
+    var cell_height = 64
+
+    
+    var image_width = image.width
+    var image_height = image.height
+
+    context.scale(_ratio* cell_width/image_width, _ratio * cell_height/image_height) // Scales image up
+      // with or without smoothing 
+
+    var start_left = 64 *image_width/cell_width 
+    var start_top = 64 * image_height/cell_height 
+    console.log(start_left)
+    console.log(start_top)
+    context.drawImage(image, start_left, start_top)
+    console.log('hello')
+  }, false);
+  image.src = 'tutorial_images/whitenoise_256x256.png'
+}
+
+//draw_literal_image_regardless_of_hidpi()
+draw_image_at_set_size_regardless_of_hidpi()
+</script>
+</body>
+</html>

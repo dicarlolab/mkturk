@@ -1,0 +1,340 @@
+#connectble{
+  z-index:101; 
+  visibility:hidden; 
+  position: absolute; 
+  top: 45%; 
+  left: 40%; 
+  height: 50px; 
+  width: 20%; 
+  border-radius: 20px;
+  background-opacity:0.5;
+  color:white;
+  background-color:#305CC6;
+}
+#noble{
+  z-index:101; 
+  visibility:hidden; 
+  position: absolute; 
+  top: 55%; 
+  left: 40%; 
+  height: 50px; 
+  width: 20%; 
+  border-radius: 20px
+}
+
+
+#SyncButton{
+  visibility:hidden; 
+  position: absolute; 
+  margin-top:4px; 
+  left: 97%; 
+  font-size: 6px; 
+  color: #A6A6A6; 
+  padding:10px 10px; 
+  border:0px solid #959595; 
+  z-index:101; 
+  background-color: #E6E6E6; 
+  text-align:center; 
+  opacity: 1
+}
+
+#WorkerCashInButton{
+  visibility:hidden; 
+  position: fixed; 
+  margin-top:4px; 
+  left: 89%; 
+  font-size: 12px; 
+  color: #f7fcf8;  
+  border-radius:5px border:0px solid #959595; 
+  z-index:101; 
+  background-color: #00cc66; 
+  text-align:center; 
+  opacity: 0.8
+}
+
+#doneTestingTask{
+  visibility:hidden; 
+  position: absolute; 
+  top: 55%; 
+  left: 70%; 
+  height: 75px; 
+  width: 200px; 
+  border-radius: 20px; 
+  z-index:101
+}
+
+#drive_juice_button{
+  visibility:hidden; 
+  position: absolute; 
+  top: 45%; 
+  left: 80%; 
+  height: 5%; 
+  border-radius: 20px; 
+  color: white;
+  background-color:#1CCC04;
+  z-index:101
+}
+
+
+
+#ReloadButton{
+  visibility:visible; 
+  position: absolute; 
+  margin-top:4px; 
+  left: 93%; 
+  font-size: 6px; 
+  color: #000000; 
+  padding:10px 10px; 
+  border-radius:5px solid #000000; 
+  z-index:101; 
+  background-color: #66ccff; 
+  text-align:center;
+  visibility:hidden;
+}
+#MechanicalTurk_TrialBar{
+  width: 0.2%;
+  height: 100%;
+  background-color: #373737;
+  opacity: 0.85;
+  color:white;
+  font-size: 8px; 
+  font-family: 'Helvetica Neue';
+  z-index:103;
+  position: absolute;
+  overflow:hidden;
+}
+
+#AutomatorLoadBar {
+  margin:;
+  width: 0.2%;
+  height: 15px;
+  background-color: #4CAF50;
+  color:white;
+  font-size: 8px; 
+  font-family: 'Helvetica Neue';
+  z-index:101;
+  position: absolute;
+  overflow:hidden;
+  visibility:hidden;
+}
+
+
+#StageBar {
+  margin-top: 34px;
+  width: 0.2%;
+  height: 15px;
+  background-color: #aed3f4;
+  color:white;
+  font-size: 8px; 
+  font-family: 'Helvetica Neue';
+  z-index:101;
+  position: absolute;
+  overflow:hidden;
+  visibility:hidden;
+}
+
+#TrialCounter {
+   position: fixed;
+   margin-top: -5px;
+   left: 1px; /* space between top of browser and annoying box */
+   height: 30px;
+   color:white;
+   font-size: 8px; 
+   z-index:102;
+   font-family: 'Helvetica Neue';
+   color:white;
+}
+
+#DebugMessageTextBox {
+   position: fixed;
+   margin-top: 51px;
+   left: 1px; /* space between top of browser and annoying box */
+   height: 30px;
+   color:white;
+   font-size: 8px; 
+   z-index:102;
+   font-family: 'Helvetica Neue';
+   color:white;
+   visibility:hidden;
+}
+
+#SessionTextBox {
+   position: fixed;
+   margin-top: 15px;
+   left: 40%; /* space between top of browser and annoying box */
+   height: 34px;
+   color:white;
+   font-size:14px; 
+   z-index:102;
+   font-family: 'Helvetica Neue';
+   vertical-align:middle;
+   color:#4B4B4B;
+   background-color:#E4E4E4;
+   border-radius:3px;
+   visibility:hidden;
+
+}
+
+#PreviewModeSplash{
+  display: table;
+  position: absolute;
+   height: 14%; /* https://stackoverflow.com/questions/982054/how-to-center-html-element-in-browser-window*/
+   width:25%;
+   left: 50%;
+   margin-left:-12.5%; /* -1 * width/2 */
+   font-size:12px; 
+   z-index:102;
+   font-family: 'Helvetica Neue';
+   text-align: center;
+   vertical-align:middle;
+   color:#4B4B4B;
+   background-color:#E4E4E4;
+   visibility:hidden;
+   border-radius:8px;
+   border-color:#F51212;
+   border-style:solid;
+}
+#PreviewSplashText{
+  display: table-cell;
+  vertical-align: middle;
+  line-height: normal;
+  margin-left:10px;
+  margin-right:10px;
+  width:20%;
+  font-size:small;
+  color:black;
+}
+
+
+
+#MechanicalTurkInstructionsSplash{
+  display: table;
+  position: absolute;
+   margin-top: 20%;
+   height: 40%; /* https://stackoverflow.com/questions/982054/how-to-center-html-element-in-browser-window*/
+   width:40%;
+   left: 50%;
+   margin-left:-20%; /* -1 * width/2 */
+   line-height:40%; /* https://stackoverflow.com/questions/8865458/how-do-i-vertically-center-text-with-css */
+   font-size:14px; 
+   z-index:102;
+   font-family: 'Helvetica Neue';
+   text-align: left;
+   vertical-align:middle;
+   color:#4B4B4B;
+   background-color:#E4E4E4;
+   visibility:hidden;
+   border-radius:8px;
+   border-color:#E6E6E6;
+   border-style:solid;
+   padding-right:1%;
+   padding-left:1%;
+}
+#InstructionSplashText{
+  vertical-align: middle;
+  line-height: normal;
+  margin-left:10px;
+  margin-right:10px;
+  width:20%;
+  color:black;
+}
+
+#CloseInstructionsButton{
+   text-align:center;
+   width:30%; 
+   height:6%;
+   margin:0 auto; 
+   display:block;
+}
+
+#MechanicalTurkCursorDeviceSelectionScreen{
+  display: table;
+  position: absolute;
+   margin-top: 20%;
+   height: 30%; /* https://stackoverflow.com/questions/982054/how-to-center-html-element-in-browser-window*/
+   width:40%;
+   left: 50%;
+   margin-left:-20%; /* -1 * width/2 */
+   line-height:40%; /* https://stackoverflow.com/questions/8865458/how-do-i-vertically-center-text-with-css */
+   font-size:14px; 
+   z-index:102;
+   font-family: 'Helvetica Neue';
+   text-align: left;
+   vertical-align:middle;
+   color:#4B4B4B;
+   background-color:#E4E4E4;
+   visibility:hidden;
+   border-radius:8px;
+   border-color:#E6E6E6;
+   border-style:solid;
+}
+
+#DeviceSelectionSplashText{
+  line-height: normal;
+  vertical-align: bottom;
+  margin-left:15%;
+  margin-top:5%;
+  width:70%;
+  text-align:center;
+  color:black;
+}
+
+.DeviceButton:hover{
+  box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);
+}
+.DeviceButton{
+  border-style:solid;
+  vertical-align:bottom; 
+  margin-top:5%; 
+  margin-left:10%;
+  border-radius:8px; 
+  border-color:#ddd;
+  max-width:20%; 
+  height:auto
+}
+
+#MechanicalTurkHandSelectionScreen{
+  display: table;
+  position: absolute;
+   margin-top: 20%;
+   height: 30%; /* https://stackoverflow.com/questions/982054/how-to-center-html-element-in-browser-window*/
+   width:40%;
+   left: 50%;
+   margin-left:-20%; /* -1 * width/2 */
+   line-height:40%; /* https://stackoverflow.com/questions/8865458/how-do-i-vertically-center-text-with-css */
+   font-size:14px; 
+   z-index:102;
+   font-family: 'Helvetica Neue';
+   text-align: left;
+   vertical-align:middle;
+   color:#4B4B4B;
+   background-color:#E4E4E4;
+   visibility:hidden;
+   border-radius:8px;
+   border-color:#E6E6E6;
+   border-style:solid;
+}
+
+#HandSelectionSplashText{
+  line-height: normal;
+  vertical-align: bottom;
+  margin-left:15%;
+  margin-top:5%;
+  width:70%;
+  text-align:center;
+  color:black;
+}
+
+.HandButton:hover{
+  box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);
+}
+.HandButton{
+  border-style:solid;
+  vertical-align:bottom; 
+  margin-top:5%; 
+  margin-left:10%;
+  border-radius:8px; 
+  border-color:#ddd;
+  max-width:35%; 
+  height:auto
+}

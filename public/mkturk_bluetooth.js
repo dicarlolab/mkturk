@@ -44,26 +44,32 @@ var ble = {
   tnotify_rfid: 0,
   statustext: "",
 }
-//================ INITIALIZE BLE VARIABLE (end) ================//
-
 
 //==================== CONNECT BLE ====================//
 function connectBLEButtonPromise(){
+  document.querySelector("button[name=connectble]").style.display = "block"
+  document.querySelector("button[name=connectble]").style.visibility = "visible"
+  document.querySelector("button[name=noble]").style.display = "block"
+  document.querySelector("button[name=noble]").style.visibility = "visible"
+  wdm("Waiting for Bluetooth preferences...")
+
+
   var resolveFunc
   var errFunc
   p = new Promise(function(resolve,reject){
     resolveFunc = resolve;
     errFunc = reject;
   }).then(function(resolveval){console.log('User clicked ' + resolveval)});
-
   function *waitforclickGenerator(){
     var buttonclicked =[-1];
     while (true){
       buttonclicked = yield buttonclicked;
+      document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+      document.querySelector("button[name=noble]").style.display = "none"
+      document.getElementById('drive_juice_button').style.visibility = "visible"
       resolveFunc(buttonclicked);
     }
   }
-
   waitforClick = waitforclickGenerator(); // start async function
   waitforClick.next(); //move out of default state
   return p;
@@ -86,7 +92,7 @@ async function findBLEDevice(event){
       var textstr = 'Error getting ble device/service/characteristic';
       console.log(textstr)
       ble.statustext = ble.statustext + "<br>" + textstr
-      updateStatusText()
+      
     }
   }
 }
@@ -96,7 +102,7 @@ async function requestBLEDevice(){
   let result = Promise.resolve()
   if (ble.connected == false){
     console.log('Requesting ble device...')
-    writeTextonBlankCanvas('Requesting bluetooth device list',25.5,20.5)
+    wdm('Requesting bluetooth device list')
     // let options = {filters: [ {name: ble.name}, {services:[ ble.customserviceUUID ]} ]}
     let options = {filters: [ {namePrefix: ble.namePrefix}, {services:[ ble.customserviceUUID ]} ]}
 
@@ -107,7 +113,7 @@ async function requestBLEDevice(){
         console.log(device.uuids)
         var textstr = "found a device name: " + device.name + "<br>" + "id: " + device.id
         ble.statustext = textstr
-        updateStatusText()
+        
         ble.device=device
         ble.device.addEventListener('gattserverdisconnected',onDisconnectedBLE)
     }
@@ -116,7 +122,7 @@ async function requestBLEDevice(){
         var textstr = 'Still waiting for user to select device'
         console.log(textstr)
         ble.statustext = ble.statustext + "<br>" + textstr
-        updateStatusText()
+        
         return error
       }
     }
@@ -132,7 +138,7 @@ async function connectBLEDeviceAndCacheCharacteristics(){
     var textstr = "found a GATT server"
     console.log(textstr,server)
     ble.statustext = ble.statustext + "<br>" + textstr
-    updateStatusText()
+    
     ble.server=server
 
   service = await server.getPrimaryService(ble.customserviceUUID)
@@ -140,7 +146,7 @@ async function connectBLEDeviceAndCacheCharacteristics(){
     var textstr = "found a service"
     console.log(textstr,service)
     ble.statustext = ble.statustext + "<br>" + textstr
-    updateStatusText()
+    
     ble.service=service
 
   characteristics = await Promise.all([
@@ -151,7 +157,7 @@ async function connectBLEDeviceAndCacheCharacteristics(){
     var textstr = "found a connection, pump duration, pump, & rfid characteristics"
     console.log(textstr,characteristics)
     ble.statustext = ble.statustext + "<br>" + textstr
-    updateStatusText()
+    
     ble.writeconnectioncharacteristic=characteristics[0]
     ble.writepumpdurationcharacteristic=characteristics[1]
     ble.pumpcharacteristic=characteristics[2]
@@ -166,13 +172,12 @@ async function connectBLEDeviceAndCacheCharacteristics(){
     var textstr="pump & rfid notifications started" + "<br><font color=blue>" + " bluetooth loading complete!"
     console.log(textstr)
     ble.statustext = ble.statustext + "<br>" + textstr
-    updateStatusText()
+    
     ble.pumpcharacteristic.addEventListener('characteristicvaluechanged',onPumpNotificationFromBLE)
     ble.rfidcharacteristic.addEventListener('characteristicvaluechanged',onRFIDNotificationFromBLE)
     ble.connected = true
     pingBLE()
-} //connectBLEDeviceAndCacheCharacteristics
-//==================== CONNECT BLE (end) ====================//
+} 
 
 
 //==================== RECONNECT BLE ====================//
@@ -183,7 +188,6 @@ function onDisconnectedBLE(){
   var textstr = 'BLE disconnected'
   console.log(textstr)
   ble.statustext = textstr
-  updateHeadsUpDisplay()
 
   reconnectBLE()
 }
@@ -195,7 +199,6 @@ async function reconnectBLE(){
       var textstr = 'Attempting to reconnect to BLE...'
       console.log(textstr)
       ble.statustext = textstr
-      updateHeadsUpDisplay()
 
       await connectBLEDeviceAndCacheCharacteristics()
     },
@@ -204,14 +207,12 @@ async function reconnectBLE(){
       var textstr = 'Successful reconnection!'
       console.log(textstr)
       ble.statustext = textstr
-      updateHeadsUpDisplay()
     },
     function fail() {
       time('Failed to reconnect.');
       var textstr = 'Could not reconnect to Bluetooth Device after multipe tries'
       console.log(textstr)
       ble.statustext = textstr
-      updateHeadsUpDisplay()
     });
 }
 
@@ -236,10 +237,10 @@ async function exponentialBackoff(max, delay, toTry, success, fail) {
 function time(text) {
   console.log('[' + new Date().toJSON().substr(11, 8) + '] ' + text);
 }
-//==================== RECONNECT BLE (end) ====================//
 
 //============== READ NOTIFICATIONS & WRITES ==============//
 async function writepumpdurationtoBLE(num){
+  console.log('Attempting bluetooth write')
   var arrInt8 = toBytesInt16(num)
   ble.twrite_pumpduration=performance.now()
   try{
@@ -247,15 +248,14 @@ async function writepumpdurationtoBLE(num){
       var textstr = 'wrote ble val >> ' + num + ', byte values ' + arrInt8
       console.log(textstr)
       ble.statustext = textstr
-      updateHeadsUpDisplay()
-      // updateStatusText()
-      // writeTextonBlankCanvas(textstr,25.5,20.5)
+      // 
+      wdm(textstr)
   }
   catch(error) {
       var textstr = 'Could not write pump duration to ble device'
       console.log(textstr)
       ble.statustext = ble.statustext + "<br>" + textstr
-      updateStatusText()
+      
   }
 }
 
@@ -277,9 +277,8 @@ function onPumpNotificationFromBLE(event){
           Math.round(ble.tnotify_pump - ble.twrite_pumpduration) + 'ms'
   console.log(textstr)
   ble.statustext = ble.statustext + "  <---->  " + textstr
-  updateHeadsUpDisplay()
-  // updateStatusText()
-  // writeTextonBlankCanvas(textstr,400,20.5)
+  // 
+  wdm(textstr)
 
   let value = event.target.value
   value = value.buffer ? value : new DataView(value)
@@ -304,6 +303,4 @@ function onRFIDNotificationFromBLE(event){
 
     var textstr = 'BLE RFID notification:  value << ' + a.join(' ') + '  interval << ' + Math.round(ble.tnotify_rfid - t0) + 'ms'
     ble.statustext = textstr
-    updateHeadsUpDisplay()
 }
-//============== READ NOTIFICATIONS & WRITES (end) ==============//
