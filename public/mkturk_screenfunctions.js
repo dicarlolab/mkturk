@@ -1,4 +1,5 @@
 //================== LOAD STATUS DISPLAY ==================//
+
 function refreshCanvasSettings(TASK){
 	// TODO: cleanup CANVAS; separate canvas ID from sequence logic; 'tsequence' variables coded by length rather than absolute time
 
@@ -19,7 +20,7 @@ function refreshCanvasSettings(TASK){
 	if (TASK.Species == "macaque" || TASK.Species == "human"){
 		CANVAS.headsupfraction=0;
 	}
-	else if (TASK.Species == "marmoset"){
+	else {
 		CANVAS.headsupfraction=1/3-0.06;
 	}
 }
