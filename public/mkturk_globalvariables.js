@@ -16,6 +16,7 @@ ENV.ImageWidthPixels = NaN;
 ENV.CanvasRatio = 1
 ENV.DevicePixelRatio = 1
 ENV.FixationRadius = 0
+ENV.FixationColor = ''
 ENV.XGridCenter = []
 ENV.YGridCenter = []
 ENV.RewardDuration = NaN
@@ -62,10 +63,8 @@ var CANVAS = {
 	headsupfraction: NaN,
 	offsetleft: 0,
 	offsettop: 0,
-	obj: [],
-}
-for (var i in CANVAS.names){
-	CANVAS.obj[CANVAS.names[i]]=document.getElementById("canvas" + CANVAS.names[i])
+	visible: document.getElementById("canvasvisible"),
+	offscreen: null,
 }
 
 var frame = {
