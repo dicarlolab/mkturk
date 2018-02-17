@@ -2,7 +2,8 @@
 Wireless touchscreen behavioral training
 
 ## Getting started
-This document only applies to running the mkturk web app. For details on purchasing and construction of related hardware, please check out the Wiki pages. The Wiki also contains more detailed explanations of some of the javascript APIs utilized by mkturk.
+This document only applies to running the mkturk web app. For details on purchasing and construction of related hardware, please check out the Wiki pages. The Wiki also contains more detailed explanations of some of the javascript APIs utilized by mkturk. For an introduction to the complete system, including both software and hardware components, see **[this overview poster](
+https://github.com/dicarlolab/mkturk/blob/master/images/IssaE%202016%20SFN%20small.pdf).**
 
 ## Hosting the web app
 Running mkturk is as simple as loading a web page since mkturk is purely a client-side piece of code. This requires a server capable of loading an html. Dropbox and Google Drive have stopped serving html, so other options have to be considered such as GitHub, GitLab, Google Firebase or Amazon S3.
