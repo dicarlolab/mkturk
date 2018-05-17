@@ -16,7 +16,8 @@
 
 // MKTURK
 var DBX_CLIENT_ID = "2m9hmv7q45kwren"
-var DBX_REDIRECT_URI_ROOT = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/"
+var DBX_REDIRECT_URI_ROOT = "http://127.0.0.1:8080/"
+// "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/"
 
 
 // ------ Subject settings ------ 
