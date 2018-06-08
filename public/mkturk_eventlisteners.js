@@ -165,7 +165,7 @@ function doneTestingTask_listener(event){
 	FLAGS.purge=1
 	purgeTrackingVariables()
 	FLAGS.purge=0
-	renderBlank(CANVAS.obj.blank)
+	
 	document.querySelector("p[id=imageloadingtext]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	document.querySelector("button[name=doneTestingTask]").style.display = "none"
 	return

@@ -298,3 +298,60 @@ function setReward(){
   return (TASK.RewardPer1000Trials - b)/m/1000;
   ENV.RewardDuration = (TASK.RewardPer1000Trials - b)/m/1000;
 }
+
+async function runPump(str){
+  var dur=0
+  var npulse=0
+
+  if (FLAGS.runPump == 0){
+    FLAGS.runPump = 1
+    if (str == "flush"){
+      dur = 10000 //milliseconds
+      npulse = 6
+      document.querySelector("button[name=pumpflush]").value = "Stop Pump"
+      document.querySelector("button[name=pumptrigger]").value = "Stop Pump"
+   }
+    else if (str == "trigger"){
+      dur = ENV.RewardDuration*1000 //milliseconds
+      npulse = 50
+      document.querySelector("button[name=pumpflush]").value = "Stop Pump"
+      document.querySelector("button[name=pumptrigger]").value = "Stop Pump"
+    }
+  }
+  else if (FLAGS.runPump == 1){ //user pressed button again to stop pump
+    FLAGS.runPump = 0
+    document.querySelector("button[name=pumpflush]").value = 'Flush Line'
+    document.querySelector("button[name=pumptrigger]").value = '50 Pulses'
+//     document.getElementById("pumptrigger").value = 'Stop Pump'
+    return
+  }
+
+ //------ Run pump
+  for (var i=1; i<=npulse; i++){
+    if (ble.connected == false && port.connected == false){
+      break //no pump connected
+    }
+    else if (FLAGS.runPump == 0){
+      break //pump was stopped by user
+    }
+    else if (FLAGS.runPump == 1 && ble.connected == true){
+        await writepumpdurationtoBLE(Math.round(dur))
+    }
+    else if (FLAGS.runPump == 1 && port.connected == true){
+        await port.writepumpdurationtoUSB(Math.round(dur))
+    }
+
+    await timeout(dur + 200)
+    console.log("pulse" + i)
+  }
+
+  if (port.connected == true){
+    port.statustext_sent = "DONE RUNNING PUMP (" + npulse + " pulses @ " + Math.round(dur) + " ms/pulse)"
+    console.log(port.statustext_sent)
+    updateHeadsUpDisplay()    
+  }
+}
+
+function timeout(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}

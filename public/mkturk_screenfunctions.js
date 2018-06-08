@@ -46,9 +46,28 @@ function setupCanvasHeadsUp(){
 	CANVAS.offsettop = canvasobj.height;
 	if (CANVAS.headsupfraction == 0){
 		canvasobj.style.display="none";
+
+		//hide buttons for triggering pump
+		document.querySelector("button[name=pumpflush]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+		document.querySelector("button[name=pumptrigger]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	}
 	else{
 		canvasobj.style.display="block";
+
+		//show buttons for triggering pump
+		document.querySelector("button[name=pumpflush]").style.display = "block"
+		document.querySelector("button[name=pumpflush]").style.visibility = "visible"
+		document.querySelector("button[name=pumptrigger]").style.display = "block"
+		document.querySelector("button[name=pumptrigger]").style.visibility = "visible"
+
+		document.querySelector("button[name=pumpflush]").addEventListener(
+			'mouseup',function(){ event.preventDefault(); runPump("flush") },false)
+		document.querySelector("button[name=pumpflush]").addEventListener(
+			'touchend',function(){ event.preventDefault(); runPump("flush") },false)
+		document.querySelector("button[name=pumptrigger]").addEventListener(
+			'mouseup',function(){ event.preventDefault(); runPump("trigger") },false)
+		document.querySelector("button[name=pumptrigger]").addEventListener(
+			'touchend',function(){ event.preventDefault(); runPump("trigger") },false)
 	}
 	var context=canvasobj.getContext('2d');
 
@@ -86,10 +105,8 @@ function scaleCanvasforHiDPI(canvasobj){
 		canvasobj.style.width = windowWidth - CANVAS.offsetleft + "px";
 		canvasobj.style.height = windowHeight - CANVAS.offsettop + "px";
 		canvasobj.style.margin="0 auto";
-		context.scale(1/ENV.CanvasRatio,1/ENV.CanvasRatio);
 	} 
-} 
-
+}
 
 function updateHeadsUpDisplay(){
 	var textobj = document.getElementById("headsuptext");
@@ -127,10 +144,15 @@ function updateHeadsUpDisplay(){
 		+ "last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>"
 		+ "last saved to dropbox @ " + CURRTRIAL.lastDropboxSave.toLocaleTimeString("en-US")
 		+ "<br>" + "<br>" 
-		+ "<br>" + "<font color=red><b>" + "<font color=blue><b>" + ble.statustext + "<br></font>" 
+		+ "<font color=red><b>" + ble.statustext + port.statustext_connect + "<br></font>" 
+		+ "<font color=green><b>" + port.statustext_sent + "<br></font>" 
+		+ "<font color=blue><b>" + port.statustext_received + "<br></font>" 
 	}
 	else if (CANVAS.headsupfraction == 0){
-		textobj.innerHTML = ble.statustext
+		textobj.innerHTML = ble.statustext + port.statustext_connect
+	}
+	else if (isNaN(CANVAS.headsupfraction)){ //before task params load
+		textobj.innerHTML = ble.statustext + port.statustext_connect
 	}
 }
 
@@ -187,25 +209,17 @@ function defineImageGrid(ngridpoints, wd, ht, gridscale){
 	return [xcanvascent, ycanvascent, xgridcent, ygridcent]
 }
 
-async function bufferTrialImages(sample_image, sample_image_grid_index, test_images, test_image_grid_indices, correct_index){
 
-	//========== BUFFER SAMPLE CANVAS ==========//
-	var canvasobj=CANVAS.obj.sample
-	var context=CANVAS.obj.sample.getContext('2d'); 
-	context.fillStyle="#7F7F7F";  // Gray out before buffering sample
-	context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
-	await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, CANVAS.obj.sample)
-	
-	//========== BUFFER TEST CANVAS ==========//
-	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)
-	var pre_grayout = true 
-	if(pre_grayout == true){
-		var canvasobj=CANVAS.obj.test;
-		var context=canvasobj.getContext('2d');
-		context.fillStyle="#7F7F7F";
-		context.fillRect(0,100, canvasobj.width,canvasobj.height); // 100 is for the photodiode bar at the top of the screen
-	}
-	
+//========== BUFFER SAMPLE CANVAS ==========//
+async function bufferSampleImage(sample_image, sample_image_grid_index,canvasobj){
+	var context=canvasobj.getContext('2d'); 
+	await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, canvasobj)
+}
+
+
+//========== BUFFER TEST CANVAS ==========//
+async function bufferTestImages(sample_image, sample_image_grid_index, test_images, test_image_grid_indices, correct_index,canvasobj){
+	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)	
 	boundingBoxesChoice['x'] = []
 	boundingBoxesChoice['y'] = []
 	// Draw test object(s): 
@@ -219,16 +233,15 @@ async function bufferTrialImages(sample_image, sample_image_grid_index, test_ima
 			}
 		}		
 
-		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], TASK.TestScale, CANVAS.obj.test); 
+		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], TASK.TestScale, canvasobj); 
 		boundingBoxesChoice.x.push(funcreturn[0]); 
 		boundingBoxesChoice.y.push(funcreturn[1]); 
 	}
 
 	// Option: draw sample (TODO: remove the blink between sample screen and test screen)
 	if (TASK.KeepSampleON==1){
-		await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, CANVAS.obj.test)
+		await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, canvasobj)
 	}
-
 }
 
 
@@ -242,22 +255,22 @@ async function renderImageOnCanvas(image, grid_index, scale, canvasobj){
 
 	wd = image.width
 	ht = image.height
-	xleft = Math.round(ENV.XGridCenter[grid_index] - 0.5*wd*scale*ENV.CanvasRatio);
-	ytop = Math.round(ENV.YGridCenter[grid_index] - 0.5*ht*scale*ENV.CanvasRatio);
+	xleft = Math.round(ENV.XGridCenter[grid_index]/ENV.CanvasRatio - 0.5*wd*scale);
+	ytop = Math.round(ENV.YGridCenter[grid_index]/ENV.CanvasRatio - 0.5*ht*scale);
 	
 	context.drawImage(
 		image, // Image element
 		xleft, // dx: Canvas x-coordinate of image's top-left corner. 
 		ytop, // dy: Canvas y-coordinate of  image's top-left corner. 
-		image.width*scale*ENV.CanvasRatio, // dwidth. width of drawn image. 
-		image.height*scale*ENV.CanvasRatio); // dheight. height of drawn image.
+		image.width*scale, // dwidth. width of drawn image. 
+		image.height*scale); // dheight. height of drawn image.
 
 	// For drawing cropped regions of an image in the canvas, see alternate input argument structures,
 	// See: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
 	
 	// Bounding boxes of images on canvas
-	xbound=[xleft, xleft+wd*scale*ENV.CanvasRatio];
-	ybound=[ytop, ytop+ht*scale*ENV.CanvasRatio];
+	xbound=[xleft*ENV.CanvasRatio, (xleft+wd*scale)*ENV.CanvasRatio];
+	ybound=[ytop*ENV.CanvasRatio, (ytop+ht*scale)*ENV.CanvasRatio];
 
 	xbound[0]=xbound[0]+CANVAS.offsetleft;
 	xbound[1]=xbound[1]+CANVAS.offsetleft;
@@ -274,7 +287,6 @@ function displayTrial(sequence,tsequence){
 		resolveFunc = resolve;
 		errFunc = reject;
 	}).then();
-	//console.log('seq', sequence, 'tseq', tsequence)
 
 	var start = null;
 	var tActual = []
@@ -287,26 +299,13 @@ function displayTrial(sequence,tsequence){
 		if (timestamp - start > tsequence[frame.current]){
 			//console.log('Frame =' + frame.current+'. Duration ='+(timestamp-start)+'. Timestamp = ' + timestamp)
 			tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
-			// Move canvas in front
-			var prev_canvasobj=CANVAS.obj[CANVAS.front]
-			var curr_canvasobj=CANVAS.obj[sequence[frame.current]]
-			if (CANVAS.front != "blank"){
-				// Move to back
-				prev_canvasobj.style.zIndex="0";
-			} 
-			if (sequence[frame.current] != "blank"){
-				curr_canvasobj.style.zIndex="100";
-				CANVAS.front = sequence[frame.current];
-			} // move to front
-			else{
-				CANVAS.front = "blank";
-			}
-			
+			CANVAS.offscreen.commitTo(CANVAS.visible.getContext("bitmaprenderer"))
 			frame.shown[frame.current]=1;
 			frame.current++;
 		}; 
 		// continue if not all frames shown
 		if (frame.shown[frame.shown.length-1] != 1){
+			renderScreen(sequence[frame.current],CANVAS.offscreen)
 			window.requestAnimationFrame(updateCanvas);
 		}
 		else{
@@ -318,25 +317,73 @@ function displayTrial(sequence,tsequence){
 	return p
 } 
 
+function renderScreen(screenType,canvasobj){
+	if (FLAGS.savedata == 0){
+		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter, 
+			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, 
+			TASK.FixationScale, TASK.SampleScale, TASK.TestScale, 
+			ENV.ImageWidthPixels, ENV.CanvasRatio,canvasobj);
+	}
+	else if (FLAGS.savedata == 1){
+		renderBlank(canvasobj)
+	}
+	switch (screenType) {
+	case 'blank':
+		renderBlank(canvasobj)
+		break
+	case 'blankWithGridMarkers':
+		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter, 
+			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, 
+			TASK.FixationScale, TASK.SampleScale, TASK.TestScale, 
+			ENV.ImageWidthPixels, ENV.CanvasRatio,canvasobj);
+		break
+	case 'touchfix':
+		if(TASK.FixationUsesSample != 1){
+			renderFixationUsingDot(ENV.FixationColor, CURRTRIAL.fixationgridindex,
+									ENV.FixationRadius, canvasobj);
+		}
+		else {
+			renderFixationUsingImage(CURRTRIAL.sampleimage, CURRTRIAL.fixationgridindex,
+									TASK.SampleScale, canvasobj)	
+		}
+		break
+	case 'sample':
+		bufferSampleImage(CURRTRIAL.sampleimage, TASK.SampleGridIndex,canvasobj);
+		break
+	case 'test':
+		bufferTestImages(CURRTRIAL.sampleimage, TASK.SampleGridIndex, 
+						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem, 
+						canvasobj);
+		break
+	case 'reward':
+		renderReward(canvasobj)
+		break
+	case 'punish':
+		renderPunish(canvasobj)
+		break
+	default:
+	}
+
+}
+
 function renderBlank(canvasobj){
 	var context=canvasobj.getContext('2d');
 	context.fillStyle="#7F7F7F";
-	context.fillRect(0,0,canvasobj.width,canvasobj.height);
+	context.fillRect(0,100,canvasobj.width,canvasobj.height);
 }
 
 function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,fixationscale,samplescale,testscale,imwidth,canvasratio,canvasobj)
 {
 	var outofbounds_str = ''
 	var context=canvasobj.getContext('2d');
-	context.fillStyle="#7F7F7F";
-	context.fillRect(0,0,canvasobj.width,canvasobj.height);
+	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 
 	//Show image positions & display grid
 	//Display grid
 	for (var i = 0; i <= gridx.length-1; i++){
 		rad = 10
 		context.beginPath()
-		context.arc(gridx[i],gridy[i],rad,0*Math.PI,2*Math.PI)
+		context.arc(gridx[i]/ENV.CanvasRatio,gridy[i]/ENV.CanvasRatio,rad/ENV.CanvasRatio,0*Math.PI,2*Math.PI)
 		context.fillStyle="red"
 		context.fill();
 
@@ -348,13 +395,14 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 	}
 
 	//Fixation Image Bounding Box
-	var wd = imwidth*fixationscale*canvasratio
-	var xcent = gridx[fixationgridindex]
-	var ycent = gridy[fixationgridindex]
+	var wd = imwidth*fixationscale
+	var xcent = gridx[fixationgridindex]/ENV.CanvasRatio
+	var ycent = gridy[fixationgridindex]/ENV.CanvasRatio
 	context.strokeStyle="white"
 	context.strokeRect(xcent-wd/2,ycent-wd/2,wd+1,wd+1)
 
-	var displaycoord = [xcent-wd/2,ycent-wd/2,xcent+wd/2,ycent+wd/2]
+	var displaycoord = [(xcent-wd/2)*ENV.CanvasRatio,(ycent-wd/2)*ENV.CanvasRatio,
+						(xcent+wd/2)*ENV.CanvasRatio,(ycent+wd/2)*ENV.CanvasRatio]
 	var outofbounds=checkDisplayBounds(displaycoord)
 	if (outofbounds == 1){
 		outofbounds_str = outofbounds_str + "<br>" + "Fixation dot is out of bounds"
@@ -363,13 +411,14 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 
 	
 	//Sample Image Bounding Box
-	var wd = imwidth*samplescale*canvasratio
-	var xcent = gridx[samplegridindex]
-	var ycent = gridy[samplegridindex]
+	var wd = imwidth*samplescale
+	var xcent = gridx[samplegridindex]/ENV.CanvasRatio
+	var ycent = gridy[samplegridindex]/ENV.CanvasRatio
 	context.strokeStyle="green"
 	context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
 
-	var displaycoord = [xcent-wd/2,ycent-wd/2,xcent+wd/2,ycent+wd/2]
+	var displaycoord = [(xcent-wd/2)*ENV.CanvasRatio,(ycent-wd/2)*ENV.CanvasRatio,
+						(xcent+wd/2)*ENV.CanvasRatio,(ycent+wd/2)*ENV.CanvasRatio]
 	var outofbounds=checkDisplayBounds(displaycoord)
 	if (outofbounds == 1){
 		outofbounds_str = outofbounds_str + "<br>" + "Sample Image is out of bounds"
@@ -379,13 +428,14 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 
 	//Test Image Bounding Box(es)
 	for (var i = 0; i <= testgridindex.length-1; i++){
-		var wd = imwidth*testscale*canvasratio
-		var xcent = gridx[testgridindex[i]]
-		var ycent = gridy[testgridindex[i]]
+		var wd = imwidth*testscale
+		var xcent = gridx[testgridindex[i]]/ENV.CanvasRatio
+		var ycent = gridy[testgridindex[i]]/ENV.CanvasRatio
 		context.strokeStyle="black"
 		context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
 
-		displaycoord = [xcent-wd/2,ycent-wd/2,xcent+wd/2,ycent+wd/2]
+		var displaycoord = [(xcent-wd/2)*ENV.CanvasRatio,(ycent-wd/2)*ENV.CanvasRatio,
+						(xcent+wd/2)*ENV.CanvasRatio,(ycent+wd/2)*ENV.CanvasRatio]
 		var outofbounds=checkDisplayBounds(displaycoord)
 		if (outofbounds == 1){
 			outofbounds_str = outofbounds_str + "<br>" + "Test Image" + i + " is out of bounds"
@@ -403,19 +453,20 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 function renderReward(canvasobj){
 	var context=canvasobj.getContext('2d');
 	context.fillStyle="green";
-	context.fillRect(xcanvascenter-200,ycanvascenter-200,400,400);
+	context.fillRect(xcanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,
+					ycanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,400/ENV.CanvasRatio,400/ENV.CanvasRatio);
 }
 
 function renderPunish(canvasobj){
 	var context=canvasobj.getContext('2d');
-	context.rect(xcanvascenter-200,ycanvascenter-200,400,400);
 	context.fillStyle="black";
-	context.fill();
+	context.fillRect(xcanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,
+					ycanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,400/ENV.CanvasRatio,400/ENV.CanvasRatio);
 }
 
 async function renderFixationUsingImage(image, gridindex, scale, canvasobj){
 	var context=canvasobj.getContext('2d');
-	context.clearRect(0,0,canvasobj.width,canvasobj.height);
+// 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 
 	// Draw fixation dot
 	boundingBoxesFixation['x']=[]
@@ -427,12 +478,12 @@ async function renderFixationUsingImage(image, gridindex, scale, canvasobj){
 }
 function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 	var context=canvasobj.getContext('2d');
-	context.clearRect(0,0,canvasobj.width,canvasobj.height);
+// 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 
 	// Draw fixation dot
-	var rad = dot_pixelradius;
-	var xcent = ENV.XGridCenter[gridindex];
-	var ycent = ENV.YGridCenter[gridindex];
+	var rad = dot_pixelradius/ENV.CanvasRatio;
+	var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
+	var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;
 	context.beginPath();
 	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
 	context.fillStyle=color; 
@@ -441,16 +492,16 @@ function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 	// Define (rectangular) boundaries of fixation
 	boundingBoxesFixation['x']=[]
 	boundingBoxesFixation['y']=[]
-	boundingBoxesFixation.x.push([xcent-rad+CANVAS.offsetleft, xcent+rad+CANVAS.offsetleft]);
-	boundingBoxesFixation.y.push([ycent-rad+CANVAS.offsettop, ycent+rad+CANVAS.offsettop]);
+	boundingBoxesFixation.x.push([(xcent-rad)*ENV.CanvasRatio+CANVAS.offsetleft, (xcent+rad)*ENV.CanvasRatio+CANVAS.offsetleft]);
+	boundingBoxesFixation.y.push([(ycent-rad)*ENV.CanvasRatio+CANVAS.offsettop, (ycent+rad)*ENV.CanvasRatio+CANVAS.offsettop]);
 }
 
 function checkDisplayBounds(displayobject_coord){
 	var outofbounds=0
-	if (displayobject_coord[0] < CANVAS.workspace[0] ||
-		displayobject_coord[1] < CANVAS.workspace[1] ||
-		displayobject_coord[2] > CANVAS.workspace[2] ||
-		displayobject_coord[3] > CANVAS.workspace[3]){
+	if (displayobject_coord[0]/ENV.CanvasRatio < CANVAS.workspace[0] ||
+		displayobject_coord[1]/ENV.CanvasRatio < CANVAS.workspace[1] ||
+		displayobject_coord[2]/ENV.CanvasRatio > CANVAS.workspace[2] ||
+		displayobject_coord[3]/ENV.CanvasRatio > CANVAS.workspace[3]){
 		outofbounds=1
 	}
 	return outofbounds
@@ -480,7 +531,6 @@ function updateImageLoadingAndDisplayText(str){
 	+ "  (min=" + Math.round(Math.min(... dt)) + ", max=" + Math.round(Math.max(... dt)) + ") </font>"
 }
 
-
 function displayPhysicalSize(tabletname,displayobject_coord,canvasobj){
 	if (tabletname == "nexus9"){
 		var dpi = 281
@@ -502,10 +552,10 @@ function displayPhysicalSize(tabletname,displayobject_coord,canvasobj){
 	visible_ctxt.fillStyle = "white";
 	visible_ctxt.font = "16px Verdana";
 	visible_ctxt.fillText( 
-		Math.round(100*(displayobject_coord[2]-displayobject_coord[0])/dpi/ENV.CanvasRatio)/100 +
+		Math.round(100*(displayobject_coord[2]-displayobject_coord[0])/dpi)/100 +
 		' x ' +
-		Math.round(100*(displayobject_coord[3]-displayobject_coord[1])/dpi/ENV.CanvasRatio)/100 + 
+		Math.round(100*(displayobject_coord[3]-displayobject_coord[1])/dpi)/100 + 
 		' in', 
-		displayobject_coord[0],displayobject_coord[1]-16
+		displayobject_coord[0]/ENV.CanvasRatio,(displayobject_coord[1]-16)/ENV.CanvasRatio
 	);
 }

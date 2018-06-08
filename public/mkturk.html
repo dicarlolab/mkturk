@@ -15,9 +15,15 @@
 <!-- ************* BODY *************** -->
 <body bgcolor=#7F7F7F>
 <div id="canvasdiv" style="position:relative; width:100vw; height:100vh">
-	<button name="connectble" style="visibility:hidden; position: absolute; top: 45%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to Bluetooth juicer</button>
+	<button name="connectble" style="visibility:hidden; position: absolute; top: 40%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to Bluetooth juicer</button>
 
-	<button name="noble" style="visibility:hidden; position: absolute; top: 55%; left: 45%; height: 50px; width: 200px; border-radius: 20px">No Bluetooth juicer</button>
+	<button name="connectusb" style="visibility:hidden; position: absolute; top: 50%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to USB juicer</button>
+
+	<button name="noble" style="visibility:hidden; position: absolute; top: 60%; left: 45%; height: 50px; width: 200px; border-radius: 20px">No juicer</button>
+
+	<button name="pumpflush" style="z-index:102; visibility:hidden; position: absolute; top: 5%; left: 80%; height: 50px; width: 150px; border-radius: 20px">Flush line</button>
+
+	<button name="pumptrigger" style="z-index:102; visibility:hidden; position: absolute; top: 10%; left: 80%; height: 50px; width: 150px; border-radius: 20px">50 pulses</button>
 
 	<p id="headsuptext" style="z-index:101; position: absolute; left: 1px; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;"></p>
 
@@ -29,15 +35,8 @@
 
 	<button name="doneTestingTask" style="visibility:hidden; position: absolute; top: 55%; left: 70%; height: 75px; width: 200px; border-radius: 20px; z-index:101">Done with testing trials</button>
 
-	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:98; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvasblank" width="0" height="0" src="" style="z-index:99; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvassample" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvastest" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvastouchfix" width="0" height="0" src="" style="z-index:3; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvaseyefix" width="0" height="0" src="" style="z-index:4; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvasreward" width="0" height="0" src="" style="z-index:5; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvasphotoreward" width="0" height="0" src="" style="z-index:6; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvaspunish" width="0" height="0" src="" style="z-index:7; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvasvisible" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
 </div>
 <dialog id="subjectID_dialog">
   <p>Select subject: </p>
@@ -55,6 +54,7 @@
 <script src="mkturk_screenfunctions.js"></script>
 <script src="mkturk_automator.js" type="text/javascript"></script>
 <script src="mkturk_bluetooth.js" type="text/javascript"></script>
+<script src="mkturk_usb.js" type="text/javascript"></script>
 <script src="mkturk_utils.js" type="text/javascript"></script>
 
 <script>
@@ -63,10 +63,10 @@
 var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "mkturk.html"
 if (isAuthenticated()){
 	//Create an instance of Dropbox with the access token
-	var dbx = new Dropbox({accessToken: getAccessTokenFromUrl()})
+	var dbx = new Dropbox.Dropbox({accessToken: getAccessTokenFromUrl()})
 }
 else {
-	var dbx = new Dropbox({clientId: DBX_CLIENT_ID});
+	var dbx = new Dropbox.Dropbox({clientId: DBX_CLIENT_ID});
 	var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
 	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
 }
@@ -84,15 +84,33 @@ for (var i=subjectlist.length-1; i>=0; i--){
 }
 subjectlistobj.addEventListener("change",subjectlist_listener,false);
 
+// Document callback 
+// document.addEventListener('DOMContentLoaded', event => {
+//       // START UP: Open (instantiate) port before assign it receive callbacks
+//       (async function(){
+//           await findUSBDevice(event)
+//           if (typeof(port.connected) == 'undefined') {
+//             console.log('No device found on page load.');
+//           }
+//           else {
+//             console.log('Successfully connected USB device on page load.');
+//           }
+//         })()
+// }) //document.domcontentLoaded callback
+
 // Button callbacks
 document.querySelector("button[name=connectble]").addEventListener(
 	'touchend',findBLEDevice,false)
 document.querySelector("button[name=connectble]").addEventListener(
 	'mouseup',findBLEDevice,false)
+document.querySelector("button[name=connectusb]").addEventListener(
+	'touchend',findUSBDevice,false)
+document.querySelector("button[name=connectusb]").addEventListener(
+	'mouseup',findUSBDevice,false)
 document.querySelector("button[name=noble]").addEventListener(
-	'touchend',skipBLEDevice,false)
+	'touchend',skipHardwareDevice,false)
 document.querySelector("button[name=noble]").addEventListener(
-	'mouseup',skipBLEDevice,false)
+	'mouseup',skipHardwareDevice,false)
 document.querySelector("button[name=doneEditingParams]").addEventListener(
 	'touchend',doneEditingParams_listener,false)
 document.querySelector("button[name=doneEditingParams]").addEventListener(
@@ -115,8 +133,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	var gainNode = audiocontext.createGain()
 	gainNode.connect(audiocontext.destination)
 	ENV.DevicePixelRatio = window.devicePixelRatio || 1;
-	var visiblecanvasobj = CANVAS.obj[CANVAS.front];
-	var visiblecontext = visiblecanvasobj.getContext("2d");
+	var visiblecontext = CANVAS.visible.getContext("bitmaprenderer");
 	var backingStoreRatio = visiblecontext.webkitBackingStorePixelRatio ||
 	                            visiblecontext.mozBackingStorePixelRatio ||
 	                            visiblecontext.msBackingStorePixelRatio ||
@@ -133,21 +150,59 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	});
 //============= (end) Initialize Audio & Battery Objects ==================//
 
+function connectHardwareButtonPromise(){
+  var resolveFunc
+  var errFunc
+  p = new Promise(function(resolve,reject){
+    resolveFunc = resolve;
+    errFunc = reject;
+  }).then(function(resolveval){console.log('User clicked ' + resolveval)});
+
+  function *waitforclickGenerator(){
+    var buttonclicked =[-1];
+    while (true){
+      buttonclicked = yield buttonclicked;
+      resolveFunc(buttonclicked);
+    }
+  }
+
+  waitforClick = waitforclickGenerator(); // start async function
+  waitforClick.next(); //move out of default state
+  return p;
+}
+
+function skipHardwareDevice(event){
+  event.preventDefault(); //prevents additional downstream call of click listener
+  waitforClick.next(1)
+}
+
+
 (async function(){
-	//================== AWAIT CONNECT TO BLE ==================//
-	document.querySelector("button[name=connectble]").style.display = "block"
-	document.querySelector("button[name=connectble]").style.visibility = "visible"
-	document.querySelector("button[name=noble]").style.display = "block"
-	document.querySelector("button[name=noble]").style.visibility = "visible"
+	var event = {}
+	event.type = "AutoConnect"
+	await findUSBDevice(event)
 
-	await connectBLEButtonPromise()
+	//=============== AWAIT CONNECT TO HARDWARE (via USB or BLE) ===============//
+	if (typeof(port.connected) == 'undefined' || port.connected == false){
+		port.connected = false
+		document.querySelector("button[name=connectble]").style.display = "block"
+		document.querySelector("button[name=connectble]").style.visibility = "visible"
+		document.querySelector("button[name=connectusb]").style.display = "block"
+		document.querySelector("button[name=connectusb]").style.visibility = "visible"
+		document.querySelector("button[name=noble]").style.display = "block"
+		document.querySelector("button[name=noble]").style.visibility = "visible"
 
-	document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
-	document.querySelector("button[name=noble]").style.display = "none"
-	
-	//================== AWAIT LOAD SUBJECT PARAMS ==================//
+		await connectHardwareButtonPromise()
+
+		document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+		document.querySelector("button[name=connectusb]").style.display = "none"
+		document.querySelector("button[name=noble]").style.display = "none"		
+	}
+
 	subjectdialog.showModal()
 	await subjectIDPromise()
+	
+	//================== AWAIT LOAD SUBJECT PARAMS ==================//
 	ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.txt";
 	await loadParametersfromDropbox(ENV.ParamFileName)
 
@@ -241,20 +296,22 @@ while(true){
 		setupCanvasHeadsUp()
 		setupImageLoadingText()
 		windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
-		windowHeight = document.body.clientHeight;	
-		for (var i = 0; i <= CANVAS.names.length-1; i++) {
-			setupCanvas(CANVAS.obj[CANVAS.names[i]]);
-		}
+		windowHeight = document.body.clientHeight;
+		setupCanvas(CANVAS.visible);
 		if (ENV.DevicePixelRatio !== 1){
-			scaleCanvasforHiDPI(CANVAS.obj.sample);
-			scaleCanvasforHiDPI(CANVAS.obj.test);
+			scaleCanvasforHiDPI(CANVAS.visible);
+		}
+		CANVAS.offscreen = new OffscreenCanvas(CANVAS.visible.width, CANVAS.visible.height)
+		CANVAS.offscreen.commitTo = function(dest){
+			var bitmap = this.transferToImageBitmap()
+			dest.transferFromImageBitmap(bitmap)
 		}
 
 		CANVAS.workspace = [
 			0,
 			0,
-			CANVAS.obj["touchfix"].width,
-			CANVAS.obj["touchfix"].height
+			CANVAS.visible.width,
+			CANVAS.visible.height
 		]
 
 		// Check if images were changed
@@ -311,28 +368,12 @@ while(true){
 	ENV.YGridCenter = funcreturn[3]
 	//============ (end) CREATE IMAGE BAG & DISPLAY GRID ============//
 
-	renderReward(CANVAS.obj.reward);
-	renderPunish(CANVAS.obj.punish);
-	if(FLAGS.savedata == 0){
-		// In test mode show grid on screen
-		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter, 
-			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, 
-			TASK.FixationScale, TASK.SampleScale, TASK.TestScale, 
-			ENV.ImageWidthPixels, ENV.CanvasRatio,CANVAS.obj.blank); 
-	}
-	else if (FLAGS.savedata == 1){
-		renderBlank(CANVAS.obj.blank);
-	}
-
 	//============ SELECT SAMPLE & TEST IMAGES ============//
 	// Draw one (1) sample image from samplebag
 	console.time('trial images loadtime:')
 	var c
 	[CURRTRIAL.sampleimage, CURRTRIAL.sampleindex, CURRTRIAL.testimages, CURRTRIAL.testindices, CURRTRIAL.correctitem] = await TQ.get_next_trial();
 	console.timeEnd('trial images loadtime:')
-
-	//============ AWAIT BUFFER CANVASES WITH SAMPLE & TEST IMAGES ============//
-	await bufferTrialImages(CURRTRIAL.sampleimage, TASK.SampleGridIndex, CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem);
 
 	//============ WHILE RUN FIXATION SCREEN ============//
 	FLAGS.waitingforTouches = TASK.NFixations
@@ -350,17 +391,13 @@ while(true){
 		}
 
 		// Render fixation screen 
-		if (TASK.FixationUsesSample == 1){
-			renderFixationUsingImage(CURRTRIAL.sampleimage, CURRTRIAL.fixationgridindex, TASK.SampleScale, CANVAS.obj.touchfix)
-		}
-		else if(TASK.FixationUsesSample != 1){
+		if(TASK.FixationUsesSample != 1){
 			if (TASK.Species == "macaque" || TASK.Species == "human"){
-				var color = "white";
+				ENV.FixationColor = "white";
 			}
 			else if (TASK.Species == "marmoset"){
-				var color = "blue";
+				ENV.FixationColor = "blue";
 			}
-			renderFixationUsingDot(color, CURRTRIAL.fixationgridindex, ENV.FixationRadius, CANVAS.obj.touchfix);
 		}
 		
 		// Start timer for this fixation render trial. 
@@ -376,6 +413,7 @@ while(true){
 		if (TASK.Species == 'marmoset'){
 			playSound(0)
 		}
+		renderScreen(CANVAS.sequencepre[0],CANVAS.offscreen)
 		await displayTrial(CANVAS.sequencepre,CANVAS.tsequencepre);
 		audiocontext.suspend()
 
@@ -401,6 +439,7 @@ while(true){
 		for (var q in CANVAS.sequenceblank){frame.shown[q]=0}
 		frame.current=0;
 		if (FLAGS.waitingforTouches > 0){
+			renderScreen(CANVAS.sequenceblank[0],CANVAS.offscreen)
 			await displayTrial(CANVAS.sequenceblank,CANVAS.tsequenceblank);
 		} //blank out screen
 	} //while waiting for NFixations
@@ -411,6 +450,7 @@ while(true){
 		frame.shown=[]
 		for (var q in CANVAS.sequence){frame.shown[q]=0} 
 		frame.current=0
+		renderScreen(CANVAS.sequence[0],CANVAS.offscreen)
 		CURRTRIAL.tsequenceactual = await displayTrial(CANVAS.sequence,CANVAS.tsequence);
 		CURRTRIAL.tsequencedesired = CANVAS.tsequence
 		audiocontext.suspend()
@@ -480,14 +520,20 @@ while(true){
 			for (var q2 in CANVAS.sequencepost){frame.shown[q2]=0}; frame.current=0;
 
 			playSound(2);
+			renderScreen(CANVAS.sequencepost[0],CANVAS.offscreen)
 			var p1 = displayTrial(CANVAS.sequencepost,CANVAS.tsequencepost)
-			if (ble.connected == false){
+			if (ble.connected == false && port.connected == false){
 				await Promise.all([p1])
 			}
 			else if (ble.connected == true){
 				var p2 = writepumpdurationtoBLE(Math.round(ENV.RewardDuration*1000))
 				await Promise.all([p1, p2])
 			}
+			else if (port.connected == true){
+				var p2 = port.writepumpdurationtoUSB(Math.round(ENV.RewardDuration*1000))
+				await Promise.all([p1, p2])
+			}
+
 		} //for nrewards
 	}
 	//PUNISH
@@ -497,6 +543,7 @@ while(true){
 		frame.shown=[];
 		for (var q in CANVAS.sequencepost){frame.shown[q]=0}; frame.current=0;
 
+		renderScreen(CANVAS.sequencepost[0],CANVAS.offscreen)
 		var p1 = displayTrial(CANVAS.sequencepost,CANVAS.tsequencepost);
 		var num_trials_to_buffer_in_punishperiod = 20
 		var p2 = TQ.generate_trials(num_trials_to_buffer_in_punishperiod)

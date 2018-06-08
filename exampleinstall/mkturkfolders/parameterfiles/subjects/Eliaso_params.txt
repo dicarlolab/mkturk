@@ -1,6 +1,6 @@
 {
-"Weight":0.350, 
-"Species":"marmoset", 
+"Weight":75, 
+"Species":"human", 
 "Homecage":1, 
 "Separated":1, 
 "Liquid":1, 
