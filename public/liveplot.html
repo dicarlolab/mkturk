@@ -816,11 +816,11 @@ var trialrange=[0,0]
 
 if (isAuthenticated()){
 	//Create an instance of Dropbox with the access token
-	var dbx = new Dropbox({accessToken: getAccessTokenFromUrl()})
+	var dbx = new Dropbox.Dropbox({accessToken: getAccessTokenFromUrl()})
 	loadGoogleCharts();
 }
 else {
-	var dbx = new Dropbox({clientId: DBX_CLIENT_ID});
+	var dbx = new Dropbox.Dropbox({clientId: DBX_CLIENT_ID});
 	var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
 	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
 }
