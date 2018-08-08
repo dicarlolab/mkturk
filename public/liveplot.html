@@ -363,8 +363,8 @@ vitals["automator"]
 	}
 
 	if (typeof(file.data.BatteryLDT) != "undefined"){
-		vitals.batteryleft = Math.round(file.data.BatteryLDT[file.data.BatteryLDT.length-1][0]*100);
-		vitals.batteryused = Math.round(file.data.BatteryLDT[0][0]*100 - vitals.batteryleft);
+		vitals.batteryleft = 0 //Math.round(file.data.BatteryLDT[file.data.BatteryLDT.length-1][0]*100);
+		vitals.batteryused = 0 //Math.round(file.data.BatteryLDT[0][0]*100 - vitals.batteryleft);
 	}
 	else {
 		vitals.batteryleft = null;

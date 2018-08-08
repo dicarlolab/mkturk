@@ -7,7 +7,7 @@ a = fgetl(fid); % the entire log is in one line
 fclose(fid);
 
 b = regexp(a, '"\w+":[\w:"./-]+', 'match');
-c = regexp(a, '"\w+":\[[\w:".,-]+\]', 'match'); % 1-D arrays
+c = regexp(a, '"\w+":\[[\w:".,/-]+\]', 'match'); % 1-D arrays
 d = regexp(a, '"\w+":\[\[[\w.\[\],]+\]\]', 'match'); % 2-D/3-D arrays
 
 res = struct;
