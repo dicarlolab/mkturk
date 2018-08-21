@@ -326,10 +326,18 @@ function renderScreen(screenType,canvasobj){
 	}
 	else if (FLAGS.savedata == 1){
 		renderBlank(canvasobj)
+		//renderBlankWithBoundingBoxes(ENV.XGridCenter,ENV.YGridCenter, 
+			//TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, 
+			//TASK.FixationScale, TASK.SampleScale, TASK.TestScale, 
+			//ENV.ImageWidthPixels, ENV.CanvasRatio,canvasobj);
 	}
 	switch (screenType) {
 	case 'blank':
 		renderBlank(canvasobj)
+// 		renderBlankWithBoundingBoxes(ENV.XGridCenter,ENV.YGridCenter, 
+// 			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, 
+// 			TASK.FixationScale, TASK.SampleScale, TASK.TestScale, 
+// 			ENV.ImageWidthPixels, ENV.CanvasRatio,canvasobj);
 		break
 	case 'blankWithGridMarkers':
 		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter, 
@@ -448,6 +456,41 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 
 	displayoutofboundsstr = outofbounds_str
 	updateImageLoadingAndDisplayText(' ')
+}
+
+function renderBlankWithBoundingBoxes(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,fixationscale,samplescale,testscale,imwidth,canvasratio,canvasobj)
+{
+	var outofbounds_str = ''
+	var context=canvasobj.getContext('2d');
+	context.clearRect(0,0,canvasobj.width,canvasobj.height);
+
+	//Show image positions
+
+	//Fixation Image Bounding Box
+	var wd = imwidth*fixationscale
+	var xcent = gridx[fixationgridindex]/ENV.CanvasRatio
+	var ycent = gridy[fixationgridindex]/ENV.CanvasRatio
+	context.strokeStyle="black"
+	context.lineWidth = 12
+	context.strokeRect(xcent-wd/2,ycent-wd/2,wd+1,wd+1)
+	
+	//Sample Image Bounding Box
+	var wd = imwidth*samplescale
+	var xcent = gridx[samplegridindex]/ENV.CanvasRatio
+	var ycent = gridy[samplegridindex]/ENV.CanvasRatio
+	context.strokeStyle="black"
+	context.lineWidth = 12
+	context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
+
+	//Test Image Bounding Box(es)
+	for (var i = 0; i <= testgridindex.length-1; i++){
+		var wd = imwidth*testscale
+		var xcent = gridx[testgridindex[i]]/ENV.CanvasRatio
+		var ycent = gridy[testgridindex[i]]/ENV.CanvasRatio
+		context.strokeStyle="black"
+		context.lineWidth = 12
+		context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
+	}
 }
 
 function renderReward(canvasobj){

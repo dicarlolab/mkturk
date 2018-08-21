@@ -109,7 +109,6 @@ async function getImageListDropboxRecursive(dirpath){
 	if(dirpath.endsWith('.png')){
 		return [dirpath]
 	}
-
 	try{
 		var entries = []
 		response = await dbx.filesListFolder({path: dirpath, 
@@ -336,9 +335,25 @@ async function loadImageArrayfromDropbox(imagepathlist){
 			//	image_array.push(loadImagefromDropbox(imagepathlist[j])) // test with no awaits
 			//}
 
-			var image_requests = imagepathlist.map(loadImagefromDropbox); 
-			
-			var image_array = await Promise.all(image_requests)
+			for (var i = 0; i < 3; i++){
+				var image_requests = imagepathlist.map(loadImagefromDropbox);
+				var image_array = await Promise.all(image_requests)
+
+				var load_success = 1
+				for (var j=0; j < image_array.length; j++){
+					if (image_array[j].src == "failed"){
+						load_success = 0
+					}
+				}
+
+				if (load_success == 1){
+					break
+				}
+				else if (load_success <= 0){
+					await timeout(i*250)
+					console.log("RETRYING IMAGE LOAD for " + i + 'th time!!!!!')
+				}
+			} //for 3 retry attempts
 		}
 		return image_array
 	}
@@ -356,33 +371,29 @@ async function loadImagefromDropbox(imagepath){
 	return new Promise(
 		function(resolve, reject){
 			try{
-				var MAX_RETRIES = 5 
-				var backoff_time_seed = 500 // ms; is multiplied by retry number. 
-				var retry_number = 0; 
-				//while(true && retry_number <= MAX_RETRIES){
-					try{
-						dbx.filesDownload({path: imagepath}).then( 
-							function(data){
-								var data_src = window.URL.createObjectURL(data.fileBlob); 	
-								var image = new Image(); 
+				try{
+					dbx.filesDownload({path: imagepath}).then( 
+						function(data){
+							var data_src = window.URL.createObjectURL(data.fileBlob); 	
+							var image = new Image(); 
 
-								image.onload = function(){
-									console.log('Loaded: ' + (imagepath));
-									updateImageLoadingAndDisplayText('Loaded: ' + imagepath)
-									resolve(image)
-									}
-								image.src = data_src
-							}
-						)
-					}
-					catch(error){
-						retry_number = retry_number + 1; 
+							image.onload = function(){
+								console.log('Loaded: ' + (imagepath));
+								updateImageLoadingAndDisplayText('Loaded: ' + imagepath)
+								resolve(image)
+								}
+							image.src = data_src
+						}
+					).catch(function(error){
 						console.log(error)
-						console.log('On retry '+retry_number)
-						sleep(backoff_time_seed * retry_number)
-						//continue
-					}
-				//}	
+						console.log("Dropbox image load failed!!")
+						var image = {src: 'failed'}
+						resolve(image)
+					})
+				}
+				catch(error){
+					console.log(error)
+				}
 			}
 			catch(error){
 				console.log(error)

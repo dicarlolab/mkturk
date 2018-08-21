@@ -12,7 +12,7 @@ var DBX_REDIRECT_URI_ROOT = "https://129.236.161.20:443/mkturk/public/"
 
 // ------ Subject settings ------ 
 var subjectlist = [
-"Praneeth","Doppleganger"
+"Praneeth","Doppleganger","Barb","Hutch"
 ];
 
 // ------ Save location settings ------
