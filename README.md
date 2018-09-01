@@ -1,7 +1,7 @@
 # mkturk
 Wireless touchscreen behavioral training
 
-## Acknowledgements
+## Acknowledgement
 We are happy to share the mkturk software and hardware and hope it helps with your project. Should this repository help in a substantitive way toward a publication, we would appreciate a brief acknowledgement: "Elias Issa and James DiCarlo for sharing their web based behavior system (mkturk)."
 
 ## Getting started

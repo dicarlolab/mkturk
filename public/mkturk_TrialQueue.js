@@ -17,6 +17,8 @@ constructor(samplingStrategy, ImageBagsSample, ImageBagsTest){
 	this.testq.indices = []; 
 	this.testq.correctIndex = [];
 
+	this.currentbag = -1;
+
 	// ImageBuffer
 	this.IB = new ImageBuffer(); 
 
@@ -31,9 +33,18 @@ async build(trial_cushion_size){
 	this.samplebag_labels = funcreturn[1];
 	this.samplebag_paths = funcreturn[0]; 
 
+	this.samplebag_block_indices = new Array(this.samplebag_labels.length)
+	for (var i = 0; i<=this.samplebag_labels.length-1; i++){
+		this.samplebag_block_indices[i] = i;
+	}
+
 	var funcreturn = await loadImageBagPathsParallel(this.ImageBagsTest); 
-	this.testbag_labels = funcreturn[1]; 
-	this.testbag_paths = funcreturn[0]; 
+	this.testbag_labels = funcreturn[1];
+	this.testbag_paths = funcreturn[0];
+
+	// array of zeros
+	this.ntrials_per_bag = new Array(Math.max(...this.samplebag_labels)+1)
+	this.ntrials_per_bag.fill(0,0,this.ntrials_per_bag.length)
 
 	console.log('this.build() will generate ' + trial_cushion_size + ' trials')
 	await this.generate_trials(trial_cushion_size); 
@@ -50,16 +61,47 @@ async generate_trials(n_trials){
 		return 
 	}
 
-
 	var image_requests = []; 
 
 	console.log('TQ.generate_trials() will generate '+n_trials+' trials')
 
 	for (var i = 0; i < n_trials; i++){
+		if (TASK.NTrialsPerBagBlock <= 0){
+			// do nothing
+		} //use all bags in block
+		else if (TASK.NTrialsPerBagBlock > 0){
+			if (this.currentbag < 0 || this.ntrials_per_bag[this.currentbag] == TASK.NTrialsPerBagBlock){
+				
+				// Increment bag
+				if (this.currentbag < 0){
+					this.currentbag = 0; //initialize with first bag
+				}
+				else{
+					this.ntrials_per_bag[this.currentbag] = 0; //reset trials
+					this.currentbag = this.currentbag + 1; //go to next bag
+
+					if (this.currentbag >= this.ntrials_per_bag.length){
+						this.currentbag = 0; //go back to first bag
+					}
+				}
+
+				// make new bag
+				this.samplebag_block_indices = []
+				var blocklen = this.samplebag_labels.filter(temp => temp == this.currentbag).length;
+				for (var j = 0; j <= this.samplebag_labels.length-1; j++){
+					if (this.samplebag_labels[j] == this.currentbag){
+						this.samplebag_block_indices.push(j)
+					}
+				} //for j images in bag
+			} // if ntrials_per_bag exceeded
+		} // if sample all bags vs blocks
+
 		// Draw one (1) sample image from samplebag
-		var sample_index = selectSampleImage(this.samplebag_labels, this.samplingStrategy)
+		var sample_index = selectSampleImage(this.samplebag_block_indices, this.samplingStrategy)
 		var sample_label = this.samplebag_labels[sample_index]; 
 		var sample_filename = this.samplebag_paths[sample_index]; 
+
+		this.ntrials_per_bag[sample_label] = this.ntrials_per_bag[sample_label] + 1
 		
 		image_requests.push(sample_filename)
 
@@ -159,12 +201,12 @@ async get_next_trial(){
 }
 
 
-function selectSampleImage(samplebag_labels, SamplingStrategy){
+function selectSampleImage(samplebag_indices, SamplingStrategy){
 
 	// Vanilla random uniform sampling with replacement: 
 	var sample_image_index = NaN
 	if(SamplingStrategy == 'uniform_with_replacement'){
-		sample_image_index = Math.floor((samplebag_labels.length)*Math.random());
+		sample_image_index = samplebag_indices[Math.floor((samplebag_indices.length)*Math.random())];
 	}
 	else {
 		throw SamplingStrategy + " not implemented in selectSampleImage."

@@ -137,6 +137,10 @@ function resetTRIAL(){
 	TRIAL.AutomatorStage = []
 	TRIAL.TSequenceDesired = []
 	TRIAL.TSequenceActual = []
+	TRIAL.RFIDTag = []
+	TRIAL.RFIDTime = []
+	TRIAL.RFIDTrial = []
+	TRIAL.NRFID = 0
 	return TRIAL
 }
 

@@ -129,6 +129,24 @@ serial.Port.prototype.onReceive = data => {
 	port.statustext_received = "RECEIVED CHAR <-- USB: " + textDecoder.decode(data)
 	console.log(port.statustext_received)
 	updateHeadsUpDisplay()
+
+	var tagstart = port.statustext_received.indexOf('{tag',0);
+	if (tagstart > 0){
+		var tagend = port.statustext_received.indexOf('}',0);
+		TRIAL.RFIDTime[TRIAL.NRFID] = Math.round(performance.now());
+		TRIAL.RFIDTrial[TRIAL.NRFID] = CURRTRIAL.num
+		TRIAL.RFIDTag[TRIAL.NRFID] = port.statustext_received.slice(tagstart+4,tagend);
+		TRIAL.NRFID = TRIAL.NRFID+1;
+
+		if (TRIAL.NRFID >= 2){
+			var dt = TRIAL.RFIDTime[TRIAL.NRFID-1] - TRIAL.RFIDTime[TRIAL.NRFID-2]
+		}
+		port.statustext_received = 'ParsedTAG ' + TRIAL.RFIDTag[TRIAL.NRFID-1] + 
+									' @' + new Date().toLocaleTimeString("en-US") + 
+									' dt=' + dt + 'ms'
+		console.log(port.statustext_received)
+		updateHeadsUpDisplay()
+	}
 }
 
 serial.Port.prototype.onReceiveError = error => {
@@ -137,7 +155,7 @@ serial.Port.prototype.onReceiveError = error => {
 
 //PORT - transferOut
 serial.Port.prototype.writepumpdurationtoUSB = async function(data){
-	let msgstr = "<" + data.toString() + ">" // start(<), end(>) characters
+	let msgstr = "{" + data.toString() + "}" // start(<), end(>) characters
 	let textEncoder = new TextEncoder();
 	await this.device_.transferOut(4, textEncoder.encode(msgstr));
 
@@ -185,7 +203,7 @@ async function readLoop(port){
 function pingUSB(){
   if (port.connected == true){
   	var pingdur = 100
-	let msgstr = "<" + pingdur.toString() + ">" // start(<), end(>) characters
+	let msgstr = "{" + pingdur.toString() + "}" // start({), end(}) characters
 	let textEncoder = new TextEncoder();
 	port.device_.transferOut(4, textEncoder.encode(msgstr))
 
