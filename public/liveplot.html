@@ -350,6 +350,14 @@ function toVitals(){
 	vitals.subject = file.data.Subject;
 	vitals.trials = file.data.Response.length;
 	vitals.time = Math.round(Math.round(file.data.StartTime[vitals.trials-1] - file.data.StartTime[0])/60000); //convert msec to minutes
+	if (typeof(file.data.RFIDTag) != "undefined"){
+		vitals.RFIDtag = file.data.RFIDTag[file.data.RFIDTag.length-1];
+	    vitals.RFIDtime = Math.round(Math.round(file.data.RFIDTime[file.data.RFIDTime.length-1] - file.data.StartTime[0])/60000); //convert millisecond to minutes
+	}
+	else {
+		vitals.RFIDtag = null
+		vitals.RFIDtime = null
+	}
 
 vitals["automator"]
 	if (typeof(file.data.Automator) != "undefined"){
@@ -564,7 +572,9 @@ function addVitalsText(){
 		", r=" + vitals.nrewards + "=" + vitals.rewardestimate + "mL, " + vitals.time + "min)     " + 
 		"Automator: " + vitals.automator +  ", Stage " + vitals.currentautomatorstage + "_" + vitals.currentautomatorstagename + "     " + 
 		"Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  " + 
-		"Last Trial:" + file.dateSaved.toLocaleTimeString('en-US')
+		"Last Trial:" + file.dateSaved.toLocaleTimeString('en-US') + 
+		"\n RFID_Tag:" + vitals.RFIDtag  + 
+		", RFID_Time:" + vitals.RFIDtime + " min"
 	titleobj.innerHTML = vitals.subject;
 }
 
