@@ -59,15 +59,13 @@ function setupCanvasHeadsUp(){
 		document.querySelector("button[name=pumpflush]").style.visibility = "visible"
 		document.querySelector("button[name=pumptrigger]").style.display = "block"
 		document.querySelector("button[name=pumptrigger]").style.visibility = "visible"
+		document.querySelector("button[name=connectblescale]").style.display = "block"
+		document.querySelector("button[name=connectblescale]").style.visibility = "visible"
 
 		document.querySelector("button[name=pumpflush]").addEventListener(
-			'mouseup',function(){ event.preventDefault(); runPump("flush") },false)
-		document.querySelector("button[name=pumpflush]").addEventListener(
-			'touchend',function(){ event.preventDefault(); runPump("flush") },false)
+			'pointerup',function(){ event.preventDefault(); runPump("flush") },false)
 		document.querySelector("button[name=pumptrigger]").addEventListener(
-			'mouseup',function(){ event.preventDefault(); runPump("trigger") },false)
-		document.querySelector("button[name=pumptrigger]").addEventListener(
-			'touchend',function(){ event.preventDefault(); runPump("trigger") },false)
+			'pointerup',function(){ event.preventDefault(); runPump("trigger") },false)
 	}
 	var context=canvasobj.getContext('2d');
 
@@ -143,16 +141,36 @@ function updateHeadsUpDisplay(){
 		+ task1 + "<br>" + task2 + "<br>" + "<br>"
 		+ "last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>"
 		+ "last saved to dropbox @ " + CURRTRIAL.lastDropboxSave.toLocaleTimeString("en-US")
-		+ "<br>" + "<br>" 
-		+ "<font color=red><b>" + ble.statustext + port.statustext_connect + "<br></font>" 
-		+ "<font color=green><b>" + port.statustext_sent + "<br></font>" 
-		+ "<font color=blue><b>" + port.statustext_received + "<br></font>" 
+		// + "<br>" + "<br>" 
+		// + "<font color=red><b>" + ble.statustext + port.statustext_connect + "<br></font>" 
+		// + "<font color=green><b>" + port.statustext_sent + "<br></font>" 
+		// + "<font color=blue><b>" + port.statustext_received + "<br></font>"
+		// + "<font color=red><b>" + blescale.statustext_connect + "<br></font>" 		
+		// + "<font color=blue><b>" + blescale.statustext_received + "<br></font>"
 	}
 	else if (CANVAS.headsupfraction == 0){
 		textobj.innerHTML = ble.statustext + port.statustext_connect
 	}
 	else if (isNaN(CANVAS.headsupfraction)){ //before task params load
 		textobj.innerHTML = ble.statustext + port.statustext_connect
+	}
+}
+
+function updateHeadsUpDisplayDevices(){
+	var textobj = document.getElementById("headsuptextdevices");
+	if (CANVAS.headsupfraction > 0){
+		textobj.innerHTML = "<font color=red><b>" + ble.statustext
+		+ port.statustext_connect + "<br></font>" 
+		+ "<font color=green><b>" + port.statustext_sent + "<br></font>" 
+		+ "<font color=blue><b>" + port.statustext_received + "<br></font>"
+		+ "<font color=red><b>" + blescale.statustext_connect + "<br></font>" 		
+		+ "<font color=blue><b>" + blescale.statustext_received + "<br></font>"
+	}
+	else if (CANVAS.headsupfraction == 0){
+		textobj.innerHTML = port.statustext_connect
+	}
+	else if (isNaN(CANVAS.headsupfraction)){ //before task params load
+		textobj.innerHTML = ble.statustext_connect
 	}
 }
 

@@ -9,7 +9,7 @@ navigator.usb.addEventListener('connect', async function(device){
 	if (typeof(port.connected) == 'undefined' || port.connected == false){
 		port.statustext_connect = "ATTEMPTING TO RECONNECT USB DEVICE..."
 		console.log(port.statustext_connect)
-		updateHeadsUpDisplay()
+		updateHeadsUpDisplayDevices()
 
 		var event = {}
 		event.type = 'Reconnect'
@@ -22,7 +22,7 @@ navigator.usb.addEventListener('disconnect', device => {
 	port.connected = false
 	port.statustext_connect = "USB DEVICE DISCONNECTED"
 	console.log(port.statustext_connect)
-	updateHeadsUpDisplay()
+	updateHeadsUpDisplayDevices()
 });
 
 // STEP 0: Port Initialization - Open (instantiate) port before assigning callbacks to it
@@ -40,7 +40,7 @@ async function findUSBDevice(event){
 		if (ports.length == 0) {
 			port.statustext_connect = "NO USB DEVICE automatically found on page load"
 			console.log(port.statustext_connect)
-			updateHeadsUpDisplay()
+			updateHeadsUpDisplayDevices()
 		}
 		else {
 			var statustext = ""
@@ -54,7 +54,7 @@ async function findUSBDevice(event){
 			await port.connect()
 			port.statustext_connect = statustext
 			console.log(port.statustext_connect)
-			updateHeadsUpDisplay()
+			updateHeadsUpDisplayDevices()
 		}
 	}
 
@@ -81,7 +81,7 @@ async function findUSBDevice(event){
 
 		  	port.statustext_connect = "USB DEVICE CONNECTED BY USER ACTION!"
 		  	console.log(port.statustext_connect)
-			updateHeadsUpDisplay()
+			updateHeadsUpDisplayDevices()
 		}
 		catch(error){
 		  console.log(error);
@@ -128,7 +128,7 @@ serial.Port.prototype.onReceive = data => {
 
 	port.statustext_received = "RECEIVED CHAR <-- USB: " + textDecoder.decode(data)
 	console.log(port.statustext_received)
-	updateHeadsUpDisplay()
+	updateHeadsUpDisplayDevices()
 
 	var tagstart = port.statustext_received.indexOf('{tag',0);
 	if (tagstart > 0){
@@ -145,7 +145,7 @@ serial.Port.prototype.onReceive = data => {
 									' @' + new Date().toLocaleTimeString("en-US") + 
 									' dt=' + dt + 'ms'
 		console.log(port.statustext_received)
-		updateHeadsUpDisplay()
+		updateHeadsUpDisplayDevices()
 	}
 }
 
@@ -161,7 +161,7 @@ serial.Port.prototype.writepumpdurationtoUSB = async function(data){
 
 	port.statustext_sent = "TRANSFERRED CHAR --> USB:" + msgstr
 	console.log(port.statustext_sent)
-	updateHeadsUpDisplay()
+	updateHeadsUpDisplayDevices()
 }
 
 //PORT - disconnect
@@ -177,7 +177,7 @@ serial.Port.prototype.disconnect = async function() {
 
 	port.statustext_connect = "USB DEVICE DISCONNECTED"
 	console.log(port.statustext_connect)
-	updateHeadsUpDisplay()
+	updateHeadsUpDisplayDevices()
 };
 
 
@@ -209,7 +209,7 @@ function pingUSB(){
 
 	port.statustext_sent = "PINGING! TRANSFERRED CHAR --> USB:" + msgstr
 	console.log(port.statustext_sent)
-	updateHeadsUpDisplay()
+	updateHeadsUpDisplayDevices()
 
     pingTimer = setTimeout(function(){
       clearTimeout(pingTimer)
@@ -230,7 +230,7 @@ serial.Port.prototype.writepumpdurationtoUSBBYTE = async function(data) {
 
 	port.statustext_sent = "TRANSFERRED BYTE --> USB:" + view
 	console.log(port.statustext_sent)
-	updateHeadsUpDisplay()
+	updateHeadsUpDisplayDevices()
 };
 
 function pingUSBBYTE(){

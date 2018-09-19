@@ -141,6 +141,10 @@ function resetTRIAL(){
 	TRIAL.RFIDTime = []
 	TRIAL.RFIDTrial = []
 	TRIAL.NRFID = 0
+	TRIAL.Weight = []
+	TRIAL.WeightTime = []
+	TRIAL.WeightTrial = []
+	TRIAL.NWeights = 0
 	return TRIAL
 }
 
