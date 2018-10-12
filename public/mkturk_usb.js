@@ -1,9 +1,16 @@
-var port = {}
+var port={
+  statustext_connect: "",
+  statustext_sent: "",
+  statustext_received: "",
+}
 var serial = {}
-
 
 navigator.usb.addEventListener('connect', async function(device){
 	if (typeof(port.connected) == 'undefined' || port.connected == false){
+		port.statustext_connect = "ATTEMPTING TO RECONNECT USB DEVICE..."
+		console.log(port.statustext_connect)
+		updateHeadsUpDisplayDevices()
+
 		var event = {}
 		event.type = 'Reconnect'
 		await findUSBDevice(event)
@@ -12,38 +19,52 @@ navigator.usb.addEventListener('connect', async function(device){
 
 navigator.usb.addEventListener('disconnect', device => {
   // USB device disconnected
-  port.connected = false
-  console.log("USB device disconnected")
+	port.connected = false
+	port.statustext_connect = "USB DEVICE DISCONNECTED"
+	console.log(port.statustext_connect)
+	updateHeadsUpDisplayDevices()
 });
-
 
 // STEP 0: Port Initialization - Open (instantiate) port before assigning callbacks to it
 async function findUSBDevice(event){
-
-	// Auto-Select first port
+	// STEP 1A: Auto-Select first port
 	if (event.type == "AutoConnect" || 
 		event.type == "Reconnect"){
-		ports = await getPorts()
+// 		ports = await getPorts()
+		//STEP 1A: GetPorts - Automatic at initialization
+		// -Enumerate all attached devices
+		// -Check for permission based on vendorID & productID
+		devices = await navigator.usb.getDevices()
+		ports = devices.map(device => new serial.Port(device)); //return port
+
 		if (ports.length == 0) {
-			console.log('No device found on page load.');
+			port.statustext_connect = "NO USB DEVICE automatically found on page load"
+			console.log(port.statustext_connect)
+			updateHeadsUpDisplayDevices()
 		}
 		else {
+			var statustext = ""
 			if (event.type == "AutoConnect"){
-				console.log('Successfully connected USB device on page load');				
+				statustext = "AUTO-CONNECTED USB DEVICE ON PAGE LOAD!"
 			}
 			else if (event.type == "Reconnect"){
-				console.log('Successfully reconnected USB device upon detection');		
+				statustext = "RECONNECTED USB DEVICE!"
 			}
 			port = ports[0];
 			await port.connect()
+			port.statustext_connect = statustext
+			console.log(port.statustext_connect)
+			updateHeadsUpDisplayDevices()
 		}
 	}
 
-	// User connects to Port
+	// STEP 1B: User connects to Port
 	if (event.type == "touchend" || event.type == "mouseup"){
 		event.preventDefault(); //prevents additional downstream call of click listener
 		try{
-		  // port = await requestPort()
+			//STEP 1B: RequestPorts - User based
+			// -Get device list based on Arduino filter
+			// -Look for user activation to select device
 			const filters = [
 			  { 'vendorId': 0x2341, 'productId': 0x8036 },
 			  { 'vendorId': 0x2341, 'productId': 0x8037 },
@@ -56,40 +77,18 @@ async function findUSBDevice(event){
 			device = await navigator.usb.requestDevice({ 'filters': filters })
 			port = new serial.Port(device) //return port
 
-		  await port.connect()
+			await port.connect()
+
+		  	port.statustext_connect = "USB DEVICE CONNECTED BY USER ACTION!"
+		  	console.log(port.statustext_connect)
+			updateHeadsUpDisplayDevices()
 		}
 		catch(error){
 		  console.log(error);
 		}
-		waitforClick.next(1)	
+		waitforClick.next(1)
 	}
 }
-
-//STEP 1A: GetPorts - Automatic at initialization
-// -Enumerate all attached devices
-// -Check for permission based on vendorID & productID
-async function getPorts(){
-  devices = await navigator.usb.getDevices()
-  return devices.map(device => new serial.Port(device)); //return port
-};
-
-//STEP 1B: RequestPorts - User based
-// -Get device list based on Arduino filter
-// -Look for user activation to select device
-async function requestPort(){
-  const filters = [
-    { 'vendorId': 0x2341, 'productId': 0x8036 },
-    { 'vendorId': 0x2341, 'productId': 0x8037 },
-    { 'vendorId': 0x2341, 'productId': 0x804d },
-    { 'vendorId': 0x2341, 'productId': 0x804e },
-    { 'vendorId': 0x2341, 'productId': 0x804f },
-    { 'vendorId': 0x2341, 'productId': 0x8050 },
-  ];
-
-  device = await navigator.usb.requestDevice({ 'filters': filters })
-  return new serial.Port(device) //return port
-}
-
 
 //============= SERIAL OBJECT =====================//
 
@@ -119,8 +118,67 @@ serial.Port.prototype.connect = async function(){
 
   this.connected = true
   readLoop(this)
-  pingUSB()
+  // pingUSB()
 }
+
+//PORT  - onReceive
+serial.Port.prototype.onReceive = data => {
+	let textDecoder = new TextDecoder();
+	// console.log('Serial roundtrip write->read' + serial.dt[serial.dt.length-1])
+
+	port.statustext_received = "RECEIVED CHAR <-- USB: " + textDecoder.decode(data)
+	console.log(port.statustext_received)
+	updateHeadsUpDisplayDevices()
+
+	var tagstart = port.statustext_received.indexOf('{tag',0);
+	if (tagstart > 0){
+		var tagend = port.statustext_received.indexOf('}',0);
+		TRIAL.RFIDTime[TRIAL.NRFID] = Math.round(performance.now());
+		TRIAL.RFIDTrial[TRIAL.NRFID] = CURRTRIAL.num
+		TRIAL.RFIDTag[TRIAL.NRFID] = port.statustext_received.slice(tagstart+4,tagend);
+		TRIAL.NRFID = TRIAL.NRFID+1;
+
+		if (TRIAL.NRFID >= 2){
+			var dt = TRIAL.RFIDTime[TRIAL.NRFID-1] - TRIAL.RFIDTime[TRIAL.NRFID-2]
+		}
+		port.statustext_received = 'ParsedTAG ' + TRIAL.RFIDTag[TRIAL.NRFID-1] + 
+									' @' + new Date().toLocaleTimeString("en-US") + 
+									' dt=' + dt + 'ms'
+		console.log(port.statustext_received)
+		updateHeadsUpDisplayDevices()
+	}
+}
+
+serial.Port.prototype.onReceiveError = error => {
+  console.log(error);
+};
+
+//PORT - transferOut
+serial.Port.prototype.writepumpdurationtoUSB = async function(data){
+	let msgstr = "{" + data.toString() + "}" // start(<), end(>) characters
+	let textEncoder = new TextEncoder();
+	await this.device_.transferOut(4, textEncoder.encode(msgstr));
+
+	port.statustext_sent = "TRANSFERRED CHAR --> USB:" + msgstr
+	console.log(port.statustext_sent)
+	updateHeadsUpDisplayDevices()
+}
+
+//PORT - disconnect
+serial.Port.prototype.disconnect = async function() {
+	await this.device_.controlTransferOut({
+			'requestType': 'class',
+			'recipient': 'interface',
+			'request': 0x22,
+			'value': 0x00,
+			'index': 0x02
+		})
+	this.device_.close()
+
+	port.statustext_connect = "USB DEVICE DISCONNECTED"
+	console.log(port.statustext_connect)
+	updateHeadsUpDisplayDevices()
+};
 
 
 //PORT - readloop
@@ -142,39 +200,16 @@ async function readLoop(port){
   }
 }
 
-
-serial.Port.prototype.onReceive = data => {
-  let textDecoder = new TextDecoder();
-  // console.log('Serial roundtrip write->read' + serial.dt[serial.dt.length-1])
-  console.log(textDecoder.decode(data));
-}
-
-serial.Port.prototype.onReceiveError = error => {
-  console.log(error);
-};
-
-serial.Port.prototype.writepumpdurationtoUSB = async function(data){
-	let msgstr = "<" + data.toString() + ">" // start(<), end(>) characters
-	let textEncoder = new TextEncoder();
-	await this.device_.transferOut(4, textEncoder.encode(msgstr));
-}
-
-//PORT - send pump duration to arduino
-serial.Port.prototype.writepumpdurationtoUSBBYTE = async function(data) {
-  serial.twrite_pumpduration=performance.now()
-  let view = new Uint16Array(1);
-  view[0] = parseInt(data,10);
-  view[0] = parseInt("5000",10);
-  await this.device_.transferOut(4, view);
-  console.log('wrote usb val for pump duration')
-};
-
 function pingUSB(){
   if (port.connected == true){
   	var pingdur = 100
-	let msgstr = "<" + pingdur.toString() + ">" // start(<), end(>) characters
+	let msgstr = "{" + pingdur.toString() + "}" // start({), end(}) characters
 	let textEncoder = new TextEncoder();
 	port.device_.transferOut(4, textEncoder.encode(msgstr))
+
+	port.statustext_sent = "PINGING! TRANSFERRED CHAR --> USB:" + msgstr
+	console.log(port.statustext_sent)
+	updateHeadsUpDisplayDevices()
 
     pingTimer = setTimeout(function(){
       clearTimeout(pingTimer)
@@ -183,6 +218,20 @@ function pingUSB(){
   }
 }
 
+//____________________LEGACY________________________
+
+//PORT - send pump duration to arduino
+serial.Port.prototype.writepumpdurationtoUSBBYTE = async function(data) {
+	serial.twrite_pumpduration=performance.now()
+	let view = new Uint16Array(1);
+	view[0] = parseInt(data,10);
+	view[0] = parseInt("5000",10);
+	await this.device_.transferOut(4, view);
+
+	port.statustext_sent = "TRANSFERRED BYTE --> USB:" + view
+	console.log(port.statustext_sent)
+	updateHeadsUpDisplayDevices()
+};
 
 function pingUSBBYTE(){
   if (port.connected == true){
@@ -197,15 +246,3 @@ function pingUSBBYTE(){
     },3000)
   }
 }
-
-//PORT - disconnect
-serial.Port.prototype.disconnect = async function() {
-  await this.device_.controlTransferOut({
-            'requestType': 'class',
-            'recipient': 'interface',
-            'request': 0x22,
-            'value': 0x00,
-            'index': 0x02
-        })
-  this.device_.close()
-};

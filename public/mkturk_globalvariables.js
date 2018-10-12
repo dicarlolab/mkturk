@@ -47,6 +47,7 @@ FLAGS.touchduration = -1;
 FLAGS.punishOutsideTouch = 0
 FLAGS.acquiredTouch = 0
 FLAGS.touchGeneratorCreated = 0
+FLAGS.runPump = 0
 
 var CANVAS = {}; 
 var CANVAS = {
@@ -136,6 +137,14 @@ function resetTRIAL(){
 	TRIAL.AutomatorStage = []
 	TRIAL.TSequenceDesired = []
 	TRIAL.TSequenceActual = []
+	TRIAL.RFIDTag = []
+	TRIAL.RFIDTime = []
+	TRIAL.RFIDTrial = []
+	TRIAL.NRFID = 0
+	TRIAL.Weight = []
+	TRIAL.WeightTime = []
+	TRIAL.WeightTrial = []
+	TRIAL.NWeights = 0
 	return TRIAL
 }
 

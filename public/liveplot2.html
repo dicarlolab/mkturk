@@ -1,0 +1,895 @@
+<!doctype html>
+<html>
+<head>
+<title id="page_title">liveplot2_mkturk</title>
+<script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+<script src="liveplot_utils.js"></script>
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script src="liveplot2_googlecharts.js" type="text/javascript"></script>
+<script src="mkturk_installsettings.js"></script>
+<style type='text/css'>
+.small-font {
+    font-size: 8px;
+}
+
+.medium-font {
+    font-size: 10px;
+}
+</style>
+<script type="text/javascript">
+// Flow: 
+// loadGoogleCharts --> getDropbox
+// checkFileStatus -- wait 1 second -- if new data -->
+// readDatafromDropbox --> initializeChartData --> updatePlots
+
+// SECTIONS:
+//================== GOOGLE CHARTS LOADING ==================//
+//================== DROPBOX STUFF ==================//
+//================== DATA HANDLING ==================//
+//================== PLOTTING ==================//
+
+//================== GOOGLE CHARTS LOADING ==================//
+// Asynchronous: Live plotting using google charts
+function loadGoogleCharts() {
+    // Load the Visualization API and the piechart package.
+    google.charts.load('current', {
+        'packages': ['corechart', 'bar', 'table', 'controls']
+    });
+    google.charts.setOnLoadCallback(function() {
+        dataCumulative = new google.visualization.DataTable()
+        dataXYPos = new google.visualization.DataTable()
+        dataReward = new google.visualization.DataTable()
+        dataChoice = new google.visualization.DataTable()
+        dataObjPerf = new google.visualization.DataTable()
+        dashboard2 = new google.visualization.Dashboard(document.getElementById('dashboard2_div'));
+
+        livesliderTime = new google.visualization.ControlWrapper({
+            'controlType': 'ChartRangeFilter',
+            'containerId': 'filtertime_div',
+            'options': livesliderTimeOptions,
+            'state': {
+                'range': {
+                    'start': 0,
+                    'end': 100
+                }
+            }
+        })
+        //wrapper
+
+        livearea = new google.visualization.ChartWrapper({
+            'chartType': 'AreaChart',
+            'containerId': 'area_div'
+        })
+
+        // Establish dependencies, declaring that the sliders drive 'liveline' & 'livearea',
+        // so that data will only display for entries that are let through
+        // given the chosen slider range.
+        dashboard2.bind(livesliderTime, livearea)
+
+        livescatter = new google.visualization.ScatterChart(document.getElementById('scatter_div'));
+        livereward = new google.visualization.ColumnChart(document.getElementById('reward_div'));
+        livechoice = new google.visualization.ColumnChart(document.getElementById('choice_div'));
+        liveobjperf = new google.visualization.ColumnChart(document.getElementById('objectPerf_div'));
+ 
+        // data formatters
+        formatterDate = new google.visualization.DateFormat({
+            pattern: 'h aa'
+        })
+        formatterDigits = new google.visualization.NumberFormat({
+            fractionDigits: 2
+        })
+        formatterColor = new google.visualization.ColorFormat();
+
+        // cell color formatting --> https://developers.google.com/chart/interactive/docs/reference#colorformatter
+        dx = 1 / (colormapJet.length - 1);
+        for (var i = 0; i <= colormapJet.length - 1; i++) {
+            formatterColor.addRange(i * dx, (i + 1) * dx, 'gray', colormapJet[i])
+        }
+
+        getFileListDropbox2();
+    })
+}
+//================== GOOGLE CHARTS LOADING (end) ==================//
+
+//================== DROPBOX STUFF ==================//
+// Mkturk
+var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "liveplot2.html"
+
+//return whether user was redirected here after authenticating
+function isAuthenticated() {
+    return !!getAccessTokenFromUrl()
+}
+
+//parse access token from url if in urls hash
+function getAccessTokenFromUrl() {
+    return utils.parseQueryString(window.location.hash).access_token
+}
+
+// Asynchronous: Get file list from dropbox directory
+async function getFileListDropbox2() {
+    try {
+        var entries = []
+        // 		file.dir = "/mkturkfiles/imagebags/objectome/wrench/flarenut_spanner/"
+        response = await dbx.filesListFolder({path:file.dir,recursive:true})
+        entries.push(...response.entries)
+
+        // Use response.has_more to propagate 
+        var num_iterations = 0
+        var iteration_limit = 100
+        while (response.has_more == true) {
+            response = await dbx.filesListFolderContinue({cursor:response.cursor})
+            entries.push(...response.entries)
+
+            num_iterations = num_iterations + 1
+            if (num_iterations > iteration_limit) {
+                throw 'Hit iteration limit of ' + iteration_limit + '. Check your ' + file.dir + ' directory is not insanely large.'
+            }
+        }
+
+        for (var q = entries.length - 1; q >= 0; q--) {
+            if (entries[q][".tag"] == "file" && entries[q].name.endsWith(".txt")) {
+                // 				console.log("found ", entries[q].name)
+                file.list[q] = entries[q].name
+                file.pathlist[q] = entries[q].path_display
+
+                //add to menu as option
+                var opt = document.createElement('option')
+                opt.value = q
+                opt.innerHTML = file.list[q]
+                menuobj.appendChild(opt)
+            }
+        }
+        file.name = file.pathlist[file.pathlist.length - 1]
+        file.filehasChanged = true
+        readDatafromDropbox2()
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+// Asynchronous: Check for file updates
+function checkFileStatus2() {
+    dbx.filesGetMetadata({
+        path: file.name
+    }).then(function(filemeta) {
+        if (file.rev != filemeta.rev) {
+            file.rev = filemeta.rev
+            file.datahasChanged = true
+            console.log('file was updated rev=' + file.rev)
+        } else {
+            file.datahasChanged = false
+        }
+
+        if (file.filehasChanged == true || file.datahasChanged == true) {
+            readDatafromDropbox2()
+        } else {
+            setTimeout(function() {
+                checkFileStatus2()
+            }, 1000)
+        }
+    }).catch(function(error) {
+        console.error(error)
+    })
+    return false
+}
+
+//Asynchronous: Read data from selected file in dropbox
+function readDatafromDropbox2() {
+    dbx.filesDownload({
+        path: file.name
+    }).then(function(data) {
+        console.log("success: loaded file size " + data.size);
+
+        file.rev = data.rev
+        file.dateSaved = new Date(data.client_modified)
+
+        //Parse date
+        var ind1 = file.name.indexOf("/2")
+        var ind2 = file.name.indexOf('_')
+        var datestr = file.name.substring(ind1 + 1, ind2)
+        file.dateCreated = new Date(datestr)
+
+        var reader = new FileReader()
+        reader.onload = function(e) {
+            var datajson
+            datajson = JSON.parse(reader.result)
+            if (Array.isArray(datajson)) {
+                file.data = {};
+                for (var elem = 0; elem < datajson.length; elem++) {
+                    for (var prop in datajson[elem]) {
+                        file.data[prop] = datajson[elem][prop]
+                    }
+                }
+
+            } else {
+                file.data = datajson
+            }
+            parseImageInfo()
+        }
+        reader.readAsText(data.fileBlob)
+    }).catch(function(error) {
+        console.error(error)
+    })
+    return false
+}
+
+function parseImageInfo() {
+    if (file.data.ImageFolderSample == 4 | file.data.ImageFolderSample == 5) {
+        objlabels = objlabelsMURI;
+        cat = catMURI;
+        catlist = catlistMURI;
+    } else if (file.data.ImageFolderSample == 9 | file.data.ImageFolderSample == 10 | file.data.ImageFolderSample == 11) {
+        objlabels = objlabelsHVM;
+        cat = catHVM;
+        catlist = catlistHVM;
+    } else if (file.data.ImageFolderSample == 12 | file.data.ImageFolderSample == 13 | file.data.ImageFolderSample == 14 | file.data.ImageFolderSample == 15) {
+        objlabels = objlabelsCOCO;
+        cat = catCOCO;
+        catlist = catlistCOCO;
+    } else {
+        objlabels = objlabelsOBJ;
+        cat = catOBJ;
+        catlist = catlistOBJ;
+    }
+
+    if (file.filehasChanged == true) {
+        initializeChartData()
+    } else if (file.datahasChanged == true) {
+        updatePlots()
+    }
+}
+//================== DROPBOX STUFF (end) ==================//
+
+//================== DATA HANDLING ==================//
+// Synchronous: Initialize chart data matrices
+function initializeChartData() {
+    dataCumulative.removeRows(0, dataCumulative.getNumberOfRows());
+    dataCumulative.removeColumns(0, dataCumulative.getNumberOfColumns());
+    dataXYPos.removeRows(0, dataXYPos.getNumberOfRows());
+    dataXYPos.removeColumns(0, dataXYPos.getNumberOfColumns());
+    dataReward.removeRows(0, dataReward.getNumberOfRows());
+    dataReward.removeColumns(0, dataReward.getNumberOfColumns());
+    dataChoice.removeRows(0, dataChoice.getNumberOfRows());
+    dataChoice.removeColumns(0, dataChoice.getNumberOfColumns());
+    dataObjPerf.removeRows(0,dataObjPerf.getNumberOfRows());
+    dataObjPerf.removeColumns(0,dataObjPerf.getNumberOfColumns());
+
+    dataCumulative.addColumn('datetime', 'time')
+    //0
+    dataCumulative.addColumn('number', 'Trials')
+    //1
+    dataCumulative.addColumn('number', 'Performance')
+    //2
+    dataCumulative.addColumn('number', 'RFID')
+    //3
+    dataCumulative.addColumn('number', 'Weight')
+    //4
+
+    dataXYPos.addColumn('number', 'xpos')
+    dataXYPos.addColumn('number', 'Fix_R')
+    dataXYPos.addColumn('number', 'Fix_NR')
+    dataXYPos.addColumn('number', 'Target_R')
+    dataXYPos.addColumn('number', 'Target_NR')
+
+    dataReward.addColumn('string', 'reward size')
+    dataReward.addColumn('number', 'nrewards')
+
+//     var nrewardMax = []
+//     for (var i = 0; i <= file.data.NRewardMax; i++) {
+//         nrewardMax.push(i.toString())
+//     }
+
+//     for (var i = 0; i <= nrewardMax.length - 1; i++) {
+//         dataReward.addRow([nrewardMax[i], 0]);
+//     }
+
+    dataChoice.addColumn('string', 'choice')
+    dataChoice.addColumn('number', '# of responses')
+
+//     for (var i = 0; i <= file.data.TestGridIndex.length - 1; i++) {
+//         dataChoice.addRow(['choice' + (i + 1), 0]);
+//     }
+
+    dataObjPerf.addColumn('string','object')
+    dataObjPerf.addColumn('number','performance')
+
+//     for (var i=0; i<=file.data.ImageBagsSample.length-1;i++){
+//         dataObjPerf.addRow([file.data.ImageBagsSample[i].split("/")[4],0]);
+//     }
+
+    updatePlots()
+    file.filehasChanged = false
+}
+
+// Synchronous
+function toTask() {
+    task.rewardstage = 1;
+    if (typeof (file.data.RewardStage) != "undefined") {
+        task.rewardstage = file.data.RewardStage;
+    }
+    task.varsample = 3;
+    if (typeof (file.data.UsePrototypeforSample) != "undefined") {
+        if (file.data.UsePrototypeforSample == true) {
+            task.imagefoldersample = 0;
+        }
+    }
+    if (typeof (file.data.ImageFolderSample) != "undefined") {
+        task.imagefoldersample = file.data.ImageFolderSample;
+    }
+    if (typeof (file.data.ImageFolderTest) != "undefined") {
+        task.imagefoldertest = file.data.ImageFolderTest;
+    }
+
+    task.sampleon = file.data.SampleON;
+    task.sampleoff = file.data.SampleOFF
+    if (typeof (file.data.KeepSampleON) != "undefined") {
+        if (file.data.KeepSampleON == 1) {
+            task.sampleoff = -1;
+            //Sample left on
+        }
+    }
+
+    task.nway = file.data.Nway;
+    task.nobj = file.data.ImageBagsTest.length;
+    task.objectlist = file.data.ImageBagsTest
+
+    task.rewardper1000 = 0;
+    if (typeof (file.data.RewardPer1000Trials) != "undefined") {
+        task.rewardper1000 = Math.round(file.data.RewardPer1000Trials);
+    }
+}
+
+// Synchronous
+function toVitals() {
+    vitals.subject = file.data.Subject;
+    vitals.trials = file.data.Response.length;
+    vitals.time = Math.round(Math.round(file.data.StartTime[vitals.trials - 1] - file.data.StartTime[0]) / 60000);
+    //convert msec to minutes
+    if (typeof (file.data.RFIDTag) != "undefined") {
+        vitals.RFIDtag = file.data.RFIDTag[file.data.RFIDTag.length - 1];
+        vitals.RFIDtime = Math.round(Math.round(file.data.RFIDTime[file.data.RFIDTime.length - 1] - file.data.StartTime[0]) / 60000);
+        //convert millisecond to minutes
+    } else {
+        vitals.RFIDtag = null
+        vitals.RFIDtime = null
+    }
+
+    if (typeof (file.data.Weight) != "undefined") {
+        vitals.Weight = file.data.Weight[file.data.Weight.length - 1];
+        vitals.WeightTime = Math.round(Math.round(file.data.WeightTime[file.data.WeightTime.length - 1] - file.data.StartTime[0]) / 60000);
+        //convert millisecond to minutes
+    } else {
+        vitals.Weight = null
+        vitals.WeightTime = null
+    }
+
+    vitals["automator"]
+    if (typeof (file.data.Automator) != "undefined") {
+        vitals.automator = file.data.Automator
+    } else {
+        vitals.automator = null
+    }
+
+    if (typeof (file.data.CurrentAutomatorStage) != "undefined") {
+        vitals.currentautomatorstage = file.data.CurrentAutomatorStage
+    } else {
+        vitals.currentautomatorstage = null
+    }
+
+    if (typeof (file.data.CurrentAutomatorStageName) != "undefined") {
+        vitals.currentautomatorstagename = file.data.CurrentAutomatorStageName
+    } else {
+        vitals.currentautomatorstagename = null
+    }
+
+    if (typeof (file.data.BatteryLDT) != "undefined") {
+        vitals.batteryleft = Math.round(file.data.BatteryLDT[file.data.BatteryLDT.length - 1][0] * 100);
+        vitals.batteryused = Math.round(file.data.BatteryLDT[0][0] * 100 - vitals.batteryleft);
+    } else {
+        vitals.batteryleft = null;
+        vitals.batteryused = null;
+    }
+    var ncorrect = 0;
+    for (var i = 0; i <= file.data.CorrectItem.length - 1; i++) {
+        if (file.data.CorrectItem[i] == file.data.Response[i]) {
+            // | file.data.RewardStage==0){
+            ncorrect++;
+        }
+    }
+    vitals.pctcorrect = Math.round(100 * ncorrect / file.data.Response.length);
+
+    if (typeof (file.data.NReward) != "undefined") {
+        vitals.nrewards = file.data.NReward.reduce(function(a, b) {
+            return a + b;
+        }, 0);
+    }
+
+    vitals.rewardestimate = 0;
+    if (typeof (file.data.RewardPer1000Trials) != "undefined") {
+        vitals.rewardestimate = Math.round(file.data.RewardPer1000Trials * vitals.nrewards / 1000);
+    }
+}
+
+// Synchronous
+function toPerformanceData() {
+
+    dataCumulative.removeRows(0,dataCumulative.getNumberOfRows());
+    dataXYPos.removeRows(0,dataXYPos.getNumberOfRows());
+
+    //Create the data table
+    var xdata = []
+    var ydata = []
+    var ntotal = []
+    var ncorrect = []
+    var tcurrent = []
+    var nRFID = []
+    var nWeight = []
+    var xpos = []
+    var ypos = []
+    var touchevent = []
+
+    for (var i = 0; i <= file.data.CorrectItem.length - 1; i++) {
+
+        if (file.data.CorrectItem[i] == file.data.Response[i]) {
+            // | file.data.RewardStage==0){
+            ydata[i] = 1;
+        } else {
+            ydata[i] = 0;
+        }
+        xdata[i] = i;
+
+        //Cumulative trials & correct trials
+        ntotal[i] = xdata.length
+        if (i > 0) {
+            ncorrect[i] = ncorrect[i - 1] + ydata[i]
+        } else if (i == 0) {
+            ncorrect[i] = ydata[i]
+        }
+
+    }
+//Referencing to time file was last written & time of last trial rather than to file start.
+    //Done because file can be changed on the fly which changes file start relative to performance.now()
+    if (typeof file.data.ResponseXYT === 'undefined' || file.data.ResponseXYT.length < 1 || typeof file.data.ResponseXYT[file.data.ResponseXYT.length - 1][2] === 'undefined') {
+        var tend = file.data.FixationXYT[file.data.FixationXYT.length - 1][2]
+    } else {
+        var tend = file.data.ResponseXYT[file.data.ResponseXYT.length - 1][2]
+    }
+
+    
+    for (var i = 0; i <= ydata.length - 1; i++){
+
+        var tfix = file.data.FixationXYT[i][2]
+        //in milliseconds
+        var t = new Date(file.dateSaved)
+        t.setTime(t.getTime() - (tend - tfix))
+
+        var minIndex = 0;
+        for (var j = 0; j <= file.data.RFIDTime.length - 1; j++) {
+
+            if (Math.abs(file.data.RFIDTime[j] - tfix) < Math.abs(file.data.RFIDTime[minIndex]-tfix)) {
+                minIndex = j;
+            }
+        }
+        nRFID[i] = minIndex
+
+        var minIndex = 0;
+
+        for (var j = 0; j <= file.data.WeightTime.length - 1; j++) {
+
+            if (Math.abs(file.data.WeightTime[j] - tfix) < Math.abs(file.data.WeightTime[minIndex]-tfix)) {
+                minIndex = j;
+            }
+        }
+        nWeight[i] = minIndex
+
+        dataCumulative.addRows([[new Date(t), ntotal[i], ncorrect[i], nRFID[i] / 1000, nWeight[i] / 1000]])
+    }
+
+    formatterDate.format(dataCumulative, 0)
+
+
+
+    if (typeof file.data.ResponseXYT != "undefined" && file.data.ResponseXYT.length >= 1) {
+        for (var i = 0; i <= file.data.FixationXYT.length * 2 - 1; i += 2) {
+            touchevent[i] = file.data.FixationXYT[i / 2]
+            touchevent[i + 1] = file.data.ResponseXYT[i / 2]
+        }
+    }
+
+    for (var i = 0; i <= touchevent.length - 1; i++) {
+        xpos = touchevent[i][0]
+        ypos = file.data.workspace[3] - touchevent[i][1]
+
+        var ydata_index = []
+        if (i % 2 == 0) {
+            ydata_index = i / 2
+        } else {
+            ydata_index = (i - 1) / 2
+        }
+
+        if (xpos != -1) {
+            if ((i % 2 == 0) && ydata[ydata_index] == 1) {
+                //Fixation and Hit
+                dataXYPos.addRows([[xpos,ypos,null ,null  ,null  ]])
+            } else if ((i % 2 == 0 && ydata[ydata_index] == 0)) {
+                //Fixation and Missed
+                dataXYPos.addRows([[xpos,null  , ypos,null  ,null  ]])
+            } else if ((i % 2 == 1 && ydata[ydata_index] == 1)) {
+                //Target and Hit		
+                dataXYPos.addRows([[xpos,null  ,null  , ypos,null ]])
+            } else if ((i % 2 == 1 && ydata[ydata_index] == 0)) {
+                //Target and Missed
+                dataXYPos.addRows([[xpos,null ,null ,null , ypos]])
+            }
+        }
+    }
+
+}
+
+// Synchronous
+function toRewardData() {
+    dataReward.removeRows(0,dataReward.getNumberOfRows());
+    var nrewardMax = []
+    for (var i = 0; i <= file.data.NRewardMax; i++) {
+        nrewardMax.push(i.toString())
+    }
+
+    for (var i = 0; i <= nrewardMax.length - 1; i++) {
+        dataReward.addRow([nrewardMax[i], 0]);
+    }
+
+    var NdiffReward = Array.apply(null, Array(nrewardMax.length)).map(Number.prototype.valueOf, 0);
+
+    for (var i = 0; i <= file.data.NReward.length - 1; i++) {
+
+        for (var j = 0; j <= nrewardMax.length - 1; j++) {
+            if (file.data.NReward[i].toString() == nrewardMax[j]) {
+                NdiffReward[j]++
+            }
+            dataReward.setValue(j, 1, NdiffReward[j] / file.data.NReward.length)
+        }
+
+    }
+}
+
+//Synchronous
+function toChoiceData() {
+
+    var possibleResp = []
+    dataChoice.removeRows(0,dataChoice.getNumberOfRows());
+    for (var i = 0; i <= file.data.TestGridIndex.length - 1; i++) {
+        dataChoice.addRow(['choice' + (i + 1), 0]);
+        possibleResp[i] = i
+    }
+
+
+    var NdiffChoice = Array.apply(null, Array(possibleResp.length)).map(Number.prototype.valueOf, 0);
+
+    for (var i = 0; i <= file.data.Response.length - 1; i++) {
+
+        for (var j = 0; j <= possibleResp.length - 1; j++) {
+            if (file.data.Response[i] == possibleResp[j]) {
+                NdiffChoice[j]++
+            }
+            dataChoice.setValue(j, 1, NdiffChoice[j] / file.data.Response.length)
+        }
+
+    }
+}
+
+//Synchronous
+function toObjPerfData(){
+
+    dataObjPerf.removeRows(0,dataObjPerf.getNumberOfRows());
+    
+    var sampleobj = []
+    for (var i=0; i<=file.data.ImageBagsSample.length-1;i++){
+        sampleobj[i] = file.data.ImageBagsSample[i].split("/")[4];
+        dataObjPerf.addRow([sampleobj[i],0]);
+    }
+
+
+    var NdiffObjPerf = Array.apply(null, Array(sampleobj.length)).map(Number.prototype.valueOf, 0);
+    var NdiffObj = Array.apply(null, Array(sampleobj.length)).map(Number.prototype.valueOf, 0);
+    for (var i = 0; i <= file.data.Sample.length - 1; i++) {
+        for (var j = 0; j <= sampleobj.length - 1; j++) {
+            if (file.data.Sample[i]==j){
+                NdiffObj[j]++
+            }
+            if (file.data.Response[i] == file.data.CorrectItem[i] && file.data.Sample[i]==j) {
+                NdiffObjPerf[j]++
+            }
+            dataObjPerf.setValue(j, 1, NdiffObjPerf[j] / NdiffObj[j])
+        }
+
+    }
+}
+
+
+//================== DATA HANDLING (end) ==================//
+
+//================== PLOTTING ==================//
+// Synchronous
+function updatePlots() {
+    toVitals();
+    toTask();
+    toPerformanceData();
+    toRewardData();
+    toChoiceData();
+    toObjPerfData();
+    addVitalsText();
+    addTaskText();
+
+    drawArea()
+    //cumulative
+    drawScatter()
+    drawReward()
+    drawChoiceBar()
+    drawObjPerfBar()
+    file.datahasChanged = false
+    checkFileStatus2();
+}
+
+// Synchronous
+function addVitalsText() {
+    areaOptions.title = vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.trials + ", r=" + vitals.nrewards + "=" + vitals.rewardestimate + "mL, " + 
+    vitals.time + "min)     " + "Automator: " + vitals.automator + ", Stage " + vitals.currentautomatorstage + "_" + vitals.currentautomatorstagename + "     " + 
+    "Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  " + "Last Trial:" + file.dateSaved.toLocaleTimeString('en-US') + 
+    "\n RFID_Tag:" + vitals.RFIDtag + ", RFID_Time:" + vitals.RFIDtime + " min," + vitals.Weight + "g, Weight_Time:" + vitals.WeightTime + " min" 
+    titleobj.innerHTML = vitals.subject;
+}
+
+// Synchronous
+function addTaskText() {
+    task["name"] = ""
+    if (task.rewardstage == 0) {
+        task["name"] = "Fixation";
+    } else if (task.rewardstage == 1 && file.data.ImageBagsSample.length>1) {
+        task["name"] = "Match-to-Sample";
+    } else if (task.nrewardstage == 1 && file.data.ImageBagsSample.length==1) {
+        task["name"] = "Detection";
+    }
+
+    tasktextobj.innerHTML = "<b>" + task.name + "</b>:" + task.nway + "-way" + ", " + task.nobj + "-obj" + "<br>" + "Sample folder " + task.imagefoldersample + ", Test folder " + task.imagefoldertest + "<br>" + "Sample On=" + task.sampleon + " ms" + ", Sample Off=" + task.sampleoff + "<br>" + "objs=[" + task.objectlist + "]" + "<br>" + "reward=" + task.rewardper1000 + "mL per 1000 correct trials"
+}
+
+//Synchronous
+function drawArea() {
+    var sliderstate = livesliderTime.getState()
+
+    var tmin = new Date(dataCumulative.getColumnRange(0).min)
+    var tmax = new Date(dataCumulative.getColumnRange(0).max)
+
+    var trange = tmax.getTime() - tmin.getTime()
+    var onehr = 60 * 60 * 1000
+
+    //updating slider
+    if (file.datahasChanged == true && file.filehasChanged == false) {
+        // if (trange < onehr){
+        // expand window size automatically up to 100
+        sliderstate.range.start = tmin
+        sliderstate.range.end = tmax
+        // }
+        // else {
+        // 	//shift slider over
+        // 	var dt = tmax.getTime() - tlast.getTime()
+        // 	sliderstate.range.start.setTime(sliderstate.range.start.getTime() + dt)
+        // 	sliderstate.range.end.setTime(sliderstate.range.end.getTime() + dt)
+        // }
+    } else if (file.filehasChanged == true) {
+        sliderstate.range.start = tmin
+        sliderstate.range.end = tmax
+        // //shift slider to end
+        // sliderstate.range.start = new Date(tmax.getTime() - onehr)
+        // sliderstate.range.end = tmax
+        // if (sliderstate.range.start.getTime() < tmin.getTime()){
+        // 	sliderstate.range.start = new Date(tmin.getTime())
+        // }
+    }
+    tlast = new Date(dataCumulative.getColumnRange(0).max)
+
+    //move slider which will drive replotting
+    livesliderTime.setState({
+        'range': {
+            'start': sliderstate.range.start,
+            'end': sliderstate.range.end
+        }
+    })
+    livearea.setOptions(areaOptions)
+    dashboard2.draw(dataCumulative)
+}
+
+// Synchronous
+function drawScatter() {
+    livescatter.draw(dataXYPos, scatterOptions)
+
+}
+
+//Synchronous
+function drawReward() {
+    livereward.draw(dataReward, rewardBarOptions)
+}
+
+//Synchronous
+function drawChoiceBar() {
+    livechoice.draw(dataChoice, choiceBarOptions)
+}
+
+//Synchronous
+function drawObjPerfBar() {
+    liveobjperf.draw(dataObjPerf, objPerfBarOptions)
+}
+//================== PLOTTING (end) ==================//
+</script>
+</head>
+<body>
+<h1>liveplot2_mkturk</h1>
+<div id="filelist_div">
+<select id="file_list"></select>
+<!--Pull down menu that will hold file list-->
+</div>
+<div id="dashboard2_div">
+<div id="area_div"></div>
+<!--Div that will hold the area chart-->
+<div id="filtertime_div"></div>
+</div>
+<div id="scatter_div"></div>
+</div><div id='reward_div'></div>
+</div><div id='choice_div'></div>
+</div><div id='objectPerf_div'</div>
+</div><p id="task_text"></p>
+<script type="text/javascript">
+var file = {
+dir: DATA_SAVEPATH,
+// from mkturk_installsettings.js
+list: [],
+pathlist: [],
+name: "",
+data: null,
+ver: null,
+date: null,
+dateCreated: null,
+datahasChanged: false,
+filehasChanged: false,
+};
+
+var titleobj = document.getElementById("page_title");
+var menuobj = document.getElementById("file_list");
+var tasktextobj = document.getElementById("task_text");
+menuobj.addEventListener("change", filelist_listener, false);
+
+//_____________ LABELS (begin)
+var objlabels = ['wrench', 'rhino', 'leg', 'camel', 'tank', 'bird', 'shorts', 'elephant', 'house', 'hanger', 'pen', 'hammer', 'zebra', 'fork', 'guitar', 'bear', 'watch', 'dog', 'spider', 'truck', 'drawer table', 'calculator', 'gun', 'knife', 'head', 'shoe', 'drum', 'cat', 'camera', 'train', 'frog', 'shirt', 'helicopter', 'pear', 'piano', 'horse', 'plane'];
+var objlabelsOBJ = objlabels;
+var objlabelsMURI = ['bucket', 'cradle', 'dishwasher', 'drum', 'fourpostbed', 'fryingpan', 'golfcart', 'jeep', 'microphone', 'microwave', 'panpipe', 'parkbench', 'piano', 'plate', 'pooltable', 'stationwagon', 'sunglasses', 'umbrella', 'ant', 'cat', 'chameleon', 'chihuahua', 'cockroach', 'crockodile', 'eel', 'gilamonster', 'hound', 'lizard', 'mantis', 'mongoose', 'pig', 'platypus', 'spaniel', 'turtle', 'vase', 'bookcase', 'stove', 'glockenspiel', 'chiffonier', 'pot', 'gokart', 'hotrod', 'subwoofer', 'oven', 'bagpipe', 'flatbench', 'accordion', 'bowl', 'pinballmachine', 'taxi', 'goggles', 'awning', 'hornet', 'horse', 'snake', 'termite', 'gecko', 'cod', 'walkingstick', 'meerkat', 'llama', 'echidna'];
+var objlabelsHVM = ['bear', 'elephant', 'table', 'head', 'car', 'dog', 'turtle', 'apple', 'plane', 'chair']
+var objlabelsCOCO = ['bear', 'elephant', 'head', 'car', 'dog', 'apple', 'chair', 'plane', 'bird', 'zebra']
+
+var cat = [];
+for (var i = 0; i <= 3699; i++) {
+cat[i] = Math.floor(i / 100);
+}
+
+var catOBJ = cat;
+
+var catMURI = [];
+var perobjvec = [12, 8, 10, 12, 6, 12, 8, 10, 12, 12, 8, 10, 6, 14, 6, 6, 12, 10, 8, 6, 6, 8, 6, 8, 12, 6, 12, 6, 8, 6, 10, 12, 6, 6, 12, 8, 10, 12, 6, 12, 8, 10, 12, 12, 8, 10, 6, 14, 6, 6, 12, 10, 8, 32, 24, 6, 8, 12, 8, 6, 10, 12];
+var cnt = 0;
+for (var i = 0; i <= perobjvec.length - 1; i++) {
+for (var j = 0; j <= perobjvec[i] - 1; j++) {
+catMURI[cnt] = i;
+cnt++;
+}
+}
+
+catHVM = []
+for (var i = 0; i <= 999; i++) {
+catHVM[i] = Math.floor(i / 100)
+}
+
+catCOCO = []
+for (var i = 0; i <= 999; i++) {
+catCOCO[i] = Math.floor(i / 100)
+}
+
+var catSample = [];
+var catTest = [];
+
+// Generate cat list
+var catlist = [];
+for (var i = 0; i <= cat.length - 1; i++) {
+if (catlist.indexOf(cat[i]) == -1) {
+catlist[catlist.length] = cat[i];
+//add category
+}
+//if
+}
+//for
+var catlistOBJ = catlist;
+
+var catlistMURI = [];
+for (var i = 0; i <= catMURI.length - 1; i++) {
+if (catlistMURI.indexOf(catMURI[i]) == -1) {
+catlistMURI[catlistMURI.length] = catMURI[i];
+//add category
+}
+//if
+}
+//for
+
+var catlistHVM = [];
+for (var i = 0; i <= catHVM.length - 1; i++) {
+if (catlistHVM.indexOf(catHVM[i]) == -1) {
+catlistHVM[catlistHVM.length] = catHVM[i];
+//add category
+}
+//if
+}
+//for
+
+var catlistCOCO = [];
+for (var i = 0; i <= catCOCO.length - 1; i++) {
+if (catlistCOCO.indexOf(catCOCO[i]) == -1) {
+catlistCOCO[catlistCOCO.length] = catCOCO[i];
+//add category
+}
+//if
+}
+//for
+//_____________ LABELS (end)
+
+var vitals = {
+subject: null,
+pctcorrect: 0,
+trials: 0,
+time: 0,
+batteryleft: 0,
+batteryused: 0,
+rewardestimate: 0,
+automator: "",
+currentautomatorstage: 0,
+currentautomatorstagename: "",
+nrewards: 0,
+RFIDtag: "",
+RFIDtime: 0
+}
+
+var task = {
+rewardstage: 0,
+rewardper1000: 0,
+imagefoldersample: 0,
+imagefoldertest: 0,
+sampleon: 0,
+sampleoff: 0,
+nway: 0,
+nobj: 0,
+objectlist: [],
+}
+
+var dataCumulative = null;
+var dataXYPos = null;
+var dataReward = null;
+var dataChoice = null;
+var dataObjPerf = null;
+var liveline = null;
+var formatterDigits = null;
+var formatterColor = null;
+
+var trialrange = [0, 0]
+
+if (isAuthenticated()) {
+//Create an instance of Dropbox with the access token
+var dbx = new Dropbox.Dropbox({
+accessToken: getAccessTokenFromUrl()
+})
+loadGoogleCharts();
+} else {
+var dbx = new Dropbox.Dropbox({
+clientId: DBX_CLIENT_ID
+});
+var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
+window.location.href = dbx_authUrl
+//send to Dropbox sign-in screen
+}
+</script>
+</body></html>

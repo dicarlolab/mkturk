@@ -136,18 +136,31 @@ function getAccessTokenFromUrl(){
 }
 
 // Asynchronous: Get file list from dropbox directory
-function getFileListDropbox2(){
-	dbx.filesListFolder({path: file.dir, recursive:true}).then(function(response){
-		console.log("success: read directory ");
+async function getFileListDropbox2(){
+	try{
+		var entries = []
+// 		file.dir = "/mkturkfiles/imagebags/objectome/wrench/flarenut_spanner/"
+		response = await dbx.filesListFolder({path: file.dir,recursive: true})
+		entries.push(... response.entries)
 
-//FilesFileMetadata: tag/name/id/rev/size/...
-//   http://dropbox.github.io/dropbox-sdk-js/global.html#FilesFileMetadata
-		var menuobj = document.getElementById("file_list");
-		for (var q = response.entries.length-1; q>=0; q--){
-			if (response.entries[q][".tag"] == "file" && response.entries[q].name.endsWith(".txt")){
-				console.log("found ", response.entries[q].name)
-				file.list[q] = response.entries[q].name
-				file.pathlist[q] = response.entries[q].path_display
+		// Use response.has_more to propagate 
+		var num_iterations = 0
+		var iteration_limit = 100
+		while(response.has_more == true){
+			response = await dbx.filesListFolderContinue({cursor: response.cursor})
+			entries.push(... response.entries)
+
+			num_iterations = num_iterations + 1 
+			if(num_iterations > iteration_limit)
+				{throw 'Hit iteration limit of '+iteration_limit+'. Check your '+
+			file.dir + ' directory is not insanely large.'}
+		}
+
+		for (var q = entries.length-1; q>=0; q--){
+			if (entries[q][".tag"] == "file" && entries[q].name.endsWith(".txt")){
+// 				console.log("found ", entries[q].name)
+				file.list[q] = entries[q].name
+				file.pathlist[q] = entries[q].path_display
 
 				//add to menu as option
 				var opt = document.createElement('option')
@@ -156,15 +169,13 @@ function getFileListDropbox2(){
 				menuobj.appendChild(opt)
 			}
 		}
-		// file.name = file.dir + file.list[file.list.length-1]
 		file.name = file.pathlist[file.pathlist.length-1]
 		file.filehasChanged = true
 		readDatafromDropbox2()
-	})
-	.catch(function(error){
+	}
+	catch (error) {
 		console.error(error)
-	})
-	return false
+	}
 }
 
 // Asynchronous: Check for file updates
@@ -339,6 +350,14 @@ function toVitals(){
 	vitals.subject = file.data.Subject;
 	vitals.trials = file.data.Response.length;
 	vitals.time = Math.round(Math.round(file.data.StartTime[vitals.trials-1] - file.data.StartTime[0])/60000); //convert msec to minutes
+	if (typeof(file.data.RFIDTag) != "undefined"){
+		vitals.RFIDtag = file.data.RFIDTag[file.data.RFIDTag.length-1];
+	    vitals.RFIDtime = Math.round(Math.round(file.data.RFIDTime[file.data.RFIDTime.length-1] - file.data.StartTime[0])/60000); //convert millisecond to minutes
+	}
+	else {
+		vitals.RFIDtag = null
+		vitals.RFIDtime = null
+	}
 
 vitals["automator"]
 	if (typeof(file.data.Automator) != "undefined"){
@@ -553,7 +572,9 @@ function addVitalsText(){
 		", r=" + vitals.nrewards + "=" + vitals.rewardestimate + "mL, " + vitals.time + "min)     " + 
 		"Automator: " + vitals.automator +  ", Stage " + vitals.currentautomatorstage + "_" + vitals.currentautomatorstagename + "     " + 
 		"Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  " + 
-		"Last Trial:" + file.dateSaved.toLocaleTimeString('en-US')
+		"Last Trial:" + file.dateSaved.toLocaleTimeString('en-US') + 
+		"\n RFID_Tag:" + vitals.RFIDtag  + 
+		", RFID_Time:" + vitals.RFIDtime + " min"
 	titleobj.innerHTML = vitals.subject;
 }
 
@@ -816,11 +837,11 @@ var trialrange=[0,0]
 
 if (isAuthenticated()){
 	//Create an instance of Dropbox with the access token
-	var dbx = new Dropbox({accessToken: getAccessTokenFromUrl()})
+	var dbx = new Dropbox.Dropbox({accessToken: getAccessTokenFromUrl()})
 	loadGoogleCharts();
 }
 else {
-	var dbx = new Dropbox({clientId: DBX_CLIENT_ID});
+	var dbx = new Dropbox.Dropbox({clientId: DBX_CLIENT_ID});
 	var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
 	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
 }

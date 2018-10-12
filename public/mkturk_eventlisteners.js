@@ -166,9 +166,6 @@ function doneTestingTask_listener(event){
 	purgeTrackingVariables()
 	FLAGS.purge=0
 	
-	renderScreen('blank',CANVAS.offscreen)
-	CANVAS.offscreen.commitTo(CANVAS.visible.getContext("bitmaprenderer"))
-
 	document.querySelector("p[id=imageloadingtext]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	document.querySelector("button[name=doneTestingTask]").style.display = "none"
 	return
