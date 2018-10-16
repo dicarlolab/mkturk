@@ -36,12 +36,36 @@ function loadGoogleCharts() {
         'packages': ['corechart', 'bar', 'table', 'controls']
     });
     google.charts.setOnLoadCallback(function() {
+        dataPerformance = new google.visualization.DataTable()
         dataCumulative = new google.visualization.DataTable()
         dataXYPos = new google.visualization.DataTable()
         dataReward = new google.visualization.DataTable()
         dataChoice = new google.visualization.DataTable()
         dataObjPerf = new google.visualization.DataTable()
-        dashboard2 = new google.visualization.Dashboard(document.getElementById('dashboard2_div'));
+     
+        // Establish dependencies, declaring that the sliders drive 'liveline' & 'livearea',
+        // so that data will only display for entries that are let through
+        // given the chosen slider range.
+
+        // Create a dashboard.
+        dashboard1 = new google.visualization.Dashboard(
+            document.getElementById('dashboard1_div'));
+
+        // Initialize plotting elements
+        // See for chartrange example: https://google-developers.appspot.com/chart/interactive/docs/gallery/controls_5cece98b344aa0b1575282db7d34d5f4.frame
+        livesliderTrial = new google.visualization.ControlWrapper({
+            'controlType': 'ChartRangeFilter',
+            'containerId': 'filtertrial_div',
+            'options': livesliderTrialOptions,
+            'state': {'range': {'start': 0, 'end': 100}}
+        }) //wrapper
+
+        liveline = new google.visualization.ChartWrapper({
+            'chartType': 'LineChart',
+            'containerId': 'line_div'
+        })
+    
+       dashboard2 = new google.visualization.Dashboard(document.getElementById('dashboard2_div'));
 
         livesliderTime = new google.visualization.ControlWrapper({
             'controlType': 'ChartRangeFilter',
@@ -61,9 +85,7 @@ function loadGoogleCharts() {
             'containerId': 'area_div'
         })
 
-        // Establish dependencies, declaring that the sliders drive 'liveline' & 'livearea',
-        // so that data will only display for entries that are let through
-        // given the chosen slider range.
+        dashboard1.bind(livesliderTrial, liveline)
         dashboard2.bind(livesliderTime, livearea)
 
         livescatter = new google.visualization.ScatterChart(document.getElementById('scatter_div'));
@@ -243,6 +265,8 @@ function parseImageInfo() {
 //================== DATA HANDLING ==================//
 // Synchronous: Initialize chart data matrices
 function initializeChartData() {
+    dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
+    dataPerformance.removeColumns(0,dataPerformance.getNumberOfColumns());
     dataCumulative.removeRows(0, dataCumulative.getNumberOfRows());
     dataCumulative.removeColumns(0, dataCumulative.getNumberOfColumns());
     dataXYPos.removeRows(0, dataXYPos.getNumberOfRows());
@@ -253,6 +277,10 @@ function initializeChartData() {
     dataChoice.removeColumns(0, dataChoice.getNumberOfColumns());
     dataObjPerf.removeRows(0,dataObjPerf.getNumberOfRows());
     dataObjPerf.removeColumns(0,dataObjPerf.getNumberOfColumns());
+
+
+    dataPerformance.addColumn('number','currentTrial')
+    dataPerformance.addColumn('number','currentPerformance')
 
     dataCumulative.addColumn('datetime', 'time')
     //0
@@ -274,28 +302,11 @@ function initializeChartData() {
     dataReward.addColumn('string', 'reward size')
     dataReward.addColumn('number', 'nrewards')
 
-//     var nrewardMax = []
-//     for (var i = 0; i <= file.data.NRewardMax; i++) {
-//         nrewardMax.push(i.toString())
-//     }
-
-//     for (var i = 0; i <= nrewardMax.length - 1; i++) {
-//         dataReward.addRow([nrewardMax[i], 0]);
-//     }
-
     dataChoice.addColumn('string', 'choice')
     dataChoice.addColumn('number', '# of responses')
 
-//     for (var i = 0; i <= file.data.TestGridIndex.length - 1; i++) {
-//         dataChoice.addRow(['choice' + (i + 1), 0]);
-//     }
-
     dataObjPerf.addColumn('string','object')
     dataObjPerf.addColumn('number','performance')
-
-//     for (var i=0; i<=file.data.ImageBagsSample.length-1;i++){
-//         dataObjPerf.addRow([file.data.ImageBagsSample[i].split("/")[4],0]);
-//     }
 
     updatePlots()
     file.filehasChanged = false
@@ -413,6 +424,7 @@ function toVitals() {
 // Synchronous
 function toPerformanceData() {
 
+    dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
     dataCumulative.removeRows(0,dataCumulative.getNumberOfRows());
     dataXYPos.removeRows(0,dataXYPos.getNumberOfRows());
 
@@ -447,6 +459,8 @@ function toPerformanceData() {
         }
 
     }
+
+    ydata = smooth(ydata,lineOptions.smooth);
 //Referencing to time file was last written & time of last trial rather than to file start.
     //Done because file can be changed on the fly which changes file start relative to performance.now()
     if (typeof file.data.ResponseXYT === 'undefined' || file.data.ResponseXYT.length < 1 || typeof file.data.ResponseXYT[file.data.ResponseXYT.length - 1][2] === 'undefined') {
@@ -457,7 +471,7 @@ function toPerformanceData() {
 
     
     for (var i = 0; i <= ydata.length - 1; i++){
-
+        dataPerformance.addRows([[xdata[i], ydata[i]]])
         var tfix = file.data.FixationXYT[i][2]
         //in milliseconds
         var t = new Date(file.dateSaved)
@@ -525,28 +539,29 @@ function toPerformanceData() {
     }
 
 }
+//Synchronous
+function toObjPerfData(){
 
-// Synchronous
-function toRewardData() {
-    dataReward.removeRows(0,dataReward.getNumberOfRows());
-    var nrewardMax = []
-    for (var i = 0; i <= file.data.NRewardMax; i++) {
-        nrewardMax.push(i.toString())
+    dataObjPerf.removeRows(0,dataObjPerf.getNumberOfRows());
+    
+    var sampleobj = []
+    for (var i=0; i<=file.data.ImageBagsSample.length-1;i++){
+        sampleobj[i] = file.data.ImageBagsSample[i].split("/")[4];
+        dataObjPerf.addRow([sampleobj[i],0]);
     }
 
-    for (var i = 0; i <= nrewardMax.length - 1; i++) {
-        dataReward.addRow([nrewardMax[i], 0]);
-    }
 
-    var NdiffReward = Array.apply(null, Array(nrewardMax.length)).map(Number.prototype.valueOf, 0);
-
-    for (var i = 0; i <= file.data.NReward.length - 1; i++) {
-
-        for (var j = 0; j <= nrewardMax.length - 1; j++) {
-            if (file.data.NReward[i].toString() == nrewardMax[j]) {
-                NdiffReward[j]++
+    var NdiffObjPerf = Array.apply(null, Array(sampleobj.length)).map(Number.prototype.valueOf, 0);
+    var NdiffObj = Array.apply(null, Array(sampleobj.length)).map(Number.prototype.valueOf, 0);
+    for (var i = 0; i <= file.data.Sample.length - 1; i++) {
+        for (var j = 0; j <= sampleobj.length - 1; j++) {
+            if (file.data.Sample[i]==j){
+                NdiffObj[j]++
             }
-            dataReward.setValue(j, 1, NdiffReward[j] / file.data.NReward.length)
+            if (file.data.Response[i] == file.data.CorrectItem[i] && file.data.Sample[i]==j) {
+                NdiffObjPerf[j]++
+            }
+            dataObjPerf.setValue(j, 1, NdiffObjPerf[j] / NdiffObj[j])
         }
 
     }
@@ -576,34 +591,34 @@ function toChoiceData() {
 
     }
 }
-
-//Synchronous
-function toObjPerfData(){
-
-    dataObjPerf.removeRows(0,dataObjPerf.getNumberOfRows());
-    
-    var sampleobj = []
-    for (var i=0; i<=file.data.ImageBagsSample.length-1;i++){
-        sampleobj[i] = file.data.ImageBagsSample[i].split("/")[4];
-        dataObjPerf.addRow([sampleobj[i],0]);
+// Synchronous
+function toRewardData() {
+    dataReward.removeRows(0,dataReward.getNumberOfRows());
+    var nrewardMax = []
+    for (var i = 0; i <= file.data.NRewardMax; i++) {
+        nrewardMax.push(i.toString())
     }
 
+    for (var i = 0; i <= nrewardMax.length - 1; i++) {
+        dataReward.addRow([nrewardMax[i], 0]);
+    }
 
-    var NdiffObjPerf = Array.apply(null, Array(sampleobj.length)).map(Number.prototype.valueOf, 0);
-    var NdiffObj = Array.apply(null, Array(sampleobj.length)).map(Number.prototype.valueOf, 0);
-    for (var i = 0; i <= file.data.Sample.length - 1; i++) {
-        for (var j = 0; j <= sampleobj.length - 1; j++) {
-            if (file.data.Sample[i]==j){
-                NdiffObj[j]++
+    var NdiffReward = Array.apply(null, Array(nrewardMax.length)).map(Number.prototype.valueOf, 0);
+
+    for (var i = 0; i <= file.data.NReward.length - 1; i++) {
+
+        for (var j = 0; j <= nrewardMax.length - 1; j++) {
+            if (file.data.NReward[i].toString() == nrewardMax[j]) {
+                NdiffReward[j]++
             }
-            if (file.data.Response[i] == file.data.CorrectItem[i] && file.data.Sample[i]==j) {
-                NdiffObjPerf[j]++
-            }
-            dataObjPerf.setValue(j, 1, NdiffObjPerf[j] / NdiffObj[j])
+            dataReward.setValue(j, 1, NdiffReward[j] / file.data.NReward.length)
         }
 
     }
 }
+
+
+
 
 
 //================== DATA HANDLING (end) ==================//
@@ -614,28 +629,29 @@ function updatePlots() {
     toVitals();
     toTask();
     toPerformanceData();
-    toRewardData();
-    toChoiceData();
     toObjPerfData();
+    toChoiceData();
+    toRewardData();
     addVitalsText();
     addTaskText();
 
+    drawLine() //current
     drawArea()
     //cumulative
-    drawScatter()
-    drawReward()
-    drawChoiceBar()
     drawObjPerfBar()
+    drawScatter()
+    drawChoiceBar()
+    drawReward()
     file.datahasChanged = false
     checkFileStatus2();
 }
 
 // Synchronous
 function addVitalsText() {
-    areaOptions.title = vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.trials + ", r=" + vitals.nrewards + "=" + vitals.rewardestimate + "mL, " + 
+    lineOptions.title = vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.trials + ", r=" + vitals.nrewards + "=" + vitals.rewardestimate + "mL, " + 
     vitals.time + "min)     " + "Automator: " + vitals.automator + ", Stage " + vitals.currentautomatorstage + "_" + vitals.currentautomatorstagename + "     " + 
     "Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  " + "Last Trial:" + file.dateSaved.toLocaleTimeString('en-US') + 
-    "\n RFID_Tag:" + vitals.RFIDtag + ", RFID_Time:" + vitals.RFIDtime + " min," + "Weight: " + vitals.Weight + "g, Weight_Time:" + vitals.WeightTime + " min" 
+    "\n RFID_Tag:" + vitals.RFIDtag + ", RFID_Time:" + vitals.RFIDtime + " min," + "Weight: " + vitals.Weight + " g, Weight_Time:" + vitals.WeightTime + " min" 
     titleobj.innerHTML = vitals.subject;
 }
 
@@ -651,6 +667,43 @@ function addTaskText() {
     }
 
     tasktextobj.innerHTML = "<b>" + task.name + "</b>:" + task.nway + "-way" + ", " + task.nobj + "-obj" + "<br>" + "Sample folder " + task.imagefoldersample + ", Test folder " + task.imagefoldertest + "<br>" + "Sample On=" + task.sampleon + " ms" + ", Sample Off=" + task.sampleoff + "<br>" + "objs=[" + task.objectlist + "]" + "<br>" + "reward=" + task.rewardper1000 + "mL per 1000 correct trials"
+}
+
+//Synchronous
+function drawLine(){
+    var nrows = dataPerformance.getNumberOfRows()
+    var sliderstate = livesliderTrial.getState()
+
+    //updating slider
+    if (file.datahasChanged == true && file.filehasChanged == false){
+        if (nrows <= 100){
+            // expand window size automatically up to 100
+            sliderstate.range.start = 0
+            sliderstate.range.end = nrows
+        }
+        else {
+            //shift slider over
+            dtrials = nrows - ntrials
+            sliderstate.range.start = sliderstate.range.start + dtrials
+            sliderstate.range.end = sliderstate.range.end + dtrials
+        }
+    }
+    else if (file.filehasChanged == true){
+        //shift slider to end
+        dslider = 100
+        sliderstate.range.start = nrows - dslider
+        sliderstate.range.end = nrows
+        if (sliderstate.range.start < 0){
+            sliderstate.range.start = 0
+        }
+    }
+
+    liveline.setOptions(lineOptions)
+
+    //move slider which will drive replotting
+    livesliderTrial.setState({'range': {'start': sliderstate.range.start,'end': sliderstate.range.end}})
+    dashboard1.draw(dataPerformance)
+    ntrials = nrows //new trial range
 }
 
 //Synchronous
@@ -699,16 +752,17 @@ function drawArea() {
     dashboard2.draw(dataCumulative)
 }
 
+//Synchronous
+function drawObjPerfBar() {
+    liveobjperf.draw(dataObjPerf, objPerfBarOptions)
+}
+
 // Synchronous
 function drawScatter() {
     livescatter.draw(dataXYPos, scatterOptions)
 
 }
 
-//Synchronous
-function drawReward() {
-    livereward.draw(dataReward, rewardBarOptions)
-}
 
 //Synchronous
 function drawChoiceBar() {
@@ -716,9 +770,13 @@ function drawChoiceBar() {
 }
 
 //Synchronous
-function drawObjPerfBar() {
-    liveobjperf.draw(dataObjPerf, objPerfBarOptions)
+function drawReward() {
+    livereward.draw(dataReward, rewardBarOptions)
 }
+
+
+
+
 //================== PLOTTING (end) ==================//
 </script>
 </head>
@@ -728,15 +786,22 @@ function drawObjPerfBar() {
 <select id="file_list"></select>
 <!--Pull down menu that will hold file list-->
 </div>
+<div id="dashboard1_div">
+<div id="line_div"></div> <!--Div that will hold the line chart-->
+<div id="filtertrial_div"></div>
+</div>
 <div id="dashboard2_div">
 <div id="area_div"></div>
 <!--Div that will hold the area chart-->
 <div id="filtertime_div"></div>
 </div>
+<div id='objectPerf_div'></div>
+</div>
 <div id="scatter_div"></div>
-</div><div id='reward_div'></div>
-</div><div id='choice_div'></div>
-</div><div id='objectPerf_div'</div>
+</div>
+<div id='choice_div'></div>
+</div>
+<div id='reward_div'></div>
 </div><p id="task_text"></p>
 <script type="text/javascript">
 var file = {
@@ -866,6 +931,7 @@ nobj: 0,
 objectlist: [],
 }
 
+var dataPerformance = null; 
 var dataCumulative = null;
 var dataXYPos = null;
 var dataReward = null;
