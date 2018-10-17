@@ -1,4 +1,4 @@
-function [res, a, b, c, d] = readMkturkLog(fName)
+function [res, a, b, c, d] = mkTurk_readLog(fName)
 if ~exist('fName', 'var')
     fName = 'exampleBehaviorFile.txt'; % just a demo file
 end
