@@ -98,8 +98,8 @@ var scatterOptions = {
 	title: 'Touch Locations',
 	width: 700,
 	height: 700, 
-	hAxis: {title: 'X position', minValue: 0, maxValue: 1768/2},
-	vAxis : {title: 'Y position', minValue: 600, maxValue: 1744/2},
+	hAxis: {title: 'X position (pixels)', minValue: 0, maxValue: 1768/2},
+	vAxis : {title: 'Y position (pixels)', minValue: 600, maxValue: 1744/2},
 	series: {
 		0: {color: 'black'},
 		1: {color: 'red'},

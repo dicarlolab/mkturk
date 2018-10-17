@@ -460,6 +460,42 @@ function toPerformanceData() {
 
     }
 
+
+    if (typeof file.data.ResponseXYT != "undefined" && file.data.ResponseXYT.length >= 1) {
+        for (var i = 0; i <= file.data.FixationXYT.length * 2 - 1; i += 2) {
+            touchevent[i] = file.data.FixationXYT[i / 2]
+            touchevent[i + 1] = file.data.ResponseXYT[i / 2]
+        }
+    }
+
+    for (var i = 0; i <= touchevent.length - 1; i++) {
+        xpos = touchevent[i][0]
+        ypos = file.data.workspace[3] - touchevent[i][1]
+
+        var ydata_index = []
+        if (i % 2 == 0) {
+            ydata_index = i / 2
+        } else {
+            ydata_index = (i - 1) / 2
+        }
+
+        if (xpos != -1) {
+            if ((i % 2 == 0) && ydata[ydata_index] == 1) {
+                //Fixation and Hit
+                dataXYPos.addRows([[xpos,ypos,null ,null  ,null  ]])
+            } else if ((i % 2 == 0 && ydata[ydata_index] == 0)) {
+                //Fixation and Missed
+                dataXYPos.addRows([[xpos,null  , ypos,null  ,null  ]])
+            } else if ((i % 2 == 1 && ydata[ydata_index] == 1)) {
+                //Target and Hit        
+                dataXYPos.addRows([[xpos,null  ,null  , ypos,null ]])
+            } else if ((i % 2 == 1 && ydata[ydata_index] == 0)) {
+                //Target and Missed
+                dataXYPos.addRows([[xpos,null ,null ,null , ypos]])
+            }
+        }
+    }
+
     ydata = smooth(ydata,lineOptions.smooth);
 //Referencing to time file was last written & time of last trial rather than to file start.
     //Done because file can be changed on the fly which changes file start relative to performance.now()
@@ -502,41 +538,6 @@ function toPerformanceData() {
     formatterDate.format(dataCumulative, 0)
 
 
-
-    if (typeof file.data.ResponseXYT != "undefined" && file.data.ResponseXYT.length >= 1) {
-        for (var i = 0; i <= file.data.FixationXYT.length * 2 - 1; i += 2) {
-            touchevent[i] = file.data.FixationXYT[i / 2]
-            touchevent[i + 1] = file.data.ResponseXYT[i / 2]
-        }
-    }
-
-    for (var i = 0; i <= touchevent.length - 1; i++) {
-        xpos = touchevent[i][0]
-        ypos = file.data.workspace[3] - touchevent[i][1]
-
-        var ydata_index = []
-        if (i % 2 == 0) {
-            ydata_index = i / 2
-        } else {
-            ydata_index = (i - 1) / 2
-        }
-
-        if (xpos != -1) {
-            if ((i % 2 == 0) && ydata[ydata_index] == 1) {
-                //Fixation and Hit
-                dataXYPos.addRows([[xpos,ypos,null ,null  ,null  ]])
-            } else if ((i % 2 == 0 && ydata[ydata_index] == 0)) {
-                //Fixation and Missed
-                dataXYPos.addRows([[xpos,null  , ypos,null  ,null  ]])
-            } else if ((i % 2 == 1 && ydata[ydata_index] == 1)) {
-                //Target and Hit		
-                dataXYPos.addRows([[xpos,null  ,null  , ypos,null ]])
-            } else if ((i % 2 == 1 && ydata[ydata_index] == 0)) {
-                //Target and Missed
-                dataXYPos.addRows([[xpos,null ,null ,null , ypos]])
-            }
-        }
-    }
 
 }
 //Synchronous
