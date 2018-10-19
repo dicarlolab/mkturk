@@ -107,7 +107,7 @@ subjectlistobj.addEventListener("change",subjectlist_listener,false);
 document.querySelector("button[name=connectble]").addEventListener(
 	'pointerup',findBLEDevice,false)
 document.querySelector("button[name=connectusb]").addEventListener(
-	'pointerup',findUSBDevice,false)
+	'touchend',findUSBDevice,false)
 document.querySelector("button[name=noble]").addEventListener(
 	'pointerup',skipHardwareDevice,false)
 

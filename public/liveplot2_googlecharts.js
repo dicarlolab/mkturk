@@ -102,7 +102,7 @@ var scatterOptions = {
 	vAxis : {title: 'Y position (pixels)', minValue: 600, maxValue: 1744/2},
 	series: {
 		0: {color: 'black'},
-		1: {color: 'red'},
+		1: {color: 'green'},
 		2: {color: 'blue',},
 		3: {color: 'red'}
 
