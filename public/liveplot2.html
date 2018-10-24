@@ -88,7 +88,7 @@ function loadGoogleCharts() {
         dashboard1.bind(livesliderTrial, liveline)
         dashboard2.bind(livesliderTime, livearea)
 
-        livescatter = new google.visualization.ScatterChart(document.getElementById('scatter_div'));
+        livescatter = new google.visualization.ComboChart(document.getElementById('scatter_div'));
         livereward = new google.visualization.ColumnChart(document.getElementById('reward_div'));
         livechoice = new google.visualization.ColumnChart(document.getElementById('choice_div'));
         liveobjperf = new google.visualization.ColumnChart(document.getElementById('objectPerf_div'));
@@ -280,7 +280,8 @@ function initializeChartData() {
 
 
     dataPerformance.addColumn('number','currentTrial')
-    dataPerformance.addColumn('number','currentPerformance')
+    dataPerformance.addColumn('number','current')
+    dataPerformance.addColumn('number','100trialsAvg')
 
     dataCumulative.addColumn('datetime', 'time')
     //0
@@ -294,6 +295,9 @@ function initializeChartData() {
     //4
 
     dataXYPos.addColumn('number', 'xpos')
+    dataXYPos.addColumn('number','Fixation')
+    dataXYPos.addColumn('number','Target1')
+    dataXYPos.addColumn('number','Target2')
     dataXYPos.addColumn('number', 'Fix_R')
     dataXYPos.addColumn('number', 'Fix_NR')
     dataXYPos.addColumn('number', 'Target_R')
@@ -339,6 +343,8 @@ function toTask() {
             //Sample left on
         }
     }
+
+    task.distractor = file.data.HideTestDistractors
 
     task.nway = file.data.Nway;
     task.nobj = file.data.ImageBagsTest.length;
@@ -432,6 +438,8 @@ function toPerformanceData() {
     //Create the data table
     var xdata = []
     var ydata = []
+    var ydata_5 = []
+    var ydata_100 = []
     var ntotal = []
     var ncorrect = []
     var tcurrent = []
@@ -469,6 +477,39 @@ function toPerformanceData() {
         }
     }
 
+    //Fixation, Sample, Test Box
+    samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.SampleScale
+    sampleheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.SampleScale
+    testwidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.TestScale
+    testheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.TestScale 
+    
+    sample_xcoord = file.data.XGridCenter[file.data.SampleGridIndex]
+    sample_ycoord = file.data.workspace[3]-file.data.YGridCenter[file.data.SampleGridIndex]-file.data.offsettop
+    test1_xcoord = file.data.XGridCenter[file.data.TestGridIndex[0]]
+    test1_ycoord =  file.data.workspace[3]-file.data.YGridCenter[file.data.TestGridIndex[0]]-file.data.offsettop
+    test2_xcoord = file.data.XGridCenter[file.data.TestGridIndex[1]]
+    test2_ycoord =  file.data.workspace[3]-file.data.YGridCenter[file.data.TestGridIndex[1]]-file.data.offsettop
+    
+    
+    dataXYPos.addRows([[sample_xcoord-samplewidth/2,sample_ycoord-sampleheight/2,null,null,null,null,null,null]]) //sample
+    dataXYPos.addRows([[sample_xcoord+samplewidth/2,sample_ycoord-sampleheight/2,null,null,null,null,null,null]]) 
+    dataXYPos.addRows([[sample_xcoord+samplewidth/2,sample_ycoord+sampleheight/2,null,null,null,null,null,null]]) 
+    dataXYPos.addRows([[sample_xcoord-samplewidth/2,sample_ycoord+sampleheight/2,null,null,null,null,null,null]]) 
+    dataXYPos.addRows([[sample_xcoord-samplewidth/2,sample_ycoord-sampleheight/2,null,null,null,null,null,null]])
+
+    dataXYPos.addRows([[test1_xcoord-testwidth/2,null,test1_ycoord-testheight/2,null,null,null,null,null]]) //test1
+    dataXYPos.addRows([[test1_xcoord+testwidth/2,null,test1_ycoord-testheight/2,null,null,null,null,null]]) 
+    dataXYPos.addRows([[test1_xcoord+testwidth/2,null,test1_ycoord+testheight/2,null,null,null,null,null]]) 
+    dataXYPos.addRows([[test1_xcoord-testwidth/2,null,test1_ycoord+testheight/2,null,null,null,null,null]]) 
+    dataXYPos.addRows([[test1_xcoord-testwidth/2,null,test1_ycoord-testheight/2,null,null,null,null,null]]) 
+    
+    dataXYPos.addRows([[test2_xcoord-testwidth/2,null,null,test2_ycoord-testheight/2,null,null,null,null]]) //test2
+    dataXYPos.addRows([[test2_xcoord+testwidth/2,null,null,test2_ycoord-testheight/2,null,null,null,null]]) 
+    dataXYPos.addRows([[test2_xcoord+testwidth/2,null,null,test2_ycoord+testheight/2,null,null,null,null]]) 
+    dataXYPos.addRows([[test2_xcoord-testwidth/2,null,null,test2_ycoord+testheight/2,null,null,null,null]]) 
+    dataXYPos.addRows([[test2_xcoord-testwidth/2,null,null,test2_ycoord-testheight/2,null,null,null,null]]) 
+
+
     for (var i = 0; i <= touchevent.length - 1; i++) {
         xpos = touchevent[i][0]
         ypos = file.data.workspace[3] - touchevent[i][1]
@@ -483,21 +524,29 @@ function toPerformanceData() {
         if (xpos != -1) {
             if ((i % 2 == 0) && ydata[ydata_index] == 1) {
                 //Fixation and Hit
-                dataXYPos.addRows([[xpos,ypos,null ,null  ,null  ]])
+                dataXYPos.addRows([[xpos,null,null,null,ypos,null ,null  ,null  ]])
             } else if ((i % 2 == 0 && ydata[ydata_index] == 0)) {
                 //Fixation and Missed
-                dataXYPos.addRows([[xpos,null  , ypos,null  ,null  ]])
+                dataXYPos.addRows([[xpos,null,null,null,null  , ypos,null  ,null  ]])
             } else if ((i % 2 == 1 && ydata[ydata_index] == 1)) {
                 //Target and Hit        
-                dataXYPos.addRows([[xpos,null  ,null  , ypos,null ]])
+                dataXYPos.addRows([[xpos,null,null,null,null  ,null  , ypos,null ]])
             } else if ((i % 2 == 1 && ydata[ydata_index] == 0)) {
                 //Target and Missed
-                dataXYPos.addRows([[xpos,null ,null ,null , ypos]])
+                dataXYPos.addRows([[xpos,null,null,null,null ,null ,null , ypos]])
             }
         }
     }
 
-    ydata = smooth(ydata,lineOptions.smooth);
+
+    // var ellipse = new Ellipse();
+    // ellipse.setFromPoints([{x: , y: }])
+    // ellipse.printEquation()
+    
+
+    ydata_5 = smooth(ydata,5);
+    ydata_100 = smooth(ydata,100);
+
 //Referencing to time file was last written & time of last trial rather than to file start.
     //Done because file can be changed on the fly which changes file start relative to performance.now()
     if (typeof file.data.ResponseXYT === 'undefined' || file.data.ResponseXYT.length < 1 || typeof file.data.ResponseXYT[file.data.ResponseXYT.length - 1][2] === 'undefined') {
@@ -508,7 +557,7 @@ function toPerformanceData() {
 
     
     for (var i = 0; i <= ydata.length - 1; i++){
-        dataPerformance.addRows([[xdata[i], ydata[i]]])
+        dataPerformance.addRows([[xdata[i], ydata_5[i],ydata_100[i]]])
         var tfix = file.data.FixationXYT[i][2]
         //in milliseconds
         var t = new Date(file.dateSaved)
@@ -533,7 +582,7 @@ function toPerformanceData() {
         }
         nWeight[i] = minIndex
 
-        dataCumulative.addRows([[new Date(t), ntotal[i], ncorrect[i], nRFID[i] / 1000, nWeight[i] / 1000]])
+        dataCumulative.addRows([[new Date(t), ntotal[i], ncorrect[i], nRFID[i], nWeight[i]]])
     }
 
     formatterDate.format(dataCumulative, 0)
@@ -581,14 +630,18 @@ function toChoiceData() {
 
 
     var NdiffChoice = Array.apply(null, Array(possibleResp.length)).map(Number.prototype.valueOf, 0);
+    var NallChoice = []
 
     for (var i = 0; i <= file.data.Response.length - 1; i++) {
+        if (file.data.Response[i] != -1){
+            NallChoice++
+        }
 
         for (var j = 0; j <= possibleResp.length - 1; j++) {
             if (file.data.Response[i] == possibleResp[j]) {
                 NdiffChoice[j]++
             }
-            dataChoice.setValue(j, 1, NdiffChoice[j] / file.data.Response.length)
+            dataChoice.setValue(j, 1, NdiffChoice[j] / NallChoice)
         }
 
     }
@@ -601,6 +654,8 @@ function toRewardData() {
         nrewardMax.push(i.toString())
     }
 
+    nrewardMax.unshift('-1')
+
     for (var i = 0; i <= nrewardMax.length - 1; i++) {
         dataReward.addRow([nrewardMax[i], 0]);
     }
@@ -608,12 +663,19 @@ function toRewardData() {
     var NdiffReward = Array.apply(null, Array(nrewardMax.length)).map(Number.prototype.valueOf, 0);
 
     for (var i = 0; i <= file.data.NReward.length - 1; i++) {
-
-        for (var j = 0; j <= nrewardMax.length - 1; j++) {
-            if (file.data.NReward[i].toString() == nrewardMax[j]) {
-                NdiffReward[j]++
+        if (file.data.Response[i] == -1){
+                NdiffReward[0]++    //timeout trials 
+                dataReward.setValue(0,1,NdiffReward[0]/file.data.NReward.length)
             }
-            dataReward.setValue(j, 1, NdiffReward[j] / file.data.NReward.length)
+        else{
+            for (var j = 1; j <= nrewardMax.length - 1; j++) {
+                if (file.data.NReward[i].toString() == nrewardMax[j]) {
+                    NdiffReward[j]++
+               }
+               dataReward.setValue(j, 1, NdiffReward[j] / file.data.NReward.length)
+
+            }
+            
         }
 
     }
@@ -662,13 +724,22 @@ function addTaskText() {
     task["name"] = ""
     if (task.rewardstage == 0) {
         task["name"] = "Fixation";
-    } else if (task.rewardstage == 1 && file.data.ImageBagsSample.length>1) {
-        task["name"] = "Match-to-Sample";
-    } else if (task.nrewardstage == 1 && file.data.ImageBagsSample.length==1) {
-        task["name"] = "Detection";
+    } 
+    else {
+        if (file.data.ImageBagsSample.length>1){
+            if (task.distractor==0){
+            task["name"] = "Match-to-Sample";
+            }
+            else{
+            task["name"] = "No distractor Match-to-Sample"
+            }
+        }
+        else{
+            task["name"] = "Detection";
+        }
     }
 
-    tasktextobj.innerHTML = "<b>" + task.name + "</b>:" + task.nway + "-way" + ", " + task.nobj + "-obj" + "<br>" + "Sample folder " + task.imagefoldersample + ", Test folder " + task.imagefoldertest + "<br>" + "Sample On=" + task.sampleon + " ms" + ", Sample Off=" + task.sampleoff + "<br>" + "objs=[" + task.objectlist + "]" + "<br>" + "reward=" + task.rewardper1000 + "mL per 1000 correct trials"
+    tasktextobj.innerHTML = "<b>" + task.name + "</b>:" + task.nway + "-way" + ", " + task.nobj + "-obj" + "<br>" + "Sample folder " + task.imagefoldersample + ", Test folder " + task.imagefoldertest + "<br>" + "Sample On=" + task.sampleon + " ms" + ", Sample Off=" + task.sampleoff + " ms" + "<br>" + "objs=[" + task.objectlist + "]" + "<br>" + "reward=" + task.rewardper1000 + "mL per 1000 correct trials"
 }
 
 //Synchronous
