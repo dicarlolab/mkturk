@@ -371,7 +371,7 @@ function toVitals() {
         vitals.RFIDtime = null
     }
 
-    if (typeof (file.data.Weight) != "undefined") {
+    if (typeof (file.data.Weight) != "undefined" && file.data.Weight.length>1 && typeof(file.data.WeightTime!="undefined")) {
         vitals.Weight = file.data.Weight[file.data.Weight.length - 1];
         vitals.WeightTime = Math.round(Math.round(file.data.WeightTime[file.data.WeightTime.length - 1] - file.data.StartTime[0]) / 60000);
         //convert millisecond to minutes
@@ -478,13 +478,22 @@ function toPerformanceData() {
     }
 
     //Fixation, Sample, Test Box
-    samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.SampleScale
-    sampleheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.SampleScale
+
+    if (file.data.FixationUsesSample == 0){
+        samplescale = file.data.FixationScale
+    }
+    else{
+        samplescale = file.data.SampleScale
+    }
+
+    if (task.name != "Fixation"){
+    samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * samplescale
+    sampleheight = file.data.CanvasRatio * file.data.ImageHeightPixels * samplescale
     testwidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.TestScale
     testheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.TestScale 
     
     sample_xcoord = file.data.XGridCenter[file.data.SampleGridIndex]
-    sample_ycoord = file.data.workspace[3]-file.data.YGridCenter[file.data.SampleGridIndex]-file.data.offsettop
+    sample_ycoord = file.data.workspace[3]-file.data.YGridCenter[file.data.StaticFixationGridIndex]-file.data.offsettop
     test1_xcoord = file.data.XGridCenter[file.data.TestGridIndex[0]]
     test1_ycoord =  file.data.workspace[3]-file.data.YGridCenter[file.data.TestGridIndex[0]]-file.data.offsettop
     test2_xcoord = file.data.XGridCenter[file.data.TestGridIndex[1]]
@@ -508,6 +517,20 @@ function toPerformanceData() {
     dataXYPos.addRows([[test2_xcoord+testwidth/2,null,null,test2_ycoord+testheight/2,null,null,null,null]]) 
     dataXYPos.addRows([[test2_xcoord-testwidth/2,null,null,test2_ycoord+testheight/2,null,null,null,null]]) 
     dataXYPos.addRows([[test2_xcoord-testwidth/2,null,null,test2_ycoord-testheight/2,null,null,null,null]]) 
+    }
+    else{
+    samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.SampleScale
+    sampleheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.SampleScale
+  
+    sample_xcoord = file.data.XGridCenter[file.data.SampleGridIndex]
+    sample_ycoord = file.data.workspace[3]-file.data.YGridCenter[file.data.StaticFixationGridIndex]-file.data.offsettop
+     
+    dataXYPos.addRows([[sample_xcoord-samplewidth/2,sample_ycoord-sampleheight/2,null,null,null,null,null,null]]) //sample
+    dataXYPos.addRows([[sample_xcoord+samplewidth/2,sample_ycoord-sampleheight/2,null,null,null,null,null,null]]) 
+    dataXYPos.addRows([[sample_xcoord+samplewidth/2,sample_ycoord+sampleheight/2,null,null,null,null,null,null]]) 
+    dataXYPos.addRows([[sample_xcoord-samplewidth/2,sample_ycoord+sampleheight/2,null,null,null,null,null,null]]) 
+    dataXYPos.addRows([[sample_xcoord-samplewidth/2,sample_ycoord-sampleheight/2,null,null,null,null,null,null]])
+    }
 
 
     for (var i = 0; i <= touchevent.length - 1; i++) {
@@ -564,21 +587,25 @@ function toPerformanceData() {
         t.setTime(t.getTime() - (tend - tfix))
 
         var minIndex = 0;
+        if (typeof(file.data.RFIDTime) != "undefined"){
         for (var j = 0; j <= file.data.RFIDTime.length - 1; j++) {
 
             if (Math.abs(file.data.RFIDTime[j] - tfix) < Math.abs(file.data.RFIDTime[minIndex]-tfix)) {
                 minIndex = j;
             }
         }
+        }
         nRFID[i] = minIndex
 
         var minIndex = 0;
 
+        if (typeof(file.data.WeightTime) != "undefined"){
         for (var j = 0; j <= file.data.WeightTime.length - 1; j++) {
 
             if (Math.abs(file.data.WeightTime[j] - tfix) < Math.abs(file.data.WeightTime[minIndex]-tfix)) {
                 minIndex = j;
             }
+        }
         }
         nWeight[i] = minIndex
 
