@@ -486,7 +486,7 @@ function toPerformanceData() {
         samplescale = file.data.SampleScale
     }
 
-    if (task.name != "Fixation"){
+    if (file.data.RewardStage != 0 ){
     samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * samplescale
     sampleheight = file.data.CanvasRatio * file.data.ImageHeightPixels * samplescale
     testwidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.TestScale
@@ -519,8 +519,8 @@ function toPerformanceData() {
     dataXYPos.addRows([[test2_xcoord-testwidth/2,null,null,test2_ycoord-testheight/2,null,null,null,null]]) 
     }
     else{
-    samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.SampleScale
-    sampleheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.SampleScale
+    samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * samplescale
+    sampleheight = file.data.CanvasRatio * file.data.ImageHeightPixels * samplescale
   
     sample_xcoord = file.data.XGridCenter[file.data.SampleGridIndex]
     sample_ycoord = file.data.workspace[3]-file.data.YGridCenter[file.data.StaticFixationGridIndex]-file.data.offsettop
@@ -622,9 +622,15 @@ function toObjPerfData(){
 
     dataObjPerf.removeRows(0,dataObjPerf.getNumberOfRows());
     
+    if (file.data.FixationUsesSample ==1){
     var sampleobj = []
-    for (var i=0; i<=file.data.ImageBagsSample.length-1;i++){
-        sampleobj[i] = file.data.ImageBagsSample[i].split("/")[4];
+    var uniqueSampleInd = []
+
+    uniqueSampleInd = Array.from(new Set(file.data.Sample))
+    uniqueSampleInd.sort(function(a,b){return a-b})
+
+    for (var i=0; i<=uniqueSampleInd.length-1;i++){
+        sampleobj[i] = file.data.Ordered_Samplebag_Filenames[uniqueSampleInd[i]].split("/")[4];
         dataObjPerf.addRow([sampleobj[i],0]);
     }
 
@@ -643,11 +649,12 @@ function toObjPerfData(){
         }
 
     }
+    }
 }
 
 //Synchronous
 function toChoiceData() {
-
+    if (file.data.RewardStage !=0){
     var possibleResp = []
     dataChoice.removeRows(0,dataChoice.getNumberOfRows());
     for (var i = 0; i <= file.data.TestGridIndex.length - 1; i++) {
@@ -657,7 +664,7 @@ function toChoiceData() {
 
 
     var NdiffChoice = Array.apply(null, Array(possibleResp.length)).map(Number.prototype.valueOf, 0);
-    var NallChoice = []
+    var NallChoice = 0
 
     for (var i = 0; i <= file.data.Response.length - 1; i++) {
         if (file.data.Response[i] != -1){
@@ -665,14 +672,50 @@ function toChoiceData() {
         }
 
         for (var j = 0; j <= possibleResp.length - 1; j++) {
-            if (file.data.Response[i] == possibleResp[j]) {
+            if (file.data.Response[i] == possibleResp[j] && file.data.Response[i]!=-1) {
                 NdiffChoice[j]++
             }
             dataChoice.setValue(j, 1, NdiffChoice[j] / NallChoice)
         }
 
     }
+    }
+    else{
+        dataChoice.removeRows(0,dataChoice.getNumberOfRows());
+        dataChoice.addRow(['outside Fix',0]);
+        dataChoice.addRow(['inside Fix',0]);
+
+
+    var NdiffChoice = Array.apply(null, Array(2)).map(Number.prototype.valueOf, 0);
+    var NallChoice = 0
+
+    var ydata = []
+
+    for (var i = 0; i <= file.data.CorrectItem.length - 1; i++) {
+
+        if (file.data.CorrectItem[i] == file.data.Response[i]) {
+            ydata[i] = 1;
+        } else {
+            ydata[i] = 0;
+        }
+    }
+
+    for (var i = 0; i <= ydata.length - 1; i++) {
+            NallChoice++
+
+        for (var j=0;j<=1;j++){
+            if (ydata[i]==j){
+                NdiffChoice[j]++
+            }
+            dataChoice.setValue(j,1,NdiffChoice[j]/NallChoice)
+        }
+           
+        }
+    }
+
 }
+    
+
 // Synchronous
 function toRewardData() {
     dataReward.removeRows(0,dataReward.getNumberOfRows());
@@ -729,6 +772,7 @@ function updatePlots() {
     drawLine() //current
     drawArea()
     //cumulative
+
     drawObjPerfBar()
     drawScatter()
     drawChoiceBar()
@@ -753,7 +797,7 @@ function addTaskText() {
         task["name"] = "Fixation";
     } 
     else {
-        if (file.data.ImageBagsSample.length>1){
+        if (Array.from(new Set(file.data.Sample)).length>1){
             if (task.distractor==0){
             task["name"] = "Match-to-Sample";
             }
@@ -854,13 +898,12 @@ function drawArea() {
 
 //Synchronous
 function drawObjPerfBar() {
-    liveobjperf.draw(dataObjPerf, objPerfBarOptions)
+    liveobjperf.draw(dataObjPerf, objPerfBarOptions)   
 }
 
 // Synchronous
 function drawScatter() {
     livescatter.draw(dataXYPos, scatterOptions)
-
 }
 
 

@@ -11,8 +11,9 @@ var lineOptions={
 		startup: true,
 	},
 	series: {
-            1: { color: '#1c91c0' },
-            0: { color: '#43459d' },
+         //   1: { color: '#1c91c0' },
+            1: {color:  '#e2431e'},
+            0: { color: '#43459d' }
         }
           
 }
