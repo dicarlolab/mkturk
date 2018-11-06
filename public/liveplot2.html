@@ -296,12 +296,14 @@ function initializeChartData() {
 
     dataXYPos.addColumn('number', 'xpos')
     dataXYPos.addColumn('number','Fixation')
-    dataXYPos.addColumn('number','Target1')
-    dataXYPos.addColumn('number','Target2')
+    for (var i = 0; i<=file.data.TestGridIndex.length-1;i++){
+        dataXYPos.addColumn('number', 'Target' + (i+1))
+    }
+
     dataXYPos.addColumn('number', 'Fix_R')
     dataXYPos.addColumn('number', 'Fix_NR')
     dataXYPos.addColumn('number', 'Target_R')
-    dataXYPos.addColumn('number', 'Target_NR')
+    dataXYPos.addColumn('number','Target_NR')
 
     dataReward.addColumn('string', 'reward size')
     dataReward.addColumn('number', 'nrewards')
@@ -448,6 +450,7 @@ function toPerformanceData() {
     var xpos = []
     var ypos = []
     var touchevent = []
+    var nColumn = dataXYPos.getNumberOfColumns()
 
     for (var i = 0; i <= file.data.CorrectItem.length - 1; i++) {
 
@@ -486,7 +489,7 @@ function toPerformanceData() {
         samplescale = file.data.SampleScale
     }
 
-    if (file.data.RewardStage != 0 ){
+    var  arr = new Array(nColumn)
     samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * samplescale
     sampleheight = file.data.CanvasRatio * file.data.ImageHeightPixels * samplescale
     testwidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.TestScale
@@ -494,45 +497,64 @@ function toPerformanceData() {
     
     sample_xcoord = file.data.XGridCenter[file.data.SampleGridIndex]
     sample_ycoord = file.data.workspace[3]-file.data.YGridCenter[file.data.StaticFixationGridIndex]-file.data.offsettop
-    test1_xcoord = file.data.XGridCenter[file.data.TestGridIndex[0]]
-    test1_ycoord =  file.data.workspace[3]-file.data.YGridCenter[file.data.TestGridIndex[0]]-file.data.offsettop
-    test2_xcoord = file.data.XGridCenter[file.data.TestGridIndex[1]]
-    test2_ycoord =  file.data.workspace[3]-file.data.YGridCenter[file.data.TestGridIndex[1]]-file.data.offsettop
-    
-    
-    dataXYPos.addRows([[sample_xcoord-samplewidth/2,sample_ycoord-sampleheight/2,null,null,null,null,null,null]]) //sample
-    dataXYPos.addRows([[sample_xcoord+samplewidth/2,sample_ycoord-sampleheight/2,null,null,null,null,null,null]]) 
-    dataXYPos.addRows([[sample_xcoord+samplewidth/2,sample_ycoord+sampleheight/2,null,null,null,null,null,null]]) 
-    dataXYPos.addRows([[sample_xcoord-samplewidth/2,sample_ycoord+sampleheight/2,null,null,null,null,null,null]]) 
-    dataXYPos.addRows([[sample_xcoord-samplewidth/2,sample_ycoord-sampleheight/2,null,null,null,null,null,null]])
 
-    dataXYPos.addRows([[test1_xcoord-testwidth/2,null,test1_ycoord-testheight/2,null,null,null,null,null]]) //test1
-    dataXYPos.addRows([[test1_xcoord+testwidth/2,null,test1_ycoord-testheight/2,null,null,null,null,null]]) 
-    dataXYPos.addRows([[test1_xcoord+testwidth/2,null,test1_ycoord+testheight/2,null,null,null,null,null]]) 
-    dataXYPos.addRows([[test1_xcoord-testwidth/2,null,test1_ycoord+testheight/2,null,null,null,null,null]]) 
-    dataXYPos.addRows([[test1_xcoord-testwidth/2,null,test1_ycoord-testheight/2,null,null,null,null,null]]) 
-    
-    dataXYPos.addRows([[test2_xcoord-testwidth/2,null,null,test2_ycoord-testheight/2,null,null,null,null]]) //test2
-    dataXYPos.addRows([[test2_xcoord+testwidth/2,null,null,test2_ycoord-testheight/2,null,null,null,null]]) 
-    dataXYPos.addRows([[test2_xcoord+testwidth/2,null,null,test2_ycoord+testheight/2,null,null,null,null]]) 
-    dataXYPos.addRows([[test2_xcoord-testwidth/2,null,null,test2_ycoord+testheight/2,null,null,null,null]]) 
-    dataXYPos.addRows([[test2_xcoord-testwidth/2,null,null,test2_ycoord-testheight/2,null,null,null,null]]) 
+
+        arr[0] = sample_xcoord-samplewidth/2
+        arr[1] = sample_ycoord-sampleheight/2
+        dataXYPos.addRows([arr])
+
+        arr[0] = sample_xcoord+samplewidth/2
+        arr[1] = sample_ycoord-sampleheight/2
+        dataXYPos.addRows([arr])
+
+        arr[0] = sample_xcoord+samplewidth/2
+        arr[1] = sample_ycoord+sampleheight/2
+        dataXYPos.addRows([arr])
+
+        arr[0] = sample_xcoord-samplewidth/2
+        arr[1] = sample_ycoord+sampleheight/2
+        dataXYPos.addRows([arr])
+        
+        arr[0] = sample_xcoord-samplewidth/2
+        arr[1] = sample_ycoord-sampleheight/2
+        dataXYPos.addRows([arr])
+
+
+    var test_xcoord = []
+    var test_ycoord = []
+    if (file.data.RewardStage != 0 ){
+
+    for (var i =0; i<=file.data.TestGridIndex.length-1; i++){
+        test_xcoord[i] = file.data.XGridCenter[file.data.TestGridIndex[i]]
+        test_ycoord[i] = file.data.workspace[3]-file.data.YGridCenter[file.data.TestGridIndex[i]]-file.data.offsettop
+
+        var arr = new Array(nColumn)
+        arr[0] = test_xcoord[i]-testwidth/2
+        arr[i+2] = test_ycoord[i]-testheight/2
+        dataXYPos.addRows([arr])
+
+        arr[0] = test_xcoord[i]+testwidth/2
+        arr[i+2] = test_ycoord[i]-testheight/2
+        dataXYPos.addRows([arr])
+
+        arr[0] = test_xcoord[i]+testwidth/2
+        arr[i+2] = test_ycoord[i]+testheight/2
+        dataXYPos.addRows([arr])
+
+        arr[0] = test_xcoord[i]-testwidth/2
+        arr[i+2] = test_ycoord[i]+testheight/2
+        dataXYPos.addRows([arr])
+        
+        arr[0] = test_xcoord[i]-testwidth/2
+        arr[i+2] = test_ycoord[i]-testheight/2
+        dataXYPos.addRows([arr])
+   
     }
-    else{
-    samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * samplescale
-    sampleheight = file.data.CanvasRatio * file.data.ImageHeightPixels * samplescale
-  
-    sample_xcoord = file.data.XGridCenter[file.data.SampleGridIndex]
-    sample_ycoord = file.data.workspace[3]-file.data.YGridCenter[file.data.StaticFixationGridIndex]-file.data.offsettop
-     
-    dataXYPos.addRows([[sample_xcoord-samplewidth/2,sample_ycoord-sampleheight/2,null,null,null,null,null,null]]) //sample
-    dataXYPos.addRows([[sample_xcoord+samplewidth/2,sample_ycoord-sampleheight/2,null,null,null,null,null,null]]) 
-    dataXYPos.addRows([[sample_xcoord+samplewidth/2,sample_ycoord+sampleheight/2,null,null,null,null,null,null]]) 
-    dataXYPos.addRows([[sample_xcoord-samplewidth/2,sample_ycoord+sampleheight/2,null,null,null,null,null,null]]) 
-    dataXYPos.addRows([[sample_xcoord-samplewidth/2,sample_ycoord-sampleheight/2,null,null,null,null,null,null]])
     }
 
-
+    var dist_from_center_Fix = []
+    var dist_from_center_T = []
+    
     for (var i = 0; i <= touchevent.length - 1; i++) {
         xpos = touchevent[i][0]
         ypos = file.data.workspace[3] - touchevent[i][1]
@@ -545,26 +567,59 @@ function toPerformanceData() {
         }
 
         if (xpos != -1) {
-            if ((i % 2 == 0) && ydata[ydata_index] == 1) {
-                //Fixation and Hit
-                dataXYPos.addRows([[xpos,null,null,null,ypos,null ,null  ,null  ]])
-            } else if ((i % 2 == 0 && ydata[ydata_index] == 0)) {
-                //Fixation and Missed
-                dataXYPos.addRows([[xpos,null,null,null,null  , ypos,null  ,null  ]])
-            } else if ((i % 2 == 1 && ydata[ydata_index] == 1)) {
-                //Target and Hit        
-                dataXYPos.addRows([[xpos,null,null,null,null  ,null  , ypos,null ]])
-            } else if ((i % 2 == 1 && ydata[ydata_index] == 0)) {
-                //Target and Missed
-                dataXYPos.addRows([[xpos,null,null,null,null ,null ,null , ypos]])
-            }
-        }
-    }
+            var arr = new Array(nColumn)
+            arr[0] = xpos 
+            if (i % 2 == 0){
+                dist_from_center_Fix.push( Math.sqrt((Math.abs(xpos-sample_xcoord))^2+(Math.abs(ypos-sample_ycoord))^2))
+                if (ydata[ydata_index]==1){
+                    //Fixation and Hit
+                arr[1 + file.data.TestGridIndex.length+1] = ypos 
+                dataXYPos.addRows([arr])
+                } else{
+               //Fixation and Missed
+                arr[1 + file.data.TestGridIndex.length+2] = ypos 
+                dataXYPos.addRows([arr])
+                }
+            } else {
+                var dist_T_arr = Array.apply(null, Array(file.data.TestGridIndex.length)).map(Number.prototype.valueOf, 0);
 
+                for (var j = 0; j<=file.data.TestGridIndex.length-1; j++){  //different targets 
+                    
+                    if (file.data.Response[ydata_index] == j){
+                    indiv_dist = Math.sqrt((Math.abs(xpos-test_xcoord[j]))^2+(Math.abs(ypos-test_ycoord[j]))^2)
+                    dist_T_arr[j] = indiv_dist
+                    }
+                    dist_from_center_T.push(dist_T_arr)        
+                       
+                    }
+                if (ydata[ydata_index]==1){ //Target and hit
+                    arr[1+file.data.TestGridIndex.length+3] = ypos
+                    dataXYPos.addRows([arr])
+                    
+                } else{ //target and Missed
+                    arr[1 + file.data.TestGridIndex.length+4] = ypos 
+                    dataXYPos.addRows([arr])    
+                }
+                }
+             }
+             sum_fix = dist_from_center_Fix.reduce(function(a,b){return a+b},0)
+             n_fix = dist_from_center_T.length
+             mean_fix =  sum_fix/n_fix 
+             var diff_fix = dist_from_center_Fix.map(function(a){return (Math.abs(a-mean_fix))^2})
+             vitals.std_fix = Math.sqrt(diff_fix.reduce(function(a,b){return a+b},0)/n_fix)
+                
+             var std_T = []
+             for (var j=0; j<=file.data.TestGridIndex.length-1;j++){
+                 sum_T = dist_from_center_T.reduce(function (a,b){return a+b[j]},0)
+                 n_T= dist_from_center_T.length/2
+                 mean_T = sum_T/n_T
+                 var diff_T = dist_from_center_T.map(function(a){return (Math.abs(a[j]-mean_T))^2})
+                 std_T[j] = Math.sqrt(diff_T.reduce(function(a,b){return a+b},0)/n_T)
+             }
+             
+            vitals.std_T = std_T
+        }     
 
-    // var ellipse = new Ellipse();
-    // ellipse.setFromPoints([{x: , y: }])
-    // ellipse.printEquation()
     
 
     ydata_5 = smooth(ydata,5);
@@ -767,6 +822,7 @@ function updatePlots() {
     toChoiceData();
     toRewardData();
     addVitalsText();
+    addTouchSDText();
     addTaskText();
 
     drawLine() //current
@@ -790,6 +846,10 @@ function addVitalsText() {
     titleobj.innerHTML = vitals.subject;
 }
 
+//Synchronous
+function addTouchSDText(){
+    scatterOptions.title = "Touch Locations " + "\n standard dev: " + "Fixation: " + vitals.std_fix + "\n Target 1: " + vitals.std_T[0] + "\n Target 2: " + vitals.std_T[1]
+}
 // Synchronous
 function addTaskText() {
     task["name"] = ""
@@ -903,6 +963,7 @@ function drawObjPerfBar() {
 
 // Synchronous
 function drawScatter() {
+    //make sure you change scatterOptions if there are more than 2 choices 
     livescatter.draw(dataXYPos, scatterOptions)
 }
 
@@ -1059,7 +1120,7 @@ currentautomatorstage: 0,
 currentautomatorstagename: "",
 nrewards: 0,
 RFIDtag: "",
-RFIDtime: 0
+RFIDtime: 0,
 }
 
 var task = {

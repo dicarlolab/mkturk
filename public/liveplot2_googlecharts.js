@@ -96,9 +96,8 @@ var objPerfBarOptions={
 	
 }
 
-//======== Touch ScatterPlot =======//
+//======== Touch ScatterPlot =======// 
 var scatterOptions = {
-	title: 'Touch Locations',
 	width: 700,
 	height: 700, 
 	pointSize: 1,
@@ -106,15 +105,14 @@ var scatterOptions = {
 	vAxis : {title: 'Y position (pixels)', minValue: 600, maxValue: 1744/2},
 	seriesType: 'scatter',
 	series: {
-		0: {type: 'line', color: 'black'},
-		1: {type: 'line', color: 'black'},
-		2: {type: 'line', color: 'black'},
+		0: {type: 'line', color: 'black', visibleInLegend: false},
+		1: {type: 'line', color: 'black',visibleInLegend: false},
+		2: {type: 'line', color: 'black', visibleInLegend: false},
 		3: {color: 'black'},
 		4: {color: 'green'},
 		5: {color: 'blue',},
-		6: {color: 'red'}
-
-	}
+		6: {color: 'red'},
+ 	}
 }
 
 //======== ChoiceBar ========//
