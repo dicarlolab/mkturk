@@ -59,7 +59,7 @@ async function findUSBDevice(event){
 	}
 
 	// STEP 1B: User connects to Port
-	if (event.type == "touchend" || event.type == "mouseup"){
+	if (event.type == "pointerup" || event.type == "touchend" || event.type == "mouseup"){
 		event.preventDefault(); //prevents additional downstream call of click listener
 		try{
 			//STEP 1B: RequestPorts - User based
@@ -116,6 +116,9 @@ serial.Port.prototype.connect = async function(){
       'index': 0x02 //interface 2 is the recipient
     }) //send controlTransferOut to work with channels
 
+ENV.USBDeviceType = 'microcontroller'
+ENV.USBDeviceName = 'Arduino Leonardo'
+
   this.connected = true
   readLoop(this)
   // pingUSB()
@@ -133,6 +136,7 @@ serial.Port.prototype.onReceive = data => {
 	var tagstart = port.statustext_received.indexOf('{tag',0);
 	if (tagstart > 0){
 		var tagend = port.statustext_received.indexOf('}',0);
+		logEVENTS("RFIDTag",port.statustext_received.slice(tagstart+4,tagend),"timeseries");
 		TRIAL.RFIDTime[TRIAL.NRFID] = Math.round(performance.now());
 		TRIAL.RFIDTrial[TRIAL.NRFID] = CURRTRIAL.num
 		TRIAL.RFIDTag[TRIAL.NRFID] = port.statustext_received.slice(tagstart+4,tagend);

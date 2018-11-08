@@ -76,7 +76,8 @@ function smooth(data,n){
   var smoothed_data=[];
   for (var i=0; i<=data.length-1; i++){
     if (i<n-1){
-      smoothed_data[i]=data[i];
+      var sub = data.slice(0,i+1); 
+      smoothed_data[i]=sub.reduce(function(a,b){return a + b;})/(i+1); 
     }
     else{
       var sub = data.slice(i-n+1,i+1);

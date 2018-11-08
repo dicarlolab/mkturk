@@ -87,7 +87,6 @@ async generate_trials(n_trials){
 
 				// make new bag
 				this.samplebag_block_indices = []
-				var blocklen = this.samplebag_labels.filter(temp => temp == this.currentbag).length;
 				for (var j = 0; j <= this.samplebag_labels.length-1; j++){
 					if (this.samplebag_labels[j] == this.currentbag){
 						this.samplebag_block_indices.push(j)

@@ -37,6 +37,8 @@ var blescale = {
   weightunits: ["gram"],
   weightstart: 0,
   tareflag: 1,
+  maxweight: 0,
+  maxweighttimeout: 0,
 
   battery: [],
   tbattery: [],
@@ -44,18 +46,6 @@ var blescale = {
   statustext_connect: "",
   statustext_sent: "",
   statustext_received: "",
-}
-
-var bout = {
-  "weightentered": [],
-  "wtcutoff": 250,
-  "ntotal": 0,
-  "vec": [0],
-  "startind": 0,
-  "lengths": [],
-  "durations": [],
-  "weights": [],
-  "average": 0,
 }
 
 //================ INITIALIZE BLE VARIABLE (end) ================//
@@ -132,6 +122,9 @@ async function requestBLEDevice(){
 
       blescale.device=device
       blescale.device.addEventListener('gattserverdisconnected',onDisconnectedBLE)
+
+      ENV.BLEDeviceType = 'scale'
+      ENV.BLEDeviceName = device.name
     }
     catch(error){
       if (blescale.connected == false){
@@ -313,7 +306,7 @@ function onWeightNotificationFromScale(event){
       a.push(('00' + value.getUint8(i).toString(16)).slice(-2));
     }
     blescale.statustext_received = 'Received WEIGHT notification:  ' + a.join(' ') + ' dt=' + Math.round(dt) + 'ms'
-    console.log(blescale.statustext_received)
+//     console.log(blescale.statustext_received)
     updateHeadsUpDisplayDevices()
 
     //Decode values (specific to scale)
@@ -347,6 +340,7 @@ function onWeightNotificationFromScale(event){
 	weight = weight/1000 //grams
 	weight = Math.round(100*weight)/100 //0.01 gram precision
 
+  logEVENTS("Weight",weight,"timeseries");
   TRIAL.WeightTime[TRIAL.NWeights] = Math.round(performance.now());
   TRIAL.WeightTrial[TRIAL.NWeights] = CURRTRIAL.num
   TRIAL.Weight[TRIAL.NWeights] = weight
@@ -356,17 +350,23 @@ function onWeightNotificationFromScale(event){
     blescale.tweights[blescale.tweights.length] = Math.round(t_notify)
     blescale.weights[blescale.weights.length] = displayweight
 
-    weightstats()
+    if (TRIAL.Weight[TRIAL.NWeights-1] > 500){
+      blescale.maxweight = 0 //reset weight since too high indicating jumped
+      blescale.maxweighttimeout = TRIAL.WeightTime[TRIAL.NWeights-1] + 1000 //wait 1 seconds
+    }
+    else if (TRIAL.Weight[TRIAL.NWeights-1] > blescale.maxweight &&
+    TRIAL.WeightTime[TRIAL.NWeights-1] > blescale.maxweighttimeout){
+      blescale.maxweight = TRIAL.Weight[TRIAL.NWeights-1]
+    } 
+
 
     blescale.statustext_received = 
       'Wt=' + blescale.weights[blescale.weights.length-1] + ' '
       + blescale.weightunits + '  ' 
       + Math.round(dt) + 'ms' + '     '
-      + 'Current Bout=' + bout.weights[bout.ntotal-1] + ' ('
-      + Math.round(bout.durations[bout.ntotal-1]/1000) + 'sec)' + '  '
-      + bout.average + ' bout avg'
+      + ' MAX =' + blescale.maxweight + '  ' + blescale.weightunits
 
-    console.log(blescale.statustext_received)
+//     console.log(blescale.statustext_received)
     updateHeadsUpDisplayDevices()
 }
 
@@ -386,6 +386,7 @@ function onBatteryNotificationFromScale(event){
 
     //Decode values (specific to scale)
     var battery = parseInt(a[0],16)
+    logEVENTS("BLEBattery",battery,"timeseries");
     blescale.tbattery[blescale.tbattery.length] = Math.round(t_notify)
     blescale.battery[blescale.battery.length] = battery
 
@@ -395,42 +396,6 @@ function onBatteryNotificationFromScale(event){
 
     console.log(blescale.statustext_received)
     updateHeadsUpDisplayDevices()
-}
-
-// Measure average during weighing bouts 
-function weightstats(){
-  var nwts = blescale.weights.length
-  var currweight = blescale.weights[nwts-1]
-  var prevweight = blescale.weights[nwts-2]
-
-  // Weighing bout started
-  if (currweight > bout.wtcutoff && prevweight <= bout.wtcutoff){
-
-    // running average of bouts up to this point
-    if (bout.ntotal > 0){
-      bout.average = ((bout.average * (bout.ntotal - 1)) + bout.weights[bout.ntotal-1])/bout.ntotal
-      bout.average = Math.round(bout.average)
-    }
-
-    // new bout
-    bout.ntotal = bout.ntotal + 1
-    bout.startind = nwts - 1
-    bout.weights[bout.ntotal-1] = 0 //initialize weight of current bout
-    saveDeviceDatatoDropbox() //update data file with new bout
-  }
-
-  if (currweight > bout.wtcutoff){
-    bout.vec[nwts-1] = bout.ntotal
-    bout.lengths[bout.ntotal-1] = nwts - bout.startind
-    bout.durations[bout.ntotal-1] = blescale.tweights[nwts-1] - blescale.tweights[bout.startind]
-
-    bout.weights[bout.ntotal-1] = (bout.weights[bout.ntotal-1]*(bout.lengths[bout.ntotal-1]-1) + currweight)
-                                  / bout.lengths[bout.ntotal-1]
-    bout.weights[bout.ntotal-1] = Math.round(bout.weights[bout.ntotal-1])
-  }
-  else if (currweight <= bout.wtcutoff) {
-    bout.vec[nwts - 1] = -1
-  }
 }
 
 //============== READ NOTIFICATIONS & WRITES (end) ==============//

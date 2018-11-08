@@ -9,6 +9,13 @@
 var TASK = {}; // Global that encapsulates state of the current task, read from Subject's Params file
 var TRIAL = resetTRIAL() // Global that contains data variables that are incremented every trial, and are dumped to disk for scientific purposes.
 var ENV = {}; // Task specific variables that are slaves to TASK settings, but still desired to be recorded. Hence, they should not appear in the TASK-based params file, but should be logged on their own. 
+
+ENV.ResearcherDisplayName = ''
+ENV.ResearcherEmail = ''
+ENV.ResearcherLastName = ''
+ENV.ResearcherID = ''
+ENV.USBDeviceType = ''
+ENV.USBDeviceName = ''
 ENV.Subject = ''
 ENV.CurrentDate = new Date;
 ENV.ImageHeightPixels = NaN; 
@@ -26,7 +33,7 @@ ENV.ParamFileName = ''
 ENV.ParamFileRev = ''
 ENV.ParamFileDate = '' //stores complete path to subject parameter file
 ENV.DataFileName = '' //stores complete path to behavioral data file
-ENV.BatteryLDT = []
+ENV.FirestoreDocRoot = ''
 ENV.CurrentAutomatorStageName = ''
 ENV.MinPercentCriterion = -1
 ENV.MinTrialsCriterion = -1
@@ -48,6 +55,7 @@ FLAGS.punishOutsideTouch = 0
 FLAGS.acquiredTouch = 0
 FLAGS.touchGeneratorCreated = 0
 FLAGS.runPump = 0
+FLAGS.firestorecreatedoc = 0
 
 var CANVAS = {}; 
 var CANVAS = {
@@ -64,9 +72,10 @@ var CANVAS = {
 	headsupfraction: NaN,
 	offsetleft: 0,
 	offsettop: 0,
-	visible: document.getElementById("canvasvisible"),
-	offscreen: null,
 }
+
+var OFFSCREENCANVAS = null
+var VISIBLECANVAS = document.getElementById("canvasvisible")
 
 var frame = {
 	current: 0,
@@ -95,6 +104,42 @@ CURRTRIAL.lastTrialCompleted = new Date
 CURRTRIAL.lastDropboxSave = new Date
 CURRTRIAL.tsequenceactual = []
 CURRTRIAL.tsequencedesired = []
+
+
+var EVENTS = {}
+EVENTS.reset = function(){
+	this.trialnum = CURRTRIAL.num;
+	this.trialseries = {};
+	this.timeseries = {};
+	this.trialseries.Sample = {}
+	this.trialseries.Test = {}
+	this.trialseries.CorrectItem = {}
+	this.trialseries.FixationGridIndex = {}
+	this.trialseries.StartTime = {}
+	this.trialseries.FixationTouchEvent = {}
+	this.trialseries.FixationXYT = {}
+	this.trialseries.Response = {}
+	this.trialseries.TSequenceDesired = {}
+	this.trialseries.TSequenceActual = {}
+	this.trialseries.ResponseTouchEvent = {}
+	this.trialseries.ResponseXYT = {}
+	this.trialseries.Response = {}
+	this.trialseries.NReward = {}
+	this.timeseries.BatteryLDT = {}	
+	this.timeseries.RFIDTag = {}
+	this.timeseries.Weight = {}
+	this.timeseries.BLEBattery = {}
+}
+EVENTS.reset()
+
+// 	TRIAL.RFIDTag = []
+// 	TRIAL.RFIDTime = []
+// 	TRIAL.RFIDTrial = []
+// 	TRIAL.NRFID = 0
+// 	TRIAL.Weight = []
+// 	TRIAL.WeightTime = []
+// 	TRIAL.WeightTrial = []
+// 	TRIAL.NWeights = 0
 
 
 var trialhistory = {}
@@ -145,6 +190,11 @@ function resetTRIAL(){
 	TRIAL.WeightTime = []
 	TRIAL.WeightTrial = []
 	TRIAL.NWeights = 0
+	TRIAL.BatteryLDT = []
+	navigator.getBattery().then(function(batteryobj){
+		TRIAL.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
+		logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"timeseries")
+	}) // starting battery level
 	return TRIAL
 }
 
@@ -174,6 +224,26 @@ function updateTrialHistory(){
 	trialhistory.correct.push(CURRTRIAL.correct)
 }
 
+function logEVENTS(eventname,eventval,eventtype){
+	//log events for a trial
+	if (eventtype == 'trialseries'){
+		//index by trial
+		var indevent = EVENTS.trialnum
+		if (FLAGS.savedata == 0){
+			indevent = 0 //store most recent trial in first position until start saving data
+		}
+	}
+	else if (eventtype == 'timeseries'){
+		//running index
+		var indevent = Object.keys(EVENTS[eventtype][eventname]).length
+		if (FLAGS.savedata == 0){
+			indevent = 0 //store most recent timepoint in first position until start saving data
+		}
+	}
+	var trialtime = [EVENTS.trialnum, Math.round(performance.now())]
+	EVENTS[eventtype][eventname][indevent.toString()] = trialtime.concat(eventval)
+}
+
 function purgeTrackingVariables(){
 	// Purges heresies committed in the test period 
 	TRIAL = resetTRIAL()
@@ -181,11 +251,13 @@ function purgeTrackingVariables(){
 	ENV.CurrentDate = new Date;
 	var datestr = ENV.CurrentDate.toISOString();
 	ENV.DataFileName = DATA_SAVEPATH + ENV.Subject + "/" + datestr.slice(0,datestr.indexOf(".")) + "_" + ENV.Subject + ".txt";
+	ENV.FirestoreDocRoot = datestr.slice(0,datestr.indexOf(".")) + "_" + ENV.Subject
 
 	if(FLAGS.waitingforTouches > 0 || FLAGS.purge == 1){
 		// purge requested by user at beginning of trial during fixation (most likely) 
 		console.log('setting to 0')
 		CURRTRIAL.num = 0
+		EVENTS.trialnum = 0
 	}
 	else{
 		console.log('setting to -1')

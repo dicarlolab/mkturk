@@ -1,6 +1,5 @@
 //======== Performance Line Plot =======//
 var lineOptions={
-	smooth: 5,
   	width: 900,
   	height: 400,
 	hAxis: {title: 'Trial#'},
@@ -11,10 +10,14 @@ var lineOptions={
 		easing: 'linear',
 		startup: true,
 	},
-	legend: {
-		position: 'none',
-	}
+	series: {
+         //   1: { color: '#1c91c0' },
+            1: {color:  '#e2431e'},
+            0: { color: '#43459d' }
+        }
+          
 }
+
 
 //======== Trial Slider =======//
 var livesliderTrialOptions={
@@ -43,7 +46,7 @@ var areaOptions={
   	areaOpacity: 0.5,
 	hAxis: {title: 'Time (h)'},
 	vAxes: {0: {title: 'Trial count'},
-			1: {title: 'RFID & Weight (in thousands)'}
+			1: {title: 'RFID & Weight'}
 			},
 	animation: {
 		duration: 500,
@@ -93,20 +96,23 @@ var objPerfBarOptions={
 	
 }
 
-//======== Touch ScatterPlot =======//
+//======== Touch ScatterPlot =======// 
 var scatterOptions = {
-	title: 'Touch Locations',
 	width: 700,
 	height: 700, 
+	pointSize: 1,
 	hAxis: {title: 'X position (pixels)', minValue: 0, maxValue: 1768/2},
 	vAxis : {title: 'Y position (pixels)', minValue: 600, maxValue: 1744/2},
+	seriesType: 'scatter',
 	series: {
-		0: {color: 'black'},
-		1: {color: 'red'},
-		2: {color: 'blue',},
-		3: {color: 'red'}
-
-	}
+		0: {type: 'line', color: 'black', visibleInLegend: false},
+		1: {type: 'line', color: 'black',visibleInLegend: false},
+		2: {type: 'line', color: 'black', visibleInLegend: false},
+		3: {color: 'black'},
+		4: {color: 'green'},
+		5: {color: 'blue',},
+		6: {color: 'red'},
+ 	}
 }
 
 //======== ChoiceBar ========//
