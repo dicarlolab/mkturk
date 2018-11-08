@@ -85,6 +85,23 @@ var livesliderTimeOptions={
 	} //ui
 }//options
 
+//======== WeightReadsPlot ==========//
+var weightOptions = {
+	width: 900,
+	height: 300,
+	vAxis: {title: "weights (grams)", minValue:0},
+	hAxis: {title: "time"},
+	title: 'Weight Reads',
+	legend: {position: 'none'},
+	// animation: {
+	// 	duration: 500,
+	// 	easing: 'linear',
+	// 	startup: true,
+	// },
+	colors: ['#6f9654']
+	
+}
+
 //======== ObjPerformanceBar ========//
 var objPerfBarOptions={
 	width: 900,

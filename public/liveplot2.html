@@ -42,6 +42,7 @@ function loadGoogleCharts() {
         dataReward = new google.visualization.DataTable()
         dataChoice = new google.visualization.DataTable()
         dataObjPerf = new google.visualization.DataTable()
+        dataWeight = new google.visualization.DataTable()
      
         // Establish dependencies, declaring that the sliders drive 'liveline' & 'livearea',
         // so that data will only display for entries that are let through
@@ -92,7 +93,10 @@ function loadGoogleCharts() {
         livereward = new google.visualization.ColumnChart(document.getElementById('reward_div'));
         livechoice = new google.visualization.ColumnChart(document.getElementById('choice_div'));
         liveobjperf = new google.visualization.ColumnChart(document.getElementById('objectPerf_div'));
- 
+        
+        liveweight = new google.visualization.ColumnChart(document.getElementById('weight_div'));
+       
+        
         // data formatters
         formatterDate = new google.visualization.DateFormat({
             pattern: 'h aa'
@@ -277,7 +281,8 @@ function initializeChartData() {
     dataChoice.removeColumns(0, dataChoice.getNumberOfColumns());
     dataObjPerf.removeRows(0,dataObjPerf.getNumberOfRows());
     dataObjPerf.removeColumns(0,dataObjPerf.getNumberOfColumns());
-
+    dataWeight.removeColumns(0,dataWeight.getNumberOfColumns());
+    dataWeight.removeRows(0,dataWeight.getNumberOfRows());
 
     dataPerformance.addColumn('number','currentTrial')
     dataPerformance.addColumn('number','current')
@@ -293,6 +298,9 @@ function initializeChartData() {
     //3
     dataCumulative.addColumn('number', 'Weight')
     //4
+
+    dataWeight.addColumn('datetime','time')
+    dataWeight.addColumn('number','WeightReads')
 
     dataXYPos.addColumn('number', 'xpos')
     dataXYPos.addColumn('number','Fixation')
@@ -450,7 +458,6 @@ function toPerformanceData() {
     var xpos = []
     var ypos = []
     var touchevent = []
-    var nColumn = dataXYPos.getNumberOfColumns()
 
     for (var i = 0; i <= file.data.CorrectItem.length - 1; i++) {
 
@@ -480,6 +487,7 @@ function toPerformanceData() {
         }
     }
 
+
     //Fixation, Sample, Test Box
 
     if (file.data.FixationUsesSample == 0){
@@ -488,6 +496,8 @@ function toPerformanceData() {
     else{
         samplescale = file.data.SampleScale
     }
+
+    nColumn = dataXYPos.getNumberOfColumns()
 
     var  arr = new Array(nColumn)
     samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * samplescale
@@ -552,8 +562,11 @@ function toPerformanceData() {
     }
     }
 
-    var dist_from_center_Fix = []
-    var dist_from_center_T = []
+    var xpos_Fix = []
+    var ypos_Fix = []
+    var xpos_T = []
+    var ypos_T = []
+    var nTarget = [0,0]
     
     for (var i = 0; i <= touchevent.length - 1; i++) {
         xpos = touchevent[i][0]
@@ -570,7 +583,8 @@ function toPerformanceData() {
             var arr = new Array(nColumn)
             arr[0] = xpos 
             if (i % 2 == 0){
-                dist_from_center_Fix.push( Math.sqrt((Math.abs(xpos-sample_xcoord))^2+(Math.abs(ypos-sample_ycoord))^2))
+                xpos_Fix.push(xpos)
+                ypos_Fix.push(ypos)
                 if (ydata[ydata_index]==1){
                     //Fixation and Hit
                 arr[1 + file.data.TestGridIndex.length+1] = ypos 
@@ -581,15 +595,17 @@ function toPerformanceData() {
                 dataXYPos.addRows([arr])
                 }
             } else {
-                var dist_T_arr = Array.apply(null, Array(file.data.TestGridIndex.length)).map(Number.prototype.valueOf, 0);
-
+                var xpos_T_arr = Array.apply(null, Array(file.data.TestGridIndex.length)).map(Number.prototype.valueOf, 0);
+                var ypos_T_arr = Array.apply(null, Array(file.data.TestGridIndex.length)).map(Number.prototype.valueOf, 0);
                 for (var j = 0; j<=file.data.TestGridIndex.length-1; j++){  //different targets 
                     
                     if (file.data.Response[ydata_index] == j){
-                    indiv_dist = Math.sqrt((Math.abs(xpos-test_xcoord[j]))^2+(Math.abs(ypos-test_ycoord[j]))^2)
-                    dist_T_arr[j] = indiv_dist
+                    xpos_T_arr[j] = xpos
+                    ypos_T_arr[j] = ypos
+                    nTarget[j]++
                     }
-                    dist_from_center_T.push(dist_T_arr)        
+                    xpos_T.push(xpos_T_arr)  
+                    ypos_T.push(ypos_T_arr)    
                        
                     }
                 if (ydata[ydata_index]==1){ //Target and hit
@@ -602,19 +618,24 @@ function toPerformanceData() {
                 }
                 }
              }
-             sum_fix = dist_from_center_Fix.reduce(function(a,b){return a+b},0)
-             n_fix = dist_from_center_T.length
-             mean_fix =  sum_fix/n_fix 
-             var diff_fix = dist_from_center_Fix.map(function(a){return (Math.abs(a-mean_fix))^2})
-             vitals.std_fix = Math.sqrt(diff_fix.reduce(function(a,b){return a+b},0)/n_fix)
+
+             mean_xpos_Fix = xpos_Fix.reduce(function(a,b){return a+b},0)/xpos_Fix.length
+             mean_ypos_Fix = ypos_Fix.reduce(function(a,b){return a+b},0)/ypos_Fix.length
+             dist_xpos_Fix = xpos_Fix.map(function(a){return Math.pow(Math.abs(a-mean_xpos_Fix),2)})
+             dist_ypos_Fix = ypos_Fix.map(function(a){return Math.pow(Math.abs(a-mean_ypos_Fix),2)})
+             std_Fix = dist_xpos_Fix.map(function(a,i){return Math.sqrt(a+dist_ypos_Fix[i])}).reduce(function(a,b){return a+b},0)/dist_xpos_Fix.length
+             vitals.std_Fix = std_Fix            
+    
                 
              var std_T = []
-             for (var j=0; j<=file.data.TestGridIndex.length-1;j++){
-                 sum_T = dist_from_center_T.reduce(function (a,b){return a+b[j]},0)
-                 n_T= dist_from_center_T.length/2
-                 mean_T = sum_T/n_T
-                 var diff_T = dist_from_center_T.map(function(a){return (Math.abs(a[j]-mean_T))^2})
-                 std_T[j] = Math.sqrt(diff_T.reduce(function(a,b){return a+b},0)/n_T)
+             for (var j=0; j<=file.data.TestGridIndex.length-1;j++){                 
+                 all_xpos_T = xpos_T.map(function(a){return a[j]}).filter(function(a){return a!=0})
+                 mean_xpos_T = all_xpos_T.reduce(function(a,b){return a+b},0)/all_xpos_T.length 
+                 dist_xpos_T = all_xpos_T.map(function(a){return Math.pow(Math.abs(a-mean_xpos_T),2)})
+                 all_ypos_T = ypos_T.map(function(a){return a[j]}).filter(function(a){return a!=0})  
+                 mean_ypos_T = all_ypos_T.reduce(function(a,b){return a+b},0)/all_ypos_T.length
+                 dist_ypos_T = all_ypos_T.map(function(a){return Math.pow(Math.abs(a-mean_ypos_T),2)})
+                 std_T[j]= dist_xpos_T.map(function(a,i){return Math.sqrt(a+dist_ypos_T[i])}).reduce(function(a,b){return a+b},0)/all_xpos_T.length
              }
              
             vitals.std_T = std_T
@@ -668,10 +689,24 @@ function toPerformanceData() {
     }
 
     formatterDate.format(dataCumulative, 0)
+   
+}
+//Synchronous
+function toWeightData(){
+    dataWeight.removeRows(0,dataWeight.getNumberOfRows());
+    
+    if (typeof(file.data.WeightTime) != null){
 
-
+    for (var i=0; i<=file.data.WeightTime.length-1;i++){
+        var tt = new Date(file.data.CurrentDate)
+        tt.setTime(tt.getTime()+file.data.WeightTime[i])
+        dataWeight.addRows([[new Date(tt),file.data.Weight[i]]])
+    }
+    formatterDate.format(dataWeight, 0)
+}
 
 }
+
 //Synchronous
 function toObjPerfData(){
 
@@ -712,9 +747,17 @@ function toChoiceData() {
     if (file.data.RewardStage !=0){
     var possibleResp = []
     dataChoice.removeRows(0,dataChoice.getNumberOfRows());
-    for (var i = 0; i <= file.data.TestGridIndex.length - 1; i++) {
+
+    if (file.data.ObjectGridIndex.length !=0){
+        for (var i = 0; i <= file.data.ObjectGridIndex.length - 1; i++) {
+        dataChoice.addRow([file.data.Ordered_Samplebag_Filenames[i].split("/")[4],0]);
+        possibleResp[i] = i
+        }
+    }else{
+        for (var i = 0; i <= file.data.TestGridIndex.length - 1; i++) {
         dataChoice.addRow(['choice' + (i + 1), 0]);
         possibleResp[i] = i
+    }
     }
 
 
@@ -818,6 +861,7 @@ function updatePlots() {
     toVitals();
     toTask();
     toPerformanceData();
+    toWeightData();
     toObjPerfData();
     toChoiceData();
     toRewardData();
@@ -828,7 +872,7 @@ function updatePlots() {
     drawLine() //current
     drawArea()
     //cumulative
-
+    drawWeight()
     drawObjPerfBar()
     drawScatter()
     drawChoiceBar()
@@ -848,7 +892,7 @@ function addVitalsText() {
 
 //Synchronous
 function addTouchSDText(){
-    scatterOptions.title = "Touch Locations " + "\n standard dev: " + "Fixation: " + vitals.std_fix + "\n Target 1: " + vitals.std_T[0] + "\n Target 2: " + vitals.std_T[1]
+    scatterOptions.title = "Touch Locations " + "\n standard dev: " + "Fixation: " + vitals.std_Fix + "\n Target 1: " + vitals.std_T[0] + "\n Target 2: " + vitals.std_T[1]
 }
 // Synchronous
 function addTaskText() {
@@ -858,11 +902,15 @@ function addTaskText() {
     } 
     else {
         if (Array.from(new Set(file.data.Sample)).length>1){
-            if (task.distractor==0){
-            task["name"] = "Match-to-Sample";
-            }
-            else{
-            task["name"] = "No distractor Match-to-Sample"
+            if (file.data.ObjectGridIndex.length != 0 ){
+                task["name"] = "Stimulus Response"
+            }else{
+                if (task.distractor==0){
+                task["name"] = "Match-to-Sample";
+                }
+                else{
+                task["name"] = "No distractor Match-to-Sample"
+                }
             }
         }
         else{
@@ -957,6 +1005,11 @@ function drawArea() {
 }
 
 //Synchronous
+function drawWeight() {
+    liveweight.draw(dataWeight,weightOptions)
+}
+
+//Synchronous
 function drawObjPerfBar() {
     liveobjperf.draw(dataObjPerf, objPerfBarOptions)   
 }
@@ -998,6 +1051,8 @@ function drawReward() {
 <div id="area_div"></div>
 <!--Div that will hold the area chart-->
 <div id="filtertime_div"></div>
+</div>
+<div id= 'weight_div'></div>
 </div>
 <div id='objectPerf_div'></div>
 </div>
@@ -1141,6 +1196,7 @@ var dataXYPos = null;
 var dataReward = null;
 var dataChoice = null;
 var dataObjPerf = null;
+var dataWeight = null; 
 var liveline = null;
 var formatterDigits = null;
 var formatterColor = null;
