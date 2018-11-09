@@ -120,16 +120,7 @@ var scatterOptions = {
 	pointSize: 1,
 	hAxis: {title: 'X position (pixels)', minValue: 0, maxValue: 1768/2},
 	vAxis : {title: 'Y position (pixels)', minValue: 600, maxValue: 1744/2},
-	seriesType: 'scatter',
-	series: {
-		0: {type: 'line', color: 'black', visibleInLegend: false},
-		1: {type: 'line', color: 'black',visibleInLegend: false},
-		2: {type: 'line', color: 'black', visibleInLegend: false},
-		3: {color: 'black'},
-		4: {color: 'green'},
-		5: {color: 'blue',},
-		6: {color: 'red'},
- 	}
+	seriesType: 'scatter'
 }
 
 //======== ChoiceBar ========//
