@@ -5,7 +5,7 @@
 // MKTURK
 var DBX_CLIENT_ID = "p4dju7hqsqpkm32" //mkturkissa
 var DBX_REDIRECT_URI_ROOT = "http://localhost:5000/"
-// var DBX_REDIRECT_URI_ROOT = "https://sandbox-ce2c5.firebaseapp.com/"
+var DBX_REDIRECT_URI_ROOT = "https://sandbox-ce2c5.firebaseapp.com/"
 
 // ------ Subject settings ------ 
 var subjectlist = [

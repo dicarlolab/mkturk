@@ -225,6 +225,7 @@ function updateTrialHistory(){
 }
 
 function logEVENTS(eventname,eventval,eventtype){
+	return
 	//log events for a trial
 	if (eventtype == 'trialseries'){
 		//index by trial
