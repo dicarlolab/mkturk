@@ -702,12 +702,12 @@ function toWeightData(){
 
     for (var i=0; i<=file.data.WeightTime.length-1;i++){
         var tt = new Date(file.data.CurrentDate)
-        tt.setTime(tt.getTime()+file.data.WeightTime[i])
+        tt.setTime(tt.getTime()-file.data.StartTime[0]+file.data.WeightTime[i])
         dataWeight.addRows([[new Date(tt),file.data.Weight[i]]])
     }
-    formatterDate.format(dataWeight, 0)
+    
 }
-
+    formatterDate.format(dataWeight, 0)
 }
 
 //Synchronous
@@ -716,18 +716,28 @@ function toObjPerfData(){
     dataObjPerf.removeRows(0,dataObjPerf.getNumberOfRows());
     
     if (file.data.RewardStage == 1){
-    var sampleobj = []
+            var sampleobj = []
+        if (file.data.NTrialsPerBagBlock >5000){
+            sampleobj[0] = file.data.ImageBagsSample[0].split("/")[4];
+            dataObjPerf.addRow([sampleobj[0],0]);
+            var sampleobj_length = 1;
+        }else{
+
+
+          var sampleobj = []
     
-    for (var i=0; i<=file.data.ImageBagsSample.length-1;i++){
+         for (var i=0; i<=file.data.ImageBagsSample.length-1;i++){
         sampleobj[i] = file.data.ImageBagsSample[i].split("/")[4];
         dataObjPerf.addRow([sampleobj[i],0]);
+        var sampleobj_length = sampleobj.length
+        }
     }
 
 
-    var NdiffObjPerf = Array.apply(null, Array(sampleobj.length)).map(Number.prototype.valueOf, 0);
-    var NdiffObj = Array.apply(null, Array(sampleobj.length)).map(Number.prototype.valueOf, 0);
+    var NdiffObjPerf = Array.apply(null, Array(sampleobj_length)).map(Number.prototype.valueOf, 0);
+    var NdiffObj = Array.apply(null, Array(sampleobj_length)).map(Number.prototype.valueOf, 0);
     for (var i = 0; i <= file.data.Sample.length - 1; i++) {
-        for (var j = 0; j <= sampleobj.length - 1; j++) {
+        for (var j = 0; j <= sampleobj_length - 1; j++) {
             if (file.data.Ordered_Samplebag_Filenames[file.data.Sample[i]].split("/")[4]==sampleobj[j]){
                 NdiffObj[j]++
             }
@@ -1227,6 +1237,7 @@ var dataChoice = null;
 var dataObjPerf = null;
 var dataWeight = null; 
 var liveline = null;
+var formatterDate = null; 
 var formatterDigits = null;
 var formatterColor = null;
 

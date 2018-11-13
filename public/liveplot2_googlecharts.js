@@ -89,8 +89,8 @@ var livesliderTimeOptions={
 var weightOptions = {
 	width: 900,
 	height: 300,
-	vAxis: {title: "weights (grams)", minValue:0},
-	hAxis: {title: "time"},
+	vAxis: {title: "weights (grams)",viewWindow: {min: 0, max: 500}, minValue:0, maxValue:500},
+	hAxis: {title: "Time (h)"},
 	title: 'Weight Reads',
 	legend: {position: 'none'},
 	// animation: {
