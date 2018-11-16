@@ -310,10 +310,11 @@ async function runPump(str){
       npulse = 6
       document.querySelector("button[name=pumpflush]").value = "Stop Pump"
       document.querySelector("button[name=pumptrigger]").value = "Stop Pump"
-   }
+    }
     else if (str == "trigger"){
-      dur = ENV.RewardDuration*1000 //milliseconds
-      npulse = 50
+      // dur = ENV.RewardDuration*1000 //milliseconds
+      dur = 190; //50 pulse * 190 ms/pulse = 1 mL milk, 1.24 mL water
+      npulse = 100
       document.querySelector("button[name=pumpflush]").value = "Stop Pump"
       document.querySelector("button[name=pumptrigger]").value = "Stop Pump"
     }
@@ -321,7 +322,7 @@ async function runPump(str){
   else if (FLAGS.runPump == 1){ //user pressed button again to stop pump
     FLAGS.runPump = 0
     document.querySelector("button[name=pumpflush]").value = 'Flush Line'
-    document.querySelector("button[name=pumptrigger]").value = '50 Pulses'
+    document.querySelector("button[name=pumptrigger]").value = '100 Pulses'
 //     document.getElementById("pumptrigger").value = 'Stop Pump'
     return
   }
@@ -336,20 +337,36 @@ async function runPump(str){
     }
     else if (FLAGS.runPump == 1 && ble.connected == true){
         await writepumpdurationtoBLE(Math.round(dur))
-    }
+    } //if ble pump
     else if (FLAGS.runPump == 1 && port.connected == true){
-        await port.writepumpdurationtoUSB(Math.round(dur))
-    }
+        if (blescale.connected == true && i==1){
+          //get start weight
+          var startweight = blescale.weights[blescale.weights.length-1]
+        }
 
-    await timeout(dur + 200)
+        await port.writepumpdurationtoUSB(Math.round(dur))
+
+        var endweight = blescale.weights[blescale.weights.length-1]
+        port.statustext_connect = "***** Calibrating Pump " + i + "/" + npulse + " pulses, wt=" + Math.round([endweight-startweight]*100)/100 + " grams"
+        updateHeadsUpDisplay()
+      } //if usb pump
+
+    await timeout(dur + 800)
     console.log("pulse" + i)
-  }
+  } //for i pulses
 
   if (port.connected == true){
     port.statustext_sent = "DONE RUNNING PUMP (" + npulse + " pulses @ " + Math.round(dur) + " ms/pulse)"
     console.log(port.statustext_sent)
-    updateHeadsUpDisplay()    
-  }
+    if (blescale.connected == true){
+      var endweight = blescale.weights[blescale.weights.length-1]
+      port.statustext_connect = "!!!! DONE PUMP CALIBRATION !!!!"
+      port.statustext_sent = "!!!! Weight after " 
+      + i + " pulses @ " + dur + "ms = " 
+      + Math.round([endweight-startweight]*100)/100 + "g vs (1, 1.24) for 100 pulse (milk,water) calibration"
+    } //if blescale
+    updateHeadsUpDisplay()
+  } //if usb pump
 }
 
 function timeout(ms) {

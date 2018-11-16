@@ -313,7 +313,7 @@ function displayTrial(sequence,tsequence){
 
 	var start = null;
 	var tActual = []
-	function updateCanvas(timestamp){
+	async function updateCanvas(timestamp){
 
 		// If start has not been set to a float timestamp, set it now.
 		if (!start) start = timestamp;
@@ -321,11 +321,41 @@ function displayTrial(sequence,tsequence){
 		// If time to show new frame, 
 		if (timestamp - start > tsequence[frame.current]){
 			//console.log('Frame =' + frame.current+'. Duration ='+(timestamp-start)+'. Timestamp = ' + timestamp)
+			
 			tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
-			OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
+			var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
+
+			if (renderstr.status == "failed"){
+				console.log("**** FAILED on 1ST rendering attempt of " + sequence[frame.current])
+
+				// attempt again
+				tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+				var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
+
+				console.log("**** " + renderstr.status + " on 2ND rendering attempt of " + sequence[frame.current])
+
+				if (renderstr.status == "failed"){
+					if (sequence[frame.current] == "touchfix" || sequence[frame.current] == "test"){
+						for (var j=0; j < 100; j++){
+							// attempt again
+							await setTimeout(j*100)
+							tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+							var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
+							if (renderstr.status == "succeeded"){
+								break
+							}
+						}
+						console.log("Render "  + sequence[frame.current] + " " + renderstr.status + " after " + j + " attempts")
+					}
+					else {
+						tActual[frame.current] = -99
+						console.log("Skipping render since not touchfix or test screen")
+					} //if touchfix || test
+				} //if failed again
+			} //if failed
 			frame.shown[frame.current]=1;
 			frame.current++;
-		}; 
+		};
 		// continue if not all frames shown
 		if (frame.shown[frame.shown.length-1] != 1){
 			renderScreen(sequence[frame.current],OFFSCREENCANVAS)

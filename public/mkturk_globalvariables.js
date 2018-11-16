@@ -56,6 +56,7 @@ FLAGS.acquiredTouch = 0
 FLAGS.touchGeneratorCreated = 0
 FLAGS.runPump = 0
 FLAGS.firestorecreatedoc = 0
+FLAGS.stressTest = 0
 
 var CANVAS = {}; 
 var CANVAS = {

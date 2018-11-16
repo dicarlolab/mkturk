@@ -54,7 +54,7 @@
 
 	<button name="pumpflush" style="z-index:102; visibility:hidden; position: absolute; top: 12%; left: 80%; height: 45px; width: 150px; border-radius: 20px">Flush line</button>
 
-	<button name="pumptrigger" style="z-index:102; visibility:hidden; position: absolute; top: 17%; left: 80%; height: 45px; width: 150px; border-radius: 20px">50 pulses</button>
+	<button name="pumptrigger" style="z-index:102; visibility:hidden; position: absolute; top: 17%; left: 80%; height: 45px; width: 150px; border-radius: 20px">100 pulses</button>
 
 	<button name="connectblescale" style="z-index:102; visibility:hidden; position: absolute; top: 22%; left: 80%; height: 45px; width: 150px; border-radius: 20px; color: green">CONNECT BLE SCALE</button>
 
@@ -69,6 +69,8 @@
 	<button name="doneEditingParams" style="visibility:hidden; position: absolute; top: 45%; left: 70%; height: 75px; width: 100px; border-radius: 20px">Done editing params</button>
 
 	<button name="doneTestingTask" style="visibility:hidden; position: absolute; top: 55%; left: 70%; height: 75px; width: 200px; border-radius: 20px; z-index:101">Done with testing trials</button>
+
+	<button name="stressTest" style="visibility:hidden; position: absolute; top: 70%; left: 70%; height: 75px; width: 200px; border-radius: 20px; z-index:101">Stress test</button>
 
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasvisible" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
@@ -159,6 +161,8 @@ document.querySelector("button[name=doneEditingParams]").addEventListener(
 	'pointerup',doneEditingParams_listener,false)
 document.querySelector("button[name=doneTestingTask]").addEventListener(
 	'pointerup',doneTestingTask_listener,false)
+document.querySelector("button[name=stressTest]").addEventListener(
+	'pointerup',stressTest_listener,false)
 var textobj = document.getElementById("headsuptext")
 textobj.addEventListener('pointerup',headsuptext_listener,false)
 
@@ -318,6 +322,8 @@ function skipHardwareDevice(event){
 	//========= Start in TEST mode =======//
 	document.querySelector("button[name=doneTestingTask]").style.display = "block"
 	document.querySelector("button[name=doneTestingTask]").style.visibility = "visible"
+	document.querySelector("button[name=stressTest]").style.display = "block"
+	document.querySelector("button[name=stressTest]").style.visibility = "visible"
 	FLAGS.savedata = 0 // test trials can be performed, but data won't be saved
 
 	FLAGS.need2loadParameters = 1
@@ -349,8 +355,17 @@ while(true){
 		}
 		OFFSCREENCANVAS = new OffscreenCanvas(VISIBLECANVAS.width, VISIBLECANVAS.height)
 		OFFSCREENCANVAS.commitTo = function(dest){
-			var bitmap = this.transferToImageBitmap()
-			dest.transferFromImageBitmap(bitmap)
+			try {
+				var bitmap = this.transferToImageBitmap()
+				dest.transferFromImageBitmap(bitmap)
+				str = {status: "succeeded"}
+				return str
+			}
+			catch(error){
+				console.log(error)
+				str = {status: "failed"}
+				return str				
+			}
 		}
 
 		CANVAS.workspace = [
@@ -475,7 +490,21 @@ while(true){
 		audiocontext.suspend()
 
 		//========= AWAIT HOLD FIXATION TOUCH =========//
-		var touchhold_return = await touchhold_promise(TASK.FixationDuration,boundingBoxesFixation,FLAGS.punishOutsideTouch)
+		if (FLAGS.stressTest == 1){
+			var touchhold_return = {type: "touchheld"}
+
+			var x = boundingBoxesFixation.x[0][0] + Math.round(Math.random()*(boundingBoxesFixation.x[0][1] - boundingBoxesFixation.x[0][0]))
+
+			var y = boundingBoxesFixation.y[0][0] + Math.round(Math.random()*(boundingBoxesFixation.y[0][1] - boundingBoxesFixation.y[0][0]))
+
+			touchhold_return.cxyt = [0,x,y,Math.round(performance.now())]
+
+			FLAGS.waitingforTouches--
+		}
+		else {
+			var touchhold_return = await touchhold_promise(TASK.FixationDuration,boundingBoxesFixation,FLAGS.punishOutsideTouch)			
+		}
+
 		CURRTRIAL.fixationtouchevent = touchhold_return.type
 		CURRTRIAL.fixationxyt = [touchhold_return.cxyt[1], touchhold_return.cxyt[2], touchhold_return.cxyt[3]]
 		CURRTRIAL.allfixationxyt[TASK.NFixations - FLAGS.waitingforTouches - 1] = CURRTRIAL.fixationxyt
@@ -533,10 +562,40 @@ while(true){
 		else {
 			FLAGS.punishOutsideTouch = 0			
 		}
-		var p1 = touchhold_promise(0,boundingBoxesChoice,FLAGS.punishOutsideTouch)
-		var p2 = choiceTimeOut(TASK.ChoiceTimeOut)
+		if (FLAGS.stressTest == 1){
+			var race_return = {type: "touchheld"}
 
-		var race_return = await Promise.race([p1,p2])
+			var nchoices = boundingBoxesChoice.x.length
+			// var currchoice = CURRTRIAL.correctitem
+			if (Math.random() < 0.75){
+				var currchoice = CURRTRIAL.correctitem
+			}
+			else {
+				var distractor_array = []
+				for (var i=0; i<=nchoices-1; i++){
+					if (i != CURRTRIAL.correctitem){
+						distractor_array.push(i)
+					}
+				}
+				distractor_array = shuffle(distractor_array)
+				var currchoice = distractor_array[0]
+			}
+
+			var x = boundingBoxesChoice.x[currchoice][0] + Math.round(Math.random()*(boundingBoxesChoice.x[currchoice][1] - boundingBoxesChoice.x[currchoice][0]))
+
+			var y = boundingBoxesChoice.y[currchoice][0] + Math.round(Math.random()*(boundingBoxesChoice.y[currchoice][1] - boundingBoxesChoice.y[currchoice][0]))
+
+			race_return.cxyt = [currchoice,x,y,Math.round(performance.now())]
+
+			FLAGS.waitingforTouches--
+		}
+		else {
+			var p1 = touchhold_promise(0,boundingBoxesChoice,FLAGS.punishOutsideTouch)
+			var p2 = choiceTimeOut(TASK.ChoiceTimeOut)
+
+			var race_return = await Promise.race([p1,p2])
+		}
+
 		CURRTRIAL.responsetouchevent = race_return.type
 		CURRTRIAL.response = race_return.cxyt[0]
 		CURRTRIAL.responsexyt = [race_return.cxyt[1], race_return.cxyt[2], race_return.cxyt[3]]
