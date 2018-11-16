@@ -717,7 +717,7 @@ function toObjPerfData(){
     
     if (file.data.RewardStage == 1){
             var sampleobj = []
-        if (file.data.NTrialsPerBagBlock >5000){
+        if (file.data.NTrialsPerBagBlock >5000){ //detection task 
             sampleobj[0] = file.data.ImageBagsSample[0].split("/")[4];
             dataObjPerf.addRow([sampleobj[0],0]);
             var sampleobj_length = 1;
@@ -754,13 +754,21 @@ function toObjPerfData(){
 //Synchronous
 function toChoiceData() {
     if (file.data.RewardStage !=0){
-    var possibleResp = []
+    var possibleResp = Array.apply(null,Array(file.data.ObjectGridIndex.length)).map(Number.prototype.valueOf,0);
     dataChoice.removeRows(0,dataChoice.getNumberOfRows());
 
     if (file.data.ObjectGridIndex.length !=0){
-        for (var i = 0; i <= file.data.ObjectGridIndex.length - 1; i++) {
-        dataChoice.addRow([file.data.ImageBagsSample[i].split("/")[4],0]);
-        possibleResp[i] = i
+        let objgridindex = [...file.data.ObjectGridIndex]
+        objgridindex.sort(function (a,b) {return a-b})
+        var allind = []
+        for (var i = 0; i<=objgridindex.length-1;i++){
+            allind[i] = file.data.ObjectGridIndex.indexOf(objgridindex[i])
+        }
+
+        for (var i = 0; i <= objgridindex.length - 1; i++) {
+        dataChoice.addRow([file.data.ImageBagsSample[allind[i]].split("/")[4],0]);
+        possibleResp[allind[i]] = i
+
         }
     }else{
         for (var i = 0; i <= file.data.TestGridIndex.length - 1; i++) {
