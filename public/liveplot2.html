@@ -482,7 +482,7 @@ function toPerformanceData() {
 
     }
 
-
+    // All touchevents. touchevent has a length that is twice the length of file.data.FixationXYT or file.data.ResponseXYT 
     if (typeof file.data.ResponseXYT != "undefined" && file.data.ResponseXYT.length >= 1) {
         for (var i = 0; i <= file.data.FixationXYT.length * 2 - 1; i += 2) {
             touchevent[i] = file.data.FixationXYT[i / 2]
@@ -511,6 +511,7 @@ function toPerformanceData() {
     sample_xcoord = file.data.XGridCenter[file.data.SampleGridIndex]
     sample_ycoord = file.data.workspace[3]-file.data.YGridCenter[file.data.StaticFixationGridIndex]-file.data.offsettop
 
+    // Size of sample and targets. Draw them as a bounding box in the touch plot
 
         arr[0] = sample_xcoord-samplewidth/2
         arr[1] = sample_ycoord-sampleheight/2
@@ -611,6 +612,7 @@ function toPerformanceData() {
                     ypos_T.push(ypos_T_arr)    
                        
                     }
+
                 if (ydata[ydata_index]==1){ //Target and hit
                     arr[1+file.data.TestGridIndex.length+3] = ypos
                     dataXYPos.addRows([arr])
@@ -753,11 +755,13 @@ function toObjPerfData(){
 
 //Synchronous
 function toChoiceData() {
-    if (file.data.RewardStage !=0){
-    var possibleResp = Array.apply(null,Array(file.data.ObjectGridIndex.length)).map(Number.prototype.valueOf,0);
-    dataChoice.removeRows(0,dataChoice.getNumberOfRows());
+     dataChoice.removeRows(0,dataChoice.getNumberOfRows());
 
-    if (file.data.ObjectGridIndex.length !=0){
+    if (file.data.RewardStage !=0){ //Non-fixation task 
+    var possibleResp = Array.apply(null,Array(file.data.ObjectGridIndex.length)).map(Number.prototype.valueOf,0);
+   
+
+    if (file.data.ObjectGridIndex.length !=0 && (file.data.NTrialsPerBagBlock == undefined || file.data.NTrialsPerBagBlock <1000)){ //Stimulus Response Task 
         let objgridindex = [...file.data.ObjectGridIndex]
         objgridindex.sort(function (a,b) {return a-b})
         var allind = []
@@ -785,7 +789,6 @@ function toChoiceData() {
         if (file.data.Response[i] != -1){
             NallChoice++
         }
-
         for (var j = 0; j <= possibleResp.length - 1; j++) {
             if (file.data.Response[i] == possibleResp[j] && file.data.Response[i]!=-1) {
                 NdiffChoice[j]++
@@ -795,8 +798,7 @@ function toChoiceData() {
 
     }
     }
-    else{
-        dataChoice.removeRows(0,dataChoice.getNumberOfRows());
+    else{ //Fixation Task 
         dataChoice.addRow(['outside Fix',0]);
         dataChoice.addRow(['inside Fix',0]);
 
