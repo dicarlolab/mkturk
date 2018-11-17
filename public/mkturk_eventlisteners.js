@@ -176,6 +176,7 @@ function stressTest_listener(event){
 	event.preventDefault()
 	console.log("User is done testing. Performing STRESS TEST");
 	FLAGS.savedata=1
+	FLAGS.createnewfirestore = 1
 	FLAGS.purge=1
 	purgeTrackingVariables()
 	FLAGS.purge=0

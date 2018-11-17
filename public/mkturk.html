@@ -567,7 +567,7 @@ while(true){
 
 			var nchoices = boundingBoxesChoice.x.length
 			// var currchoice = CURRTRIAL.correctitem
-			if (Math.random() < 0.75){
+			if (Math.random() < 0.99){
 				var currchoice = CURRTRIAL.correctitem
 			}
 			else {
@@ -706,11 +706,11 @@ while(true){
 		// Save data asynchronously
 		saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL);
 
-		// // Save data asynchronously to Firestore
-		// if (FLAGS.createnewfirestore == 1){
-		// 	saveBehaviorDatatoFirestore(TASK,ENV,CANVAS); //write once
-		// }
-		// updateEventDataonFirestore(EVENTS); //update with each trial
+		// Save data asynchronously to Firestore
+		if (FLAGS.createnewfirestore == 1){
+			saveBehaviorDatatoFirestore(TASK,ENV,CANVAS); //write once
+		}
+		updateEventDataonFirestore(EVENTS); //update with each trial
 	}
 
 	if (FLAGS.need2saveParameters == 1){
@@ -719,10 +719,10 @@ while(true){
 
 	//FLAGS.need2loadParameters=1: reload task which automatically creates a new data file
 	checkParameterFileStatus()
-	if ( (new Date).getDate() != ENV.CurrentDate.getDate()){
+	if ( (new Date).getDate() != ENV.CurrentDate.getDate()){ //in local time
 		FLAGS.need2loadParameters = 1
 		FLAGS.createnewfirestore = 1
-	} //if new day
+	} //if new day, start new file
 	//================= (end) HOUSEKEEPING =================//
 
 	updateHeadsUpDisplay();

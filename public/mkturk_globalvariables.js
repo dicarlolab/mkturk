@@ -226,7 +226,6 @@ function updateTrialHistory(){
 }
 
 function logEVENTS(eventname,eventval,eventtype){
-	return
 	//log events for a trial
 	if (eventtype == 'trialseries'){
 		//index by trial
@@ -234,6 +233,7 @@ function logEVENTS(eventname,eventval,eventtype){
 		if (FLAGS.savedata == 0){
 			indevent = 0 //store most recent trial in first position until start saving data
 		}
+		EVENTS[eventtype][eventname][indevent.toString()] = eventval
 	}
 	else if (eventtype == 'timeseries'){
 		//running index
@@ -241,9 +241,9 @@ function logEVENTS(eventname,eventval,eventtype){
 		if (FLAGS.savedata == 0){
 			indevent = 0 //store most recent timepoint in first position until start saving data
 		}
+		var trialtime = [EVENTS.trialnum, Math.round(performance.now())]
+		EVENTS[eventtype][eventname][indevent.toString()] = trialtime.concat(eventval)
 	}
-	var trialtime = [EVENTS.trialnum, Math.round(performance.now())]
-	EVENTS[eventtype][eventname][indevent.toString()] = trialtime.concat(eventval)
 }
 
 function purgeTrackingVariables(){
