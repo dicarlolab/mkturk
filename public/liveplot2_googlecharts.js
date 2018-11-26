@@ -115,11 +115,7 @@ var objPerfBarOptions={
 
 //======== Touch ScatterPlot =======// 
 var scatterOptions = {
-	width: 700,
-	height: 700, 
 	pointSize: 1,
-	hAxis: {title: 'X position (pixels)', minValue: 0, maxValue: 1768/2},
-	vAxis : {title: 'Y position (pixels)', minValue: 600, maxValue: 1744/2},
 	seriesType: 'scatter'
 }
 

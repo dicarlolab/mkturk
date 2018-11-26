@@ -509,28 +509,29 @@ function toPerformanceData() {
     testheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.TestScale 
     
     sample_xcoord = file.data.XGridCenter[file.data.SampleGridIndex]
-    sample_ycoord = file.data.workspace[3]-file.data.YGridCenter[file.data.StaticFixationGridIndex]-file.data.offsettop
+    sample_ycoord = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.StaticFixationGridIndex]
+    
 
     // Size of sample and targets. Draw them as a bounding box in the touch plot
 
-        arr[0] = sample_xcoord-samplewidth/2
-        arr[1] = sample_ycoord-sampleheight/2
+        arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
+        arr[1] = sample_ycoord-sampleheight*file.data.CanvasRatio
         dataXYPos.addRows([arr])
 
-        arr[0] = sample_xcoord+samplewidth/2
-        arr[1] = sample_ycoord-sampleheight/2
+        arr[0] = sample_xcoord+samplewidth*file.data.CanvasRatio
+        arr[1] = sample_ycoord-sampleheight*file.data.CanvasRatio
         dataXYPos.addRows([arr])
 
-        arr[0] = sample_xcoord+samplewidth/2
-        arr[1] = sample_ycoord+sampleheight/2
+        arr[0] = sample_xcoord+samplewidth*file.data.CanvasRatio
+        arr[1] = sample_ycoord+sampleheight*file.data.CanvasRatio
         dataXYPos.addRows([arr])
 
-        arr[0] = sample_xcoord-samplewidth/2
-        arr[1] = sample_ycoord+sampleheight/2
+        arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
+        arr[1] = sample_ycoord+sampleheight*file.data.CanvasRatio
         dataXYPos.addRows([arr])
         
-        arr[0] = sample_xcoord-samplewidth/2
-        arr[1] = sample_ycoord-sampleheight/2
+        arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
+        arr[1] = sample_ycoord-sampleheight*file.data.CanvasRatio
         dataXYPos.addRows([arr])
 
 
@@ -540,27 +541,28 @@ function toPerformanceData() {
 
     for (var i =0; i<=file.data.TestGridIndex.length-1; i++){
         test_xcoord[i] = file.data.XGridCenter[file.data.TestGridIndex[i]]
-        test_ycoord[i] = file.data.workspace[3]-file.data.YGridCenter[file.data.TestGridIndex[i]]-file.data.offsettop
+        test_ycoord[i] = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.TestGridIndex[i]]
+        
 
         var arr = new Array(nColumn)
-        arr[0] = test_xcoord[i]-testwidth/2
-        arr[i+2] = test_ycoord[i]-testheight/2
+        arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
+        arr[i+2] = test_ycoord[i]-testheight*file.data.CanvasRatio
         dataXYPos.addRows([arr])
 
-        arr[0] = test_xcoord[i]+testwidth/2
-        arr[i+2] = test_ycoord[i]-testheight/2
+        arr[0] = test_xcoord[i]+testwidth*file.data.CanvasRatio
+        arr[i+2] = test_ycoord[i]-testheight*file.data.CanvasRatio
         dataXYPos.addRows([arr])
 
-        arr[0] = test_xcoord[i]+testwidth/2
-        arr[i+2] = test_ycoord[i]+testheight/2
+        arr[0] = test_xcoord[i]+testwidth*file.data.CanvasRatio
+        arr[i+2] = test_ycoord[i]+testheight*file.data.CanvasRatio
         dataXYPos.addRows([arr])
 
-        arr[0] = test_xcoord[i]-testwidth/2
-        arr[i+2] = test_ycoord[i]+testheight/2
+        arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
+        arr[i+2] = test_ycoord[i]+testheight*file.data.CanvasRatio
         dataXYPos.addRows([arr])
         
-        arr[0] = test_xcoord[i]-testwidth/2
-        arr[i+2] = test_ycoord[i]-testheight/2
+        arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
+        arr[i+2] = test_ycoord[i]-testheight*file.data.CanvasRatio
         dataXYPos.addRows([arr])
    
     }
@@ -574,7 +576,9 @@ function toPerformanceData() {
     
     for (var i = 0; i <= touchevent.length - 1; i++) {
         xpos = touchevent[i][0]
-        ypos = file.data.workspace[3] - touchevent[i][1]
+        ypos = file.data.workspace[3]*file.data.CanvasRatio-touchevent[i][1]+file.data.offsettop
+        
+      
 
         var ydata_index = []
         if (i % 2 == 0) {
@@ -1057,15 +1061,18 @@ function drawScatter() {
             scatterOptions.series[i] = {color: 'red'}
         }
 }
-  //       0: {type: 'line', color: 'black', visibleInLegend: false},
-		// 1: {type: 'line', color: 'black',visibleInLegend: false},
-		// 2: {type: 'line', color: 'black', visibleInLegend: false},
-		// 3: {color: 'black'},
-		// 4: {color: 'green'},
-		// 5: {color: 'blue',},
-		// 6: {color: 'red'}}
+    scatterOptions.height = file.data.workspace[3]*file.data.CanvasRatio,
+    scatterOptions.width = file.data.workspace[2]*file.data.CanvasRatio,
+    scatterOptions.hAxis = {title: 'X position (pixels)',
+    viewWindow: {
+        min: 0, max: file.data.workspace[2]*file.data.CanvasRatio}
+    },
+    scatterOptions.vAxis = {title: 'Y position (pixels)', 
+    viewWindow: {
+        min: 0, max: file.data.workspace[3]*file.data.CanvasRatio}
+    }
+    
 
-        
     livescatter.draw(dataXYPos, scatterOptions)
 }
 
