@@ -14,9 +14,9 @@ function touchhold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 		while (true){
 			touchevent = yield touchevent
 
-console.log('TOUCHEVENT', touchevent.type)
+// console.log('TOUCHEVENT', touchevent.type)
 
-			if (touchevent.type == 'touchheld' || touchevent.type == 'touchbroken'){
+			if (touchevent.type == 'theld' || touchevent.type == 'tbroken'){
 				return_event.type = touchevent.type
 				break;
 			}
@@ -53,7 +53,7 @@ console.log('TOUCHEVENT', touchevent.type)
 					if (punishOutsideTouch){
 						FLAGS.acquiredTouch = 0
 						clearTimeout(touchTimer);
-						return_event.type = "touchbroken"
+						return_event.type = "tbroken"
 						break;
 					} //touched outside fixation, advance to punish
 					else {
@@ -69,13 +69,13 @@ console.log('TOUCHEVENT', touchevent.type)
 							FLAGS.waitingforTouches--
 							FLAGS.acquiredTouch = 0
 							FLAGS.touchGeneratorCreated = 0 //block other callbacks
-							waitforEvent.next({type: "touchheld"})
+							waitforEvent.next({type: "theld"})
 						},touchduration)
 					} //if touch hold required
 					else {
 						FLAGS.waitingforTouches--
 						FLAGS.acquiredTouch = 0
-						return_event.type = "touchheld"
+						return_event.type = "theld"
 						break;
 					} //if no touch hold required
 				} //if touched inside box		
@@ -88,7 +88,7 @@ console.log('TOUCHEVENT', touchevent.type)
 				else if (chosenbox == -1){
 					FLAGS.acquiredTouch = 0
 					clearTimeout(touchTimer)
-					return_event.type = "touchbroken"
+					return_event.type = "tbroken"
 					break;
 				} //if moved out of touch bounding box
 			} //if touchmove
@@ -98,17 +98,17 @@ console.log('TOUCHEVENT', touchevent.type)
 				FLAGS.acquiredTouch = 0
 				console.log('was fixating but lifted finger prematurely');
 				clearTimeout(touchTimer);
-				return_event.type = "touchbroken"
+				return_event.type = "tbroken"
 				break;
 			} //if ended touch too early			
 		} //while events
-		console.log('RETURN_EVENT', return_event.type)
+		// console.log('RETURN_EVENT', return_event.type)
 		return_event.cxyt = touchcxyt
 		resolveFunc(return_event)
 	} //generator
 	waitforEvent = waitforeventGenerator(); // start async function
 	FLAGS.touchGeneratorCreated = 1
-	console.log('GENERATOR CREATED waiting for ntouches',FLAGS.waitingforTouches)
+	// console.log('GENERATOR CREATED waiting for ntouches',FLAGS.waitingforTouches)
 	waitforEvent.next(); //move out of default state
 	return p;
 }
@@ -117,15 +117,15 @@ console.log('TOUCHEVENT', touchevent.type)
 function touchstart_listener(event){
 	event.preventDefault(); //prevents additional downstream call of click listener
 	if(typeof event === 'undefined'){
-		console.log('no click, loading images, initializing responsepromise');
+		// console.log('no click, loading images, initializing responsepromise');
 		return
 	}
 	if (!FLAGS.touchGeneratorCreated){
 		//wait for touch generator promise to be created before registering new touches
-		console.log("IGNORING TOUCH EVENT: no active touch generators")
+		// console.log("IGNORING TOUCH EVENT: no active touch generators")
 	} //if no click generator created
 	else {
-		console.log('touchstart_listener called')
+		// console.log('touchstart_listener called')
 		waitforEvent.next(event)
 	}
 } //touchstart_listener
@@ -133,7 +133,7 @@ function touchstart_listener(event){
 function touchmove_listener(event){
 	if (!FLAGS.touchGeneratorCreated){
 		//wait for touch generator promise to be created before registering new touches
-		console.log("IGNORING TOUCH EVENT: no active touch generators")
+		// console.log("IGNORING TOUCH EVENT: no active touch generators")
 	} //if no click generator created
 	else {
 		waitforEvent.next(event)
@@ -143,7 +143,7 @@ function touchmove_listener(event){
 function touchend_listener(event){
 	if (!FLAGS.touchGeneratorCreated){
 		//wait for touch generator promise to be created before registering new touches
-		console.log("IGNORING TOUCH EVENT: no active touch generators")
+		// console.log("IGNORING TOUCH EVENT: no active touch generators")
 	} //if no click generator created
 	else {
 		waitforEvent.next(event)
@@ -196,7 +196,6 @@ function stressTest_listener(event){
 
 
 function subjectlist_listener(event){
-	console.log("subject selected");
 	ENV.Subject = subjectlist[this.value];
 	subjectdialog.close();
 	waitforClick.next(1);
@@ -214,7 +213,7 @@ function subjectIDPromise(){
 			errFunc = reject;
 		}).then(
 		function(resolveval){
-			console.log('User selected ' + resolveval)
+			console.log('User selected agent ' + resolveval)
 		});
 	
 	function *waitforclickGenerator(){

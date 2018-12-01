@@ -409,6 +409,26 @@ while(true){
 		testbag_paths = TQ.testbag_paths
 		testbag_labels = TQ.testbag_labels
 
+		var funcreturn = objectomeImageNamesToLatentVars(samplebag_paths,samplebag_labels)
+		IMAGES.Sample = funcreturn[0]
+		IMAGES.object.sample = funcreturn[1]
+
+		var funcreturn = objectomeImageNamesToLatentVars(testbag_paths,testbag_labels)
+		IMAGES.Test = funcreturn[0]
+		IMAGES.object.test = funcreturn[1]
+
+		var keys = Object.keys(IMAGES.Sample)
+		for (var i=0; i<=keys.length-1; i++){
+			IMAGES.Sample["Sample" + keys[i]] = IMAGES.Sample[keys[i]]
+			delete IMAGES.Sample[keys[i]]
+		} //for i keys
+
+		var keys = Object.keys(IMAGES.Test)
+		for (var i=0; i<=keys.length-1; i++){
+			IMAGES.Test["Test" + keys[i]] = IMAGES.Test[keys[i]]
+			delete IMAGES.Test[keys[i]]
+		} //for i keys
+
 		// Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image.
 		await TQ.generate_trials(1)
 		var representative_image = await TQ.IB.get_by_name(TQ.sampleq.filename[0])
@@ -416,8 +436,11 @@ while(true){
 		ENV.ImageWidthPixels = representative_image.width
 		ENV.ImageHeightPixels = representative_image.height
 		
-		ENV.Ordered_Samplebag_Filenames = samplebag_paths; 
-		ENV.Ordered_Testbag_Filenames = testbag_paths; 
+		// ENV.Ordered_Samplebag_Filenames = samplebag_paths; 
+		// ENV.Ordered_Testbag_Filenames = testbag_paths; 
+		IMAGES.imagepaths.Ordered_Samplebag_Filenames = samplebag_paths
+		IMAGES.imagepaths.Ordered_Testbag_Filenames = testbag_paths
+
 		FLAGS.need2loadImages = 0;
 		console.timeEnd('Image loading time:')
 	} //if need2loadImages
@@ -433,15 +456,41 @@ while(true){
 
 	//============ SELECT SAMPLE & TEST IMAGES ============//
 	// Draw one (1) sample image from samplebag
-	console.time('trial images loadtime:')
+	// console.time('trial images loadtime:')
 	var c
 	[CURRTRIAL.sampleimage, CURRTRIAL.sampleindex, CURRTRIAL.testimages, CURRTRIAL.testindices, CURRTRIAL.correctitem] = await TQ.get_next_trial();
-	console.timeEnd('trial images loadtime:')
+	// console.timeEnd('trial images loadtime:')
 
 	logEVENTS("Sample",CURRTRIAL.sampleindex,"trialseries")
 	logEVENTS("Test",CURRTRIAL.testindices,"trialseries")
 	logEVENTS("CorrectItem",CURRTRIAL.correctitem,"trialseries")
+
+	var keys = Object.keys(IMAGES.object.sample)
+	for (var i=0; i<=keys.length-1; i++){
+		CURRTRIAL["sampleobject" + keys[i]] = IMAGES.object.sample[keys[i]][CURRTRIAL.sampleindex]
+	}
 	
+	var keys = Object.keys(IMAGES.object.test)
+	for (var i=0; i<=keys.length-1; i++){
+		for (var j=0; j<=CURRTRIAL.testindices.length-1; j++){
+			CURRTRIAL["testobject" + keys[i]][j] = IMAGES.object.test[keys[i]][CURRTRIAL.testindices[j]]
+		}
+	}
+
+	logEVENTS("SampleObjectTy",CURRTRIAL.sampleobjectty,"imageseries")
+	logEVENTS("SampleObjectTz",CURRTRIAL.sampleobjecttz,"imageseries")
+	logEVENTS("SampleObjectRxy",CURRTRIAL.sampleobjectrxy,"imageseries")
+	logEVENTS("SampleObjectRxz",CURRTRIAL.sampleobjectrxz,"imageseries")
+	logEVENTS("SampleObjectRyz",CURRTRIAL.sampleobjectryz,"imageseries")
+	logEVENTS("SampleObjectScale",CURRTRIAL.sampleobjectscale,"imageseries")
+
+	logEVENTS("TestObjectTy",CURRTRIAL.testobjectty,"imageseries")
+	logEVENTS("TestObjectTz",CURRTRIAL.testobjecttz,"imageseries")
+	logEVENTS("TestObjectRxy",CURRTRIAL.testobjectrxy,"imageseries")
+	logEVENTS("TestObjectRxz",CURRTRIAL.testobjectrxz,"imageseries")
+	logEVENTS("TestObjectRyz",CURRTRIAL.testobjectryz,"imageseries")
+	logEVENTS("TestObjectScale",CURRTRIAL.testobjectscale,"imageseries")
+
 
 	//============ WHILE RUN FIXATION SCREEN ============//
 	FLAGS.waitingforTouches = TASK.NFixations
@@ -491,7 +540,7 @@ while(true){
 
 		//========= AWAIT HOLD FIXATION TOUCH =========//
 		if (FLAGS.stressTest == 1){
-			var touchhold_return = {type: "touchheld"}
+			var touchhold_return = {type: "theld"}
 
 			var x = boundingBoxesFixation.x[0][0] + Math.round(Math.random()*(boundingBoxesFixation.x[0][1] - boundingBoxesFixation.x[0][0]))
 
@@ -512,19 +561,19 @@ while(true){
 		logEVENTS("FixationTouchEvent",CURRTRIAL.fixationtouchevent,"trialseries")
 		logEVENTS("FixationXYT",CURRTRIAL.fixationxyt,"trialseries")
 
-		if (CURRTRIAL.fixationtouchevent == "touchheld"){
+		if (CURRTRIAL.fixationtouchevent == "theld"){
 			if (TASK.RewardStage == 0 && FLAGS.waitingforTouches == 0){
 				CURRTRIAL.response = CURRTRIAL.correctitem
 				logEVENTS("Response",CURRTRIAL.response,"trialseries")
 			}
 		} //touched fixation
-		else if (CURRTRIAL.fixationtouchevent == "touchbroken" &&
+		else if (CURRTRIAL.fixationtouchevent == "tbroken" &&
 			TASK.RewardStage == 0){
 			CURRTRIAL.response = -1
 			FLAGS.waitingforTouches = 0 //exit loop
 			logEVENTS("Response",CURRTRIAL.response,"trialseries")
 		} //fixation task, but touched outside fixation
-		else if (CURRTRIAL.fixationtouchevent == "touchbroken" &&
+		else if (CURRTRIAL.fixationtouchevent == "tbroken" &&
 			TASK.RewardStage == 1){
 			//dms task, ok if touched outside, just wait for touch inside fixation area
 		}
@@ -563,11 +612,18 @@ while(true){
 			FLAGS.punishOutsideTouch = 0			
 		}
 		if (FLAGS.stressTest == 1){
-			var race_return = {type: "touchheld"}
+			var race_return = {type: "theld"}
 
 			var nchoices = boundingBoxesChoice.x.length
 			// var currchoice = CURRTRIAL.correctitem
-			if (Math.random() < 0.99){
+			var hitrate = 0
+			if (ENV.Subject == "Youno"){
+				hitrate = 0.9
+			}
+			else if (ENV.Subject == "Eliaso"){
+				hitrate = 0.7
+			}
+			if (Math.random() < hitrate){
 				var currchoice = CURRTRIAL.correctitem
 			}
 			else {
@@ -606,7 +662,7 @@ while(true){
 
 
 		// Keep track of repeated responses to one side
-		if (CURRTRIAL.num > 0 && FLAGS.savedata && CURRTRIAL.responsetouchevent == "touchheld"){
+		if (CURRTRIAL.num > 0 && FLAGS.savedata && CURRTRIAL.responsetouchevent == "theld"){
 			if (CURRTRIAL.response==trialhistory.response[trialhistory.correct.length-1]){
 				FLAGS.stickyresponse++;
 			}
@@ -619,8 +675,8 @@ while(true){
 	if (CURRTRIAL.response == CURRTRIAL.correctitem){ CURRTRIAL.correct = 1; }
 	else { CURRTRIAL.correct=0; }
 
-	console.log('response:', CURRTRIAL.response)
-	console.log('correct response', CURRTRIAL.correctitem)
+	// console.log('response:', CURRTRIAL.response)
+	// console.log('correct response', CURRTRIAL.correctitem)
 
 	//============ DETERMINE NUMBER OF REWARDS ============//
 	if (CURRTRIAL.correct){
@@ -684,9 +740,9 @@ while(true){
 		var num_trials_to_buffer_in_punishperiod = 20
 		var p2 = TQ.generate_trials(num_trials_to_buffer_in_punishperiod)
 		playSound(3);
-		console.time('punish download/timeout')
+		// console.time('punish download/timeout')
 		await Promise.all([p1,p2])
-		console.timeEnd('punish download/timeout')
+		// console.timeEnd('punish download/timeout')
 	}
 	//============ (end) DELIVER REWARD/PUNISH ============//
 
@@ -709,8 +765,8 @@ while(true){
 		// Save data asynchronously to Firestore
 		if (FLAGS.createnewfirestore == 1){
 			saveBehaviorDatatoFirestore(TASK,ENV,CANVAS); //write once
+			pingFirestore()
 		}
-		updateEventDataonFirestore(EVENTS); //update with each trial
 	}
 
 	if (FLAGS.need2saveParameters == 1){
@@ -719,14 +775,15 @@ while(true){
 
 	//FLAGS.need2loadParameters=1: reload task which automatically creates a new data file
 	checkParameterFileStatus()
-	if ( (new Date).getDate() != ENV.CurrentDate.getDate()){ //in local time
+	if ( (new Date).getDate() != ENV.CurrentDate.getDate() ||
+			CURRTRIAL.num == 1000){ //in local time
+		updateEventDataonFirestore(EVENTS);
 		FLAGS.need2loadParameters = 1
-		FLAGS.createnewfirestore = 1
-	} //if new day, start new file
+	} //if new day, start new file or reached 1000 trials 
 	//================= (end) HOUSEKEEPING =================//
 
 	updateHeadsUpDisplay();
-	console.log('End of trial ', CURRTRIAL.num, '. TRIAL: ', TRIAL)
+	console.log('End of trial ', CURRTRIAL.num)
 	CURRTRIAL.num++
 	EVENTS.trialnum = CURRTRIAL.num
 }

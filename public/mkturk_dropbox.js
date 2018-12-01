@@ -111,13 +111,14 @@ async function getImageListDropboxRecursive(dirpath){
 	}
 	try{
 		var entries = []
-		response = await dbx.filesListFolder({path: dirpath, 
+		let response = await dbx.filesListFolder({path: dirpath, 
 											  recursive: true}) 
 		entries.push(... response.entries)
 
 		// Use response.has_more to propagate 
 		var num_iterations = 0
 		var iteration_limit = 100
+		response.has_more = false
 		while(response.has_more == true){
 			response = await dbx.filesListFolderContinue(response.cursor)
 			entries.push(... response.entries)
@@ -164,6 +165,7 @@ async function checkParameterFileStatus(){
 			ENV.ParamFileDate = new Date(filemeta.client_modified)
 
 			FLAGS.need2loadParameters = 1
+		updateEventDataonFirestore(EVENTS);
 
 			console.log('Parameter file on disk was changed. New rev =' + ENV.ParamFileRev)
 		}
@@ -378,7 +380,7 @@ async function loadImagefromDropbox(imagepath){
 							var image = new Image(); 
 
 							image.onload = function(){
-								console.log('Loaded: ' + (imagepath));
+								// console.log('Loaded: ' + (imagepath));
 								updateImageLoadingAndDisplayText('Loaded: ' + imagepath)
 								resolve(image)
 								}
@@ -410,6 +412,7 @@ async function saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL){
         var dataobj = [] 
 
 		dataobj.push(ENV)
+		dataobj.push(IMAGES.imagepaths)
 		dataobj.push(CANVAS)
 		dataobj.push(TASK)
 		dataobj.push(TRIAL)

@@ -1,0 +1,312 @@
+<!doctype html>
+<html>
+<head>
+<title id="page_title">fireplace_mkturk</title>
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script src="mkturk_installsettings.js"></script>
+<script src="fireplace_googlecharts.js" type="text/javascript"></script>
+
+<!-- =========== (begin) FIREBASE + FIRESTORE =========== -->
+<!-- Firebase App is always required and must be first -->
+<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-app.js"></script>
+
+<!-- Add additional services that you want to use -->
+<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-firestore.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/5.5.5/firebase.js"></script>
+<script type="text/javascript">
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",
+    authDomain: "sandbox-ce2c5.firebaseapp.com",
+    databaseURL: "https://sandbox-ce2c5.firebaseio.com",
+    projectId: "sandbox-ce2c5",
+    storageBucket: "sandbox-ce2c5.appspot.com",
+    messagingSenderId: "1003719887944"
+  };
+  firebase.initializeApp(config);
+
+  //Initialize Cloud Firestore
+  var db = firebase.firestore();
+
+  // Disable deprecated features
+  db.settings({
+    timestampsInSnapshots: true
+  });
+</script>
+<!-- =========== (end) FIREBASE + FIRESTORE =========== -->
+
+
+<script type="text/javascript">
+// Flow: 
+// authenticate --> loadGoogleCharts --> queryFirestore -->
+// checkFileStatus -- wait 1 second -- if new data -->
+// readDatafromDropbox --> initializeChartData --> updatePlots
+
+
+async function firebaseToggleSignIn() {
+    if (!firebase.auth().currentUser){
+      var provider = new firebase.auth.GoogleAuthProvider();
+      provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
+
+      // [START signin]
+      await firebase.auth().signInWithPopup(provider).then(function(result) {
+        // This gives you a Google Access Token. You can use it to access the Google API.
+        var token = result.credential.accessToken;
+        var user = result.user; // The signed-in user info.
+        GOOGLEUSER.ResearcherDisplayName = result.user.displayName;
+        GOOGLEUSER.ResearcherEmail = result.user.email;
+        GOOGLEUSER.ResearcherLastName = result.additionalUserInfo.profile.family_name
+        GOOGLEUSER.ResearcherID = result.additionalUserInfo.profile.id
+          
+        console.log('USER ' + user.email + ' signed in')
+      }).catch(function(error) {
+        var errorCode = error.code;
+        var errorMessage = error.message;
+        // The email of the user's account used.
+        var email = error.email;
+        // The firebase.auth.AuthCredential type that was used.
+        var credential = error.credential;
+      });
+      // [END signin]
+    } else {
+      await firebase.auth().signOut();
+      console.log('USER ' + user.email + ' signed out')
+    }
+    return
+} //toggleSignIn
+// [SIGN-IN END buttoncallback]
+//=============== (end) AUTHENTICATE GOOGLE ===============//
+
+
+//================== GOOGLE CHARTS LOADING (begin) ==================//
+// Asynchronous: Live plotting using google charts
+function loadGoogleCharts() {
+    // Load the Visualization API and the piechart package.
+    google.charts.load('current', {'packages': ['corechart','line', 'bar', 'table', 'controls'] });
+    google.charts.setOnLoadCallback(function() {
+        dataPerformance = new google.visualization.DataTable()
+        dataTrial = new google.visualization.DataTable()
+        dataLeaderboard = new google.visualization.DataTable()
+
+
+// document.getElementById("line_div").style.textIndent = "100px";
+
+        liveline = new google.charts.Line(document.getElementById('line_div'));
+        livelinetrial = new google.charts.Line(document.getElementById('linetrial_div'));
+        livetable = new google.visualization.Table(document.getElementById('table_div'));
+        queryFirestore(7) //ndays back
+    })
+}
+//================== GOOGLE CHARTS LOADING (end) ==================//
+
+// queryFirestore
+// join & label data
+
+//================== FIRESTORE QUERY (begin) ==================//
+function queryFirestore(ndays){
+    var currdate = new Date()
+    var refdate = new Date(
+        Date.UTC(currdate.getFullYear(),currdate.getMonth(),currdate.getDate(),29,0,0)) //end of today in UTC which is +5 hours
+
+    // last x days
+    var msperday = 24*60*60*1000
+    var dt = ndays * msperday
+    console.log("Querying up to " + 24*ndays + "hrs back")
+
+    var query = db.collection("data").where("CurrentDateValue",">=",refdate.valueOf()-dt);
+
+    // https://firebase.google.com/docs/firestore/query-data/get-data#get_multiple_documents_from_a_collection
+    query.get().then(
+        function(querySnapshot)
+        {
+            querySnapshot.forEach(function(doc)
+            {
+                if (typeof(doc.data().Response) == "undefined"){
+                    // do nothing
+                }
+                else //contains trial data
+                {
+                    DATA.agent[DATA.ndocs] = doc.data().Agent
+                    DATA.date[DATA.ndocs] = doc.data().CurrentDate
+
+                    // # of days from today
+                    DATA.dt[DATA.ndocs] = Math.ceil((doc.data().CurrentDate.toDate().valueOf() - refdate.valueOf())/msperday);
+
+                    // doc.data() is never undefined for query doc snapshots
+                    var ncorrect = 0
+                    doc.data().Response.map((element, index) => 
+                    {
+                        if (element != doc.data().CorrectItem[index]){
+                            return 0
+                        }
+                        else {
+                            ncorrect++
+                            return 1
+                        }
+                    }) //map
+
+                    DATA.response[DATA.ndocs] = doc.data().Response
+                    DATA.correctitem[DATA.ndocs] = doc.data().CorrectItem
+                    DATA.ncorrect[DATA.ndocs] = ncorrect
+                    DATA.ndocs++
+
+
+                    console.log(doc.id, " ==> ", doc.data().CorrectItem.length
+                     + ' trials, ' + Math.round(100*ncorrect/doc.data().Response.length) + "%");
+
+                } //if contains data
+            }); // forEach doc
+            console.log(querySnapshot.size + " documents recovered")
+            joinData()
+            toGoogleDataTable()
+            liveline.draw(dataPerformance,google.charts.Line.convertOptions(lineOptions))
+            livelinetrial.draw(dataTrial,google.charts.Line.convertOptions(linetrialOptions))
+            livetable.draw(dataLeaderboard,google.charts.Line.convertOptions(tableOptions))
+        }) // getdocs.then
+} //query firestore
+//================== (end) FIRESTORE QUERY ==================//
+
+
+//================== (begin) DATA JOIN ===================//
+function joinData(){
+    // determine # of days and # of agents
+    STAT.agents = [...new Set(DATA.agent)] //unique agents
+    STAT.dt = [...new Set(DATA.dt)] //unique days
+    
+    STAT.ntrials = Array(STAT.agents.length).fill([]).map(element => {return Array(STAT.dt.length).fill(0)})
+    STAT.pct = Array(STAT.agents.length).fill([]).map(element => {return Array(STAT.dt.length).fill(0)})
+    for (var i=0; i<=DATA.response.length-1; i++){
+        var agentidx = STAT.agents.indexOf(DATA.agent[i])
+        var dayidx = STAT.dt.indexOf(DATA.dt[i])
+
+        STAT.pct[agentidx][dayidx] =  
+            ((0.01*STAT.pct[agentidx][dayidx]*STAT.ntrials[agentidx][dayidx]) + DATA.ncorrect[i])
+        STAT.ntrials[agentidx][dayidx]+= DATA.response[i].length
+        STAT.pct[agentidx][dayidx] = 100*STAT.pct[agentidx][dayidx]/STAT.ntrials[agentidx][dayidx]
+    } //for i docs
+}
+//================== (end) DATA JOIN ===================//
+
+// ================== (begin) DATA HANDLING ==================//
+// Synchronous
+function toGoogleDataTable() {
+
+    //-------- Performance line chart ---------//
+    dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
+
+    dataPerformance.addColumn('number','days from today')
+    for (var i=0; i<=STAT.agents.length-1; i++){
+        dataPerformance.addColumn('number',STAT.agents[i]);
+    }
+
+    //Create the data table    
+    for (var i = 0; i <= STAT.pct[0].length - 1; i++){
+        var array_t = []
+        for (var j =0; j<= STAT.pct.length-1; j++){
+            array_t[j] = STAT.pct[j][i]
+        } //for j agents
+        dataPerformance.addRows([[STAT.dt[i],...array_t]])
+    } //for i timepoints
+
+    //-------- Trial line chart ---------//
+    dataTrial.removeRows(0,dataTrial.getNumberOfRows());
+
+    dataTrial.addColumn('number','days from today')
+    for (var i=0; i<=STAT.agents.length-1; i++){
+        dataTrial.addColumn('number',STAT.agents[i]);
+    }
+
+    //Create the data table    
+    for (var i = 0; i <= STAT.ntrials[0].length - 1; i++){
+        var array_t = []
+        for (var j =0; j<= STAT.ntrials.length-1; j++){
+            array_t[j] = STAT.ntrials[j][i]
+        } //for j agents
+        dataTrial.addRows([[STAT.dt[i],...array_t]])
+    } //for i timepoints
+
+
+
+    //-------- Leaderboard table ----------//
+    var ndays = STAT.pct[0].length
+    dataLeaderboard.removeRows(0,dataLeaderboard.getNumberOfRows());
+    dataLeaderboard.addColumn('string','Agent');
+    dataLeaderboard.addColumn('number','% (today)');
+    dataLeaderboard.addColumn('number','n (today)');
+    dataLeaderboard.addColumn('number','% (' + ndays + 'd)');
+    dataLeaderboard.addColumn('number','n (' + ndays + 'd)');
+
+    for (var i = 0; i <= STAT.agents.length-1; i++){
+      var ntotal = 0
+      var ncorrect = 0
+      var nsess = 0
+
+      for (var j = 0; j <= STAT.pct[i][j]; j++){
+        if (STAT.ntrials[i][j] > 0){
+          ntotal += STAT.ntrials[i][j]
+          ncorrect = STAT.ntrials[i][j] * STAT.pct[i][j]/100
+          nsess+=1
+        } //if
+      } //for j days
+            
+      dataLeaderboard.addRows([
+        [ STAT.agents[i], Math.round(STAT.pct[i][ndays-1]), STAT.ntrials[i][ndays-1],
+          Math.round(100*ncorrect/ntotal), Math.round(ntotal/nsess) ]
+      ])
+    } //for i agents
+}
+//================== DATA HANDLING (end) ==================//
+
+
+</script>
+</head>
+
+<body>
+<h1>fireplace_mkturk</h1>
+<div id="table_div"></div> <!--Div that will hold the leaderboard table-->
+<div id="line_div"></div> <!--Div that will hold the line chart-->
+<div id="linetrial_div"></div> <!--Div that will hold the line chart-->
+<script type="text/javascript">
+
+var liveline = null;
+var dataPerformance = null; 
+var formatterDate = null; 
+var formatterDigits = null;
+
+var DATA = {
+    response: [],
+    correctitem: [],
+    ncorrect: [],
+    agent: [],
+    date: [],
+    dt: [],
+    ndocs: 0,
+};
+
+var STAT = {
+    agents: [],
+    dt: [],
+    ntrials: [],
+    pct: [],
+}
+
+var GOOGLEUSER = {
+    ResearcherDisplayName: "",
+    ResearcherEmail: "",
+    ResearcherLastName: "",
+    ResearcherID: "",
+};
+
+//================== (begin) AUTHENTICATE GOOGLEUSER ==================//
+// self-executing anonymous function
+// (async function(){
+//     await firebaseToggleSignIn()
+// })();
+loadGoogleCharts();
+
+</script>
+</body>
+</html>

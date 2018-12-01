@@ -130,7 +130,7 @@ serial.Port.prototype.onReceive = data => {
 	// console.log('Serial roundtrip write->read' + serial.dt[serial.dt.length-1])
 
 	port.statustext_received = "RECEIVED CHAR <-- USB: " + textDecoder.decode(data)
-	console.log(port.statustext_received)
+	// console.log(port.statustext_received)
 	updateHeadsUpDisplayDevices()
 
 	var tagstart = port.statustext_received.indexOf('{tag',0);
@@ -148,7 +148,7 @@ serial.Port.prototype.onReceive = data => {
 		port.statustext_received = 'ParsedTAG ' + TRIAL.RFIDTag[TRIAL.NRFID-1] + 
 									' @' + new Date().toLocaleTimeString("en-US") + 
 									' dt=' + dt + 'ms'
-		console.log(port.statustext_received)
+		// console.log(port.statustext_received)
 		updateHeadsUpDisplayDevices()
 	}
 }
@@ -164,7 +164,7 @@ serial.Port.prototype.writepumpdurationtoUSB = async function(data){
 	await this.device_.transferOut(4, textEncoder.encode(msgstr));
 
 	port.statustext_sent = "TRANSFERRED CHAR --> USB:" + msgstr
-	console.log(port.statustext_sent)
+	// console.log(port.statustext_sent)
 	updateHeadsUpDisplayDevices()
 }
 

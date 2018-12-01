@@ -1,0 +1,102 @@
+<!doctype html>
+
+<head>
+<title id="page_title">fireplace_mkturk</title> 
+<meta name="mobile-web-app-capable" content="yes"> <!-- full screen https://developer.chrome.com/multidevice/android/installtohomescreen -->
+<meta name="viewport" content="width=device-width, user-scalable=no"> <!-- do not allow window rescaling.  To avoid window rescaling in portrait mode, added with=device-width from http://stackoverflow.com/questions/22771523/ipad-w-retina-safari-reported-dimensions-in-landscape-make-no-sense. Also, removes 300-350ms tap delay (https://developers.google.com/web/updates/2013/12/300ms-tap-delay-gone-away) -->
+
+<script src="mkturk_installsettings.js"></script>
+
+<!-- Firebase App is always required and must be first -->
+<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-app.js"></script>
+
+<!-- GOOGLE CHARTS -->
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+<!-- Add additional services that you want to use -->
+<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-firestore.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/5.5.5/firebase.js"></script>
+<script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",
+    authDomain: "sandbox-ce2c5.firebaseapp.com",
+    databaseURL: "https://sandbox-ce2c5.firebaseio.com",
+    projectId: "sandbox-ce2c5",
+    storageBucket: "sandbox-ce2c5.appspot.com",
+    messagingSenderId: "1003719887944"
+  };
+  firebase.initializeApp(config);
+
+  //Initialize Cloud Firestore
+  var db = firebase.firestore();
+
+  // Disable deprecated features
+  db.settings({
+    timestampsInSnapshots: true
+  });
+</script>
+
+
+<script type="text/javascript">
+
+var dataRef = db.collection("data")
+
+// all files for subject
+var query = dataRef.where("Agent","==","Eliaso")
+
+// last x days
+var msperday = 24*60*60*1000
+var dt = 0.04 * msperday
+console.log("Querying up to " + 24*dt/msperday + "hrs back")
+var query = dataRef.where("CurrentDateValue",">=",(new Date).valueOf()-dt)
+
+
+
+
+query.get().then(function(querySnapshot) {
+        querySnapshot.forEach(function(doc) {
+            // doc.data() is never undefined for query doc snapshots
+            var r = doc.data().Response
+            var c = doc.data().CorrectItem
+
+
+            var ncorrect = 0
+            var r_v_c = r.map((element, index) => {
+              if (element != c[index]){
+                return 0
+              }
+              else {
+                ncorrect++
+                return 1
+              }
+            })
+
+
+
+            console.log(doc.id, " => ", doc.data().CorrectItem.length
+             + ', ' + Math.round(100*ncorrect/r.length) + "%");
+        });
+  console.log(querySnapshot.size + " documents recovered")
+    })
+
+//firestore queries
+
+// get performance for x days of subject
+// get performance of all subjects x days in past
+
+// plot average performance, average number of trials, across days for each subject
+
+
+
+</script>
+
+
+
+</head>
+
+
+

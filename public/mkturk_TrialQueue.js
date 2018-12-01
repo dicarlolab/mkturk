@@ -63,7 +63,7 @@ async generate_trials(n_trials){
 
 	var image_requests = []; 
 
-	console.log('TQ.generate_trials() will generate '+n_trials+' trials')
+	// console.log('TQ.generate_trials() will generate '+n_trials+' trials')
 
 	for (var i = 0; i < n_trials; i++){
 		if (TASK.NTrialsPerBagBlock <= 0){
@@ -126,7 +126,7 @@ async generate_trials(n_trials){
 		this.num_in_queue++;
 	}
 	// Download images to support these trials to download queue
-	console.log("TQ.generate_trials() will request", image_requests.length)
+	// console.log("TQ.generate_trials() will request", image_requests.length)
 	await this.IB.cache_these_images(image_requests); 
 }
 
@@ -136,7 +136,7 @@ async get_next_trial(){
 	// along with its sample/test images 
 
 	if (this.sampleq.filename.length == 0){
-		console.log("Reached end of trial queue... generating one more in this.get_next_trial")
+		// console.log("Reached end of trial queue... generating one more in this.get_next_trial")
 		await this.generate_trials(1); 
 	}
 
@@ -190,9 +190,9 @@ async get_next_trial(){
 		test_images.push(await this.IB.get_by_name(test_filenames[i]))
 	}
 
-	console.log('sample- get_next_trial()  image:', sample_index, '. name:', sample_filename); 
-	console.log('test- get_next_trial() images:', test_indices, '. name:', test_filenames); 
-	console.log('correct- get_next_trial()', test_correctIndex)
+	// console.log('sample- get_next_trial()  image:', sample_index, '. name:', sample_filename); 
+	// console.log('test- get_next_trial() images:', test_indices, '. name:', test_filenames); 
+	// console.log('correct- get_next_trial()', test_correctIndex)
 	this.num_in_queue--;
 
 	return [sample_image, sample_index, test_images, test_indices, test_correctIndex]

@@ -9,6 +9,11 @@
 var TASK = {}; // Global that encapsulates state of the current task, read from Subject's Params file
 var TRIAL = resetTRIAL() // Global that contains data variables that are incremented every trial, and are dumped to disk for scientific purposes.
 var ENV = {}; // Task specific variables that are slaves to TASK settings, but still desired to be recorded. Hence, they should not appear in the TASK-based params file, but should be logged on their own. 
+var IMAGES = {
+	Sample: {}, Test: {}, 
+	object: {sample:{}, test: {}},
+	imagepaths: {Ordered_Samplebag_Filenames: {}, Ordered_Testbag_Filenames: {}}
+}
 
 ENV.ResearcherDisplayName = ''
 ENV.ResearcherEmail = ''
@@ -27,8 +32,6 @@ ENV.FixationColor = ''
 ENV.XGridCenter = []
 ENV.YGridCenter = []
 ENV.RewardDuration = NaN
-ENV.Ordered_Samplebag_Filenames = []
-ENV.Ordered_Testbag_Filenames = []
 ENV.ParamFileName = ''
 ENV.ParamFileRev = ''
 ENV.ParamFileDate = '' //stores complete path to subject parameter file
@@ -56,6 +59,8 @@ FLAGS.acquiredTouch = 0
 FLAGS.touchGeneratorCreated = 0
 FLAGS.runPump = 0
 FLAGS.firestorecreatedoc = 0
+FLAGS.firestorelastsavedtrial = 0
+FLAGS.firestoretimeron = 0
 FLAGS.stressTest = 0
 
 var CANVAS = {}; 
@@ -106,12 +111,26 @@ CURRTRIAL.lastDropboxSave = new Date
 CURRTRIAL.tsequenceactual = []
 CURRTRIAL.tsequencedesired = []
 
+CURRTRIAL.sampleobjectty = []
+CURRTRIAL.sampleobjecttz = []
+CURRTRIAL.sampleobjectrxy = []
+CURRTRIAL.sampleobjectrxz = []
+CURRTRIAL.sampleobjectryz = []
+CURRTRIAL.sampleobjectscale = []
+
+CURRTRIAL.testobjectty = []
+CURRTRIAL.testobjecttz = []
+CURRTRIAL.testobjectrxy = []
+CURRTRIAL.testobjectrxz = []
+CURRTRIAL.testobjectryz = []
+CURRTRIAL.testobjectscale = []
 
 var EVENTS = {}
 EVENTS.reset = function(){
 	this.trialnum = CURRTRIAL.num;
 	this.trialseries = {};
 	this.timeseries = {};
+	this.imageseries = {};
 	this.trialseries.Sample = {}
 	this.trialseries.Test = {}
 	this.trialseries.CorrectItem = {}
@@ -130,17 +149,21 @@ EVENTS.reset = function(){
 	this.timeseries.RFIDTag = {}
 	this.timeseries.Weight = {}
 	this.timeseries.BLEBattery = {}
+
+	this.imageseries.SampleObjectTy = {}
+	this.imageseries.SampleObjectTz = {}
+	this.imageseries.SampleObjectRxy = {}
+	this.imageseries.SampleObjectRxz = {}
+	this.imageseries.SampleObjectRyz = {}
+	this.imageseries.SampleObjectScale = {}
+	this.imageseries.TestObjectTy = {}
+	this.imageseries.TestObjectTz = {}
+	this.imageseries.TestObjectRxy = {}
+	this.imageseries.TestObjectRxz = {}
+	this.imageseries.TestObjectRyz = {}
+	this.imageseries.TestObjectScale = {}
 }
 EVENTS.reset()
-
-// 	TRIAL.RFIDTag = []
-// 	TRIAL.RFIDTime = []
-// 	TRIAL.RFIDTrial = []
-// 	TRIAL.NRFID = 0
-// 	TRIAL.Weight = []
-// 	TRIAL.WeightTime = []
-// 	TRIAL.WeightTrial = []
-// 	TRIAL.NWeights = 0
 
 
 var trialhistory = {}
@@ -191,10 +214,25 @@ function resetTRIAL(){
 	TRIAL.WeightTime = []
 	TRIAL.WeightTrial = []
 	TRIAL.NWeights = 0
-	TRIAL.BatteryLDT = []
+	TRIAL.BatteryLDT = []	
 	navigator.getBattery().then(function(batteryobj){
 		TRIAL.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
 		logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"timeseries")
+
+	TRIAL.SampleObjectTy = []
+	TRIAL.SampleObjectTz = []
+	TRIAL.SampleObjectRxy = []
+	TRIAL.SampleObjectRxz = []
+	TRIAL.SampleObjectRyz = []
+	TRIAL.SampleObjectScale = []
+
+	TRIAL.TestObjectTy = []
+	TRIAL.TestObjectTz = []
+	TRIAL.TestObjectRxy = []
+	TRIAL.TestObjectRxz = []
+	TRIAL.TestObjectRyz = []
+	TRIAL.TestObjectScale = []
+
 	}) // starting battery level
 	return TRIAL
 }
@@ -215,6 +253,20 @@ function updateTRIAL(){
 	TRIAL.AutomatorStage[CURRTRIAL.num] = TASK.CurrentAutomatorStage; 
 	TRIAL.TSequenceDesired[CURRTRIAL.num] = CURRTRIAL.tsequencedesired
 	TRIAL.TSequenceActual[CURRTRIAL.num] = CURRTRIAL.tsequenceactual
+
+	TRIAL.SampleObjectTy[CURRTRIAL.num] = CURRTRIAL.sampleobjectty
+	TRIAL.SampleObjectTz[CURRTRIAL.num] = CURRTRIAL.sampleobjecttz
+	TRIAL.SampleObjectRxy[CURRTRIAL.num] = CURRTRIAL.sampleobjectrxy
+	TRIAL.SampleObjectRxz[CURRTRIAL.num] = CURRTRIAL.sampleobjectrxz
+	TRIAL.SampleObjectRyz[CURRTRIAL.num] = CURRTRIAL.sampleobjectryz
+	TRIAL.SampleObjectScale[CURRTRIAL.num] = CURRTRIAL.sampleobjectscale
+
+	TRIAL.TestObjectTy[CURRTRIAL.num] = CURRTRIAL.testobjectty
+	TRIAL.TestObjectTz[CURRTRIAL.num] = CURRTRIAL.testobjecttz
+	TRIAL.TestObjectRxy[CURRTRIAL.num] = CURRTRIAL.testobjectrxy
+	TRIAL.TestObjectRxz[CURRTRIAL.num] = CURRTRIAL.testobjectrxz
+	TRIAL.TestObjectRyz[CURRTRIAL.num] = CURRTRIAL.testobjectryz
+	TRIAL.TestObjectScale[CURRTRIAL.num] = CURRTRIAL.testobjectscale
 }
 
 function updateTrialHistory(){
@@ -227,13 +279,32 @@ function updateTrialHistory(){
 
 function logEVENTS(eventname,eventval,eventtype){
 	//log events for a trial
-	if (eventtype == 'trialseries'){
+	if (eventtype == 'trialseries' || eventtype == 'imageseries'){
 		//index by trial
 		var indevent = EVENTS.trialnum
 		if (FLAGS.savedata == 0){
 			indevent = 0 //store most recent trial in first position until start saving data
 		}
-		EVENTS[eventtype][eventname][indevent.toString()] = eventval
+// 		EVENTS[eventtype][eventname][indevent.toString()] = eventval
+
+		if (typeof(eventval) == "number" ||
+			typeof(eventval) == "string" || 
+			eventval.length == 1){
+			if (!Array.isArray(EVENTS[eventtype][eventname])){
+				EVENTS[eventtype][eventname] = []; //initialize to array
+			} //if initialized as object, convert to array
+			EVENTS[eventtype][eventname][indevent] = eventval
+		}
+		else if (typeof(eventval) == "object" ||
+				eventval.length > 1){
+			for (var i=0; i<=eventval.length-1; i++){
+				if (typeof(EVENTS[eventtype][eventname][i.toString()]) == "undefined"){
+					EVENTS[eventtype][eventname][i.toString()]={}; //initialize array
+EVENTS[eventtype][eventname][i.toString()] = []
+				} //if not initialized
+				EVENTS[eventtype][eventname][i.toString()][indevent] = eventval[i]
+			}
+		}
 	}
 	else if (eventtype == 'timeseries'){
 		//running index
