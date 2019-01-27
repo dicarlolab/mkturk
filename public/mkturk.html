@@ -187,12 +187,12 @@ textobj.addEventListener('pointerup',headsuptext_listener,false)
 	//Monitor Battery - from: http://www.w3.org/TR/battery-status/
 	navigator.getBattery().then(function(batteryobj){
 		TRIAL.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
-		logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"timeseries")
+		logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"trialseries")
 
 
 		batteryobj.addEventListener('levelchange',function(){
 			TRIAL.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
-		logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"timeseries")
+		logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"trialseries")
 
 		})
 	});

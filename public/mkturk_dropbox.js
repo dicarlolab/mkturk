@@ -118,9 +118,8 @@ async function getImageListDropboxRecursive(dirpath){
 		// Use response.has_more to propagate 
 		var num_iterations = 0
 		var iteration_limit = 100
-		response.has_more = false
 		while(response.has_more == true){
-			response = await dbx.filesListFolderContinue(response.cursor)
+			response = await dbx.filesListFolderContinue({cursor: response.cursor})
 			entries.push(... response.entries)
 
 			num_iterations = num_iterations + 1 

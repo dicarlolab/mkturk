@@ -5,8 +5,8 @@ async function saveBehaviorDatatoFirestore(TASK,ENV,CANVAS){
 	// Get a new write batch
 	var batch = db.batch();
 	
-	var taskRef = db.collection("data").doc(ENV.FirestoreDocRoot + '_task')
-	var imagesRef = db.collection("data").doc(ENV.FirestoreDocRoot + '_images')
+	var taskRef = db.collection(FIREBASE_COLLECTION).doc(ENV.FirestoreDocRoot + '_task')
+	var imagesRef = db.collection(FIREBASE_COLLECTION).doc(ENV.FirestoreDocRoot + '_images')
 	
 
 	//task meta & trial data
@@ -61,10 +61,10 @@ async function updateEventDataonFirestore(EVENTS){
 	// Get a new write batch
 	var batch = db.batch();
 
-	var taskRef = db.collection("data").doc(ENV.FirestoreDocRoot + '_task')
+	var taskRef = db.collection(FIREBASE_COLLECTION).doc(ENV.FirestoreDocRoot + '_task')
 	batch.update(taskRef,EVENTS.trialseries)
 	
-	var imagesRef = db.collection("data").doc(ENV.FirestoreDocRoot + '_images')
+	var imagesRef = db.collection(FIREBASE_COLLECTION).doc(ENV.FirestoreDocRoot + '_images')
 	batch.update(imagesRef,EVENTS.imageseries)
 	
 	// Commit the batch

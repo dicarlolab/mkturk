@@ -16,6 +16,7 @@
 <script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-firestore.js"></script>
 
 <script src="https://www.gstatic.com/firebasejs/5.5.5/firebase.js"></script>
+<script src=https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.3.0/math.min.js></script>
 <script type="text/javascript">
   // Initialize Firebase
   var config = {
@@ -45,6 +46,43 @@
 // checkFileStatus -- wait 1 second -- if new data -->
 // readDatafromDropbox --> initializeChartData --> updatePlots
 
+var queryndaysback = 7
+
+// // FIREPLACE modifications
+
+//---- (0) dropbox -> firestore converter
+
+//---- (1a) store params when load fireplace
+//---- (1b) textbox to show file params
+
+// (2a) query nweeks back text box
+// (2a) loading ticker
+// (2b) plot range slider
+// (2c) update with new files
+
+// (3) plot other vars, pulldown: choice bias, target accuracy, weight, all params
+
+// (4a) live updates - https://firebase.google.com/docs/firestore/query-data/listen
+// (4b) expanded table (last trial, battery level, last ping, green if running today)
+
+
+// // MKTURK modifications
+// (5a) mkturk - sends pings
+// (5b) mkturk - write json docs --> google drive
+
+
+// // EASY TO IMPLEMENT
+// # of objects
+// sample on time
+// reward amount
+// punish timeout
+// sample & test scales
+// battery used per hour 
+
+// // MORE INVOLVED
+// choice bias
+// total # of rewards
+// touch accuracy
 
 async function firebaseToggleSignIn() {
     if (!firebase.auth().currentUser){
@@ -91,22 +129,80 @@ function loadGoogleCharts() {
         dataTrial = new google.visualization.DataTable()
         dataLeaderboard = new google.visualization.DataTable()
 
-
 // document.getElementById("line_div").style.textIndent = "100px";
 
         liveline = new google.charts.Line(document.getElementById('line_div'));
         livelinetrial = new google.charts.Line(document.getElementById('linetrial_div'));
         livetable = new google.visualization.Table(document.getElementById('table_div'));
-        queryFirestore(7) //ndays back
+
+        google.visualization.events.addListener(liveline, 'select', selectHandlerPerformance1);
+        google.visualization.events.addListener(livelinetrial, 'select', selectHandlerPerformance2);
+
+        queryFirestore(queryndaysback) //ndays back
     })
 }
+
+
+function selectHandlerPerformance1() {
+  var selection = liveline.getSelection();
+  var message = '';
+  for (var i = 0; i < selection.length; i++) {
+    var item = selection[i];
+    if (item.row != null && item.column != null) {
+      var str = dataPerformance.getFormattedValue(item.row, item.column);
+      message += '{row:' + item.row + ',column:' + item.column + '} = ' + str + '\n';
+      showTaskText(item.row,item.column)
+    }
+  }
+  console.log('User selected ' + message);
+}
+
+function selectHandlerPerformance2() {
+  var selection = livelinetrial.getSelection();
+  var message = '';
+  for (var i = 0; i < selection.length; i++) {
+    var item = selection[i];
+    if (item.row != null && item.column != null) {
+      var str = dataPerformance.getFormattedValue(item.row, item.column);
+      message += '{row:' + item.row + ',column:' + item.column + '} = ' + str + '\n';
+      showTaskText(item.row,item.column)
+    }
+  }
+  console.log('User selected ' + message);
+}
+
+function showTaskText(dayidx,agentidx){
+    console.log('day ' + STAT.dt[dayidx]  + ', Agent ' + STAT.agents[agentidx-1])
+    var textobj = document.getElementById("tasktext");
+//     textobj.innerHTML = JSON.stringify(DATA.task[STAT.lastfile[agentidx-1][dayidx]],null,'\t')
+    textobj.innerHTML = JSON.stringify(DATA.task[STAT.lastfile[agentidx-1][dayidx]], function(a, b) {
+  return (Object.prototype.toString.call(b) === '[object Array]') ? JSON.stringify(b) : b;
+}, 4)
+}
+
+// 	ble.statustext = await loadTextFilefromDropbox(ENV.ParamFileName)
+// 	updateStatusText(ble.statustext)
+// 	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
+// 	document.querySelector("button[name=doneEditingParams]").style.display = "block"
+// 	document.querySelector("button[name=doneEditingParams]").style.visibility = "visible"
+	
+// 	await editParamsPromise()
+// 	document.querySelector("button[name=doneEditingParams]").style.display = "none"
+// 	var textobj = document.getElementById("headsuptext")
+// 	textobj.removeEventListener('touchend',headsuptext_listener)
+// 	textobj.removeEventListener('mouseup',headsuptext_listener)
+// 	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",false)
+
+
+
 //================== GOOGLE CHARTS LOADING (end) ==================//
+
 
 // queryFirestore
 // join & label data
 
 //================== FIRESTORE QUERY (begin) ==================//
-function queryFirestore(ndays){
+async function queryFirestore(ndays){
     var currdate = new Date()
     var refdate = new Date(
         Date.UTC(currdate.getFullYear(),currdate.getMonth(),currdate.getDate(),29,0,0)) //end of today in UTC which is +5 hours
@@ -116,16 +212,22 @@ function queryFirestore(ndays){
     var dt = ndays * msperday
     console.log("Querying up to " + 24*ndays + "hrs back")
 
-    var query = db.collection("data").where("CurrentDateValue",">=",refdate.valueOf()-dt);
+    var query = db.collection(FIREBASE_COLLECTION)
+                .where("CurrentDateValue",">=",refdate.valueOf()-dt)
+                .where("Doctype","==",'task')
 
     // https://firebase.google.com/docs/firestore/query-data/get-data#get_multiple_documents_from_a_collection
     query.get().then(
         function(querySnapshot)
         {
+
             querySnapshot.forEach(function(doc)
             {
                 if (typeof(doc.data().Response) == "undefined"){
                     // do nothing
+                    if (doc.data().Doctype == "task"){
+                        console.log('Doc contains no response data, skipping')
+                    }
                 }
                 else //contains trial data
                 {
@@ -135,30 +237,53 @@ function queryFirestore(ndays){
                     // # of days from today
                     DATA.dt[DATA.ndocs] = Math.ceil((doc.data().CurrentDate.toDate().valueOf() - refdate.valueOf())/msperday);
 
-                    // doc.data() is never undefined for query doc snapshots
-                    var ncorrect = 0
-                    doc.data().Response.map((element, index) => 
-                    {
-                        if (element != doc.data().CorrectItem[index]){
-                            return 0
-                        }
-                        else {
-                            ncorrect++
-                            return 1
-                        }
-                    }) //map
+                    var r = math.matrix(doc.data().Response);
+                    var c = math.matrix(doc.data().CorrectItem.splice(0,r.size()[0]));
+                    var ncorrect = math.filter(math.subtract(r,c), el => el==0).size()[0];
 
                     DATA.response[DATA.ndocs] = doc.data().Response
                     DATA.correctitem[DATA.ndocs] = doc.data().CorrectItem
                     DATA.ncorrect[DATA.ndocs] = ncorrect
-                    DATA.ndocs++
 
+                    DATA.task[DATA.ndocs] = doc.data()
+
+
+//                     if (Array.isArray(doc.data().BatteryLDT[0]) == true){
+//                         var nupdates = doc.data().BatteryLDT[0].length
+//                         DATA.task.lastbatterypct[DATA.ndocs] = 100*doc.data().BatteryLDT[0][nupdates-1]
+//                         DATA.task.batterypctperhour[DATA.ndocs] = -100*1000*60*60*
+//                             (doc.data().BatteryLDT[0][nupdates-1] - 
+//                             doc.data().BatteryLDT[0][0]) / 
+//                             (doc.data().BatteryLDT[2][nupdates-1] - doc.data().BatteryLDT[2][0])
+//                         DATA.task.batterypctperhour[DATA.ndocs] = 0.1*Math.round(10*DATA.task.batterypctperhour[DATA.ndocs])
+//                     }
+//                     else {
+//                         DATA.task.lastbatterypct[DATA.ndocs] = 0
+//                         DATA.task.batterypctperhour[DATA.ndocs] = 0
+//                     }
+                    DATA.ndocs++
 
                     console.log(doc.id, " ==> ", doc.data().CorrectItem.length
                      + ' trials, ' + Math.round(100*ncorrect/doc.data().Response.length) + "%");
 
                 } //if contains data
             }); // forEach doc
+
+            //Delete some of task metadata & trialdata to save space
+            for (var j=0; j<=DATA.task.length-1; j++){
+              delete DATA.task[j].CorrectItem
+              delete DATA.task[j].Response
+              delete DATA.task[j].FixationXYT
+              delete DATA.task[j].ResponseXYT
+              delete DATA.task[j].FixationGridIndex
+              delete DATA.task[j].FixationTouchEvent
+              delete DATA.task[j].ResponseTouchEvent
+              delete DATA.task[j].NReward
+              delete DATA.task[j].Sample
+              delete DATA.task[j].Test
+              delete DATA.task[j].StartTime              
+            }
+
             console.log(querySnapshot.size + " documents recovered")
             joinData()
             toGoogleDataTable()
@@ -174,10 +299,13 @@ function queryFirestore(ndays){
 function joinData(){
     // determine # of days and # of agents
     STAT.agents = [...new Set(DATA.agent)] //unique agents
+    STAT.agents.sort() //alphabetical order
     STAT.dt = [...new Set(DATA.dt)] //unique days
-    
+   
     STAT.ntrials = Array(STAT.agents.length).fill([]).map(element => {return Array(STAT.dt.length).fill(0)})
     STAT.pct = Array(STAT.agents.length).fill([]).map(element => {return Array(STAT.dt.length).fill(0)})
+    STAT.firstfile = Array(STAT.agents.length).fill([]).map(element => {return Array(STAT.dt.length).fill(-1)})
+    STAT.lastfile = Array(STAT.agents.length).fill([]).map(element => {return Array(STAT.dt.length).fill(-1)})
     for (var i=0; i<=DATA.response.length-1; i++){
         var agentidx = STAT.agents.indexOf(DATA.agent[i])
         var dayidx = STAT.dt.indexOf(DATA.dt[i])
@@ -186,6 +314,11 @@ function joinData(){
             ((0.01*STAT.pct[agentidx][dayidx]*STAT.ntrials[agentidx][dayidx]) + DATA.ncorrect[i])
         STAT.ntrials[agentidx][dayidx]+= DATA.response[i].length
         STAT.pct[agentidx][dayidx] = 100*STAT.pct[agentidx][dayidx]/STAT.ntrials[agentidx][dayidx]
+
+        if (STAT.firstfile[agentidx][dayidx] == -1){
+            STAT.firstfile[agentidx][dayidx] = i
+        }
+        STAT.lastfile[agentidx][dayidx] = i
     } //for i docs
 }
 //================== (end) DATA JOIN ===================//
@@ -269,6 +402,7 @@ function toGoogleDataTable() {
 <div id="table_div"></div> <!--Div that will hold the leaderboard table-->
 <div id="line_div"></div> <!--Div that will hold the line chart-->
 <div id="linetrial_div"></div> <!--Div that will hold the line chart-->
+<pre id="tasktext" style="position: absolute; left: 1px; width: 100%; font-size: 18px; color: black; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;"></pre>
 <script type="text/javascript">
 
 var liveline = null;
@@ -284,6 +418,7 @@ var DATA = {
     date: [],
     dt: [],
     ndocs: 0,
+    task: [],
 };
 
 var STAT = {
@@ -291,6 +426,8 @@ var STAT = {
     dt: [],
     ntrials: [],
     pct: [],
+    firstfile: [],
+    lastfile: [],
 }
 
 var GOOGLEUSER = {

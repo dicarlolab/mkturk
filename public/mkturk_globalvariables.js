@@ -145,10 +145,10 @@ EVENTS.reset = function(){
 	this.trialseries.ResponseXYT = {}
 	this.trialseries.Response = {}
 	this.trialseries.NReward = {}
-	this.timeseries.BatteryLDT = {}	
+	this.trialseries.BatteryLDT = {}	
+	this.trialseries.BLEBattery = {}
 	this.timeseries.RFIDTag = {}
 	this.timeseries.Weight = {}
-	this.timeseries.BLEBattery = {}
 
 	this.imageseries.SampleObjectTy = {}
 	this.imageseries.SampleObjectTz = {}
@@ -217,7 +217,7 @@ function resetTRIAL(){
 	TRIAL.BatteryLDT = []	
 	navigator.getBattery().then(function(batteryobj){
 		TRIAL.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
-		logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"timeseries")
+		logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"trialseries")
 
 	TRIAL.SampleObjectTy = []
 	TRIAL.SampleObjectTz = []
@@ -280,8 +280,13 @@ function updateTrialHistory(){
 function logEVENTS(eventname,eventval,eventtype){
 	//log events for a trial
 	if (eventtype == 'trialseries' || eventtype == 'imageseries'){
+		
 		//index by trial
 		var indevent = EVENTS.trialnum
+		if (eventname == 'BatteryLDT'){
+			var indevent = TRIAL.BatteryLDT.length-1
+		}
+
 		if (FLAGS.savedata == 0){
 			indevent = 0 //store most recent trial in first position until start saving data
 		}
@@ -300,7 +305,7 @@ function logEVENTS(eventname,eventval,eventtype){
 			for (var i=0; i<=eventval.length-1; i++){
 				if (typeof(EVENTS[eventtype][eventname][i.toString()]) == "undefined"){
 					EVENTS[eventtype][eventname][i.toString()]={}; //initialize array
-EVENTS[eventtype][eventname][i.toString()] = []
+					EVENTS[eventtype][eventname][i.toString()] = []
 				} //if not initialized
 				EVENTS[eventtype][eventname][i.toString()][indevent] = eventval[i]
 			}

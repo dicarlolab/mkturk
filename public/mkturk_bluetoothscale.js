@@ -386,7 +386,7 @@ function onBatteryNotificationFromScale(event){
 
     //Decode values (specific to scale)
     var battery = parseInt(a[0],16)
-    logEVENTS("BLEBattery",battery,"timeseries");
+    logEVENTS("BLEBattery",battery,"trialseries");
     blescale.tbattery[blescale.tbattery.length] = Math.round(t_notify)
     blescale.battery[blescale.battery.length] = battery
 

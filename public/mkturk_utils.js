@@ -422,6 +422,14 @@ function objectomeImageNamesToLatentVars(imagefilepaths,imagelabels){
     var findnext=0
     var paramstrs = strs[strs.length-1].split("_")
 
+    // initialize to NaN in case meta not specified in filename
+    object.ty[i] = NaN
+    object.tz[i] = NaN
+    object.rxy[i] = NaN
+    object.rxz[i] = NaN
+    object.ryz[i] = NaN
+    object.scale[i] = NaN
+
     //remove file extension
     paramstrs[paramstrs.length-1] = paramstrs[paramstrs.length-1].slice(0,paramstrs[paramstrs.length-1].indexOf(".png"))
     for (var j=0; j<=paramstrs.length-1; j++){

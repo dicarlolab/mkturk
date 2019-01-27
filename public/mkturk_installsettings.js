@@ -5,7 +5,7 @@
 // MKTURK
 var DBX_CLIENT_ID = "p4dju7hqsqpkm32" //mkturkissa
 var DBX_REDIRECT_URI_ROOT = "http://localhost:5000/"
-var DBX_REDIRECT_URI_ROOT = "https://sandbox-ce2c5.firebaseapp.com/"
+var DBX_REDIRECT_URI_ROOT = "https://www.mkturk.com/"
 
 // ------ Subject settings ------ 
 var subjectlist = [
@@ -16,6 +16,8 @@ var subjectlist = [
 var DATA_SAVEPATH = "/mkturkfiles/datafiles/"
 var PARAM_DIRPATH = "/mkturkfiles/parameterfiles/subjects/"
 var SOUND_FILEPREFIX = "/mkturkfiles/sounds/au"
+
+var FIREBASE_COLLECTION = 'mkturkdata'
 
 // ------ Misc. -----------------------
 var ndatafiles2read=5; // todo: change to trials. and use as upper bound (stop reading once you hit the first discrepancy). maybe this is effectively synonymous with mintrials
