@@ -17,7 +17,7 @@ var titlestyle = {
 var lineOptions={
   	width: 900,
   	height: 400,
-	hAxis: {title: 'Days back', titleTextStyle: axislabelstyle},
+// 	hAxis: {title: 'Date', titleTextStyle: axislabelstyle},
 	vAxis: {title: '% Correct', titleTextStyle: axislabelstyle},
 	title: 'Performance',
 	titleTextStyle: titlestyle,
@@ -31,7 +31,7 @@ var lineOptions={
 var linetrialOptions={
   	width: 900,
   	height: 400,
-	hAxis: {title: 'Days back', titleTextStyle: axislabelstyle},
+	hAxis: {title: 'Date', titleTextStyle: axislabelstyle},
 	vAxis: {title: '# Trials', titleTextStyle: axislabelstyle},
 	title: 'Number of Trials',
 	titleTextStyle: titlestyle,

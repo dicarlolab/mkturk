@@ -40,13 +40,22 @@
 <!-- =========== (end) FIREBASE + FIRESTORE =========== -->
 
 
+<!-- =========== (begin) MATERIAL DESIGN LITE =========== -->
+<!-- Include Material Design Lite CDN hosted components -->
+<!-- Getting started @ https://getmdl.io/started/index.html -->
+<!-- MDL color theme picker @ https://getmdl.io/customize/index.html -->
+    <script src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.deep_purple-pink.min.css">
+<!--     <link rel="stylesheet" href="styles.css"> -->
+<!-- =========== (end) MATERIAL DESIGN LITE =========== -->
+
 <script type="text/javascript">
 // Flow: 
 // authenticate --> loadGoogleCharts --> queryFirestore -->
 // checkFileStatus -- wait 1 second -- if new data -->
 // readDatafromDropbox --> initializeChartData --> updatePlots
-
-var queryndaysback = 7
 
 // // FIREPLACE modifications
 
@@ -55,10 +64,10 @@ var queryndaysback = 7
 //---- (1a) store params when load fireplace
 //---- (1b) textbox to show file params
 
-// (2a) query nweeks back text box
-// (2a) loading ticker
-// (2b) plot range slider
-// (2c) update with new files
+//---- (2a) query nweeks back text box
+//---- (2a) loading ticker
+//---- (2b) plot range slider
+//---- (2c) update with new files
 
 // (3) plot other vars, pulldown: choice bias, target accuracy, weight, all params
 
@@ -138,7 +147,7 @@ function loadGoogleCharts() {
         google.visualization.events.addListener(liveline, 'select', selectHandlerPerformance1);
         google.visualization.events.addListener(livelinetrial, 'select', selectHandlerPerformance2);
 
-        queryFirestore(queryndaysback) //ndays back
+        queryFirestore() //ndays back
     })
 }
 
@@ -172,7 +181,7 @@ function selectHandlerPerformance2() {
 }
 
 function showTaskText(dayidx,agentidx){
-    console.log('day ' + STAT.dt[dayidx]  + ', Agent ' + STAT.agents[agentidx-1])
+    console.log('day ' + new Date(STAT.t[dayidx]).toDateString()  + ', Agent ' + STAT.agents[agentidx-1])
     var textobj = document.getElementById("tasktext");
 //     textobj.innerHTML = JSON.stringify(DATA.task[STAT.lastfile[agentidx-1][dayidx]],null,'\t')
     textobj.innerHTML = JSON.stringify(DATA.task[STAT.lastfile[agentidx-1][dayidx]], function(a, b) {
@@ -202,50 +211,73 @@ function showTaskText(dayidx,agentidx){
 // join & label data
 
 //================== FIRESTORE QUERY (begin) ==================//
-async function queryFirestore(ndays){
-    var currdate = new Date()
-    var refdate = new Date(
-        Date.UTC(currdate.getFullYear(),currdate.getMonth(),currdate.getDate(),29,0,0)) //end of today in UTC which is +5 hours
+async function queryFirestore(){
+  document.querySelector('#progressbar').style.display = "block"
+  document.querySelector('#progressbar').style.visibility = "visible"
 
-    // last x days
-    var msperday = 24*60*60*1000
-    var dt = ndays * msperday
-    console.log("Querying up to " + 24*ndays + "hrs back")
+  var querystarttime = performance.now()
 
-    var query = db.collection(FIREBASE_COLLECTION)
-                .where("CurrentDateValue",">=",refdate.valueOf()-dt)
-                .where("Doctype","==",'task')
+  var queryend = enddatevalue
+  var querystart = queryend
 
-    // https://firebase.google.com/docs/firestore/query-data/get-data#get_multiple_documents_from_a_collection
-    query.get().then(
-        function(querySnapshot)
-        {
+  //(1) move end --> to start of previous queries
+  // moves only if contained within a query
+  for (var i=0; i <= DATA.queries.end.length-1; i++){
+    if (queryend <= DATA.queries.end[i] &&
+        queryend >= DATA.queries.start[i]){
+      queryend = DATA.queries.start[i] - (24*60*60*100) //shift end to beginning of last query
+    } //if
+  } //for i query ranges
 
-            querySnapshot.forEach(function(doc)
-            {
-                if (typeof(doc.data().Response) == "undefined"){
-                    // do nothing
-                    if (doc.data().Doctype == "task"){
-                        console.log('Doc contains no response data, skipping')
-                    }
-                }
-                else //contains trial data
-                {
-                    DATA.agent[DATA.ndocs] = doc.data().Agent
-                    DATA.date[DATA.ndocs] = doc.data().CurrentDate
+  //(2) move start --> to nearest end of previous queries
+  // advance start whenever there is an earlier query
+  querystart = startdatevalue
+  for (var i = 0; i <= DATA.queries.start.length-1; i++){
+    if (DATA.queries.end[i] >= querystart &&
+         DATA.queries.end[i] < queryend){
+           querystart = DATA.queries.end[i] + (24*60*60*100) // nearest current endpoint to end
+    } //if
+  } //for i query ranges
 
-                    // # of days from today
-                    DATA.dt[DATA.ndocs] = Math.ceil((doc.data().CurrentDate.toDate().valueOf() - refdate.valueOf())/msperday);
+  //perform query
+  var query = db.collection(FIREBASE_COLLECTION)
+            .where("CurrentDateValue",">=",querystart)
+            .where("CurrentDateValue","<=",queryend)
+            .where("Doctype","==",'task')
 
-                    var r = math.matrix(doc.data().Response);
-                    var c = math.matrix(doc.data().CorrectItem.splice(0,r.size()[0]));
-                    var ncorrect = math.filter(math.subtract(r,c), el => el==0).size()[0];
+  // https://firebase.google.com/docs/firestore/query-data/get-data#get_multiple_documents_from_a_collection
+  query.get().then(
+    function(querySnapshot)
+    {
+      var ndocsquerytotal = querySnapshot.size;
+      var ndocsprocessed = 0;
+      querySnapshot.forEach(function(doc)
+      {
+          if (typeof(doc.data().Response) == "undefined"){
+              // do nothing
+              if (doc.data().Doctype == "task"){
+                  console.log('Doc contains no response data, skipping')
+              }
+          }
+          else //contains trial data
+          {
+              DATA.agent[DATA.ndocs] = doc.data().Agent
+              DATA.date[DATA.ndocs] = doc.data().CurrentDate
 
-                    DATA.response[DATA.ndocs] = doc.data().Response
-                    DATA.correctitem[DATA.ndocs] = doc.data().CorrectItem
-                    DATA.ncorrect[DATA.ndocs] = ncorrect
+              // # of days from today
+              // DATA.dt[DATA.ndocs] = Math.ceil((doc.data().CurrentDate.toDate().valueOf() - refdate.valueOf())/(24*60*60*1000));
+              // round to times to nearest day & add 8 hours
+              DATA.t[DATA.ndocs] = (24*60*60*1000) * Math.floor((doc.data().CurrentDate.toDate().valueOf())/(24*60*60*1000)) + 0.25*(24*60*60*1000);
 
-                    DATA.task[DATA.ndocs] = doc.data()
+              var r = math.matrix(doc.data().Response);
+              var c = math.matrix(doc.data().CorrectItem.splice(0,r.size()[0]));
+              var ncorrect = math.filter(math.subtract(r,c), el => el==0).size()[0];
+
+              DATA.response[DATA.ndocs] = doc.data().Response
+              DATA.correctitem[DATA.ndocs] = doc.data().CorrectItem
+              DATA.ncorrect[DATA.ndocs] = ncorrect
+
+              DATA.task[DATA.ndocs] = doc.data()
 
 
 //                     if (Array.isArray(doc.data().BatteryLDT[0]) == true){
@@ -261,54 +293,89 @@ async function queryFirestore(ndays){
 //                         DATA.task.lastbatterypct[DATA.ndocs] = 0
 //                         DATA.task.batterypctperhour[DATA.ndocs] = 0
 //                     }
-                    DATA.ndocs++
+              DATA.ndocs++
 
-                    console.log(doc.id, " ==> ", doc.data().CorrectItem.length
-                     + ' trials, ' + Math.round(100*ncorrect/doc.data().Response.length) + "%");
+              console.log(doc.id, " ==> ", doc.data().CorrectItem.length
+               + ' trials, ' + Math.round(100*ncorrect/doc.data().Response.length) + "%");
 
-                } //if contains data
-            }); // forEach doc
+          } //if contains data
+          
+          ndocsprocessed++
+//           updateProgressBar(100*ndocsprocessed/ndocsquerytotal)
+      }); // forEach doc
 
-            //Delete some of task metadata & trialdata to save space
-            for (var j=0; j<=DATA.task.length-1; j++){
-              delete DATA.task[j].CorrectItem
-              delete DATA.task[j].Response
-              delete DATA.task[j].FixationXYT
-              delete DATA.task[j].ResponseXYT
-              delete DATA.task[j].FixationGridIndex
-              delete DATA.task[j].FixationTouchEvent
-              delete DATA.task[j].ResponseTouchEvent
-              delete DATA.task[j].NReward
-              delete DATA.task[j].Sample
-              delete DATA.task[j].Test
-              delete DATA.task[j].StartTime              
-            }
+      //Delete some of task metadata & trialdata to save space
+      for (var j=0; j<=DATA.task.length-1; j++){
+        delete DATA.task[j].CorrectItem
+        delete DATA.task[j].Response
+        delete DATA.task[j].FixationXYT
+        delete DATA.task[j].ResponseXYT
+        delete DATA.task[j].FixationGridIndex
+        delete DATA.task[j].FixationTouchEvent
+        delete DATA.task[j].ResponseTouchEvent
+        delete DATA.task[j].NReward
+        delete DATA.task[j].Sample
+        delete DATA.task[j].Test
+        delete DATA.task[j].StartTime              
+      }
 
-            console.log(querySnapshot.size + " documents recovered")
-            joinData()
-            toGoogleDataTable()
-            liveline.draw(dataPerformance,google.charts.Line.convertOptions(lineOptions))
-            livelinetrial.draw(dataTrial,google.charts.Line.convertOptions(linetrialOptions))
-            livetable.draw(dataLeaderboard,google.charts.Line.convertOptions(tableOptions))
-        }) // getdocs.then
+      console.log(querySnapshot.size + " documents recovered")
+
+      //store position of query
+      DATA.queries.start.push(querystart)
+      DATA.queries.end.push(queryend)
+
+      if (querystart != startdatevalue){
+        DATA.totalloadtime += (performance.now() - querystarttime)/1000
+        document.getElementById('titletext').innerHTML = 
+                'fireplace mkturk &nbsp&nbsp' + "<font size=-4>" + DATA.ndocs + ' docs, ' + Math.round(DATA.totalloadtime) + ' sec' + "</font>"
+        queryFirestore()
+      }
+      else if (querystart == startdatevalue){
+        joinData()
+        toGoogleDataTable()
+
+        //update axes range
+        lineOptions.hAxis = {viewWindow: {
+                min: new Date(startdatevalue),
+                max: new Date(enddatevalue)
+          }
+        }
+        linetrialOptions.hAxis = {viewWindow: {
+                min: new Date(startdatevalue),
+                max: new Date(enddatevalue)
+          }
+        }
+        liveline.draw(dataPerformance,google.charts.Line.convertOptions(lineOptions))
+        livelinetrial.draw(dataTrial,google.charts.Line.convertOptions(linetrialOptions))
+        livetable.draw(dataLeaderboard,google.charts.Line.convertOptions(tableOptions))
+
+        DATA.totalloadtime += (performance.now() - querystarttime)/1000
+        document.getElementById('titletext').innerHTML = 
+                'fireplace mkturk &nbsp&nbsp' + "<font size=-4>" + DATA.ndocs + ' docs, ' + Math.round(DATA.totalloadtime) + ' sec' + "</font>"
+        document.querySelector('#progressbar').style.display = "none"
+      }
+  }) // getdocs.then
 } //query firestore
 //================== (end) FIRESTORE QUERY ==================//
 
 
 //================== (begin) DATA JOIN ===================//
 function joinData(){
+  console.time('datajoin')
     // determine # of days and # of agents
     STAT.agents = [...new Set(DATA.agent)] //unique agents
     STAT.agents.sort() //alphabetical order
-    STAT.dt = [...new Set(DATA.dt)] //unique days
+    STAT.t = [...new Set(DATA.t)] //unique days
+    STAT.t.sort()
    
-    STAT.ntrials = Array(STAT.agents.length).fill([]).map(element => {return Array(STAT.dt.length).fill(0)})
-    STAT.pct = Array(STAT.agents.length).fill([]).map(element => {return Array(STAT.dt.length).fill(0)})
-    STAT.firstfile = Array(STAT.agents.length).fill([]).map(element => {return Array(STAT.dt.length).fill(-1)})
-    STAT.lastfile = Array(STAT.agents.length).fill([]).map(element => {return Array(STAT.dt.length).fill(-1)})
+    STAT.ntrials = Array(STAT.agents.length).fill([]).map(element => {return Array(STAT.t.length).fill(0)})
+    STAT.pct = Array(STAT.agents.length).fill([]).map(element => {return Array(STAT.t.length).fill(0)})
+    STAT.firstfile = Array(STAT.agents.length).fill([]).map(element => {return Array(STAT.t.length).fill(-1)})
+    STAT.lastfile = Array(STAT.agents.length).fill([]).map(element => {return Array(STAT.t.length).fill(-1)})
     for (var i=0; i<=DATA.response.length-1; i++){
         var agentidx = STAT.agents.indexOf(DATA.agent[i])
-        var dayidx = STAT.dt.indexOf(DATA.dt[i])
+        var dayidx = STAT.t.indexOf(DATA.t[i])
 
         STAT.pct[agentidx][dayidx] =  
             ((0.01*STAT.pct[agentidx][dayidx]*STAT.ntrials[agentidx][dayidx]) + DATA.ncorrect[i])
@@ -320,6 +387,7 @@ function joinData(){
         }
         STAT.lastfile[agentidx][dayidx] = i
     } //for i docs
+console.timeEnd('datajoin')
 }
 //================== (end) DATA JOIN ===================//
 
@@ -328,9 +396,10 @@ function joinData(){
 function toGoogleDataTable() {
 
     //-------- Performance line chart ---------//
+    dataPerformance.removeColumns(0,dataPerformance.getNumberOfColumns());
     dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
 
-    dataPerformance.addColumn('number','days from today')
+    dataPerformance.addColumn('datetime','')
     for (var i=0; i<=STAT.agents.length-1; i++){
         dataPerformance.addColumn('number',STAT.agents[i]);
     }
@@ -341,13 +410,14 @@ function toGoogleDataTable() {
         for (var j =0; j<= STAT.pct.length-1; j++){
             array_t[j] = STAT.pct[j][i]
         } //for j agents
-        dataPerformance.addRows([[STAT.dt[i],...array_t]])
+        dataPerformance.addRows([[new Date(STAT.t[i]),...array_t]])
     } //for i timepoints
 
     //-------- Trial line chart ---------//
+    dataTrial.removeColumns(0,dataTrial.getNumberOfColumns());
     dataTrial.removeRows(0,dataTrial.getNumberOfRows());
 
-    dataTrial.addColumn('number','days from today')
+    dataTrial.addColumn('datetime','')
     for (var i=0; i<=STAT.agents.length-1; i++){
         dataTrial.addColumn('number',STAT.agents[i]);
     }
@@ -358,13 +428,14 @@ function toGoogleDataTable() {
         for (var j =0; j<= STAT.ntrials.length-1; j++){
             array_t[j] = STAT.ntrials[j][i]
         } //for j agents
-        dataTrial.addRows([[STAT.dt[i],...array_t]])
+        dataTrial.addRows([[new Date(STAT.t[i]),...array_t]])
     } //for i timepoints
 
 
 
     //-------- Leaderboard table ----------//
     var ndays = STAT.pct[0].length
+    dataLeaderboard.removeColumns(0,dataLeaderboard.getNumberOfColumns());
     dataLeaderboard.removeRows(0,dataLeaderboard.getNumberOfRows());
     dataLeaderboard.addColumn('string','Agent');
     dataLeaderboard.addColumn('number','% (today)');
@@ -394,16 +465,80 @@ function toGoogleDataTable() {
 //================== DATA HANDLING (end) ==================//
 
 
+function queryduration_listener(event){
+  queryndaysback = 7 * event.target.value; //convert weeks -> days
+  console.log('query duration changed = ' + queryndaysback + ' days')
+  startdatevalue = enddatevalue - queryndaysback*(24*60*60*1000)
+  updateDateChip()
+}
+
+function queryend_listener(event){
+  enddatevalue = new Date(event.target.value).valueOf()
+  updateDateChip()
+}
+
+function updateDateChip(){
+  var str = '<b>' + new Date(startdatevalue).toDateString() + ' - ' + new Date(enddatevalue).toDateString() + '</b>'
+  document.getElementById("datechip").innerHTML = str;
+}
+
+// function updateProgressBar(pct){
+//   document.querySelector('#progressbar').MaterialProgress.setProgress(pct);
+// }
+
 </script>
 </head>
 
-<body>
-<h1>fireplace_mkturk</h1>
+<body class="mdl-demo mdl-color--grey-100 mdl-color-text--grey-700 mdl-base">
+
+<div>
+<h4 id="titletext">fireplace mkturk</h4>
+</div>
+
+<!-- Simple MDL Progress Bar -->
+<!-- <div id="progressbar" class="mdl-progress mdl-js-progress"></div> -->
+
+<!-- MDL Progress Bar with Indeterminate Progress -->
+<div id="progressbar" class="mdl-progress mdl-js-progress mdl-progress__indeterminate"></div>
+
+<span class="mdl-chip">
+    <span class="mdl-chip__text" id="datechip"> <b> DateRange </b> </span>
+</span>
+
+<!-- Numeric Textfield -->
+<form action="#">
+<div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+  <input class="mdl-textfield__input" type="text" pattern="-?[0-9]*(\.[0-9]+)?" id="querydurationinput">
+  <label class="mdl-textfield__label" for="querydurationinput">Number of weeks back</label>
+  <span class="mdl-textfield__error">NaN!</span>
+</div>
+</action>
+
+
+<!-- Numeric Textfield -->
+<form action="#">
+<div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+  <input class="mdl-textfield__input" type="text" id="queryendinput">
+  <label class="mdl-textfield__label" for="queryendinput">End date</label>
+  <span class="mdl-textfield__error">Input is not a number!</span>
+</div>
+</action>
+
+<!-- Colored FAB button with ripple -->
+<button class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored" id="runquerybutton">
+  <i class="material-icons">refresh</i>
+</button>
+
 <div id="table_div"></div> <!--Div that will hold the leaderboard table-->
+<p></p>
 <div id="line_div"></div> <!--Div that will hold the line chart-->
 <div id="linetrial_div"></div> <!--Div that will hold the line chart-->
 <pre id="tasktext" style="position: absolute; left: 1px; width: 100%; font-size: 18px; color: black; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;"></pre>
 <script type="text/javascript">
+
+document.getElementById("querydurationinput").addEventListener("change",queryduration_listener,false);
+document.getElementById("queryendinput").addEventListener("change",queryend_listener,false);
+document.getElementById("runquerybutton").addEventListener("pointerup",queryFirestore,false)
 
 var liveline = null;
 var dataPerformance = null; 
@@ -416,14 +551,16 @@ var DATA = {
     ncorrect: [],
     agent: [],
     date: [],
-    dt: [],
-    ndocs: 0,
+    t: [],
     task: [],
+    queries: {start: [], end: []},
+    totalloadtime: 0,
+    ndocs: 0,
 };
 
 var STAT = {
     agents: [],
-    dt: [],
+    t: [],
     ntrials: [],
     pct: [],
     firstfile: [],
@@ -436,6 +573,16 @@ var GOOGLEUSER = {
     ResearcherLastName: "",
     ResearcherID: "",
 };
+
+var currdate = new Date()
+var refdate = new Date(Date.UTC(currdate.getFullYear(),currdate.getMonth(),currdate.getDate(),28,59,0)) //end of today in UTC which is +5 hours
+var queryndaysback = 7
+var enddatevalue = refdate.valueOf()
+var startdatevalue = refdate.valueOf() - queryndaysback*(24*60*60*1000) //msperday
+document.getElementById("querydurationinput").value = Math.round(queryndaysback/7)
+document.getElementById("queryendinput").value = refdate.toLocaleDateString()
+updateDateChip()
+
 
 //================== (begin) AUTHENTICATE GOOGLEUSER ==================//
 // self-executing anonymous function
