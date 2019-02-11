@@ -17,7 +17,6 @@ var IMAGES = {
 
 ENV.ResearcherDisplayName = ''
 ENV.ResearcherEmail = ''
-ENV.ResearcherLastName = ''
 ENV.ResearcherID = ''
 ENV.USBDeviceType = ''
 ENV.USBDeviceName = ''
@@ -146,7 +145,7 @@ EVENTS.reset = function(){
 	this.trialseries.Response = {}
 	this.trialseries.NReward = {}
 	this.trialseries.BatteryLDT = {}	
-	this.trialseries.BLEBattery = {}
+	this.trialseries.BLEBatteryLT = {}
 	this.timeseries.RFIDTag = {}
 	this.timeseries.Weight = {}
 
@@ -285,6 +284,9 @@ function logEVENTS(eventname,eventval,eventtype){
 		var indevent = EVENTS.trialnum
 		if (eventname == 'BatteryLDT'){
 			var indevent = TRIAL.BatteryLDT.length-1
+		}
+		if (eventname == 'BLEBatteryLT'){
+			var indevent = blescale.tbattery.length-1
 		}
 
 		if (FLAGS.savedata == 0){

@@ -80,6 +80,7 @@ var trialkeys = [
 "AllFixationXYT",
 "AutomatorStage",
 "BatteryLDT",
+"BLEBatteryLT",
 "CorrectItem",
 "FixationGridIndex",
 "FixationTouchEvent",
@@ -98,19 +99,19 @@ var trialkeys = [
 (async function(){
 
 //========= 01 - get dropbox file list
-
-
 //========= 02 - open each dropbox file and convert variables to firestore format
-
-
 //========= 03 - save to firestore
-
-
 var filenames = await getFileListDropboxRecursive(DATA_SAVEPATH)
-//546 Setta 01/17/16:14
-for (var i = 547; i <= filenames.length-1; i++){
+for (var i = 0; i <= filenames.length-1; i++){
   var datastring = await loadTextFilefromDropbox(filenames[i]);
   var data = JSON.parse(datastring);
+
+	// EXCEPTIONS
+	// Setta 01/17/16:14
+	if (filenames[i].includes('Setta/2019-01-17T16:14') == true){
+		console.log('skipping ' + filenames[i])
+		continue
+	}
 
   for (var j=0; j<=data.length-1; j++){
     keynames = Object.keys(data[j])
@@ -234,7 +235,7 @@ if (imagebagssample[0].indexOf("objectome") < 0 || imagebagstest[0].indexOf("obj
 			trialkeys.forEach(key => { if (key == keynames[k]){trialkeypresent = 1} })
 
 			if (trialkeypresent == 1){
-			  if (keynames[k] == 'AllFixationXYT' || keynames[k] == 'AutomatorStage'){
+			  if (keynames[k] == 'AllFixationXYT' || keynames[k] == 'AutomatorStage' || keynames[k] == 'ResearcherLastName'){
 			    //don't save
 			  }
 			  else if (keynames[k] == 'FixationTouchEvent' || keynames[k] == 'ResponseTouchEvent'){
@@ -333,7 +334,33 @@ if (imagebagssample[0].indexOf("objectome") < 0 || imagebagstest[0].indexOf("obj
 			        EVENTS.trialnum = EVENTS.trialnum + 1
 			      } //if in this block
 			    } //for m battery status updates
-			  }
+			  } //BatteryLDT
+        else if (keynames[k] == 'BLEBatteryLT' || keynames[k] == 'BLEBattery'){
+          //ADJUST TIMES
+          TRIAL.BLEBatteryLT = []
+                EVENTS.trialnum = 0;
+          for (var m = 0; m <= data[j][keynames[k]].length-1; m++){
+            var batterystarttime = dt
+            if (b==0){
+              batterystarttime = 0
+            }
+            if (data[j][keynames[k]][m][1] >= batterystarttime && 
+               data[j][keynames[k]][m][1] < endtime){
+              var temparray = data[j][keynames[k]][m].slice()
+              temparray[1]-=dt
+              if (temparray[0] == null){
+                temparray[0] = NaN
+              }
+              if (temparray[1] == null){
+                temparray[1] = NaN
+              }
+
+              TRIAL.BLEBatteryLT[EVENTS.trialnum] = temparray
+              logEVENTS(keynames[k],temparray,'trialseries')
+              EVENTS.trialnum = EVENTS.trialnum + 1
+            } //if in this block
+          } //for m battery status updates
+        } //if BLEBatteryLT
 			  else if (keynames[k] == "FixationXYT" || keynames[k]=="ResponseXYT"){
 			    //ADJUST TIMES & TRIALS
                 for (var m = starttrial; m <= endtrial; m++){
@@ -371,6 +398,30 @@ if (imagebagssample[0].indexOf("objectome") < 0 || imagebagstest[0].indexOf("obj
 		} //if
 	} //for k keys
   }// for j objects
+
+if (typeof(TASK['ResearcherEmail']) != "undefined"){
+	if (TASK['ResearcherEmail'] == ''){
+		TASK['ResearcherDisplayName'] = 'Issa Lab'
+		TASK['ResearcherEmail'] = 'mkturkissa@gmail.com'
+		TASK['ResearcherID'] = '4YRo1vkArubH4h9oTpvwqVaGpQu2'
+		console.log('mkturk')
+	}
+	if (TASK['ResearcherEmail'] == 'mkturkissa@gmail.com'){
+		TASK['ResearcherID'] = '4YRo1vkArubH4h9oTpvwqVaGpQu2'
+		console.log('mkturk')
+	}
+	else if (TASK['ResearcherEmail'] == 'ei2228@columbia.edu'){
+		TASK['ResearcherID'] = '4HwdvIBa9saxMgITUlAFfikipq93'		
+		console.log('elias')
+	}
+	else if (TASK['ResearcherEmail'] == 'slb2242@columbia.edu'){
+		TASK['ResearcherID'] = 'x5JeaMC2w0NtL3KjP9YyulPbwMG2'
+		console.log('Sophie')
+	}
+	else {
+		console.log('UNRECOGNIZED GOOGLE ACCOUNT ' + TASK['ResearcherEmail'])
+	}
+}
 
   console.log('block ' + b + ' ' + Math.round(dt/(1000*60)) + ' minutes later')
   var newdatevalue = Date.parse(TASK.CurrentDate) + dt

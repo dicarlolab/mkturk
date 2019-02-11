@@ -67,13 +67,15 @@
 //---- (2a) query nweeks back text box
 //---- (2a) loading ticker
 //---- (2b) plot range slider
-//---- (2c) update with new files
+//---- (2c) accumulate docs across queries
 
-// (3) plot other vars, pulldown: choice bias, target accuracy, weight, all params
+// (2d) promise.all for parallel processing of queries?
+// ---> NO, firestore function query.get is bottleneck
 
-// (4a) live updates - https://firebase.google.com/docs/firestore/query-data/listen
-// (4b) expanded table (last trial, battery level, last ping, green if running today)
+// (3a) live updates - https://firebase.google.com/docs/firestore/query-data/listen
+// (3b) expanded table (last trial, battery level, last ping, green if running today)
 
+// (4) plot other vars, pulldown: choice bias, target accuracy, weight, all params
 
 // // MKTURK modifications
 // (5a) mkturk - sends pings
@@ -92,41 +94,6 @@
 // choice bias
 // total # of rewards
 // touch accuracy
-
-async function firebaseToggleSignIn() {
-    if (!firebase.auth().currentUser){
-      var provider = new firebase.auth.GoogleAuthProvider();
-      provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
-
-      // [START signin]
-      await firebase.auth().signInWithPopup(provider).then(function(result) {
-        // This gives you a Google Access Token. You can use it to access the Google API.
-        var token = result.credential.accessToken;
-        var user = result.user; // The signed-in user info.
-        GOOGLEUSER.ResearcherDisplayName = result.user.displayName;
-        GOOGLEUSER.ResearcherEmail = result.user.email;
-        GOOGLEUSER.ResearcherLastName = result.additionalUserInfo.profile.family_name
-        GOOGLEUSER.ResearcherID = result.additionalUserInfo.profile.id
-          
-        console.log('USER ' + user.email + ' signed in')
-      }).catch(function(error) {
-        var errorCode = error.code;
-        var errorMessage = error.message;
-        // The email of the user's account used.
-        var email = error.email;
-        // The firebase.auth.AuthCredential type that was used.
-        var credential = error.credential;
-      });
-      // [END signin]
-    } else {
-      await firebase.auth().signOut();
-      console.log('USER ' + user.email + ' signed out')
-    }
-    return
-} //toggleSignIn
-// [SIGN-IN END buttoncallback]
-//=============== (end) AUTHENTICATE GOOGLE ===============//
-
 
 //================== GOOGLE CHARTS LOADING (begin) ==================//
 // Asynchronous: Live plotting using google charts
@@ -150,7 +117,6 @@ function loadGoogleCharts() {
         queryFirestore() //ndays back
     })
 }
-
 
 function selectHandlerPerformance1() {
   var selection = liveline.getSelection();
@@ -181,12 +147,41 @@ function selectHandlerPerformance2() {
 }
 
 function showTaskText(dayidx,agentidx){
-    console.log('day ' + new Date(STAT.t[dayidx]).toDateString()  + ', Agent ' + STAT.agents[agentidx-1])
-    var textobj = document.getElementById("tasktext");
-//     textobj.innerHTML = JSON.stringify(DATA.task[STAT.lastfile[agentidx-1][dayidx]],null,'\t')
-    textobj.innerHTML = JSON.stringify(DATA.task[STAT.lastfile[agentidx-1][dayidx]], function(a, b) {
-  return (Object.prototype.toString.call(b) === '[object Array]') ? JSON.stringify(b) : b;
-}, 4)
+  console.log('day ' + new Date(STAT.t[dayidx]).toDateString()  + ', Agent ' + STAT.agents[agentidx-1])
+
+  //add object metadata
+  var task = DATA.task[STAT.lastfile[agentidx-1][dayidx]];
+  var imagesRef = db.collection(FIREBASE_COLLECTION).doc(task.Imagesdoc)
+
+  imagesRef.get().then(
+    function(doc)
+    {
+      var taskname = ''
+      if (task.RewardStage == 0){
+        taskname = 'FIXATION'
+      }
+      else if (task.ObjectGridIndex.length == task.TestGridIndex.length)
+      {
+        taskname = 'SR' + task.ObjectGridIndex.length
+      }
+      else if (task.HideTestDistractors == 0){
+        taskname = 'M2S' + doc.data().TestNouns.length + ' R' + task.TestGridIndex.length
+      }
+
+      var textobj = document.getElementById("tasktext");
+  //     textobj.innerHTML = JSON.stringify(DATA.task[STAT.lastfile[agentidx-1][dayidx]],null,'\t')
+      textobj.innerHTML = 
+      "<b>" + taskname + "</b>"
+      +"<br> <b>Sample nouns:</b> " + doc.data().SampleNouns + '  (' + doc.data().SampleBagNames + ')'
+      + "<br> <b>Test nouns:</b> " + doc.data().SampleNouns + '  (' + doc.data().TestBagNames + ')'
+      + "<br>"
+      + "<br> Sample object models: " + doc.data().SampleObjects
+      + "<br> Test object models: " + doc.data().TestObjects
+      + "<br><br>"
+      + JSON.stringify(task, function(a, b) {
+        return (Object.prototype.toString.call(b) === '[object Array]') ? JSON.stringify(b) : b;
+      }, 4)
+    })
 }
 
 // 	ble.statustext = await loadTextFilefromDropbox(ENV.ParamFileName)
@@ -241,16 +236,17 @@ async function queryFirestore(){
 
   //perform query
   var query = db.collection(FIREBASE_COLLECTION)
+            .where("Doctype","==",'task')
             .where("CurrentDateValue",">=",querystart)
             .where("CurrentDateValue","<=",queryend)
-            .where("Doctype","==",'task')
-
+            
   // https://firebase.google.com/docs/firestore/query-data/get-data#get_multiple_documents_from_a_collection
   query.get().then(
     function(querySnapshot)
     {
       var ndocsquerytotal = querySnapshot.size;
       var ndocsprocessed = 0;
+
       querySnapshot.forEach(function(doc)
       {
           if (typeof(doc.data().Response) == "undefined"){
@@ -258,6 +254,9 @@ async function queryFirestore(){
               if (doc.data().Doctype == "task"){
                   console.log('Doc contains no response data, skipping')
               }
+          }
+          else if (doc.data().Agent == "Eliaso" || doc.data().Agent == "Sophieo" || doc.data().Agent == "Youno"){
+            console.log('Doc is debug file of Eliaso/Sophieo/Youno, skipping')
           }
           else //contains trial data
           {
@@ -297,11 +296,8 @@ async function queryFirestore(){
 
               console.log(doc.id, " ==> ", doc.data().CorrectItem.length
                + ' trials, ' + Math.round(100*ncorrect/doc.data().Response.length) + "%");
-
           } //if contains data
-          
           ndocsprocessed++
-//           updateProgressBar(100*ndocsprocessed/ndocsquerytotal)
       }); // forEach doc
 
       //Delete some of task metadata & trialdata to save space
@@ -589,6 +585,46 @@ updateDateChip()
 // (async function(){
 //     await firebaseToggleSignIn()
 // })();
+
+//================== AUTHENTICATE GOOGLE ==================//
+// [START authstatelistener]
+var provider = new firebase.auth.GoogleAuthProvider();
+provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
+// firebase.auth().onAuthStateChanged(function(user) {
+//   if (user) {
+//         GOOGLEUSER.ResearcherDisplayName = user.displayName;
+//         GOOGLEUSER.ResearcherEmail = user.email;
+//         GOOGLEUSER.ResearcherID = user.uid          
+//         console.log('USER ' + user.email + ' signed in')
+//   } else {
+//     firebase.auth().signInWithRedirect(provider)
+//   }
+// });
+firebase.auth().getRedirectResult().then(function(result) {
+  if (result.user) {
+    // User just signed in. you can get the result.credential.
+    GOOGLEUSER.ResearcherDisplayName = result.user.displayName;
+	GOOGLEUSER.ResearcherEmail = result.user.email;
+	GOOGLEUSER.ResearcherID = result.user.uid
+
+	console.log('Sign-In Redirect Result, USER ' + result.user.email + ' is signed in')
+  }
+  else if (firebase.auth().currentUser) {
+    // User already signed in.
+	GOOGLEUSER.ResearcherDisplayName = firebase.auth().currentUser.displayName;
+	GOOGLEUSER.ResearcherEmail = firebase.auth().currentUser.email;
+	GOOGLEUSER.ResearcherID = firebase.auth().currentUser.uid
+
+	console.log('Already Signed In, USER ' + firebase.auth().currentUser.email + ' is signed in')
+  }
+  else {
+    // No user signed in, update your UI, show the redirect sign-in screen.
+	firebase.auth().signInWithRedirect(provider)
+  }
+});
+//================== (end) AUTHENTICATE GOOGLE ==================//
+
+
 loadGoogleCharts();
 
 </script>

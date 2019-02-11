@@ -46,11 +46,13 @@
 <!-- ************* BODY *************** -->
 <body bgcolor=#7F7F7F>
 <div id="canvasdiv" style="position:relative; width:100vw; height:100vh">
-	<button name="connectble" style="visibility:hidden; position: absolute; top: 40%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to Bluetooth juicer</button>
+	<button name="googlesignin" style="visibility:hidden; position: absolute; top: 40%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Sign Back In</button>
 
-	<button name="connectusb" style="visibility:hidden; position: absolute; top: 50%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to USB juicer</button>
+	<button name="connectble" style="visibility:hidden; position: absolute; top: 50%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to Bluetooth juicer</button>
 
-	<button name="noble" style="visibility:hidden; position: absolute; top: 60%; left: 45%; height: 50px; width: 200px; border-radius: 20px">No juicer</button>
+	<button name="connectusb" style="visibility:hidden; position: absolute; top: 60%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to USB juicer</button>
+
+	<button name="noble" style="visibility:hidden; position: absolute; top: 70%; left: 45%; height: 50px; width: 200px; border-radius: 20px">No juicer</button>
 
 	<button name="pumpflush" style="z-index:102; visibility:hidden; position: absolute; top: 12%; left: 80%; height: 45px; width: 150px; border-radius: 20px">Flush line</button>
 
@@ -99,6 +101,60 @@
 
 <script>
 
+
+//================== AUTHENTICATE GOOGLE ==================//
+// [START authstatelistener]
+var provider = new firebase.auth.GoogleAuthProvider();
+provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
+// firebase.auth().onAuthStateChanged(function(user) {
+// 	if (user) {
+//         ENV.ResearcherDisplayName = user.displayName;
+//         ENV.ResearcherEmail = user.email;
+//         ENV.ResearcherID = user.uid
+          
+//         console.log('Auth State Change, USER ' + user.email + ' is signed in')
+//         updateHeadsUpDisplay()
+// 	} 
+// 	else if (firebase.auth().currentUser){
+//         ENV.ResearcherDisplayName = firebase.auth().currentUser.displayName;
+//         ENV.ResearcherEmail = firebase.auth().currentUser.email;
+//         ENV.ResearcherID = firebase.auth().currentUser.uid
+          
+//         console.log('Auth State Change, USER ' + firebase.auth().currentUser.email + ' is signed in')
+//         updateHeadsUpDisplay()		
+// 	}
+// 	else {
+// 		firebase.auth().signInWithRedirect(provider)
+// 	}
+// });
+
+firebase.auth().getRedirectResult().then(function(result) {
+  if (result.user) {
+    // User just signed in. you can get the result.credential.
+    ENV.ResearcherDisplayName = result.user.displayName;
+	ENV.ResearcherEmail = result.user.email;
+	ENV.ResearcherID = result.user.uid
+
+	console.log('Sign-In Redirect Result, USER ' + result.user.email + ' is signed in')
+	updateHeadsUpDisplay()
+  }
+  else if (firebase.auth().currentUser) {
+    // User already signed in.
+	ENV.ResearcherDisplayName = firebase.auth().currentUser.displayName;
+	ENV.ResearcherEmail = firebase.auth().currentUser.email;
+	ENV.ResearcherID = firebase.auth().currentUser.uid
+
+	console.log('Sign-In Redirect Result, USER ' + firebase.auth().currentUser.email + ' is signed in')
+	updateHeadsUpDisplay()		
+  }
+  else {
+    // No user signed in, update your UI, show the redirect sign-in screen.
+	firebase.auth().signInWithRedirect(provider)
+  }
+});
+//================== (end) AUTHENTICATE GOOGLE ==================//
+
+
 //================== AUTHENTICATE DROPBOX ==================//
 var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "mkturk.html"
 if (isAuthenticated()){
@@ -114,9 +170,9 @@ else {
 
 //================== AUTHENTICATE GOOGLE ==================//
 //self-executing anonymous function
-(async function(){
-	await firebaseToggleSignIn()	
-})()
+// (async function(){
+// 	await firebaseToggleSignIn()	
+// })()
 //================== (end) AUTHENTICATE GOOGLE ==================//
 
 
@@ -146,12 +202,19 @@ subjectlistobj.addEventListener("change",subjectlist_listener,false);
 // }) //document.domcontentLoaded callback
 
 // Button callbacks for inline connection to arduino device
+document.querySelector("button[name=googlesignin]").style.display = "block"
+document.querySelector("button[name=googlesignin]").style.visibility = "visible"
+document.querySelector("button[name=googlesignin]").addEventListener(
+	'pointerup',firebaseRedirectSignIn,false)
+
 document.querySelector("button[name=connectble]").addEventListener(
 	'pointerup',findBLEDevice,false)
 document.querySelector("button[name=connectusb]").addEventListener(
 	'pointerup',findUSBDevice,false)
 document.querySelector("button[name=noble]").addEventListener(
 	'pointerup',skipHardwareDevice,false)
+
+
 
 //button callback for asynchronous connection to bluetooth scale
 document.querySelector("button[name=connectblescale]").addEventListener(
@@ -242,6 +305,7 @@ function skipHardwareDevice(event){
 
 		await connectHardwareButtonPromise()
 
+		document.querySelector("button[name=googlesignin]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 		document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 		document.querySelector("button[name=connectusb]").style.display = "none"
 		document.querySelector("button[name=noble]").style.display = "none"		
