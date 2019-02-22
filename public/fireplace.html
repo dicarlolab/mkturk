@@ -126,6 +126,7 @@ function selectHandlerPerformance1() {
     if (item.row != null && item.column != null) {
       var str = dataPerformance.getFormattedValue(item.row, item.column);
       message += '{row:' + item.row + ',column:' + item.column + '} = ' + str + '\n';
+//       dataPerformance.setFormattedValue(item.row, item.column+1, 'new tooltip')	      
       showTaskText(item.row,item.column)
     }
   }
@@ -169,7 +170,6 @@ function showTaskText(dayidx,agentidx){
       }
 
       var textobj = document.getElementById("tasktext");
-  //     textobj.innerHTML = JSON.stringify(DATA.task[STAT.lastfile[agentidx-1][dayidx]],null,'\t')
       textobj.innerHTML = 
       "<b>" + taskname + "</b>"
       +"<br> <b>Sample nouns:</b> " + doc.data().SampleNouns + '  (' + doc.data().SampleBagNames + ')'
@@ -183,22 +183,6 @@ function showTaskText(dayidx,agentidx){
       }, 4)
     })
 }
-
-// 	ble.statustext = await loadTextFilefromDropbox(ENV.ParamFileName)
-// 	updateStatusText(ble.statustext)
-// 	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
-// 	document.querySelector("button[name=doneEditingParams]").style.display = "block"
-// 	document.querySelector("button[name=doneEditingParams]").style.visibility = "visible"
-	
-// 	await editParamsPromise()
-// 	document.querySelector("button[name=doneEditingParams]").style.display = "none"
-// 	var textobj = document.getElementById("headsuptext")
-// 	textobj.removeEventListener('touchend',headsuptext_listener)
-// 	textobj.removeEventListener('mouseup',headsuptext_listener)
-// 	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",false)
-
-
-
 //================== GOOGLE CHARTS LOADING (end) ==================//
 
 

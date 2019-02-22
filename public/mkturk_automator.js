@@ -99,7 +99,7 @@ automator_eventstring.push(
 
 		// If imagebags are changed by automator, load images at beginning of next trial. 
 		if(!old_imageBagsTest.equals(TASK.ImageBagsTest) || !old_imageBagsSample.equals(TASK.ImageBagsSample)){
-			FLAGS.need2loadImages = 1; 
+			FLAGS.need2loadImagesTrialQueue = 1; 
 automator_eventstring.push('NEW IMAGES NEEDED for this automator stage')
 		}
 

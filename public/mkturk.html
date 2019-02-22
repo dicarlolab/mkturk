@@ -156,7 +156,7 @@ firebase.auth().getRedirectResult().then(function(result) {
 
 
 //================== AUTHENTICATE DROPBOX ==================//
-var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "mkturk.html"
+var DBX_REDIRECT_URI = window.location.href
 if (isAuthenticated()){
 	//Create an instance of Dropbox with the access token
 	var dbx = new Dropbox.Dropbox({accessToken: getAccessTokenFromUrl()})
@@ -305,11 +305,12 @@ function skipHardwareDevice(event){
 
 		await connectHardwareButtonPromise()
 
-		document.querySelector("button[name=googlesignin]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 		document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 		document.querySelector("button[name=connectusb]").style.display = "none"
 		document.querySelector("button[name=noble]").style.display = "none"		
 	}
+
+	document.querySelector("button[name=googlesignin]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 
 	subjectdialog.showModal()
 	await subjectIDPromise()
@@ -393,7 +394,7 @@ function skipHardwareDevice(event){
 	FLAGS.need2loadParameters = 1
 	CURRTRIAL.num = 0
 	EVENTS.trialnum = 0
-	FLAGS.need2loadImages = 1
+	FLAGS.need2loadImagesTrialQueue = 1
 
 // =========================================================================================================== // 
 // ============ MAIN LOOP ==================================================================================== // 
@@ -404,6 +405,9 @@ while(true){
 	if (FLAGS.need2loadParameters == 1){
 		var old_ImageBagsSample = TASK.ImageBagsSample
 		var old_ImageBagsTest = TASK.ImageBagsTest
+
+		var old_ObjectGridIndex = TASK.ObjectGridIndex
+		var old_NTrialsPerBagBlock = [TASK.NTrialsPerBagBlock]
 		FLAGS.need2loadParameters = await loadParametersfromDropbox(ENV.ParamFileName);
 
 		//============= SET UP CANVAS =============//
@@ -440,8 +444,12 @@ while(true){
 		]
 
 		// Check if images were changed
-		if(!old_ImageBagsTest.equals(TASK.ImageBagsTest) || !old_ImageBagsSample.equals(TASK.ImageBagsSample)){
-			FLAGS.need2loadImages = 1; 
+		if(!old_ImageBagsTest.equals(TASK.ImageBagsTest) || 
+			!old_ImageBagsSample.equals(TASK.ImageBagsSample) ||
+			!old_ObjectGridIndex.equals(TASK.ObjectGridIndex) || 
+			!old_NTrialsPerBagBlock.equals([TASK.NTrialsPerBagBlock]))
+		{
+			FLAGS.need2loadImagesTrialQueue = 1; 
 		}
 		FLAGS.purge = 1
 		FLAGS.createnewfirestore = 1
@@ -455,7 +463,7 @@ while(true){
 
 
 	//============ CREATE IMAGE BAG & DISPLAY GRID ============//
-	if (FLAGS.need2loadImages == 1){
+	if (FLAGS.need2loadImagesTrialQueue == 1){
 		console.time('Image loading time:')
 
 		if(TASK.Automator != 1){
@@ -505,9 +513,9 @@ while(true){
 		IMAGES.imagepaths.Ordered_Samplebag_Filenames = samplebag_paths
 		IMAGES.imagepaths.Ordered_Testbag_Filenames = testbag_paths
 
-		FLAGS.need2loadImages = 0;
+		FLAGS.need2loadImagesTrialQueue = 0;
 		console.timeEnd('Image loading time:')
-	} //if need2loadImages
+	} //if need2loadImagesTrialQueue
 
 	// define image display grid
 	ENV.FixationRadius=(ENV.ImageWidthPixels/2)*TASK.FixationScale*ENV.CanvasRatio

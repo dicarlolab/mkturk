@@ -12,12 +12,10 @@ taskRef.get().then(
     function(doc)
     {
     	taskRef2.set(doc.data()).then(function(){console.log('wrote task')})
-    }
-}
+    })
 
 imagesRef.get().then(
     function(doc)
     {
     	imagesRef2.set(doc.data()).then(function(){console.log('wrote images')})
-    }
-}
+    })

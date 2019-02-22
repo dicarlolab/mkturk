@@ -4,8 +4,6 @@
 // ------ Dropbox WebApp settings ------ 
 // MKTURK
 var DBX_CLIENT_ID = "p4dju7hqsqpkm32" //mkturkissa
-var DBX_REDIRECT_URI_ROOT = "http://localhost:5000/"
-var DBX_REDIRECT_URI_ROOT = "https://mkturk.com/"
 
 // ------ Subject settings ------ 
 var subjectlist = [
