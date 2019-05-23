@@ -35,6 +35,9 @@
   //Initialize Cloud Firestore
   var db = firebase.firestore();
 
+  //Initialize Cloud Storage
+  var storage = firebase.storage();
+
   // Disable deprecated features
   db.settings({
     timestampsInSnapshots: true
@@ -98,6 +101,8 @@
 <script src="mkturk_bluetoothscale.js" type="text/javascript"></script>
 <script src="mkturk_firebase.js" type="text/javascript"></script>
 <script src="mkturk_firestore.js" type="text/javascript"></script>
+<script src="mkturk_firebasestorage.js" type="text/javascript"></script>
+
 
 <script>
 
@@ -315,13 +320,19 @@ function skipHardwareDevice(event){
 	subjectdialog.showModal()
 	await subjectIDPromise()
 	
-	//================== AWAIT LOAD SUBJECT PARAMS ==================//
+	//================== AWAIT LOAD SUBJECT PARAMS ==================//	
 	ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.txt";
+
+	console.time('firebase params')
+	var response = await loadParametersfromFirebase(ENV.ParamFileName)
+	console.timeEnd('firebase params')
+
+	console.time('dropbox params')
 	await loadParametersfromDropbox(ENV.ParamFileName)
+	console.timeEnd('dropbox params')
 
 	//================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
-	ble.statustext = await loadTextFilefromDropbox(ENV.ParamFileName)
-	updateStatusText(ble.statustext)
+	updateStatusText(JSON.stringify(TASK,null,' '));
 	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
 	document.querySelector("button[name=doneEditingParams]").style.display = "block"
 	document.querySelector("button[name=doneEditingParams]").style.visibility = "visible"
@@ -809,7 +820,7 @@ while(true){
 
 		renderScreen(CANVAS.sequencepost[0],OFFSCREENCANVAS)
 		var p1 = displayTrial(CANVAS.sequencepost,CANVAS.tsequencepost);
-		var num_trials_to_buffer_in_punishperiod = 20
+		var num_trials_to_buffer_in_punishperiod = 50
 		var p2 = TQ.generate_trials(num_trials_to_buffer_in_punishperiod)
 		playSound(3);
 		// console.time('punish download/timeout')
@@ -832,7 +843,13 @@ while(true){
 		}
 
 		// Save data asynchronously
-		saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL);
+		console.time('dropbox data')
+		await saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL);
+		console.timeEnd('dropbox data')
+
+		console.time('firebase data')
+		await saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, TRIAL);
+		console.timeEnd('firebase data')
 
 		// Save data asynchronously to Firestore
 		if (FLAGS.createnewfirestore == 1){
@@ -846,7 +863,8 @@ while(true){
 	}
 
 	//FLAGS.need2loadParameters=1: reload task which automatically creates a new data file
-	checkParameterFileStatus()
+// 	checkParameterFileStatus()
+	await checkParameterFileStatusFirebase()
 	if ( (new Date).getDate() != ENV.CurrentDate.getDate() ||
 			CURRTRIAL.num == 1000){ //in local time
 		updateEventDataonFirestore(EVENTS);

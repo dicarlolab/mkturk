@@ -18,7 +18,7 @@ constructor(){
 
 	// Todo: double buffer
 	this.num_elements_in_cache = 0; // tracking variable
-	this.max_buffer_size = 10; // (for now, arbitrary) number of unique images to keep in buffer
+	this.max_buffer_size = 100; // (for now, arbitrary) number of unique images to keep in buffer
 }
 
 
@@ -59,7 +59,15 @@ async cache_these_images(imagenames){
 		if (typeof(imagenames) == "string"){
 			var filename = imagenames; 
 			if (!(filename in this.cache_dict)){
-				var image = await loadImagefromDropbox(filename); 
+
+				console.time('dropbox image')
+				var image = await loadImagefromDropbox(filename);
+				console.timeEnd('dropbox image')
+
+				console.time('firebase image')
+				var image = await loadImagefromFirebase(filename);
+				console.timeEnd('firebase image')
+
 				this.cache_dict[filename] = image; 
 				this.num_elements_in_cache++
 				return 
