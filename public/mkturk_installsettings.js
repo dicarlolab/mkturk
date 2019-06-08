@@ -1,13 +1,9 @@
 // For each experimenter's installation of mkturk, this contains information for dropbox keys, savepaths, stimuli
 // Also used for liveplot to identify where to look for behavioral files
 
-// ------ Dropbox WebApp settings ------ 
-// MKTURK
-var DBX_CLIENT_ID = "p4dju7hqsqpkm32" //mkturkissa
-
 // ------ Subject settings ------ 
 var subjectlist = [
-"Eliaso","Youno","Tahereho","Sophieo","Praneetho","West","Waffles","Setta","Sausage","Rafiki","Hutch","Barb","AJ"
+"Eliaso","Youno","Sophieo","West","Waffles","Setta","Sausage","Rafiki","Hutch","AJ"
 ];
 
 // ------ Save location settings ------

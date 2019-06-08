@@ -33,11 +33,11 @@ async function saveBehaviorDatatoFirestore(TASK,ENV,CANVAS){
 
 	// Commit the batch
 	batch.commit().then(function () {
-	    console.log("Firestore task & image docs batch created");
+	    console.log("FIRESTORE: task & image docs batch created");
 	    FLAGS.createnewfirestore = 0;
 	})
 	.catch(function(error) {
-		console.error("!Error creating firestore task or image doc: ", error);
+		console.error("FIRESTORE: !Error creating database task or image doc: ", error);
 	});
 }
 //================== CREATE FIRESTORE DOCS (end) ====================//
@@ -71,13 +71,13 @@ async function updateEventDataonFirestore(EVENTS){
 	var currtrial = CURRTRIAL.num
 	await batch.commit().then(function () {
 		FLAGS.firestorelastsavedtrial = currtrial
-	    console.log("Trial " + FLAGS.firestorelastsavedtrial + "--Batch updated Firestore task & image docs");
+	    console.log("FIRESTORE: Trial " + FLAGS.firestorelastsavedtrial + "--Batch updated database task & image docs");
 
 	    delete firestoreTimer //to start a new timer
 		pingFirestore()
 	})
 	.catch(function(error) {
-		console.error("!Trial" + FLAGS.firestorelastsavedtrial + "--Error updating firestore task or image doc: ", error);
+		console.error("FIRESTORE: !Trial" + FLAGS.firestorelastsavedtrial + "--Error updating database task or image doc: ", error);
 
 		delete firestoreTimer //to start a new timer
 		pingFirestore()
@@ -90,9 +90,9 @@ async function updateEventDataonFirestore(EVENTS){
 function getFirestoreDocSize(collectionName,docRef,doctype){
     docRef.get().then(function(doc){
         if (doc.exists){
-            console.log("Document found " + doc.id)
+            console.log("FIRESTORE: Document found " + doc.id)
             docSize = calcFirestoreDocSize(collectionName,doc.id,doc.data())
-            console.log("Document size : " + docSize)
+            console.log("FIRESTORE: Document size : " + docSize)
             DOCSIZE[doctype][CURRTRIAL.num-1] = docSize
             if (docSize > 200000){
             	console.log("Firestore " + doc.id + " is LARGE!  " + docSize + " bytes")
@@ -162,9 +162,9 @@ function calcObjSize(obj) {
 
 function savetofirestore(docref,data){
 	docref.set(data).then(function () {
-	    console.log("wrote to firestore");
+	    console.log("FIRESTORE: wrote to firestore");
 	})
 	.catch(function(error) {
-		console.error("!Error creating firestore meta/trialseries docs: ", error);
+		console.error("FIRESTORE: !Error creating database meta/trialseries docs: ", error);
 	});
 }

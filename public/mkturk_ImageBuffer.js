@@ -6,9 +6,7 @@ class ImageBuffer {
 	// Construct with image_source (directory string or list of directory strings) and all_filenames ([first to download, last to download])
 
 	// Todo: double buffer to serve imagelists > device RAM (basically, set upper limit on size of cache)
-	//														and then flush cache as needed) 
-	// Todo: make this Dropbox independent - make this usable with local disk, or in-lab server, for example
-	// Todo:  
+	//														and then flush cache as needed)
 
 constructor(){
 	// future: some "generator" object that can take queries 
@@ -60,13 +58,7 @@ async cache_these_images(imagenames){
 			var filename = imagenames; 
 			if (!(filename in this.cache_dict)){
 
-				console.time('dropbox image')
-				var image = await loadImagefromDropbox(filename);
-				console.timeEnd('dropbox image')
-
-				console.time('firebase image')
 				var image = await loadImagefromFirebase(filename);
-				console.timeEnd('firebase image')
 
 				this.cache_dict[filename] = image; 
 				this.num_elements_in_cache++
@@ -93,7 +85,8 @@ async cache_these_images(imagenames){
 					continue
 				}
 			}
-			var image_array = await loadImageArrayfromDropbox(requested_imagenames)
+			var image_array = await loadImageArrayfromFirebase(requested_imagenames)
+
 			for (var i = 0; i < image_array.length; i++){
 				this.cache_dict[requested_imagenames[i]] = image_array[i]; 
 				this.num_elements_in_cache++; 

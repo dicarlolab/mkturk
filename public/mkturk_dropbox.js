@@ -1,3 +1,32 @@
+//_____________________________________________________________
+// CODE TO ADD TO MKTURK.HTML IF PREFER TO USE DROPBOX
+
+// <script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+// <script src="mkturk_dropbox.js" type="text/javascript"></script>
+
+
+// //================== AUTHENTICATE DROPBOX ==================//
+// var DBX_REDIRECT_URI = window.location.href
+// if (isAuthenticated()){
+// 	//Create an instance of Dropbox with the access token
+// 	var dbx = new Dropbox.Dropbox({accessToken: getAccessTokenFromUrl()})
+// }
+// else {
+// 	var dbx = new Dropbox.Dropbox({clientId: DBX_CLIENT_ID});
+// 	var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
+// 	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
+// }
+// //=============== (end) AUTHENTICATE DROPBOX ===============//
+// ________________________________________________________________________
+
+
+//_____________________________________________________________
+// CODE TO ADD TO MKTURK_INSTALLSETTINGS.JS IF PREFER TO USE DROPBOX
+// // ------ Dropbox WebApp settings ------ 
+// var DBX_CLIENT_ID = "p4dju7hqsqpkm32" //mkturkissa
+// ________________________________________________________________________
+
+
 //return whether user was redirected here after authenticating
 function isAuthenticated(){
 	return !!getAccessTokenFromUrl()
@@ -338,20 +367,13 @@ async function loadImageArrayfromDropbox(imagepathlist){
 
 			for (var i = 0; i < 3; i++){
 
-// 				var image_requests = imagepathlist.map(loadImagefromDropbox);
+				var image_requests = imagepathlist.map(loadImagefromDropbox);
 
-				var image_requests2 = imagepathlist.map(loadImagefromFirebase);
-
-// 				console.time('dropbox image batch')
-// 				var image_array = await Promise.all(image_requests)
-// 				console.timeEnd('dropbox image batch')
+				// console.time('dropbox image batch')
+				var image_array = await Promise.all(image_requests)
+				// console.timeEnd('dropbox image batch')
 
 console.log('buffering ' + imagepathlist.length + ' images')
-				console.time('firebase image batch')
-// 				var t0=performance.now()
-				var image_array = await Promise.all(image_requests2)
-// 				console.log(performance.now()-t0)
-				console.timeEnd('firebase image batch')
 
 				var load_success = 1
 				for (var j=0; j < image_array.length; j++){

@@ -23,13 +23,13 @@ constructor(samplingStrategy, ImageBagsSample, ImageBagsTest){
 	this.IB = new ImageBuffer(); 
 
 	// Settings 
-	this.max_queue_size = 500; // Max number of trials (and their images) to have prepared from now; to improve browser performance
+	this.max_queue_size = 5200; // Max number of trials (and their images) to have prepared from now; to improve browser performance
 	this.num_in_queue = 0; // Tracking variable
 }
 
 async build(trial_cushion_size){
 	// Call after construction
-	var funcreturn = await loadImageBagPathsParallel(this.ImageBagsSample); 
+	var funcreturn = await loadImageBagPathsParallelFirebase(this.ImageBagsSample); 
 	this.samplebag_labels = funcreturn[1];
 	this.samplebag_paths = funcreturn[0]; 
 
@@ -38,7 +38,7 @@ async build(trial_cushion_size){
 		this.samplebag_block_indices[i] = i;
 	}
 
-	var funcreturn = await loadImageBagPathsParallel(this.ImageBagsTest); 
+	var funcreturn = await loadImageBagPathsParallelFirebase(this.ImageBagsTest); 
 	this.testbag_labels = funcreturn[1];
 	this.testbag_paths = funcreturn[0];
 
@@ -55,7 +55,10 @@ async generate_trials(n_trials){
 
 	// Adds trials to queue and downloads their images 
 
-	n_trials = Math.min(this.max_queue_size - this.num_in_queue, n_trials); 
+	n_trials = Math.min(this.max_queue_size - this.num_in_queue, n_trials);
+	if (this.max_queue_size <= this.num_in_queue){
+		n_trials=0
+	}
 	if(n_trials == 0){
 		console.log('TQ.generate_trials(): Queue is full or no trials were requested')
 		return 

@@ -1,6 +1,6 @@
 //------- ATOMIC OPERATIONS -------//
 
-//---- Load JSON text
+//------------- LOAD JSON TEXT --------------//
 async function loadTextfromFirebase(textfile_path){
 	var textfileRef = storage.ref().child(textfile_path)
 	url = await textfileRef.getDownloadURL()
@@ -8,19 +8,19 @@ async function loadTextfromFirebase(textfile_path){
 	return response.json()
 } //ReadFromFirebase
 
-//---- Load image
+//------------- LOAD IMAGE --------------//
 async function loadImagefromFirebase(imagefile_path){
-	var imagefileRef = storage.ref().child(imagefile_path)
+try{
+	var imagefileRef = await storage.ref().child(imagefile_path)
 	var url = await imagefileRef.getDownloadURL()
+	.catch((error) => console.log(error));
 
 	return new Promise(
 		function(resolve, reject){
 			try {
 				var image = new Image(); 
 				image.onload = function(){
-					// console.log('Loaded: ' + (imagepath));
 					updateImageLoadingAndDisplayText('Loaded: ' + imagefile_path)
-// 					console.log('Loaded: ' + imagefile_path)
 					resolve(image)				
 				}
 				image.src = url
@@ -30,31 +30,143 @@ async function loadImagefromFirebase(imagefile_path){
 			} //catch
 		}
 	) //Promise
+}
+catch (error){
+	console.log(error)
+}
 } //ReadFromFirebase
 
 
-//---- Get file metadata
+//------------- GET METADATA --------------//
 async function getFileMetadataFirebase(file_path){
 	return await storage.ref().child(file_path).getMetadata()
 // Even without Object Versioning enabled, all Cloud Storage objects have generation numbers and meta-generation numbers.
 // GENERATION: The generation number changes each time the object is overwritten, and the meta-generation number changes each time the object's metadata is updated.
 // MD5HASH: A Base64-encoded MD5 hash of the object being uploaded.
+// https://firebase.google.com/docs/reference/js/firebase.storage.FullMetadata.html
 }
 
-//---- Get file list
+async function getFileListRecursiveFirebase(dir,ext){
+	var fileList = await storage.ref().child(dir).listAll()
+
+	var files = []
+	for (const item of fileList.prefixes){
+		var subfileList = await getFileListRecursiveFirebase(dir + item.name + '/',ext)
+		files = [...files, ...subfileList]
+	}
+	for (i=0; i<=fileList.items.length-1; i++){
+		if (typeof(ext) == 'string'){
+			if (fileList.items[i].name.endsWith(ext)){
+				files.push(dir + fileList.items[i].name)
+			} //if correct file extension
+			else {
+				// file does not have requested extension
+			}
+		}
+		else {
+			files.push(dir + fileList.items[i].name)		
+		} //if file extension required
+	}
+	return files
+} //recursviely accumulate files from subfolders (if any)
 
 
+//======================================//
+//======================================//
+
+//------- NON-ATOMIC OPERATIONS -------//
+
+
+//------- LIST IMAGES FROM MULTIPLE FOLDERS -------//
+async function loadImageBagPathsParallelFirebase(imagebagroots){
+	var imagepath_promises = imagebagroots.map(file => getFileListRecursiveFirebase(file,'.png')); //create array of recursive path load Promises
+	var funcreturn = await Promise.all(imagepath_promises);
+	//Assemble images and add labels
+	var bagitems_paths = [] // Can also be paths to a single .png file. 
+	var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
+	for (var i=0; i<=funcreturn.length-1; i++){
+		bagitems_paths.push(... funcreturn[i])
+		for (var j=0; j<= funcreturn[i].length-1; j++){
+			bagitems_labels.push(i)
+		}
+	} //for i labels
+	return [bagitems_paths, bagitems_labels] 
+}
+
+async function loadImageArrayfromFirebase(imagepathlist){
+	try{
+		var MAX_SIMULTANEOUS_REQUESTS = 2600 // Need to empirically test GCS API's download request limit in a "short" amount of time.
+		var MAX_TOTAL_REQUESTS = 5200 // Not empirically tested yet
+
+		if (imagepathlist.length > MAX_TOTAL_REQUESTS) {
+			throw "Under the Firebase Cloud Storage API, cannot load more than "+MAX_TOTAL_REQUESTS+" images at a short time period. You have requested "
+			+imagepathlist.length+". Consider using an image loading strategy that reduces the request rate on Google Cloud Storage."
+			return 
+		}
+
+		if (imagepathlist.length > MAX_SIMULTANEOUS_REQUESTS){
+			console.log('FIREBASE: Chunking your '+ imagepathlist.length+' image requests into '+Math.ceil(imagepathlist.length / MAX_SIMULTANEOUS_REQUESTS)+' chunks of (up to) '+MAX_SIMULTANEOUS_REQUESTS+' each. ')
+			var image_array = []
+
+			for (var i = 0; i < Math.ceil(imagepathlist.length / MAX_SIMULTANEOUS_REQUESTS); i++){
+				var lb = i*MAX_SIMULTANEOUS_REQUESTS; 
+				var ub = i*MAX_SIMULTANEOUS_REQUESTS + MAX_SIMULTANEOUS_REQUESTS; 
+				var partial_pathlist = imagepathlist.slice(lb, ub);
+
+				var partial_image_requests = []
+				for (var j = 0; j<partial_pathlist.length; j++){
+					partial_image_requests.push(loadImagefromFirebase(partial_pathlist[j]))
+				}
+
+				var partial_image_array = await Promise.all(partial_image_requests)
+				image_array.push(... partial_image_array);
+			}
+			
+		}
+		else { // If number of images is less than MAX_SIMULTANEOUS_REQUESTS, request them all simultaneously: 
+			for (var i = 0; i < 3; i++){
+				var image_requests = imagepathlist.map(loadImagefromFirebase);
+
+				console.log('FIREBASE: buffering ' + imagepathlist.length + ' images')
+				var image_array = await Promise.all(image_requests)
+				.catch(function(error){ console.log(error)}).then()
+
+				var load_success = 1
+				for (var j=0; j < image_array.length; j++){
+					if (image_array[j].src == "failed"){
+						load_success = 0
+					}
+				}
+
+				if (load_success == 1){
+					break
+				}
+				else if (load_success <= 0){
+					await timeout(i*250)
+					console.log("FIREBASE: RETRYING IMAGE LOAD for " + i + 'th time!!!!!')
+				}
+			} //for 3 retry attempts
+		}
+		return image_array
+	}
+	catch(err){
+		console.log(err)
+	}
+} //loadImageArrayfromFirebase
+
+
+//------------- CHECK PARAMS VERSION --------------//
 async function checkParameterFileStatusFirebase(){
 try {
-	var filemeta = await getFileMetadataFirebase(ENV.DataFileName)
-	if (ENV.ParamFileRev != filemeta.md5Hash){
-		ENV.ParamFileRev = filemeta.md5Hash
+	var filemeta = await getFileMetadataFirebase(ENV.ParamFileName)
+	if (ENV.ParamFileRev != filemeta.generation){
+		ENV.ParamFileRev = filemeta.generation
 		ENV.ParamFileDate = new Date(filemeta.updated)
 
-		// FLAGS.need2loadParameters = 1
+		FLAGS.need2loadParameters = 1
 		updateEventDataonFirestore(EVENTS);
 
-		console.log('Parameter file on disk was changed. New rev =' + ENV.ParamFileRev)
+		console.log('FIREBASE: Parameter file on disk was changed. New rev =' + ENV.ParamFileRev)
 	} //if file updated
 } //try
 catch(error){
@@ -63,17 +175,18 @@ catch(error){
 }
 
 
+//------------- LOAD PARAMS --------------//
 async function loadParametersfromFirebase(paramfile_path){
 	try{ 
 		data = await loadTextfromFirebase(paramfile_path)
-// 		filemeta = await dbx.filesGetMetadata({path: paramfile_path})
-
 		TASK = {}
 		TASK = data
 
-// 		ENV.ParamFileName = filemeta.path_display; 
-// 		ENV.ParamFileRev = filemeta.rev
-// 		ENV.ParamFileDate = new Date(filemeta.client_modified)
+		var filemeta = await getFileMetadataFirebase(paramfile_path)
+		ENV.ParamFileName = '/' + filemeta.fullPath; 
+		ENV.ParamFileRev = filemeta.generation
+		ENV.ParamFileDate = new Date(filemeta.updated)
+
 		return 0; //need2loadParameters
 	}
 	catch(error){
@@ -82,9 +195,82 @@ async function loadParametersfromFirebase(paramfile_path){
 	}
 }
 
+//------------- SAVE PARAMS FROM TEXT --------------//
+async function saveParameterTexttoFirebase(parameter_text){
+	try{
+	    datastr = parameter_text
+
+	    var success = false
+	    var i = 1; 
+	    var timeout_seed =  1000; 
+	    var max_retries = 10; 
+
+	    while(!success && i < max_retries){
+	    	try{
+
+				var blob = new Blob([ datastr ], {type : 'application/json'});
+
+				// Create file metadata including the content type
+				var metadata = { contentType: 'text/json' };
+
+				// Upload the file and metadata
+				var response = await storage.ref().child(ENV.ParamFileName).put(blob, metadata);
+				CURRTRIAL.lastFirebaseSave = new Date(response.metadata.timeCreated)
+				console.log("FIREBASE: Successful parameter file upload. Size:" + Math.round(response.totalBytes/1000) + 'kb')
+			}
+			catch(error){
+				console.log(error)
+				console.log('FIREBASE: Trying to write in '+(timeout_seed*i)+'ms...on try '+ i)
+				sleep(timeout_seed * i)
+				i++
+				continue;
+			} //catch
+			success = true
+		} //while
+	} //try
+	catch (error){
+		console.error(error)
+	}
+
+	try{
+
+		var filemeta = await getFileMetadataFirebase(ENV.ParamFileName)
+		if (ENV.ParamFileRev != filemeta.generation){
+			ENV.ParamFileRev = filemeta.generation
+			ENV.ParamFileDate = new Date(filemeta.updated)
+			console.log('FIREBASE: Parameter file was updated. Rev=' + ENV.ParamFileRev)
+		}//if
+	} //try
+	catch(error) {
+		console.error(error)
+	} //catch
+}
+
+//------------- SAVE PARAMS FROM OBJECT --------------//
+async function saveParameterstoFirebase() {
+	try{
+	    var datastr = JSON.stringify(TASK,null,' ');
+		var blob = new Blob([ datastr ], {type : 'application/json'});
+
+		// Upload the file and metadata
+		var response = await storage.ref().child(ENV.ParamFileName).put(blob, metadata);
+		var filemeta = await getFileMetadataFirebase(ENV.ParamFileName)
+			if (ENV.ParamFileRev != filemeta.generation){
+				ENV.ParamFileRev = filemeta.generation
+				ENV.ParamFileDate = new Date(filemeta.updated)
+			}//if filemeta
+
+		console.log("FIREBASE: TASK written to disk as "+ENV.ParamFileName+". Size: " + Math.round(response.totalBytes/1000) + 'kb')
+		return 0; //need2saveParameters
+	}
+	catch (error){
+		console.error(error)
+		return 1 //need2saveParameters
+	}
+}
 
 
-//---- Write text
+//------------- SAVE DATA --------------//
 async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, TRIAL){
 	var dataobj = [] 
 
@@ -103,77 +289,60 @@ async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, TRIAL){
 
 	// Upload the file and metadata
 	var response = await storage.ref().child(ENV.DataFileName).put(blob, metadata);
-	CURRTRIAL.lastFirebaseSave = new Date(response.metadata.timeCreated)
+	CURRTRIAL.lastFirebaseSave = new Date(response.metadata.updated)
 	console.log("FIREBASE: Successful behavior file upload. Size:" + Math.round(response.totalBytes/1000) + 'kb')
 } //UploadToFirebase
 
 
+//------------- LOAD AUDIO --------------//
+function loadSoundfromFirebase(src,idx){
+	return new Promise(async function(resolve,reject){
+		try {
+			var fileRef = storage.ref().child(SOUND_FILEPREFIX + src + ".wav")
+			url = await fileRef.getDownloadURL()
+			response = await fetch(url)
+			fileBlob = await response.blob()
+
+			var reader = new FileReader()
+			reader.onload = function(e){
+				audiocontext.decodeAudioData(reader.result).then(function(buffer){
+					sounds.buffer[idx] = buffer;
+					resolve(idx)				
+				})
+			} //reader.onload
+			reader.readAsArrayBuffer(fileBlob)
+		} //try
+		catch (error){
+			console.error(error)
+			reject('reject')
+		}//catch
+	})//promise
+} //loadSoundfromFirebase
 
 
-// async function saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL){
-// 	try{
-//         var dataobj = [] 
+//------------- GET RECENT BEHAVIOR FILE PATHS --------------//
+async function getMostRecentBehavioralFilePathsFromFirebase(num_files_to_get, subject_id, save_directory){
+	var file_list = []
+	try{
+		// TODO: add code for reading huge folders -- (see getImageListDropboxRecursive)
+		response = await getFileListRecursiveFirebase(save_directory,'.txt')
 
-// 		dataobj.push(ENV)
-// 		dataobj.push(IMAGES.imagepaths)
-// 		dataobj.push(CANVAS)
-// 		dataobj.push(TASK)
-// 		dataobj.push(TRIAL)
-// 		datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
+		var q2=0;
+		for (var q = 0; q <= response.length-1; q++){
+			if (response[q].indexOf(subject_id) != -1){
+				file_list[q2] = response[q]
+				q2++;
+			}
+		} //for
 
-// 		// TODO: 
-// 		// Check if folder ENV.DataFileName exists 
-// 		// If not, create it for this subjectID using dbx.filesCreateFolder (see: http://dropbox.github.io/dropbox-sdk-js/Dropbox.html#filesCreateFolder__anchor)
+		// [oldest,...,most recent]
+		file_list.sort();
 
-// 		response = await dbx.filesUpload({
-// 			path: ENV.DataFileName,
-// 			contents: datastr,
-// 			mode: {[".tag"]: "overwrite"} })
-// 			CURRTRIAL.lastDropboxSave = new Date(response.client_modified)
-// 			console.log("Successful behavior file upload. Size:" + response.size)
-// 		}
-// 	catch(error){
-// 		console.error(error)
-// 	}
-// }
-
-
-
-// async function loadImagefromDropbox(imagepath){
-// 	// Loads and returns a single image located at imagepath into an Image()
-// 	// Upon failure (e.g. from Dropbox API limit), will retry up to MAX_RETRIES. 
-// 	// Will wait between retries with linear increase in waittime between tries. 
-// 	return new Promise(
-// 		function(resolve, reject){
-// 			try{
-// 				try{
-// 					dbx.filesDownload({path: imagepath}).then( 
-// 						function(data){
-// 							var data_src = window.URL.createObjectURL(data.fileBlob); 	
-// 							var image = new Image(); 
-
-// 							image.onload = function(){
-// 								// console.log('Loaded: ' + (imagepath));
-// 								updateImageLoadingAndDisplayText('Loaded: ' + imagepath)
-// 								resolve(image)
-// 								}
-// 							image.src = data_src
-// 						}
-// 					).catch(function(error){
-// 						console.log(error)
-// 						console.log("Dropbox image load failed!!")
-// 						var image = {src: 'failed'}
-// 						resolve(image)
-// 					})
-// 				}
-// 				catch(error){
-// 					console.log(error)
-// 				}
-// 			}
-// 			catch(error){
-// 				console.log(error)
-// 				resolve(0)
-// 			}
-// 		}
-// 	)
-// }
+		// Return most recent files 
+		num_files = file_list.length
+		return file_list.slice(num_files - num_files_to_get, num_files)
+	}
+	catch (error) {
+		console.error(error)
+	} //try
+} //getMostRecentBehavioralFilePathsFromFirebase

@@ -8,18 +8,17 @@
 <link rel="icon" href="mkturklogo48.png">
 
 <script src="mkturk_installsettings.js"></script>
-<script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
-
 
 <!-- Firebase App is always required and must be first -->
-<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase.js"></script>
-<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase-app.js"></script>
 
 <!-- Add additional services that you want to use -->
-<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase-storage.js"></script>
+<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase-functions.js"></script>
 
-<script src="https://www.gstatic.com/firebasejs/5.5.5/firebase.js"></script>
 <script>
   // Initialize Firebase
   var config = {
@@ -37,11 +36,6 @@
 
   //Initialize Cloud Storage
   var storage = firebase.storage();
-
-  // Disable deprecated features
-  db.settings({
-    timestampsInSnapshots: true
-  });
 </script>
 
 </head>
@@ -90,7 +84,6 @@
 
 <script src="mkturk_globalvariables.js"></script>
 <script src="mkturk_eventlisteners.js" type="text/javascript"></script>
-<script src="mkturk_dropbox.js" type="text/javascript"></script>
 <script src="mkturk_imagebuffer.js" type="text/javascript"></script>
 <script src="mkturk_trialqueue.js" type="text/javascript"></script>
 <script src="mkturk_screenfunctions.js"></script>
@@ -111,28 +104,6 @@
 // [START authstatelistener]
 var provider = new firebase.auth.GoogleAuthProvider();
 provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
-// firebase.auth().onAuthStateChanged(function(user) {
-// 	if (user) {
-//         ENV.ResearcherDisplayName = user.displayName;
-//         ENV.ResearcherEmail = user.email;
-//         ENV.ResearcherID = user.uid
-          
-//         console.log('Auth State Change, USER ' + user.email + ' is signed in')
-//         updateHeadsUpDisplay()
-// 	} 
-// 	else if (firebase.auth().currentUser){
-//         ENV.ResearcherDisplayName = firebase.auth().currentUser.displayName;
-//         ENV.ResearcherEmail = firebase.auth().currentUser.email;
-//         ENV.ResearcherID = firebase.auth().currentUser.uid
-          
-//         console.log('Auth State Change, USER ' + firebase.auth().currentUser.email + ' is signed in')
-//         updateHeadsUpDisplay()		
-// 	}
-// 	else {
-// 		firebase.auth().signInWithRedirect(provider)
-// 	}
-// });
-
 firebase.auth().getRedirectResult().then(function(result) {
   if (result.user) {
     // User just signed in. you can get the result.credential.
@@ -159,28 +130,6 @@ firebase.auth().getRedirectResult().then(function(result) {
 });
 //================== (end) AUTHENTICATE GOOGLE ==================//
 
-
-//================== AUTHENTICATE DROPBOX ==================//
-var DBX_REDIRECT_URI = window.location.href
-if (isAuthenticated()){
-	//Create an instance of Dropbox with the access token
-	var dbx = new Dropbox.Dropbox({accessToken: getAccessTokenFromUrl()})
-}
-else {
-	var dbx = new Dropbox.Dropbox({clientId: DBX_CLIENT_ID});
-	var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
-	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
-}
-//=============== (end) AUTHENTICATE DROPBOX ===============//
-
-//================== AUTHENTICATE GOOGLE ==================//
-//self-executing anonymous function
-// (async function(){
-// 	await firebaseToggleSignIn()	
-// })()
-//================== (end) AUTHENTICATE GOOGLE ==================//
-
-
 // GET PARAMFILE NAME
 var subjectdialog = document.getElementById("subjectID_dialog");
 var subjectlistobj = document.getElementById("subjectID_list");
@@ -191,20 +140,6 @@ for (var i=subjectlist.length-1; i>=0; i--){
 	subjectlistobj.appendChild(opt);
 }
 subjectlistobj.addEventListener("change",subjectlist_listener,false);
-
-// Document callback 
-// document.addEventListener('DOMContentLoaded', event => {
-//       // START UP: Open (instantiate) port before assign it receive callbacks
-//       (async function(){
-//           await findUSBDevice(event)
-//           if (typeof(port.connected) == 'undefined') {
-//             console.log('No device found on page load.');
-//           }
-//           else {
-//             console.log('Successfully connected USB device on page load.');
-//           }
-//         })()
-// }) //document.domcontentLoaded callback
 
 // Button callbacks for inline connection to arduino device
 document.querySelector("button[name=googlesignin]").style.display = "block"
@@ -219,9 +154,7 @@ document.querySelector("button[name=connectusb]").addEventListener(
 document.querySelector("button[name=noble]").addEventListener(
 	'pointerup',skipHardwareDevice,false)
 
-
-
-//button callback for asynchronous connection to bluetooth scale
+//Button callback for asynchronous connection to bluetooth scale
 document.querySelector("button[name=connectblescale]").addEventListener(
 	'pointerup',blescaleconnect,false)
 
@@ -294,6 +227,7 @@ function skipHardwareDevice(event){
 
 
 (async function(){
+	
 	var event = {}
 	event.type = "AutoConnect"
 	await findUSBDevice(event)
@@ -322,14 +256,7 @@ function skipHardwareDevice(event){
 	
 	//================== AWAIT LOAD SUBJECT PARAMS ==================//	
 	ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.txt";
-
-	console.time('firebase params')
-	var response = await loadParametersfromFirebase(ENV.ParamFileName)
-	console.timeEnd('firebase params')
-
-	console.time('dropbox params')
-	await loadParametersfromDropbox(ENV.ParamFileName)
-	console.timeEnd('dropbox params')
+	await loadParametersfromFirebase(ENV.ParamFileName)
 
 	//================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
 	updateStatusText(JSON.stringify(TASK,null,' '));
@@ -346,8 +273,8 @@ function skipHardwareDevice(event){
 
 	if (FLAGS.need2saveParameters == 1){
 		var user_param_text = document.getElementById("headsuptext").innerHTML //get new params
-		await saveParameterTexttoDropbox(user_param_text) //write new params
-		await loadParametersfromDropbox(ENV.ParamFileName) //then read them
+		await saveParameterTexttoFirebase(user_param_text) //write new params
+		await loadParametersfromFirebase(ENV.ParamFileName) //then read them
 	}
 	ble.statustext=""
 
@@ -355,17 +282,18 @@ function skipHardwareDevice(event){
 	// Read performance history
 	var subject_behavior_save_directory = DATA_SAVEPATH + ENV.Subject + '/'
 	if (TASK.Automator != 0){
-		var history_file_paths = await getMostRecentBehavioralFilePathsFromDropbox(ndatafiles2read, ENV.Subject, subject_behavior_save_directory)
-		trialhistory = await readTrialHistoryFromDropbox(history_file_paths);		
+		var history_file_paths = await getMostRecentBehavioralFilePathsFromFirebase(ndatafiles2read, ENV.Subject, subject_behavior_save_directory)
+		trialhistory = await readTrialHistoryFromFirebase(history_file_paths);		
 	}
 
 	//===================== AWAIT INITIALIZE AUTOMATOR =================//
 	// Initialize automator - change TASK to that specified by TASK.CurrentAutomatorStage. 
+	var num_prebuffer_trials = 200
 	if (TASK.Automator != 0){
-		automator_data = await parseAutomatorFilefromDropbox(TASK.AutomatorFilePath) 
+		automator_data = await loadTextfromFirebase(TASK.AutomatorFilePath)
 		automateTask(automator_data, trialhistory) 
-		await saveParameterstoDropbox() 
-		await loadParametersfromDropbox(ENV.ParamFileName);
+		await saveParameterstoFirebase() 
+		await loadParametersfromFirebase(ENV.ParamFileName);
 
 		//========= AWAIT PRELOAD IMAGES FOR AUTOMATOR STAGES =======//
 		// Preload stuff now (to ensure smooth transitions between automator stages)
@@ -383,7 +311,6 @@ function skipHardwareDevice(event){
 			AutomatorPreBuffer['TrialQueue'][a] = new TrialQueue(samplingStrategy, automator_data[a].ImageBagsSample, automator_data[a].ImageBagsTest); 
 
 			// Populate the stage's imagebuffer with some images
-			var num_prebuffer_trials = 5
 			await AutomatorPreBuffer['TrialQueue'][a].build(num_prebuffer_trials)
 			console.timeEnd('Stage '+a)
 		}
@@ -391,7 +318,8 @@ function skipHardwareDevice(event){
 	} //if automator
 
 	//============= AWAIT LOAD SOUNDS =============//
-	soundpromises = sounds.serial.map(loadSoundfromDropbox2); //create array of sound load Promises
+
+	soundpromises = sounds.serial.map(loadSoundfromFirebase); //create array of sound load Promises
 	await Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
 	updateStatusText("")
 
@@ -419,7 +347,7 @@ while(true){
 
 		var old_ObjectGridIndex = TASK.ObjectGridIndex
 		var old_NTrialsPerBagBlock = [TASK.NTrialsPerBagBlock]
-		FLAGS.need2loadParameters = await loadParametersfromDropbox(ENV.ParamFileName);
+		FLAGS.need2loadParameters = await loadParametersfromFirebase(ENV.ParamFileName);
 
 		//============= SET UP CANVAS =============//
 		// Update canvas based on latest TASK state: 
@@ -475,14 +403,11 @@ while(true){
 
 	//============ CREATE IMAGE BAG & DISPLAY GRID ============//
 	if (FLAGS.need2loadImagesTrialQueue == 1){
-		console.time('Image loading time:')
-
 		if(TASK.Automator != 1){
 			// Make TrialQueue
-			// Loads filenames manually from Dropbox
 			var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
 			TQ = new TrialQueue(samplingStrategy, TASK.ImageBagsSample, TASK.ImageBagsTest)
-			await TQ.build(1)
+			await TQ.build(num_prebuffer_trials)
 		}	
 		else if(TASK.Automator == 1){
 			TQ = AutomatorPreBuffer.TrialQueue[TASK.AutomatorStage]
@@ -525,7 +450,6 @@ while(true){
 		IMAGES.imagepaths.Ordered_Testbag_Filenames = testbag_paths
 
 		FLAGS.need2loadImagesTrialQueue = 0;
-		console.timeEnd('Image loading time:')
 	} //if need2loadImagesTrialQueue
 
 	// define image display grid
@@ -590,7 +514,6 @@ while(true){
 			CURRTRIAL.fixationgridindex = TASK.StaticFixationGridIndex;
 		}
 		logEVENTS("FixationGridIndex",CURRTRIAL.fixationgridindex,"trialseries")
-
 
 		// Render fixation screen 
 		if(TASK.FixationUsesSample != 1){
@@ -843,23 +766,18 @@ while(true){
 		}
 
 		// Save data asynchronously
-		console.time('dropbox data')
-		await saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL);
-		console.timeEnd('dropbox data')
-
-		console.time('firebase data')
-		await saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, TRIAL);
-		console.timeEnd('firebase data')
+		saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, TRIAL);
 
 		// Save data asynchronously to Firestore
 		if (FLAGS.createnewfirestore == 1){
 			saveBehaviorDatatoFirestore(TASK,ENV,CANVAS); //write once
-			pingFirestore()
-		}
-	}
+			pingFirestore() //every 10 seconds, will check for data updates to upload to firestore
+		} //kick off firestore database writes
+	} //if savedata
 
 	if (FLAGS.need2saveParameters == 1){
-		FLAGS.need2saveParameters = saveParameterstoDropbox(); // Save parameters asynchronously
+		// FLAGS.need2saveParameters = saveParameterstoDropbox(); // Save parameters asynchronously
+		FLAGS.need2saveParameters = saveParameterstoFirebase(); // Save parameters asynchronously
 	}
 
 	//FLAGS.need2loadParameters=1: reload task which automatically creates a new data file

@@ -106,7 +106,7 @@ CURRTRIAL.nreward = NaN;
 CURRTRIAL.fixationtouchevent = ""
 CURRTRIAL.responsetouchevent = ""
 CURRTRIAL.lastTrialCompleted = new Date
-CURRTRIAL.lastDropboxSave = new Date
+CURRTRIAL.lastFirebaseSave = new Date
 CURRTRIAL.tsequenceactual = []
 CURRTRIAL.tsequencedesired = []
 

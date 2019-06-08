@@ -142,7 +142,7 @@ function updateHeadsUpDisplay(){
 		+ " mL per 1000)" + "<br> " 
 		+ task1 + "<br>" + task2 + "<br>" + "<br>"
 		+ "last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>"
-		+ "last saved to dropbox @ " + CURRTRIAL.lastDropboxSave.toLocaleTimeString("en-US")
+		+ "last saved to firebase @ " + CURRTRIAL.lastFirebaseSave.toLocaleTimeString("en-US")
 		// + "<br>" + "<br>" 
 		// + "<font color=red><b>" + ble.statustext + port.statustext_connect + "<br></font>" 
 		// + "<font color=green><b>" + port.statustext_sent + "<br></font>" 
