@@ -308,21 +308,21 @@ async function runPump(str){
     if (str == "flush"){
       dur = 10000 //milliseconds
       npulse = 6
-      document.querySelector("button[name=pumpflush]").value = "Stop Pump"
-      document.querySelector("button[name=pumptrigger]").value = "Stop Pump"
+      document.querySelector("button[id=pumpflush]").value = "Stop Pump"
+      document.querySelector("button[id=pumptrigger]").value = "Stop Pump"
     }
     else if (str == "trigger"){
       // dur = ENV.RewardDuration*1000 //milliseconds
       dur = 190; //50 pulse * 190 ms/pulse = 1 mL milk, 1.24 mL water
       npulse = 100
-      document.querySelector("button[name=pumpflush]").value = "Stop Pump"
-      document.querySelector("button[name=pumptrigger]").value = "Stop Pump"
+      document.querySelector("button[id=pumpflush]").value = "Stop Pump"
+      document.querySelector("button[id=pumptrigger]").value = "Stop Pump"
     }
   }
   else if (FLAGS.runPump == 1){ //user pressed button again to stop pump
     FLAGS.runPump = 0
-    document.querySelector("button[name=pumpflush]").value = 'Flush Line'
-    document.querySelector("button[name=pumptrigger]").value = '100 Pulses'
+    document.querySelector("button[id=pumpflush]").value = 'Flush Line'
+    document.querySelector("button[id=pumptrigger]").value = '100 Pulses'
 //     document.getElementById("pumptrigger").value = 'Stop Pump'
     return
   }

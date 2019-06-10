@@ -167,8 +167,8 @@ function doneTestingTask_listener(event){
 	FLAGS.purge=0
 	
 	document.querySelector("p[id=imageloadingtext]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
-	document.querySelector("button[name=doneTestingTask]").style.display = "none"
-	document.querySelector("button[name=stressTest]").style.display = "none"
+	document.querySelector("button[id=doneTestingTask]").style.display = "none"
+	document.querySelector("button[id=stressTest]").style.display = "none"
 	return
 }
 
@@ -189,8 +189,7 @@ function stressTest_listener(event){
 	}
 	
 	document.querySelector("p[id=imageloadingtext]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
-	document.querySelector("button[name=doneTestingTask]").style.display = "none"
-	// document.querySelector("button[name=stressTest]").style.display = "none"
+	document.querySelector("button[id=doneTestingTask]").style.display = "none"
 	return
 }
 

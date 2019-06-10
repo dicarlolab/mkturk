@@ -7,6 +7,15 @@
 <link rel="manifest" href="mkturkmanifest.json">
 <link rel="icon" href="mkturklogo48.png">
 
+<!-- Include Material Design Lite CDN hosted components -->
+<!-- Gettign started @ https://getmdl.io/started/index.html -->
+<!-- MDL color theme picker @ https://getmdl.io/customize/index.html -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+<link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-red.min.css">
+<link rel="stylesheet" href="styles.css">
+
+
 <script src="mkturk_installsettings.js"></script>
 
 <!-- Firebase App is always required and must be first -->
@@ -43,19 +52,32 @@
 <!-- ************* BODY *************** -->
 <body bgcolor=#7F7F7F>
 <div id="canvasdiv" style="position:relative; width:100vw; height:100vh">
-	<button name="googlesignin" style="visibility:hidden; position: absolute; top: 40%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Sign Back In</button>
+    <button class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--accent" id="googlesignin" style="z-index: 102; position: absolute; top: 0%; left: 92%">
+      <i class="material-icons">person</i>
+    </button>
+    <button class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--accent" id="reloadpage" style="visibility:hidden; z-index: 102; position: absolute; top: 0%; left: 92%">
+      <i class="material-icons">refresh</i>
+    </button>
 
-	<button name="connectble" style="visibility:hidden; position: absolute; top: 50%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to Bluetooth juicer</button>
+   <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="connectusb" style="visibility:hidden; z-index: 102; font-size: 25px; position: absolute; top: 5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
+     CONNECT USB
+   </button>
 
-	<button name="connectusb" style="visibility:hidden; position: absolute; top: 60%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to USB juicer</button>
+   <button class="mdl-button mdl-js-button mdl-button--raised" id="nousb" style="visibility:hidden; background-color:white; z-index: 102; font-size: 25px; position: absolute; top: 15%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
+     NO USB
+   </button>
+ 
+  <button class="mdl-button mdl-js-button mdl-button--raised" id="pumpflush" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 12%; left: 80%; height: 45px; width: 150px; border-radius: 20px">
+     Flush Line
+   </button>
+ 
+  <button class="mdl-button mdl-js-button mdl-button--raised" id="pumptrigger" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 17%; left: 80%; height: 45px; width: 150px; border-radius: 20px">
+     100 Pulses
+   </button>
 
-	<button name="noble" style="visibility:hidden; position: absolute; top: 70%; left: 45%; height: 50px; width: 200px; border-radius: 20px">No juicer</button>
-
-	<button name="pumpflush" style="z-index:102; visibility:hidden; position: absolute; top: 12%; left: 80%; height: 45px; width: 150px; border-radius: 20px">Flush line</button>
-
-	<button name="pumptrigger" style="z-index:102; visibility:hidden; position: absolute; top: 17%; left: 80%; height: 45px; width: 150px; border-radius: 20px">100 pulses</button>
-
-	<button name="connectblescale" style="z-index:102; visibility:hidden; position: absolute; top: 22%; left: 80%; height: 45px; width: 150px; border-radius: 20px; color: green">CONNECT BLE SCALE</button>
+  <button class="mdl-button mdl-js-button mdl-button--raised" id="connectblescale" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 22%; left: 80%; height: 45px; width: 150px; border-radius: 20px">
+     Connect BLE Scale
+   </button>
 
 	<p id="headsuptext" style="z-index:101; position: absolute; left: 1px; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;"></p>
 
@@ -65,16 +87,23 @@
  -->
 	<p id="imageloadingtext" style="z-index:100; position: absolute; left: 1px; top: 1px; height: 5%; width: 100%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
 
-	<button name="doneEditingParams" style="visibility:hidden; position: absolute; top: 45%; left: 70%; height: 75px; width: 100px; border-radius: 20px">Done editing params</button>
 
-	<button name="doneTestingTask" style="visibility:hidden; position: absolute; top: 55%; left: 70%; height: 75px; width: 200px; border-radius: 20px; z-index:101">Done with testing trials</button>
+  <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="doneEditingParams" style="visibility:hidden; z-index: 102; font-size: 25px; position: absolute; top: 5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
+	Done Editing Params
+   </button>
 
-	<button name="stressTest" style="visibility:hidden; position: absolute; top: 70%; left: 70%; height: 75px; width: 200px; border-radius: 20px; z-index:101">Stress test</button>
+  <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="doneTestingTask" style="visibility:hidden; z-index: 102; font-size: 25px; position: absolute; top: 5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
+	Done Testing Task
+   </button>
+
+  <button class="mdl-button mdl-js-button mdl-button--raised" id="stressTest" style="visibility:hidden; background-color:white; z-index: 102; font-size: 25px; position: absolute; top: 15%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
+	Stress Test
+   </button>
 
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasvisible" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
 </div>
-<dialog id="subjectID_dialog">
+<dialog id="subjectID_dialog" style="z-index: 102; position: absolute; top: 0%; left: 0%;">
   <p>Select subject: </p>
    <!--Pull down menu that will hold file list-->
   <select id="subjectID_list">
@@ -142,27 +171,26 @@ for (var i=subjectlist.length-1; i>=0; i--){
 subjectlistobj.addEventListener("change",subjectlist_listener,false);
 
 // Button callbacks for inline connection to arduino device
-document.querySelector("button[name=googlesignin]").style.display = "block"
-document.querySelector("button[name=googlesignin]").style.visibility = "visible"
-document.querySelector("button[name=googlesignin]").addEventListener(
+document.querySelector("button[id=googlesignin]").style.display = "block"
+document.querySelector("button[id=googlesignin]").style.visibility = "visible"
+document.querySelector("button[id=googlesignin]").addEventListener(
 	'pointerup',firebaseRedirectSignIn,false)
-
-document.querySelector("button[name=connectble]").addEventListener(
-	'pointerup',findBLEDevice,false)
-document.querySelector("button[name=connectusb]").addEventListener(
+document.querySelector("button[id=reloadpage]").addEventListener(
+	'pointerup',function(){ location.reload('true')},false)
+document.querySelector ("button[id=connectusb]").addEventListener(
 	'pointerup',findUSBDevice,false)
-document.querySelector("button[name=noble]").addEventListener(
+document.querySelector("button[id=nousb]").addEventListener(
 	'pointerup',skipHardwareDevice,false)
 
 //Button callback for asynchronous connection to bluetooth scale
-document.querySelector("button[name=connectblescale]").addEventListener(
+document.querySelector("button[id=connectblescale]").addEventListener(
 	'pointerup',blescaleconnect,false)
 
-document.querySelector("button[name=doneEditingParams]").addEventListener(
+document.querySelector("button[id=doneEditingParams]").addEventListener(
 	'pointerup',doneEditingParams_listener,false)
-document.querySelector("button[name=doneTestingTask]").addEventListener(
+document.querySelector("button[id=doneTestingTask]").addEventListener(
 	'pointerup',doneTestingTask_listener,false)
-document.querySelector("button[name=stressTest]").addEventListener(
+document.querySelector("button[id=stressTest]").addEventListener(
 	'pointerup',stressTest_listener,false)
 var textobj = document.getElementById("headsuptext")
 textobj.addEventListener('pointerup',headsuptext_listener,false)
@@ -235,21 +263,16 @@ function skipHardwareDevice(event){
 	//=============== AWAIT CONNECT TO HARDWARE (via USB or BLE) ===============//
 	if (typeof(port.connected) == 'undefined' || port.connected == false){
 		port.connected = false
-		document.querySelector("button[name=connectble]").style.display = "block"
-		document.querySelector("button[name=connectble]").style.visibility = "visible"
-		document.querySelector("button[name=connectusb]").style.display = "block"
-		document.querySelector("button[name=connectusb]").style.visibility = "visible"
-		document.querySelector("button[name=noble]").style.display = "block"
-		document.querySelector("button[name=noble]").style.visibility = "visible"
+		document.querySelector("button[id=connectusb]").style.display = "block"
+		document.querySelector("button[id=connectusb]").style.visibility = "visible"
+		document.querySelector("button[id=nousb]").style.display = "block"
+		document.querySelector("button[id=nousb]").style.visibility = "visible"
 
 		await connectHardwareButtonPromise()
 
-		document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
-		document.querySelector("button[name=connectusb]").style.display = "none"
-		document.querySelector("button[name=noble]").style.display = "none"		
+		document.querySelector("button[id=connectusb]").style.display = "none"
+		document.querySelector("button[id=nousb]").style.display = "none"		
 	}
-
-	document.querySelector("button[name=googlesignin]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 
 	subjectdialog.showModal()
 	await subjectIDPromise()
@@ -261,11 +284,11 @@ function skipHardwareDevice(event){
 	//================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
 	updateStatusText(JSON.stringify(TASK,null,' '));
 	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
-	document.querySelector("button[name=doneEditingParams]").style.display = "block"
-	document.querySelector("button[name=doneEditingParams]").style.visibility = "visible"
+	document.querySelector("button[id=doneEditingParams]").style.display = "block"
+	document.querySelector("button[id=doneEditingParams]").style.visibility = "visible"
 	
 	await editParamsPromise()
-	document.querySelector("button[name=doneEditingParams]").style.display = "none"
+	document.querySelector("button[id=doneEditingParams]").style.display = "none"
 	var textobj = document.getElementById("headsuptext")
 	textobj.removeEventListener('touchend',headsuptext_listener)
 	textobj.removeEventListener('mouseup',headsuptext_listener)
@@ -324,10 +347,14 @@ function skipHardwareDevice(event){
 	updateStatusText("")
 
 	//========= Start in TEST mode =======//
-	document.querySelector("button[name=doneTestingTask]").style.display = "block"
-	document.querySelector("button[name=doneTestingTask]").style.visibility = "visible"
-	document.querySelector("button[name=stressTest]").style.display = "block"
-	document.querySelector("button[name=stressTest]").style.visibility = "visible"
+	document.querySelector("button[id=googlesignin]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+	document.querySelector("button[id=reloadpage]").style.display = "block"
+	document.querySelector("button[id=reloadpage]").style.visibility = "visible"
+
+	document.querySelector("button[id=doneTestingTask]").style.display = "block"
+	document.querySelector("button[id=doneTestingTask]").style.visibility = "visible"
+	document.querySelector("button[id=stressTest]").style.display = "block"
+	document.querySelector("button[id=stressTest]").style.visibility = "visible"
 	FLAGS.savedata = 0 // test trials can be performed, but data won't be saved
 
 	FLAGS.need2loadParameters = 1

@@ -48,23 +48,23 @@ function setupCanvasHeadsUp(){
 		canvasobj.style.display="none";
 
 		//hide buttons for triggering pump
-		document.querySelector("button[name=pumpflush]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
-		document.querySelector("button[name=pumptrigger]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+		document.querySelector("button[id=pumpflush]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+		document.querySelector("button[id=pumptrigger]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	}
 	else{
 		canvasobj.style.display="block";
 
 		//show buttons for triggering pump
-		document.querySelector("button[name=pumpflush]").style.display = "block"
-		document.querySelector("button[name=pumpflush]").style.visibility = "visible"
-		document.querySelector("button[name=pumptrigger]").style.display = "block"
-		document.querySelector("button[name=pumptrigger]").style.visibility = "visible"
-		document.querySelector("button[name=connectblescale]").style.display = "block"
-		document.querySelector("button[name=connectblescale]").style.visibility = "visible"
+		document.querySelector("button[id=pumpflush]").style.display = "block"
+		document.querySelector("button[id=pumpflush]").style.visibility = "visible"
+		document.querySelector("button[id=pumptrigger]").style.display = "block"
+		document.querySelector("button[id=pumptrigger]").style.visibility = "visible"
+		document.querySelector("button[id=connectblescale]").style.display = "block"
+		document.querySelector("button[id=connectblescale]").style.visibility = "visible"
 
-		document.querySelector("button[name=pumpflush]").addEventListener(
+		document.querySelector("button[id=pumpflush]").addEventListener(
 			'pointerup',function(){ event.preventDefault(); runPump("flush") },false)
-		document.querySelector("button[name=pumptrigger]").addEventListener(
+		document.querySelector("button[id=pumptrigger]").addEventListener(
 			'pointerup',function(){ event.preventDefault(); runPump("trigger") },false)
 	}
 	var context=canvasobj.getContext('2d');
