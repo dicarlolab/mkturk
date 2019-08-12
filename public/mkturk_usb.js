@@ -51,7 +51,12 @@ async function findUSBDevice(event){
 				statustext = "RECONNECTED USB DEVICE!"
 			}
 			port = ports[0];
-			await port.connect()
+			try{
+				await port.connect()				
+			}
+			catch (error){
+				console.log(error)
+			}
 			port.statustext_connect = statustext
 			console.log(port.statustext_connect)
 			updateHeadsUpDisplayDevices()

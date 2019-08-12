@@ -2,7 +2,6 @@
 <html>
 <head>
 <title id="page_title">liveplot2_mkturk</title>
-<script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
 <script src="liveplot_utils.js"></script>
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script src="liveplot2_googlecharts.js" type="text/javascript"></script>
@@ -16,15 +15,42 @@
     font-size: 10px;
 }
 </style>
+
+<!-- Firebase App is always required and must be first -->
+<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase-app.js"></script>
+
+<!-- Add additional services that you want to use -->
+<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase-storage.js"></script>
+
+<script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",
+    authDomain: "sandbox-ce2c5.firebaseapp.com",
+    databaseURL: "https://sandbox-ce2c5.firebaseio.com",
+    projectId: "sandbox-ce2c5",
+    storageBucket: "sandbox-ce2c5.appspot.com",
+    messagingSenderId: "1003719887944"
+  };
+  firebase.initializeApp(config);
+
+  //Initialize Cloud Storage
+  var storage = firebase.storage();
+</script>
+
+
 <script type="text/javascript">
 // Flow: 
-// loadGoogleCharts --> getDropbox
+// authenticate --> loadGoogleCharts --> getfilesfromfirebase
 // checkFileStatus -- wait 1 second -- if new data -->
-// readDatafromDropbox --> initializeChartData --> updatePlots
+// readDatafromFirebase --> initializeChartData --> updatePlots
 
 // SECTIONS:
+//================== AUTHENICATION ==================//
 //================== GOOGLE CHARTS LOADING ==================//
-//================== DROPBOX STUFF ==================//
+//================== FIREBASE STUFF ==================//
 //================== DATA HANDLING ==================//
 //================== PLOTTING ==================//
 
@@ -112,151 +138,152 @@ function loadGoogleCharts() {
             formatterColor.addRange(i * dx, (i + 1) * dx, 'gray', colormapJet[i])
         }
 
-        getFileListDropbox2();
+        populateFileDropDownMenu();
     })
 }
 //================== GOOGLE CHARTS LOADING (end) ==================//
 
-//================== DROPBOX STUFF ==================//
-// Mkturk
-var DBX_REDIRECT_URI = window.location.href
 
-//return whether user was redirected here after authenticating
-function isAuthenticated() {
-    return !!getAccessTokenFromUrl()
-}
 
-//parse access token from url if in urls hash
-function getAccessTokenFromUrl() {
-    return utils.parseQueryString(window.location.hash).access_token
-}
+//================== FIREBASE STORAGE STUFF ==================//
+async function getFileListRecursiveFirebase(dir,ext){
+	var fileList = await storage.ref().child(dir).listAll()
 
-// Asynchronous: Get file list from dropbox directory
-async function getFileListDropbox2() {
+	var files = []
+	for (const item of fileList.prefixes){
+		var subfileList = await getFileListRecursiveFirebase(dir + item.name + '/',ext)
+		files = [...files, ...subfileList]
+	}
+	for (i=0; i<=fileList.items.length-1; i++){
+		if (typeof(ext) == 'string'){
+			if (fileList.items[i].name.endsWith(ext)){
+				files.push({fullpath: fileList.items[i].fullPath, name: fileList.items[i].name})
+			} //if correct file extension
+			else {
+				// file does not have requested extension
+			}
+		}
+		else {
+            files.push({fullpath: fileList.items[i].fullPath, name: fileList.items[i].name})
+		} //if file extension required
+	}
+	return files
+} //recursviely accumulate files from subfolders (if any)
+
+
+async function populateFileDropDownMenu(){
     try {
-        var entries = []
-        //      file.dir = "/mkturkfiles/imagebags/objectome/wrench/flarenut_spanner/"
-        response = await dbx.filesListFolder({path:file.dir,recursive:true})
-        entries.push(...response.entries)
+        var filelist = await getFileListRecursiveFirebase(file.dir,'.txt')
 
-        // Use response.has_more to propagate 
-        var num_iterations = 0
-        var iteration_limit = 100
-        while (response.has_more == true) {
-            response = await dbx.filesListFolderContinue({cursor:response.cursor})
-            entries.push(...response.entries)
+// // sort by value
+// items.sort(function (a, b) {
+//   return a.value - b.value;
+// });
 
-            num_iterations = num_iterations + 1
-            if (num_iterations > iteration_limit) {
-                throw 'Hit iteration limit of ' + iteration_limit + '. Check your ' + file.dir + ' directory is not insanely large.'
-            }
-        }
+// sort descending by name
+filelist.sort(function(a, b) {
+  var nameA = a.name.toUpperCase(); // ignore upper and lowercase
+  var nameB = b.name.toUpperCase(); // ignore upper and lowercase
+  if (nameA > nameB) {
+    return -1;
+  }
+  if (nameA < nameB) {
+    return 1;
+  }
 
-        for (var q = entries.length - 1; q >= 0; q--) {
-            if (entries[q][".tag"] == "file" && entries[q].name.endsWith(".txt")) {
-                //              console.log("found ", entries[q].name)
-                file.list[q] = entries[q].name
-                file.pathlist[q] = entries[q].path_display
+  // names must be equal
+  return 0;
+});
 
-                //add to menu as option
-                var opt = document.createElement('option')
-                opt.value = q
-                opt.innerHTML = file.list[q]
-                menuobj.appendChild(opt)
-            }
-        }
-        file.name = file.pathlist[file.pathlist.length - 1]
+        file.filelist = filelist
+        for (var i=0; i<=filelist.length-1; i++){
+            //add to menu as option
+            var opt = document.createElement('option')
+            opt.value = i
+            opt.innerHTML = filelist[i].name
+            menuobj.appendChild(opt)        
+        } //for i files
+        file.name = file.filelist[0].fullpath
         file.filehasChanged = true
-        readDatafromDropbox2()
-    } catch (error) {
+        loadDatafromFirebase(file.name)
+    }
+    catch (error) {
         console.error(error)
     }
-}
+} //populateFileDropDownMenu
 
 // Asynchronous: Check for file updates
-function checkFileStatus2() {
-    dbx.filesGetMetadata({
-        path: file.name
-    }).then(function(filemeta) {
-        if (file.rev != filemeta.rev) {
-            file.rev = filemeta.rev
+async function checkFileStatusFirebase() {
+    try{
+        var filemeta = await storage.ref().child(file.name).getMetadata()
+
+        if (file.rev != filemeta.generation) {
+            file.rev = filemeta.generation
+            file.dateSaved = new Date(filemeta.updated)
             file.datahasChanged = true
             console.log('file was updated rev=' + file.rev)
         } else {
             file.datahasChanged = false
-        }
+        } //if file.rev
 
         if (file.filehasChanged == true || file.datahasChanged == true) {
-            readDatafromDropbox2()
+            loadDatafromFirebase(file.name)
         } else {
             setTimeout(function() {
-                checkFileStatus2()
+                checkFileStatusFirebase()
             }, 1000)
-        }
-    }).catch(function(error) {
+        } //if filehasChanged
+    }
+    catch (error) {
         console.error(error)
-    })
+    } //try
     return false
 }
 
-//Asynchronous: Read data from selected file in dropbox
-function readDatafromDropbox2() {
-    dbx.filesDownload({
-        path: file.name
-    }).then(function(data) {
-        console.log("success: loaded file size " + data.size);
+//------------- LOAD JSON TEXT --------------//
+async function loadDatafromFirebase(textfile_path){
+    try{
+    var textfileRef = storage.ref().child(textfile_path)
+	url = await textfileRef.getDownloadURL()
+	response = await fetch(url)
+	var datajson = await response.json()
 
-        file.rev = data.rev
-        file.dateSaved = new Date(data.client_modified)
 
-        //Parse date
-        var ind1 = file.name.indexOf("/2")
-        var ind2 = file.name.indexOf('_')
-        var datestr = file.name.substring(ind1 + 1, ind2)
-        file.dateCreated = new Date(datestr)
+    if (Array.isArray(datajson)) {
+        file.data = {};
+        for (var elem = 0; elem < datajson.length; elem++) {
+            for (var prop in datajson[elem]) {
+                file.data[prop] = datajson[elem][prop]
+            } //for property
+        } //for array elements
+    } else {
+        file.data = datajson
+    } //if data array
 
-        var reader = new FileReader()
-        reader.onload = function(e) {
-            var datajson
-            datajson = JSON.parse(reader.result)
-            if (Array.isArray(datajson)) {
-                file.data = {};
-                for (var elem = 0; elem < datajson.length; elem++) {
-                    for (var prop in datajson[elem]) {
-                        file.data[prop] = datajson[elem][prop]
-                    }
-                }
+    var filemeta = await storage.ref().child(textfile_path).getMetadata()
+    console.log("success: loaded file size " + filemeta.size/1000 + ' kb');
+    file.rev = filemeta.generation
+    file.dateSaved = new Date(filemeta.updated)
 
-            } else {
-                file.data = datajson
-            }
-            parseImageInfo()
-        }
-        reader.readAsText(data.fileBlob)
-    }).catch(function(error) {
+    //Parse date
+    var ind1 = file.name.indexOf("/2")
+    var ind2 = file.name.indexOf('_')
+    var datestr = file.name.substring(ind1 + 1, ind2)
+    file.dateCreated = new Date(datestr)
+
+    parseImageInfo()
+    }
+    catch (error) {
         console.error(error)
-    })
+    } //try
     return false
-}
+} //ReadFromFirebase
+//================== FIREBASE STORAGE STUFF (end) ==================//
 
 function parseImageInfo() {
-    if (file.data.ImageFolderSample == 4 | file.data.ImageFolderSample == 5) {
-        objlabels = objlabelsMURI;
-        cat = catMURI;
-        catlist = catlistMURI;
-    } else if (file.data.ImageFolderSample == 9 | file.data.ImageFolderSample == 10 | file.data.ImageFolderSample == 11) {
-        objlabels = objlabelsHVM;
-        cat = catHVM;
-        catlist = catlistHVM;
-    } else if (file.data.ImageFolderSample == 12 | file.data.ImageFolderSample == 13 | file.data.ImageFolderSample == 14 | file.data.ImageFolderSample == 15) {
-        objlabels = objlabelsCOCO;
-        cat = catCOCO;
-        catlist = catlistCOCO;
-    } else {
-        objlabels = objlabelsOBJ;
-        cat = catOBJ;
-        catlist = catlistOBJ;
-    }
+    objlabels = objlabelsOBJ;
+    cat = catOBJ;
+    catlist = catlistOBJ;
 
     if (file.filehasChanged == true) {
         initializeChartData()
@@ -264,7 +291,6 @@ function parseImageInfo() {
         updatePlots()
     }
 }
-//================== DROPBOX STUFF (end) ==================//
 
 //================== DATA HANDLING ==================//
 // Synchronous: Initialize chart data matrices
@@ -704,7 +730,7 @@ function toPerformanceData() {
 function toWeightData(){
     dataWeight.removeRows(0,dataWeight.getNumberOfRows());
     
-    if (typeof(file.data.WeightTime) != null){
+    if (typeof(file.data.WeightTime) != null && typeof(file.data.WeightTime) != "undefined"){
 
     for (var i=0; i<=file.data.WeightTime.length-1;i++){
         var tt = new Date(file.data.CurrentDate)
@@ -901,7 +927,7 @@ function updatePlots() {
     drawChoiceBar()
     drawReward()
     file.datahasChanged = false
-    checkFileStatus2();
+    checkFileStatusFirebase();
 }
 
 // Synchronous
@@ -1123,7 +1149,7 @@ var file = {
 dir: DATA_SAVEPATH,
 // from mkturk_installsettings.js
 list: [],
-pathlist: [],
+filelist: [],
 name: "",
 data: null,
 ver: null,
@@ -1260,19 +1286,26 @@ var formatterColor = null;
 
 var trialrange = [0, 0]
 
-if (isAuthenticated()) {
-//Create an instance of Dropbox with the access token
-var dbx = new Dropbox.Dropbox({
-accessToken: getAccessTokenFromUrl()
-})
-loadGoogleCharts();
-} else {
-var dbx = new Dropbox.Dropbox({
-clientId: DBX_CLIENT_ID
+//================== AUTHENTICATE GOOGLE ==================//
+// [START authstatelistener]
+var provider = new firebase.auth.GoogleAuthProvider();
+provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
+firebase.auth().getRedirectResult().then(function(result) {
+  if (result.user) {
+    // User just signed in. you can get the result.credential.
+	console.log('Sign-In Redirect Result, USER ' + result.user.email + ' is signed in')
+  }
+  else if (firebase.auth().currentUser) {
+    // User already signed in.
+	console.log('Sign-In Redirect Result, USER ' + firebase.auth().currentUser.email + ' is signed in')
+  }
+  else {
+    // No user signed in, update your UI, show the redirect sign-in screen.
+	firebase.auth().signInWithRedirect(provider)
+  }
 });
-var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
-window.location.href = dbx_authUrl
-//send to Dropbox sign-in screen
-}
+//================== (end) AUTHENTICATE GOOGLE ==================//
+
+loadGoogleCharts()
 </script>
 </body></html>

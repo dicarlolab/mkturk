@@ -3,7 +3,7 @@
 
 // ------ Subject settings ------ 
 var subjectlist = [
-"Eliaso","Youno","Sophieo","West","Waffles","Setta","Sausage","Rafiki","Hutch","AJ"
+"Eliaso","Youno","Sophieo","West","Waffles","Sausage","Rafiki","Hutch","East","Bloo","Blintz","Blaise","AJ","You-Nah","Tahereh","Sophie","Elias","Alex"
 ];
 
 // ------ Save location settings ------

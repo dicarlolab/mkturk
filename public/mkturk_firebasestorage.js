@@ -190,7 +190,7 @@ async function loadParametersfromFirebase(paramfile_path){
 		return 0; //need2loadParameters
 	}
 	catch(error){
-		console.error('loadParametersfromFirebase() error: ' + error)
+// 		console.error('loadParametersfromFirebase() error: ' + error)
 		return 1; //need2loadParameters
 	}
 }
@@ -251,6 +251,9 @@ async function saveParameterstoFirebase() {
 	try{
 	    var datastr = JSON.stringify(TASK,null,' ');
 		var blob = new Blob([ datastr ], {type : 'application/json'});
+
+		// Create file metadata including the content type
+		var metadata = { contentType: 'text/json' };
 
 		// Upload the file and metadata
 		var response = await storage.ref().child(ENV.ParamFileName).put(blob, metadata);
