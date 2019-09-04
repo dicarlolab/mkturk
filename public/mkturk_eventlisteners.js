@@ -1,3 +1,5 @@
+//================== TOUCH PROMISE ==================//
+// Promise: Touch Hold
 function touchhold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 	var resolveFunc
 	var errFunc
@@ -42,7 +44,7 @@ function touchhold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 						chosenbox=q
 					}//if in bounding box
 				}//for q boxes
-				var touchcxyt = [chosenbox,x,y,Math.round(performance.now())];		
+				var touchcxyt = [chosenbox,x,y,Date.now() - ENV.CurrentDate.valueOf()];		
 			} //if waiting for touch, get coords
 
 			//================== ACQUIRING TOUCH ==================//
@@ -201,7 +203,7 @@ function subjectlist_listener(event){
 	return
 }
 
-//================== PROMISE STATES ==================//
+//================== SUBJECT PROMISE ==================//
 // Promise: Select Subject
 function subjectIDPromise(){
 	var resolveFunc
@@ -228,6 +230,7 @@ function subjectIDPromise(){
 	return p;
 }
 
+//================== EDIT PARAMS PROMISE ==================//
 // Promise: Edit Parameters Text
 function editParamsPromise(){
 	var resolveFunc
@@ -248,4 +251,59 @@ function editParamsPromise(){
 	waitforClick = waitforclickGenerator(); // start async function
 	waitforClick.next(); //move out of default state
 	return p;
+}
+
+
+//================== RFID PROMISE ==================//
+// // Promise: Check for correct agent RFID
+function rfid_promise(agentTag,recencyInMS){
+	var resolveFunc
+	var errFunc
+	p = new Promise(function(resolve,reject){
+		resolveFunc = resolve;
+		errFunc = reject;
+	}).then(function(resolveval){
+		FLAGS.RFIDGeneratorCreated = 0
+		if (CANVAS.headsupfraction > 0){ //button on headsupdisplay to preempt RFID tag check
+			document.querySelector("button[id=preemptRFID]").style.display = "none"
+		}
+		updateHeadsUpDisplay()
+		return resolveval
+	});
+	function *waitforRFIDEventGenerator(){
+		var rfidevent
+		var return_event = ""
+		while (true){
+			rfidevent = yield rfidevent
+
+			if ( typeof(agentTag) == "undefined" ||
+				( rfidevent.tag == agentTag && (Date.now() - ENV.CurrentDate.valueOf()) - rfidevent.time <= recencyInMS) )
+			{
+				return_event = "done"
+				break;
+			}
+			else{
+				//keep processing rfid until register agent's RFID
+			}
+		} //while events
+		// console.log('RETURN_EVENT', return_event.type)
+		resolveFunc(return_event)
+	} //generator
+	waitforRFIDEvent = waitforRFIDEventGenerator(); // start async function
+	FLAGS.RFIDGeneratorCreated = 1
+	if (CANVAS.headsupfraction > 0){ //button on headsupdisplay to preempt RFID tag check
+		document.querySelector("button[id=preemptRFID]").style.display = "block"
+		document.querySelector("button[id=preemptRFID]").style.visibility = "visible"		
+	}
+	updateHeadsUpDisplay()
+	waitforRFIDEvent.next(); //move out of default state
+	return p;
+}
+
+
+function preemptRFID_listener(event){
+	event.preventDefault()
+	document.querySelector("button[id=preemptRFID]").style.display = "none"
+	waitforRFIDEvent.next({tag: ENV.AgentRFID, time: (Date.now() - ENV.CurrentDate.valueOf())})
+	return
 }

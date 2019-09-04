@@ -68,11 +68,11 @@
    </button>
  
   <button class="mdl-button mdl-js-button mdl-button--raised" id="pumpflush" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 12%; left: 80%; height: 45px; width: 150px; border-radius: 20px">
-     Flush Line
+     Flush 1 minute
    </button>
  
-  <button class="mdl-button mdl-js-button mdl-button--raised" id="pumptrigger" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 17%; left: 80%; height: 45px; width: 150px; border-radius: 20px">
-     100 Pulses
+  <button class="mdl-button mdl-js-button mdl-button--raised" id="pumptrigger" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 17%; left: 80%; height: 45px; width: 150px; border-radius: 11px">
+     100Pulses->1mL Milk
    </button>
 
   <button class="mdl-button mdl-js-button mdl-button--raised" id="connectblescale" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 22%; left: 80%; height: 45px; width: 150px; border-radius: 20px">
@@ -98,6 +98,10 @@
 
   <button class="mdl-button mdl-js-button mdl-button--raised" id="stressTest" style="visibility:hidden; background-color:white; z-index: 102; font-size: 25px; position: absolute; top: 15%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
 	Stress Test
+   </button>
+
+  <button class="mdl-button mdl-js-button mdl-button--raised" id="preemptRFID" style="visibility:hidden; background-color:red; z-index: 102; font-size: 25px; position: absolute; top: 20%; left: 5%; height: 75px; width: 200px; border-radius: 20px">
+	Preempt RFID
    </button>
 
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
@@ -176,7 +180,7 @@ document.querySelector("button[id=googlesignin]").style.visibility = "visible"
 document.querySelector("button[id=googlesignin]").addEventListener(
 	'pointerup',firebaseRedirectSignIn,false)
 document.querySelector("button[id=reloadpage]").addEventListener(
-	'pointerup',function(){ location.reload('true')},false)
+	'pointerup',function(){ window.location.reload(true) },false)
 document.querySelector ("button[id=connectusb]").addEventListener(
 	'pointerup',findUSBDevice,false)
 document.querySelector("button[id=nousb]").addEventListener(
@@ -192,6 +196,8 @@ document.querySelector("button[id=doneTestingTask]").addEventListener(
 	'pointerup',doneTestingTask_listener,false)
 document.querySelector("button[id=stressTest]").addEventListener(
 	'pointerup',stressTest_listener,false)
+document.querySelector("button[id=preemptRFID]").addEventListener(
+	'pointerup',preemptRFID_listener,false)	
 var textobj = document.getElementById("headsuptext")
 textobj.addEventListener('pointerup',headsuptext_listener,false)
 
@@ -215,12 +221,12 @@ textobj.addEventListener('pointerup',headsuptext_listener,false)
 	
 	//Monitor Battery - from: http://www.w3.org/TR/battery-status/
 	navigator.getBattery().then(function(batteryobj){
-		TRIAL.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
+		TRIAL.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Date.now() - ENV.CurrentDate.valueOf()]);
 		logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"trialseries")
 
 
 		batteryobj.addEventListener('levelchange',function(){
-			TRIAL.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
+			TRIAL.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Date.now() - ENV.CurrentDate.valueOf()]);
 		logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"trialseries")
 
 		})
@@ -526,6 +532,25 @@ while(true){
 	logEVENTS("TestObjectScale",CURRTRIAL.testobjectscale,"imageseries")
 
 
+	//================= RFID check =================//
+	// If no matching read in the last TASK.CheckRFID seconds, wait for matching read
+	// (kicks-them-off model where they can work as long as reading, but then get kicked off within TASK.CheckRFID seconds if they are the wrong agent or no reads)
+	if (TASK.CheckRFID > 0 && ENV.AgentRFID != "XX" && FLAGS.savedata == 1){
+		if (port.connected == false){
+			console.log('NO USB DEVICE CONNECTED: cannot check RFID!!')
+		}
+		else if (port.connected == true){
+			var nreads = TRIAL.RFIDTag.length
+	    	if (TRIAL.RFIDTag[nreads-1] == ENV.AgentRFID && (Date.now() - ENV.CurrentDate.valueOf()) - TRIAL.RFIDTime[nreads-1] < TASK.CheckRFID){
+	    		// RFID checks out
+	    	}
+	    	else{ //wait for a recent rfid read before proceeding with next trial
+				await rfid_promise(ENV.AgentRFID,TASK.CheckRFID)
+	    	}
+		}
+	}
+	//================= (end) RFID check =================//
+
 	//============ WHILE RUN FIXATION SCREEN ============//
 	FLAGS.waitingforTouches = TASK.NFixations
 	if (TASK.RewardStage == 0){
@@ -553,7 +578,7 @@ while(true){
 		}
 		
 		// Start timer for this fixation render trial. 
-		CURRTRIAL.starttime=Math.round(performance.now());
+		CURRTRIAL.starttime=Date.now() - ENV.CurrentDate.valueOf();
 		logEVENTS("StartTime",CURRTRIAL.starttime,"trialseries")
 
 		frame.shown=[];
@@ -579,7 +604,7 @@ while(true){
 
 			var y = boundingBoxesFixation.y[0][0] + Math.round(Math.random()*(boundingBoxesFixation.y[0][1] - boundingBoxesFixation.y[0][0]))
 
-			touchhold_return.cxyt = [0,x,y,Math.round(performance.now())]
+			touchhold_return.cxyt = [0,x,y,Date.now() - ENV.CurrentDate.valueOf()]
 
 			FLAGS.waitingforTouches--
 		}
@@ -674,7 +699,7 @@ while(true){
 
 			var y = boundingBoxesChoice.y[currchoice][0] + Math.round(Math.random()*(boundingBoxesChoice.y[currchoice][1] - boundingBoxesChoice.y[currchoice][0]))
 
-			race_return.cxyt = [currchoice,x,y,Math.round(performance.now())]
+			race_return.cxyt = [currchoice,x,y,Date.now() - ENV.CurrentDate.valueOf()]
 
 			FLAGS.waitingforTouches--
 		}
@@ -816,6 +841,7 @@ while(true){
 		FLAGS.need2loadParameters = 1
 	} //if new day, start new file or reached 1000 trials 
 	//================= (end) HOUSEKEEPING =================//
+
 
 	updateHeadsUpDisplay();
 	console.log('End of trial ', CURRTRIAL.num)

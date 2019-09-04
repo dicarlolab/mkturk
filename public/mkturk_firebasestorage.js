@@ -128,6 +128,7 @@ async function loadImageArrayfromFirebase(imagepathlist){
 				var image_requests = imagepathlist.map(loadImagefromFirebase);
 
 				console.log('FIREBASE: buffering ' + imagepathlist.length + ' images')
+				var tstart = performance.now()
 				var image_array = await Promise.all(image_requests)
 				.catch(function(error){ console.log(error)}).then()
 
@@ -139,6 +140,8 @@ async function loadImageArrayfromFirebase(imagepathlist){
 				}
 
 				if (load_success == 1){
+					imageloadingtimestr = imageloadingtimestr + image_array.length + " images in " + (Math.round(100*(performance.now() - tstart)/1000)/100) + " seconds, "
+					updateImageLoadingAndDisplayText(' ')
 					break
 				}
 				else if (load_success <= 0){
@@ -181,6 +184,7 @@ async function loadParametersfromFirebase(paramfile_path){
 		data = await loadTextfromFirebase(paramfile_path)
 		TASK = {}
 		TASK = data
+		await loadAgentRFIDfromFirestore(ENV.Subject,TASK.Species)
 
 		var filemeta = await getFileMetadataFirebase(paramfile_path)
 		ENV.ParamFileName = '/' + filemeta.fullPath; 

@@ -86,6 +86,30 @@ async function updateEventDataonFirestore(EVENTS){
 //================== UPDATE FIRESTORE WITH EVENT DATA (end) ====================//
 
 
+async function loadAgentRFIDfromFirestore(subject,species){
+	if (species != "marmoset"){
+		ENV.AgentRFID = "XX"	
+	}
+	else {
+		try{
+			var docRef = db.collection("marmosets").doc(subject)
+			var doc = await db.collection("marmosets").doc(subject).get()
+
+			if (doc.exists == false){
+				ENV.AgentRFID = "XX"	
+				console.log('MISSING AGENT: no biographical document in firestore database for this agent')				
+			}
+			else {
+				ENV.AgentRFID = doc.data().rfid
+			}
+		}
+		catch(error){
+			ENV.AgentRFID = "XX"	
+			console.log('no subject document in firestore database for this agent')
+		}
+	}
+}
+
 
 function getFirestoreDocSize(collectionName,docRef,doctype){
     docRef.get().then(function(doc){

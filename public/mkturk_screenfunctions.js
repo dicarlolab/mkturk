@@ -149,6 +149,15 @@ function updateHeadsUpDisplay(){
 		// + "<font color=blue><b>" + port.statustext_received + "<br></font>"
 		// + "<font color=red><b>" + blescale.statustext_connect + "<br></font>" 		
 		// + "<font color=blue><b>" + blescale.statustext_received + "<br></font>"
+
+		if (FLAGS.RFIDGeneratorCreated == 1){
+			textobj.innerHTML = textobj.innerHTML + "<br>"
+			+ "<font color = red>" + "PAUSED: waiting for RFID read!!" + "<br></font>"
+		}
+		if (TASK.CheckRFID > 0 && port.connected == false){
+			textobj.innerHTML = textobj.innerHTML + "<br>"
+			+ "<font color = red>" + "WARNING: USB device not connected to check RFID!!" + "<br></font>"
+		}
 	}
 	else if (CANVAS.headsupfraction == 0){
 		textobj.innerHTML = port.statustext_connect + blescale.statustext_connect
@@ -158,6 +167,7 @@ function updateHeadsUpDisplay(){
 		'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail
 		+ "<br>" + "No trials performed"
 	}
+
 }
 
 function updateHeadsUpDisplayDevices(){
@@ -578,7 +588,8 @@ function updateImageLoadingAndDisplayText(str){
 
 	textobj.innerHTML =
 	str
-	+ displayoutofboundsstr 
+	+ imageloadingtimestr
+	+ "<br>" + displayoutofboundsstr 
 	+ "<br>" + "Software reported frame display (t_actual - t_desired) :"
 	+ "<br>" + "<font color=red> mean dt = " + Math.round(u_dt) + " ms"
 	+ "  (min=" + Math.round(Math.min(... dt)) + ", max=" + Math.round(Math.max(... dt)) + ") </font>"

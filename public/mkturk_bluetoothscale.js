@@ -296,7 +296,7 @@ function time(text) {
 
 //============== READ NOTIFICATIONS & WRITES ==============//
 function onWeightNotificationFromScale(event){
-  var t_notify = performance.now()
+  var t_notify = Date.now() - ENV.CurrentDate.valueOf()
   var dt = t_notify-blescale.tweights[blescale.tweights.length-1]
   let value = event.target.value
 
@@ -341,7 +341,7 @@ function onWeightNotificationFromScale(event){
 	weight = Math.round(100*weight)/100 //0.01 gram precision
 
   logEVENTS("Weight",weight,"timeseries");
-  TRIAL.WeightTime[TRIAL.NWeights] = Math.round(performance.now());
+  TRIAL.WeightTime[TRIAL.NWeights] = Date.now() - ENV.CurrentDate.valueOf();
   TRIAL.WeightTrial[TRIAL.NWeights] = CURRTRIAL.num
   TRIAL.Weight[TRIAL.NWeights] = weight
   TRIAL.NWeights = TRIAL.NWeights+1;
@@ -371,7 +371,7 @@ function onWeightNotificationFromScale(event){
 }
 
 function onBatteryNotificationFromScale(event){
-  var t_notify = performance.now()
+  var t_notify = Date.now() - ENV.CurrentDate.valueOf()
   var dt = t_notify-blescale.tbattery[blescale.tbattery.length-1]
   let value = event.target.value
 

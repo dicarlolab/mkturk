@@ -142,7 +142,7 @@ serial.Port.prototype.onReceive = data => {
 	if (tagstart > 0){
 		var tagend = port.statustext_received.indexOf('}',0);
 		logEVENTS("RFIDTag",port.statustext_received.slice(tagstart+4,tagend),"timeseries");
-		TRIAL.RFIDTime[TRIAL.NRFID] = Math.round(performance.now());
+		TRIAL.RFIDTime[TRIAL.NRFID] = Date.now() - ENV.CurrentDate.valueOf();
 		TRIAL.RFIDTrial[TRIAL.NRFID] = CURRTRIAL.num
 		TRIAL.RFIDTag[TRIAL.NRFID] = port.statustext_received.slice(tagstart+4,tagend);
 		TRIAL.NRFID = TRIAL.NRFID+1;
@@ -150,10 +150,15 @@ serial.Port.prototype.onReceive = data => {
 		if (TRIAL.NRFID >= 2){
 			var dt = TRIAL.RFIDTime[TRIAL.NRFID-1] - TRIAL.RFIDTime[TRIAL.NRFID-2]
 		}
-		port.statustext_received = 'ParsedTAG ' + TRIAL.RFIDTag[TRIAL.NRFID-1] + 
-									' @' + new Date().toLocaleTimeString("en-US") + 
+		port.statustext_received = 'Parsed TAG ' + TRIAL.RFIDTag[TRIAL.NRFID-1] + 
+									' @ ' + new Date().toLocaleTimeString("en-US") + 
 									' dt=' + dt + 'ms'
 		// console.log(port.statustext_received)
+
+		if (FLAGS.RFIDGeneratorCreated == 1){
+			var event = {tag: TRIAL.RFIDTag[TRIAL.NRFID-1], time: TRIAL.RFIDTime[TRIAL.NRFID-1]}
+			waitforRFIDEvent.next(event)
+		}
 		updateHeadsUpDisplayDevices()
 	}
 }
@@ -231,7 +236,7 @@ function pingUSB(){
 
 //PORT - send pump duration to arduino
 serial.Port.prototype.writepumpdurationtoUSBBYTE = async function(data) {
-	serial.twrite_pumpduration=performance.now()
+	serial.twrite_pumpduration= Date.now() - ENV.CurrentDate.valueOf()
 	let view = new Uint16Array(1);
 	view[0] = parseInt(data,10);
 	view[0] = parseInt("5000",10);

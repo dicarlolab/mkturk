@@ -328,16 +328,28 @@ function initializeChartData() {
     dataWeight.addColumn('datetime','time')
     dataWeight.addColumn('number','WeightReads')
 
+
+//dataXYPos for 2 test choices
+// 0: x
+// 1: y fix (box)
+// 2: y sample (box)
+// 3: y test1 (box)
+// 4: y test2 (box)
+// 5: y Fix_reward (dots)
+// 6: y Fix_punish (dots)
+// 7: y Target_reward (dots)
+// 8: y Target_punish (dots)
     dataXYPos.addColumn('number', 'xpos')
     dataXYPos.addColumn('number','Fixation')
+    dataXYPos.addColumn('number','Sample')    
     for (var i = 0; i<=file.data.TestGridIndex.length-1;i++){
         dataXYPos.addColumn('number', 'Target' + (i+1))
     }
 
-    dataXYPos.addColumn('number', 'Fix_R')
-    dataXYPos.addColumn('number', 'Fix_NR')
-    dataXYPos.addColumn('number', 'Target_R')
-    dataXYPos.addColumn('number','Target_NR')
+    dataXYPos.addColumn('number', 'Fix_Reward')
+    dataXYPos.addColumn('number', 'Fix_Punish')
+    dataXYPos.addColumn('number', 'Target_Reward')
+    dataXYPos.addColumn('number','Target_Punish')
 
     dataReward.addColumn('string', 'reward size')
     dataReward.addColumn('number', 'nrewards')
@@ -508,6 +520,7 @@ function toPerformanceData() {
 
     }
 
+    // Store fixation in odd indices and choice in even
     // All touchevents. touchevent has a length that is twice the length of file.data.FixationXYT or file.data.ResponseXYT 
     if (typeof file.data.ResponseXYT != "undefined" && file.data.ResponseXYT.length >= 1) {
         for (var i = 0; i <= file.data.FixationXYT.length * 2 - 1; i += 2) {
@@ -516,83 +529,104 @@ function toPerformanceData() {
         }
     }
 
-
     //Fixation, Sample, Test Box
-
     if (file.data.FixationUsesSample == 0){
-        samplescale = file.data.FixationScale
+        fixationscale = file.data.FixationScale
     }
     else{
-        samplescale = file.data.SampleScale
+        fixationscale = file.data.SampleScale
     }
 
     nColumn = dataXYPos.getNumberOfColumns()
 
     var  arr = new Array(nColumn)
-    samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * samplescale
-    sampleheight = file.data.CanvasRatio * file.data.ImageHeightPixels * samplescale
+    fixationwidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.FixationScale
+    fixationheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.FixationScale
+    samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.SampleScale
+    sampleheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.SampleScale
     testwidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.TestScale
     testheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.TestScale 
     
-    sample_xcoord = file.data.XGridCenter[file.data.SampleGridIndex]
-    sample_ycoord = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.StaticFixationGridIndex]
-    
-
     // Size of sample and targets. Draw them as a bounding box in the touch plot
 
-        arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
-        arr[1] = sample_ycoord-sampleheight*file.data.CanvasRatio
-        dataXYPos.addRows([arr])
+    //FIXATION
+    fixation_xcoord = file.data.XGridCenter[file.data.StaticFixationGridIndex]
+    fixation_ycoord = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.StaticFixationGridIndex]
 
-        arr[0] = sample_xcoord+samplewidth*file.data.CanvasRatio
-        arr[1] = sample_ycoord-sampleheight*file.data.CanvasRatio
-        dataXYPos.addRows([arr])
+    arr[0] = fixation_xcoord-fixationwidth*file.data.CanvasRatio
+    arr[1] = fixation_ycoord-fixationheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
 
-        arr[0] = sample_xcoord+samplewidth*file.data.CanvasRatio
-        arr[1] = sample_ycoord+sampleheight*file.data.CanvasRatio
-        dataXYPos.addRows([arr])
+    arr[0] = fixation_xcoord+fixationwidth*file.data.CanvasRatio
+    arr[1] = fixation_ycoord-fixationheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
 
-        arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
-        arr[1] = sample_ycoord+sampleheight*file.data.CanvasRatio
-        dataXYPos.addRows([arr])
-        
-        arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
-        arr[1] = sample_ycoord-sampleheight*file.data.CanvasRatio
-        dataXYPos.addRows([arr])
+    arr[0] = fixation_xcoord+fixationwidth*file.data.CanvasRatio
+    arr[1] = fixation_ycoord+fixationheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
 
+    arr[0] = fixation_xcoord-fixationwidth*file.data.CanvasRatio
+    arr[1] = fixation_ycoord+fixationheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
 
+    arr[0] = fixation_xcoord-fixationwidth*file.data.CanvasRatio
+    arr[1] = fixation_ycoord-fixationheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
+
+    //SAMPLE
+    sample_xcoord = file.data.XGridCenter[file.data.SampleGridIndex]
+    sample_ycoord = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.SampleGridIndex]    
+
+    arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
+    arr[2] = sample_ycoord-sampleheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
+
+    arr[0] = sample_xcoord+samplewidth*file.data.CanvasRatio
+    arr[2] = sample_ycoord-sampleheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
+
+    arr[0] = sample_xcoord+samplewidth*file.data.CanvasRatio
+    arr[2] = sample_ycoord+sampleheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
+
+    arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
+    arr[2] = sample_ycoord+sampleheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
+
+    arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
+    arr[2] = sample_ycoord-sampleheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
+
+    //TEST
     var test_xcoord = []
     var test_ycoord = []
     if (file.data.RewardStage != 0 ){
+        for (var i =0; i<=file.data.TestGridIndex.length-1; i++){
+            var arr = new Array(nColumn)
+            test_xcoord[i] = file.data.XGridCenter[file.data.TestGridIndex[i]]
+            test_ycoord[i] = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.TestGridIndex[i]]
 
-    for (var i =0; i<=file.data.TestGridIndex.length-1; i++){
-        test_xcoord[i] = file.data.XGridCenter[file.data.TestGridIndex[i]]
-        test_ycoord[i] = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.TestGridIndex[i]]
-        
+            arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
+            arr[i+3] = test_ycoord[i]-testheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
 
-        var arr = new Array(nColumn)
-        arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
-        arr[i+2] = test_ycoord[i]-testheight*file.data.CanvasRatio
-        dataXYPos.addRows([arr])
+            arr[0] = test_xcoord[i]+testwidth*file.data.CanvasRatio
+            arr[i+3] = test_ycoord[i]-testheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
 
-        arr[0] = test_xcoord[i]+testwidth*file.data.CanvasRatio
-        arr[i+2] = test_ycoord[i]-testheight*file.data.CanvasRatio
-        dataXYPos.addRows([arr])
+            arr[0] = test_xcoord[i]+testwidth*file.data.CanvasRatio
+            arr[i+3] = test_ycoord[i]+testheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
 
-        arr[0] = test_xcoord[i]+testwidth*file.data.CanvasRatio
-        arr[i+2] = test_ycoord[i]+testheight*file.data.CanvasRatio
-        dataXYPos.addRows([arr])
+            arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
+            arr[i+3] = test_ycoord[i]+testheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
 
-        arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
-        arr[i+2] = test_ycoord[i]+testheight*file.data.CanvasRatio
-        dataXYPos.addRows([arr])
-        
-        arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
-        arr[i+2] = test_ycoord[i]-testheight*file.data.CanvasRatio
-        dataXYPos.addRows([arr])
-   
-    }
-    }
+            arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
+            arr[i+3] = test_ycoord[i]-testheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
+        } //for n-way
+    } //if rewardstage != 0
 
     var xpos_Fix = []
     var ypos_Fix = []
@@ -604,8 +638,6 @@ function toPerformanceData() {
         xpos = touchevent[i][0]
         ypos = file.data.workspace[3]*file.data.CanvasRatio-touchevent[i][1]+file.data.offsettop
         
-      
-
         var ydata_index = []
         if (i % 2 == 0) {
             ydata_index = i / 2
@@ -616,71 +648,66 @@ function toPerformanceData() {
         if (xpos != -1) {
             var arr = new Array(nColumn)
             arr[0] = xpos 
-            if (i % 2 == 0){
+            if (i % 2 == 0){ //if even (fixation)
                 xpos_Fix.push(xpos)
                 ypos_Fix.push(ypos)
                 if (ydata[ydata_index]==1){
-                    //Fixation and Hit
-                arr[1 + file.data.TestGridIndex.length+1] = ypos 
+                //Fixation and Hit
+                arr[3 + file.data.TestGridIndex.length] = ypos 
                 dataXYPos.addRows([arr])
                 } else{
                //Fixation and Missed
-                arr[1 + file.data.TestGridIndex.length+2] = ypos 
+                arr[3 + file.data.TestGridIndex.length+1] = ypos 
                 dataXYPos.addRows([arr])
                 }
-            } else {
+            } else { //if odd (choice)
                 var xpos_T_arr = Array.apply(null, Array(file.data.TestGridIndex.length)).map(Number.prototype.valueOf, 0);
                 var ypos_T_arr = Array.apply(null, Array(file.data.TestGridIndex.length)).map(Number.prototype.valueOf, 0);
                 for (var j = 0; j<=file.data.TestGridIndex.length-1; j++){  //different targets 
                     
                     if (file.data.Response[ydata_index] == j){
-                    xpos_T_arr[j] = xpos
-                    ypos_T_arr[j] = ypos
-                    nTarget[j]++
+                        xpos_T_arr[j] = xpos
+                        ypos_T_arr[j] = ypos
+                        nTarget[j]++
                     }
                     xpos_T.push(xpos_T_arr)  
-                    ypos_T.push(ypos_T_arr)    
-                       
-                    }
+                    ypos_T.push(ypos_T_arr)  
+                }
 
                 if (ydata[ydata_index]==1){ //Target and hit
-                    arr[1+file.data.TestGridIndex.length+3] = ypos
+                    arr[3+file.data.TestGridIndex.length+2] = ypos
                     dataXYPos.addRows([arr])
-                    
+
                 } else{ //target and Missed
-                    arr[1 + file.data.TestGridIndex.length+4] = ypos 
-                    dataXYPos.addRows([arr])    
-                }
-                }
-             }
+                    arr[3 + file.data.TestGridIndex.length+3] = ypos 
+                    dataXYPos.addRows([arr])
+                } //if
+            }// if even else odd
+        } // if xpos
 
-             mean_xpos_Fix = xpos_Fix.reduce(function(a,b){return a+b},0)/xpos_Fix.length
-             mean_ypos_Fix = ypos_Fix.reduce(function(a,b){return a+b},0)/ypos_Fix.length
-             dist_xpos_Fix = xpos_Fix.map(function(a){return Math.pow(Math.abs(a-mean_xpos_Fix),2)})
-             dist_ypos_Fix = ypos_Fix.map(function(a){return Math.pow(Math.abs(a-mean_ypos_Fix),2)})
-             std_Fix = dist_xpos_Fix.map(function(a,i){return Math.sqrt(a+dist_ypos_Fix[i])}).reduce(function(a,b){return a+b},0)/dist_xpos_Fix.length
-             vitals.std_Fix = std_Fix            
-    
-                
-             var std_T = []
-             for (var j=0; j<=file.data.TestGridIndex.length-1;j++){                 
-                 all_xpos_T = xpos_T.map(function(a){return a[j]}).filter(function(a){return a!=0})
-                 mean_xpos_T = all_xpos_T.reduce(function(a,b){return a+b},0)/all_xpos_T.length 
-                 dist_xpos_T = all_xpos_T.map(function(a){return Math.pow(Math.abs(a-mean_xpos_T),2)})
-                 all_ypos_T = ypos_T.map(function(a){return a[j]}).filter(function(a){return a!=0})  
-                 mean_ypos_T = all_ypos_T.reduce(function(a,b){return a+b},0)/all_ypos_T.length
-                 dist_ypos_T = all_ypos_T.map(function(a){return Math.pow(Math.abs(a-mean_ypos_T),2)})
-                 std_T[j]= dist_xpos_T.map(function(a,i){return Math.sqrt(a+dist_ypos_T[i])}).reduce(function(a,b){return a+b},0)/all_xpos_T.length
-             }
-             
-            vitals.std_T = std_T
-        }     
+         mean_xpos_Fix = xpos_Fix.reduce(function(a,b){return a+b},0)/xpos_Fix.length
+         mean_ypos_Fix = ypos_Fix.reduce(function(a,b){return a+b},0)/ypos_Fix.length
+         dist_xpos_Fix = xpos_Fix.map(function(a){return Math.pow(Math.abs(a-mean_xpos_Fix),2)})
+         dist_ypos_Fix = ypos_Fix.map(function(a){return Math.pow(Math.abs(a-mean_ypos_Fix),2)})
+         std_Fix = dist_xpos_Fix.map(function(a,i){return Math.sqrt(a+dist_ypos_Fix[i])}).reduce(function(a,b){return a+b},0)/dist_xpos_Fix.length
+         vitals.std_Fix = std_Fix            
 
-    
+        var std_T = []
+        for (var j=0; j<=file.data.TestGridIndex.length-1;j++){                 
+             all_xpos_T = xpos_T.map(function(a){return a[j]}).filter(function(a){return a!=0})
+             mean_xpos_T = all_xpos_T.reduce(function(a,b){return a+b},0)/all_xpos_T.length 
+             dist_xpos_T = all_xpos_T.map(function(a){return Math.pow(Math.abs(a-mean_xpos_T),2)})
+             all_ypos_T = ypos_T.map(function(a){return a[j]}).filter(function(a){return a!=0})  
+             mean_ypos_T = all_ypos_T.reduce(function(a,b){return a+b},0)/all_ypos_T.length
+             dist_ypos_T = all_ypos_T.map(function(a){return Math.pow(Math.abs(a-mean_ypos_T),2)})
+             std_T[j]= dist_xpos_T.map(function(a,i){return Math.sqrt(a+dist_ypos_T[i])}).reduce(function(a,b){return a+b},0)/all_xpos_T.length
+        } //for j test choices
+        vitals.std_T = std_T
+    } //for i touch events   
 
     ydata_5 = smooth(ydata,5);
     ydata_100 = smooth(ydata,100);
-
+    
 //Referencing to time file was last written & time of last trial rather than to file start.
     //Done because file can be changed on the fly which changes file start relative to performance.now()
     if (typeof file.data.ResponseXYT === 'undefined' || file.data.ResponseXYT.length < 1 || typeof file.data.ResponseXYT[file.data.ResponseXYT.length - 1][2] === 'undefined') {
@@ -1074,19 +1101,25 @@ function drawObjPerfBar() {
 function drawScatter() {
     scatterOptions.series = []
     for (var i=0; i<dataXYPos.getNumberOfColumns();i++){
-        if (i<=file.data.TestGridIndex.length){
+        if (i==0){
+            scatterOptions.series[i] = {type:'line',color:'gray',visibleInLegend: false}
+        } //if fixation 
+        else if (i==1){
             scatterOptions.series[i] = {type:'line',color:'black',visibleInLegend: false}
-        }
-        else if (i == file.data.TestGridIndex.length+1){
-            scatterOptions.series[i] = {color: 'black'}
-        } else if (i==file.data.TestGridIndex.length+2){
-            scatterOptions.series[i] = {color: 'green'}
-        } else if (i== file.data.TestGridIndex.length+3){
+        } // else if sample 
+        else if (i>=2 && i<=1+file.data.TestGridIndex.length){
+            scatterOptions.series[i] = {type:'line',color:'black',visibleInLegend: false}
+        } // else if test
+        else if (i == 2+file.data.TestGridIndex.length+0){
             scatterOptions.series[i] = {color: 'blue'}
-        } else if (i == file.data.TestGridIndex.length+4){
+        } else if (i==2+file.data.TestGridIndex.length+1){
             scatterOptions.series[i] = {color: 'red'}
+        } else if (i== 2+file.data.TestGridIndex.length+2){
+            scatterOptions.series[i] = {color: 'green'}
+        } else if (i == 2+file.data.TestGridIndex.length+3){
+            scatterOptions.series[i] = {color: 'black'}
         }
-}
+    } //for i scatter plot elements
     scatterOptions.height = file.data.workspace[3]*file.data.CanvasRatio,
     scatterOptions.width = file.data.workspace[2]*file.data.CanvasRatio,
     scatterOptions.hAxis = {title: 'X position (pixels)',
@@ -1097,8 +1130,6 @@ function drawScatter() {
     viewWindow: {
         min: 0, max: file.data.workspace[3]*file.data.CanvasRatio}
     }
-    
-
     livescatter.draw(dataXYPos, scatterOptions)
 }
 

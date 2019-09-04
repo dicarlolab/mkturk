@@ -306,24 +306,23 @@ async function runPump(str){
   if (FLAGS.runPump == 0){
     FLAGS.runPump = 1
     if (str == "flush"){
-      dur = 10000 //milliseconds
+      dur = 1000 //milliseconds
       npulse = 6
-      document.querySelector("button[id=pumpflush]").value = "Stop Pump"
-      document.querySelector("button[id=pumptrigger]").value = "Stop Pump"
     }
     else if (str == "trigger"){
       // dur = ENV.RewardDuration*1000 //milliseconds
       dur = 190; //50 pulse * 190 ms/pulse = 1 mL milk, 1.24 mL water
       npulse = 100
-      document.querySelector("button[id=pumpflush]").value = "Stop Pump"
-      document.querySelector("button[id=pumptrigger]").value = "Stop Pump"
     }
+    document.querySelector("button[id=pumpflush]").innerHTML = "Stop Pump"
+    document.querySelector("button[id=pumptrigger]").innerHTML = "Stop Pump"
   }
   else if (FLAGS.runPump == 1){ //user pressed button again to stop pump
     FLAGS.runPump = 0
-    document.querySelector("button[id=pumpflush]").value = 'Flush Line'
-    document.querySelector("button[id=pumptrigger]").value = '100 Pulses'
-//     document.getElementById("pumptrigger").value = 'Stop Pump'
+    port.statustext_connect = "!!!! USER STOPPED PUMP !!!!"
+    document.querySelector("button[id=pumpflush]").innerHTML = 'Flush 1 minute'
+    document.querySelector("button[id=pumptrigger]").innerHTML = '100Pulses->1mL Milk'
+    updateHeadsUpDisplayDevices()
     return
   }
 
@@ -333,7 +332,12 @@ async function runPump(str){
       break //no pump connected
     }
     else if (FLAGS.runPump == 0){
-      break //pump was stopped by user
+      FLAGS.runPump = 0
+      port.statustext_connect = "!!!! USER STOPPED PUMP !!!!"
+      document.querySelector("button[id=pumpflush]").innerHTML = 'Flush 1 minute'
+      document.querySelector("button[id=pumptrigger]").innerHTML = '100Pulses->1mL Milk'
+      updateHeadsUpDisplayDevices()
+      return //pump was stopped by user
     }
     else if (FLAGS.runPump == 1 && ble.connected == true){
         await writepumpdurationtoBLE(Math.round(dur))
@@ -348,7 +352,7 @@ async function runPump(str){
 
         var endweight = blescale.weights[blescale.weights.length-1]
         port.statustext_connect = "***** Calibrating Pump " + i + "/" + npulse + " pulses, wt=" + Math.round([endweight-startweight]*100)/100 + " grams"
-        updateHeadsUpDisplay()
+        updateHeadsUpDisplayDevices()
       } //if usb pump
 
     await timeout(dur + 800)
@@ -356,8 +360,7 @@ async function runPump(str){
   } //for i pulses
 
   if (port.connected == true){
-    port.statustext_sent = "DONE RUNNING PUMP (" + npulse + " pulses @ " + Math.round(dur) + " ms/pulse)"
-    console.log(port.statustext_sent)
+    port.statustext_connect = "DONE RUNNING PUMP (" + npulse + " pulses @ " + Math.round(dur) + " ms/pulse)"
     if (blescale.connected == true){
       var endweight = blescale.weights[blescale.weights.length-1]
       port.statustext_connect = "!!!! DONE PUMP CALIBRATION !!!!"
@@ -365,7 +368,11 @@ async function runPump(str){
       + i + " pulses @ " + dur + "ms = " 
       + Math.round([endweight-startweight]*100)/100 + "g vs (1, 1.24) for 100 pulse (milk,water) calibration"
     } //if blescale
-    updateHeadsUpDisplay()
+    console.log(port.statustext_sent)
+    document.querySelector("button[id=pumpflush]").innerHTML = 'Flush 1 minute'
+    document.querySelector("button[id=pumptrigger]").innerHTML = '100Pulses->1mL Milk'
+    FLAGS.runPump = 0
+    updateHeadsUpDisplayDevices()
   } //if usb pump
 }
 

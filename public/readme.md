@@ -77,7 +77,7 @@ TestScale: Size of the test image in units of sample image width
 Weight: Weight in kilograms
 
 ## ENV
-BatteryLDT: Stores any status update from the battery API, L=battery level in %  D=estimated time until battery discharges  T=performance.now() timestamp of latest battery status update
+BatteryLDT: Stores any status update from the battery API, L=battery level in %  D=estimated time until battery discharges  T=Date.now()-StartDate timestamp of latest battery status update
 
 CanvasRatio: Ratio of the logical canvas pixels to the physical screen pixels = BackingStoreRatio/DevicePixelRatio
 
@@ -112,7 +112,7 @@ XGridCenter: The location of all grid points in pixels. Follows from user-specif
 YGridCenter: The location of all grid points in pixels. Follows from user-specified NGridPoints and GridScale (e.g. to create a 3x3 grid with adjacent non-overlapping images, set NGridPoints=3, GridScale=1 and YGridCenters will be spaced by ImageHeightPixels)
 
 ## TRIAL
-AllFixationXYT: records all fixation touches as opposed to most recent fixation touch in FixationXYT. If NFixations > 1, then AllFixationXYT will have multiple touch entries on a given trial. X,Y=horizontal,vertical position of fixation touch in pixels T=time of touch measured during performance.now()
+AllFixationXYT: records all fixation touches as opposed to most recent fixation touch in FixationXYT. If NFixations > 1, then AllFixationXYT will have multiple touch entries on a given trial. X,Y=horizontal,vertical position of fixation touch in pixels T=time of touch measured during Date.now()
 
 AutomatorStage: Stage number if Automator=1
 
@@ -122,7 +122,7 @@ FixationGridIndex: Fixation grid location on each trial.
 
 FixationTouchEvent: The type of touch event that was registered for that trial (e.g. touchheld or touchbroke if there was a required FixationDuration>0 period)
 
-FixationXYT: records most recent fixation touch on each trial. X,Y=horizontal,vertical position of fixation touch in pixels T=time of touch measured using performance.now()
+FixationXYT: records most recent fixation touch on each trial. X,Y=horizontal,vertical position of fixation touch in pixels T=time of touch measured using Date.now()
 
 NReward: The number of rewards given at the end of each trial; usually 1x reward unless subject got many trials in a row correct in which case may get bonus reward according to nconsecutivehitsforbonus.
 
@@ -130,7 +130,7 @@ Response: Index of the chosen item on each trial
 
 ResponseTouchEvent: The type of touch event that was registered for that trial (e.g. touchheld, touchbroken, TimeOut)
 
-ResponseXYT: records the coordinates and time of touching the choice item. X,Y=horizontal,vertical position of response touch in pixels T=time of touch measured using performance.now()
+ResponseXYT: records the coordinates and time of touching the choice item. X,Y=horizontal,vertical position of response touch in pixels T=time of touch measured using Date.now()
 
 
 Sample: Index of sample displayed on each trial. Index into list of imagebags for that session

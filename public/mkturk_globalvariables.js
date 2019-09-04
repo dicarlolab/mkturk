@@ -21,6 +21,7 @@ ENV.ResearcherID = ''
 ENV.USBDeviceType = ''
 ENV.USBDeviceName = ''
 ENV.Subject = ''
+ENV.AgentRFID = "XX"
 ENV.CurrentDate = new Date;
 ENV.ImageHeightPixels = NaN; 
 ENV.ImageWidthPixels = NaN;
@@ -61,6 +62,7 @@ FLAGS.firestorecreatedoc = 0
 FLAGS.firestorelastsavedtrial = 0
 FLAGS.firestoretimeron = 0
 FLAGS.stressTest = 0
+FLAGS.RFIDGeneratorCreated = 0
 
 var CANVAS = {}; 
 var CANVAS = {
@@ -186,6 +188,7 @@ var ycanvascenter=[];
 var curridx = null;
 var datafiles=[];
 var displayoutofboundsstr=""
+var imageloadingtimestr="Loaded: "
 
 //================ UPDATE VARIABLE FUNCTIONS ================//
 function resetTRIAL(){
@@ -215,7 +218,7 @@ function resetTRIAL(){
 	TRIAL.NWeights = 0
 	TRIAL.BatteryLDT = []	
 	navigator.getBattery().then(function(batteryobj){
-		TRIAL.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
+		TRIAL.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Date.now() - ENV.CurrentDate.valueOf()]);
 		logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"trialseries")
 
 	TRIAL.SampleObjectTy = []
@@ -319,7 +322,7 @@ function logEVENTS(eventname,eventval,eventtype){
 		if (FLAGS.savedata == 0){
 			indevent = 0 //store most recent timepoint in first position until start saving data
 		}
-		var trialtime = [EVENTS.trialnum, Math.round(performance.now())]
+		var trialtime = [EVENTS.trialnum, Date.now() - ENV.CurrentDate.valueOf()]
 		EVENTS[eventtype][eventname][indevent.toString()] = trialtime.concat(eventval)
 	}
 }
