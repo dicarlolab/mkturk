@@ -335,15 +335,24 @@ function initializeChartData() {
 // 2: y sample (box)
 // 3: y test1 (box)
 // 4: y test2 (box)
+// 3: y same (box)
+// 4: y different (box)
 // 5: y Fix_reward (dots)
 // 6: y Fix_punish (dots)
 // 7: y Target_reward (dots)
 // 8: y Target_punish (dots)
     dataXYPos.addColumn('number', 'xpos')
     dataXYPos.addColumn('number','Fixation')
-    dataXYPos.addColumn('number','Sample')    
+    dataXYPos.addColumn('number','Sample')  
     for (var i = 0; i<=file.data.TestGridIndex.length-1;i++){
-        dataXYPos.addColumn('number', 'Target' + (i+1))
+        if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0 && i > 0){
+            break
+        }
+        dataXYPos.addColumn('number', 'Test' + (i+1))
+    }
+    if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0){
+        dataXYPos.addColumn('number', 'Same')
+        dataXYPos.addColumn('number', 'Different')
     }
 
     dataXYPos.addColumn('number', 'Fix_Reward')
@@ -393,8 +402,6 @@ function toTask() {
     }
 
     task.distractor = file.data.HideTestDistractors
-
-    task.nway = file.data.Nway;
     task.nobj = file.data.ImageBagsTest.length;
     task.objectlist = file.data.ImageBagsTest
 
@@ -517,7 +524,6 @@ function toPerformanceData() {
         } else if (i == 0) {
             ncorrect[i] = ydata[i]
         }
-
     }
 
     // Store fixation in odd indices and choice in even
@@ -539,62 +545,71 @@ function toPerformanceData() {
 
     nColumn = dataXYPos.getNumberOfColumns()
 
-    var  arr = new Array(nColumn)
+    // Size of sample, test & choice targets. Draw them as a bounding box in the touch plot
     fixationwidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.FixationScale
     fixationheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.FixationScale
     samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.SampleScale
     sampleheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.SampleScale
     testwidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.TestScale
-    testheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.TestScale 
+    testheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.TestScale
+    if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0){
+        choicewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.ChoiceScale
+        choiceheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.ChoiceScale 
+    }
     
-    // Size of sample and targets. Draw them as a bounding box in the touch plot
+    var ndisplayelements = 0
 
     //FIXATION
+    ndisplayelements++
+
     fixation_xcoord = file.data.XGridCenter[file.data.StaticFixationGridIndex]
     fixation_ycoord = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.StaticFixationGridIndex]
 
+    var  arr = new Array(nColumn)
     arr[0] = fixation_xcoord-fixationwidth*file.data.CanvasRatio
-    arr[1] = fixation_ycoord-fixationheight*file.data.CanvasRatio
+    arr[ndisplayelements] = fixation_ycoord-fixationheight*file.data.CanvasRatio
     dataXYPos.addRows([arr])
 
     arr[0] = fixation_xcoord+fixationwidth*file.data.CanvasRatio
-    arr[1] = fixation_ycoord-fixationheight*file.data.CanvasRatio
+    arr[ndisplayelements] = fixation_ycoord-fixationheight*file.data.CanvasRatio
     dataXYPos.addRows([arr])
 
     arr[0] = fixation_xcoord+fixationwidth*file.data.CanvasRatio
-    arr[1] = fixation_ycoord+fixationheight*file.data.CanvasRatio
+    arr[ndisplayelements] = fixation_ycoord+fixationheight*file.data.CanvasRatio
     dataXYPos.addRows([arr])
 
     arr[0] = fixation_xcoord-fixationwidth*file.data.CanvasRatio
-    arr[1] = fixation_ycoord+fixationheight*file.data.CanvasRatio
+    arr[ndisplayelements] = fixation_ycoord+fixationheight*file.data.CanvasRatio
     dataXYPos.addRows([arr])
 
     arr[0] = fixation_xcoord-fixationwidth*file.data.CanvasRatio
-    arr[1] = fixation_ycoord-fixationheight*file.data.CanvasRatio
+    arr[ndisplayelements] = fixation_ycoord-fixationheight*file.data.CanvasRatio
     dataXYPos.addRows([arr])
 
     //SAMPLE
+    ndisplayelements++
     sample_xcoord = file.data.XGridCenter[file.data.SampleGridIndex]
     sample_ycoord = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.SampleGridIndex]    
 
+    var  arr = new Array(nColumn)
     arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
-    arr[2] = sample_ycoord-sampleheight*file.data.CanvasRatio
+    arr[ndisplayelements] = sample_ycoord-sampleheight*file.data.CanvasRatio
     dataXYPos.addRows([arr])
 
     arr[0] = sample_xcoord+samplewidth*file.data.CanvasRatio
-    arr[2] = sample_ycoord-sampleheight*file.data.CanvasRatio
+    arr[ndisplayelements] = sample_ycoord-sampleheight*file.data.CanvasRatio
     dataXYPos.addRows([arr])
 
     arr[0] = sample_xcoord+samplewidth*file.data.CanvasRatio
-    arr[2] = sample_ycoord+sampleheight*file.data.CanvasRatio
+    arr[ndisplayelements] = sample_ycoord+sampleheight*file.data.CanvasRatio
     dataXYPos.addRows([arr])
 
     arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
-    arr[2] = sample_ycoord+sampleheight*file.data.CanvasRatio
+    arr[ndisplayelements] = sample_ycoord+sampleheight*file.data.CanvasRatio
     dataXYPos.addRows([arr])
 
     arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
-    arr[2] = sample_ycoord-sampleheight*file.data.CanvasRatio
+    arr[ndisplayelements] = sample_ycoord-sampleheight*file.data.CanvasRatio
     dataXYPos.addRows([arr])
 
     //TEST
@@ -602,31 +617,69 @@ function toPerformanceData() {
     var test_ycoord = []
     if (file.data.RewardStage != 0 ){
         for (var i =0; i<=file.data.TestGridIndex.length-1; i++){
+
+            if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0 && i > 0){
+                break
+            } // IF same-different, only show first test
+
+            ndisplayelements++
             var arr = new Array(nColumn)
             test_xcoord[i] = file.data.XGridCenter[file.data.TestGridIndex[i]]
             test_ycoord[i] = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.TestGridIndex[i]]
 
             arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
-            arr[i+3] = test_ycoord[i]-testheight*file.data.CanvasRatio
+            arr[ndisplayelements] = test_ycoord[i]-testheight*file.data.CanvasRatio
             dataXYPos.addRows([arr])
 
             arr[0] = test_xcoord[i]+testwidth*file.data.CanvasRatio
-            arr[i+3] = test_ycoord[i]-testheight*file.data.CanvasRatio
+            arr[ndisplayelements] = test_ycoord[i]-testheight*file.data.CanvasRatio
             dataXYPos.addRows([arr])
 
             arr[0] = test_xcoord[i]+testwidth*file.data.CanvasRatio
-            arr[i+3] = test_ycoord[i]+testheight*file.data.CanvasRatio
+            arr[ndisplayelements] = test_ycoord[i]+testheight*file.data.CanvasRatio
             dataXYPos.addRows([arr])
 
             arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
-            arr[i+3] = test_ycoord[i]+testheight*file.data.CanvasRatio
+            arr[ndisplayelements] = test_ycoord[i]+testheight*file.data.CanvasRatio
             dataXYPos.addRows([arr])
 
             arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
-            arr[i+3] = test_ycoord[i]-testheight*file.data.CanvasRatio
+            arr[ndisplayelements] = test_ycoord[i]-testheight*file.data.CanvasRatio
             dataXYPos.addRows([arr])
         } //for n-way
     } //if rewardstage != 0
+
+    //CHOICE
+    var choice_xcoord = []
+    var choice_ycoord = []
+    if (typeof(file.data.TestON) != "undefined" && file.data.RewardStage != 0 && file.data.TestON > 0){
+        for (var i =0; i<=file.data.ChoiceGridIndex.length-1; i++){
+            ndisplayelements++
+            var arr = new Array(nColumn)
+            choice_xcoord[i] = file.data.XGridCenter[file.data.ChoiceGridIndex[i]]
+            choice_ycoord[i] = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.ChoiceGridIndex[i]]
+
+            arr[0] = choice_xcoord[i]-choicewidth*file.data.CanvasRatio
+            arr[ndisplayelements] = choice_ycoord[i]-choiceheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
+
+            arr[0] = choice_xcoord[i]+choicewidth*file.data.CanvasRatio
+            arr[ndisplayelements] = choice_ycoord[i]-choiceheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
+
+            arr[0] = choice_xcoord[i]+choicewidth*file.data.CanvasRatio
+            arr[ndisplayelements] = choice_ycoord[i]+choiceheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
+
+            arr[0] = choice_xcoord[i]-choicewidth*file.data.CanvasRatio
+            arr[ndisplayelements] = choice_ycoord[i]+choiceheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
+
+            arr[0] = choice_xcoord[i]-choicewidth*file.data.CanvasRatio
+            arr[ndisplayelements] = choice_ycoord[i]-choiceheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
+        } //for n-way
+    } //if rewardstage != 0    
 
     var xpos_Fix = []
     var ypos_Fix = []
@@ -653,11 +706,11 @@ function toPerformanceData() {
                 ypos_Fix.push(ypos)
                 if (ydata[ydata_index]==1){
                 //Fixation and Hit
-                arr[3 + file.data.TestGridIndex.length] = ypos 
+                arr[ndisplayelements+1] = ypos 
                 dataXYPos.addRows([arr])
                 } else{
                //Fixation and Missed
-                arr[3 + file.data.TestGridIndex.length+1] = ypos 
+                arr[ndisplayelements+2] = ypos 
                 dataXYPos.addRows([arr])
                 }
             } else { //if odd (choice)
@@ -675,11 +728,11 @@ function toPerformanceData() {
                 }
 
                 if (ydata[ydata_index]==1){ //Target and hit
-                    arr[3+file.data.TestGridIndex.length+2] = ypos
+                    arr[ndisplayelements+3] = ypos
                     dataXYPos.addRows([arr])
 
                 } else{ //target and Missed
-                    arr[3 + file.data.TestGridIndex.length+3] = ypos 
+                    arr[ndisplayelements+4] = ypos 
                     dataXYPos.addRows([arr])
                 } //if
             }// if even else odd
@@ -981,26 +1034,39 @@ function addTaskText() {
     task["name"] = ""
     if (task.rewardstage == 0) {
         task["name"] = "Fixation";
+        var nchoice = 1
     } 
+    else if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0){
+        task["name"] = "Same-Different"
+        var nchoice = 2
+
+        if (file.data.HideChoiceDistractors){
+            var nchoice = 1
+        }
+    }
     else {
         if (Array.from(new Set(file.data.Sample)).length>1){
             if (file.data.ObjectGridIndex.length != 0 ){
                 task["name"] = "Stimulus Response"
+                var nchoice = file.data.TestGridIndex.length
             }else{
                 if (task.distractor==0){
-                task["name"] = "Match-to-Sample";
+                    task["name"] = "Match-to-Sample";
+                    var nchoice = file.data.TestGridIndex.length
                 }
                 else{
-                task["name"] = "No distractor Match-to-Sample"
+                    task["name"] = "No distractor Match-to-Sample"
+                    var nchoice = 1
                 }
             }
         }
         else{
             task["name"] = "Detection";
+            var nchoice = file.data.TestGridIndex.length
         }
     }
 
-    tasktextobj.innerHTML = "<b>" + task.name + "</b>:" + task.nway + "-way" + ", " + task.nobj + "-obj" + "<br>" + "Sample folder " + task.imagefoldersample + ", Test folder " + task.imagefoldertest + "<br>" + "Sample On=" + task.sampleon + " ms" + ", Sample Off=" + task.sampleoff + " ms" + "<br>" + "objs=[" + task.objectlist + "]" + "<br>" + "reward=" + task.rewardper1000 + "mL per 1000 correct trials"
+    tasktextobj.innerHTML = "<b>" + task.name + "</b>:" + " " + task.nobj + "obj " + nchoice + "choice" + "<br>" + "Sample folder " + task.imagefoldersample + ", Test folder " + task.imagefoldertest + "<br>" + "Sample On=" + task.sampleon + " ms" + ", Sample Off=" + task.sampleoff + " ms" + "<br>" + "objs=[" + task.objectlist + "]" + "<br>" + "reward=" + task.rewardper1000 + "mL per 1000 correct trials"
 }
 
 //Synchronous
@@ -1101,24 +1167,30 @@ function drawObjPerfBar() {
 function drawScatter() {
     scatterOptions.series = []
     for (var i=0; i<dataXYPos.getNumberOfColumns();i++){
-        if (i==0){
-            scatterOptions.series[i] = {type:'line',color:'gray',visibleInLegend: false}
+        if (dataXYPos.getColumnLabel(i) == "Fixation"){
+            scatterOptions.series[i-1] = {type:'line',color:'gray'} //,visibleInLegend: false}
         } //if fixation 
-        else if (i==1){
-            scatterOptions.series[i] = {type:'line',color:'black',visibleInLegend: false}
+        else if (dataXYPos.getColumnLabel(i) == "Sample"){
+            scatterOptions.series[i-1] = {type:'line',color:'black'} //,visibleInLegend: false}
         } // else if sample 
-        else if (i>=2 && i<=1+file.data.TestGridIndex.length){
-            scatterOptions.series[i] = {type:'line',color:'black',visibleInLegend: false}
-        } // else if test
-        else if (i == 2+file.data.TestGridIndex.length+0){
-            scatterOptions.series[i] = {color: 'blue'}
-        } else if (i==2+file.data.TestGridIndex.length+1){
-            scatterOptions.series[i] = {color: 'red'}
-        } else if (i== 2+file.data.TestGridIndex.length+2){
-            scatterOptions.series[i] = {color: 'green'}
-        } else if (i == 2+file.data.TestGridIndex.length+3){
-            scatterOptions.series[i] = {color: 'black'}
+        else if (dataXYPos.getColumnLabel(i) == "Same"){
+            scatterOptions.series[i-1] = {type:'line',color:'green'} //,visibleInLegend: false}
+        } // else if same
+        else if (dataXYPos.getColumnLabel(i) == "Different"){
+            scatterOptions.series[i-1] = {type:'line',color:'red'} //,visibleInLegend: false}
+        } // else if different
+        else if (dataXYPos.getColumnLabel(i) == "Fix_Reward"){
+            scatterOptions.series[i-1] = {color: 'blue'}
+        } else if (dataXYPos.getColumnLabel(i) == "Fix_Punish"){
+            scatterOptions.series[i-1] = {color: 'red'}
+        } else if (dataXYPos.getColumnLabel(i) == "Target_Reward"){
+            scatterOptions.series[i-1] = {color: 'green'}
+        } else if (dataXYPos.getColumnLabel(i) == "Target_Punish"){
+            scatterOptions.series[i-1] = {color: 'black'}
         }
+        else if (dataXYPos.getColumnLabel(i).includes("Test")){
+            scatterOptions.series[i-1] = {type:'line',color:'black'} //,visibleInLegend: false}
+        } // else if test
     } //for i scatter plot elements
     scatterOptions.height = file.data.workspace[3]*file.data.CanvasRatio,
     scatterOptions.width = file.data.workspace[2]*file.data.CanvasRatio,
@@ -1298,7 +1370,6 @@ imagefoldersample: 0,
 imagefoldertest: 0,
 sampleon: 0,
 sampleoff: 0,
-nway: 0,
 nobj: 0,
 objectlist: [],
 }

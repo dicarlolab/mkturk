@@ -5,7 +5,13 @@ Automator: Boolean on/off
 
 AutomatorFilePath: File path to params for the automator curriculum.
 
-ChoiceTimeOut: Time in milliseconds that subject has to make a choice in AFC task before trial aborts and new sample is displayed
+CheckRFID: Time in milliseconds over which at least one matching RFID read is required so that agent doesn't get kicked off of task. If there is a read within the last CheckRFID ms, task continues, otherwise agent is locked out at start of next trial. CheckRFID <= 0 turns off RFID checking.
+
+ChoiceGridIndex: For a same-different task, need to specify two locations, one for same choice (circle) and one for different choice (square).
+
+ChoiceScale: Size of choice circle and square in units of sample image width
+
+ChoiceTimeOut: Time in milliseconds that subject has to make a choice in AFC task before trial aborts and new sample is displayed. This timeout applies to test response screen in SR2 or M2S and to choice response screen in same-different
 
 ConsecutiveHitsITI: Maximum time in milliseconds allowed to elapse from the previous trial for the current trial to count toward reward accumulation for a string of correct responses. For example, if ConsecutiveHitsITI=8000, then subject has 8 seconds to complete the next trial successfully and the consecutivehits counter will be incremented. Otherwise, the number of consecutivehits will get set to 0
 
@@ -20,7 +26,9 @@ FixationUsesSample: FixationUsesSample=0, a fixation circle is shown for subject
 
 GridScale: Determines intergridpoint spacing. Can think of this as the resolution of grid. gridscale=1 means intergridpoint spacing is equal to the width of the sample image. Finer grid resolutions (gridscale<1) can be used for more precise sample positioning.
 
-HideTestDistractors: HideTestDistractors=1, hides the distractor choices so that subject only sees matching choice.
+HideChoiceDistractors: HideChoiceDistractors=1, hides the same or different button so that subject sees only the correct one to touch. Still gets punished if touches blank area where the incorrect button would have been. This only applies to same-different choice screen. See HideTestDistractors for test response screen used in SR2 and M2S.
+
+HideTestDistractors: HideTestDistractors=1, hides the distractor choices so that subject only sees matching choice. Still gets punished if touches blank area where the incorrect button would have been.
 
 Homecage: Where task was performed. 0=lab 1=subject's home
 
@@ -28,7 +36,9 @@ ImageBagsSample: List of (list of) paths, where entries at the top level are dir
 
 ImageBagsTest: List of (list of) paths, where entries at the top level are directories / imagepaths for the test images of one group; e.g. [['/buttons/bear_icon.png, '/buttons/dog_icon.png'], ['/buttons/face_icon1.png, '/buttons/face_icon2.png']]
 
-KeepSampleON: KeepSampleON=0, sample is presented only for sampleON milliseconds for a delayed match-to-sample, KeepSampleON=1 sample remains on during choice scree. This implements a spatial match to sample.
+KeepSampleON: KeepSampleON=0, sample is presented only for sampleON milliseconds for a delayed match-to-sample, KeepSampleON=1 sample remains on during choice screen. This implements a spatial match to sample.
+
+KeepTestON: KeepTestON=0, test is presented only for testON milliseconds, KeepTestON=1 test remains on during choice screen. This only applies to same-different task when responses are indicated on additional choice screen following test screen.
 
 Liquid: 1=water 2=water-condensed milk 3=marshmallow slurry (4/30mL)
 
@@ -40,7 +50,7 @@ NGridPoints: Number of display grid points in either direction. Produces square 
 
 NRewardMax: Max number of rewards that can be given for a successful trial. This caps how much extra (bonus) reward subject can get for successful completion of consecutive trials. If nrewardmax=3, then subject can get up to 3x reward for completing 3*NConsecutiveHitsforBonus consecutive trials successfully, and then would get 3x reward after that until gets a trial wrong.
 
-NStickyResponse: Number of times subject can choose the same location on the screen before force them out of it by placing the correct answer somewhere else (i.e. if they have response bias, then on the next trial, the correct choice is drawn somewhere away from that bias).
+NStickyResponse: Number of times subject can choose the same location on the screen before force them out of it by placing the correct answer somewhere else (i.e. if they have response bias, then on the next trial, the correct choice is drawn somewhere away from that bias). Currently not implemented for same-different task or SR2
 
 NTrialsPerBagBlock: if 0, randomly samples from all bags (default: interleaved match-t0-sample), if >0, samples N consecutive images from the same sample image bag. This is equivalent to blocking the session so that training is done in object blocks rather than interleaving all objects. After N trials are completed for bag i, proceeds to next bag i+1 according to bag sequence specified in ImageBagsSample. When all bags have been sampled NTrialsPerBagBlock times, starts back at bag 0.
 
@@ -72,14 +82,24 @@ Tablet: nexus9, samsung10, pixelc
 
 TestGridIndex: Index on grid where test images (choices) appear.
 
+TestON: TestON > 0 indicates a Same-Different task so that last screen is a new choice screen with same (circle) and different (square) buttons. Test image extinguishes after TestON milliseconds, followed by TestOFF pause, followed by choice screen. If KeepTestON=1, then test image is on for TestON milliseconds and then remains on for choice screen
+
+TestOFF: Choice screen appears TestOFF milliseconds after test image is extinguished. If TestOFF=0, then test screen does not extinguish (go to blank gray) until same-different choice screen appears. If KeepTestON=1, then test image reappears during the same-different choice screen.
+
 TestScale: Size of the test image in units of sample image width
 
 Weight: Weight in kilograms
 
 ## ENV
+AgentRFID: If CheckRFID>0, then fetches AgentRFID from database to check against incoming RFID reads to determine if correct agent is performing task. If tag doesn't match AgentRFID, task locks out and waits for a valid tag read
+
 BatteryLDT: Stores any status update from the battery API, L=battery level in %  D=estimated time until battery discharges  T=Date.now()-StartDate timestamp of latest battery status update
 
 CanvasRatio: Ratio of the logical canvas pixels to the physical screen pixels = BackingStoreRatio/DevicePixelRatio
+
+ChoiceRadius: Radius (width) of same circle (different square) in pixels. This is not set by the user. Rather, user specifies ChoiceScale, and then ChoiceRadius stores the actual pixel-based size in the json data file.
+
+ChoiceColor: Defaults to white circle (same) and square (different) buttons for same-different choice screen
 
 CurrentDate: date & time when task session was initiated
 
@@ -88,6 +108,8 @@ DataFileName: complete file path and name of datafile
 DevicePixelRatio: In a typical retina display, there can be a devicePixelRatio of 2 so that each 1x1 logical pixel is rendered using 2x2 logical pixels. This upsampling requires interpolation and can lead to blurring over your image. However, this can be compensated by setting the CanvasRatio = BackingStoreRatio/DevicePixelRatio
 
 FixationRadius: Radius of fixation image in pixels. This is not set by the user. Rather, user specifies FixationScale, and then FixationRadius stores the actual pixel-based size in the json data file.
+
+FixationColor: color of fixation dot if image is not used
 
 ImageHeightPixels: The height of the sample image in pixels. The image height is used as the unit for the vertical dimension. SampleScale, FixationScale, TestScale, or GridScale = 1 means correspond to 1 unit in terms of the sample image
 
@@ -126,15 +148,30 @@ FixationXYT: records most recent fixation touch on each trial. X,Y=horizontal,ve
 
 NReward: The number of rewards given at the end of each trial; usually 1x reward unless subject got many trials in a row correct in which case may get bonus reward according to nconsecutivehitsforbonus.
 
-Response: Index of the chosen item on each trial
+NRFID: total # of RFID tag reads
+
+NWeights: total # of weight reads
+
+Response: Index of the chosen item on each trial. For M2S and SR2, response is measured for touches on the test screen. For same-different task, this is collected at the choice screen.
 
 ResponseTouchEvent: The type of touch event that was registered for that trial (e.g. touchheld, touchbroken, TimeOut)
 
 ResponseXYT: records the coordinates and time of touching the choice item. X,Y=horizontal,vertical position of response touch in pixels T=time of touch measured using Date.now()
 
+RFIDTag: tag read 
+
+RFIDTime: time in milliseconds that tag was read
+
+RFIDTrial: trial# during which tag was read
 
 Sample: Index of sample displayed on each trial. Index into list of imagebags for that session
 
 StartTime: Time recorded when the most recent fixation dot was shown for that trial.
 
 Test: Indices of test choices displayed on each trial where N indices are stored for an N-AFC task. Index into list of test imagebags for that session
+
+Weight: weight in grams
+
+WeightTime: time in milliseconds of weight reading
+
+WeightTrial: trial # during which tag was read

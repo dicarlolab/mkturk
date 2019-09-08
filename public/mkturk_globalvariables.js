@@ -29,6 +29,8 @@ ENV.CanvasRatio = 1
 ENV.DevicePixelRatio = 1
 ENV.FixationRadius = 0
 ENV.FixationColor = ''
+ENV.ChoiceRadius = 0
+ENV.ChoiceColor = 'white'
 ENV.XGridCenter = []
 ENV.YGridCenter = []
 ENV.RewardDuration = NaN
@@ -66,7 +68,7 @@ FLAGS.RFIDGeneratorCreated = 0
 
 var CANVAS = {}; 
 var CANVAS = {
-	names: ["blank","sample","test","touchfix","eyefix","reward","photoreward","punish"],
+	names: ["blank","sample","test","touchfix","eyefix","reward","photoreward","punish","choice"],
 	front: "blank",
 	sequenceblank: ["blank","blank"], 
 	tsequenceblank: [0,50], 

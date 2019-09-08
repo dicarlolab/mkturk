@@ -109,12 +109,18 @@ async generate_trials(n_trials){
 
 		// Select appropriate test images (correct one and distractors) 
 		var funcreturn = selectTestImages(sample_label, this.testbag_labels) 
-		var test_indices = funcreturn[0] 
-		var correctIndex = funcreturn[1] 
 		var test_filenames = []
-		for (var j = 0; j < test_indices.length; j++){
-			test_filenames.push(this.testbag_paths[test_indices[j]])
-		}
+		if (TASK.TestON <= 0){
+			var test_indices = funcreturn[0] 
+			for (var j = 0; j < test_indices.length; j++){
+				test_filenames.push(this.testbag_paths[test_indices[j]])
+			}
+		} // m2s or sr2
+		else if (TASK.TestON > 0) {
+			var test_indices = funcreturn[0][0]
+			test_filenames.push(this.testbag_paths[test_indices])
+		} //Same-Different Task = one side of the Match-to-Sample
+		var correctIndex = funcreturn[1] 
 
 		image_requests.push(... test_filenames)
 

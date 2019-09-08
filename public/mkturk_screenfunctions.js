@@ -3,14 +3,43 @@ function refreshCanvasSettings(TASK){
 	// TODO: cleanup CANVAS; separate canvas ID from sequence logic; 'tsequence' variables coded by length rather than absolute time
 
 	// Adjust length / toggle presence of gray screen between sample and test screens
-	if (TASK.SampleOFF > 0){
-		CANVAS.sequence = ["blank", "sample","blank","test"]
-		CANVAS.tsequence = [0,100,100+TASK.SampleON,100+TASK.SampleON+TASK.SampleOFF]; 
-	}
-	else if (TASK.SampleOFF <= 0 ){
-		CANVAS.sequence = ["blank","sample","test"]
-		CANVAS.tsequence = [0,100,100+TASK.SampleON]; 
-	}
+
+	//---------------- SEQUENCE OF SAMPLE & TEST IMAGES ----------------//
+	if (TASK.TestON <= 0){
+		if (TASK.SampleOFF > 0){
+			CANVAS.sequence = ["blank", "sample","blank","test"]
+			CANVAS.tsequence = [0,100,100+TASK.SampleON,100+TASK.SampleON+TASK.SampleOFF]; 
+		}
+		else if (TASK.SampleOFF <= 0 ){
+			CANVAS.sequence = ["blank","sample","test"]
+			CANVAS.tsequence = [0,100,100+TASK.SampleON]; 
+		}
+	} //if Match-to-Sample
+	else if (TASK.TestON > 0){
+		if (TASK.SampleOFF > 0 && TASK.TestOFF > 0){
+			CANVAS.sequence = ["blank","sample","blank","test","blank","choice"]
+			CANVAS.tsequence = [0,100,100+TASK.SampleON,100+TASK.SampleON+TASK.SampleOFF,
+								100+TASK.SampleON+TASK.SampleOFF+TASK.TestON,
+								100+TASK.SampleON+TASK.SampleOFF+TASK.TestON+TASK.TestOFF]; 
+		}
+		else if (TASK.SampleOFF <= 0 && TASK.TestOFF > 0){
+			CANVAS.sequence = ["blank","sample","test","blank","choice"]
+			CANVAS.tsequence = [0,100,100+TASK.SampleON,
+			100+TASK.SampleON+TASK.TestON,
+			100+TASK.SampleON+TASK.TestON+TASK.TestOFF];
+		}
+		else if (TASK.SampleOFF > 0 && TASK.TestOFF <= 0){
+			CANVAS.sequence = ["blank","sample","blank","test","choice"]
+			CANVAS.tsequence = [0,100,100+TASK.SampleON,100+TASK.SampleON+TASK.SampleOFF,
+								100+TASK.SampleON+TASK.SampleOFF+TASK.TestON]; 
+		}
+		if (TASK.SampleOFF <= 0 && TASK.TestOFF <= 0){
+			CANVAS.sequence = ["blank","sample","test","choice"]
+			CANVAS.tsequence = [0,100,100+TASK.SampleON,
+								100+TASK.SampleON+TASK.TestON];
+		}
+	} //else if Same-Different
+	//---------------- SEQUENCE OF SAMPLE & TEST IMAGES (end) ----------------//
 	
 	// Adjust length of reward screen based on reward amount 
 	CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+ENV.RewardDuration*1000;
@@ -277,6 +306,87 @@ async function bufferTestImages(sample_image, sample_image_grid_index, test_imag
 	}
 }
 
+//========== BUFFER CHOICE CANVAS ==========//
+async function bufferChoiceUsingDot(sample_image, sample_image_grid_index, test_images, test_image_grid_indices, correct_index, choice_color, choice_radius, choice_grid_indices, canvasobj){
+	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)	
+	boundingBoxesChoice['x'] = []
+	boundingBoxesChoice['y'] = []
+	// Draw test object(s): 
+	for (i = 0; i<choice_grid_indices.length; i++){
+		// If HideTestDistractors, simply do not draw the image
+		if(TASK.HideChoiceDistractors == 1){
+			if (correct_index != i){
+				boundingBoxesChoice.x.push([NaN, NaN]); 
+				boundingBoxesChoice.y.push([NaN, NaN]); 
+				continue 
+			}
+		}
+		if (i==0){
+			funcreturn = await renderDotOnCanvas(choice_color, choice_grid_indices[i], choice_radius, canvasobj);
+		} //different = square
+		else if (i==1){
+			funcreturn = await renderSquareOnCanvas(choice_color, choice_grid_indices[i], 2*choice_radius, canvasobj);
+		} //same = circle
+		boundingBoxesChoice.x.push(funcreturn[0]); 
+		boundingBoxesChoice.y.push(funcreturn[1]); 
+	} //FOR i choices
+
+	// Option: draw sample (TODO: remove the blink between sample screen and test screen)
+	if (TASK.KeepSampleON==1){
+		await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, canvasobj)
+	}
+	if (TASK.KeepTestON==1){ //should only be one test image
+		await renderImageOnCanvas(test_images[0], test_image_grid_indices[0], TASK.TestScale, canvasobj);
+	}
+} //FUNCTION bufferChoiceUsingDot
+
+
+async function renderDotOnCanvas(color, gridindex, dot_pixelradius, canvasobj){
+	var context=canvasobj.getContext('2d');
+
+	// Draw fixation dot
+	var rad = dot_pixelradius/ENV.CanvasRatio;
+	var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
+	var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;
+	context.beginPath();
+	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
+	context.fillStyle=color; 
+	context.fill();
+
+	// Define (rectangular) boundaries of fixation
+	// Bounding boxes of dot on canvas
+	xbound = [ (xcent-rad)*ENV.CanvasRatio, (xcent+rad)*ENV.CanvasRatio ];
+	ybound = [ (ycent-rad)*ENV.CanvasRatio, (ycent+rad)*ENV.CanvasRatio ];
+
+	xbound[0]=xbound[0]+CANVAS.offsetleft;
+	xbound[1]=xbound[1]+CANVAS.offsetleft;
+	ybound[0]=ybound[0]+CANVAS.offsettop;
+	ybound[1]=ybound[1]+CANVAS.offsettop;
+	return [xbound, ybound]
+}
+
+async function renderSquareOnCanvas(color, gridindex, square_pixelwidth, canvasobj){
+	// Draw Square
+	var context=canvasobj.getContext('2d');
+	var wd = square_pixelwidth/ENV.CanvasRatio;
+	var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
+	var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;
+	context.fillStyle=color;
+	context.fillRect(xcent-wd/2,ycent-wd/2,wd,wd);
+
+
+	// Define (rectangular) boundaries of fixation
+	// Bounding boxes of dot on canvas
+	xbound = [ (xcent-wd/2)*ENV.CanvasRatio, (xcent+wd/2)*ENV.CanvasRatio ];
+	ybound = [ (ycent-wd/2)*ENV.CanvasRatio, (ycent+wd/2)*ENV.CanvasRatio ];
+
+	xbound[0]=xbound[0]+CANVAS.offsetleft;
+	xbound[1]=xbound[1]+CANVAS.offsetleft;
+	ybound[0]=ybound[0]+CANVAS.offsettop;
+	ybound[1]=ybound[1]+CANVAS.offsettop;
+	return [xbound, ybound]
+}
+
 
 async function renderImageOnCanvas(image, grid_index, scale, canvasobj){
 	var context=canvasobj.getContext('2d');
@@ -345,7 +455,7 @@ function displayTrial(sequence,tsequence){
 				console.log("**** " + renderstr.status + " on 2ND rendering attempt of " + sequence[frame.current])
 
 				if (renderstr.status == "failed"){
-					if (sequence[frame.current] == "touchfix" || sequence[frame.current] == "test"){
+					if (sequence[frame.current] == "touchfix" || sequence[frame.current] == "test" || sequence[frame.current] == "choice"){
 						for (var j=0; j < 100; j++){
 							// attempt again
 							await setTimeout(j*100)
@@ -383,8 +493,8 @@ function displayTrial(sequence,tsequence){
 function renderScreen(screenType,canvasobj){
 	if (FLAGS.savedata == 0){
 		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter, 
-			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, 
-			TASK.FixationScale, TASK.SampleScale, TASK.TestScale, 
+			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, TASK.ChoiceGridIndex,
+			TASK.FixationScale, TASK.SampleScale, TASK.TestScale, TASK.ChoiceScale,
 			ENV.ImageWidthPixels, ENV.CanvasRatio,canvasobj);
 	}
 	else if (FLAGS.savedata == 1){
@@ -396,17 +506,17 @@ function renderScreen(screenType,canvasobj){
 		break
 	case 'blankWithGridMarkers':
 		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter, 
-			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, 
-			TASK.FixationScale, TASK.SampleScale, TASK.TestScale, 
+			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, TASK.ChoiceGridIndex,
+			TASK.FixationScale, TASK.SampleScale, TASK.TestScale, TASK.ChoiceScale,
 			ENV.ImageWidthPixels, ENV.CanvasRatio,canvasobj);
 		break
 	case 'touchfix':
 		if(TASK.FixationUsesSample != 1){
-			renderFixationUsingDot(ENV.FixationColor, CURRTRIAL.fixationgridindex,
+			bufferFixationUsingDot(ENV.FixationColor, CURRTRIAL.fixationgridindex,
 									ENV.FixationRadius, canvasobj);
 		}
 		else {
-			renderFixationUsingImage(CURRTRIAL.sampleimage, CURRTRIAL.fixationgridindex,
+			bufferFixationUsingImage(CURRTRIAL.sampleimage, CURRTRIAL.fixationgridindex,
 									TASK.SampleScale, canvasobj)	
 		}
 		break
@@ -418,6 +528,12 @@ function renderScreen(screenType,canvasobj){
 						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem, 
 						canvasobj);
 		break
+	case 'choice':
+		bufferChoiceUsingDot(CURRTRIAL.sampleimage, TASK.SampleGridIndex, 
+						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem, 
+						ENV.ChoiceColor,ENV.ChoiceRadius,TASK.ChoiceGridIndex,
+						canvasobj);
+		break
 	case 'reward':
 		renderReward(canvasobj)
 		break
@@ -426,7 +542,6 @@ function renderScreen(screenType,canvasobj){
 		break
 	default:
 	}
-
 }
 
 function renderBlank(canvasobj){
@@ -435,7 +550,7 @@ function renderBlank(canvasobj){
 	context.fillRect(0,100,canvasobj.width,canvasobj.height);
 }
 
-function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,fixationscale,samplescale,testscale,imwidth,canvasratio,canvasobj)
+function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,choicegridindex,fixationscale,samplescale,testscale,choicescale,imwidth,canvasratio,canvasobj)
 {
 	var outofbounds_str = ''
 	var context=canvasobj.getContext('2d');
@@ -505,6 +620,26 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 		}
 		displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
 	}
+
+	//Choice Image Bounding Box(es)
+	if (TASK.TestON > 0){
+		for (var i = 0; i <= choicegridindex.length-1; i++){
+			var wd = imwidth*choicescale
+			var xcent = gridx[choicegridindex[i]]/ENV.CanvasRatio
+			var ycent = gridy[choicegridindex[i]]/ENV.CanvasRatio
+			context.strokeStyle="red"
+			context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
+
+			var displaycoord = [(xcent-wd/2)*ENV.CanvasRatio,(ycent-wd/2)*ENV.CanvasRatio,
+							(xcent+wd/2)*ENV.CanvasRatio,(ycent+wd/2)*ENV.CanvasRatio]
+			var outofbounds=checkDisplayBounds(displaycoord)
+			if (outofbounds == 1){
+				outofbounds_str = outofbounds_str + "<br>" + "Choice Image" + i + " is out of bounds"
+			}
+			displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
+		}
+	} //IF testON (same-different choice screen)
+
 	if (outofbounds_str == ''){
 		outofbounds_str = 'All display elements are fully visible'
 	}
@@ -527,11 +662,10 @@ function renderPunish(canvasobj){
 					ycanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,400/ENV.CanvasRatio,400/ENV.CanvasRatio);
 }
 
-async function renderFixationUsingImage(image, gridindex, scale, canvasobj){
-	var context=canvasobj.getContext('2d');
+async function bufferFixationUsingImage(image, gridindex, scale, canvasobj){
+// 	var context=canvasobj.getContext('2d');
 // 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 
-	// Draw fixation dot
 	boundingBoxesFixation['x']=[]
 	boundingBoxesFixation['y']=[]
 
@@ -539,24 +673,14 @@ async function renderFixationUsingImage(image, gridindex, scale, canvasobj){
 	boundingBoxesFixation.x.push(funcreturn[0]);
 	boundingBoxesFixation.y.push(funcreturn[1]);
 }
-function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
-	var context=canvasobj.getContext('2d');
-// 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 
-	// Draw fixation dot
-	var rad = dot_pixelradius/ENV.CanvasRatio;
-	var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
-	var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;
-	context.beginPath();
-	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
-	context.fillStyle=color; 
-	context.fill();
-
-	// Define (rectangular) boundaries of fixation
+async function bufferFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 	boundingBoxesFixation['x']=[]
 	boundingBoxesFixation['y']=[]
-	boundingBoxesFixation.x.push([(xcent-rad)*ENV.CanvasRatio+CANVAS.offsetleft, (xcent+rad)*ENV.CanvasRatio+CANVAS.offsetleft]);
-	boundingBoxesFixation.y.push([(ycent-rad)*ENV.CanvasRatio+CANVAS.offsettop, (ycent+rad)*ENV.CanvasRatio+CANVAS.offsettop]);
+
+	funcreturn = await renderDotOnCanvas(color, gridindex, dot_pixelradius, canvasobj)
+	boundingBoxesFixation.x.push(funcreturn[0]);
+	boundingBoxesFixation.y.push(funcreturn[1]);
 }
 
 function checkDisplayBounds(displayobject_coord){

@@ -487,6 +487,7 @@ while(true){
 
 	// define image display grid
 	ENV.FixationRadius=(ENV.ImageWidthPixels/2)*TASK.FixationScale*ENV.CanvasRatio
+	ENV.ChoiceRadius=(ENV.ImageWidthPixels/2)*TASK.ChoiceScale*ENV.CanvasRatio	
 	funcreturn = defineImageGrid(TASK.NGridPoints, ENV.ImageWidthPixels, ENV.ImageHeightPixels, TASK.GridScale);
 	xcanvascenter = funcreturn[0]
 	ycanvascenter = funcreturn[1]
@@ -511,11 +512,18 @@ while(true){
 	}
 	
 	var keys = Object.keys(IMAGES.object.test)
-	for (var i=0; i<=keys.length-1; i++){
-		for (var j=0; j<=CURRTRIAL.testindices.length-1; j++){
-			CURRTRIAL["testobject" + keys[i]][j] = IMAGES.object.test[keys[i]][CURRTRIAL.testindices[j]]
+	if (TASK.TestON <= 0){
+		for (var i=0; i<=keys.length-1; i++){
+			for (var j=0; j<=CURRTRIAL.testindices.length-1; j++){
+				CURRTRIAL["testobject" + keys[i]][j] = IMAGES.object.test[keys[i]][CURRTRIAL.testindices[j]]
+			}		
 		}
-	}
+	} //IF SR2 or M2S
+	else if (TASK.TestON > 0){
+		for (var i=0; i<=keys.length-1; i++){
+			CURRTRIAL["testobject" + keys[i]] = IMAGES.object.test[keys[i]][0]
+		}		
+	} //IF same-different
 
 	logEVENTS("SampleObjectTy",CURRTRIAL.sampleobjectty,"imageseries")
 	logEVENTS("SampleObjectTz",CURRTRIAL.sampleobjecttz,"imageseries")
@@ -730,8 +738,10 @@ while(true){
 		} //if
 	} //if TASK.RewardStage
 
+	// Determine if Choice was correct
 	if (CURRTRIAL.response == CURRTRIAL.correctitem){ CURRTRIAL.correct = 1; }
 	else { CURRTRIAL.correct=0; }
+
 
 	// console.log('response:', CURRTRIAL.response)
 	// console.log('correct response', CURRTRIAL.correctitem)
