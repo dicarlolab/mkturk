@@ -7,15 +7,14 @@
 <script src="fireplace_googlecharts.js" type="text/javascript"></script>
 
 <!-- =========== (begin) FIREBASE + FIRESTORE =========== -->
-<!-- Firebase App is always required and must be first -->
-<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase.js"></script>
-<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-app.js"></script>
+<!--   Firebase App is always required and must be first -->
+<script src="https://www.gstatic.com/firebasejs/6.6.1/firebase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/6.6.1/firebase-app.js"></script>
 
 <!-- Add additional services that you want to use -->
-<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/6.6.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/6.6.1/firebase-firestore.js"></script>
 
-<script src="https://www.gstatic.com/firebasejs/5.5.5/firebase.js"></script>
 <script src=https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.3.0/math.min.js></script>
 <script type="text/javascript">
   // Initialize Firebase
@@ -31,11 +30,6 @@
 
   //Initialize Cloud Firestore
   var db = firebase.firestore();
-
-  // Disable deprecated features
-  db.settings({
-    timestampsInSnapshots: true
-  });
 </script>
 <!-- =========== (end) FIREBASE + FIRESTORE =========== -->
 
@@ -54,33 +48,11 @@
 <script type="text/javascript">
 // Flow: 
 // authenticate --> loadGoogleCharts --> queryFirestore -->
-// checkFileStatus -- wait 1 second -- if new data -->
-// readDatafromDropbox --> initializeChartData --> updatePlots
 
 // // FIREPLACE modifications
-
-//---- (0) dropbox -> firestore converter
-
-//---- (1a) store params when load fireplace
-//---- (1b) textbox to show file params
-
-//---- (2a) query nweeks back text box
-//---- (2a) loading ticker
-//---- (2b) plot range slider
-//---- (2c) accumulate docs across queries
-
-// (2d) promise.all for parallel processing of queries?
-// ---> NO, firestore function query.get is bottleneck
-
-// (3a) live updates - https://firebase.google.com/docs/firestore/query-data/listen
-// (3b) expanded table (last trial, battery level, last ping, green if running today)
-
+//---- (3a) live updates - https://firebase.google.com/docs/firestore/query-data/listen
+//---- (3b) expanded table (last trial, battery level, last ping, green if running today)
 // (4) plot other vars, pulldown: choice bias, target accuracy, weight, all params
-
-// // MKTURK modifications
-// (5a) mkturk - sends pings
-// (5b) mkturk - write json docs --> google drive
-
 
 // // EASY TO IMPLEMENT
 // # of objects
@@ -105,8 +77,6 @@ function loadGoogleCharts() {
         dataTrial = new google.visualization.DataTable()
         dataLeaderboard = new google.visualization.DataTable()
 
-// document.getElementById("line_div").style.textIndent = "100px";
-
         liveline = new google.charts.Line(document.getElementById('line_div'));
         livelinetrial = new google.charts.Line(document.getElementById('linetrial_div'));
         livetable = new google.visualization.Table(document.getElementById('table_div'));
@@ -126,7 +96,6 @@ function selectHandlerPerformance1() {
     if (item.row != null && item.column != null) {
       var str = dataPerformance.getFormattedValue(item.row, item.column);
       message += '{row:' + item.row + ',column:' + item.column + '} = ' + str + '\n';
-//       dataPerformance.setFormattedValue(item.row, item.column+1, 'new tooltip')	      
       showTaskText(item.row,item.column)
     }
   }
@@ -189,157 +158,154 @@ function showTaskText(dayidx,agentidx){
 //================== GOOGLE CHARTS LOADING (end) ==================//
 
 
-// queryFirestore
-// join & label data
-
 //================== FIRESTORE QUERY (begin) ==================//
-async function queryFirestore(){
+async function queryFirestoreCallback(querySnapshot){
+//NOTE: would use generator to step out for X seconds (pause), but firestore externally calls query Firestore anyway, so only get new data & update plot every X seconds, but can't prevent multiple calls from firestore in the meantime
+  if (performance.now() - tlastquery < queryUpdateInterval && queryfirstpass == 0){
+    console.log('NEW DATA! Skipping snapshot callback @' + Math.round(performance.now()-tlastquery) + 'ms')
+    return //wait queryUpdateInterval milliseconds between updates
+  }
+  queryfirstpass = 0
+  console.log('NEW DATA! Loading... @' + Math.round(performance.now()-tlastquery) + 'ms')
+
   document.querySelector('#progressbar').style.display = "block"
   document.querySelector('#progressbar').style.visibility = "visible"
+  document.getElementById('titletext').innerHTML = 
+              'fireplace mkturk &nbsp&nbsp' + "<font size=-4><font color=#673ab7>" + 'Updating...' + "</font>"
 
-  var querystarttime = performance.now()
+  var ndocsquerytotal = querySnapshot.size;
+  DATA.response = []
+  DATA.correctitem = []
+  DATA.ncorrect = []
+  DATA.agent = []
+  DATA.date = []
+  DATA.t = []
+  DATA.task = []
+  DATA.ndocs = 0
 
-  var queryend = enddatevalue
-  var querystart = queryend
-
-  //(1) move end --> to start of previous queries
-  // moves only if contained within a query
-  for (var i=0; i <= DATA.queries.end.length-1; i++){
-    if (queryend <= DATA.queries.end[i] &&
-        queryend >= DATA.queries.start[i]){
-      queryend = DATA.queries.start[i] - (24*60*60*100) //shift end to beginning of last query
-    } //if
-  } //for i query ranges
-
-  //(2) move start --> to nearest end of previous queries
-  // advance start whenever there is an earlier query
-  querystart = startdatevalue
-  for (var i = 0; i <= DATA.queries.start.length-1; i++){
-    if (DATA.queries.end[i] >= querystart &&
-         DATA.queries.end[i] < queryend){
-           querystart = DATA.queries.end[i] + (24*60*60*100) // nearest current endpoint to end
-    } //if
-  } //for i query ranges
-
-  //perform query
-  var query = db.collection(FIREBASE_COLLECTION)
-            .where("Doctype","==",'task')
-            .where("CurrentDateValue",">=",querystart)
-            .where("CurrentDateValue","<=",queryend)
-            
-  // https://firebase.google.com/docs/firestore/query-data/get-data#get_multiple_documents_from_a_collection
-  query.get().then(
-    function(querySnapshot)
-    {
-      var ndocsquerytotal = querySnapshot.size;
-      var ndocsprocessed = 0;
-
-      querySnapshot.forEach(function(doc)
+  querySnapshot.forEach(function(doc)
+  {
+      if (typeof(doc.data().Response) == "undefined"){
+          // do nothing
+          if (doc.data().Doctype == "task"){
+              console.log('Doc contains no response data, skipping')
+          }
+      }
+      else if (doc.data().Agent == "Eliaso" || doc.data().Agent == "Sophieo" || doc.data().Agent == "Youno"){
+        console.log('Doc is debug file of Eliaso/Sophieo/Youno, skipping')
+      }
+      else //contains trial data
       {
-          if (typeof(doc.data().Response) == "undefined"){
-              // do nothing
-              if (doc.data().Doctype == "task"){
-                  console.log('Doc contains no response data, skipping')
-              }
+          DATA.agent[DATA.ndocs] = doc.data().Agent
+          DATA.date[DATA.ndocs] = doc.data().CurrentDate
+
+          // # of days from today
+          // round to times to nearest day & add 8 hours
+          DATA.t[DATA.ndocs] = (24*60*60*1000) * Math.floor((doc.data().CurrentDate.toDate().valueOf())/(24*60*60*1000)) + 0.25*(24*60*60*1000);
+
+          var r = math.matrix(doc.data().Response);
+          var c = math.matrix(doc.data().CorrectItem.splice(0,r.size()[0]));
+          var ncorrect = math.filter(math.subtract(r,c), el => el==0).size()[0];
+
+          DATA.response[DATA.ndocs] = doc.data().Response
+          DATA.correctitem[DATA.ndocs] = doc.data().CorrectItem
+          DATA.ncorrect[DATA.ndocs] = ncorrect
+
+          DATA.task[DATA.ndocs] = doc.data()
+
+          DATA.lastdatevalue[DATA.ndocs] = doc.data().CurrentDateValue + doc.data().StartTime[doc.data().StartTime.length-1]
+
+          if (Array.isArray(doc.data().BatteryLDT[0]) == true){
+              var nupdates = doc.data().BatteryLDT[0].length
+              DATA.lastbatterypct[DATA.ndocs] = 100*doc.data().BatteryLDT[0][nupdates-1]
+              DATA.batterypctperhour[DATA.ndocs] = 100*1000*60*60*
+                  (doc.data().BatteryLDT[0][nupdates-1] - 
+                  doc.data().BatteryLDT[0][0]) / 
+                  (doc.data().BatteryLDT[2][nupdates-1] - doc.data().BatteryLDT[2][0])
+              DATA.batterypctperhour[DATA.ndocs] = 0.1*Math.round(10*DATA.batterypctperhour[DATA.ndocs])
           }
-          else if (doc.data().Agent == "Eliasoo" || doc.data().Agent == "Sophieo" || doc.data().Agent == "Youno"){
-            console.log('Doc is debug file of Eliaso/Sophieo/Youno, skipping')
+          else {
+              DATA.lastbatterypct[DATA.ndocs] = 0
+              DATA.batterypctperhour[DATA.ndocs] = 0
           }
-          else //contains trial data
-          {
-              DATA.agent[DATA.ndocs] = doc.data().Agent
-              DATA.date[DATA.ndocs] = doc.data().CurrentDate
+          DATA.ndocs++
 
-              // # of days from today
-              // DATA.dt[DATA.ndocs] = Math.ceil((doc.data().CurrentDate.toDate().valueOf() - refdate.valueOf())/(24*60*60*1000));
-              // round to times to nearest day & add 8 hours
-              DATA.t[DATA.ndocs] = (24*60*60*1000) * Math.floor((doc.data().CurrentDate.toDate().valueOf())/(24*60*60*1000)) + 0.25*(24*60*60*1000);
+          console.log(doc.id, " ==> ", doc.data().CorrectItem.length
+           + ' trials, ' + Math.round(100*ncorrect/doc.data().Response.length) + "%");
+      } //if contains data
+  }); // forEach doc
 
-              var r = math.matrix(doc.data().Response);
-              var c = math.matrix(doc.data().CorrectItem.splice(0,r.size()[0]));
-              var ncorrect = math.filter(math.subtract(r,c), el => el==0).size()[0];
+    //Delete some of task metadata & trialdata to save space
+    for (var j=0; j<=DATA.task.length-1; j++){
+      delete DATA.task[j].CorrectItem
+      delete DATA.task[j].Response
+      delete DATA.task[j].FixationXYT
+      delete DATA.task[j].ResponseXYT
+      delete DATA.task[j].FixationGridIndex
+      delete DATA.task[j].FixationTouchEvent
+      delete DATA.task[j].ResponseTouchEvent
+      delete DATA.task[j].NReward
+      delete DATA.task[j].Sample
+      delete DATA.task[j].Test
+      delete DATA.task[j].StartTime              
+    }
+    console.log(querySnapshot.size + " documents recovered")
 
-              DATA.response[DATA.ndocs] = doc.data().Response
-              DATA.correctitem[DATA.ndocs] = doc.data().CorrectItem
-              DATA.ncorrect[DATA.ndocs] = ncorrect
+    //store position of query
+    DATA.queries.start.push(startdatevalue)
+    DATA.queries.end.push(enddatevalue)
 
-              DATA.task[DATA.ndocs] = doc.data()
+    joinData()
+    toGoogleDataTable()
 
-
-//                     if (Array.isArray(doc.data().BatteryLDT[0]) == true){
-//                         var nupdates = doc.data().BatteryLDT[0].length
-//                         DATA.task.lastbatterypct[DATA.ndocs] = 100*doc.data().BatteryLDT[0][nupdates-1]
-//                         DATA.task.batterypctperhour[DATA.ndocs] = -100*1000*60*60*
-//                             (doc.data().BatteryLDT[0][nupdates-1] - 
-//                             doc.data().BatteryLDT[0][0]) / 
-//                             (doc.data().BatteryLDT[2][nupdates-1] - doc.data().BatteryLDT[2][0])
-//                         DATA.task.batterypctperhour[DATA.ndocs] = 0.1*Math.round(10*DATA.task.batterypctperhour[DATA.ndocs])
-//                     }
-//                     else {
-//                         DATA.task.lastbatterypct[DATA.ndocs] = 0
-//                         DATA.task.batterypctperhour[DATA.ndocs] = 0
-//                     }
-              DATA.ndocs++
-
-              console.log(doc.id, " ==> ", doc.data().CorrectItem.length
-               + ' trials, ' + Math.round(100*ncorrect/doc.data().Response.length) + "%");
-          } //if contains data
-          ndocsprocessed++
-      }); // forEach doc
-
-      //Delete some of task metadata & trialdata to save space
-      for (var j=0; j<=DATA.task.length-1; j++){
-        delete DATA.task[j].CorrectItem
-        delete DATA.task[j].Response
-        delete DATA.task[j].FixationXYT
-        delete DATA.task[j].ResponseXYT
-        delete DATA.task[j].FixationGridIndex
-        delete DATA.task[j].FixationTouchEvent
-        delete DATA.task[j].ResponseTouchEvent
-        delete DATA.task[j].NReward
-        delete DATA.task[j].Sample
-        delete DATA.task[j].Test
-        delete DATA.task[j].StartTime              
+    //update axes range
+    lineOptions.hAxis = {viewWindow: {
+            min: new Date(startdatevalue),
+            max: new Date(enddatevalue)
       }
-
-      console.log(querySnapshot.size + " documents recovered")
-
-      //store position of query
-      DATA.queries.start.push(querystart)
-      DATA.queries.end.push(queryend)
-
-      if (querystart != startdatevalue){
-        DATA.totalloadtime += (performance.now() - querystarttime)/1000
-        document.getElementById('titletext').innerHTML = 
-                'fireplace mkturk &nbsp&nbsp' + "<font size=-4>" + DATA.ndocs + ' docs, ' + Math.round(DATA.totalloadtime) + ' sec' + "</font>"
-        queryFirestore()
+    }
+    linetrialOptions.hAxis = {viewWindow: {
+            min: new Date(startdatevalue),
+            max: new Date(enddatevalue)
       }
-      else if (querystart == startdatevalue){
-        joinData()
-        toGoogleDataTable()
+    }
+    liveline.draw(dataPerformance,google.charts.Line.convertOptions(lineOptions))
+    livelinetrial.draw(dataTrial,google.charts.Line.convertOptions(linetrialOptions))
+    livetable.draw(dataLeaderboard,google.charts.Line.convertOptions(tableOptions))
 
-        //update axes range
-        lineOptions.hAxis = {viewWindow: {
-                min: new Date(startdatevalue),
-                max: new Date(enddatevalue)
-          }
-        }
-        linetrialOptions.hAxis = {viewWindow: {
-                min: new Date(startdatevalue),
-                max: new Date(enddatevalue)
-          }
-        }
-        liveline.draw(dataPerformance,google.charts.Line.convertOptions(lineOptions))
-        livelinetrial.draw(dataTrial,google.charts.Line.convertOptions(linetrialOptions))
-        livetable.draw(dataLeaderboard,google.charts.Line.convertOptions(tableOptions))
+    DATA.totalloadtime = performance.now() - tlastquery
+    tlastquery = performance.now()
 
-        DATA.totalloadtime += (performance.now() - querystarttime)/1000
-        document.getElementById('titletext').innerHTML = 
-                'fireplace mkturk &nbsp&nbsp' + "<font size=-4>" + DATA.ndocs + ' docs, ' + Math.round(DATA.totalloadtime) + ' sec' + "</font>"
-        document.querySelector('#progressbar').style.display = "none"
-      }
-  }) // getdocs.then
-} //query firestore
+    var d = new Date()
+    h = d.getHours()
+    m = d.getMinutes()
+    s = d.getSeconds()
+    var ampm = 'am'
+    if (h>12){ h = h-12; ampm = 'pm' }
+    if (m<10){ m = "0" + m}
+    if (s<10){ s = "0" + s}
+    document.getElementById('titletext').innerHTML = 
+            'fireplace mkturk &nbsp&nbsp' + 
+            "<font size=-4>" + DATA.ndocs + ' docs, ' + Math.round(DATA.totalloadtime/1000) + ' sec' + "</font>" +
+            "<font size=-4><i>" + '&nbsp&nbsp ' + h + ':' + m + ':' + s + '' + ampm + "</i></font>"
+    document.querySelector('#progressbar').style.display = "none"
+} // FUNCTION queryFirestoreCallback(querySnapshot)
+
+async function queryFirestore(){
+  if (typeof(query) != "undefined"){
+    query() //unsubscribe from last query
+  } //if query active
+
+  queryfirstpass = 1
+  document.querySelector('#progressbar').style.display = "block"
+  document.querySelector('#progressbar').style.visibility = "visible"
+  document.getElementById('titletext').innerHTML = 
+              'fireplace mkturk &nbsp&nbsp' + "<font size=-4><font color=#673ab7>" + 'Updating...' + "</font>"
+  query = db.collection(FIREBASE_COLLECTION)
+            .where("Doctype","==",'task')
+            .where("CurrentDateValue",">=",startdatevalue)
+            .where("CurrentDateValue","<=",enddatevalue).onSnapshot(querySnapshot => queryFirestoreCallback(querySnapshot))
+} //FUNCTION initialize firestore query, kick off listener
 //================== (end) FIRESTORE QUERY ==================//
 
 
@@ -349,6 +315,10 @@ function joinData(){
     // determine # of days and # of agents
     STAT.agents = [...new Set(DATA.agent)] //unique agents
     STAT.agents.sort() //alphabetical order
+    STAT.tlasttrial = Array(STAT.agents.length).fill(0)
+    STAT.lastbatterypct = Array(STAT.agents.length).fill(0)
+    STAT.batterypctperhour = Array(STAT.agents.length).fill(0)
+
     STAT.t = [...new Set(DATA.t)] //unique days
     STAT.t.sort()
    
@@ -369,6 +339,12 @@ function joinData(){
             STAT.firstfile[agentidx][dayidx] = i
         }
         STAT.lastfile[agentidx][dayidx] = i
+
+        if (STAT.tlasttrial[agentidx] < DATA.lastdatevalue[i]){
+          STAT.tlasttrial[agentidx] = DATA.lastdatevalue[i]
+          STAT.lastbatterypct[agentidx] = DATA.lastbatterypct[i]
+          STAT.batterypctperhour[agentidx] = DATA.batterypctperhour[i]
+        } //if more recent file for that agent
     } //for i docs
 console.timeEnd('datajoin')
 }
@@ -377,7 +353,6 @@ console.timeEnd('datajoin')
 // ================== (begin) DATA HANDLING ==================//
 // Synchronous
 function toGoogleDataTable() {
-
     //-------- Performance line chart ---------//
     dataPerformance.removeColumns(0,dataPerformance.getNumberOfColumns());
     dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
@@ -415,7 +390,6 @@ function toGoogleDataTable() {
     } //for i timepoints
 
 
-
     //-------- Leaderboard table ----------//
     var ndays = STAT.pct[0].length
     dataLeaderboard.removeColumns(0,dataLeaderboard.getNumberOfColumns());
@@ -423,9 +397,12 @@ function toGoogleDataTable() {
     dataLeaderboard.addColumn('string','Agent');
     dataLeaderboard.addColumn('number','% (today)');
     dataLeaderboard.addColumn('number','n (today)');
+    dataLeaderboard.addColumn('number','tlast (min)');
+    dataLeaderboard.addColumn('number','batt%');
+    dataLeaderboard.addColumn('number','%/hr');    
     dataLeaderboard.addColumn('number','% (' + ndays + 'd)');
     dataLeaderboard.addColumn('number','n (' + ndays + 'd)');
-
+ 
     for (var i = 0; i <= STAT.agents.length-1; i++){
       var ntotal = 0
       var ncorrect = 0
@@ -439,10 +416,35 @@ function toGoogleDataTable() {
         } //if
       } //for j days
             
+      var tsincelasttrial = Math.round( ( new Date().valueOf() - STAT.tlasttrial[i] ) / 1000 / 60 )      
+
       dataLeaderboard.addRows([
         [ STAT.agents[i], Math.round(STAT.pct[i][ndays-1]), STAT.ntrials[i][ndays-1],
-          Math.round(100*ncorrect/ntotal), Math.round(ntotal/nsess) ]
+        tsincelasttrial,
+        STAT.lastbatterypct[i], STAT.batterypctperhour[i],
+        Math.round(100*ncorrect/ntotal), Math.round(ntotal/nsess) ]
       ])
+
+      // Color based on last trial time
+      tlastFormatter = new google.visualization.ColorFormat();
+      tlastFormatter.addRange(0, 5, 'black', '#33ff33');
+      tlastFormatter.addRange(5, 60, 'black', 'red');
+      tlastFormatter.addRange(60, null, 'black', 'white');
+      tlastFormatter.format(dataLeaderboard, 3); // Apply formatter to fourth column
+      if (tsincelasttrial < 5){ //actively working
+          dataLeaderboard.setCell(i, 0, STAT.agents[i],STAT.agents[i], {'style': 'color: #33ff33; background-color: white; font-weight: bold'});        
+      }
+      else if (tsincelasttrial < 60){ //was working but stopped recently
+          dataLeaderboard.setCell(i, 0, STAT.agents[i],STAT.agents[i], {'style': 'color: red; background-color: white; font-weight: bold'});
+      }
+      else{ //inactive
+          dataLeaderboard.setCell(i, 0, STAT.agents[i],STAT.agents[i], {'style': 'color: black; background-color: white'});
+      }
+
+      // Color based on battery life
+      if (STAT.lastbatterypct[i] < 25){ //battery low
+          dataLeaderboard.setCell(i, 4, STAT.lastbatterypct[i],STAT.lastbatterypct[i], {'style': 'color: red; background-color: white; font-weight: bold'});
+      }
     } //for i agents
 }
 //================== DATA HANDLING (end) ==================//
@@ -465,10 +467,6 @@ function updateDateChip(){
   document.getElementById("datechip").innerHTML = str;
 }
 
-// function updateProgressBar(pct){
-//   document.querySelector('#progressbar').MaterialProgress.setProgress(pct);
-// }
-
 </script>
 </head>
 
@@ -477,9 +475,6 @@ function updateDateChip(){
 <div>
 <h4 id="titletext">fireplace mkturk</h4>
 </div>
-
-<!-- Simple MDL Progress Bar -->
-<!-- <div id="progressbar" class="mdl-progress mdl-js-progress"></div> -->
 
 <!-- MDL Progress Bar with Indeterminate Progress -->
 <div id="progressbar" class="mdl-progress mdl-js-progress mdl-progress__indeterminate"></div>
@@ -496,7 +491,6 @@ function updateDateChip(){
   <span class="mdl-textfield__error">NaN!</span>
 </div>
 </action>
-
 
 <!-- Numeric Textfield -->
 <form action="#">
@@ -527,6 +521,8 @@ var liveline = null;
 var dataPerformance = null; 
 var formatterDate = null; 
 var formatterDigits = null;
+var queryUpdateInterval = 20000 //milliseconds
+var tlastquery = performance.now() - queryUpdateInterval
 
 var DATA = {
     response: [],
@@ -535,6 +531,9 @@ var DATA = {
     agent: [],
     date: [],
     t: [],
+    lastdatevalue: [],
+    lastbatterypct: [],
+    batterypctperhour: [],
     task: [],
     queries: {start: [], end: []},
     totalloadtime: 0,
@@ -548,6 +547,7 @@ var STAT = {
     pct: [],
     firstfile: [],
     lastfile: [],
+    tlasttrial: [],
 }
 
 var GOOGLEUSER = {

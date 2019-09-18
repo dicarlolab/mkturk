@@ -43,6 +43,7 @@ var linetrialOptions={
 }
 
 var tableOptions={
+	allowHtml: true,
   	width: 600,
 	sortColumn: 2,
 	showRowNumber: true,
