@@ -194,6 +194,11 @@ async get_next_trial(){
 
 	// Get image from imagebag
 	var sample_image = await this.IB.get_by_name(sample_filename); 
+	var sample_reward = -1
+	if (typeof(ImageRewardList[sample_filename]) != "undefined"){
+		sample_reward = ImageRewardList[sample_filename]		
+	}
+	
 	var test_images = []
 	for (var i = 0; i < test_filenames.length; i++){
 		test_images.push(await this.IB.get_by_name(test_filenames[i]))
@@ -204,7 +209,7 @@ async get_next_trial(){
 	// console.log('correct- get_next_trial()', test_correctIndex)
 	this.num_in_queue--;
 
-	return [sample_image, sample_index, test_images, test_indices, test_correctIndex]
+	return [sample_image, sample_index, test_images, test_indices, test_correctIndex, sample_reward]
 }
 }
 

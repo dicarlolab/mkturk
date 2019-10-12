@@ -12,8 +12,9 @@ var ENV = {}; // Task specific variables that are slaves to TASK settings, but s
 var IMAGES = {
 	Sample: {}, Test: {}, 
 	object: {sample:{}, test: {}},
-	imagepaths: {Ordered_Samplebag_Filenames: {}, Ordered_Testbag_Filenames: {}}
+	imagepaths: {Ordered_Samplebag_Filenames: {}, Ordered_Testbag_Filenames: {}},
 }
+var ImageRewardList = {}
 
 ENV.ResearcherDisplayName = ''
 ENV.ResearcherEmail = ''

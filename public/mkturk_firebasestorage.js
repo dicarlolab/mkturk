@@ -186,6 +186,17 @@ async function loadParametersfromFirebase(paramfile_path){
 		TASK = data
 		await loadAgentRFIDfromFirestore(ENV.Subject,TASK.Species)
 
+		
+		if (typeof(TASK.ImageRewardList) != "undefined"){
+			for (var i=0; i<=TASK.ImageRewardList.length-1; i++){
+				var data = await loadTextfromFirebase(TASK.ImageRewardList[i])
+				for (var j=0; j<=data.ImageRewardList.length/2 - 1; j++){
+					ImageRewardList[ data.ImageRewardList[2*j+1] ] = data.ImageRewardList[2*j]
+				}			
+			} //for i reward lists			
+		}
+
+
 		var filemeta = await getFileMetadataFirebase(paramfile_path)
 		ENV.ParamFileName = '/' + filemeta.fullPath; 
 		ENV.ParamFileRev = filemeta.generation

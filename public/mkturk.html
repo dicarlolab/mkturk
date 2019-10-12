@@ -454,6 +454,16 @@ while(true){
 		IMAGES.Sample = funcreturn[0]
 		IMAGES.object.sample = funcreturn[1]
 
+		IMAGES.Sample["Reward"] = []
+		for (var i=0; i<=samplebag_paths.length-1; i++){
+			if (typeof(ImageRewardList[ samplebag_paths[i] ]) != "undefined"){
+				IMAGES.Sample["Reward"][i] = ImageRewardList[ samplebag_paths[i] ]
+			}
+			else {
+				IMAGES.Sample["Reward"][i]= -1
+			}
+		}
+
 		var funcreturn = objectomeImageNamesToLatentVars(testbag_paths,testbag_labels)
 		IMAGES.Test = funcreturn[0]
 		IMAGES.object.test = funcreturn[1]
@@ -477,10 +487,9 @@ while(true){
 		ENV.ImageWidthPixels = representative_image.width
 		ENV.ImageHeightPixels = representative_image.height
 		
-		// ENV.Ordered_Samplebag_Filenames = samplebag_paths; 
-		// ENV.Ordered_Testbag_Filenames = testbag_paths; 
 		IMAGES.imagepaths.Ordered_Samplebag_Filenames = samplebag_paths
 		IMAGES.imagepaths.Ordered_Testbag_Filenames = testbag_paths
+		IMAGES.imagepaths.Ordered_SampleImageRewardList = IMAGES.Sample.SampleReward
 
 		FLAGS.need2loadImagesTrialQueue = 0;
 	} //if need2loadImagesTrialQueue
@@ -499,7 +508,7 @@ while(true){
 	// Draw one (1) sample image from samplebag
 	// console.time('trial images loadtime:')
 	var c
-	[CURRTRIAL.sampleimage, CURRTRIAL.sampleindex, CURRTRIAL.testimages, CURRTRIAL.testindices, CURRTRIAL.correctitem] = await TQ.get_next_trial();
+	[CURRTRIAL.sampleimage, CURRTRIAL.sampleindex, CURRTRIAL.testimages, CURRTRIAL.testindices, CURRTRIAL.correctitem, samplereward] = await TQ.get_next_trial();
 	// console.timeEnd('trial images loadtime:')
 
 	logEVENTS("Sample",CURRTRIAL.sampleindex,"trialseries")
@@ -726,7 +735,6 @@ while(true){
 		logEVENTS("ResponseTouchEvent",CURRTRIAL.responsetouchevent,"trialseries")
 		logEVENTS("Response",CURRTRIAL.response,"trialseries")
 
-
 		// Keep track of repeated responses to one side
 		if (CURRTRIAL.num > 0 && FLAGS.savedata && CURRTRIAL.responsetouchevent == "theld"){
 			if (CURRTRIAL.response==trialhistory.response[trialhistory.correct.length-1]){
@@ -747,7 +755,10 @@ while(true){
 	// console.log('correct response', CURRTRIAL.correctitem)
 
 	//============ DETERMINE NUMBER OF REWARDS ============//
-	if (CURRTRIAL.correct){
+	if (samplereward == 0){
+		CURRTRIAL.nreward = -1 //skip reward/punish
+	}
+	else if (CURRTRIAL.correct && samplereward == -1){ //default behavior
 		if (FLAGS.savedata && (CURRTRIAL.starttime - trialhistory.starttime[trialhistory.starttime.length-1] < TASK.ConsecutiveHitsITI || CURRTRIAL.num==0)){
 			// if correct within bonus interval
 			FLAGS.consecutivehits++
@@ -757,21 +768,36 @@ while(true){
 			FLAGS.consecutivehits=1
 		}
 		CURRTRIAL.nreward = 1 + Math.floor(FLAGS.consecutivehits / TASK.NConsecutiveHitsforBonus)
+
 		if (CURRTRIAL.nreward > TASK.NRewardMax){
 			CURRTRIAL.nreward = TASK.NRewardMax
 		}
+	}
+	else if (CURRTRIAL.correct && samplereward >= 1){
+		//Override if user had manually set reward for that sample image in image_reward_list file
+		CURRTRIAL.nreward = samplereward
 	}
 	else if (!CURRTRIAL.correct){
 			FLAGS.consecutivehits=0;
 			CURRTRIAL.nreward = 0;
 	} //# of rewards to give
-	ENV.RewardDuration = setReward();
 
+	ENV.RewardDuration = setReward();
 	logEVENTS("NReward",CURRTRIAL.nreward,"trialseries")
 	
 	//============ DELIVER REWARD/PUNISH ============//
+	//NO FEEDBACK
+	if (  CURRTRIAL.nreward == -1 ){
+		CANVAS.sequencepost[1] = "blank";
+		CANVAS.tsequencepost[2] = 2*CANVAS.tsequencepost[1];
+		frame.shown=[];
+		for (var q in CANVAS.sequencepost){frame.shown[q]=0}; frame.current=0;
+
+		renderScreen(CANVAS.sequencepost[0],OFFSCREENCANVAS)
+		await displayTrial(CANVAS.sequencepost,CANVAS.tsequencepost);
+	}
 	// REWARD
-	if (CURRTRIAL.correct){
+	else if (CURRTRIAL.correct){
 		CANVAS.sequencepost[1]="reward";
 		CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+ENV.RewardDuration*1000;
 
@@ -851,7 +877,6 @@ while(true){
 		FLAGS.need2loadParameters = 1
 	} //if new day, start new file or reached 1000 trials 
 	//================= (end) HOUSEKEEPING =================//
-
 
 	updateHeadsUpDisplay();
 	console.log('End of trial ', CURRTRIAL.num)

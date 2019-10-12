@@ -36,6 +36,8 @@ ImageBagsSample: List of (list of) paths, where entries at the top level are dir
 
 ImageBagsTest: List of (list of) paths, where entries at the top level are directories / imagepaths for the test images of one group; e.g. [['/buttons/bear_icon.png, '/buttons/dog_icon.png'], ['/buttons/face_icon1.png, '/buttons/face_icon2.png']]
 
+ImageRewardsList: List of paths containing user-specified reward per image. Images in the image_reward_list file need to be referenced by their complete path. ImageReward values: 0=no feedback (no reward or punish for that sample image) >0=user set reward for that sample image, overrides bonus reward behavior. These can be partial lists. For images where reward is manually specified, then default bonus reward behavior is used. No corresponding list is used for test (choice) images. Instead, specify reward for a whole class by listing reward for each image in that class in ImageRewardsList.
+
 KeepSampleON: KeepSampleON=0, sample is presented only for sampleON milliseconds for a delayed match-to-sample, KeepSampleON=1 sample remains on during choice screen. This implements a spatial match to sample.
 
 KeepTestON: KeepTestON=0, test is presented only for testON milliseconds, KeepTestON=1 test remains on during choice screen. This only applies to same-different task when responses are indicated on additional choice screen following test screen.
@@ -118,6 +120,8 @@ ImageWidthPixels: The width of the sample image in pixels. The image width is us
 Ordered_Samplebag_Filenames: Names of the sample image bags. Each bag is treated as a separate label class
 
 Ordered_Testbag_Filenames: Names of the test image bags. Each test image bag serves as the label images for each sample class
+
+Ordered_SampleImageRewardList: Reward specification for each image: -1=default behavior 0=now reward/punish feedback >0=fixed reward for that image, value overrides default task bonus reward behavior
 
 ParamFileDate: Date of revision on dropbox of the parameter file used for loading the task.
 

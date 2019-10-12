@@ -281,6 +281,11 @@ async function bufferSampleImage(sample_image, sample_image_grid_index,canvasobj
 
 //========== BUFFER TEST CANVAS ==========//
 async function bufferTestImages(sample_image, sample_image_grid_index, test_images, test_image_grid_indices, correct_index,canvasobj){
+	// Option: draw sample (TODO: remove the blink between sample screen and test screen)
+	if (TASK.KeepSampleON==1){
+		await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, canvasobj)
+	}
+
 	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)	
 	boundingBoxesChoice['x'] = []
 	boundingBoxesChoice['y'] = []
@@ -298,11 +303,6 @@ async function bufferTestImages(sample_image, sample_image_grid_index, test_imag
 		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], TASK.TestScale, canvasobj); 
 		boundingBoxesChoice.x.push(funcreturn[0]); 
 		boundingBoxesChoice.y.push(funcreturn[1]); 
-	}
-
-	// Option: draw sample (TODO: remove the blink between sample screen and test screen)
-	if (TASK.KeepSampleON==1){
-		await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, canvasobj)
 	}
 }
 
