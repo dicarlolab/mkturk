@@ -37,6 +37,52 @@ catch (error){
 } //ReadFromFirebase
 
 
+//------------- LOAD MESH --------------//
+async function loadMeshfromFirebase(meshfile_path,ext){
+//file ext = gltf or obj
+try{
+	var meshfileRef = await storage.ref().child("mkturkfiles/imagebags/objectome3d/face/example_small.glb")
+	var url = await meshfileRef.getDownloadURL().catch((error) => console.log(error));
+
+
+	if (ext == 'gltf' || ext == 'glb'){
+		var loader = new THREE.GLTFLoader()
+
+		return new Promise(
+			function(resolve, reject){
+				try {
+
+				loader.load(url, function(gltfmesh){
+
+//----- scene.traverse is optional (begin)
+					gltfmesh.scene.traverse(function(child){
+					if (child.material) {
+							console.log(child.material)
+							var material = new THREE.MeshPhongMaterial({
+							color:  0x7F7F7F, //0x202020,
+							map : child.material.map
+						});
+						child.material = material;
+						child.material.needsUpdate = true;
+					}
+				})
+//----- scene.traverse is optional (end)
+
+				resolve(gltfmesh)
+			})
+			} //try
+			catch (error){
+					console.log(error)
+			} //catch
+		}) //Promise
+	} //if gltf or glb
+} //try
+catch (error){
+	console.log(error)
+} //catch
+} //loadMeshFromFirebase
+
+
 //------------- GET METADATA --------------//
 async function getFileMetadataFirebase(file_path){
 	return await storage.ref().child(file_path).getMetadata()

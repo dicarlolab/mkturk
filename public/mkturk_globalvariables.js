@@ -86,6 +86,7 @@ var CANVAS = {
 
 var OFFSCREENCANVAS = null
 var VISIBLECANVAS = document.getElementById("canvasvisible")
+var VISIBLECANVASWEBGL = document.getElementById("canvasvisiblewebgl")
 
 var frame = {
 	current: 0,

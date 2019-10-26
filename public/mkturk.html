@@ -18,6 +18,11 @@
 
 <script src="mkturk_installsettings.js"></script>
 
+<!-- ThreeJS -->
+<script src="http://threejs.org/build/three.js"></script>
+<script src="http://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
+<script src="http://threejs.org/examples/js/controls/OrbitControls.js"></script> 
+
 <!-- Firebase App is always required and must be first -->
 <script src="https://www.gstatic.com/firebasejs/6.1.0/firebase.js"></script>
 <script src="https://www.gstatic.com/firebasejs/6.1.0/firebase-app.js"></script>
@@ -106,6 +111,7 @@
 
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasvisible" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvasvisiblewebgl" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
 </div>
 <dialog id="subjectID_dialog" style="z-index: 102; position: absolute; top: 0%; left: 0%;">
   <p>Select subject: </p>
@@ -128,6 +134,8 @@
 <script src="mkturk_firebase.js" type="text/javascript"></script>
 <script src="mkturk_firestore.js" type="text/javascript"></script>
 <script src="mkturk_firebasestorage.js" type="text/javascript"></script>
+<script src="mkturk_threejs.js" type="text/javascript"></script>
+
 
 
 <script>
@@ -390,8 +398,10 @@ while(true){
 		windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
 		windowHeight = document.body.clientHeight;
 		setupCanvas(VISIBLECANVAS);
+		setupCanvas(VISIBLECANVASWEBGL);
 		if (ENV.DevicePixelRatio !== 1){
 			scaleCanvasforHiDPI(VISIBLECANVAS);
+// 			scaleCanvasforHiDPI(VISIBLECANVASWEBGL);
 		}
 		OFFSCREENCANVAS = new OffscreenCanvas(VISIBLECANVAS.width, VISIBLECANVAS.height)
 		OFFSCREENCANVAS.commitTo = function(dest){
@@ -433,6 +443,38 @@ while(true){
 		FLAGS.purge = 0; 
 	} //if purge
 
+
+	//============ LOAD OBJECT MESHES ============//
+	console.time('loadmesh')
+	var objectmesh = await loadMeshfromFirebase("mkturkfiles/imagebags/objectome3d/face/example_small.glb",'glb');
+	console.timeEnd('loadmesh')
+
+	console.time('init scene')
+	await initThreeJS()
+	console.timeEnd('init scene')
+
+
+	console.time('add object to scene')
+	scene.add(objectmesh.scene)
+	console.timeEnd('add object to scene')
+
+
+	console.time('render')
+	requestAnimationFrame(animate);
+	renderer.render(scene, camera);
+	console.timeEnd('render')
+
+	function animate() {
+		requestAnimationFrame(animate);
+		renderer.render(scene, camera);
+// 		controls.update();
+// 		if (model) {
+// 			modelPos = new THREE.Vector3(0,0,0);
+// 		 model.rotation.set(modelPos.x,modelPos.y,modelPos.z) ; //think of xyz as xzy 
+// 		}
+// 		imgData = renderer.domElement.toDataURL();
+// 		getImageData = false;
+	} //function animate()
 
 	//============ CREATE IMAGE BAG & DISPLAY GRID ============//
 	if (FLAGS.need2loadImagesTrialQueue == 1){
