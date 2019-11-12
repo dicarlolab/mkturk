@@ -1,17 +1,15 @@
-var renderer, camera, scene, controls, material, model, modelPos
-const directionalLight = new  THREE.DirectionalLight( 0xffffff, 0.5 );
-
-
-async function initThreeJS() {
+async function initThreeJS(CAMERAS) {
+//     const canvaswebgl = document.querySelector("canvasvisiblewebgl");
+// const offscreencanvaswebgl = ('OffscreenCanvas' in window) ? canvaswebgl.transferControlToOffscreen() : canvaswebgl;
+// offscreencanvaswebgl.style = { width: 0, height: 0 }
     // init renderer
+   
     console.time('start')
-    renderer = new THREE.WebGLRenderer({canvas: VISIBLECANVASWEBGL, antialias: true})
+    renderer = new THREE.WebGLRenderer({canvas: VISIBLECANVASWEBGL, antialias: true, alpha: true})
 //     renderer.setPixelRatio(window.devicePixelRatio);
-
-// renderer.setSize(VISIBLECANVASWEBGL.width,VISIBLECANVASWEBGL.height)
+//      renderer.setSize(VISIBLECANVASWEBGL.width,VISIBLECANVASWEBGL.height)
 //     renderer.setSize(window.innerWidth, window.innerHeight);
-
-    renderer.setClearColor(0x7F7F7F);
+    renderer.setClearColor(0x7F7F7F,0);
     renderer.physicallyCorrectLights = true;
     renderer.toneMappingExposure = 10;   // set exposure to light
     renderer.gammaOutput = true;
@@ -19,40 +17,33 @@ async function initThreeJS() {
 //     document.body.append(renderer.domElement);
     // init scene
     scene = new THREE.Scene();
-    // init camera
-    camera = new THREE.PerspectiveCamera(45, VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height, 0.1, 2000);
-    cameraPos = new THREE.Vector3(0,10,0);
-    camera.position.set(cameraPos.x,cameraPos.y,cameraPos.z); // our face mesh is loaded with its face up so
-                                 // in order to directly put the face in the user's view, set the camera position in some distance from the origin in y direction
-    scene.add(camera)
-    //init light
-    lightPos = new THREE.Vector3(-20,0,0)
-    directionalLight.position.set(lightPos.x,lightPos.y,lightPos.z)
-   //Because we set the camera to view from the y axis above,
-                                            // it's easier to think of the lighting direction as x,z,y instead of x,y,z. 
-                                            // from the center of the face stimulus, top is negative y and bottom is positive y.
-                                            // from the center of the face stimulus, right is positive x and left is negative x.
-                                            // from the center of the face stimulus, front is positive z and back is negative z.
-    scene.add( directionalLight );
-    controls = new THREE.OrbitControls(camera,renderer.domElement);
-    controls.target = new THREE.Vector3(0, 2, 0);
-    //load object
-//     loadGLTFobj();   
-//     animate()
-//     // Load the background texture
-//     var texture = THREE.ImageUtils.loadTexture(bk);
-//     var backgroundMesh = new THREE.Mesh(
-//         new THREE.PlaneGeometry(2, 2, 0),
-//         new THREE.MeshBasicMaterial({
-//             map: texture
-//         }));
-//     backgroundMesh .material.depthTest = false;
-//     backgroundMesh .material.depthWrite = false;
-//     // Create your background scene
-//     var backgroundScene = new THREE.Scene();
-//     var backgroundCamera = new THREE.Camera();
-//     backgroundScene .add(backgroundCamera );
-//     backgroundScene .add(backgroundMesh );
    
+    // init camera
+
+    // loop through CAMERAS object 
+    // add cameras if visible == 1
+    
+    for (cam in CAMERAS){
+        if (CAMERAS[cam].visible ==1){
+           camera = new THREE.PerspectiveCamera(CAMERAS[cam].fieldOfVIEW,VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height,CAMERAS[cam].near,CAMERAS[cam].far) 
+           camera.position.set(CAMERAS[cam].positionInches.x,CAMERAS[cam].positionInches.y,CAMERAS[cam].positionInches.z)
+           camera.lookAt(0,0,0)
+           scene.add(camera)
+        }
+    }
+    
+    //camera.lookAt(0,0,0)
+    //init light
+//     lightPos = new THREE.Vector3(-20,0,0)
+//     directionalLight.position.set(lightPos.x,lightPos.y,lightPos.z)
+//     cam.add( directionalLight );
+    
+  //  lightPos = new THREE.Vector3(0,10,2)
+   // directionalLight2.position.set(lightPos.x,lightPos.y,lightPos.z)
+   // camera.add(directionalLight2)
+
+    controls = new THREE.OrbitControls(camera,renderer.domElement);
+    controls.target = new THREE.Vector3(0, 0, 0);
     console.timeEnd('start')
+
 }
