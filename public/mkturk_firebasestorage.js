@@ -41,7 +41,7 @@ catch (error){
 async function loadMeshfromFirebase(meshfile_path,ext){
 //file ext = gltf or obj
 try{
-	var meshfileRef = await storage.ref().child("mkturkfiles/imagebags/objectome3d/face/example_small.glb")
+	var meshfileRef = await storage.ref().child(meshfile_path)
 	var url = await meshfileRef.getDownloadURL().catch((error) => console.log(error));
 
 
@@ -58,10 +58,18 @@ try{
 					gltfmesh.scene.traverse(function(child){
 					if (child.material) {
 							console.log(child.material)
-							var material = new THREE.MeshPhongMaterial({
-							color:  0x7F7F7F, //0x202020,
-							map : child.material.map
-						});
+// 							var material = new THREE.MeshPhongMaterial({
+// 							color:  0x7F7F7F, //0x202020,
+// 							map : child.material.map
+// 						});
+
+							var material = new THREE.MeshPhysicalMaterial({
+								color: 0xc58c85,// 0x7F7F7F, //0x202020,
+								map : child.material.map,
+								metalness: 0.25,
+								roughness: 0.65
+							});
+
 						child.material = material;
 						child.material.needsUpdate = true;
 					}
@@ -369,10 +377,19 @@ function loadSoundfromFirebase(src,idx){
 
 			var reader = new FileReader()
 			reader.onload = function(e){
-				audiocontext.decodeAudioData(reader.result).then(function(buffer){
+
+// // promises not used in safari webkit decodeAudioData
+// 				audiocontext.decodeAudioData(reader.result).then(function(buffer){
+// 					sounds.buffer[idx] = buffer;
+// 					resolve(idx)				
+// 				})
+
+				// Cross-browser compatible: doesn't use promises
+				audiocontext.decodeAudioData(reader.result, (buffer) => { 
 					sounds.buffer[idx] = buffer;
 					resolve(idx)				
-				})
+				 }, (e) => { reject(e); });	
+				 			
 			} //reader.onload
 			reader.readAsArrayBuffer(fileBlob)
 		} //try

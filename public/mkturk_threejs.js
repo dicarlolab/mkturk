@@ -5,13 +5,13 @@ const directionalLight = new  THREE.DirectionalLight( 0xffffff, 0.5 );
 async function initThreeJS() {
     // init renderer
     console.time('start')
-    renderer = new THREE.WebGLRenderer({canvas: VISIBLECANVASWEBGL, antialias: true})
+    renderer = new THREE.WebGLRenderer({canvas: VISIBLECANVASWEBGL, antialias: true, alpha: true})
 //     renderer.setPixelRatio(window.devicePixelRatio);
 
 // renderer.setSize(VISIBLECANVASWEBGL.width,VISIBLECANVASWEBGL.height)
 //     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    renderer.setClearColor(0x7F7F7F);
+    renderer.setClearColor(0x7F7F7F,0);
     renderer.physicallyCorrectLights = true;
     renderer.toneMappingExposure = 10;   // set exposure to light
     renderer.gammaOutput = true;

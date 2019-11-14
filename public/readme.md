@@ -9,7 +9,9 @@ CheckRFID: Time in milliseconds over which at least one matching RFID read is re
 
 ChoiceGridIndex: For a same-different task, need to specify two locations, one for same choice (circle) and one for different choice (square).
 
-ChoiceScale: Size of choice circle and square in units of sample image width
+ChoiceScale (computed internally and stored in ENV.ChoiceScale instead of provided by user in TASK): Size of choice circle and square in units of sample image width
+
+ChoiceSizeInches: Size of choice circle and square in physical inches on the screen
 
 ChoiceTimeOut: Time in milliseconds that subject has to make a choice in AFC task before trial aborts and new sample is displayed. This timeout applies to test response screen in SR2 or M2S and to choice response screen in same-different
 
@@ -22,9 +24,15 @@ FixationDuration: How long subject has to hold fixation touch in milliseconds fo
 FixationMove: FixationMove=0, fixation image is presented at fixationGridindex. FixationMove=N, N>0, fixation image is presented at a randomly selected grid point and the fixation position is redrawn every N milliseconds. FixationMove > 0 can be used to train subjects to touch different screen locations or to calibrate an eyetracker.
 FixationScale: Size of fixation image in units of sample image width.
 
+FixationScale (computed internally and stored in ENV.FixationScale instead of provided by user in TASK params): Size of the fixation dot or image (ie FixationUsesSample=1) in units of sample image width
+
+FixationSizeInches: Size of fixation dot or image (ie FixationUsesSample=1) in physical inches on the screen
+
 FixationUsesSample: FixationUsesSample=0, a fixation circle is shown for subject to touch; FixationUsesSample=1, sample image is shown as the fixation image. This allows implementation of a trianing strategy where the subject has to engage the sample image nfixations number of times before the choice screen.
 
-GridScale: Determines intergridpoint spacing. Can think of this as the resolution of grid. gridscale=1 means intergridpoint spacing is equal to the width of the sample image. Finer grid resolutions (gridscale<1) can be used for more precise sample positioning.
+GridScale (deprecated, replaced by GridSpacingInches): Determines intergridpoint spacing. Can think of this as the resolution of grid. gridscale=1 means intergridpoint spacing is equal to the width of the sample image. Finer grid resolutions (gridscale<1) can be used for more precise sample positioning.
+
+GridSpacingInches: Determines intergridpoint spacing in physical inches on screen.
 
 HideChoiceDistractors: HideChoiceDistractors=1, hides the same or different button so that subject sees only the correct one to touch. Still gets punished if touches blank area where the incorrect button would have been. This only applies to same-different choice screen. See HideTestDistractors for test response screen used in SR2 and M2S.
 
@@ -72,7 +80,9 @@ SampleOFF: Duration in milliseconds that a gray screen is presented after the sa
 
 SampleON: Duration in milliseconds that sample image is presented
 
-SampleScale: Size of sample image in units of sample image width. sampleScal=1 displays a npx x npx image on npx x npx screen pixels on the screen (i.e. no up or down sampling/resizing/filtering of the image)
+SampleScale (computed internally and stored in ENV.SampleScale instead of provided by user in TASK params): Size of sample image in units of sample image width. sampleScale=1 displays a npx x npx image on npx x npx screen pixels on the screen (i.e. no up or down sampling/resizing/filtering of the image)
+
+SampleSizeInches: Size of sample image in physical inches on the screen. sampleSizeInches = 0.834444 displays a 256 x 256 image on 256 x 256 screen pixels on the google pixel c screen (i.e. no up or down sampling/resizing/filtering of the image)
 
 Separated: 0=subject was paired with conspecific during task, 1=individual housed was separated from conspecific
 
@@ -80,7 +90,7 @@ Species: marmoset, macaque, or human
 
 StaticFixationGridIndex: Index on the grid where the fixation image will appear. If FixationMove>0, then StaticFixationGridindex is ignored.
 
-Tablet: nexus9, samsung10, pixelc
+Tablet (deprecated, replaced by auto-detected ENV.DeviceName): nexus9, samsung10, pixelc
 
 TestGridIndex: Index on grid where test images (choices) appear.
 
@@ -88,7 +98,9 @@ TestON: TestON > 0 indicates a Same-Different task so that last screen is a new 
 
 TestOFF: Choice screen appears TestOFF milliseconds after test image is extinguished. If TestOFF=0, then test screen does not extinguish (go to blank gray) until same-different choice screen appears. If KeepTestON=1, then test image reappears during the same-different choice screen.
 
-TestScale: Size of the test image in units of sample image width
+TestScale (computed internally and stored in ENV.TestScale instead of provided by user in TASK params): Size of the test image in units of sample image width
+
+TestSizeImages: Size of the test image in physical inches on the screen
 
 Weight: Weight in kilograms
 
@@ -103,15 +115,43 @@ ChoiceRadius: Radius (width) of same circle (different square) in pixels. This i
 
 ChoiceColor: Defaults to white circle (same) and square (different) buttons for same-different choice screen
 
+ChoiceScale: Size of choice circle and square in units of sample image width
+
 CurrentDate: date & time when task session was initiated
 
 DataFileName: complete file path and name of datafile
 
 DevicePixelRatio: In a typical retina display, there can be a devicePixelRatio of 2 so that each 1x1 logical pixel is rendered using 2x2 logical pixels. This upsampling requires interpolation and can lead to blurring over your image. However, this can be compensated by setting the CanvasRatio = BackingStoreRatio/DevicePixelRatio
 
+DeviceBrand: eg Not available (for google devices) or Apple (depends on deviceAPI)
+
+DeviceBrowserName: eg Chrome or Safari(depends on deviceAPI)
+
+DeviceBrowserVerion: eg 78.0.3904.90 or 12.0 (depends on deviceAPI)
+
+DeviceGPU: eg Adreno (TM) 640 or Apple A9 GPU (depends on deviceAPI)
+
+DeviceName: the name of the device used by mkturk to search firestore records eg Pixel 4 XL or iPhone 6s Plus (depends on deviceAPI)
+
+DeviceOSName: eg Android 10 or iOS 12.0.1 (depends on deviceAPI)
+
+DeviceOSCodename: eg Android or iOS (depends on deviceAPI)
+
+DeviceOSVersion: eg 10 or 12.0.1 (depends on deviceAPI)
+
+DeviceScreenWidth: physical display pixels (depends on deviceAPI)
+
+DeviceScreenHeight: physical display pixels (depends on deviceAPI)
+
+DeviceTouchscreen: 0 (not available) or 1 (available), indicates if touchscreen functionality available on device (depends on deviceAPI)
+
+DeviceType:desktop or mobile(depends on deviceAPI)
+
 FixationRadius: Radius of fixation image in pixels. This is not set by the user. Rather, user specifies FixationScale, and then FixationRadius stores the actual pixel-based size in the json data file.
 
 FixationColor: color of fixation dot if image is not used
+
+FixationScale: Size of the fixation dot or image (ie FixationUsesSample=1) in units of sample image width
 
 ImageHeightPixels: The height of the sample image in pixels. The image height is used as the unit for the vertical dimension. SampleScale, FixationScale, TestScale, or GridScale = 1 means correspond to 1 unit in terms of the sample image
 
@@ -129,9 +169,27 @@ ParamFileName: Name of the parameter file used for loading the task
 
 ParamFileRev: Dropbox revision # of the parameter file. The revision number is used to determine if a new version of the parameter file was found
 
+PhysicalPPI: physical quantity, should equal ENV.DevicePixelRatio*ENV.ViewportPPI, physical device pixels per inch
+
 RewardDuration: How long the reward is dispensed in milliseconds of time the pump is on. RewardDuration is derived by the user-specified RewardPer1000Trials in mL and the calibration curve for that pump type. 
 
+SampleScale: Size of sample image in units of sample image width. sampleScale=1 displays a npx x npx image on npx x npx screen pixels on the screen (i.e. no up or down sampling/resizing/filtering of the image)
+
+ScreenRatio: the standard device pixel ratio for that screen assuming no scaling (retrieved from firestore device record if available)
+
+ScreenSizeInches: physical quantity, recorded physical size of screen (retrieved from firestore device record if available)
+
+ScreenSizePixels: physical quantity, recorded # of pixels of screen (retrieved from firestore device record if available)
+
 Subject: Name of subject, chosen from pulldown menu at beginning of task.
+
+TestScale: Size of the test image in units of sample image width
+
+UserAgent: info from window.navigator.UserAgent
+
+ViewportPixels: derived quantity computed as ENV.ViewportPixels = ENV.ScreenPhysicalPixels/ENV.DevicePixelRatio where ScreenPhysicalPixels is the screen spec retrieved from firestore, and DevicePixelRatio is from the scaling being used by the user as detected during the browser session
+
+ViewportPPI: derived quantity, equals ENV.ViewportPixels[0]/ENV.ScreenSizeInches[0], viewport pixels per inch (computed from first screen dimension)
 
 XGridCenter: The location of all grid points in pixels. Follows from user-specified NGridPoints and GridScale (e.g. to create a 3x3 grid with adjacent non-overlapping images, set NGridPoints=3, GridScale=1 and XGridCenters will be spaced by ImageWidthPixels)
 

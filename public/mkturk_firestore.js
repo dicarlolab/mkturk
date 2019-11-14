@@ -5,8 +5,8 @@ async function saveBehaviorDatatoFirestore(TASK,ENV,CANVAS){
 	// Get a new write batch
 	var batch = db.batch();
 	
-	var taskRef = db.collection(FIREBASE_COLLECTION).doc(ENV.FirestoreDocRoot + '_task')
-	var imagesRef = db.collection(FIREBASE_COLLECTION).doc(ENV.FirestoreDocRoot + '_images')
+	var taskRef = db.collection(FIRESTORECOLLECTION.DATA).doc(ENV.FirestoreDocRoot + '_task')
+	var imagesRef = db.collection(FIRESTORECOLLECTION.DATA).doc(ENV.FirestoreDocRoot + '_images')
 	
 
 	//task meta & trial data
@@ -61,10 +61,10 @@ async function updateEventDataonFirestore(EVENTS){
 	// Get a new write batch
 	var batch = db.batch();
 
-	var taskRef = db.collection(FIREBASE_COLLECTION).doc(ENV.FirestoreDocRoot + '_task')
+	var taskRef = db.collection(FIRESTORECOLLECTION.DATA).doc(ENV.FirestoreDocRoot + '_task')
 	batch.update(taskRef,EVENTS.trialseries)
 	
-	var imagesRef = db.collection(FIREBASE_COLLECTION).doc(ENV.FirestoreDocRoot + '_images')
+	var imagesRef = db.collection(FIRESTORECOLLECTION.DATA).doc(ENV.FirestoreDocRoot + '_images')
 	batch.update(imagesRef,EVENTS.imageseries)
 	
 	// Commit the batch
@@ -109,6 +109,32 @@ async function loadAgentRFIDfromFirestore(subject,species){
 		}
 	}
 }
+
+async function queryDeviceonFirestore(deviceName){
+	var query = await db.collection(FIRESTORECOLLECTION.DEVICES).where("model","==",deviceName.toLowerCase())
+	var querySnapshot = await query.get()
+	return new Promise(
+		function(resolve, reject){
+			try {
+				if (querySnapshot.size==0){
+					resolve({screenSizeInches: [-1], screenPhysicalPixels: [-1], screenRatio: -1, ppi: -1})
+				}
+				querySnapshot.forEach(function(doc){
+					if (typeof(doc.data().screenRatio) == "undefined"){
+						//do nothing
+						resolve({screenSizeInches: [-1], screenPhysicalPixels: [-1], screenRatio: -1, ppi: -1})
+					} //END if no matching device
+					else {
+						resolve({screenSizeInches: doc.data().screenSizeInches, screenPhysicalPixels: doc.data().screenPhysicalPixels, screenRatio: doc.data().screenRatio, ppi: doc.data().ppi})
+					} //END else matching device
+				})		
+			} //try
+			catch (error){
+				console.log(error)
+			} //catch
+		}
+	) //Promise
+} //FUNCTION queryDeviceonFirestore
 
 
 function getFirestoreDocSize(collectionName,docRef,doctype){
