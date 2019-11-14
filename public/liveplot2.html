@@ -2,7 +2,10 @@
 <html>
 <head>
 <title id="page_title">liveplot2_mkturk</title>
+<<<<<<< HEAD
 <script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+=======
+>>>>>>> master
 <script src="liveplot_utils.js"></script>
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script src="liveplot2_googlecharts.js" type="text/javascript"></script>
@@ -16,6 +19,7 @@
     font-size: 10px;
 }
 </style>
+<<<<<<< HEAD
 <script type="text/javascript">
 // Flow: 
 // loadGoogleCharts --> getDropbox
@@ -25,6 +29,44 @@
 // SECTIONS:
 //================== GOOGLE CHARTS LOADING ==================//
 //================== DROPBOX STUFF ==================//
+=======
+
+<!-- Firebase App is always required and must be first -->
+<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase-app.js"></script>
+
+<!-- Add additional services that you want to use -->
+<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase-storage.js"></script>
+
+<script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",
+    authDomain: "sandbox-ce2c5.firebaseapp.com",
+    databaseURL: "https://sandbox-ce2c5.firebaseio.com",
+    projectId: "sandbox-ce2c5",
+    storageBucket: "sandbox-ce2c5.appspot.com",
+    messagingSenderId: "1003719887944"
+  };
+  firebase.initializeApp(config);
+
+  //Initialize Cloud Storage
+  var storage = firebase.storage();
+</script>
+
+
+<script type="text/javascript">
+// Flow: 
+// authenticate --> loadGoogleCharts --> getfilesfromfirebase
+// checkFileStatus -- wait 1 second -- if new data -->
+// readDatafromFirebase --> initializeChartData --> updatePlots
+
+// SECTIONS:
+//================== AUTHENICATION ==================//
+//================== GOOGLE CHARTS LOADING ==================//
+//================== FIREBASE STUFF ==================//
+>>>>>>> master
 //================== DATA HANDLING ==================//
 //================== PLOTTING ==================//
 
@@ -112,11 +154,16 @@ function loadGoogleCharts() {
             formatterColor.addRange(i * dx, (i + 1) * dx, 'gray', colormapJet[i])
         }
 
+<<<<<<< HEAD
         getFileListDropbox2();
+=======
+        populateFileDropDownMenu();
+>>>>>>> master
     })
 }
 //================== GOOGLE CHARTS LOADING (end) ==================//
 
+<<<<<<< HEAD
 //================== DROPBOX STUFF ==================//
 // Mkturk
 var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "liveplot2.html"
@@ -180,10 +227,90 @@ function checkFileStatus2() {
     }).then(function(filemeta) {
         if (file.rev != filemeta.rev) {
             file.rev = filemeta.rev
+=======
+
+
+//================== FIREBASE STORAGE STUFF ==================//
+async function getFileListRecursiveFirebase(dir,ext){
+	var fileList = await storage.ref().child(dir).listAll()
+
+	var files = []
+	for (const item of fileList.prefixes){
+		var subfileList = await getFileListRecursiveFirebase(dir + item.name + '/',ext)
+		files = [...files, ...subfileList]
+	}
+	for (i=0; i<=fileList.items.length-1; i++){
+		if (typeof(ext) == 'string'){
+			if (fileList.items[i].name.endsWith(ext)){
+				files.push({fullpath: fileList.items[i].fullPath, name: fileList.items[i].name})
+			} //if correct file extension
+			else {
+				// file does not have requested extension
+			}
+		}
+		else {
+            files.push({fullpath: fileList.items[i].fullPath, name: fileList.items[i].name})
+		} //if file extension required
+	}
+	return files
+} //recursviely accumulate files from subfolders (if any)
+
+
+async function populateFileDropDownMenu(){
+    try {
+        var filelist = await getFileListRecursiveFirebase(file.dir,'.txt')
+
+// // sort by value
+// items.sort(function (a, b) {
+//   return a.value - b.value;
+// });
+
+// sort descending by name
+filelist.sort(function(a, b) {
+  var nameA = a.name.toUpperCase(); // ignore upper and lowercase
+  var nameB = b.name.toUpperCase(); // ignore upper and lowercase
+  if (nameA > nameB) {
+    return -1;
+  }
+  if (nameA < nameB) {
+    return 1;
+  }
+
+  // names must be equal
+  return 0;
+});
+
+        file.filelist = filelist
+        for (var i=0; i<=filelist.length-1; i++){
+            //add to menu as option
+            var opt = document.createElement('option')
+            opt.value = i
+            opt.innerHTML = filelist[i].name
+            menuobj.appendChild(opt)        
+        } //for i files
+        file.name = file.filelist[0].fullpath
+        file.filehasChanged = true
+        loadDatafromFirebase(file.name)
+    }
+    catch (error) {
+        console.error(error)
+    }
+} //populateFileDropDownMenu
+
+// Asynchronous: Check for file updates
+async function checkFileStatusFirebase() {
+    try{
+        var filemeta = await storage.ref().child(file.name).getMetadata()
+
+        if (file.rev != filemeta.generation) {
+            file.rev = filemeta.generation
+            file.dateSaved = new Date(filemeta.updated)
+>>>>>>> master
             file.datahasChanged = true
             console.log('file was updated rev=' + file.rev)
         } else {
             file.datahasChanged = false
+<<<<<<< HEAD
         }
 
         if (file.filehasChanged == true || file.datahasChanged == true) {
@@ -257,6 +384,68 @@ function parseImageInfo() {
         cat = catOBJ;
         catlist = catlistOBJ;
     }
+=======
+        } //if file.rev
+
+        if (file.filehasChanged == true || file.datahasChanged == true) {
+            loadDatafromFirebase(file.name)
+        } else {
+            setTimeout(function() {
+                checkFileStatusFirebase()
+            }, 1000)
+        } //if filehasChanged
+    }
+    catch (error) {
+        console.error(error)
+    } //try
+    return false
+}
+
+//------------- LOAD JSON TEXT --------------//
+async function loadDatafromFirebase(textfile_path){
+    try{
+    var textfileRef = storage.ref().child(textfile_path)
+	url = await textfileRef.getDownloadURL()
+	response = await fetch(url)
+	var datajson = await response.json()
+
+
+    if (Array.isArray(datajson)) {
+        file.data = {};
+        for (var elem = 0; elem < datajson.length; elem++) {
+            for (var prop in datajson[elem]) {
+                file.data[prop] = datajson[elem][prop]
+            } //for property
+        } //for array elements
+    } else {
+        file.data = datajson
+    } //if data array
+
+    var filemeta = await storage.ref().child(textfile_path).getMetadata()
+    console.log("success: loaded file size " + filemeta.size/1000 + ' kb');
+    file.rev = filemeta.generation
+    file.dateSaved = new Date(filemeta.updated)
+
+    //Parse date
+    var ind1 = file.name.indexOf("/2")
+    var ind2 = file.name.indexOf('_')
+    var datestr = file.name.substring(ind1 + 1, ind2)
+    file.dateCreated = new Date(datestr)
+
+    parseImageInfo()
+    }
+    catch (error) {
+        console.error(error)
+    } //try
+    return false
+} //ReadFromFirebase
+//================== FIREBASE STORAGE STUFF (end) ==================//
+
+function parseImageInfo() {
+    objlabels = objlabelsOBJ;
+    cat = catOBJ;
+    catlist = catlistOBJ;
+>>>>>>> master
 
     if (file.filehasChanged == true) {
         initializeChartData()
@@ -264,7 +453,10 @@ function parseImageInfo() {
         updatePlots()
     }
 }
+<<<<<<< HEAD
 //================== DROPBOX STUFF (end) ==================//
+=======
+>>>>>>> master
 
 //================== DATA HANDLING ==================//
 // Synchronous: Initialize chart data matrices
@@ -302,6 +494,7 @@ function initializeChartData() {
     dataWeight.addColumn('datetime','time')
     dataWeight.addColumn('number','WeightReads')
 
+<<<<<<< HEAD
     dataXYPos.addColumn('number', 'xpos')
     dataXYPos.addColumn('number','Fixation')
     for (var i = 0; i<=file.data.TestGridIndex.length-1;i++){
@@ -312,6 +505,39 @@ function initializeChartData() {
     dataXYPos.addColumn('number', 'Fix_NR')
     dataXYPos.addColumn('number', 'Target_R')
     dataXYPos.addColumn('number','Target_NR')
+=======
+
+//dataXYPos for 2 test choices
+// 0: x
+// 1: y fix (box)
+// 2: y sample (box)
+// 3: y test1 (box)
+// 4: y test2 (box)
+// 3: y same (box)
+// 4: y different (box)
+// 5: y Fix_reward (dots)
+// 6: y Fix_punish (dots)
+// 7: y Target_reward (dots)
+// 8: y Target_punish (dots)
+    dataXYPos.addColumn('number', 'xpos')
+    dataXYPos.addColumn('number','Fixation')
+    dataXYPos.addColumn('number','Sample')  
+    for (var i = 0; i<=file.data.TestGridIndex.length-1;i++){
+        if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0 && i > 0){
+            break
+        }
+        dataXYPos.addColumn('number', 'Test' + (i+1))
+    }
+    if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0){
+        dataXYPos.addColumn('number', 'Same')
+        dataXYPos.addColumn('number', 'Different')
+    }
+
+    dataXYPos.addColumn('number', 'Fix_Reward')
+    dataXYPos.addColumn('number', 'Fix_Punish')
+    dataXYPos.addColumn('number', 'Target_Reward')
+    dataXYPos.addColumn('number','Target_Punish')
+>>>>>>> master
 
     dataReward.addColumn('string', 'reward size')
     dataReward.addColumn('number', 'nrewards')
@@ -355,8 +581,11 @@ function toTask() {
     }
 
     task.distractor = file.data.HideTestDistractors
+<<<<<<< HEAD
 
     task.nway = file.data.Nway;
+=======
+>>>>>>> master
     task.nobj = file.data.ImageBagsTest.length;
     task.objectlist = file.data.ImageBagsTest
 
@@ -479,9 +708,15 @@ function toPerformanceData() {
         } else if (i == 0) {
             ncorrect[i] = ydata[i]
         }
+<<<<<<< HEAD
 
     }
 
+=======
+    }
+
+    // Store fixation in odd indices and choice in even
+>>>>>>> master
     // All touchevents. touchevent has a length that is twice the length of file.data.FixationXYT or file.data.ResponseXYT 
     if (typeof file.data.ResponseXYT != "undefined" && file.data.ResponseXYT.length >= 1) {
         for (var i = 0; i <= file.data.FixationXYT.length * 2 - 1; i += 2) {
@@ -490,6 +725,7 @@ function toPerformanceData() {
         }
     }
 
+<<<<<<< HEAD
 
     //Fixation, Sample, Test Box
 
@@ -498,10 +734,19 @@ function toPerformanceData() {
     }
     else{
         samplescale = file.data.SampleScale
+=======
+    //Fixation, Sample, Test Box
+    if (file.data.FixationUsesSample == 0){
+        fixationscale = file.data.FixationScale
+    }
+    else{
+        fixationscale = file.data.SampleScale
+>>>>>>> master
     }
 
     nColumn = dataXYPos.getNumberOfColumns()
 
+<<<<<<< HEAD
     var  arr = new Array(nColumn)
     samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * samplescale
     sampleheight = file.data.CanvasRatio * file.data.ImageHeightPixels * samplescale
@@ -567,6 +812,143 @@ function toPerformanceData() {
    
     }
     }
+=======
+    // Size of sample, test & choice targets. Draw them as a bounding box in the touch plot
+    fixationwidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.FixationScale
+    fixationheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.FixationScale
+    samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.SampleScale
+    sampleheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.SampleScale
+    testwidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.TestScale
+    testheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.TestScale
+    if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0){
+        choicewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.ChoiceScale
+        choiceheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.ChoiceScale 
+    }
+    
+    var ndisplayelements = 0
+
+    //FIXATION
+    ndisplayelements++
+
+    fixation_xcoord = file.data.XGridCenter[file.data.StaticFixationGridIndex]
+    fixation_ycoord = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.StaticFixationGridIndex]
+
+    var  arr = new Array(nColumn)
+    arr[0] = fixation_xcoord-fixationwidth*file.data.CanvasRatio
+    arr[ndisplayelements] = fixation_ycoord-fixationheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
+
+    arr[0] = fixation_xcoord+fixationwidth*file.data.CanvasRatio
+    arr[ndisplayelements] = fixation_ycoord-fixationheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
+
+    arr[0] = fixation_xcoord+fixationwidth*file.data.CanvasRatio
+    arr[ndisplayelements] = fixation_ycoord+fixationheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
+
+    arr[0] = fixation_xcoord-fixationwidth*file.data.CanvasRatio
+    arr[ndisplayelements] = fixation_ycoord+fixationheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
+
+    arr[0] = fixation_xcoord-fixationwidth*file.data.CanvasRatio
+    arr[ndisplayelements] = fixation_ycoord-fixationheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
+
+    //SAMPLE
+    ndisplayelements++
+    sample_xcoord = file.data.XGridCenter[file.data.SampleGridIndex]
+    sample_ycoord = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.SampleGridIndex]    
+
+    var  arr = new Array(nColumn)
+    arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
+    arr[ndisplayelements] = sample_ycoord-sampleheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
+
+    arr[0] = sample_xcoord+samplewidth*file.data.CanvasRatio
+    arr[ndisplayelements] = sample_ycoord-sampleheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
+
+    arr[0] = sample_xcoord+samplewidth*file.data.CanvasRatio
+    arr[ndisplayelements] = sample_ycoord+sampleheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
+
+    arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
+    arr[ndisplayelements] = sample_ycoord+sampleheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
+
+    arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
+    arr[ndisplayelements] = sample_ycoord-sampleheight*file.data.CanvasRatio
+    dataXYPos.addRows([arr])
+
+    //TEST
+    var test_xcoord = []
+    var test_ycoord = []
+    if (file.data.RewardStage != 0 ){
+        for (var i =0; i<=file.data.TestGridIndex.length-1; i++){
+
+            if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0 && i > 0){
+                break
+            } // IF same-different, only show first test
+
+            ndisplayelements++
+            var arr = new Array(nColumn)
+            test_xcoord[i] = file.data.XGridCenter[file.data.TestGridIndex[i]]
+            test_ycoord[i] = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.TestGridIndex[i]]
+
+            arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
+            arr[ndisplayelements] = test_ycoord[i]-testheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
+
+            arr[0] = test_xcoord[i]+testwidth*file.data.CanvasRatio
+            arr[ndisplayelements] = test_ycoord[i]-testheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
+
+            arr[0] = test_xcoord[i]+testwidth*file.data.CanvasRatio
+            arr[ndisplayelements] = test_ycoord[i]+testheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
+
+            arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
+            arr[ndisplayelements] = test_ycoord[i]+testheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
+
+            arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
+            arr[ndisplayelements] = test_ycoord[i]-testheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
+        } //for n-way
+    } //if rewardstage != 0
+
+    //CHOICE
+    var choice_xcoord = []
+    var choice_ycoord = []
+    if (typeof(file.data.TestON) != "undefined" && file.data.RewardStage != 0 && file.data.TestON > 0){
+        for (var i =0; i<=file.data.ChoiceGridIndex.length-1; i++){
+            ndisplayelements++
+            var arr = new Array(nColumn)
+            choice_xcoord[i] = file.data.XGridCenter[file.data.ChoiceGridIndex[i]]
+            choice_ycoord[i] = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.ChoiceGridIndex[i]]
+
+            arr[0] = choice_xcoord[i]-choicewidth*file.data.CanvasRatio
+            arr[ndisplayelements] = choice_ycoord[i]-choiceheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
+
+            arr[0] = choice_xcoord[i]+choicewidth*file.data.CanvasRatio
+            arr[ndisplayelements] = choice_ycoord[i]-choiceheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
+
+            arr[0] = choice_xcoord[i]+choicewidth*file.data.CanvasRatio
+            arr[ndisplayelements] = choice_ycoord[i]+choiceheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
+
+            arr[0] = choice_xcoord[i]-choicewidth*file.data.CanvasRatio
+            arr[ndisplayelements] = choice_ycoord[i]+choiceheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
+
+            arr[0] = choice_xcoord[i]-choicewidth*file.data.CanvasRatio
+            arr[ndisplayelements] = choice_ycoord[i]-choiceheight*file.data.CanvasRatio
+            dataXYPos.addRows([arr])
+        } //for n-way
+    } //if rewardstage != 0    
+>>>>>>> master
 
     var xpos_Fix = []
     var ypos_Fix = []
@@ -578,8 +960,11 @@ function toPerformanceData() {
         xpos = touchevent[i][0]
         ypos = file.data.workspace[3]*file.data.CanvasRatio-touchevent[i][1]+file.data.offsettop
         
+<<<<<<< HEAD
       
 
+=======
+>>>>>>> master
         var ydata_index = []
         if (i % 2 == 0) {
             ydata_index = i / 2
@@ -590,6 +975,7 @@ function toPerformanceData() {
         if (xpos != -1) {
             var arr = new Array(nColumn)
             arr[0] = xpos 
+<<<<<<< HEAD
             if (i % 2 == 0){
                 xpos_Fix.push(xpos)
                 ypos_Fix.push(ypos)
@@ -603,11 +989,27 @@ function toPerformanceData() {
                 dataXYPos.addRows([arr])
                 }
             } else {
+=======
+            if (i % 2 == 0){ //if even (fixation)
+                xpos_Fix.push(xpos)
+                ypos_Fix.push(ypos)
+                if (ydata[ydata_index]==1){
+                //Fixation and Hit
+                arr[ndisplayelements+1] = ypos 
+                dataXYPos.addRows([arr])
+                } else{
+               //Fixation and Missed
+                arr[ndisplayelements+2] = ypos 
+                dataXYPos.addRows([arr])
+                }
+            } else { //if odd (choice)
+>>>>>>> master
                 var xpos_T_arr = Array.apply(null, Array(file.data.TestGridIndex.length)).map(Number.prototype.valueOf, 0);
                 var ypos_T_arr = Array.apply(null, Array(file.data.TestGridIndex.length)).map(Number.prototype.valueOf, 0);
                 for (var j = 0; j<=file.data.TestGridIndex.length-1; j++){  //different targets 
                     
                     if (file.data.Response[ydata_index] == j){
+<<<<<<< HEAD
                     xpos_T_arr[j] = xpos
                     ypos_T_arr[j] = ypos
                     nTarget[j]++
@@ -655,6 +1057,50 @@ function toPerformanceData() {
     ydata_5 = smooth(ydata,5);
     ydata_100 = smooth(ydata,100);
 
+=======
+                        xpos_T_arr[j] = xpos
+                        ypos_T_arr[j] = ypos
+                        nTarget[j]++
+                    }
+                    xpos_T.push(xpos_T_arr)  
+                    ypos_T.push(ypos_T_arr)  
+                }
+
+                if (ydata[ydata_index]==1){ //Target and hit
+                    arr[ndisplayelements+3] = ypos
+                    dataXYPos.addRows([arr])
+
+                } else{ //target and Missed
+                    arr[ndisplayelements+4] = ypos 
+                    dataXYPos.addRows([arr])
+                } //if
+            }// if even else odd
+        } // if xpos
+
+         mean_xpos_Fix = xpos_Fix.reduce(function(a,b){return a+b},0)/xpos_Fix.length
+         mean_ypos_Fix = ypos_Fix.reduce(function(a,b){return a+b},0)/ypos_Fix.length
+         dist_xpos_Fix = xpos_Fix.map(function(a){return Math.pow(Math.abs(a-mean_xpos_Fix),2)})
+         dist_ypos_Fix = ypos_Fix.map(function(a){return Math.pow(Math.abs(a-mean_ypos_Fix),2)})
+         std_Fix = dist_xpos_Fix.map(function(a,i){return Math.sqrt(a+dist_ypos_Fix[i])}).reduce(function(a,b){return a+b},0)/dist_xpos_Fix.length
+         vitals.std_Fix = std_Fix            
+
+        var std_T = []
+        for (var j=0; j<=file.data.TestGridIndex.length-1;j++){                 
+             all_xpos_T = xpos_T.map(function(a){return a[j]}).filter(function(a){return a!=0})
+             mean_xpos_T = all_xpos_T.reduce(function(a,b){return a+b},0)/all_xpos_T.length 
+             dist_xpos_T = all_xpos_T.map(function(a){return Math.pow(Math.abs(a-mean_xpos_T),2)})
+             all_ypos_T = ypos_T.map(function(a){return a[j]}).filter(function(a){return a!=0})  
+             mean_ypos_T = all_ypos_T.reduce(function(a,b){return a+b},0)/all_ypos_T.length
+             dist_ypos_T = all_ypos_T.map(function(a){return Math.pow(Math.abs(a-mean_ypos_T),2)})
+             std_T[j]= dist_xpos_T.map(function(a,i){return Math.sqrt(a+dist_ypos_T[i])}).reduce(function(a,b){return a+b},0)/all_xpos_T.length
+        } //for j test choices
+        vitals.std_T = std_T
+    } //for i touch events   
+
+    ydata_5 = smooth(ydata,5);
+    ydata_100 = smooth(ydata,100);
+    
+>>>>>>> master
 //Referencing to time file was last written & time of last trial rather than to file start.
     //Done because file can be changed on the fly which changes file start relative to performance.now()
     if (typeof file.data.ResponseXYT === 'undefined' || file.data.ResponseXYT.length < 1 || typeof file.data.ResponseXYT[file.data.ResponseXYT.length - 1][2] === 'undefined') {
@@ -704,7 +1150,11 @@ function toPerformanceData() {
 function toWeightData(){
     dataWeight.removeRows(0,dataWeight.getNumberOfRows());
     
+<<<<<<< HEAD
     if (typeof(file.data.WeightTime) != null){
+=======
+    if (typeof(file.data.WeightTime) != null && typeof(file.data.WeightTime) != "undefined"){
+>>>>>>> master
 
     for (var i=0; i<=file.data.WeightTime.length-1;i++){
         var tt = new Date(file.data.CurrentDate)
@@ -901,7 +1351,11 @@ function updatePlots() {
     drawChoiceBar()
     drawReward()
     file.datahasChanged = false
+<<<<<<< HEAD
     checkFileStatus2();
+=======
+    checkFileStatusFirebase();
+>>>>>>> master
 }
 
 // Synchronous
@@ -920,7 +1374,11 @@ function addTouchSDText(){
 
     for (var i = 0; i<=vitals.std_T.length-1; i++){
         scatterOptions.title = scatterOptions.title + 
+<<<<<<< HEAD
         "\n Target" + i + ":" + Math.round(vitals.std_T[i]*10)/10
+=======
+        "\n Target" + i + ": " + Math.round(vitals.std_T[i]*10)/10
+>>>>>>> master
     }
 }
 // Synchronous
@@ -928,26 +1386,59 @@ function addTaskText() {
     task["name"] = ""
     if (task.rewardstage == 0) {
         task["name"] = "Fixation";
+<<<<<<< HEAD
     } 
+=======
+        var nchoice = 1
+    } 
+    else if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0){
+        task["name"] = "Same-Different"
+        var nchoice = 2
+
+        if (file.data.HideChoiceDistractors){
+            var nchoice = 1
+        }
+    }
+>>>>>>> master
     else {
         if (Array.from(new Set(file.data.Sample)).length>1){
             if (file.data.ObjectGridIndex.length != 0 ){
                 task["name"] = "Stimulus Response"
+<<<<<<< HEAD
             }else{
                 if (task.distractor==0){
                 task["name"] = "Match-to-Sample";
                 }
                 else{
                 task["name"] = "No distractor Match-to-Sample"
+=======
+                var nchoice = file.data.TestGridIndex.length
+            }else{
+                if (task.distractor==0){
+                    task["name"] = "Match-to-Sample";
+                    var nchoice = file.data.TestGridIndex.length
+                }
+                else{
+                    task["name"] = "No distractor Match-to-Sample"
+                    var nchoice = 1
+>>>>>>> master
                 }
             }
         }
         else{
             task["name"] = "Detection";
+<<<<<<< HEAD
         }
     }
 
     tasktextobj.innerHTML = "<b>" + task.name + "</b>:" + task.nway + "-way" + ", " + task.nobj + "-obj" + "<br>" + "Sample folder " + task.imagefoldersample + ", Test folder " + task.imagefoldertest + "<br>" + "Sample On=" + task.sampleon + " ms" + ", Sample Off=" + task.sampleoff + " ms" + "<br>" + "objs=[" + task.objectlist + "]" + "<br>" + "reward=" + task.rewardper1000 + "mL per 1000 correct trials"
+=======
+            var nchoice = file.data.TestGridIndex.length
+        }
+    }
+
+    tasktextobj.innerHTML = "<b>" + task.name + "</b>:" + " " + task.nobj + "obj " + nchoice + "choice" + "<br>" + "Sample folder " + task.imagefoldersample + ", Test folder " + task.imagefoldertest + "<br>" + "Sample On=" + task.sampleon + " ms" + ", Sample Off=" + task.sampleoff + " ms" + "<br>" + "objs=[" + task.objectlist + "]" + "<br>" + "reward=" + task.rewardper1000 + "mL per 1000 correct trials"
+>>>>>>> master
 }
 
 //Synchronous
@@ -1048,6 +1539,7 @@ function drawObjPerfBar() {
 function drawScatter() {
     scatterOptions.series = []
     for (var i=0; i<dataXYPos.getNumberOfColumns();i++){
+<<<<<<< HEAD
         if (i<=file.data.TestGridIndex.length){
             scatterOptions.series[i] = {type:'line',color:'black',visibleInLegend: false}
         }
@@ -1061,6 +1553,33 @@ function drawScatter() {
             scatterOptions.series[i] = {color: 'red'}
         }
 }
+=======
+        if (dataXYPos.getColumnLabel(i) == "Fixation"){
+            scatterOptions.series[i-1] = {type:'line',color:'gray'} //,visibleInLegend: false}
+        } //if fixation 
+        else if (dataXYPos.getColumnLabel(i) == "Sample"){
+            scatterOptions.series[i-1] = {type:'line',color:'black'} //,visibleInLegend: false}
+        } // else if sample 
+        else if (dataXYPos.getColumnLabel(i) == "Same"){
+            scatterOptions.series[i-1] = {type:'line',color:'green'} //,visibleInLegend: false}
+        } // else if same
+        else if (dataXYPos.getColumnLabel(i) == "Different"){
+            scatterOptions.series[i-1] = {type:'line',color:'red'} //,visibleInLegend: false}
+        } // else if different
+        else if (dataXYPos.getColumnLabel(i) == "Fix_Reward"){
+            scatterOptions.series[i-1] = {color: 'blue'}
+        } else if (dataXYPos.getColumnLabel(i) == "Fix_Punish"){
+            scatterOptions.series[i-1] = {color: 'red'}
+        } else if (dataXYPos.getColumnLabel(i) == "Target_Reward"){
+            scatterOptions.series[i-1] = {color: 'green'}
+        } else if (dataXYPos.getColumnLabel(i) == "Target_Punish"){
+            scatterOptions.series[i-1] = {color: 'black'}
+        }
+        else if (dataXYPos.getColumnLabel(i).includes("Test")){
+            scatterOptions.series[i-1] = {type:'line',color:'black'} //,visibleInLegend: false}
+        } // else if test
+    } //for i scatter plot elements
+>>>>>>> master
     scatterOptions.height = file.data.workspace[3]*file.data.CanvasRatio,
     scatterOptions.width = file.data.workspace[2]*file.data.CanvasRatio,
     scatterOptions.hAxis = {title: 'X position (pixels)',
@@ -1071,8 +1590,11 @@ function drawScatter() {
     viewWindow: {
         min: 0, max: file.data.workspace[3]*file.data.CanvasRatio}
     }
+<<<<<<< HEAD
     
 
+=======
+>>>>>>> master
     livescatter.draw(dataXYPos, scatterOptions)
 }
 
@@ -1123,7 +1645,11 @@ var file = {
 dir: DATA_SAVEPATH,
 // from mkturk_installsettings.js
 list: [],
+<<<<<<< HEAD
 pathlist: [],
+=======
+filelist: [],
+>>>>>>> master
 name: "",
 data: null,
 ver: null,
@@ -1241,7 +1767,10 @@ imagefoldersample: 0,
 imagefoldertest: 0,
 sampleon: 0,
 sampleoff: 0,
+<<<<<<< HEAD
 nway: 0,
+=======
+>>>>>>> master
 nobj: 0,
 objectlist: [],
 }
@@ -1260,6 +1789,7 @@ var formatterColor = null;
 
 var trialrange = [0, 0]
 
+<<<<<<< HEAD
 if (isAuthenticated()) {
 //Create an instance of Dropbox with the access token
 var dbx = new Dropbox.Dropbox({
@@ -1274,5 +1804,28 @@ var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
 window.location.href = dbx_authUrl
 //send to Dropbox sign-in screen
 }
+=======
+//================== AUTHENTICATE GOOGLE ==================//
+// [START authstatelistener]
+var provider = new firebase.auth.GoogleAuthProvider();
+provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
+firebase.auth().getRedirectResult().then(function(result) {
+  if (result.user) {
+    // User just signed in. you can get the result.credential.
+	console.log('Sign-In Redirect Result, USER ' + result.user.email + ' is signed in')
+  }
+  else if (firebase.auth().currentUser) {
+    // User already signed in.
+	console.log('Sign-In Redirect Result, USER ' + firebase.auth().currentUser.email + ' is signed in')
+  }
+  else {
+    // No user signed in, update your UI, show the redirect sign-in screen.
+	firebase.auth().signInWithRedirect(provider)
+  }
+});
+//================== (end) AUTHENTICATE GOOGLE ==================//
+
+loadGoogleCharts()
+>>>>>>> master
 </script>
 </body></html>

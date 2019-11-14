@@ -90,7 +90,7 @@ function smooth(data,n){
 function filelist_listener(event){
   console.log("new file");
   //file.name=file.dir + file.list[this.value]; 
-  file.name = file.pathlist[this.value]
+  file.name = file.filelist[this.value].fullpath
   file.filehasChanged=true;
 }
 

@@ -72,7 +72,7 @@ automator_eventstring.push(
 		console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject advanced to stage '+(i_current_stage+1)+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
 
 		// Save behavior with current TASK, ENV, and TRIAL before moving on. 
-		saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL); 
+		saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, TRIAL);
 
 		// Reset tracking variables 
 		purgeTrackingVariables()
@@ -99,7 +99,7 @@ automator_eventstring.push(
 
 		// If imagebags are changed by automator, load images at beginning of next trial. 
 		if(!old_imageBagsTest.equals(TASK.ImageBagsTest) || !old_imageBagsSample.equals(TASK.ImageBagsSample)){
-			FLAGS.need2loadImages = 1; 
+			FLAGS.need2loadImagesTrialQueue = 1; 
 automator_eventstring.push('NEW IMAGES NEEDED for this automator stage')
 		}
 
@@ -129,12 +129,11 @@ function stageHash(task){
 }
 
 
-async function readTrialHistoryFromDropbox(filepaths){
+async function readTrialHistoryFromFirebase(filepaths){
 	
 	var trialhistory = {}
 	trialhistory.trainingstage = []
 	trialhistory.starttime = []
-	trialhistory.response = []
 	trialhistory.correct = []
 
 	if (typeof filepaths == "string"){
@@ -147,10 +146,9 @@ async function readTrialHistoryFromDropbox(filepaths){
 
 	// Iterate over files and add relevant variables
 	for (var i = 0; i< filepaths.length; i++){
-		datastring = await loadTextFilefromDropbox(filepaths[i])
-		data = JSON.parse(datastring)
-		task_data = data[2]
-		trial_data = data[3]
+		data = await loadTextfromFirebase(filepaths[i])
+		task_data = data[3]
+		trial_data = data[4]
 
 		var numTRIALs = trial_data.Response.length; 
 		// Iterate over TRIALs

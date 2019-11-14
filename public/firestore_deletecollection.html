@@ -1,0 +1,105 @@
+<!doctype html>
+
+<head>
+<meta name="mobile-web-app-capable" content="yes"> <!-- full screen https://developer.chrome.com/multidevice/android/installtohomescreen -->
+<meta name="viewport" content="width=device-width, user-scalable=no"> <!-- do not allow window rescaling.  To avoid window rescaling in portrait mode, added with=device-width from http://stackoverflow.com/questions/22771523/ipad-w-retina-safari-reported-dimensions-in-landscape-make-no-sense. Also, removes 300-350ms tap delay (https://developers.google.com/web/updates/2013/12/300ms-tap-delay-gone-away) -->
+
+<link rel="manifest" href="mkturkmanifest.json">
+<link rel="icon" href="mkturklogo48.png">
+
+<script src="mkturk_installsettings.js"></script>
+<script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+
+
+<!-- Firebase App is always required and must be first -->
+<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-app.js"></script>
+
+<!-- Add additional services that you want to use -->
+<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-firestore.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/5.5.5/firebase.js"></script>
+<script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",
+    authDomain: "sandbox-ce2c5.firebaseapp.com",
+    databaseURL: "https://sandbox-ce2c5.firebaseio.com",
+    projectId: "sandbox-ce2c5",
+    storageBucket: "sandbox-ce2c5.appspot.com",
+    messagingSenderId: "1003719887944"
+  };
+  firebase.initializeApp(config);
+
+  //Initialize Cloud Firestore
+  var db = firebase.firestore();
+
+  // Disable deprecated features
+  db.settings({
+    timestampsInSnapshots: true
+  });
+</script>
+
+</head>
+
+
+<body bgcolor=#7F7F7F>
+
+<script src="mkturk_dropbox.js" type="text/javascript"></script>
+<script src="mkturk_globalvariables.js" type="text/javascript"></script>
+<script src="mkturk_utils.js" type="text/javascript"></script>
+<script src="mkturk_firebase.js" type="text/javascript"></script>
+<script src="mkturk_firestore.js" type="text/javascript"></script>
+<script src="mkturk_dropbox2firestore.js" type="text/javascript"></script>
+
+<script>
+
+(async function(){
+
+
+async function deletenext(){
+	var first = db.collection(FIREBASE_COLLECTION)
+			.where("Doctype","==",'task')
+			.limit(25);
+
+	first.get().then(function (querySnapshot) {
+		if (querySnapshot.size == 0){
+			console.log('DONE: NO MORE FILES TO DELETE')
+			return
+		}
+		var batch = db.batch();
+		querySnapshot.forEach(function(doc)
+		{
+			batch.delete(doc.ref);
+	// 		db.collection(FIREBASE_COLLECTION).doc(doc.data().FirestoreDocRoot).delete()
+		  console.log('ready to delete ' + doc.id)
+		}); // forEach doc
+
+		batch.commit().then(function () {
+			console.log("Deleted firestore docs");
+			deletenext();
+		})
+		.catch(function(error) {
+			console.error("!Error deleting docs in collection", error);
+		});
+
+	//   // Get the last visible document
+	//   var lastVisible = documentSnapshots.docs[documentSnapshots.docs.length-1];
+	//   console.log("last", lastVisible);
+
+	//   // Construct a new query starting at this document,
+	//   // get the next 25 cities.
+	//   var next = db.collection(FIREBASE_COLLECTION)
+	// 		  .where("Doctype","==",'task')
+	//           .startAfter(lastVisible)
+	//           .limit(25);
+	}); //get
+} //function deletenext
+
+await deletenext()
+
+})()
+</script>
+
+</body>

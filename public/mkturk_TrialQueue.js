@@ -23,13 +23,13 @@ constructor(samplingStrategy, ImageBagsSample, ImageBagsTest){
 	this.IB = new ImageBuffer(); 
 
 	// Settings 
-	this.max_queue_size = 500; // Max number of trials (and their images) to have prepared from now; to improve browser performance
+	this.max_queue_size = 5200; // Max number of trials (and their images) to have prepared from now; to improve browser performance
 	this.num_in_queue = 0; // Tracking variable
 }
 
 async build(trial_cushion_size){
 	// Call after construction
-	var funcreturn = await loadImageBagPathsParallel(this.ImageBagsSample); 
+	var funcreturn = await loadImageBagPathsParallelFirebase(this.ImageBagsSample); 
 	this.samplebag_labels = funcreturn[1];
 	this.samplebag_paths = funcreturn[0]; 
 
@@ -38,7 +38,11 @@ async build(trial_cushion_size){
 		this.samplebag_block_indices[i] = i;
 	}
 
+<<<<<<< HEAD
 	var funcreturn = await loadImageBagPathsParallel(this.ImageBagsTest); 
+=======
+	var funcreturn = await loadImageBagPathsParallelFirebase(this.ImageBagsTest); 
+>>>>>>> master
 	this.testbag_labels = funcreturn[1];
 	this.testbag_paths = funcreturn[0];
 
@@ -55,7 +59,10 @@ async generate_trials(n_trials){
 
 	// Adds trials to queue and downloads their images 
 
-	n_trials = Math.min(this.max_queue_size - this.num_in_queue, n_trials); 
+	n_trials = Math.min(this.max_queue_size - this.num_in_queue, n_trials);
+	if (this.max_queue_size <= this.num_in_queue){
+		n_trials=0
+	}
 	if(n_trials == 0){
 		console.log('TQ.generate_trials(): Queue is full or no trials were requested')
 		return 
@@ -63,7 +70,7 @@ async generate_trials(n_trials){
 
 	var image_requests = []; 
 
-	console.log('TQ.generate_trials() will generate '+n_trials+' trials')
+	// console.log('TQ.generate_trials() will generate '+n_trials+' trials')
 
 	for (var i = 0; i < n_trials; i++){
 		if (TASK.NTrialsPerBagBlock <= 0){
@@ -87,7 +94,10 @@ async generate_trials(n_trials){
 
 				// make new bag
 				this.samplebag_block_indices = []
+<<<<<<< HEAD
 				var blocklen = this.samplebag_labels.filter(temp => temp == this.currentbag).length;
+=======
+>>>>>>> master
 				for (var j = 0; j <= this.samplebag_labels.length-1; j++){
 					if (this.samplebag_labels[j] == this.currentbag){
 						this.samplebag_block_indices.push(j)
@@ -107,12 +117,18 @@ async generate_trials(n_trials){
 
 		// Select appropriate test images (correct one and distractors) 
 		var funcreturn = selectTestImages(sample_label, this.testbag_labels) 
-		var test_indices = funcreturn[0] 
-		var correctIndex = funcreturn[1] 
 		var test_filenames = []
-		for (var j = 0; j < test_indices.length; j++){
-			test_filenames.push(this.testbag_paths[test_indices[j]])
-		}
+		if (TASK.TestON <= 0){
+			var test_indices = funcreturn[0] 
+			for (var j = 0; j < test_indices.length; j++){
+				test_filenames.push(this.testbag_paths[test_indices[j]])
+			}
+		} // m2s or sr2
+		else if (TASK.TestON > 0) {
+			var test_indices = funcreturn[0][0]
+			test_filenames.push(this.testbag_paths[test_indices])
+		} //Same-Different Task = one side of the Match-to-Sample
+		var correctIndex = funcreturn[1] 
 
 		image_requests.push(... test_filenames)
 
@@ -127,7 +143,7 @@ async generate_trials(n_trials){
 		this.num_in_queue++;
 	}
 	// Download images to support these trials to download queue
-	console.log("TQ.generate_trials() will request", image_requests.length)
+	// console.log("TQ.generate_trials() will request", image_requests.length)
 	await this.IB.cache_these_images(image_requests); 
 }
 
@@ -137,7 +153,7 @@ async get_next_trial(){
 	// along with its sample/test images 
 
 	if (this.sampleq.filename.length == 0){
-		console.log("Reached end of trial queue... generating one more in this.get_next_trial")
+		// console.log("Reached end of trial queue... generating one more in this.get_next_trial")
 		await this.generate_trials(1); 
 	}
 
@@ -186,17 +202,22 @@ async get_next_trial(){
 
 	// Get image from imagebag
 	var sample_image = await this.IB.get_by_name(sample_filename); 
+	var sample_reward = -1
+	if (typeof(ImageRewardList[sample_filename]) != "undefined"){
+		sample_reward = ImageRewardList[sample_filename]		
+	}
+	
 	var test_images = []
 	for (var i = 0; i < test_filenames.length; i++){
 		test_images.push(await this.IB.get_by_name(test_filenames[i]))
 	}
 
-	console.log('sample- get_next_trial()  image:', sample_index, '. name:', sample_filename); 
-	console.log('test- get_next_trial() images:', test_indices, '. name:', test_filenames); 
-	console.log('correct- get_next_trial()', test_correctIndex)
+	// console.log('sample- get_next_trial()  image:', sample_index, '. name:', sample_filename); 
+	// console.log('test- get_next_trial() images:', test_indices, '. name:', test_filenames); 
+	// console.log('correct- get_next_trial()', test_correctIndex)
 	this.num_in_queue--;
 
-	return [sample_image, sample_index, test_images, test_indices, test_correctIndex]
+	return [sample_image, sample_index, test_images, test_indices, test_correctIndex, sample_reward]
 }
 }
 

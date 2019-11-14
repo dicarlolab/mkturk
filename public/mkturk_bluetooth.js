@@ -158,8 +158,8 @@ async function connectBLEDeviceAndCacheCharacteristics(){
     ble.rfidcharacteristic=characteristics[3]
 
   await ble.pumpcharacteristic.startNotifications()
-    var currentTime = performance.now()
-    while (currentTime + 1000 >= performance.now()) {
+    var currentTime = Date.now() - ENV.CurrentDate.valueOf()
+    while (currentTime + 1000 >= (Date.now() - ENV.CurrentDate.valueOf()) ) {
     }
 
   await ble.rfidcharacteristic.startNotifications()
@@ -241,7 +241,7 @@ function time(text) {
 //============== READ NOTIFICATIONS & WRITES ==============//
 async function writepumpdurationtoBLE(num){
   var arrInt8 = toBytesInt16(num)
-  ble.twrite_pumpduration=performance.now()
+  ble.twrite_pumpduration=Date.now() - ENV.CurrentDate.valueOf()
   try{
     await ble.writepumpdurationcharacteristic.writeValue(arrInt8)
       var textstr = 'wrote ble val >> ' + num + ', byte values ' + arrInt8
@@ -272,7 +272,7 @@ function pingBLE(){
 }
 
 function onPumpNotificationFromBLE(event){
-  ble.tnotify_pump=performance.now()
+  ble.tnotify_pump = Date.now() - ENV.CurrentDate.valueOf()
   var textstr = 'BLE read notification << ' +
           Math.round(ble.tnotify_pump - ble.twrite_pumpduration) + 'ms'
   console.log(textstr)
@@ -292,7 +292,7 @@ function onPumpNotificationFromBLE(event){
 
 function onRFIDNotificationFromBLE(event){
   var t0 = ble.tnotify_rfid
-  ble.tnotify_rfid = performance.now()
+  ble.tnotify_rfid = Date.now() - ENV.CurrentDate.valueOf()
 
   let value = event.target.value
   value = value.buffer ? value : new DataView(value)

@@ -3,14 +3,43 @@ function refreshCanvasSettings(TASK){
 	// TODO: cleanup CANVAS; separate canvas ID from sequence logic; 'tsequence' variables coded by length rather than absolute time
 
 	// Adjust length / toggle presence of gray screen between sample and test screens
-	if (TASK.SampleOFF > 0){
-		CANVAS.sequence = ["blank", "sample","blank","test"]
-		CANVAS.tsequence = [0,100,100+TASK.SampleON,100+TASK.SampleON+TASK.SampleOFF]; 
-	}
-	else if (TASK.SampleOFF <= 0 ){
-		CANVAS.sequence = ["blank","sample","test"]
-		CANVAS.tsequence = [0,100,100+TASK.SampleON]; 
-	}
+
+	//---------------- SEQUENCE OF SAMPLE & TEST IMAGES ----------------//
+	if (TASK.TestON <= 0){
+		if (TASK.SampleOFF > 0){
+			CANVAS.sequence = ["blank", "sample","blank","test"]
+			CANVAS.tsequence = [0,100,100+TASK.SampleON,100+TASK.SampleON+TASK.SampleOFF]; 
+		}
+		else if (TASK.SampleOFF <= 0 ){
+			CANVAS.sequence = ["blank","sample","test"]
+			CANVAS.tsequence = [0,100,100+TASK.SampleON]; 
+		}
+	} //if Match-to-Sample
+	else if (TASK.TestON > 0){
+		if (TASK.SampleOFF > 0 && TASK.TestOFF > 0){
+			CANVAS.sequence = ["blank","sample","blank","test","blank","choice"]
+			CANVAS.tsequence = [0,100,100+TASK.SampleON,100+TASK.SampleON+TASK.SampleOFF,
+								100+TASK.SampleON+TASK.SampleOFF+TASK.TestON,
+								100+TASK.SampleON+TASK.SampleOFF+TASK.TestON+TASK.TestOFF]; 
+		}
+		else if (TASK.SampleOFF <= 0 && TASK.TestOFF > 0){
+			CANVAS.sequence = ["blank","sample","test","blank","choice"]
+			CANVAS.tsequence = [0,100,100+TASK.SampleON,
+			100+TASK.SampleON+TASK.TestON,
+			100+TASK.SampleON+TASK.TestON+TASK.TestOFF];
+		}
+		else if (TASK.SampleOFF > 0 && TASK.TestOFF <= 0){
+			CANVAS.sequence = ["blank","sample","blank","test","choice"]
+			CANVAS.tsequence = [0,100,100+TASK.SampleON,100+TASK.SampleON+TASK.SampleOFF,
+								100+TASK.SampleON+TASK.SampleOFF+TASK.TestON]; 
+		}
+		if (TASK.SampleOFF <= 0 && TASK.TestOFF <= 0){
+			CANVAS.sequence = ["blank","sample","test","choice"]
+			CANVAS.tsequence = [0,100,100+TASK.SampleON,
+								100+TASK.SampleON+TASK.TestON];
+		}
+	} //else if Same-Different
+	//---------------- SEQUENCE OF SAMPLE & TEST IMAGES (end) ----------------//
 	
 	// Adjust length of reward screen based on reward amount 
 	CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+ENV.RewardDuration*1000;
@@ -48,13 +77,19 @@ function setupCanvasHeadsUp(){
 		canvasobj.style.display="none";
 
 		//hide buttons for triggering pump
+<<<<<<< HEAD
 		document.querySelector("button[name=pumpflush]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 		document.querySelector("button[name=pumptrigger]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+=======
+		document.querySelector("button[id=pumpflush]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+		document.querySelector("button[id=pumptrigger]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+>>>>>>> master
 	}
 	else{
 		canvasobj.style.display="block";
 
 		//show buttons for triggering pump
+<<<<<<< HEAD
 		document.querySelector("button[name=pumpflush]").style.display = "block"
 		document.querySelector("button[name=pumpflush]").style.visibility = "visible"
 		document.querySelector("button[name=pumptrigger]").style.display = "block"
@@ -65,6 +100,18 @@ function setupCanvasHeadsUp(){
 		document.querySelector("button[name=pumpflush]").addEventListener(
 			'pointerup',function(){ event.preventDefault(); runPump("flush") },false)
 		document.querySelector("button[name=pumptrigger]").addEventListener(
+=======
+		document.querySelector("button[id=pumpflush]").style.display = "block"
+		document.querySelector("button[id=pumpflush]").style.visibility = "visible"
+		document.querySelector("button[id=pumptrigger]").style.display = "block"
+		document.querySelector("button[id=pumptrigger]").style.visibility = "visible"
+		document.querySelector("button[id=connectblescale]").style.display = "block"
+		document.querySelector("button[id=connectblescale]").style.visibility = "visible"
+
+		document.querySelector("button[id=pumpflush]").addEventListener(
+			'pointerup',function(){ event.preventDefault(); runPump("flush") },false)
+		document.querySelector("button[id=pumptrigger]").addEventListener(
+>>>>>>> master
 			'pointerup',function(){ event.preventDefault(); runPump("trigger") },false)
 	}
 	var context=canvasobj.getContext('2d');
@@ -132,7 +179,9 @@ function updateHeadsUpDisplay(){
 		task2 = TASK.SampleON + "ms, " + TASK.ImageBagsTest.length + "-categories in pool"
 	}
 	if (CANVAS.headsupfraction > 0){
-		textobj.innerHTML = ENV.Subject + ": <font color=green><b>" + pctcorrect 
+		textobj.innerHTML = 
+ 		'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail + "<br>"
+		+ 'Agent: ' + ENV.Subject + ", <font color=green><b>" + pctcorrect 
 		+ "%</b></font> " + "(" + ncorrect + " of " + TRIAL.Response.length + " trials)" 
 		+ "<br>" + "NRewards=" + nreward + ", <font color=green><b>" 
 		+ Math.round(TASK.RewardPer1000Trials*nreward/1000) 
@@ -140,13 +189,18 @@ function updateHeadsUpDisplay(){
 		+ " mL per 1000)" + "<br> " 
 		+ task1 + "<br>" + task2 + "<br>" + "<br>"
 		+ "last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>"
+<<<<<<< HEAD
 		+ "last saved to dropbox @ " + CURRTRIAL.lastDropboxSave.toLocaleTimeString("en-US")
+=======
+		+ "last saved to firebase @ " + CURRTRIAL.lastFirebaseSave.toLocaleTimeString("en-US")
+>>>>>>> master
 		// + "<br>" + "<br>" 
 		// + "<font color=red><b>" + ble.statustext + port.statustext_connect + "<br></font>" 
 		// + "<font color=green><b>" + port.statustext_sent + "<br></font>" 
 		// + "<font color=blue><b>" + port.statustext_received + "<br></font>"
 		// + "<font color=red><b>" + blescale.statustext_connect + "<br></font>" 		
 		// + "<font color=blue><b>" + blescale.statustext_received + "<br></font>"
+<<<<<<< HEAD
 	}
 	else if (CANVAS.headsupfraction == 0){
 		textobj.innerHTML = ble.statustext + port.statustext_connect
@@ -171,6 +225,45 @@ function updateHeadsUpDisplayDevices(){
 	}
 	else if (isNaN(CANVAS.headsupfraction)){ //before task params load
 		textobj.innerHTML = ble.statustext_connect
+=======
+
+		if (FLAGS.RFIDGeneratorCreated == 1){
+			textobj.innerHTML = textobj.innerHTML + "<br>"
+			+ "<font color = red>" + "PAUSED: waiting for RFID read!!" + "<br></font>"
+		}
+		if (TASK.CheckRFID > 0 && port.connected == false){
+			textobj.innerHTML = textobj.innerHTML + "<br>"
+			+ "<font color = red>" + "WARNING: USB device not connected to check RFID!!" + "<br></font>"
+		}
+	}
+	else if (CANVAS.headsupfraction == 0){
+		textobj.innerHTML = port.statustext_connect + blescale.statustext_connect
+	}
+	else if (isNaN(CANVAS.headsupfraction)){ //before task params load
+		textobj.innerHTML = 
+		'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail
+		+ "<br>" + "No trials performed"
+	}
+
+}
+
+function updateHeadsUpDisplayDevices(){
+	var textobj = document.getElementById("headsuptextdevices");
+	if (CANVAS.headsupfraction > 0){
+		textobj.innerHTML = "<font color=red><b>" + ble.statustext
+		+ port.statustext_connect + "<br></font>" 
+		+ "<font color=green><b>" + port.statustext_sent + "<br></font>" 
+		+ "<font color=blue><b>" + port.statustext_received + "<br></font>"
+		+ "<font color=red><b>" + blescale.statustext_connect + "<br></font>" 		
+		+ "<font color=blue><b>" + blescale.statustext_received + "<br></font>"
+	}
+	else if (CANVAS.headsupfraction == 0){
+		textobj.innerHTML = port.statustext_connect + blescale.statustext_connect
+	}
+	else if (isNaN(CANVAS.headsupfraction)){
+		//before task params load
+		textobj.innerHTML =  port.statustext_connect + blescale.statustext_connect
+>>>>>>> master
 	}
 }
 
@@ -237,6 +330,14 @@ async function bufferSampleImage(sample_image, sample_image_grid_index,canvasobj
 
 //========== BUFFER TEST CANVAS ==========//
 async function bufferTestImages(sample_image, sample_image_grid_index, test_images, test_image_grid_indices, correct_index,canvasobj){
+<<<<<<< HEAD
+=======
+	// Option: draw sample (TODO: remove the blink between sample screen and test screen)
+	if (TASK.KeepSampleON==1){
+		await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, canvasobj)
+	}
+
+>>>>>>> master
 	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)	
 	boundingBoxesChoice['x'] = []
 	boundingBoxesChoice['y'] = []
@@ -255,11 +356,91 @@ async function bufferTestImages(sample_image, sample_image_grid_index, test_imag
 		boundingBoxesChoice.x.push(funcreturn[0]); 
 		boundingBoxesChoice.y.push(funcreturn[1]); 
 	}
+}
+
+//========== BUFFER CHOICE CANVAS ==========//
+async function bufferChoiceUsingDot(sample_image, sample_image_grid_index, test_images, test_image_grid_indices, correct_index, choice_color, choice_radius, choice_grid_indices, canvasobj){
+	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)	
+	boundingBoxesChoice['x'] = []
+	boundingBoxesChoice['y'] = []
+	// Draw test object(s): 
+	for (i = 0; i<choice_grid_indices.length; i++){
+		// If HideTestDistractors, simply do not draw the image
+		if(TASK.HideChoiceDistractors == 1){
+			if (correct_index != i){
+				boundingBoxesChoice.x.push([NaN, NaN]); 
+				boundingBoxesChoice.y.push([NaN, NaN]); 
+				continue 
+			}
+		}
+		if (i==0){
+			funcreturn = await renderDotOnCanvas(choice_color, choice_grid_indices[i], choice_radius, canvasobj);
+		} //different = square
+		else if (i==1){
+			funcreturn = await renderSquareOnCanvas(choice_color, choice_grid_indices[i], 2*choice_radius, canvasobj);
+		} //same = circle
+		boundingBoxesChoice.x.push(funcreturn[0]); 
+		boundingBoxesChoice.y.push(funcreturn[1]); 
+	} //FOR i choices
 
 	// Option: draw sample (TODO: remove the blink between sample screen and test screen)
 	if (TASK.KeepSampleON==1){
 		await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, canvasobj)
+<<<<<<< HEAD
 	}
+=======
+	}
+	if (TASK.KeepTestON==1){ //should only be one test image
+		await renderImageOnCanvas(test_images[0], test_image_grid_indices[0], TASK.TestScale, canvasobj);
+	}
+} //FUNCTION bufferChoiceUsingDot
+
+
+async function renderDotOnCanvas(color, gridindex, dot_pixelradius, canvasobj){
+	var context=canvasobj.getContext('2d');
+
+	// Draw fixation dot
+	var rad = dot_pixelradius/ENV.CanvasRatio;
+	var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
+	var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;
+	context.beginPath();
+	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
+	context.fillStyle=color; 
+	context.fill();
+
+	// Define (rectangular) boundaries of fixation
+	// Bounding boxes of dot on canvas
+	xbound = [ (xcent-rad)*ENV.CanvasRatio, (xcent+rad)*ENV.CanvasRatio ];
+	ybound = [ (ycent-rad)*ENV.CanvasRatio, (ycent+rad)*ENV.CanvasRatio ];
+
+	xbound[0]=xbound[0]+CANVAS.offsetleft;
+	xbound[1]=xbound[1]+CANVAS.offsetleft;
+	ybound[0]=ybound[0]+CANVAS.offsettop;
+	ybound[1]=ybound[1]+CANVAS.offsettop;
+	return [xbound, ybound]
+}
+
+async function renderSquareOnCanvas(color, gridindex, square_pixelwidth, canvasobj){
+	// Draw Square
+	var context=canvasobj.getContext('2d');
+	var wd = square_pixelwidth/ENV.CanvasRatio;
+	var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
+	var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;
+	context.fillStyle=color;
+	context.fillRect(xcent-wd/2,ycent-wd/2,wd,wd);
+
+
+	// Define (rectangular) boundaries of fixation
+	// Bounding boxes of dot on canvas
+	xbound = [ (xcent-wd/2)*ENV.CanvasRatio, (xcent+wd/2)*ENV.CanvasRatio ];
+	ybound = [ (ycent-wd/2)*ENV.CanvasRatio, (ycent+wd/2)*ENV.CanvasRatio ];
+
+	xbound[0]=xbound[0]+CANVAS.offsetleft;
+	xbound[1]=xbound[1]+CANVAS.offsetleft;
+	ybound[0]=ybound[0]+CANVAS.offsettop;
+	ybound[1]=ybound[1]+CANVAS.offsettop;
+	return [xbound, ybound]
+>>>>>>> master
 }
 
 
@@ -308,7 +489,7 @@ function displayTrial(sequence,tsequence){
 
 	var start = null;
 	var tActual = []
-	function updateCanvas(timestamp){
+	async function updateCanvas(timestamp){
 
 		// If start has not been set to a float timestamp, set it now.
 		if (!start) start = timestamp;
@@ -316,14 +497,53 @@ function displayTrial(sequence,tsequence){
 		// If time to show new frame, 
 		if (timestamp - start > tsequence[frame.current]){
 			//console.log('Frame =' + frame.current+'. Duration ='+(timestamp-start)+'. Timestamp = ' + timestamp)
+<<<<<<< HEAD
 			tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
 			CANVAS.offscreen.commitTo(CANVAS.visible.getContext("bitmaprenderer"))
+=======
+			
+			tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+			var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
+
+			if (renderstr.status == "failed"){
+				console.log("**** FAILED on 1ST rendering attempt of " + sequence[frame.current])
+
+				// attempt again
+				tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+				var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
+
+				console.log("**** " + renderstr.status + " on 2ND rendering attempt of " + sequence[frame.current])
+
+				if (renderstr.status == "failed"){
+					if (sequence[frame.current] == "touchfix" || sequence[frame.current] == "test" || sequence[frame.current] == "choice"){
+						for (var j=0; j < 100; j++){
+							// attempt again
+							await setTimeout(j*100)
+							tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+							var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
+							if (renderstr.status == "succeeded"){
+								break
+							}
+						}
+						console.log("Render "  + sequence[frame.current] + " " + renderstr.status + " after " + j + " attempts")
+					}
+					else {
+						tActual[frame.current] = -99
+						console.log("Skipping render since not touchfix or test screen")
+					} //if touchfix || test
+				} //if failed again
+			} //if failed
+>>>>>>> master
 			frame.shown[frame.current]=1;
 			frame.current++;
-		}; 
+		};
 		// continue if not all frames shown
 		if (frame.shown[frame.shown.length-1] != 1){
+<<<<<<< HEAD
 			renderScreen(sequence[frame.current],CANVAS.offscreen)
+=======
+			renderScreen(sequence[frame.current],OFFSCREENCANVAS)
+>>>>>>> master
 			window.requestAnimationFrame(updateCanvas);
 		}
 		else{
@@ -338,8 +558,13 @@ function displayTrial(sequence,tsequence){
 function renderScreen(screenType,canvasobj){
 	if (FLAGS.savedata == 0){
 		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter, 
+<<<<<<< HEAD
 			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, 
 			TASK.FixationScale, TASK.SampleScale, TASK.TestScale, 
+=======
+			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, TASK.ChoiceGridIndex,
+			TASK.FixationScale, TASK.SampleScale, TASK.TestScale, TASK.ChoiceScale,
+>>>>>>> master
 			ENV.ImageWidthPixels, ENV.CanvasRatio,canvasobj);
 	}
 	else if (FLAGS.savedata == 1){
@@ -351,17 +576,30 @@ function renderScreen(screenType,canvasobj){
 		break
 	case 'blankWithGridMarkers':
 		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter, 
+<<<<<<< HEAD
 			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, 
 			TASK.FixationScale, TASK.SampleScale, TASK.TestScale, 
+=======
+			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, TASK.ChoiceGridIndex,
+			TASK.FixationScale, TASK.SampleScale, TASK.TestScale, TASK.ChoiceScale,
+>>>>>>> master
 			ENV.ImageWidthPixels, ENV.CanvasRatio,canvasobj);
 		break
 	case 'touchfix':
 		if(TASK.FixationUsesSample != 1){
+<<<<<<< HEAD
 			renderFixationUsingDot(ENV.FixationColor, CURRTRIAL.fixationgridindex,
 									ENV.FixationRadius, canvasobj);
 		}
 		else {
 			renderFixationUsingImage(CURRTRIAL.sampleimage, CURRTRIAL.fixationgridindex,
+=======
+			bufferFixationUsingDot(ENV.FixationColor, CURRTRIAL.fixationgridindex,
+									ENV.FixationRadius, canvasobj);
+		}
+		else {
+			bufferFixationUsingImage(CURRTRIAL.sampleimage, CURRTRIAL.fixationgridindex,
+>>>>>>> master
 									TASK.SampleScale, canvasobj)	
 		}
 		break
@@ -373,6 +611,15 @@ function renderScreen(screenType,canvasobj){
 						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem, 
 						canvasobj);
 		break
+<<<<<<< HEAD
+=======
+	case 'choice':
+		bufferChoiceUsingDot(CURRTRIAL.sampleimage, TASK.SampleGridIndex, 
+						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem, 
+						ENV.ChoiceColor,ENV.ChoiceRadius,TASK.ChoiceGridIndex,
+						canvasobj);
+		break
+>>>>>>> master
 	case 'reward':
 		renderReward(canvasobj)
 		break
@@ -381,7 +628,10 @@ function renderScreen(screenType,canvasobj){
 		break
 	default:
 	}
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
 }
 
 function renderBlank(canvasobj){
@@ -390,7 +640,7 @@ function renderBlank(canvasobj){
 	context.fillRect(0,100,canvasobj.width,canvasobj.height);
 }
 
-function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,fixationscale,samplescale,testscale,imwidth,canvasratio,canvasobj)
+function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,choicegridindex,fixationscale,samplescale,testscale,choicescale,imwidth,canvasratio,canvasobj)
 {
 	var outofbounds_str = ''
 	var context=canvasobj.getContext('2d');
@@ -460,6 +710,26 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 		}
 		displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
 	}
+
+	//Choice Image Bounding Box(es)
+	if (TASK.TestON > 0){
+		for (var i = 0; i <= choicegridindex.length-1; i++){
+			var wd = imwidth*choicescale
+			var xcent = gridx[choicegridindex[i]]/ENV.CanvasRatio
+			var ycent = gridy[choicegridindex[i]]/ENV.CanvasRatio
+			context.strokeStyle="red"
+			context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
+
+			var displaycoord = [(xcent-wd/2)*ENV.CanvasRatio,(ycent-wd/2)*ENV.CanvasRatio,
+							(xcent+wd/2)*ENV.CanvasRatio,(ycent+wd/2)*ENV.CanvasRatio]
+			var outofbounds=checkDisplayBounds(displaycoord)
+			if (outofbounds == 1){
+				outofbounds_str = outofbounds_str + "<br>" + "Choice Image" + i + " is out of bounds"
+			}
+			displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
+		}
+	} //IF testON (same-different choice screen)
+
 	if (outofbounds_str == ''){
 		outofbounds_str = 'All display elements are fully visible'
 	}
@@ -482,11 +752,15 @@ function renderPunish(canvasobj){
 					ycanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,400/ENV.CanvasRatio,400/ENV.CanvasRatio);
 }
 
+<<<<<<< HEAD
 async function renderFixationUsingImage(image, gridindex, scale, canvasobj){
 	var context=canvasobj.getContext('2d');
+=======
+async function bufferFixationUsingImage(image, gridindex, scale, canvasobj){
+// 	var context=canvasobj.getContext('2d');
+>>>>>>> master
 // 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 
-	// Draw fixation dot
 	boundingBoxesFixation['x']=[]
 	boundingBoxesFixation['y']=[]
 
@@ -494,6 +768,7 @@ async function renderFixationUsingImage(image, gridindex, scale, canvasobj){
 	boundingBoxesFixation.x.push(funcreturn[0]);
 	boundingBoxesFixation.y.push(funcreturn[1]);
 }
+<<<<<<< HEAD
 function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 	var context=canvasobj.getContext('2d');
 // 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
@@ -512,6 +787,16 @@ function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 	boundingBoxesFixation['y']=[]
 	boundingBoxesFixation.x.push([(xcent-rad)*ENV.CanvasRatio+CANVAS.offsetleft, (xcent+rad)*ENV.CanvasRatio+CANVAS.offsetleft]);
 	boundingBoxesFixation.y.push([(ycent-rad)*ENV.CanvasRatio+CANVAS.offsettop, (ycent+rad)*ENV.CanvasRatio+CANVAS.offsettop]);
+=======
+
+async function bufferFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
+	boundingBoxesFixation['x']=[]
+	boundingBoxesFixation['y']=[]
+
+	funcreturn = await renderDotOnCanvas(color, gridindex, dot_pixelradius, canvasobj)
+	boundingBoxesFixation.x.push(funcreturn[0]);
+	boundingBoxesFixation.y.push(funcreturn[1]);
+>>>>>>> master
 }
 
 function checkDisplayBounds(displayobject_coord){
@@ -543,7 +828,8 @@ function updateImageLoadingAndDisplayText(str){
 
 	textobj.innerHTML =
 	str
-	+ displayoutofboundsstr 
+	+ imageloadingtimestr
+	+ "<br>" + displayoutofboundsstr 
 	+ "<br>" + "Software reported frame display (t_actual - t_desired) :"
 	+ "<br>" + "<font color=red> mean dt = " + Math.round(u_dt) + " ms"
 	+ "  (min=" + Math.round(Math.min(... dt)) + ", max=" + Math.round(Math.max(... dt)) + ") </font>"

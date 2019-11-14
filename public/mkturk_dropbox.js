@@ -1,3 +1,32 @@
+//_____________________________________________________________
+// CODE TO ADD TO MKTURK.HTML IF PREFER TO USE DROPBOX
+
+// <script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+// <script src="mkturk_dropbox.js" type="text/javascript"></script>
+
+
+// //================== AUTHENTICATE DROPBOX ==================//
+// var DBX_REDIRECT_URI = window.location.href
+// if (isAuthenticated()){
+// 	//Create an instance of Dropbox with the access token
+// 	var dbx = new Dropbox.Dropbox({accessToken: getAccessTokenFromUrl()})
+// }
+// else {
+// 	var dbx = new Dropbox.Dropbox({clientId: DBX_CLIENT_ID});
+// 	var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
+// 	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
+// }
+// //=============== (end) AUTHENTICATE DROPBOX ===============//
+// ________________________________________________________________________
+
+
+//_____________________________________________________________
+// CODE TO ADD TO MKTURK_INSTALLSETTINGS.JS IF PREFER TO USE DROPBOX
+// // ------ Dropbox WebApp settings ------ 
+// var DBX_CLIENT_ID = "p4dju7hqsqpkm32" //mkturkissa
+// ________________________________________________________________________
+
+
 //return whether user was redirected here after authenticating
 function isAuthenticated(){
 	return !!getAccessTokenFromUrl()
@@ -111,7 +140,7 @@ async function getImageListDropboxRecursive(dirpath){
 	}
 	try{
 		var entries = []
-		response = await dbx.filesListFolder({path: dirpath, 
+		let response = await dbx.filesListFolder({path: dirpath, 
 											  recursive: true}) 
 		entries.push(... response.entries)
 
@@ -119,7 +148,7 @@ async function getImageListDropboxRecursive(dirpath){
 		var num_iterations = 0
 		var iteration_limit = 100
 		while(response.has_more == true){
-			response = await dbx.filesListFolderContinue(response.cursor)
+			response = await dbx.filesListFolderContinue({cursor: response.cursor})
 			entries.push(... response.entries)
 
 			num_iterations = num_iterations + 1 
@@ -164,6 +193,7 @@ async function checkParameterFileStatus(){
 			ENV.ParamFileDate = new Date(filemeta.client_modified)
 
 			FLAGS.need2loadParameters = 1
+		updateEventDataonFirestore(EVENTS);
 
 			console.log('Parameter file on disk was changed. New rev =' + ENV.ParamFileRev)
 		}
@@ -336,8 +366,19 @@ async function loadImageArrayfromDropbox(imagepathlist){
 			//}
 
 			for (var i = 0; i < 3; i++){
+<<<<<<< HEAD
 				var image_requests = imagepathlist.map(loadImagefromDropbox);
 				var image_array = await Promise.all(image_requests)
+=======
+
+				var image_requests = imagepathlist.map(loadImagefromDropbox);
+
+				// console.time('dropbox image batch')
+				var image_array = await Promise.all(image_requests)
+				// console.timeEnd('dropbox image batch')
+
+console.log('buffering ' + imagepathlist.length + ' images')
+>>>>>>> master
 
 				var load_success = 1
 				for (var j=0; j < image_array.length; j++){
@@ -378,7 +419,11 @@ async function loadImagefromDropbox(imagepath){
 							var image = new Image(); 
 
 							image.onload = function(){
+<<<<<<< HEAD
 								console.log('Loaded: ' + (imagepath));
+=======
+								// console.log('Loaded: ' + (imagepath));
+>>>>>>> master
 								updateImageLoadingAndDisplayText('Loaded: ' + imagepath)
 								resolve(image)
 								}
@@ -410,6 +455,7 @@ async function saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL){
         var dataobj = [] 
 
 		dataobj.push(ENV)
+		dataobj.push(IMAGES.imagepaths)
 		dataobj.push(CANVAS)
 		dataobj.push(TASK)
 		dataobj.push(TRIAL)
