@@ -170,6 +170,28 @@ function doneTestingTask_listener(event){
 	
 	document.querySelector("p[id=imageloadingtext]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	document.querySelector("button[id=doneTestingTask]").style.display = "none"
+	document.querySelector("button[id=stressTest]").style.display = "none"
+	return
+}
+
+function stressTest_listener(event){
+	event.preventDefault()
+	console.log("User is done testing. Performing STRESS TEST");
+	FLAGS.savedata=1
+	FLAGS.createnewfirestore = 1
+	FLAGS.purge=1
+	purgeTrackingVariables()
+	FLAGS.purge=0
+
+	if (FLAGS.stressTest == 0){
+		FLAGS.stressTest = 1
+	}
+	else if (FLAGS.stressTest == 1){
+		FLAGS.stressTest = 0
+	}
+	
+	document.querySelector("p[id=imageloadingtext]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+	document.querySelector("button[id=doneTestingTask]").style.display = "none"
 	return
 }
 

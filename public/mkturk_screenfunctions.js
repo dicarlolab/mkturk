@@ -77,23 +77,23 @@ function setupCanvasHeadsUp(){
 		canvasobj.style.display="none";
 
 		//hide buttons for triggering pump
-		document.querySelector("button[name=pumpflush]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
-		document.querySelector("button[name=pumptrigger]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+		document.querySelector("button[id=pumpflush]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+		document.querySelector("button[id=pumptrigger]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	}
 	else{
 		canvasobj.style.display="block";
 
 		//show buttons for triggering pump
-		document.querySelector("button[name=pumpflush]").style.display = "block"
-		document.querySelector("button[name=pumpflush]").style.visibility = "visible"
-		document.querySelector("button[name=pumptrigger]").style.display = "block"
-		document.querySelector("button[name=pumptrigger]").style.visibility = "visible"
-		document.querySelector("button[name=connectblescale]").style.display = "block"
-		document.querySelector("button[name=connectblescale]").style.visibility = "visible"
+		document.querySelector("button[id=pumpflush]").style.display = "block"
+		document.querySelector("button[id=pumpflush]").style.visibility = "visible"
+		document.querySelector("button[id=pumptrigger]").style.display = "block"
+		document.querySelector("button[id=pumptrigger]").style.visibility = "visible"
+		document.querySelector("button[id=connectblescale]").style.display = "block"
+		document.querySelector("button[id=connectblescale]").style.visibility = "visible"
 
-		document.querySelector("button[name=pumpflush]").addEventListener(
+		document.querySelector("button[id=pumpflush]").addEventListener(
 			'pointerup',function(){ event.preventDefault(); runPump("flush") },false)
-		document.querySelector("button[name=pumptrigger]").addEventListener(
+		document.querySelector("button[id=pumptrigger]").addEventListener(
 			'pointerup',function(){ event.preventDefault(); runPump("trigger") },false)
 	}
 	var context=canvasobj.getContext('2d');
@@ -171,16 +171,25 @@ function updateHeadsUpDisplay(){
 		+ " mL per 1000)" + "<br> " 
 		+ task1 + "<br>" + task2 + "<br>" + "<br>"
 		+ "last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>"
-		+ "last saved to dropbox @ " + CURRTRIAL.lastDropboxSave.toLocaleTimeString("en-US")
+		+ "last saved to firebase @ " + CURRTRIAL.lastFirebaseSave.toLocaleTimeString("en-US")
 		// + "<br>" + "<br>" 
 		// + "<font color=red><b>" + ble.statustext + port.statustext_connect + "<br></font>" 
 		// + "<font color=green><b>" + port.statustext_sent + "<br></font>" 
 		// + "<font color=blue><b>" + port.statustext_received + "<br></font>"
 		// + "<font color=red><b>" + blescale.statustext_connect + "<br></font>" 		
 		// + "<font color=blue><b>" + blescale.statustext_received + "<br></font>"
+
+		if (FLAGS.RFIDGeneratorCreated == 1){
+			textobj.innerHTML = textobj.innerHTML + "<br>"
+			+ "<font color = red>" + "PAUSED: waiting for RFID read!!" + "<br></font>"
+		}
+		if (TASK.CheckRFID > 0 && port.connected == false){
+			textobj.innerHTML = textobj.innerHTML + "<br>"
+			+ "<font color = red>" + "WARNING: USB device not connected to check RFID!!" + "<br></font>"
+		}
 	}
 	else if (CANVAS.headsupfraction == 0){
-		textobj.innerHTML = ble.statustext + port.statustext_connect
+		textobj.innerHTML = port.statustext_connect + blescale.statustext_connect
 	}
 	else if (isNaN(CANVAS.headsupfraction)){ //before task params load
 	if (ENV.ScreenRatio == -1) {
@@ -224,10 +233,11 @@ function updateHeadsUpDisplayDevices(){
 		+ "<font color=blue><b>" + blescale.statustext_received + "<br></font>"
 	}
 	else if (CANVAS.headsupfraction == 0){
-		textobj.innerHTML = port.statustext_connect
+		textobj.innerHTML = port.statustext_connect + blescale.statustext_connect
 	}
-	else if (isNaN(CANVAS.headsupfraction)){ //before task params load
-		textobj.innerHTML = ble.statustext_connect
+	else if (isNaN(CANVAS.headsupfraction)){
+		//before task params load
+		textobj.innerHTML =  port.statustext_connect + blescale.statustext_connect
 	}
 }
 
@@ -459,6 +469,7 @@ function displayTrial(sequence,tsequence){
 		// If time to show new frame, 
 		if (timestamp - start > tsequence[frame.current]){
 			//console.log('Frame =' + frame.current+'. Duration ='+(timestamp-start)+'. Timestamp = ' + timestamp)
+			
 			tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
 
 			if (ENV.OffscreenCanvasAvailable){
@@ -546,7 +557,7 @@ function renderScreen(screenType,canvasobj){
 		break
 	case 'touchfix':
 		if(TASK.FixationUsesSample != 1){
-			renderFixationUsingDot(ENV.FixationColor, CURRTRIAL.fixationgridindex,
+			bufferFixationUsingDot(ENV.FixationColor, CURRTRIAL.fixationgridindex,
 									ENV.FixationRadius, canvasobj);
 		}
 		else {
@@ -560,6 +571,12 @@ function renderScreen(screenType,canvasobj){
 	case 'test':
 		bufferTestImages(CURRTRIAL.sampleimage, TASK.SampleGridIndex, 
 						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem, 
+						canvasobj);
+		break
+	case 'choice':
+		bufferChoiceUsingDot(CURRTRIAL.sampleimage, TASK.SampleGridIndex, 
+						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem, 
+						ENV.ChoiceColor,ENV.ChoiceRadius,TASK.ChoiceGridIndex,
 						canvasobj);
 		break
 	case 'reward':
@@ -694,8 +711,8 @@ function renderPunish(canvasobj){
 					ycanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,400/ENV.CanvasRatio,400/ENV.CanvasRatio);
 }
 
-async function renderFixationUsingImage(image, gridindex, scale, canvasobj){
-	var context=canvasobj.getContext('2d');
+async function bufferFixationUsingImage(image, gridindex, scale, canvasobj){
+// 	var context=canvasobj.getContext('2d');
 // 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 
 	boundingBoxesFixation['x']=[]
@@ -705,19 +722,7 @@ async function renderFixationUsingImage(image, gridindex, scale, canvasobj){
 	boundingBoxesFixation.x.push(funcreturn[0]);
 	boundingBoxesFixation.y.push(funcreturn[1]);
 }
-function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
-	var context=canvasobj.getContext('2d');
-// 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 
-	// Draw fixation dot
-	var rad = dot_pixelradius/ENV.CanvasRatio;
-	var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
-	var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;
-	context.beginPath();
-	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
-	context.fillStyle=color; 
-	context.fill();
-}
 async function bufferFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 	 console.time('startrenderFIXATION')
 
@@ -788,5 +793,5 @@ function displayGridCoordinate(idx,xycoord,canvasobj){
 	visible_ctxt.textBaseline = "middle";
 	visible_ctxt.fillStyle = "white";
 	visible_ctxt.font = "20px Verdana";
-	visible_ctxt.fillText(idx,xycoord[0]/ENV.CanvasRatio, xycoord[1]/ENV.CanvasRatio) 
+	visible_ctxt.fillText(idx,xycoord[0]/ENV.CanvasRatio, xycoord[1]/ENV.CanvasRatio)
 }
