@@ -8,11 +8,11 @@ function refreshCanvasSettings(TASK){
 	if (TASK.TestON <= 0){
 		if (TASK.SampleOFF > 0){
 			CANVAS.sequence = ["blank", "sample","blank","test"]
-			CANVAS.tsequence = [0,100,100+TASK.SampleON,100+TASK.SampleON+TASK.SampleOFF];
+			CANVAS.tsequence = [0,100,100+TASK.SampleON,100+TASK.SampleON+TASK.SampleOFF]; 
 		}
 		else if (TASK.SampleOFF <= 0 ){
 			CANVAS.sequence = ["blank","sample","test"]
-			CANVAS.tsequence = [0,100,100+TASK.SampleON];
+			CANVAS.tsequence = [0,100,100+TASK.SampleON]; 
 		}
 	} //if Match-to-Sample
 	else if (TASK.TestON > 0){
@@ -20,7 +20,7 @@ function refreshCanvasSettings(TASK){
 			CANVAS.sequence = ["blank","sample","blank","test","blank","choice"]
 			CANVAS.tsequence = [0,100,100+TASK.SampleON,100+TASK.SampleON+TASK.SampleOFF,
 								100+TASK.SampleON+TASK.SampleOFF+TASK.TestON,
-								100+TASK.SampleON+TASK.SampleOFF+TASK.TestON+TASK.TestOFF];
+								100+TASK.SampleON+TASK.SampleOFF+TASK.TestON+TASK.TestOFF]; 
 		}
 		else if (TASK.SampleOFF <= 0 && TASK.TestOFF > 0){
 			CANVAS.sequence = ["blank","sample","test","blank","choice"]
@@ -31,7 +31,7 @@ function refreshCanvasSettings(TASK){
 		else if (TASK.SampleOFF > 0 && TASK.TestOFF <= 0){
 			CANVAS.sequence = ["blank","sample","blank","test","choice"]
 			CANVAS.tsequence = [0,100,100+TASK.SampleON,100+TASK.SampleON+TASK.SampleOFF,
-								100+TASK.SampleON+TASK.SampleOFF+TASK.TestON];
+								100+TASK.SampleON+TASK.SampleOFF+TASK.TestON]; 
 		}
 		if (TASK.SampleOFF <= 0 && TASK.TestOFF <= 0){
 			CANVAS.sequence = ["blank","sample","test","choice"]
@@ -40,8 +40,8 @@ function refreshCanvasSettings(TASK){
 		}
 	} //else if Same-Different
 	//---------------- SEQUENCE OF SAMPLE & TEST IMAGES (end) ----------------//
-
-	// Adjust length of reward screen based on reward amount
+	
+	// Adjust length of reward screen based on reward amount 
 	CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+ENV.RewardDuration*1000;
 
 	// Adjust location of CANVAS based on species-specific setup
@@ -118,7 +118,7 @@ function setupCanvas(canvasobj){
 	canvasobj.addEventListener('mousedown',touchstart_listener,{capture: false,passive: false}); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
 	canvasobj.addEventListener('mousemove',touchmove_listener,{passive: false}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
 	canvasobj.addEventListener('mouseup',touchend_listener,{capture: false, passive:false});
-}
+} 
 
 // Sync: Adjust canvas for the device pixel ratio & browser backing store size
 // from http://www.html5rocks.com/en/tutorials/canvas/hidpi/#disqus_thread
@@ -132,7 +132,7 @@ function scaleCanvasforHiDPI(canvasobj){
 		canvasobj.style.width = windowWidth - CANVAS.offsetleft + "px";
 		canvasobj.style.height = windowHeight - CANVAS.offsettop + "px";
 		canvasobj.style.margin="0 auto";
-	}
+	} 
 }
 
 function updateHeadsUpDisplay(){
@@ -161,22 +161,22 @@ function updateHeadsUpDisplay(){
 		task2 = TASK.SampleON + "ms, " + TASK.ImageBagsTest.length + "-categories in pool"
 	}
 	if (CANVAS.headsupfraction > 0){
-		textobj.innerHTML =
+		textobj.innerHTML = 
  		'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail + "<br>"
-		+ 'Agent: ' + ENV.Subject + ", <font color=green><b>" + pctcorrect
-		+ "%</b></font> " + "(" + ncorrect + " of " + TRIAL.Response.length + " trials)"
-		+ "<br>" + "NRewards=" + nreward + ", <font color=green><b>"
-		+ Math.round(TASK.RewardPer1000Trials*nreward/1000)
-		+ "mL</b></font> (" + Math.round(TASK.RewardPer1000Trials)
-		+ " mL per 1000)" + "<br> "
+		+ 'Agent: ' + ENV.Subject + ", <font color=green><b>" + pctcorrect 
+		+ "%</b></font> " + "(" + ncorrect + " of " + TRIAL.Response.length + " trials)" 
+		+ "<br>" + "NRewards=" + nreward + ", <font color=green><b>" 
+		+ Math.round(TASK.RewardPer1000Trials*nreward/1000) 
+		+ "mL</b></font> (" + Math.round(TASK.RewardPer1000Trials) 
+		+ " mL per 1000)" + "<br> " 
 		+ task1 + "<br>" + task2 + "<br>" + "<br>"
 		+ "last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>"
 		+ "last saved to firebase @ " + CURRTRIAL.lastFirebaseSave.toLocaleTimeString("en-US")
-		// + "<br>" + "<br>"
-		// + "<font color=red><b>" + ble.statustext + port.statustext_connect + "<br></font>"
-		// + "<font color=green><b>" + port.statustext_sent + "<br></font>"
+		// + "<br>" + "<br>" 
+		// + "<font color=red><b>" + ble.statustext + port.statustext_connect + "<br></font>" 
+		// + "<font color=green><b>" + port.statustext_sent + "<br></font>" 
 		// + "<font color=blue><b>" + port.statustext_received + "<br></font>"
-		// + "<font color=red><b>" + blescale.statustext_connect + "<br></font>"
+		// + "<font color=red><b>" + blescale.statustext_connect + "<br></font>" 		
 		// + "<font color=blue><b>" + blescale.statustext_received + "<br></font>"
 
 		if (FLAGS.RFIDGeneratorCreated == 1){
@@ -192,7 +192,7 @@ function updateHeadsUpDisplay(){
 		textobj.innerHTML = port.statustext_connect + blescale.statustext_connect
 	}
 	else if (isNaN(CANVAS.headsupfraction)){ //before task params load
-		textobj.innerHTML =
+		textobj.innerHTML = 
 		'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail
 		+ "<br>" + "No trials performed"
 	}
@@ -203,10 +203,10 @@ function updateHeadsUpDisplayDevices(){
 	var textobj = document.getElementById("headsuptextdevices");
 	if (CANVAS.headsupfraction > 0){
 		textobj.innerHTML = "<font color=red><b>" + ble.statustext
-		+ port.statustext_connect + "<br></font>"
-		+ "<font color=green><b>" + port.statustext_sent + "<br></font>"
+		+ port.statustext_connect + "<br></font>" 
+		+ "<font color=green><b>" + port.statustext_sent + "<br></font>" 
 		+ "<font color=blue><b>" + port.statustext_received + "<br></font>"
-		+ "<font color=red><b>" + blescale.statustext_connect + "<br></font>"
+		+ "<font color=red><b>" + blescale.statustext_connect + "<br></font>" 		
 		+ "<font color=blue><b>" + blescale.statustext_received + "<br></font>"
 	}
 	else if (CANVAS.headsupfraction == 0){
@@ -222,16 +222,16 @@ function updateHeadsUpDisplayAutomator(currentautomatorstagename,pctcorrect,ntri
 	var textobj = document.getElementById("headsuptextautomator");
 	if (CANVAS.headsupfraction > 0){
 		textobj.innerHTML =
-			"Automator: " +
+			"Automator: " + 
 			"<font color=red><b>" + TASK.Automator + "</b></font> " +
 			" " + "<font color=white><b>" +
 			 "Stage" + TASK.CurrentAutomatorStage + "=" +
 				currentautomatorstagename +
 			"</b></font>" +"<br>" +
-			"Performance: " +
-			"<font color=green><b>" + Math.round(pctcorrect) + "%, last " +
-			ntrials + " trials</b></font> " +
-			"(min: " + minpctcorrect +
+			"Performance: " + 
+			"<font color=green><b>" + Math.round(pctcorrect) + "%, last " + 
+			ntrials + " trials</b></font> " + 
+			"(min: " + minpctcorrect + 
 				"%, " + mintrials + " trials)" + "<br>" + "<br>" +
 			eventstring
 	}
@@ -247,7 +247,7 @@ function updateHeadsUpDisplayAutomator(currentautomatorstagename,pctcorrect,ntri
 function defineImageGrid(ngridpoints, wd, ht, gridscale){
 	var xgrid =[]
 	var ygrid =[]
-	var xgridcent =[]
+	var xgridcent =[] 
 	var ygridcent =[]
 	var cnt=0;
 	for (var i=1; i<=ngridpoints; i++){
@@ -274,7 +274,7 @@ function defineImageGrid(ngridpoints, wd, ht, gridscale){
 
 //========== BUFFER SAMPLE CANVAS ==========//
 async function bufferSampleImage(sample_image, sample_image_grid_index,canvasobj){
-	var context=canvasobj.getContext('2d');
+	var context=canvasobj.getContext('2d'); 
 	await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, canvasobj)
 }
 
@@ -286,39 +286,39 @@ async function bufferTestImages(sample_image, sample_image_grid_index, test_imag
 		await renderImageOnCanvas(sample_image, sample_image_grid_index, TASK.SampleScale, canvasobj)
 	}
 
-	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)
+	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)	
 	boundingBoxesChoice['x'] = []
 	boundingBoxesChoice['y'] = []
-	// Draw test object(s):
+	// Draw test object(s): 
 	for (i = 0; i<test_images.length; i++){
 		// If HideTestDistractors, simply do not draw the image
 		if(TASK.HideTestDistractors == 1){
 			if (correct_index != i){
-				boundingBoxesChoice.x.push([NaN, NaN]);
-				boundingBoxesChoice.y.push([NaN, NaN]);
-				continue
+				boundingBoxesChoice.x.push([NaN, NaN]); 
+				boundingBoxesChoice.y.push([NaN, NaN]); 
+				continue 
 			}
-		}
+		}		
 
-		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], TASK.TestScale, canvasobj);
-		boundingBoxesChoice.x.push(funcreturn[0]);
-		boundingBoxesChoice.y.push(funcreturn[1]);
+		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], TASK.TestScale, canvasobj); 
+		boundingBoxesChoice.x.push(funcreturn[0]); 
+		boundingBoxesChoice.y.push(funcreturn[1]); 
 	}
 }
 
 //========== BUFFER CHOICE CANVAS ==========//
 async function bufferChoiceUsingDot(sample_image, sample_image_grid_index, test_images, test_image_grid_indices, correct_index, choice_color, choice_radius, choice_grid_indices, canvasobj){
-	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)
+	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)	
 	boundingBoxesChoice['x'] = []
 	boundingBoxesChoice['y'] = []
-	// Draw test object(s):
+	// Draw test object(s): 
 	for (i = 0; i<choice_grid_indices.length; i++){
 		// If HideTestDistractors, simply do not draw the image
 		if(TASK.HideChoiceDistractors == 1){
 			if (correct_index != i){
-				boundingBoxesChoice.x.push([NaN, NaN]);
-				boundingBoxesChoice.y.push([NaN, NaN]);
-				continue
+				boundingBoxesChoice.x.push([NaN, NaN]); 
+				boundingBoxesChoice.y.push([NaN, NaN]); 
+				continue 
 			}
 		}
 		if (i==0){
@@ -327,8 +327,8 @@ async function bufferChoiceUsingDot(sample_image, sample_image_grid_index, test_
 		else if (i==1){
 			funcreturn = await renderSquareOnCanvas(choice_color, choice_grid_indices[i], 2*choice_radius, canvasobj);
 		} //same = circle
-		boundingBoxesChoice.x.push(funcreturn[0]);
-		boundingBoxesChoice.y.push(funcreturn[1]);
+		boundingBoxesChoice.x.push(funcreturn[0]); 
+		boundingBoxesChoice.y.push(funcreturn[1]); 
 	} //FOR i choices
 
 	// Option: draw sample (TODO: remove the blink between sample screen and test screen)
@@ -350,7 +350,7 @@ async function renderDotOnCanvas(color, gridindex, dot_pixelradius, canvasobj){
 	var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;
 	context.beginPath();
 	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
-	context.fillStyle=color;
+	context.fillStyle=color; 
 	context.fill();
 
 	// Define (rectangular) boundaries of fixation
@@ -400,17 +400,17 @@ async function renderImageOnCanvas(image, grid_index, scale, canvasobj){
 	ht = image.height
 	xleft = Math.round(ENV.XGridCenter[grid_index]/ENV.CanvasRatio - 0.5*wd*scale);
 	ytop = Math.round(ENV.YGridCenter[grid_index]/ENV.CanvasRatio - 0.5*ht*scale);
-
+	
 	context.drawImage(
 		image, // Image element
-		xleft, // dx: Canvas x-coordinate of image's top-left corner.
-		ytop, // dy: Canvas y-coordinate of  image's top-left corner.
-		image.width*scale, // dwidth. width of drawn image.
+		xleft, // dx: Canvas x-coordinate of image's top-left corner. 
+		ytop, // dy: Canvas y-coordinate of  image's top-left corner. 
+		image.width*scale, // dwidth. width of drawn image. 
 		image.height*scale); // dheight. height of drawn image.
 
 	// For drawing cropped regions of an image in the canvas, see alternate input argument structures,
 	// See: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
-
+	
 	// Bounding boxes of images on canvas
 	xbound=[xleft*ENV.CanvasRatio, (xleft+wd*scale)*ENV.CanvasRatio];
 	ybound=[ytop*ENV.CanvasRatio, (ytop+ht*scale)*ENV.CanvasRatio];
@@ -438,10 +438,10 @@ function displayTrial(sequence,tsequence){
 		// If start has not been set to a float timestamp, set it now.
 		if (!start) start = timestamp;
 
-		// If time to show new frame,
+		// If time to show new frame, 
 		if (timestamp - start > tsequence[frame.current]){
 			//console.log('Frame =' + frame.current+'. Duration ='+(timestamp-start)+'. Timestamp = ' + timestamp)
-
+			
 			tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
 			var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
 
@@ -488,11 +488,11 @@ function displayTrial(sequence,tsequence){
 	//requestAnimationFrame advantages: goes on next screen refresh and syncs to browsers refresh rate on separate clock (not js clock)
 	window.requestAnimationFrame(updateCanvas); // kick off async work
 	return p
-}
+} 
 
 function renderScreen(screenType,canvasobj){
 	if (FLAGS.savedata == 0){
-		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter,
+		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter, 
 			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, TASK.ChoiceGridIndex,
 			TASK.FixationScale, TASK.SampleScale, TASK.TestScale, TASK.ChoiceScale,
 			ENV.ImageWidthPixels, ENV.CanvasRatio,canvasobj);
@@ -505,7 +505,7 @@ function renderScreen(screenType,canvasobj){
 		renderBlank(canvasobj)
 		break
 	case 'blankWithGridMarkers':
-		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter,
+		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter, 
 			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, TASK.ChoiceGridIndex,
 			TASK.FixationScale, TASK.SampleScale, TASK.TestScale, TASK.ChoiceScale,
 			ENV.ImageWidthPixels, ENV.CanvasRatio,canvasobj);
@@ -517,20 +517,20 @@ function renderScreen(screenType,canvasobj){
 		}
 		else {
 			bufferFixationUsingImage(CURRTRIAL.sampleimage, CURRTRIAL.fixationgridindex,
-									TASK.SampleScale, canvasobj)
+									TASK.SampleScale, canvasobj)	
 		}
 		break
 	case 'sample':
 		bufferSampleImage(CURRTRIAL.sampleimage, TASK.SampleGridIndex,canvasobj);
 		break
 	case 'test':
-		bufferTestImages(CURRTRIAL.sampleimage, TASK.SampleGridIndex,
-						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem,
+		bufferTestImages(CURRTRIAL.sampleimage, TASK.SampleGridIndex, 
+						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem, 
 						canvasobj);
 		break
 	case 'choice':
-		bufferChoiceUsingDot(CURRTRIAL.sampleimage, TASK.SampleGridIndex,
-						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem,
+		bufferChoiceUsingDot(CURRTRIAL.sampleimage, TASK.SampleGridIndex, 
+						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem, 
 						ENV.ChoiceColor,ENV.ChoiceRadius,TASK.ChoiceGridIndex,
 						canvasobj);
 		break
@@ -546,9 +546,8 @@ function renderScreen(screenType,canvasobj){
 
 function renderBlank(canvasobj){
 	var context=canvasobj.getContext('2d');
-	//context.fillStyle="#7F7F7F";
-	context.clearRect(0,100,canvasobj.width,canvasobj.height);
-	//context.fillRect(0,100,canvasobj.width,canvasobj.height);
+	context.fillStyle="#7F7F7F";
+	context.fillRect(0,100,canvasobj.width,canvasobj.height);
 }
 
 function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,choicegridindex,fixationscale,samplescale,testscale,choicescale,imwidth,canvasratio,canvasobj)
@@ -588,7 +587,7 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 	}
 	displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
 
-
+	
 	//Sample Image Bounding Box
 	var wd = imwidth*samplescale
 	var xcent = gridx[samplegridindex]/ENV.CanvasRatio
@@ -670,7 +669,7 @@ async function bufferFixationUsingImage(image, gridindex, scale, canvasobj){
 	boundingBoxesFixation['x']=[]
 	boundingBoxesFixation['y']=[]
 
-	funcreturn = await renderImageOnCanvas(image, gridindex, scale, canvasobj);
+	funcreturn = await renderImageOnCanvas(image, gridindex, scale, canvasobj); 
 	boundingBoxesFixation.x.push(funcreturn[0]);
 	boundingBoxesFixation.y.push(funcreturn[1]);
 }
@@ -714,7 +713,7 @@ function updateImageLoadingAndDisplayText(str){
 	textobj.innerHTML =
 	str
 	+ imageloadingtimestr
-	+ "<br>" + displayoutofboundsstr
+	+ "<br>" + displayoutofboundsstr 
 	+ "<br>" + "Software reported frame display (t_actual - t_desired) :"
 	+ "<br>" + "<font color=red> mean dt = " + Math.round(u_dt) + " ms"
 	+ "  (min=" + Math.round(Math.min(... dt)) + ", max=" + Math.round(Math.max(... dt)) + ") </font>"
@@ -740,11 +739,11 @@ function displayPhysicalSize(tabletname,displayobject_coord,canvasobj){
 	visible_ctxt.textBaseline = "hanging";
 	visible_ctxt.fillStyle = "white";
 	visible_ctxt.font = "16px Verdana";
-	visible_ctxt.fillText(
+	visible_ctxt.fillText( 
 		Math.round(100*(displayobject_coord[2]-displayobject_coord[0])/dpi)/100 +
 		' x ' +
-		Math.round(100*(displayobject_coord[3]-displayobject_coord[1])/dpi)/100 +
-		' in',
+		Math.round(100*(displayobject_coord[3]-displayobject_coord[1])/dpi)/100 + 
+		' in', 
 		displayobject_coord[0]/ENV.CanvasRatio,(displayobject_coord[1]-16)/ENV.CanvasRatio
 	);
 }
