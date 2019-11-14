@@ -366,19 +366,8 @@ async function loadImageArrayfromDropbox(imagepathlist){
 			//}
 
 			for (var i = 0; i < 3; i++){
-<<<<<<< HEAD
 				var image_requests = imagepathlist.map(loadImagefromDropbox);
 				var image_array = await Promise.all(image_requests)
-=======
-
-				var image_requests = imagepathlist.map(loadImagefromDropbox);
-
-				// console.time('dropbox image batch')
-				var image_array = await Promise.all(image_requests)
-				// console.timeEnd('dropbox image batch')
-
-console.log('buffering ' + imagepathlist.length + ' images')
->>>>>>> master
 
 				var load_success = 1
 				for (var j=0; j < image_array.length; j++){
@@ -419,11 +408,7 @@ async function loadImagefromDropbox(imagepath){
 							var image = new Image(); 
 
 							image.onload = function(){
-<<<<<<< HEAD
 								console.log('Loaded: ' + (imagepath));
-=======
-								// console.log('Loaded: ' + (imagepath));
->>>>>>> master
 								updateImageLoadingAndDisplayText('Loaded: ' + imagepath)
 								resolve(image)
 								}

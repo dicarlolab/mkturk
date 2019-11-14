@@ -51,16 +51,7 @@ async function findUSBDevice(event){
 				statustext = "RECONNECTED USB DEVICE!"
 			}
 			port = ports[0];
-<<<<<<< HEAD
 			await port.connect()
-=======
-			try{
-				await port.connect()				
-			}
-			catch (error){
-				console.log(error)
-			}
->>>>>>> master
 			port.statustext_connect = statustext
 			console.log(port.statustext_connect)
 			updateHeadsUpDisplayDevices()
@@ -68,11 +59,7 @@ async function findUSBDevice(event){
 	}
 
 	// STEP 1B: User connects to Port
-<<<<<<< HEAD
 	if (event.type == "touchend" || event.type == "mouseup"){
-=======
-	if (event.type == "pointerup" || event.type == "touchend" || event.type == "mouseup"){
->>>>>>> master
 		event.preventDefault(); //prevents additional downstream call of click listener
 		try{
 			//STEP 1B: RequestPorts - User based
@@ -129,12 +116,6 @@ serial.Port.prototype.connect = async function(){
       'index': 0x02 //interface 2 is the recipient
     }) //send controlTransferOut to work with channels
 
-<<<<<<< HEAD
-=======
-ENV.USBDeviceType = 'microcontroller'
-ENV.USBDeviceName = 'Arduino Leonardo'
-
->>>>>>> master
   this.connected = true
   readLoop(this)
   // pingUSB()
@@ -146,22 +127,13 @@ serial.Port.prototype.onReceive = data => {
 	// console.log('Serial roundtrip write->read' + serial.dt[serial.dt.length-1])
 
 	port.statustext_received = "RECEIVED CHAR <-- USB: " + textDecoder.decode(data)
-<<<<<<< HEAD
 	console.log(port.statustext_received)
-=======
-	// console.log(port.statustext_received)
->>>>>>> master
 	updateHeadsUpDisplayDevices()
 
 	var tagstart = port.statustext_received.indexOf('{tag',0);
 	if (tagstart > 0){
 		var tagend = port.statustext_received.indexOf('}',0);
-<<<<<<< HEAD
 		TRIAL.RFIDTime[TRIAL.NRFID] = Math.round(performance.now());
-=======
-		logEVENTS("RFIDTag",port.statustext_received.slice(tagstart+4,tagend),"timeseries");
-		TRIAL.RFIDTime[TRIAL.NRFID] = Date.now() - ENV.CurrentDate.valueOf();
->>>>>>> master
 		TRIAL.RFIDTrial[TRIAL.NRFID] = CURRTRIAL.num
 		TRIAL.RFIDTag[TRIAL.NRFID] = port.statustext_received.slice(tagstart+4,tagend);
 		TRIAL.NRFID = TRIAL.NRFID+1;
@@ -169,22 +141,10 @@ serial.Port.prototype.onReceive = data => {
 		if (TRIAL.NRFID >= 2){
 			var dt = TRIAL.RFIDTime[TRIAL.NRFID-1] - TRIAL.RFIDTime[TRIAL.NRFID-2]
 		}
-<<<<<<< HEAD
 		port.statustext_received = 'ParsedTAG ' + TRIAL.RFIDTag[TRIAL.NRFID-1] + 
 									' @' + new Date().toLocaleTimeString("en-US") + 
 									' dt=' + dt + 'ms'
 		console.log(port.statustext_received)
-=======
-		port.statustext_received = 'Parsed TAG ' + TRIAL.RFIDTag[TRIAL.NRFID-1] + 
-									' @ ' + new Date().toLocaleTimeString("en-US") + 
-									' dt=' + dt + 'ms'
-		// console.log(port.statustext_received)
-
-		if (FLAGS.RFIDGeneratorCreated == 1){
-			var event = {tag: TRIAL.RFIDTag[TRIAL.NRFID-1], time: TRIAL.RFIDTime[TRIAL.NRFID-1]}
-			waitforRFIDEvent.next(event)
-		}
->>>>>>> master
 		updateHeadsUpDisplayDevices()
 	}
 }
@@ -200,11 +160,7 @@ serial.Port.prototype.writepumpdurationtoUSB = async function(data){
 	await this.device_.transferOut(4, textEncoder.encode(msgstr));
 
 	port.statustext_sent = "TRANSFERRED CHAR --> USB:" + msgstr
-<<<<<<< HEAD
 	console.log(port.statustext_sent)
-=======
-	// console.log(port.statustext_sent)
->>>>>>> master
 	updateHeadsUpDisplayDevices()
 }
 
@@ -266,11 +222,7 @@ function pingUSB(){
 
 //PORT - send pump duration to arduino
 serial.Port.prototype.writepumpdurationtoUSBBYTE = async function(data) {
-<<<<<<< HEAD
 	serial.twrite_pumpduration=performance.now()
-=======
-	serial.twrite_pumpduration= Date.now() - ENV.CurrentDate.valueOf()
->>>>>>> master
 	let view = new Uint16Array(1);
 	view[0] = parseInt(data,10);
 	view[0] = parseInt("5000",10);
