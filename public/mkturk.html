@@ -57,7 +57,6 @@
 <!-- ************* BODY *************** -->
 <body bgcolor=#7F7F7F>
 <div id="canvasdiv" style="position:relative; width:100vw; height:100vh">
-<<<<<<< HEAD
 	<button name="connectble" style="visibility:hidden; position: absolute; top: 40%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to Bluetooth juicer</button>
 
 	<button name="connectusb" style="visibility:hidden; position: absolute; top: 50%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to USB juicer</button>
@@ -73,38 +72,6 @@
 	<p id="headsuptext" style="z-index:101; position: absolute; left: 1px; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;"></p>
 
 	<p id="headsuptextdevices" style="z-index:101; position: absolute; left: 50%; top: 1px; height: 40%; width: 40%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;"></p>
-=======
-    <button class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--accent" id="googlesignin" style="z-index: 102; position: absolute; top: 0%; left: 92%">
-      <i class="material-icons">person</i>
-    </button>
-    <button class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--accent" id="reloadpage" style="visibility:hidden; z-index: 102; position: absolute; top: 0%; left: 92%">
-      <i class="material-icons">refresh</i>
-    </button>
-
-   <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="connectusb" style="visibility:hidden; z-index: 102; font-size: 25px; position: absolute; top: 5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
-     CONNECT USB
-   </button>
-
-   <button class="mdl-button mdl-js-button mdl-button--raised" id="nousb" style="visibility:hidden; background-color:white; z-index: 102; font-size: 25px; position: absolute; top: 15%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
-     NO USB
-   </button>
- 
-  <button class="mdl-button mdl-js-button mdl-button--raised" id="pumpflush" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 12%; left: 80%; height: 45px; width: 150px; border-radius: 20px">
-     Flush 1 minute
-   </button>
- 
-  <button class="mdl-button mdl-js-button mdl-button--raised" id="pumptrigger" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 17%; left: 80%; height: 45px; width: 150px; border-radius: 11px">
-     100Pulses->1mL Milk
-   </button>
-
-  <button class="mdl-button mdl-js-button mdl-button--raised" id="connectblescale" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 22%; left: 80%; height: 45px; width: 150px; border-radius: 20px">
-     Connect BLE Scale
-   </button>
-
-	<p id="headsuptext" style="z-index:101; position: absolute; left: 1px; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;"></p>
-
-	<p id="headsuptextdevices" style="z-index:101; position: absolute; left: 50%; top: 1px; height: 40%; width: 40%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;">No devices connected</p>
->>>>>>> master
 
 <!-- 	<p id="headsuptextautomator" style="z-index:99; position: absolute; left: 50%; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
  -->
@@ -123,18 +90,8 @@
 	Stress Test
    </button>
 
-<<<<<<< HEAD
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasvisible" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
-=======
-  <button class="mdl-button mdl-js-button mdl-button--raised" id="preemptRFID" style="visibility:hidden; background-color:red; z-index: 102; font-size: 25px; position: absolute; top: 20%; left: 5%; height: 75px; width: 200px; border-radius: 20px">
-	Preempt RFID
-   </button>
-
-	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvasvisible" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvasvisiblewebgl" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
->>>>>>> master
 </div>
 <dialog id="subjectID_dialog" style="z-index: 102; position: absolute; top: 0%; left: 0%;">
   <p>Select subject: </p>
@@ -154,7 +111,6 @@
 <script src="mkturk_usb.js" type="text/javascript"></script>
 <script src="mkturk_utils.js" type="text/javascript"></script>
 <script src="mkturk_bluetoothscale.js" type="text/javascript"></script>
-<<<<<<< HEAD
 
 <script>
 
@@ -170,17 +126,6 @@ else {
 	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
 }
 //=============== (end) AUTHENTICATE ===============//
-=======
-<script src="mkturk_firebase.js" type="text/javascript"></script>
-<script src="mkturk_firestore.js" type="text/javascript"></script>
-<script src="mkturk_firebasestorage.js" type="text/javascript"></script>
-<script src="mkturk_threejs.js" type="text/javascript"></script>
-
-
-
-<script>
-
->>>>>>> master
 
 //================== AUTHENTICATE GOOGLE ==================//
 // [START authstatelistener]
@@ -223,7 +168,6 @@ for (var i=subjectlist.length-1; i>=0; i--){
 }
 subjectlistobj.addEventListener("change",subjectlist_listener,false);
 
-<<<<<<< HEAD
 // Document callback 
 // document.addEventListener('DOMContentLoaded', event => {
 //       // START UP: Open (instantiate) port before assign it receive callbacks
@@ -254,32 +198,6 @@ document.querySelector("button[name=doneEditingParams]").addEventListener(
 	'pointerup',doneEditingParams_listener,false)
 document.querySelector("button[name=doneTestingTask]").addEventListener(
 	'pointerup',doneTestingTask_listener,false)
-=======
-// Button callbacks for inline connection to arduino device
-document.querySelector("button[id=googlesignin]").style.display = "block"
-document.querySelector("button[id=googlesignin]").style.visibility = "visible"
-document.querySelector("button[id=googlesignin]").addEventListener(
-	'pointerup',firebaseRedirectSignIn,false)
-document.querySelector("button[id=reloadpage]").addEventListener(
-	'pointerup',function(){ window.location.reload(true) },false)
-document.querySelector ("button[id=connectusb]").addEventListener(
-	'pointerup',findUSBDevice,false)
-document.querySelector("button[id=nousb]").addEventListener(
-	'pointerup',skipHardwareDevice,false)
-
-//Button callback for asynchronous connection to bluetooth scale
-document.querySelector("button[id=connectblescale]").addEventListener(
-	'pointerup',blescaleconnect,false)
-
-document.querySelector("button[id=doneEditingParams]").addEventListener(
-	'pointerup',doneEditingParams_listener,false)
-document.querySelector("button[id=doneTestingTask]").addEventListener(
-	'pointerup',doneTestingTask_listener,false)
-document.querySelector("button[id=stressTest]").addEventListener(
-	'pointerup',stressTest_listener,false)
-document.querySelector("button[id=preemptRFID]").addEventListener(
-	'pointerup',preemptRFID_listener,false)	
->>>>>>> master
 var textobj = document.getElementById("headsuptext")
 textobj.addEventListener('pointerup',headsuptext_listener,false)
 
@@ -293,11 +211,7 @@ textobj.addEventListener('pointerup',headsuptext_listener,false)
 	var gainNode = audiocontext.createGain()
 	gainNode.connect(audiocontext.destination)
 	ENV.DevicePixelRatio = window.devicePixelRatio || 1;
-<<<<<<< HEAD
 	var visiblecontext = CANVAS.visible.getContext("bitmaprenderer");
-=======
-	var visiblecontext = VISIBLECANVAS.getContext("bitmaprenderer");
->>>>>>> master
 	var backingStoreRatio = visiblecontext.webkitBackingStorePixelRatio ||
 	                            visiblecontext.mozBackingStorePixelRatio ||
 	                            visiblecontext.msBackingStorePixelRatio ||
@@ -339,7 +253,6 @@ function connectHardwareButtonPromise(){
   waitforClick.next(); //move out of default state
   return p;
 }
-<<<<<<< HEAD
 
 function skipHardwareDevice(event){
   event.preventDefault(); //prevents additional downstream call of click listener
@@ -373,39 +286,6 @@ function skipHardwareDevice(event){
 	await subjectIDPromise()
 	
 	//================== AWAIT LOAD SUBJECT PARAMS ==================//
-=======
-
-function skipHardwareDevice(event){
-  event.preventDefault(); //prevents additional downstream call of click listener
-  waitforClick.next(1)
-}
-
-
-(async function(){
-	
-	var event = {}
-	event.type = "AutoConnect"
-	await findUSBDevice(event)
-
-	//=============== AWAIT CONNECT TO HARDWARE (via USB or BLE) ===============//
-	if (typeof(port.connected) == 'undefined' || port.connected == false){
-		port.connected = false
-		document.querySelector("button[id=connectusb]").style.display = "block"
-		document.querySelector("button[id=connectusb]").style.visibility = "visible"
-		document.querySelector("button[id=nousb]").style.display = "block"
-		document.querySelector("button[id=nousb]").style.visibility = "visible"
-
-		await connectHardwareButtonPromise()
-
-		document.querySelector("button[id=connectusb]").style.display = "none"
-		document.querySelector("button[id=nousb]").style.display = "none"		
-	}
-
-	subjectdialog.showModal()
-	await subjectIDPromise()
-	
-	//================== AWAIT LOAD SUBJECT PARAMS ==================//	
->>>>>>> master
 	ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.txt";
 	await loadParametersfromFirebase(ENV.ParamFileName)
 
@@ -511,7 +391,6 @@ while(true){
 		setupImageLoadingText()
 		windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
 		windowHeight = document.body.clientHeight;
-<<<<<<< HEAD
 		setupCanvas(CANVAS.visible);
 		if (ENV.DevicePixelRatio !== 1){
 			scaleCanvasforHiDPI(CANVAS.visible);
@@ -520,39 +399,13 @@ while(true){
 		CANVAS.offscreen.commitTo = function(dest){
 			var bitmap = this.transferToImageBitmap()
 			dest.transferFromImageBitmap(bitmap)
-=======
-		setupCanvas(VISIBLECANVAS);
-		setupCanvas(VISIBLECANVASWEBGL);
-		if (ENV.DevicePixelRatio !== 1){
-			scaleCanvasforHiDPI(VISIBLECANVAS);
-// 			scaleCanvasforHiDPI(VISIBLECANVASWEBGL);
-		}
-		OFFSCREENCANVAS = new OffscreenCanvas(VISIBLECANVAS.width, VISIBLECANVAS.height)
-		OFFSCREENCANVAS.commitTo = function(dest){
-			try {
-				var bitmap = this.transferToImageBitmap()
-				dest.transferFromImageBitmap(bitmap)
-				str = {status: "succeeded"}
-				return str
-			}
-			catch(error){
-				console.log(error)
-				str = {status: "failed"}
-				return str				
-			}
->>>>>>> master
 		}
 
 		CANVAS.workspace = [
 			0,
 			0,
-<<<<<<< HEAD
 			CANVAS.visible.width,
 			CANVAS.visible.height
-=======
-			VISIBLECANVAS.width,
-			VISIBLECANVAS.height
->>>>>>> master
 		]
 
 		// Check if images were changed
@@ -683,66 +536,6 @@ while(true){
 	[CURRTRIAL.sampleimage, CURRTRIAL.sampleindex, CURRTRIAL.testimages, CURRTRIAL.testindices, CURRTRIAL.correctitem, samplereward] = await TQ.get_next_trial();
 	// console.timeEnd('trial images loadtime:')
 
-<<<<<<< HEAD
-=======
-	logEVENTS("Sample",CURRTRIAL.sampleindex,"trialseries")
-	logEVENTS("Test",CURRTRIAL.testindices,"trialseries")
-	logEVENTS("CorrectItem",CURRTRIAL.correctitem,"trialseries")
-
-	var keys = Object.keys(IMAGES.object.sample)
-	for (var i=0; i<=keys.length-1; i++){
-		CURRTRIAL["sampleobject" + keys[i]] = IMAGES.object.sample[keys[i]][CURRTRIAL.sampleindex]
-	}
-	
-	var keys = Object.keys(IMAGES.object.test)
-	if (TASK.TestON <= 0){
-		for (var i=0; i<=keys.length-1; i++){
-			for (var j=0; j<=CURRTRIAL.testindices.length-1; j++){
-				CURRTRIAL["testobject" + keys[i]][j] = IMAGES.object.test[keys[i]][CURRTRIAL.testindices[j]]
-			}		
-		}
-	} //IF SR2 or M2S
-	else if (TASK.TestON > 0){
-		for (var i=0; i<=keys.length-1; i++){
-			CURRTRIAL["testobject" + keys[i]] = IMAGES.object.test[keys[i]][0]
-		}		
-	} //IF same-different
-
-	logEVENTS("SampleObjectTy",CURRTRIAL.sampleobjectty,"imageseries")
-	logEVENTS("SampleObjectTz",CURRTRIAL.sampleobjecttz,"imageseries")
-	logEVENTS("SampleObjectRxy",CURRTRIAL.sampleobjectrxy,"imageseries")
-	logEVENTS("SampleObjectRxz",CURRTRIAL.sampleobjectrxz,"imageseries")
-	logEVENTS("SampleObjectRyz",CURRTRIAL.sampleobjectryz,"imageseries")
-	logEVENTS("SampleObjectScale",CURRTRIAL.sampleobjectscale,"imageseries")
-
-	logEVENTS("TestObjectTy",CURRTRIAL.testobjectty,"imageseries")
-	logEVENTS("TestObjectTz",CURRTRIAL.testobjecttz,"imageseries")
-	logEVENTS("TestObjectRxy",CURRTRIAL.testobjectrxy,"imageseries")
-	logEVENTS("TestObjectRxz",CURRTRIAL.testobjectrxz,"imageseries")
-	logEVENTS("TestObjectRyz",CURRTRIAL.testobjectryz,"imageseries")
-	logEVENTS("TestObjectScale",CURRTRIAL.testobjectscale,"imageseries")
-
-
-	//================= RFID check =================//
-	// If no matching read in the last TASK.CheckRFID seconds, wait for matching read
-	// (kicks-them-off model where they can work as long as reading, but then get kicked off within TASK.CheckRFID seconds if they are the wrong agent or no reads)
-	if (TASK.CheckRFID > 0 && ENV.AgentRFID != "XX" && FLAGS.savedata == 1){
-		if (port.connected == false){
-			console.log('NO USB DEVICE CONNECTED: cannot check RFID!!')
-		}
-		else if (port.connected == true){
-			var nreads = TRIAL.RFIDTag.length
-	    	if (TRIAL.RFIDTag[nreads-1] == ENV.AgentRFID && (Date.now() - ENV.CurrentDate.valueOf()) - TRIAL.RFIDTime[nreads-1] < TASK.CheckRFID){
-	    		// RFID checks out
-	    	}
-	    	else{ //wait for a recent rfid read before proceeding with next trial
-				await rfid_promise(ENV.AgentRFID,TASK.CheckRFID)
-	    	}
-		}
-	}
-	//================= (end) RFID check =================//
-
->>>>>>> master
 	//============ WHILE RUN FIXATION SCREEN ============//
 	FLAGS.waitingforTouches = TASK.NFixations
 	if (TASK.RewardStage == 0){
@@ -784,11 +577,7 @@ while(true){
 		if (TASK.Species == 'marmoset'){
 			playSound(0)
 		}
-<<<<<<< HEAD
 		renderScreen(CANVAS.sequencepre[0],CANVAS.offscreen)
-=======
-		renderScreen(CANVAS.sequencepre[0],OFFSCREENCANVAS)
->>>>>>> master
 		await displayTrial(CANVAS.sequencepre,CANVAS.tsequencepre);
 		audiocontext.suspend()
 
@@ -837,11 +626,7 @@ while(true){
 		for (var q in CANVAS.sequenceblank){frame.shown[q]=0}
 		frame.current=0;
 		if (FLAGS.waitingforTouches > 0){
-<<<<<<< HEAD
 			renderScreen(CANVAS.sequenceblank[0],CANVAS.offscreen)
-=======
-			renderScreen(CANVAS.sequenceblank[0],OFFSCREENCANVAS)
->>>>>>> master
 			await displayTrial(CANVAS.sequenceblank,CANVAS.tsequenceblank);
 		} //blank out screen
 	} //while waiting for NFixations
@@ -852,11 +637,7 @@ while(true){
 		frame.shown=[]
 		for (var q in CANVAS.sequence){frame.shown[q]=0} 
 		frame.current=0
-<<<<<<< HEAD
 		renderScreen(CANVAS.sequence[0],CANVAS.offscreen)
-=======
-		renderScreen(CANVAS.sequence[0],OFFSCREENCANVAS)
->>>>>>> master
 		CURRTRIAL.tsequenceactual = await displayTrial(CANVAS.sequence,CANVAS.tsequence);
 		CURRTRIAL.tsequencedesired = CANVAS.tsequence
 		audiocontext.suspend()
@@ -993,11 +774,7 @@ while(true){
 			for (var q2 in CANVAS.sequencepost){frame.shown[q2]=0}; frame.current=0;
 
 			playSound(2);
-<<<<<<< HEAD
 			renderScreen(CANVAS.sequencepost[0],CANVAS.offscreen)
-=======
-			renderScreen(CANVAS.sequencepost[0],OFFSCREENCANVAS)
->>>>>>> master
 			var p1 = displayTrial(CANVAS.sequencepost,CANVAS.tsequencepost)
 			if (ble.connected == false && port.connected == false){
 				await Promise.all([p1])
@@ -1020,11 +797,7 @@ while(true){
 		frame.shown=[];
 		for (var q in CANVAS.sequencepost){frame.shown[q]=0}; frame.current=0;
 
-<<<<<<< HEAD
 		renderScreen(CANVAS.sequencepost[0],CANVAS.offscreen)
-=======
-		renderScreen(CANVAS.sequencepost[0],OFFSCREENCANVAS)
->>>>>>> master
 		var p1 = displayTrial(CANVAS.sequencepost,CANVAS.tsequencepost);
 		var num_trials_to_buffer_in_punishperiod = 50
 		var p2 = TQ.generate_trials(num_trials_to_buffer_in_punishperiod)
