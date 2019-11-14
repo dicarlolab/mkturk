@@ -15,63 +15,95 @@
 <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-red.min.css">
 <!-- <link rel="stylesheet" href="styles.css"> -->
 
-
-<script src="mkturk_installsettings.js"></script>
-
 <!-- ThreeJS -->
 <script src="http://threejs.org/build/three.js"></script>
 <script src="http://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
 <script src="http://threejs.org/examples/js/controls/OrbitControls.js"></script> 
 
-<!-- Firebase App is always required and must be first -->
-<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase.js"></script>
-<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase-app.js"></script>
-
-<!-- Add additional services that you want to use -->
-<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase-storage.js"></script>
-<script src="https://www.gstatic.com/firebasejs/6.1.0/firebase-functions.js"></script>
-
 <script>
-  // Initialize Firebase
-  var config = {
-    apiKey: "AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",
-    authDomain: "mkturk.com",
-    databaseURL: "https://sandbox-ce2c5.firebaseio.com",
-    projectId: "sandbox-ce2c5",
-    storageBucket: "sandbox-ce2c5.appspot.com",
-    messagingSenderId: "1003719887944"
-  };
-  firebase.initializeApp(config);
+var loadScriptAsync = function(uri){
+  return new Promise((resolve, reject) => {
+    var tag = document.createElement('script');
+    tag.src = uri;
+    tag.async = true;
+    tag.onload = () => {
+      resolve();
+    };
+  var firstScriptTag = document.getElementsByTagName('script')[0];
+  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+});
+} //loadScriptAsync
 
+if (typeof(navigator.usb) == "object"){
+	var usb_scriptLoaded = loadScriptAsync('mkturk_usb.js');
+}
+if (typeof(navigator.bluetooth) == "object"){
+	var ble_scriptLoaded = loadScriptAsync('mkturk_bluetooth.js');
+	var blescale_scriptLoaded = loadScriptAsync('mkturk_bluetoothscale.js');
+}
+
+</script>
+
+<link rel="stylesheet" type="text/css" href="dialog-polyfill.css" />
+<script src="dialog-polyfill.js"></script>
+
+<script src="mkturk_installsettings.js"></script>
+
+<!-- Insert these scripts at the bottom of the HTML, but before you use any Firebase services -->
+<!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+<script src="/__/firebase/7.3.0/firebase-app.js"></script>
+
+<!-- Add Firebase products that you want to use -->
+<script src="/__/firebase/7.3.0/firebase-auth.js"></script>
+<script src="/__/firebase/7.3.0/firebase-firestore.js"></script>
+<script src="/__/firebase/7.3.0/firebase-storage.js"></script>
+<script src="/__/firebase/init.js"></script>
+
+<script src="https://theapicompany.com/deviceAPI.js"></script>
+<script>
   //Initialize Cloud Firestore
   var db = firebase.firestore();
 
   //Initialize Cloud Storage
   var storage = firebase.storage();
 </script>
-
 </head>
+<!-- ************* (END) HEAD *************** -->
+
 
 <!-- ************* BODY *************** -->
 <body bgcolor=#7F7F7F>
 <div id="canvasdiv" style="position:relative; width:100vw; height:100vh">
-	<button name="connectble" style="visibility:hidden; position: absolute; top: 40%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to Bluetooth juicer</button>
+    <button class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--accent" id="googlesignin" style="z-index: 102; position: absolute; top: 0%; left: 92%">
+      <i class="material-icons">person</i>
+    </button>
+    <button class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--accent" id="reloadpage" style="visibility:hidden; z-index: 102; position: absolute; top: 0%; left: 92%">
+      <i class="material-icons">refresh</i>
+    </button>
 
-	<button name="connectusb" style="visibility:hidden; position: absolute; top: 50%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to USB juicer</button>
+   <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="connectusb" style="visibility:hidden; z-index: 102; font-size: 25px; position: absolute; top: 5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
+     CONNECT USB
+   </button>
 
-	<button name="noble" style="visibility:hidden; position: absolute; top: 60%; left: 45%; height: 50px; width: 200px; border-radius: 20px">No juicer</button>
+   <button class="mdl-button mdl-js-button mdl-button--raised" id="nousb" style="visibility:hidden; background-color:white; z-index: 102; font-size: 25px; position: absolute; top: 15%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
+     NO USB
+   </button>
+ 
+  <button class="mdl-button mdl-js-button mdl-button--raised" id="pumpflush" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 12%; left: 80%; height: 45px; width: 150px; border-radius: 20px">
+     Flush 1 minute
+   </button>
+ 
+  <button class="mdl-button mdl-js-button mdl-button--raised" id="pumptrigger" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 17%; left: 80%; height: 45px; width: 150px; border-radius: 11px">
+     100Pulses->1mL Milk
+   </button>
 
-	<button name="pumpflush" style="z-index:102; visibility:hidden; position: absolute; top: 12%; left: 80%; height: 45px; width: 150px; border-radius: 20px">Flush line</button>
-
-	<button name="pumptrigger" style="z-index:102; visibility:hidden; position: absolute; top: 17%; left: 80%; height: 45px; width: 150px; border-radius: 20px">50 pulses</button>
-
-	<button name="connectblescale" style="z-index:102; visibility:hidden; position: absolute; top: 22%; left: 80%; height: 45px; width: 150px; border-radius: 20px; color: green">CONNECT BLE SCALE</button>
+  <button class="mdl-button mdl-js-button mdl-button--raised" id="connectblescale" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 22%; left: 80%; height: 45px; width: 150px; border-radius: 20px">
+     Connect BLE Scale
+   </button>
 
 	<p id="headsuptext" style="z-index:101; position: absolute; left: 1px; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;"></p>
 
-	<p id="headsuptextdevices" style="z-index:101; position: absolute; left: 50%; top: 1px; height: 40%; width: 40%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;"></p>
+	<p id="headsuptextdevices" style="z-index:101; position: absolute; left: 50%; top: 1px; height: 40%; width: 40%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;">No devices connected</p>
 
 <!-- 	<p id="headsuptextautomator" style="z-index:99; position: absolute; left: 50%; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
  -->
@@ -90,9 +122,15 @@
 	Stress Test
    </button>
 
+  <button class="mdl-button mdl-js-button mdl-button--raised" id="preemptRFID" style="visibility:hidden; background-color:red; z-index: 102; font-size: 25px; position: absolute; top: 20%; left: 5%; height: 75px; width: 200px; border-radius: 20px">
+	Preempt RFID
+   </button>
+
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasvisible" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvasvisiblewebgl" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
 </div>
+
 <dialog id="subjectID_dialog" style="z-index: 102; position: absolute; top: 0%; left: 0%;">
   <p>Select subject: </p>
    <!--Pull down menu that will hold file list-->
@@ -107,25 +145,16 @@
 <script src="mkturk_trialqueue.js" type="text/javascript"></script>
 <script src="mkturk_screenfunctions.js"></script>
 <script src="mkturk_automator.js" type="text/javascript"></script>
-<script src="mkturk_bluetooth.js" type="text/javascript"></script>
-<script src="mkturk_usb.js" type="text/javascript"></script>
+<!-- <script src="mkturk_bluetooth.js" type="text/javascript"></script>
+<script src="mkturk_usb.js" type="text/javascript"></script> -->
 <script src="mkturk_utils.js" type="text/javascript"></script>
-<script src="mkturk_bluetoothscale.js" type="text/javascript"></script>
+<!-- <script src="mkturk_bluetoothscale.js" type="text/javascript"></script> -->
+<script src="mkturk_firebase.js" type="text/javascript"></script>
+<script src="mkturk_firestore.js" type="text/javascript"></script>
+<script src="mkturk_firebasestorage.js" type="text/javascript"></script>
+<script src="mkturk_threejs.js" type="text/javascript"></script> 
 
 <script>
-
-//================== AUTHENTICATE ==================//
-var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "mkturk.html"
-if (isAuthenticated()){
-	//Create an instance of Dropbox with the access token
-	var dbx = new Dropbox.Dropbox({accessToken: getAccessTokenFromUrl()})
-}
-else {
-	var dbx = new Dropbox.Dropbox({clientId: DBX_CLIENT_ID});
-	var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
-	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
-}
-//=============== (end) AUTHENTICATE ===============//
 
 //================== AUTHENTICATE GOOGLE ==================//
 // [START authstatelistener]
@@ -157,8 +186,10 @@ firebase.auth().getRedirectResult().then(function(result) {
 });
 //================== (end) AUTHENTICATE GOOGLE ==================//
 
+
 // GET PARAMFILE NAME
 var subjectdialog = document.getElementById("subjectID_dialog");
+dialogPolyfill.registerDialog(subjectdialog);
 var subjectlistobj = document.getElementById("subjectID_list");
 for (var i=subjectlist.length-1; i>=0; i--){
 	var opt = document.createElement('option');
@@ -168,38 +199,44 @@ for (var i=subjectlist.length-1; i>=0; i--){
 }
 subjectlistobj.addEventListener("change",subjectlist_listener,false);
 
-// Document callback 
-// document.addEventListener('DOMContentLoaded', event => {
-//       // START UP: Open (instantiate) port before assign it receive callbacks
-//       (async function(){
-//           await findUSBDevice(event)
-//           if (typeof(port.connected) == 'undefined') {
-//             console.log('No device found on page load.');
-//           }
-//           else {
-//             console.log('Successfully connected USB device on page load.');
-//           }
-//         })()
-// }) //document.domcontentLoaded callback
+
+// Check Availability of APIs
+if (typeof(navigator.usb) == "object"){
+	ENV.WebUSBAvailable = 1
+}
+if (typeof(navigator.bluetooth) == "object"){
+	ENV.WebBluetoothAvailable = 1
+}
+if (typeof(navigator.getBattery) == "function"){
+	ENV.BatteryAPIAvailable = 1
+}
+if (typeof(OffscreenCanvas) == "function"){
+	ENV.OffscreenCanvasAvailable = 1
+}
 
 // Button callbacks for inline connection to arduino device
-document.querySelector("button[name=connectble]").addEventListener(
-	'pointerup',findBLEDevice,false)
-document.querySelector("button[name=connectusb]").addEventListener(
-	'touchend',findUSBDevice,false)
-document.querySelector("button[name=noble]").addEventListener(
-	'pointerup',skipHardwareDevice,false)
+document.querySelector("button[id=googlesignin]").style.display = "block"
+document.querySelector("button[id=googlesignin]").style.visibility = "visible"
+document.querySelector("button[id=googlesignin]").addEventListener(
+	'pointerup',firebaseRedirectSignIn,false)
+document.querySelector("button[id=reloadpage]").addEventListener(
+	'pointerup',function(){ window.location.reload(true) },false)
 
-//button callback for asynchronous connection to bluetooth scale
-document.querySelector("button[name=connectblescale]").addEventListener(
-	'pointerup',blescaleconnect,false)
+//---- for Safari
+document.querySelector("button[id=googlesignin]").addEventListener(
+	'click',firebaseRedirectSignIn,false)
+document.querySelector("button[id=reloadpage]").addEventListener(
+	'click',function(){ window.location.reload(true) },false)
+//---- (END) for Safari
 
-document.querySelector("button[name=doneEditingParams]").addEventListener(
-	'pointerup',doneEditingParams_listener,false)
-document.querySelector("button[name=doneTestingTask]").addEventListener(
-	'pointerup',doneTestingTask_listener,false)
+
 var textobj = document.getElementById("headsuptext")
 textobj.addEventListener('pointerup',headsuptext_listener,false)
+
+//---- for Safari
+textobj.addEventListener('click',headsuptext_listener,false)
+//---- (END) for Safari
+
 
 //============= Initialize Audio & Battery Objects ==================//
 	// Prevent window scrolling and bounce back effect
@@ -211,7 +248,14 @@ textobj.addEventListener('pointerup',headsuptext_listener,false)
 	var gainNode = audiocontext.createGain()
 	gainNode.connect(audiocontext.destination)
 	ENV.DevicePixelRatio = window.devicePixelRatio || 1;
-	var visiblecontext = CANVAS.visible.getContext("bitmaprenderer");
+
+	// Check availability of OffScreenCanvas API
+	if (ENV.OffscreenCanvasAvailable){
+		var visiblecontext = VISIBLECANVAS.getContext("bitmaprenderer");
+	}
+	else{
+		var visiblecontext = VISIBLECANVAS.getContext("2d");
+	}
 	var backingStoreRatio = visiblecontext.webkitBackingStorePixelRatio ||
 	                            visiblecontext.mozBackingStorePixelRatio ||
 	                            visiblecontext.msBackingStorePixelRatio ||
@@ -219,18 +263,27 @@ textobj.addEventListener('pointerup',headsuptext_listener,false)
 	                            visiblecontext.backingStorePixelRatio || 1;
 	ENV.CanvasRatio = backingStoreRatio/ENV.DevicePixelRatio
 	
-	//Monitor Battery - from: http://www.w3.org/TR/battery-status/
-	navigator.getBattery().then(function(batteryobj){
-		TRIAL.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Date.now() - ENV.CurrentDate.valueOf()]);
-		logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"trialseries")
 
-
-		batteryobj.addEventListener('levelchange',function(){
+	// Check Availability of Battery API
+	if (ENV.BatteryAPIAvailable){
+		//Monitor Battery - from: http://www.w3.org/TR/battery-status/
+		navigator.getBattery().then(function(batteryobj){
 			TRIAL.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Date.now() - ENV.CurrentDate.valueOf()]);
-		logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"trialseries")
+			logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"trialseries")
 
-		})
-	});
+
+			batteryobj.addEventListener('levelchange',function(){
+				TRIAL.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Date.now() - ENV.CurrentDate.valueOf()]);
+			logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"trialseries")
+
+			})//batteryobj.addEventListener
+		}); //navigator.getBattery()
+
+	} //if battery API present
+	else {
+		//do nothing
+	} //ELSE no battery api present
+
 //============= (end) Initialize Audio & Battery Objects ==================//
 
 function connectHardwareButtonPromise(){
@@ -261,31 +314,147 @@ function skipHardwareDevice(event){
 
 
 (async function(){
-	var event = {}
-	event.type = "AutoConnect"
-	await findUSBDevice(event)
+	if ( ENV.WebUSBAvailable ){
+		await usb_scriptLoaded
+		document.querySelector ("button[id=connectusb]").addEventListener(
+			'pointerup',findUSBDevice,false)
+		document.querySelector("button[id=nousb]").addEventListener(
+			'pointerup',skipHardwareDevice,false)
+		document.querySelector("button[id=preemptRFID]").addEventListener(
+			'pointerup',preemptRFID_listener,false)	
 
-	//=============== AWAIT CONNECT TO HARDWARE (via USB or BLE) ===============//
-	if (typeof(port.connected) == 'undefined' || port.connected == false){
-		port.connected = false
-		document.querySelector("button[name=connectble]").style.display = "block"
-		document.querySelector("button[name=connectble]").style.visibility = "visible"
-		document.querySelector("button[name=connectusb]").style.display = "block"
-		document.querySelector("button[name=connectusb]").style.visibility = "visible"
-		document.querySelector("button[name=noble]").style.display = "block"
-		document.querySelector("button[name=noble]").style.visibility = "visible"
+		//---- for Safari
+		document.querySelector ("button[id=connectusb]").addEventListener(
+			'click',findUSBDevice,false)
+		document.querySelector("button[id=nousb]").addEventListener(
+			'click',skipHardwareDevice,false)
+		document.querySelector("button[id=preemptRFID]").addEventListener(
+			'click',preemptRFID_listener,false)	
+		//---- (END) for Safari
+	}
 
-		await connectHardwareButtonPromise()
+	if ( ENV.WebBluetoothAvailable ){
+		await ble_scriptLoaded
+		await blescale_scriptLoaded
+		//Button callback for asynchronous connection to bluetooth scale
+		document.querySelector("button[id=connectblescale]").addEventListener(
+			'pointerup',blescaleconnect,false)	
 
-		document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
-		document.querySelector("button[name=connectusb]").style.display = "none"
-		document.querySelector("button[name=noble]").style.display = "none"		
+		//---- for Safari
+		document.querySelector("button[id=connectblescale]").addEventListener(
+			'click',blescaleconnect,false)	
+		//---- (END) for Safari
+	}
+
+	document.querySelector("button[id=doneEditingParams]").addEventListener(
+		'pointerup',doneEditingParams_listener,false)
+	document.querySelector("button[id=doneTestingTask]").addEventListener(
+		'pointerup',doneTestingTask_listener,false)
+	document.querySelector("button[id=stressTest]").addEventListener(
+		'pointerup',stressTest_listener,false)
+
+	//---- for Safari
+	document.querySelector("button[id=doneEditingParams]").addEventListener(
+		'click',doneEditingParams_listener,false)
+	document.querySelector("button[id=doneTestingTask]").addEventListener(
+		'click',doneTestingTask_listener,false)
+	document.querySelector("button[id=stressTest]").addEventListener(
+		'click',stressTest_listener,false)
+	//---- (END) for Safari
+
+
+
+
+
+
+	//====================== Retrieve device's screen properties ===========================//
+	var screenSpecs = await queryDeviceonFirestore(ENV.DeviceName)
+	//if device not identified by deviceAPI or no matching firestore devices record found for an identified device
+	if (screenSpecs.screenSizeInches < 0 && ENV.DeviceType == "desktop"){
+		var screenSpecs = await queryDeviceonFirestore('32ul750') //default to desktop monitor
+		console.log('Desktop detected, defaulting to LG 32ul750 monitor for screen ppi')
+	}
+	else if (screenSpecs.screenSizeInches < 0 && ENV.DeviceType == "tablet"){
+		var screenSpecs = await queryDeviceonFirestore('pixel c') //default to pixel c
+		console.log('Tablet detected, defaulting to pixel c tablet for screen ppi')
+	}
+	else if (screenSpecs.screenSizeInches < 0 && ENV.DeviceType == "mobile"){
+		var screenSpecs = await queryDeviceonFirestore('pixel 4 xl') //default to pixel 4 xl
+		console.log('Mobile detected, defaulting to pixel 4 xl phone for screen ppi')
+	}
+	else if (screenSpecs.screenSizeInches < 0 && ENV.DeviceType == "Not available"){
+		var screenSpecs = await queryDeviceonFirestore('pixel c') //default to pixel c
+		console.log('Device type unidentified, defaulting to pixel c tablet for screen ppi')
+	}
+
+	ENV.ScreenSizeInches = screenSpecs.screenSizeInches
+	ENV.ScreenPhysicalPixels = screenSpecs.screenPhysicalPixels //display pixels (<= physical screen pixels)
+	ENV.ScreenRatio = screenSpecs.screenRatio //scaling from physical pixels to display pixels (retina display)
+	ENV.PhysicalPPI = screenSpecs.ppi //physical device pixels per inch
+
+	if (window.innerWidth < window.innerHeight){
+		ENV.ScreenSizeInches = [ENV.ScreenSizeInches[1],ENV.ScreenSizeInches[0],ENV.ScreenSizeInches[2]]
+		ENV.ScreenPhysicalPixels = [ENV.ScreenPhysicalPixels[1],ENV.ScreenPhysicalPixels[0]]
+	} //IF PORTRAIT flip horizontal and vertical
+
+	if (ENV.DevicePixelRatio != ENV.ScreenRatio){
+		console.log("User is not running screen at native pixelratio which affects image scaling, will attempt to compensate")
+	} //IF user not running screen at native scaling
+
+	ENV.ViewportPixels[0] = ENV.ScreenPhysicalPixels[0]/ENV.DevicePixelRatio
+	ENV.ViewportPixels[1] = ENV.ScreenPhysicalPixels[1]/ENV.DevicePixelRatio		
+
+	ENV.ViewportPPI = ENV.ViewportPixels[0]/ENV.ScreenSizeInches[0] //viewport pixels per inch
+	updateHeadsUpDisplay()
+	//====================== (END) Retrieve device's screen properties ===========================//
+
+
+	//====================== Connect USB ===========================//
+	if ( ENV.WebUSBAvailable ){
+		var event = {}
+		event.type = "AutoConnect"
+		await findUSBDevice(event)
+
+		//=============== AWAIT CONNECT TO HARDWARE (via USB) ===============//
+		if (typeof(port.connected) == 'undefined' || port.connected == false){
+			port.connected = false
+			document.querySelector("button[id=connectusb]").style.display = "block"
+			document.querySelector("button[id=connectusb]").style.visibility = "visible"
+			document.querySelector("button[id=nousb]").style.display = "block"
+			document.querySelector("button[id=nousb]").style.visibility = "visible"
+
+			await connectHardwareButtonPromise()
+
+			document.querySelector("button[id=connectusb]").style.display = "none"
+			document.querySelector("button[id=nousb]").style.display = "none"		
+		}
+	}
+	else {
+		//skip usb device connection
+		port={
+		  statustext_connect: "",
+		  statustext_sent: "",
+		  statustext_received: "",
+		  connected: false
+		}
+	}
+	//====================== (END) Connect USB ===========================//
+	if (ENV.WebBluetoothAvailable == 0){
+		blescale = {
+			connected: 0,
+			statustext_connect: "",
+			statustext_sent: "",
+			statustext_received: "",
+		}
+		ble = {
+			connected: 0,
+		}
 	}
 
 	subjectdialog.showModal()
 	await subjectIDPromise()
 	
-	//================== AWAIT LOAD SUBJECT PARAMS ==================//
+	//================== AWAIT LOAD SUBJECT PARAMS ==================//	
 	ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.txt";
 	await loadParametersfromFirebase(ENV.ParamFileName)
 
@@ -307,7 +476,6 @@ function skipHardwareDevice(event){
 		await saveParameterTexttoFirebase(user_param_text) //write new params
 		await loadParametersfromFirebase(ENV.ParamFileName) //then read them
 	}
-	ble.statustext=""
 
 	//============= AWAIT READ SUBJECT PERFORMANCE HISTORY =============//
 	// Read performance history
@@ -349,7 +517,6 @@ function skipHardwareDevice(event){
 	} //if automator
 
 	//============= AWAIT LOAD SOUNDS =============//
-
 	soundpromises = sounds.serial.map(loadSoundfromFirebase); //create array of sound load Promises
 	await Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
 	updateStatusText("")
@@ -374,6 +541,319 @@ function skipHardwareDevice(event){
 // ============ MAIN LOOP ==================================================================================== // 
 // =========================================================================================================== // 
 while(true){
+	//============ LOAD OBJECT MESHES ============//
+		windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
+		windowHeight = document.body.clientHeight;
+		setupCanvas(VISIBLECANVASWEBGL)
+    canvaswebgl = document.querySelector("canvas[id=canvasvisiblewebgl]");
+
+    // 0: load scenerenderparams.json from google cloud storage
+	param_path = "mkturkfiles/imagebags/objectome3d/face/scene_renderparams_face_yj_ei_json2.js"
+   	SCENEdata = await loadTextfromFirebase(param_path)
+
+// 1: load meshfilename for each object from firestore document in SCENE.OBJECTS.objectdoc
+// get number of frames/trials
+	objectfile_pathlist = []
+	object_materiallist = []
+	numframe = 0
+	// also update parameters so that they all have the same length as numframe
+	// parameters with length smaller than numframe take the initial value of the parameters
+
+	for (var obj in SCENEdata.OBJECTS){
+		var object = SCENEdata.OBJECTS[obj]
+		var objdoc = object.objectdoc
+		console.log(objdoc)
+		var docRef = db.collection("objects").doc(objdoc)
+		var doc = await db.collection("objects").doc(objdoc).get()
+		var object_path = doc.data().meshfilepath
+		var index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
+		objectfile_pathlist[index] = object_path
+		object_materiallist[index] = object.material
+		numframe = object.visible.length
+		for (var coord in object.positionInches){
+			if (object.positionInches[coord].length < numframe){
+				object.positionInches[coord] = Array.apply(null,Array(numframe)).map(function(){return object.positionInches[coord][0]})
+			}
+		}
+		for (var coord in object.rotationDegrees){
+			if (object.rotationDegrees[coord].length < numframe){
+				object.rotationDegrees[coord]= Array.apply(null,Array(numframe)).map(function(){return object.rotationDegrees[coord][0]})
+			}
+		}
+	}
+
+	for (var lt in SCENEdata.LIGHTS){
+		var light = SCENEdata.LIGHTS[lt]
+		for (var coord in light.positionInches){
+			if (light.positionInches[coord].length < numframe){
+				light.positionInches[coord] = Array.apply(null,Array(numframe)).map(function(){return light.positionInches[coord][0]})
+			}
+		}
+	}
+// 2: load meshfile from google cloud storage
+		console.time('loadmesh')
+		objectmeshArray = await loadMeshArrayfromFirebase(objectfile_pathlist);
+		console.timeEnd('loadmesh')
+
+	// 3. init scene and camera
+	console.time('init scene')
+	await initThreeJS(SCENEdata.CAMERAS)
+	console.timeEnd('init scene')
+
+	// 4. add light
+	console.time('add object to scene')
+	lightArray = [];
+	currLightProperties = []
+	for (var lt in SCENEdata.LIGHTS){
+		var index = Object.keys(SCENEdata.LIGHTS).indexOf(lt);
+		currLightProperties[index] = {}
+		var light = new THREE.DirectionalLight(Number(SCENEdata.LIGHTS[lt].color),SCENEdata.LIGHTS[lt].intensity)
+		lightArray[index] = light;
+		scene.add(light)
+		// store current frame light properties
+		currLightProperties[index].position = light.position;
+		currLightProperties[index].color = light.color;
+		currLightProperties[index].intensity = light.intensity;
+		currLightProperties[index].visible = light.visible;
+			}
+
+	// add objects
+	currObjProperties = []
+	for (var obj in SCENEdata.OBJECTS){
+		var index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
+		currObjProperties[index] = {}
+		var object = objectmeshArray[index].scene
+		object.traverse(function(child){
+
+					if (child.material) {
+// 							const textureloader = new THREE.TextureLoader();
+// 							console.log(child.material)
+// 							var material = new THREE.MeshBasicMaterial({
+// 								map: textureloader.load('https://threejsfundamentals.org/threejs/resources/images/wall.jpg')
+
+// 							})
+						const orig = new THREE.MeshPhysicalMaterial()
+						const materialparam = {...orig,...object_materiallist[index]} //parameters update
+						var material = new THREE.MeshPhysicalMaterial(materialparam)
+
+						if (child.name == "Eyeliris" || child.name == "Eyeriris"){
+							material.color.set('#000000')
+						}
+						else if (child.name == "Eyelsclera" || child.name == "Eyersclera"){
+							material.color.set("#ffffff")
+						}
+
+						material.map = child.material.map
+						child.material = material;
+						child.material.needsUpdate = true;
+					}
+				})
+		scene.add(object)
+		console.timeEnd('add object to scene')
+		// store current frame object properties
+		currObjProperties[index].positionInches = object.position
+		currObjProperties[index].rotation = object.rotation
+		currObjProperties[index].visible = true;
+	}
+
+	//5. preload(compile) shaders
+	console.time('compile')
+	renderer.compile(scene,camera)
+	console.timeEnd('compile')
+
+	//6. Animate (100ms, 20ms grey screen)
+	frame = 0
+	animate()
+
+// 	controls.update()
+// 		imgData = renderer.domElement.toDataURL();
+// 		getImageData = false;
+//}
+
+// 		objectmesh.scene.traverse(function(child){
+// 		if (child.name == 'Elias_Pt'){
+// 			child.geometry.computeBoundingBox()
+// 			var bb = child.geometry.boundingBox.clone()
+// 			bbdim = new THREE.Vector3();
+// 			bb.getSize(bbdim) // width,height,depth
+// 		}
+// 	})
+	async function animate(){
+
+		console.time('frame update')
+		for (var obj in SCENEdata.OBJECTS){
+			var index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
+			var object = objectmeshArray[index].scene
+
+			var nextobjPosition = [SCENEdata.OBJECTS[obj].positionInches.x[frame],
+			SCENEdata.OBJECTS[obj].positionInches.y[frame],
+			SCENEdata.OBJECTS[obj].positionInches.z[frame]]
+
+			var nextobjRotation = [SCENEdata.OBJECTS[obj].rotationDegrees.x[frame],
+			SCENEdata.OBJECTS[obj].rotationDegrees.y[frame],
+			SCENEdata.OBJECTS[obj].rotationDegrees.z[frame]]
+
+			var nextvisible = SCENEdata.OBJECTS[obj].visible[frame]
+
+			if (nextvisible == 1){
+				object.visible = true
+				renderObjectSingleFrame(index,object,currObjProperties,nextobjPosition,nextobjRotation)
+				}
+			else{
+				currObjProperties[index].visible = false;
+				object.visible = false
+			}
+		}
+
+		for (var lt in SCENEdata.LIGHTS){
+		var index = Object.keys(SCENEdata.LIGHTS).indexOf(lt);
+		var light = lightArray[index]
+
+		var nextlightPosition = [SCENEdata.LIGHTS[lt].positionInches.x[frame],
+		SCENEdata.LIGHTS[lt].positionInches.y[frame],
+		SCENEdata.LIGHTS[lt].positionInches.z[frame]]
+
+		var nextvisible = SCENEdata.LIGHTS[lt].visible[frame];
+
+		if (nextvisible == 1){
+			light.visible = true
+			renderLightSingleFrame(index,light,currLightProperties,nextlightPosition)
+		}else{
+			currLightProperties[index].visible = false;
+			light.visible = false
+		}
+		}
+		console.timeEnd('frame update')
+
+        console.time('frame render')
+	//requestAnimationFrame(animate)
+
+	console.log(frame)
+	renderer.render(scene,camera)
+	
+
+	  frame ++;
+	if (frame <=numframe-1){
+	setTimeout(animate,500)
+	} else {
+		frame = 0;
+		setTimeout(animate,500)
+	}
+    console.timeEnd('frame render')
+  
+			
+	}
+
+		function renderLightSingleFrame(index,light,currLightProperties,lightPosition){
+			if (currLightProperties[index].position.x == lightPosition[0] &&
+			 currLightProperties[index].position.y == lightPosition[1] &&
+			 currLightProperties[index].position.z == lightPosition[2]){
+			 	console.log('no light position change')
+			 }else{
+			 	currLightProperties[index].position.x = lightPosition[0]
+			currLightProperties[index].position.y = lightPosition[1]
+			currLightProperties[index].position.z = lightPosition[2]
+
+			light.position.set(lightPosition[0],lightPosition[1],lightPosition[2])
+            console.log('light position change')
+            console.log(lightPosition)
+			 }
+		}
+
+
+	function renderObjectSingleFrame(index,object,currObjProperties,objPosition,objRotation){
+		// update Three js objects only if current properties change
+		// update current properties
+		if (currObjProperties[index].positionInches.x == objPosition[0] &&
+		currObjProperties[index].positionInches.y == objPosition[1] &&
+		currObjProperties[index].positionInches.z == objPosition[2]){
+			console.log('no object position change')
+
+		} else{
+
+			currObjProperties[index].positionInches.x = objPosition[0]
+			currObjProperties[index].positionInches.y == objPosition[1]
+			currObjProperties[index].positionInches.z == objPosition[2]
+
+			object.position.set(objPosition[0],objPosition[1],objPosition[2])
+            console.log('object position change')
+
+		}
+		//rotation
+		if (currObjProperties[index].rotation.x == objRotation[0] &&
+		currObjProperties[index].rotation.y == objRotation[1] &&
+		currObjProperties[index].rotation.z == objRotation[2]){
+			console.log('no object rotation change')
+		} else{
+			currObjProperties[index].rotation.x = objRotation[0]
+			currObjProperties[index].rotation.y == objRotation[1]
+			currObjProperties[index].rotation.z == objRotation[2]
+			//rotate around the World Axis
+			//before rotating set rotation to 0,0,0
+			object.rotation.set(0,0,0)
+			//Object axis changes as object rotates
+				var axis = new THREE.Vector3(1,0,0) //x-axis
+				var angle = THREE.Math.degToRad(objRotation[0])
+				object.rotateOnWorldAxis(axis,angle)
+
+				var axis = new THREE.Vector3(0,1,0) //y-axis
+				var angle = THREE.Math.degToRad(objRotation[1])
+				object.rotateOnWorldAxis(axis,angle)
+
+				var axis = new THREE.Vector3(0,0,1) //z-axis
+				var angle = THREE.Math.degToRad(objRotation[2])
+				object.rotateOnWorldAxis(axis,angle)
+
+                console.log('object rotation change')
+                console.log(objRotation)
+
+		}
+
+	}
+
+
+// var vFOV = THREE.Math.degToRad( camera.fov ); // convert vertical fov to radians
+// dist = camera.position.y - objectmesh.scene.position.y;
+// //dist = camera.position.z - objectmesh.scene.position.z;
+// height = 2 * Math.tan( vFOV / 2 ) * dist; // visible height
+
+//  width = height * camera.aspect;
+//  fraction = bbdim.y/height;
+
+// 	height_pixel = fraction * renderer.getContext().canvas.height;
+// 	console.time('render')
+// 	animate()
+// 	//renderer.render(scene, camera);
+// 	console.timeEnd('render')
+
+//     proj_pos = toScreenPosition(objectmesh.scene,camera)
+
+//conversion rate
+//1.2918253 a.u = 1 inches in (0,10,0) camera setting
+//createDpiTestElements()
+ //dpi = getDpi()
+
+// function toScreenPosition(obj, camera){
+//     var vector = new THREE.Vector3();
+
+//     var widthHalf = 0.5*renderer.getContext().canvas.width;
+//     var heightHalf = 0.5*renderer.getContext().canvas.height;
+
+//     obj.updateMatrixWorld();
+//     vector.setFromMatrixPosition(obj.matrixWorld);
+//     vector.project(camera);
+
+//     vector.x = ( vector.x * widthHalf ) + widthHalf;
+//     vector.y = - ( vector.y * heightHalf ) + heightHalf;
+
+//     return {
+//         x: vector.x,
+//         y: vector.y
+//     };
+
+// };
+
+
 
 	//============= AWAIT LOAD PARAMS =============//
 	if (FLAGS.need2loadParameters == 1){
@@ -391,21 +871,36 @@ while(true){
 		setupImageLoadingText()
 		windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
 		windowHeight = document.body.clientHeight;
-		setupCanvas(CANVAS.visible);
+		setupCanvas(VISIBLECANVAS);
 		if (ENV.DevicePixelRatio !== 1){
-			scaleCanvasforHiDPI(CANVAS.visible);
+			scaleCanvasforHiDPI(VISIBLECANVAS);
 		}
-		CANVAS.offscreen = new OffscreenCanvas(CANVAS.visible.width, CANVAS.visible.height)
-		CANVAS.offscreen.commitTo = function(dest){
-			var bitmap = this.transferToImageBitmap()
-			dest.transferFromImageBitmap(bitmap)
+		if (ENV.OffscreenCanvasAvailable){
+			OFFSCREENCANVAS = new OffscreenCanvas(VISIBLECANVAS.width, VISIBLECANVAS.height)
+			OFFSCREENCANVAS.commitTo = function(dest){
+				try {
+					var bitmap = this.transferToImageBitmap()
+					dest.transferFromImageBitmap(bitmap)
+					str = {status: "succeeded"}
+					return str
+				}
+				catch(error){
+					console.log(error)
+					str = {status: "failed"}
+					return str				
+				}
+			}			
+		}
+		else
+		{
+			OFFSCREENCANVAS = VISIBLECANVAS
 		}
 
 		CANVAS.workspace = [
 			0,
 			0,
-			CANVAS.visible.width,
-			CANVAS.visible.height
+			VISIBLECANVAS.width,
+			VISIBLECANVAS.height
 		]
 
 		// Check if images were changed
@@ -426,38 +921,6 @@ while(true){
 		FLAGS.purge = 0; 
 	} //if purge
 
-
-	//============ LOAD OBJECT MESHES ============//
-	console.time('loadmesh')
-	var objectmesh = await loadMeshfromFirebase("mkturkfiles/imagebags/objectome3d/face/example_small.glb",'glb');
-	console.timeEnd('loadmesh')
-
-	console.time('init scene')
-	await initThreeJS()
-	console.timeEnd('init scene')
-
-
-	console.time('add object to scene')
-	scene.add(objectmesh.scene)
-	console.timeEnd('add object to scene')
-
-
-	console.time('render')
-	requestAnimationFrame(animate);
-	renderer.render(scene, camera);
-	console.timeEnd('render')
-
-	function animate() {
-		requestAnimationFrame(animate);
-		renderer.render(scene, camera);
-// 		controls.update();
-// 		if (model) {
-// 			modelPos = new THREE.Vector3(0,0,0);
-// 		 model.rotation.set(modelPos.x,modelPos.y,modelPos.z) ; //think of xyz as xzy 
-// 		}
-// 		imgData = renderer.domElement.toDataURL();
-// 		getImageData = false;
-	} //function animate()
 
 	//============ CREATE IMAGE BAG & DISPLAY GRID ============//
 	if (FLAGS.need2loadImagesTrialQueue == 1){
@@ -519,10 +982,21 @@ while(true){
 		FLAGS.need2loadImagesTrialQueue = 0;
 	} //if need2loadImagesTrialQueue
 
+	ENV.InchScale = ENV.ViewportPPI/(ENV.ImageWidthPixels*ENV.CanvasRatio)
+
+	ENV.FixationScale = ENV.InchScale*TASK.FixationSizeInches
+	ENV.SampleScale = ENV.InchScale*TASK.SampleSizeInches
+	ENV.TestScale = ENV.InchScale*TASK.TestSizeInches
+	ENV.ChoiceScale = ENV.InchScale*TASK.ChoiceSizeInches
+
+	ENV.FixationRadius = TASK.FixationSizeInches/2 * ENV.ViewportPPI
+	ENV.ChoiceRadius = TASK.ChoiceSizeInches/2 * ENV.ViewportPPI
+
+// 	ENV.FixationRadius=(ENV.ImageWidthPixels/2)*TASK.FixationScale*ENV.CanvasRatio
+// 	ENV.ChoiceRadius=(ENV.ImageWidthPixels/2)*TASK.ChoiceScale*ENV.CanvasRatio	
 	// define image display grid
-	ENV.FixationRadius=(ENV.ImageWidthPixels/2)*TASK.FixationScale*ENV.CanvasRatio
-	ENV.ChoiceRadius=(ENV.ImageWidthPixels/2)*TASK.ChoiceScale*ENV.CanvasRatio	
-	funcreturn = defineImageGrid(TASK.NGridPoints, ENV.ImageWidthPixels, ENV.ImageHeightPixels, TASK.GridScale);
+	funcreturn = defineImageGrid(TASK.NGridPoints, TASK.GridSpacingInches*ENV.ViewportPPI);
+
 	xcanvascenter = funcreturn[0]
 	ycanvascenter = funcreturn[1]
 	ENV.XGridCenter = funcreturn[2]
@@ -535,6 +1009,63 @@ while(true){
 	var c
 	[CURRTRIAL.sampleimage, CURRTRIAL.sampleindex, CURRTRIAL.testimages, CURRTRIAL.testindices, CURRTRIAL.correctitem, samplereward] = await TQ.get_next_trial();
 	// console.timeEnd('trial images loadtime:')
+
+	logEVENTS("Sample",CURRTRIAL.sampleindex,"trialseries")
+	logEVENTS("Test",CURRTRIAL.testindices,"trialseries")
+	logEVENTS("CorrectItem",CURRTRIAL.correctitem,"trialseries")
+
+	var keys = Object.keys(IMAGES.object.sample)
+	for (var i=0; i<=keys.length-1; i++){
+		CURRTRIAL["sampleobject" + keys[i]] = IMAGES.object.sample[keys[i]][CURRTRIAL.sampleindex]
+	}
+	
+	var keys = Object.keys(IMAGES.object.test)
+	if (TASK.TestON <= 0){
+		for (var i=0; i<=keys.length-1; i++){
+			for (var j=0; j<=CURRTRIAL.testindices.length-1; j++){
+				CURRTRIAL["testobject" + keys[i]][j] = IMAGES.object.test[keys[i]][CURRTRIAL.testindices[j]]
+			}		
+		}
+	} //IF SR2 or M2S
+	else if (TASK.TestON > 0){
+		for (var i=0; i<=keys.length-1; i++){
+			CURRTRIAL["testobject" + keys[i]] = IMAGES.object.test[keys[i]][0]
+		}		
+	} //IF same-different
+
+	logEVENTS("SampleObjectTy",CURRTRIAL.sampleobjectty,"imageseries")
+	logEVENTS("SampleObjectTz",CURRTRIAL.sampleobjecttz,"imageseries")
+	logEVENTS("SampleObjectRxy",CURRTRIAL.sampleobjectrxy,"imageseries")
+	logEVENTS("SampleObjectRxz",CURRTRIAL.sampleobjectrxz,"imageseries")
+	logEVENTS("SampleObjectRyz",CURRTRIAL.sampleobjectryz,"imageseries")
+	logEVENTS("SampleObjectScale",CURRTRIAL.sampleobjectscale,"imageseries")
+
+	logEVENTS("TestObjectTy",CURRTRIAL.testobjectty,"imageseries")
+	logEVENTS("TestObjectTz",CURRTRIAL.testobjecttz,"imageseries")
+	logEVENTS("TestObjectRxy",CURRTRIAL.testobjectrxy,"imageseries")
+	logEVENTS("TestObjectRxz",CURRTRIAL.testobjectrxz,"imageseries")
+	logEVENTS("TestObjectRyz",CURRTRIAL.testobjectryz,"imageseries")
+	logEVENTS("TestObjectScale",CURRTRIAL.testobjectscale,"imageseries")
+
+
+	//================= RFID check =================//
+	// If no matching read in the last TASK.CheckRFID seconds, wait for matching read
+	// (kicks-them-off model where they can work as long as reading, but then get kicked off within TASK.CheckRFID seconds if they are the wrong agent or no reads)
+	if (TASK.CheckRFID > 0 && ENV.AgentRFID != "XX" && FLAGS.savedata == 1){
+		if (port.connected == false){
+			console.log('NO USB DEVICE CONNECTED: cannot check RFID!!')
+		}
+		else if (port.connected == true){
+			var nreads = TRIAL.RFIDTag.length
+	    	if (TRIAL.RFIDTag[nreads-1] == ENV.AgentRFID && (Date.now() - ENV.CurrentDate.valueOf()) - TRIAL.RFIDTime[nreads-1] < TASK.CheckRFID){
+	    		// RFID checks out
+	    	}
+	    	else{ //wait for a recent rfid read before proceeding with next trial
+				await rfid_promise(ENV.AgentRFID,TASK.CheckRFID)
+	    	}
+		}
+	}
+	//================= (end) RFID check =================//
 
 	//============ WHILE RUN FIXATION SCREEN ============//
 	FLAGS.waitingforTouches = TASK.NFixations
@@ -577,7 +1108,7 @@ while(true){
 		if (TASK.Species == 'marmoset'){
 			playSound(0)
 		}
-		renderScreen(CANVAS.sequencepre[0],CANVAS.offscreen)
+		renderScreen(CANVAS.sequencepre[0],OFFSCREENCANVAS)
 		await displayTrial(CANVAS.sequencepre,CANVAS.tsequencepre);
 		audiocontext.suspend()
 
@@ -626,7 +1157,7 @@ while(true){
 		for (var q in CANVAS.sequenceblank){frame.shown[q]=0}
 		frame.current=0;
 		if (FLAGS.waitingforTouches > 0){
-			renderScreen(CANVAS.sequenceblank[0],CANVAS.offscreen)
+			renderScreen(CANVAS.sequenceblank[0],OFFSCREENCANVAS)
 			await displayTrial(CANVAS.sequenceblank,CANVAS.tsequenceblank);
 		} //blank out screen
 	} //while waiting for NFixations
@@ -637,7 +1168,7 @@ while(true){
 		frame.shown=[]
 		for (var q in CANVAS.sequence){frame.shown[q]=0} 
 		frame.current=0
-		renderScreen(CANVAS.sequence[0],CANVAS.offscreen)
+		renderScreen(CANVAS.sequence[0],OFFSCREENCANVAS)
 		CURRTRIAL.tsequenceactual = await displayTrial(CANVAS.sequence,CANVAS.tsequence);
 		CURRTRIAL.tsequencedesired = CANVAS.tsequence
 		audiocontext.suspend()
@@ -774,7 +1305,7 @@ while(true){
 			for (var q2 in CANVAS.sequencepost){frame.shown[q2]=0}; frame.current=0;
 
 			playSound(2);
-			renderScreen(CANVAS.sequencepost[0],CANVAS.offscreen)
+			renderScreen(CANVAS.sequencepost[0],OFFSCREENCANVAS)
 			var p1 = displayTrial(CANVAS.sequencepost,CANVAS.tsequencepost)
 			if (ble.connected == false && port.connected == false){
 				await Promise.all([p1])
@@ -797,7 +1328,7 @@ while(true){
 		frame.shown=[];
 		for (var q in CANVAS.sequencepost){frame.shown[q]=0}; frame.current=0;
 
-		renderScreen(CANVAS.sequencepost[0],CANVAS.offscreen)
+		renderScreen(CANVAS.sequencepost[0],OFFSCREENCANVAS)
 		var p1 = displayTrial(CANVAS.sequencepost,CANVAS.tsequencepost);
 		var num_trials_to_buffer_in_punishperiod = 50
 		var p2 = TQ.generate_trials(num_trials_to_buffer_in_punishperiod)
