@@ -35,6 +35,8 @@ ENV.CanvasRatio = 1
 ENV.DevicePixelRatio = 1
 ENV.FixationRadius = 0
 ENV.FixationColor = ''
+ENV.ChoiceRadius = 0
+ENV.ChoiceColor = 'white'
 ENV.XGridCenter = []
 ENV.YGridCenter = []
 ENV.RewardDuration = NaN
@@ -97,6 +99,11 @@ FLAGS.punishOutsideTouch = 0
 FLAGS.acquiredTouch = 0
 FLAGS.touchGeneratorCreated = 0
 FLAGS.runPump = 0
+FLAGS.firestorecreatedoc = 0
+FLAGS.firestorelastsavedtrial = 0
+FLAGS.firestoretimeron = 0
+FLAGS.stressTest = 0
+FLAGS.RFIDGeneratorCreated = 0
 
 var CANVAS = {}; 
 var CANVAS = {
@@ -113,8 +120,6 @@ var CANVAS = {
 	headsupfraction: NaN,
 	offsetleft: 0,
 	offsettop: 0,
-	visible: document.getElementById("canvasvisible"),
-	offscreen: null,
 }
 
 var OFFSCREENCANVAS = null

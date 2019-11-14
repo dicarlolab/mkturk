@@ -74,35 +74,23 @@ try{
 						child.material.needsUpdate = true;
 					}
 				})
-				})
-			 } //try
-				catch (error){
+//----- scene.traverse is optional (end)
+
+				resolve(gltfmesh)
+			})
+			} //try
+			catch (error){
 					console.log(error)
-				} //catch
-			 }
-			 )// Promise
-			 }
-			} 
-			catch(err){
-				console.log(err)
-			}
-		}
-	
-async function loadMeshArrayfromFirebase(meshfile_pathlist){
-		try{
-			var object_requests = meshfile_pathlist.map(loadMeshfromFirebase);
-			console.log('FIREBASE: buffering ' + meshfile_pathlist.length + ' objects')
-			var tstart = performance.now()
-			var object_array = await Promise.all(object_requests)
-			.catch(function(error){ console.log(error)}).then()
-	
-			return object_array
-			}
-		catch(err){
-			console.log(err)
-		}
-	}
-	
+			} //catch
+		}) //Promise
+	} //if gltf or glb
+} //try
+catch (error){
+	console.log(error)
+} //catch
+} //loadMeshFromFirebase
+
+
 //------------- GET METADATA --------------//
 async function getFileMetadataFirebase(file_path){
 	return await storage.ref().child(file_path).getMetadata()

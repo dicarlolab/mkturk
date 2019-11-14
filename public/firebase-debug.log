@@ -1,0 +1,25 @@
+[debug] [2019-11-14T19:10:00.359Z] ----------------------------------------------------------------------
+[debug] [2019-11-14T19:10:00.361Z] Command:       /Users/younah/.nvm/versions/node/v8.16.1/bin/node /Users/younah/.nvm/versions/node/v8.16.1/bin/firebase serve
+[debug] [2019-11-14T19:10:00.362Z] CLI Version:   7.3.2
+[debug] [2019-11-14T19:10:00.362Z] Platform:      darwin
+[debug] [2019-11-14T19:10:00.362Z] Node Version:  v8.16.1
+[debug] [2019-11-14T19:10:00.362Z] Time:          Thu Nov 14 2019 14:10:00 GMT-0500 (EST)
+[debug] [2019-11-14T19:10:00.362Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2019-11-14T19:10:00.370Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2019-11-14T19:10:00.370Z] > authorizing via signed-in user
+[debug] [2019-11-14T19:10:00.371Z] [iam] checking project sandbox-ce2c5 for permissions ["firebase.projects.get"]
+[debug] [2019-11-14T19:10:00.372Z] >>> HTTP REQUEST POST https://cloudresourcemanager.googleapis.com/v1/projects/sandbox-ce2c5:testIamPermissions  
+
+[debug] [2019-11-14T19:10:00.628Z] <<< HTTP RESPONSE 200
+[debug] [2019-11-14T19:10:00.629Z] >>> HTTP REQUEST GET https://firebase.googleapis.com/v1beta1/projects/sandbox-ce2c5  
+ 
+[debug] [2019-11-14T19:10:00.866Z] <<< HTTP RESPONSE 200
+[info] 
+[info] === Serving from '/Users/younah/Documents/GitHub/mkturk'...
+[info] 
+[debug] [2019-11-14T19:10:00.869Z] >>> HTTP REQUEST GET https://firebase.googleapis.com/v1beta1/projects/sandbox-ce2c5/webApps/-/config  
+ 
+[debug] [2019-11-14T19:10:01.213Z] <<< HTTP RESPONSE 200
+[info] i  hosting: Serving hosting files from: public
+[info] ✔  hosting: Local server: http://localhost:5000
