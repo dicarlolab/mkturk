@@ -9,13 +9,18 @@ var DBX_REDIRECT_URI_ROOT = "http://localhost:8080/"
 
 // ------ Subject settings ------ 
 var subjectlist = [
-"Eliaso","Youno","Tahereho","Praneetho","West","Waffles","Setta","Sausage","Rafiki","Hutch","Barb","AJ"
+"Eliaso","Youno","Sophieo","West","Waffles","Sausage","Rafiki","Hutch","Eggo","East","Bloo","Blintz","Blaise","Athena","AJ","You-Nah","Tahereh","Sophie","Hector","Erica","Elias","Andrea","Alex"
 ];
 
 // ------ Save location settings ------
 var DATA_SAVEPATH = "/mkturkfiles/datafiles/"
 var PARAM_DIRPATH = "/mkturkfiles/parameterfiles/subjects/"
 var SOUND_FILEPREFIX = "/mkturkfiles/sounds/au"
+
+var FIRESTORECOLLECTION =	{ 	DATA: 'mkturkdata',
+								DEVICES: 'devices',
+								AGENTS: 'marmosets',
+							}
 
 // ------ Misc. -----------------------
 var ndatafiles2read=5; // todo: change to trials. and use as upper bound (stop reading once you hit the first discrepancy). maybe this is effectively synonymous with mintrials

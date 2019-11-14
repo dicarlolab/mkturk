@@ -3,13 +3,12 @@ async function initThreeJS(CAMERAS) {
    
     console.time('start')
     renderer = new THREE.WebGLRenderer({canvas: VISIBLECANVASWEBGL, antialias: true, alpha: true})
-    // renderer.setPixelRatio(window.devicePixelRatio);
+//     renderer.setPixelRatio(window.devicePixelRatio);
 
     // renderer.setSize(VISIBLECANVASWEBGL.width,VISIBLECANVASWEBGL.height)
     // renderer.setSize(VISIBLECANVASWEBGL.width,VISIBLECANVASWEBGL.height)
     // renderer.setSize(window.innerWidth, window.innerHeight);
 
-    renderer.setClearColor(0x7F7F7F);
     renderer.setClearColor(0x7F7F7F,0);
     renderer.physicallyCorrectLights = true;
     renderer.toneMappingExposure = 10;   // set exposure to light

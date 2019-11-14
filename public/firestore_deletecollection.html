@@ -59,7 +59,7 @@
 
 
 async function deletenext(){
-	var first = db.collection(FIREBASE_COLLECTION)
+	var first = db.collection(FIRESTORECOLLECTION.DATA)
 			.where("Doctype","==",'task')
 			.limit(25);
 
@@ -72,7 +72,7 @@ async function deletenext(){
 		querySnapshot.forEach(function(doc)
 		{
 			batch.delete(doc.ref);
-	// 		db.collection(FIREBASE_COLLECTION).doc(doc.data().FirestoreDocRoot).delete()
+	// 		db.collection(FIRESTORECOLLECTION.DATA).doc(doc.data().FirestoreDocRoot).delete()
 		  console.log('ready to delete ' + doc.id)
 		}); // forEach doc
 
@@ -90,7 +90,7 @@ async function deletenext(){
 
 	//   // Construct a new query starting at this document,
 	//   // get the next 25 cities.
-	//   var next = db.collection(FIREBASE_COLLECTION)
+	//   var next = db.collection(FIRESTORECOLLECTION.DATA)
 	// 		  .where("Doctype","==",'task')
 	//           .startAfter(lastVisible)
 	//           .limit(25);

@@ -2,6 +2,7 @@ var port={
   statustext_connect: "",
   statustext_sent: "",
   statustext_received: "",
+  connected: false,
 }
 var serial = {}
 
@@ -88,7 +89,7 @@ async function findUSBDevice(event){
 		}
 		waitforClick.next(1)
 	}
-}
+} //FUNCTION findUSBDevice
 
 //============= SERIAL OBJECT =====================//
 
@@ -116,10 +117,13 @@ serial.Port.prototype.connect = async function(){
       'index': 0x02 //interface 2 is the recipient
     }) //send controlTransferOut to work with channels
 
+	ENV.USBDeviceType = 'microcontroller'
+	ENV.USBDeviceName = 'Arduino Leonardo'
+
   this.connected = true
   readLoop(this)
   // pingUSB()
-}
+}//port.connect
 
 //PORT  - onReceive
 serial.Port.prototype.onReceive = data => {
@@ -127,7 +131,7 @@ serial.Port.prototype.onReceive = data => {
 	// console.log('Serial roundtrip write->read' + serial.dt[serial.dt.length-1])
 
 	port.statustext_received = "RECEIVED CHAR <-- USB: " + textDecoder.decode(data)
-	console.log(port.statustext_received)
+// 	console.log(port.statustext_received)
 	updateHeadsUpDisplayDevices()
 
 	var tagstart = port.statustext_received.indexOf('{tag',0);
@@ -147,7 +151,7 @@ serial.Port.prototype.onReceive = data => {
 		console.log(port.statustext_received)
 		updateHeadsUpDisplayDevices()
 	}
-}
+} //port.onReceive
 
 serial.Port.prototype.onReceiveError = error => {
   console.log(error);
@@ -162,7 +166,7 @@ serial.Port.prototype.writepumpdurationtoUSB = async function(data){
 	port.statustext_sent = "TRANSFERRED CHAR --> USB:" + msgstr
 	console.log(port.statustext_sent)
 	updateHeadsUpDisplayDevices()
-}
+} //port.writepumpdurationUSB
 
 //PORT - disconnect
 serial.Port.prototype.disconnect = async function() {
@@ -178,7 +182,7 @@ serial.Port.prototype.disconnect = async function() {
 	port.statustext_connect = "USB DEVICE DISCONNECTED"
 	console.log(port.statustext_connect)
 	updateHeadsUpDisplayDevices()
-};
+}; //port.disconnect
 
 
 //PORT - readloop
@@ -198,7 +202,7 @@ async function readLoop(port){
   catch(error){
     port.onReceiveError(error);
   }
-}
+} //FUNCTION readLoop
 
 function pingUSB(){
   if (port.connected == true){
@@ -216,7 +220,7 @@ function pingUSB(){
       pingUSB()
     },5000)
   }
-}
+} //FUNCTION pingUSB
 
 //____________________LEGACY________________________
 

@@ -14,6 +14,11 @@ var IMAGES = {
 	object: {sample:{}, test: {}},
 	imagepaths: {Ordered_Samplebag_Filenames: {}, Ordered_Testbag_Filenames: {}},
 }
+
+var OBJECTS = {}
+var CAMERAS = {}
+var LIGHTS = {}
+
 var ImageRewardList = {}
 
 ENV.ResearcherDisplayName = ''
@@ -41,6 +46,39 @@ ENV.FirestoreDocRoot = ''
 ENV.CurrentAutomatorStageName = ''
 ENV.MinPercentCriterion = -1
 ENV.MinTrialsCriterion = -1
+
+ENV.WebBluetoothAvailable = 0
+ENV.WebUSBAvailable = 0
+ENV.BatteryAPIAvailable = 0
+ENV.OffscreenCanvasAvailable = 0
+
+
+ENV.UserAgent = window.navigator.userAgent
+ENV.DeviceType = deviceAPI.deviceType || -1
+ENV.DeviceBrand = deviceAPI.Brand || -1
+ENV.DeviceName = deviceAPI.deviceName  || -1
+ENV.DeviceScreenWidth = deviceAPI.screenWidth || -1
+ENV.DeviceScreenHeight = deviceAPI.screenHeight  || -1
+ENV.DeviceGPU = deviceAPI.GPU || -1
+ENV.DeviceBrowserName = deviceAPI.browserName || -1
+ENV.DeviceBrowserVersion = deviceAPI.browserVersion || -1
+ENV.DeviceOSName = deviceAPI.osName || -1
+ENV.DeviceOSCodename = deviceAPI.osCodeName || -1
+ENV.DeviceOSVersion = deviceAPI.osVersion || -1
+ENV.DeviceTouchscreen = deviceAPI.touchScreen || -1
+
+ENV.ScreenRatio = -1
+ENV.ScreenSizePixels = [-1,-1]
+ENV.ScreenSizeInches = [-1,-1,-1]
+ENV.ViewportPixels = [-1,-1]
+
+ENV.ViewportPPI = -1
+ENV.PhysicalPPI = -1
+
+ENV.FixationScale = -1
+ENV.SampleScale = -1
+ENV.TestScale = -1
+ENV.ChoiceScale = -1
 
 //================ OTHER GLOBALS (NOT SAVED) ================//
 var FLAGS = {} // Global that keeps track of the task's requests to the Dropbox/server/disk/whatever; buffering requests; etc.
@@ -215,6 +253,28 @@ function resetTRIAL(){
 	TRIAL.WeightTime = []
 	TRIAL.WeightTrial = []
 	TRIAL.NWeights = 0
+	TRIAL.BatteryLDT = []	
+	if (typeof(navigator.getBattery) == "function"){
+			navigator.getBattery().then(function(batteryobj){
+			TRIAL.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Date.now() - ENV.CurrentDate.valueOf()]);
+			logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"trialseries")
+		}) // starting battery level
+	}
+
+	TRIAL.SampleObjectTy = []
+	TRIAL.SampleObjectTz = []
+	TRIAL.SampleObjectRxy = []
+	TRIAL.SampleObjectRxz = []
+	TRIAL.SampleObjectRyz = []
+	TRIAL.SampleObjectScale = []
+
+	TRIAL.TestObjectTy = []
+	TRIAL.TestObjectTz = []
+	TRIAL.TestObjectRxy = []
+	TRIAL.TestObjectRxz = []
+	TRIAL.TestObjectRyz = []
+	TRIAL.TestObjectScale = []
+
 	return TRIAL
 }
 
