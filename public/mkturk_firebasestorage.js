@@ -74,7 +74,8 @@ try{
 						child.material.needsUpdate = true;
 					}
 				})
-				} //try
+				})
+			 } //try
 				catch (error){
 					console.log(error)
 				} //catch

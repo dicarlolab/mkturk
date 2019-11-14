@@ -717,7 +717,7 @@ function renderFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
 	context.fillStyle=color; 
 	context.fill();
-
+}
 async function bufferFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
 	 console.time('startrenderFIXATION')
 
@@ -788,5 +788,5 @@ function displayGridCoordinate(idx,xycoord,canvasobj){
 	visible_ctxt.textBaseline = "middle";
 	visible_ctxt.fillStyle = "white";
 	visible_ctxt.font = "20px Verdana";
-	visible_ctxt.fillText(idx,xycoord[0]/ENV.CanvasRatio, xycoord[1]/ENV.CanvasRatio)
+	visible_ctxt.fillText(idx,xycoord[0]/ENV.CanvasRatio, xycoord[1]/ENV.CanvasRatio) 
 }
