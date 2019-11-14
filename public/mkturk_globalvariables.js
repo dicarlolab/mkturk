@@ -30,11 +30,6 @@ ENV.CanvasRatio = 1
 ENV.DevicePixelRatio = 1
 ENV.FixationRadius = 0
 ENV.FixationColor = ''
-<<<<<<< HEAD
-=======
-ENV.ChoiceRadius = 0
-ENV.ChoiceColor = 'white'
->>>>>>> master
 ENV.XGridCenter = []
 ENV.YGridCenter = []
 ENV.RewardDuration = NaN
@@ -64,14 +59,6 @@ FLAGS.punishOutsideTouch = 0
 FLAGS.acquiredTouch = 0
 FLAGS.touchGeneratorCreated = 0
 FLAGS.runPump = 0
-<<<<<<< HEAD
-=======
-FLAGS.firestorecreatedoc = 0
-FLAGS.firestorelastsavedtrial = 0
-FLAGS.firestoretimeron = 0
-FLAGS.stressTest = 0
-FLAGS.RFIDGeneratorCreated = 0
->>>>>>> master
 
 var CANVAS = {}; 
 var CANVAS = {
@@ -88,11 +75,8 @@ var CANVAS = {
 	headsupfraction: NaN,
 	offsetleft: 0,
 	offsettop: 0,
-<<<<<<< HEAD
 	visible: document.getElementById("canvasvisible"),
 	offscreen: null,
-=======
->>>>>>> master
 }
 
 var OFFSCREENCANVAS = null
@@ -231,29 +215,6 @@ function resetTRIAL(){
 	TRIAL.WeightTime = []
 	TRIAL.WeightTrial = []
 	TRIAL.NWeights = 0
-<<<<<<< HEAD
-=======
-	TRIAL.BatteryLDT = []	
-	navigator.getBattery().then(function(batteryobj){
-		TRIAL.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Date.now() - ENV.CurrentDate.valueOf()]);
-		logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"trialseries")
-
-	TRIAL.SampleObjectTy = []
-	TRIAL.SampleObjectTz = []
-	TRIAL.SampleObjectRxy = []
-	TRIAL.SampleObjectRxz = []
-	TRIAL.SampleObjectRyz = []
-	TRIAL.SampleObjectScale = []
-
-	TRIAL.TestObjectTy = []
-	TRIAL.TestObjectTz = []
-	TRIAL.TestObjectRxy = []
-	TRIAL.TestObjectRxz = []
-	TRIAL.TestObjectRyz = []
-	TRIAL.TestObjectScale = []
-
-	}) // starting battery level
->>>>>>> master
 	return TRIAL
 }
 

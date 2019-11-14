@@ -306,7 +306,6 @@ async function runPump(str){
   if (FLAGS.runPump == 0){
     FLAGS.runPump = 1
     if (str == "flush"){
-<<<<<<< HEAD
       dur = 10000 //milliseconds
       npulse = 6
       document.querySelector("button[name=pumpflush]").value = "Stop Pump"
@@ -324,25 +323,6 @@ async function runPump(str){
     document.querySelector("button[name=pumpflush]").value = 'Flush Line'
     document.querySelector("button[name=pumptrigger]").value = '50 Pulses'
 //     document.getElementById("pumptrigger").value = 'Stop Pump'
-=======
-      dur = 1000 //milliseconds
-      npulse = 6
-    }
-    else if (str == "trigger"){
-      // dur = ENV.RewardDuration*1000 //milliseconds
-      dur = 190; //50 pulse * 190 ms/pulse = 1 mL milk, 1.24 mL water
-      npulse = 100
-    }
-    document.querySelector("button[id=pumpflush]").innerHTML = "Stop Pump"
-    document.querySelector("button[id=pumptrigger]").innerHTML = "Stop Pump"
-  }
-  else if (FLAGS.runPump == 1){ //user pressed button again to stop pump
-    FLAGS.runPump = 0
-    port.statustext_connect = "!!!! USER STOPPED PUMP !!!!"
-    document.querySelector("button[id=pumpflush]").innerHTML = 'Flush 1 minute'
-    document.querySelector("button[id=pumptrigger]").innerHTML = '100Pulses->1mL Milk'
-    updateHeadsUpDisplayDevices()
->>>>>>> master
     return
   }
 
@@ -352,7 +332,6 @@ async function runPump(str){
       break //no pump connected
     }
     else if (FLAGS.runPump == 0){
-<<<<<<< HEAD
       break //pump was stopped by user
     }
     else if (FLAGS.runPump == 1 && ble.connected == true){
@@ -371,153 +350,8 @@ async function runPump(str){
     console.log(port.statustext_sent)
     updateHeadsUpDisplay()    
   }
-=======
-      FLAGS.runPump = 0
-      port.statustext_connect = "!!!! USER STOPPED PUMP !!!!"
-      document.querySelector("button[id=pumpflush]").innerHTML = 'Flush 1 minute'
-      document.querySelector("button[id=pumptrigger]").innerHTML = '100Pulses->1mL Milk'
-      updateHeadsUpDisplayDevices()
-      return //pump was stopped by user
-    }
-    else if (FLAGS.runPump == 1 && ble.connected == true){
-        await writepumpdurationtoBLE(Math.round(dur))
-    } //if ble pump
-    else if (FLAGS.runPump == 1 && port.connected == true){
-        if (blescale.connected == true && i==1){
-          //get start weight
-          var startweight = blescale.weights[blescale.weights.length-1]
-        }
-
-        await port.writepumpdurationtoUSB(Math.round(dur))
-
-        var endweight = blescale.weights[blescale.weights.length-1]
-        port.statustext_connect = "***** Calibrating Pump " + i + "/" + npulse + " pulses, wt=" + Math.round([endweight-startweight]*100)/100 + " grams"
-        updateHeadsUpDisplayDevices()
-      } //if usb pump
-
-    await timeout(dur + 800)
-    console.log("pulse" + i)
-  } //for i pulses
-
-  if (port.connected == true){
-    port.statustext_connect = "DONE RUNNING PUMP (" + npulse + " pulses @ " + Math.round(dur) + " ms/pulse)"
-    if (blescale.connected == true){
-      var endweight = blescale.weights[blescale.weights.length-1]
-      port.statustext_connect = "!!!! DONE PUMP CALIBRATION !!!!"
-      port.statustext_sent = "!!!! Weight after " 
-      + i + " pulses @ " + dur + "ms = " 
-      + Math.round([endweight-startweight]*100)/100 + "g vs (1, 1.24) for 100 pulse (milk,water) calibration"
-    } //if blescale
-    console.log(port.statustext_sent)
-    document.querySelector("button[id=pumpflush]").innerHTML = 'Flush 1 minute'
-    document.querySelector("button[id=pumptrigger]").innerHTML = '100Pulses->1mL Milk'
-    FLAGS.runPump = 0
-    updateHeadsUpDisplayDevices()
-  } //if usb pump
->>>>>>> master
 }
 
 function timeout(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
-<<<<<<< HEAD
-=======
-}
-
-function objectomeImageNamesToLatentVars(imagefilepaths,imagelabels){
-  var images = {
-    ImageSetDir: "",
-    Nouns: [],
-    Objects: [],
-    BagNames: [],    
-    BagIdx: [],
-    HashesPrefix: []
-  }
-  var object = {
-    ty: [],
-    tz: [],
-    rxy: [],
-    rxz: [],
-    ryz: [],
-    scale: []
-  }
-
-  images.ImageSetDir = imagefilepaths[0].slice(0,imagefilepaths[0].indexOf("objectome")) + "objectome/"
-
-
-  for (var i=0; i<=imagefilepaths.length-1; i++){
-    images.BagIdx[i] = imagelabels[i]
-    var strs = imagefilepaths[i].split("/") //split path into words
-
-    // Noun, object model, image folder
-    var findnext = 0;
-    for (var j=0; j<=strs.length-1; j++){
-      if (findnext == 0 && strs[j] == "objectome"){
-        findnext++
-      }
-      else if (findnext == 1){
-        images.Nouns[images.BagIdx[i]] = strs[j]
-        findnext++
-      } //else if noun
-      else if (findnext == 2){
-        images.Objects[images.BagIdx[i]] = strs[j]
-        findnext++
-      } //else if object
-      else if (findnext == 3){
-        images.BagNames[images.BagIdx[i]] = strs[j]
-        findnext++
-      } //else if folder
-    } //for j strs
-
-    // Hash, ty, tz, rxy,rxz, ryz,scale
-    var findnext=0
-    var paramstrs = strs[strs.length-1].split("_")
-
-    // initialize to NaN in case meta not specified in filename
-    object.ty[i] = NaN
-    object.tz[i] = NaN
-    object.rxy[i] = NaN
-    object.rxz[i] = NaN
-    object.ryz[i] = NaN
-    object.scale[i] = NaN
-
-    //remove file extension
-    paramstrs[paramstrs.length-1] = paramstrs[paramstrs.length-1].slice(0,paramstrs[paramstrs.length-1].indexOf(".png"))
-    for (var j=0; j<=paramstrs.length-1; j++){
-      if (findnext==0 && paramstrs[j]==images.Nouns[images.BagIdx[i]]){
-        findnext++
-      }
-      else if (findnext == 1){
-        images.HashesPrefix[i] = paramstrs[j].slice(0,7) //first 8 characters of hash
-        findnext++
-      }
-      else if (findnext == 2){
-        if (paramstrs[j].indexOf("ty") != -1){
-          object.ty[i] = Number(paramstrs[j].slice(paramstrs[j].indexOf("ty")+2))
-        }
-
-        if (paramstrs[j].indexOf("tz") != -1){
-          object.tz[i] = Number(paramstrs[j].slice(paramstrs[j].indexOf("tz")+2))
-        }
-
-        if (paramstrs[j].indexOf("rxy") != -1){
-          object.rxy[i] = Number(paramstrs[j].slice(paramstrs[j].indexOf("rxy")+3))
-        }
-
-        if (paramstrs[j].indexOf("rxz") != -1){
-          object.rxz[i] = Number(paramstrs[j].slice(paramstrs[j].indexOf("rxz")+3))
-        }
-
-        if (paramstrs[j].indexOf("ryz") != -1){
-          object.ryz[i] = Number(paramstrs[j].slice(paramstrs[j].indexOf("ryz")+3))
-        }
-
-        if (paramstrs[j].indexOf("s") != -1){
-          object.scale[i] = Number(paramstrs[j].slice(paramstrs[j].indexOf("s")+1))
-        }
-      } //else latent vars
-    } //for j params
-  } //for i images
-
-  return [images,object]
->>>>>>> master
 }

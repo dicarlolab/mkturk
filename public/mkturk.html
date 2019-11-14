@@ -15,11 +15,6 @@
 <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-red.min.css">
 <!-- <link rel="stylesheet" href="styles.css"> -->
 
-<!-- ThreeJS -->
-<script src="http://threejs.org/build/three.js"></script>
-<script src="http://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
-<script src="http://threejs.org/examples/js/controls/OrbitControls.js"></script> 
-
 <script>
 var loadScriptAsync = function(uri){
   return new Promise((resolve, reject) => {
@@ -51,15 +46,17 @@ if (typeof(navigator.bluetooth) == "object"){
 
 <!-- Insert these scripts at the bottom of the HTML, but before you use any Firebase services -->
 <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
-<script src="/__/firebase/7.3.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebase/7.3.0/firebase-app.js"></script>
 
 <!-- Add Firebase products that you want to use -->
-<script src="/__/firebase/7.3.0/firebase-auth.js"></script>
-<script src="/__/firebase/7.3.0/firebase-firestore.js"></script>
-<script src="/__/firebase/7.3.0/firebase-storage.js"></script>
-<script src="/__/firebase/init.js"></script>
+<script src="https://www.gstatic.com/firebase/7.3.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebase/7.3.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebase/7.3.0/firebase-storage.js"></script>
+<script src="https://www.gstatic.com/firebase/init.js"></script>
+
 
 <script src="https://theapicompany.com/deviceAPI.js"></script>
+
 <script>
   //Initialize Cloud Firestore
   var db = firebase.firestore();
@@ -128,7 +125,6 @@ if (typeof(navigator.bluetooth) == "object"){
 
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasvisible" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvasvisiblewebgl" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
 </div>
 
 <dialog id="subjectID_dialog" style="z-index: 102; position: absolute; top: 0%; left: 0%;">
@@ -152,8 +148,6 @@ if (typeof(navigator.bluetooth) == "object"){
 <script src="mkturk_firebase.js" type="text/javascript"></script>
 <script src="mkturk_firestore.js" type="text/javascript"></script>
 <script src="mkturk_firebasestorage.js" type="text/javascript"></script>
-<script src="mkturk_threejs.js" type="text/javascript"></script> 
-
 <script>
 
 //================== AUTHENTICATE GOOGLE ==================//
@@ -541,319 +535,6 @@ function skipHardwareDevice(event){
 // ============ MAIN LOOP ==================================================================================== // 
 // =========================================================================================================== // 
 while(true){
-	//============ LOAD OBJECT MESHES ============//
-		windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
-		windowHeight = document.body.clientHeight;
-		setupCanvas(VISIBLECANVASWEBGL)
-    canvaswebgl = document.querySelector("canvas[id=canvasvisiblewebgl]");
-
-    // 0: load scenerenderparams.json from google cloud storage
-	param_path = "mkturkfiles/imagebags/objectome3d/face/scene_renderparams_face_yj_ei_json2.js"
-   	SCENEdata = await loadTextfromFirebase(param_path)
-
-// 1: load meshfilename for each object from firestore document in SCENE.OBJECTS.objectdoc
-// get number of frames/trials
-	objectfile_pathlist = []
-	object_materiallist = []
-	numframe = 0
-	// also update parameters so that they all have the same length as numframe
-	// parameters with length smaller than numframe take the initial value of the parameters
-
-	for (var obj in SCENEdata.OBJECTS){
-		var object = SCENEdata.OBJECTS[obj]
-		var objdoc = object.objectdoc
-		console.log(objdoc)
-		var docRef = db.collection("objects").doc(objdoc)
-		var doc = await db.collection("objects").doc(objdoc).get()
-		var object_path = doc.data().meshfilepath
-		var index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
-		objectfile_pathlist[index] = object_path
-		object_materiallist[index] = object.material
-		numframe = object.visible.length
-		for (var coord in object.positionInches){
-			if (object.positionInches[coord].length < numframe){
-				object.positionInches[coord] = Array.apply(null,Array(numframe)).map(function(){return object.positionInches[coord][0]})
-			}
-		}
-		for (var coord in object.rotationDegrees){
-			if (object.rotationDegrees[coord].length < numframe){
-				object.rotationDegrees[coord]= Array.apply(null,Array(numframe)).map(function(){return object.rotationDegrees[coord][0]})
-			}
-		}
-	}
-
-	for (var lt in SCENEdata.LIGHTS){
-		var light = SCENEdata.LIGHTS[lt]
-		for (var coord in light.positionInches){
-			if (light.positionInches[coord].length < numframe){
-				light.positionInches[coord] = Array.apply(null,Array(numframe)).map(function(){return light.positionInches[coord][0]})
-			}
-		}
-	}
-// 2: load meshfile from google cloud storage
-		console.time('loadmesh')
-		objectmeshArray = await loadMeshArrayfromFirebase(objectfile_pathlist);
-		console.timeEnd('loadmesh')
-
-	// 3. init scene and camera
-	console.time('init scene')
-	await initThreeJS(SCENEdata.CAMERAS)
-	console.timeEnd('init scene')
-
-	// 4. add light
-	console.time('add object to scene')
-	lightArray = [];
-	currLightProperties = []
-	for (var lt in SCENEdata.LIGHTS){
-		var index = Object.keys(SCENEdata.LIGHTS).indexOf(lt);
-		currLightProperties[index] = {}
-		var light = new THREE.DirectionalLight(Number(SCENEdata.LIGHTS[lt].color),SCENEdata.LIGHTS[lt].intensity)
-		lightArray[index] = light;
-		scene.add(light)
-		// store current frame light properties
-		currLightProperties[index].position = light.position;
-		currLightProperties[index].color = light.color;
-		currLightProperties[index].intensity = light.intensity;
-		currLightProperties[index].visible = light.visible;
-			}
-
-	// add objects
-	currObjProperties = []
-	for (var obj in SCENEdata.OBJECTS){
-		var index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
-		currObjProperties[index] = {}
-		var object = objectmeshArray[index].scene
-		object.traverse(function(child){
-
-					if (child.material) {
-// 							const textureloader = new THREE.TextureLoader();
-// 							console.log(child.material)
-// 							var material = new THREE.MeshBasicMaterial({
-// 								map: textureloader.load('https://threejsfundamentals.org/threejs/resources/images/wall.jpg')
-
-// 							})
-						const orig = new THREE.MeshPhysicalMaterial()
-						const materialparam = {...orig,...object_materiallist[index]} //parameters update
-						var material = new THREE.MeshPhysicalMaterial(materialparam)
-
-						if (child.name == "Eyeliris" || child.name == "Eyeriris"){
-							material.color.set('#000000')
-						}
-						else if (child.name == "Eyelsclera" || child.name == "Eyersclera"){
-							material.color.set("#ffffff")
-						}
-
-						material.map = child.material.map
-						child.material = material;
-						child.material.needsUpdate = true;
-					}
-				})
-		scene.add(object)
-		console.timeEnd('add object to scene')
-		// store current frame object properties
-		currObjProperties[index].positionInches = object.position
-		currObjProperties[index].rotation = object.rotation
-		currObjProperties[index].visible = true;
-	}
-
-	//5. preload(compile) shaders
-	console.time('compile')
-	renderer.compile(scene,camera)
-	console.timeEnd('compile')
-
-	//6. Animate (100ms, 20ms grey screen)
-	frame = 0
-	animate()
-
-// 	controls.update()
-// 		imgData = renderer.domElement.toDataURL();
-// 		getImageData = false;
-//}
-
-// 		objectmesh.scene.traverse(function(child){
-// 		if (child.name == 'Elias_Pt'){
-// 			child.geometry.computeBoundingBox()
-// 			var bb = child.geometry.boundingBox.clone()
-// 			bbdim = new THREE.Vector3();
-// 			bb.getSize(bbdim) // width,height,depth
-// 		}
-// 	})
-	async function animate(){
-
-		console.time('frame update')
-		for (var obj in SCENEdata.OBJECTS){
-			var index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
-			var object = objectmeshArray[index].scene
-
-			var nextobjPosition = [SCENEdata.OBJECTS[obj].positionInches.x[frame],
-			SCENEdata.OBJECTS[obj].positionInches.y[frame],
-			SCENEdata.OBJECTS[obj].positionInches.z[frame]]
-
-			var nextobjRotation = [SCENEdata.OBJECTS[obj].rotationDegrees.x[frame],
-			SCENEdata.OBJECTS[obj].rotationDegrees.y[frame],
-			SCENEdata.OBJECTS[obj].rotationDegrees.z[frame]]
-
-			var nextvisible = SCENEdata.OBJECTS[obj].visible[frame]
-
-			if (nextvisible == 1){
-				object.visible = true
-				renderObjectSingleFrame(index,object,currObjProperties,nextobjPosition,nextobjRotation)
-				}
-			else{
-				currObjProperties[index].visible = false;
-				object.visible = false
-			}
-		}
-
-		for (var lt in SCENEdata.LIGHTS){
-		var index = Object.keys(SCENEdata.LIGHTS).indexOf(lt);
-		var light = lightArray[index]
-
-		var nextlightPosition = [SCENEdata.LIGHTS[lt].positionInches.x[frame],
-		SCENEdata.LIGHTS[lt].positionInches.y[frame],
-		SCENEdata.LIGHTS[lt].positionInches.z[frame]]
-
-		var nextvisible = SCENEdata.LIGHTS[lt].visible[frame];
-
-		if (nextvisible == 1){
-			light.visible = true
-			renderLightSingleFrame(index,light,currLightProperties,nextlightPosition)
-		}else{
-			currLightProperties[index].visible = false;
-			light.visible = false
-		}
-		}
-		console.timeEnd('frame update')
-
-        console.time('frame render')
-	//requestAnimationFrame(animate)
-
-	console.log(frame)
-	renderer.render(scene,camera)
-	
-
-	  frame ++;
-	if (frame <=numframe-1){
-	setTimeout(animate,500)
-	} else {
-		frame = 0;
-		setTimeout(animate,500)
-	}
-    console.timeEnd('frame render')
-  
-			
-	}
-
-		function renderLightSingleFrame(index,light,currLightProperties,lightPosition){
-			if (currLightProperties[index].position.x == lightPosition[0] &&
-			 currLightProperties[index].position.y == lightPosition[1] &&
-			 currLightProperties[index].position.z == lightPosition[2]){
-			 	console.log('no light position change')
-			 }else{
-			 	currLightProperties[index].position.x = lightPosition[0]
-			currLightProperties[index].position.y = lightPosition[1]
-			currLightProperties[index].position.z = lightPosition[2]
-
-			light.position.set(lightPosition[0],lightPosition[1],lightPosition[2])
-            console.log('light position change')
-            console.log(lightPosition)
-			 }
-		}
-
-
-	function renderObjectSingleFrame(index,object,currObjProperties,objPosition,objRotation){
-		// update Three js objects only if current properties change
-		// update current properties
-		if (currObjProperties[index].positionInches.x == objPosition[0] &&
-		currObjProperties[index].positionInches.y == objPosition[1] &&
-		currObjProperties[index].positionInches.z == objPosition[2]){
-			console.log('no object position change')
-
-		} else{
-
-			currObjProperties[index].positionInches.x = objPosition[0]
-			currObjProperties[index].positionInches.y == objPosition[1]
-			currObjProperties[index].positionInches.z == objPosition[2]
-
-			object.position.set(objPosition[0],objPosition[1],objPosition[2])
-            console.log('object position change')
-
-		}
-		//rotation
-		if (currObjProperties[index].rotation.x == objRotation[0] &&
-		currObjProperties[index].rotation.y == objRotation[1] &&
-		currObjProperties[index].rotation.z == objRotation[2]){
-			console.log('no object rotation change')
-		} else{
-			currObjProperties[index].rotation.x = objRotation[0]
-			currObjProperties[index].rotation.y == objRotation[1]
-			currObjProperties[index].rotation.z == objRotation[2]
-			//rotate around the World Axis
-			//before rotating set rotation to 0,0,0
-			object.rotation.set(0,0,0)
-			//Object axis changes as object rotates
-				var axis = new THREE.Vector3(1,0,0) //x-axis
-				var angle = THREE.Math.degToRad(objRotation[0])
-				object.rotateOnWorldAxis(axis,angle)
-
-				var axis = new THREE.Vector3(0,1,0) //y-axis
-				var angle = THREE.Math.degToRad(objRotation[1])
-				object.rotateOnWorldAxis(axis,angle)
-
-				var axis = new THREE.Vector3(0,0,1) //z-axis
-				var angle = THREE.Math.degToRad(objRotation[2])
-				object.rotateOnWorldAxis(axis,angle)
-
-                console.log('object rotation change')
-                console.log(objRotation)
-
-		}
-
-	}
-
-
-// var vFOV = THREE.Math.degToRad( camera.fov ); // convert vertical fov to radians
-// dist = camera.position.y - objectmesh.scene.position.y;
-// //dist = camera.position.z - objectmesh.scene.position.z;
-// height = 2 * Math.tan( vFOV / 2 ) * dist; // visible height
-
-//  width = height * camera.aspect;
-//  fraction = bbdim.y/height;
-
-// 	height_pixel = fraction * renderer.getContext().canvas.height;
-// 	console.time('render')
-// 	animate()
-// 	//renderer.render(scene, camera);
-// 	console.timeEnd('render')
-
-//     proj_pos = toScreenPosition(objectmesh.scene,camera)
-
-//conversion rate
-//1.2918253 a.u = 1 inches in (0,10,0) camera setting
-//createDpiTestElements()
- //dpi = getDpi()
-
-// function toScreenPosition(obj, camera){
-//     var vector = new THREE.Vector3();
-
-//     var widthHalf = 0.5*renderer.getContext().canvas.width;
-//     var heightHalf = 0.5*renderer.getContext().canvas.height;
-
-//     obj.updateMatrixWorld();
-//     vector.setFromMatrixPosition(obj.matrixWorld);
-//     vector.project(camera);
-
-//     vector.x = ( vector.x * widthHalf ) + widthHalf;
-//     vector.y = - ( vector.y * heightHalf ) + heightHalf;
-
-//     return {
-//         x: vector.x,
-//         y: vector.y
-//     };
-
-// };
-
-
 
 	//============= AWAIT LOAD PARAMS =============//
 	if (FLAGS.need2loadParameters == 1){

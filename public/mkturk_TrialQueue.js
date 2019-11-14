@@ -38,11 +38,7 @@ async build(trial_cushion_size){
 		this.samplebag_block_indices[i] = i;
 	}
 
-<<<<<<< HEAD
 	var funcreturn = await loadImageBagPathsParallel(this.ImageBagsTest); 
-=======
-	var funcreturn = await loadImageBagPathsParallelFirebase(this.ImageBagsTest); 
->>>>>>> master
 	this.testbag_labels = funcreturn[1];
 	this.testbag_paths = funcreturn[0];
 
@@ -94,10 +90,7 @@ async generate_trials(n_trials){
 
 				// make new bag
 				this.samplebag_block_indices = []
-<<<<<<< HEAD
 				var blocklen = this.samplebag_labels.filter(temp => temp == this.currentbag).length;
-=======
->>>>>>> master
 				for (var j = 0; j <= this.samplebag_labels.length-1; j++){
 					if (this.samplebag_labels[j] == this.currentbag){
 						this.samplebag_block_indices.push(j)
