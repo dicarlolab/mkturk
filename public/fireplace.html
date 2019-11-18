@@ -121,7 +121,7 @@ function showTaskText(dayidx,agentidx){
 
   //add object metadata
   var task = DATA.task[STAT.lastfile[agentidx-1][dayidx]];
-  var imagesRef = db.collection(FIRESTORE_COLLECTION_DATA).doc(task.Imagesdoc)
+  var imagesRef = db.collection(FIRESTORECOLLECTION.DATA).doc(task.Imagesdoc)
 
   imagesRef.get().then(
     function(doc)
@@ -301,7 +301,7 @@ async function queryFirestore(){
   document.querySelector('#progressbar').style.visibility = "visible"
   document.getElementById('titletext').innerHTML = 
               'fireplace mkturk &nbsp&nbsp' + "<font size=-4><font color=#673ab7>" + 'Updating...' + "</font>"
-  query = db.collection(FIRESTORE_COLLECTION_DATA)
+  query = db.collection(FIRESTORECOLLECTION.DATA)
             .where("Doctype","==",'task')
             .where("CurrentDateValue",">=",startdatevalue)
             .where("CurrentDateValue","<=",enddatevalue).onSnapshot(querySnapshot => queryFirestoreCallback(querySnapshot))
