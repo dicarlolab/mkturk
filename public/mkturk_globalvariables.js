@@ -20,6 +20,7 @@ var CAMERAS = {}
 var LIGHTS = {}
 
 var ImageRewardList = {}
+var QuickLoad = { load: 0, agent: '', connectusb: 0}
 
 ENV.ResearcherDisplayName = ''
 ENV.ResearcherEmail = ''

@@ -110,6 +110,19 @@ async function loadAgentRFIDfromFirestore(subject,species){
 	}
 }
 
+async function queryRFIDTagonFirestore(tag){
+	var query = await db.collection(FIRESTORECOLLECTION.AGENTS).where("rfid","==",tag)
+	var querySnapshot = query.get()
+	.then(function(querySnapshot) {
+        querySnapshot.forEach(function(doc) {
+			ENV.Subject = doc.data().name
+			console.log('AUTO-FOUND AGENT ' + ENV.Subject)
+			QuickLoad.load = 1
+			waitforClick.next(1)
+        }); //forEach
+	}) //.then
+} //FUNCTION queryRFIDTagonFirestore
+
 async function queryDeviceonFirestore(deviceName){
 	var query = await db.collection(FIRESTORECOLLECTION.DEVICES).where("model","==",deviceName.toLowerCase())
 	var querySnapshot = await query.get()

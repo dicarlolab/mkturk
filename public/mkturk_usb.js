@@ -6,7 +6,7 @@ var port={
 }
 var serial = {}
 
-navigator.usb.addEventListener('connect', async function(device){
+navigator.usb.onconnect = function(device){
 	if (typeof(port.connected) == 'undefined' || port.connected == false){
 		port.statustext_connect = "ATTEMPTING TO RECONNECT USB DEVICE..."
 		console.log(port.statustext_connect)
@@ -14,17 +14,33 @@ navigator.usb.addEventListener('connect', async function(device){
 
 		var event = {}
 		event.type = 'Reconnect'
-		await findUSBDevice(event)
+		findUSBDevice(event)
 	}
-});
+};
 
-navigator.usb.addEventListener('disconnect', device => {
+// function autoconnectLoop(device){
+// 	if (typeof(port.connected) == 'undefined' || port.connected == false){
+// 		navigator.usb.onconnect(device)
+// 		setTimeout(autoconnectLoop, 5000) //attempt to autoreconnect every 5 seconds
+// 	}
+// } //FUNCTION autoconnectLoop
+
+navigator.usb.ondisconnect = function(device){
   // USB device disconnected
 	port.connected = false
 	port.statustext_connect = "USB DEVICE DISCONNECTED"
 	console.log(port.statustext_connect)
 	updateHeadsUpDisplayDevices()
-});
+
+	// Expose button in case need to manually reconnect (navigator.usb.onconnect doesn't seem to work on all chrome for android)
+	document.querySelector("button[id=connectusb]").style.display = "block"
+	document.querySelector("button[id=connectusb]").style.visibility = "visible"
+	document.querySelector("button[id=connectusb]").style.top = "5%"
+
+// 	// Attempt to auto-reconnect
+// 	autoconnectLoop(device)
+};
+
 
 // STEP 0: Port Initialization - Open (instantiate) port before assigning callbacks to it
 async function findUSBDevice(event){
@@ -61,6 +77,10 @@ async function findUSBDevice(event){
 			port.statustext_connect = statustext
 			console.log(port.statustext_connect)
 			updateHeadsUpDisplayDevices()
+			localStorage.setItem("ConnectUSB",1)
+
+			//Hide manual connect button upon successful connect
+			document.querySelector("button[id=connectusb]").style.display = "none"
 		}
 	}
 
@@ -88,6 +108,10 @@ async function findUSBDevice(event){
 		  	port.statustext_connect = "USB DEVICE CONNECTED BY USER ACTION!"
 		  	console.log(port.statustext_connect)
 			updateHeadsUpDisplayDevices()
+			localStorage.setItem("ConnectUSB",1)
+
+			//Hide manual connect button upon successful connect
+			document.querySelector("button[id=connectusb]").style.display = "none"
 		}
 		catch(error){
 		  console.log(error);
@@ -160,6 +184,9 @@ serial.Port.prototype.onReceive = data => {
 			var event = {tag: TRIAL.RFIDTag[TRIAL.NRFID-1], time: TRIAL.RFIDTime[TRIAL.NRFID-1]}
 			waitforRFIDEvent.next(event)
 		}
+		if (ENV.Subject == ""){
+			queryRFIDTagonFirestore(TRIAL.RFIDTag[TRIAL.NRFID-1])
+		} //IF no subject chosen yet, auto-find in firestore based on their RFIDTag, which will then QuickLoad the page
 		updateHeadsUpDisplayDevices()
 	}
 } //port.onReceive

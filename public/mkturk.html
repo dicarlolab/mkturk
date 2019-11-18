@@ -39,9 +39,6 @@ if (typeof(navigator.bluetooth) == "object"){
 
 </script>
 
-<link rel="stylesheet" type="text/css" href="dialog-polyfill.css" />
-<script src="dialog-polyfill.js"></script>
-
 <script src="mkturk_installsettings.js"></script>
 
 <!-- Insert these scripts at the bottom of the HTML, but before you use any Firebase services -->
@@ -78,11 +75,22 @@ if (typeof(navigator.bluetooth) == "object"){
       <i class="material-icons">refresh</i>
     </button>
 
-   <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="connectusb" style="visibility:hidden; z-index: 102; font-size: 25px; position: absolute; top: 5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
+   <button class="mdl-button mdl-js-button mdl-button--raised" id="quickload" style="visibility:hidden; background-color:green; z-index: 102; font-size: 25px; position: absolute; top: 5%; left: 50%; height: 85px; width: 200px; border-radius: 20px">
+     QUICK LOAD
+   </button>
+
+<div class="custom-select" id="subjectID_div" style="z-index: 102; font-size: 25px; position: absolute; top: 7.5%; left: 75%; height: 75px; width: 200px;">
+	<label for="subjectID_select" >Select subject:</label>
+	<select class="mdl-textfield__input" name="subjects" id="subjectID_select">
+		<option value="-1">--</option>
+	</select>
+</div>
+
+   <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="connectusb" style="visibility:hidden; z-index: 102; font-size: 25px; position: absolute; top: 12.5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
      CONNECT USB
    </button>
 
-   <button class="mdl-button mdl-js-button mdl-button--raised" id="nousb" style="visibility:hidden; background-color:white; z-index: 102; font-size: 25px; position: absolute; top: 15%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
+   <button class="mdl-button mdl-js-button mdl-button--raised" id="nousb" style="visibility:hidden; background-color:white; z-index: 102; font-size: 25px; position: absolute; top: 20%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
      NO USB
    </button>
  
@@ -102,8 +110,7 @@ if (typeof(navigator.bluetooth) == "object"){
 
 	<p id="headsuptextdevices" style="z-index:101; position: absolute; left: 50%; top: 1px; height: 40%; width: 40%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;">No devices connected</p>
 
-<!-- 	<p id="headsuptextautomator" style="z-index:99; position: absolute; left: 50%; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
- -->
+	<p id="headsuptextautomator" style="z-index:99; position: absolute; left: 50%; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
 	<p id="imageloadingtext" style="z-index:100; position: absolute; left: 1px; top: 1px; height: 5%; width: 100%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
 
 
@@ -111,11 +118,11 @@ if (typeof(navigator.bluetooth) == "object"){
 	Done Editing Params
    </button>
 
-  <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="doneTestingTask" style="visibility:hidden; z-index: 102; font-size: 25px; position: absolute; top: 5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
-	Done Testing Task
+  <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="doneTestingTask" style="visibility:hidden; z-index: 102; font-size: 25px; position: absolute; top: 12.5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
+	Done Practice
    </button>
 
-  <button class="mdl-button mdl-js-button mdl-button--raised" id="stressTest" style="visibility:hidden; background-color:white; z-index: 102; font-size: 25px; position: absolute; top: 15%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
+  <button class="mdl-button mdl-js-button mdl-button--raised" id="stressTest" style="visibility:hidden; background-color:white; z-index: 102; font-size: 25px; position: absolute; top: 20%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
 	Stress Test
    </button>
 
@@ -127,24 +134,13 @@ if (typeof(navigator.bluetooth) == "object"){
 	<canvas id="canvasvisible" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
 </div>
 
-<dialog id="subjectID_dialog" style="z-index: 102; position: absolute; top: 0%; left: 0%;">
-  <p>Select subject: </p>
-   <!--Pull down menu that will hold file list-->
-  <select id="subjectID_list">
-  	<option value="-1">--</option>
-  </select>
-</dialog>
-
 <script src="mkturk_globalvariables.js"></script>
 <script src="mkturk_eventlisteners.js" type="text/javascript"></script>
 <script src="mkturk_imagebuffer.js" type="text/javascript"></script>
 <script src="mkturk_trialqueue.js" type="text/javascript"></script>
 <script src="mkturk_screenfunctions.js"></script>
 <script src="mkturk_automator.js" type="text/javascript"></script>
-<!-- <script src="mkturk_bluetooth.js" type="text/javascript"></script>
-<script src="mkturk_usb.js" type="text/javascript"></script> -->
 <script src="mkturk_utils.js" type="text/javascript"></script>
-<!-- <script src="mkturk_bluetoothscale.js" type="text/javascript"></script> -->
 <script src="mkturk_firebase.js" type="text/javascript"></script>
 <script src="mkturk_firestore.js" type="text/javascript"></script>
 <script src="mkturk_firebasestorage.js" type="text/javascript"></script>
@@ -182,9 +178,7 @@ firebase.auth().getRedirectResult().then(function(result) {
 
 
 // GET PARAMFILE NAME
-var subjectdialog = document.getElementById("subjectID_dialog");
-dialogPolyfill.registerDialog(subjectdialog);
-var subjectlistobj = document.getElementById("subjectID_list");
+var subjectlistobj = document.getElementById("subjectID_select");
 for (var i=subjectlist.length-1; i>=0; i--){
 	var opt = document.createElement('option');
 	opt.value = i;
@@ -195,18 +189,10 @@ subjectlistobj.addEventListener("change",subjectlist_listener,false);
 
 
 // Check Availability of APIs
-if (typeof(navigator.usb) == "object"){
-	ENV.WebUSBAvailable = 1
-}
-if (typeof(navigator.bluetooth) == "object"){
-	ENV.WebBluetoothAvailable = 1
-}
-if (typeof(navigator.getBattery) == "function"){
-	ENV.BatteryAPIAvailable = 1
-}
-if (typeof(OffscreenCanvas) == "function"){
-	ENV.OffscreenCanvasAvailable = 1
-}
+if (typeof(navigator.usb) == "object"){ ENV.WebUSBAvailable = 1 }
+if (typeof(navigator.bluetooth) == "object"){ ENV.WebBluetoothAvailable = 1 }
+if (typeof(navigator.getBattery) == "function"){ ENV.BatteryAPIAvailable = 1 }
+if (typeof(OffscreenCanvas) == "function"){ ENV.OffscreenCanvasAvailable = 1 }
 
 // Button callbacks for inline connection to arduino device
 document.querySelector("button[id=googlesignin]").style.display = "block"
@@ -216,20 +202,20 @@ document.querySelector("button[id=googlesignin]").addEventListener(
 document.querySelector("button[id=reloadpage]").addEventListener(
 	'pointerup',function(){ window.location.reload(true) },false)
 
-//---- for Safari
-document.querySelector("button[id=googlesignin]").addEventListener(
-	'click',firebaseRedirectSignIn,false)
-document.querySelector("button[id=reloadpage]").addEventListener(
-	'click',function(){ window.location.reload(true) },false)
-//---- (END) for Safari
+	//---- for Safari
+	document.querySelector("button[id=googlesignin]").addEventListener(
+		'click',firebaseRedirectSignIn,false)
+	document.querySelector("button[id=reloadpage]").addEventListener(
+		'click',function(){ window.location.reload(true) },false)
+	//---- (END) for Safari
 
 
 var textobj = document.getElementById("headsuptext")
 textobj.addEventListener('pointerup',headsuptext_listener,false)
 
-//---- for Safari
-textobj.addEventListener('click',headsuptext_listener,false)
-//---- (END) for Safari
+	//---- for Safari
+	textobj.addEventListener('click',headsuptext_listener,false)
+	//---- (END) for Safari
 
 
 //============= Initialize Audio & Battery Objects ==================//
@@ -241,9 +227,9 @@ textobj.addEventListener('click',headsuptext_listener,false)
 	var audiocontext = new (window.AudioContext || window.webkitAudioContext)();
 	var gainNode = audiocontext.createGain()
 	gainNode.connect(audiocontext.destination)
-	ENV.DevicePixelRatio = window.devicePixelRatio || 1;
 
 	// Check availability of OffScreenCanvas API
+	ENV.DevicePixelRatio = window.devicePixelRatio || 1;
 	if (ENV.OffscreenCanvasAvailable){
 		var visiblecontext = VISIBLECANVAS.getContext("bitmaprenderer");
 	}
@@ -303,11 +289,19 @@ function connectHardwareButtonPromise(){
 
 function skipHardwareDevice(event){
   event.preventDefault(); //prevents additional downstream call of click listener
+  localStorage.setItem("ConnectUSB",0)
   waitforClick.next(1)
 }
 
 
 (async function(){
+	document.querySelector ("button[id=quickload]").addEventListener(
+		'pointerup',quickLoad_listener,false)
+
+		//---- for Safari
+		document.querySelector ("button[id=quickload]").addEventListener(
+			'click',quickLoad_listener,false)
+
 	if ( ENV.WebUSBAvailable ){
 		await usb_scriptLoaded
 		document.querySelector ("button[id=connectusb]").addEventListener(
@@ -317,14 +311,14 @@ function skipHardwareDevice(event){
 		document.querySelector("button[id=preemptRFID]").addEventListener(
 			'pointerup',preemptRFID_listener,false)	
 
-		//---- for Safari
-		document.querySelector ("button[id=connectusb]").addEventListener(
-			'click',findUSBDevice,false)
-		document.querySelector("button[id=nousb]").addEventListener(
-			'click',skipHardwareDevice,false)
-		document.querySelector("button[id=preemptRFID]").addEventListener(
-			'click',preemptRFID_listener,false)	
-		//---- (END) for Safari
+			//---- for Safari
+			document.querySelector ("button[id=connectusb]").addEventListener(
+				'click',findUSBDevice,false)
+			document.querySelector("button[id=nousb]").addEventListener(
+				'click',skipHardwareDevice,false)
+			document.querySelector("button[id=preemptRFID]").addEventListener(
+				'click',preemptRFID_listener,false)	
+			//---- (END) for Safari
 	}
 
 	if ( ENV.WebBluetoothAvailable ){
@@ -334,10 +328,10 @@ function skipHardwareDevice(event){
 		document.querySelector("button[id=connectblescale]").addEventListener(
 			'pointerup',blescaleconnect,false)	
 
-		//---- for Safari
-		document.querySelector("button[id=connectblescale]").addEventListener(
-			'click',blescaleconnect,false)	
-		//---- (END) for Safari
+			//---- for Safari
+			document.querySelector("button[id=connectblescale]").addEventListener(
+				'click',blescaleconnect,false)	
+			//---- (END) for Safari
 	}
 
 	document.querySelector("button[id=doneEditingParams]").addEventListener(
@@ -347,18 +341,14 @@ function skipHardwareDevice(event){
 	document.querySelector("button[id=stressTest]").addEventListener(
 		'pointerup',stressTest_listener,false)
 
-	//---- for Safari
-	document.querySelector("button[id=doneEditingParams]").addEventListener(
-		'click',doneEditingParams_listener,false)
-	document.querySelector("button[id=doneTestingTask]").addEventListener(
-		'click',doneTestingTask_listener,false)
-	document.querySelector("button[id=stressTest]").addEventListener(
-		'click',stressTest_listener,false)
-	//---- (END) for Safari
-
-
-
-
+		//---- for Safari
+		document.querySelector("button[id=doneEditingParams]").addEventListener(
+			'click',doneEditingParams_listener,false)
+		document.querySelector("button[id=doneTestingTask]").addEventListener(
+			'click',doneTestingTask_listener,false)
+		document.querySelector("button[id=stressTest]").addEventListener(
+			'click',stressTest_listener,false)
+		//---- (END) for Safari
 
 
 	//====================== Retrieve device's screen properties ===========================//
@@ -402,15 +392,59 @@ function skipHardwareDevice(event){
 	updateHeadsUpDisplay()
 	//====================== (END) Retrieve device's screen properties ===========================//
 
-
-	//====================== Connect USB ===========================//
 	if ( ENV.WebUSBAvailable ){
 		var event = {}
 		event.type = "AutoConnect"
 		await findUSBDevice(event)
+	}
 
-		//=============== AWAIT CONNECT TO HARDWARE (via USB) ===============//
+	//====================== Quickload Button Set-up ===========================//
+	if ( localStorage.getItem("Agent") != null ){
+		QuickLoad.agent = localStorage.getItem("Agent")
+		QuickLoad.connectusb = localStorage.getItem("ConnectUSB")
+		if (QuickLoad.connectusb == null){ QuickLoad.connectusb = 0}
+
+		document.querySelector("button[id=quickload]").style.display = "block"
+		document.querySelector("button[id=quickload]").style.visibility = "visible"
+
+		if ( QuickLoad.connectusb == 0){
+			document.querySelector("button[id=quickload]").innerHTML = QuickLoad.agent
+		}
+		else if ( QuickLoad.connectusb == 1){
+			document.querySelector("button[id=quickload]").innerHTML = QuickLoad.agent + " <i>USB</i>"
+		}
+	} //IF agent stored locally, show quickload button
+	else {
+		document.querySelector("button[id=quickload]").style.display = "none"
+	} //ELSE don't show button
+	//====================== (END) Quickload Set-up ===========================//
+
+	//================== AWAIT LOAD SUBJECT PARAMS ==================//
+	document.querySelector("div[id=subjectID_div]").style.display = "block"
+	document.querySelector("div[id=subjectID_div]").style.visibility = "visible"
+	await subjectIDPromise()	
+	document.querySelector("button[id=quickload]").style.display = "none"
+	document.querySelector("div[id=subjectID_div]").style.display = "none"
+
+	localStorage.setItem("Agent",ENV.Subject)		
+
+	ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.txt";
+	await loadParametersfromFirebase(ENV.ParamFileName)
+	//================== (END) AWAIT LOAD SUBJECT PARAMS ==================//
+
+
+	//====================== Connect USB ===========================//
+	if ( ENV.WebUSBAvailable ){
+
 		if (typeof(port.connected) == 'undefined' || port.connected == false){
+			var event = {}
+			event.type = "AutoConnect"
+			await findUSBDevice(event)
+		}
+
+		if ( (typeof(port.connected) == 'undefined' || port.connected == false) &&
+		     (QuickLoad.load == 0 || (QuickLoad.load == 1 && QuickLoad.connectusb == 1))){
+			//=============== AWAIT CONNECT TO HARDWARE (via USB) ===============//
 			port.connected = false
 			document.querySelector("button[id=connectusb]").style.display = "block"
 			document.querySelector("button[id=connectusb]").style.visibility = "visible"
@@ -418,10 +452,10 @@ function skipHardwareDevice(event){
 			document.querySelector("button[id=nousb]").style.visibility = "visible"
 
 			await connectHardwareButtonPromise()
+		} //IF !QuickLoad.load
 
-			document.querySelector("button[id=connectusb]").style.display = "none"
-			document.querySelector("button[id=nousb]").style.display = "none"		
-		}
+		document.querySelector("button[id=connectusb]").style.display = "none"
+		document.querySelector("button[id=nousb]").style.display = "none"
 	}
 	else {
 		//skip usb device connection
@@ -433,6 +467,7 @@ function skipHardwareDevice(event){
 		}
 	}
 	//====================== (END) Connect USB ===========================//
+
 	if (ENV.WebBluetoothAvailable == 0){
 		blescale = {
 			connected: 0,
@@ -445,31 +480,28 @@ function skipHardwareDevice(event){
 		}
 	}
 
-	subjectdialog.showModal()
-	await subjectIDPromise()
-	
-	//================== AWAIT LOAD SUBJECT PARAMS ==================//	
-	ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.txt";
-	await loadParametersfromFirebase(ENV.ParamFileName)
-
 	//================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
-	updateStatusText(JSON.stringify(TASK,null,' '));
-	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
-	document.querySelector("button[id=doneEditingParams]").style.display = "block"
-	document.querySelector("button[id=doneEditingParams]").style.visibility = "visible"
-	
-	await editParamsPromise()
-	document.querySelector("button[id=doneEditingParams]").style.display = "none"
-	var textobj = document.getElementById("headsuptext")
-	textobj.removeEventListener('touchend',headsuptext_listener)
-	textobj.removeEventListener('mouseup',headsuptext_listener)
-	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",false)
+	if (QuickLoad.load == 0){
+		updateStatusText(JSON.stringify(TASK,null,' '));
+		document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
+		document.querySelector("button[id=doneEditingParams]").style.display = "block"
+		document.querySelector("button[id=doneEditingParams]").style.visibility = "visible"
 
-	if (FLAGS.need2saveParameters == 1){
-		var user_param_text = document.getElementById("headsuptext").innerHTML //get new params
-		await saveParameterTexttoFirebase(user_param_text) //write new params
-		await loadParametersfromFirebase(ENV.ParamFileName) //then read them
-	}
+		await editParamsPromise()
+		document.querySelector("button[id=doneEditingParams]").style.display = "none"
+		var textobj = document.getElementById("headsuptext")
+		textobj.removeEventListener('touchend',headsuptext_listener)
+		textobj.removeEventListener('mouseup',headsuptext_listener)
+		document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",false)
+
+		if (FLAGS.need2saveParameters == 1){
+			var user_param_text = document.getElementById("headsuptext").innerHTML //get new params
+			await saveParameterTexttoFirebase(user_param_text) //write new params
+			await loadParametersfromFirebase(ENV.ParamFileName) //then read them
+		} //IF 
+	} //IF !QuickLoad.load
+	//================== (END) AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
+
 
 	//============= AWAIT READ SUBJECT PERFORMANCE HISTORY =============//
 	// Read performance history
