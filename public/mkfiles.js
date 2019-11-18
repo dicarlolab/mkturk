@@ -2,6 +2,18 @@
  * version 0.1           *
  * Hector Cho @ Issa Lab */
 
+let provider = new firebase.auth.GoogleAuthProvider();
+provider.addScope("https://www.googleapis.com/auth/contacts.readonly");
+firebase.auth().getRedirectResult().then(result => {
+  if (result.user) {
+    console.log("Sign-In Redirect Result, USER:", result.user.email, "is signed in");
+  } else if (firebase.auth().currentUser) {
+    console.log("Sign-In Redirect Result, USER:", firebase.auth().currentUser.email, "is signed in");
+  } else {
+    firebase.auth().signInWithRedirect(provider);
+  }
+});
+
 /* const variable declarations */
 const db = firebase.firestore();
 const storage = firebase.storage();
@@ -85,25 +97,6 @@ rfidModeBtn.onclick = async function () {
     statusCircle.style.backgroundColor = "black";
   }
 };
-
-
-
-//function qryOnSubmit(event) {
-  //event.preventDefault();
-
-  //let qryLocation = document.querySelector("#qry-loc-selector").value;
-  //let field = document.querySelector("#field-selector").value;
-  //let keyword0 = document.querySelector("#keyword-input-0").value;
-  //let keyword1 = document.querySelector("#keyword-input-1").value;
-  //let keyword2 = document.querySelector("#keyword-input-2").value;
-
-  //let keywords = [keyword0, keyword1, keyword2];
-
-  //mkquery(qryLocation, field, keywords);
-//}
-
-
-//queryForm.addEventListener("submit", qryOnSubmit, false);
 
 /* query form submission */
 queryForm.addEventListener("submit", event => {
@@ -418,7 +411,7 @@ function displayDatabaseTable(data, database) {
       index: "name",
       layout: "fitColumns",
       initialSort: [
-        {column: "name", dir: "des"}
+        {column: "name", dir: "asc"}
       ],
       columns: [
         {title: "<input id='select-all' type='checkbox' onchange='updateSelectAll()'/>", width: 15, headerSort: false},
@@ -428,7 +421,8 @@ function displayDatabaseTable(data, database) {
         {title: "RFID", field: "rfid"},
       ],
       selectable: true,
-      rowDblClick: function(e, row) {
+      selectableRangeMode: "click",
+      rowClick: function(e, row) {
         e.stopPropagation();
         destroyThreeObjects();
         editorContainer.style.zIndex = 3;
@@ -438,7 +432,6 @@ function displayDatabaseTable(data, database) {
         console.log(row._row.data);
         displayJson(row._row.data);
         trackInEditor("marmosets", row._row.data);
-
       }
     });
     let filterField = document.querySelector("#filter-field");
@@ -454,7 +447,7 @@ function displayDatabaseTable(data, database) {
       index: "Agent",
       layout: "fitColumns",
       initialSort: [
-        {column: "Agent", dir: "des"}
+        {column: "Agent", dir: "asc"}
       ],
       columns: [
         {title: "<input id='select-all' type='checkbox' onchange='updateSelectAll()'/>", width: 15, headerSort: false},
@@ -464,7 +457,8 @@ function displayDatabaseTable(data, database) {
         {title: "FirestoreDocRoot", field: "FirestoreDocRoot", visible: false}
       ],
       selectable: true,
-      rowDblClick: function(e, row) {
+      selectableRangeMode: "click",
+      rowClick: function(e, row) {
         e.stopPropagation();
         destroyThreeObjects();
         editorContainer.style.zIndex = 3;
@@ -932,6 +926,61 @@ function displayStorageTable(metadataArray) {
         }
       }
     },
+    rowClick: async function(e, row) {
+      e.stopPropagation();
+      if (row._row.data.contentType == "folder") {
+        console.log(row._row.data.fullPath);
+      } else if (row._row.data.contentType.includes("text") ||
+                 row._row.data.contentType.includes("json")) {
+        
+        destroyThreeObjects();
+
+        editorContainer.style.zIndex = 3;
+        updateBtn.style.zIndex = 3;
+        canvasHolder.style.zIndex = 2;
+        webglCanvas.style.zIndex = 1;
+
+        fetchJson(storageRef.child(row._row.data.fullPath));
+        inEditor[3] = row._row.data.contentType;
+      } else if (row._row.data.contentType.includes("image")) {
+
+        destroyThreeObjects();
+        
+        canvasHolder.style.zIndex = 3;
+        editorContainer.style.zIndex = 2;
+        updateBtn.style.zIndex = 2;
+        webglCanvas.style.zIndex = 1;
+        removeElementsByClassName("imageList");
+
+        let fileRef = storageRef.child(row._row.data.fullPath);
+        gallery.destroy();
+        fetchImage(fileRef);
+      } else if (row._row.data.contentType == "application/octet-stream" &&
+                 row._row.data.name.includes(".glb")) {
+        webglCanvas.style.zIndex = 3;
+        canvasHolder.style.zIndex = 2;
+        editorContainer.style.zIndex = 1;
+        updateBtn.style.zIndex = 1;
+        console.log("do face glb stuff");
+        console.time("loadMesh");
+        objectMesh = await loadMesh(row._row.data.fullPath);
+        console.log("objectMesh:", objectMesh);
+        console.timeEnd("loadMesh");
+
+        console.time("init scene");
+        await initThree();
+        console.timeEnd("init scene");
+
+        scene.add(objectMesh.scene);
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+
+        function animate() {
+          animationID = requestAnimationFrame(animate);
+          renderer.render(scene, camera);
+        }
+      }
+    },
     rowSelectionChanged: function(data, rows) {
       let isNotImage = !imageTypeTest(data) ? true: false;
       showSelectedImages.disabled = isNotImage;
@@ -1068,6 +1117,7 @@ function destroyThreeObjects() {
     scene = null;
     lightPos = null;
     loader = null;
+    light = null;
     cancelAnimationFrame(animationID);
     console.log( "ThreeJS Objects destroyed" );
   } catch ( error ) {
@@ -1075,14 +1125,22 @@ function destroyThreeObjects() {
   }
 }
 
-var renderer, camera, scene, controls, material, model, modelPos;
+var renderer, camera, scene, controls, material, model, modelPos, light;
 const directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
 
 async function initThree () {
   console.time("start");
   renderer = new THREE.WebGLRenderer({ canvas: webglCanvas, antialias: true });
 
-  renderer.setClearColor( 0x7F7F7F );
+  /* FROM YOUNAH'S THREEJS SETUP PARAM */
+  //renderer.setPixelRatio(window.devicePixelRatio);
+  //renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0xFFFFFF);
+  /* YOUNAH'S THREEJS SETUP PARAM (END)*/
+
+
+
+  //renderer.setClearColor( 0x7F7F7F );
   renderer.physicallyCorrectLight = true;
   renderer.toneMappingExposure = 10;
   renderer.gammaOutput = true;
@@ -1091,19 +1149,25 @@ async function initThree () {
   scene = new THREE.Scene();
 
   camera = new THREE.PerspectiveCamera( 45, webglCanvas.width/webglCanvas.height, 0.1, 2000 );
-  cameraPos = new THREE.Vector3( 0, 10, 0 );
+  cameraPos = new THREE.Vector3(0, 0, 10);
   camera.position.set( cameraPos.x, cameraPos.y, cameraPos.z );
 
   scene.add(camera);
 
-  lightPos = new THREE.Vector3( -20, 0, 0 );
+  lightPos = new THREE.Vector3(0, 2, 0);
   directionalLight.position.set( lightPos.x, lightPos.y, lightPos.z );
 
   scene.add( directionalLight );
+
+  // ambient light
+  light = new THREE.AmbientLight( 0x404040, 0.1 );
+  scene.add( light );
+
   controls = new THREE.OrbitControls( camera, renderer.domElement );
-  controls.target = new THREE.Vector3( 0, 2, 0 );
+  controls.target = new THREE.Vector3( 0, 0, 0 );
 
   console.timeEnd("start");
+  console.log("scene:", scene);
 }
 
 var loader, material;
@@ -1120,9 +1184,9 @@ async function loadMesh(filePath) {
         loader.load(meshUrl, function(gltfmesh){
           gltfmesh.scene.traverse(child => {
             if (child.material) {
-              console.log(child.material);
+              console.log("child material:", child.material);
               material = 
-                new THREE.MeshPhongMaterial({ color: 0x7F7F7F, map: child.material.map });
+                new THREE.MeshPhongMaterial({ color: 0xFF0000, map: child.material.map });
               child.material = material;
               child.material.needsUpdate = true;
             }
