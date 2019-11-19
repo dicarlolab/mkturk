@@ -109,6 +109,7 @@ queryForm.addEventListener("submit", event => {
   let keyword2 = document.querySelector("#keyword-input-2").value;
 
   let keywords = [keyword0, keyword1, keyword2];
+  console.log(keywords);
 
   mkquery(qryLocation, field, keywords);
 });
@@ -224,33 +225,33 @@ function queryMkturkdata (field, keywords) {
       let uDate = refDate + Number(strArr[1].substring(2, len)) * 86400000;
 
       query = mkturkdataCollection.where("CurrentDateValue", ">=", lDate)
-                          .where("CurrentDateValue", "<=", uDate)
-                          .where("Agent", "==", keywords[0])
-                          .where("Doctype", "==", keywords[1]);
+                                  .where("CurrentDateValue", "<=", uDate)
+                                  .where("Agent", "==", keywords[0])
+                                  .where("Doctype", "==", keywords[1]);
 
     } else if (strArr[1][0] == "+" && !isNaN(strArr[1][1])) {
       let refDate = new Date(strArr[0]).getTime();
       let uDate = refDate + Number(strArr[1].substring(2, len)) * 86400000;
 
       query = mkturkdataCollection.where("CurrentDateValue", ">=", refDate)
-                          .where("CurrentDateValue", "<=", uDate)
-                          .where("Agent", "==", keywords[0])
-                          .where("Doctype", "==", keywords[1]);
+                                  .where("CurrentDateValue", "<=", uDate)
+                                  .where("Agent", "==", keywords[0])
+                                  .where("Doctype", "==", keywords[1]);
     } else if (strArr[1][0] == "-" && !isNaN(strArr[1][1])) {
       let refDate = new Date(strArr[0]).getTime();
       let lDate = refDate - Number(strArr[1].substring(2, len)) * 86400000;
       query = mkturkdataCollection.where("CurrentDateValue", ">=", lDate)
-                          .where("CurrentDateValue", "<=", refDate)
-                          .where("Agent", "==", keywords[0])
-                          .where("Doctype", "==", keywords[1]);
+                                  .where("CurrentDateValue", "<=", refDate)
+                                  .where("Agent", "==", keywords[0])
+                                  .where("Doctype", "==", keywords[1]);
     } else {
       let refDate = new Date(strArr[0]).getTime();
       let uDate = refDate + 86400000; //within that day
 
       query = mkturkdataCollection.where("CurrentDateValue", ">=", refDate)
-                          .where("CurrentDateValue", "<=", uDate)
-                          .where("Agent", "==", keywords[0])
-                          .where("Doctype", "==", keywords[1]);
+                                  .where("CurrentDateValue", "<=", uDate)
+                                  .where("Agent", "==", keywords[0])
+                                  .where("Doctype", "==", keywords[1]);
     }
   } else if (!isEmptyObject(keywords[0]) &&
              !isEmptyObject(keywords[1]) &&
@@ -258,7 +259,7 @@ function queryMkturkdata (field, keywords) {
     
     //agent, doctype
     query = mkturkdataCollection.where("Agent", "==", keywords[0])
-                        .where("Doctype", "==", keywords[1]);
+                                .where("Doctype", "==", keywords[1]);
 
   } else if (!isEmptyObject(keywords[0]) &&
              isEmptyObject(keywords[1]) &&
@@ -279,28 +280,28 @@ function queryMkturkdata (field, keywords) {
       let uDate = refDate + Number(strArr[1].substring(2, len)) * 86400000;
 
       query = mkturkdataCollection.where("CurrentDateValue", ">=", lDate)
-                          .where("CurrentDateValue", "<=", uDate)
-                          .where("Agent", "==", keywords[0]);
+                                  .where("CurrentDateValue", "<=", uDate)
+                                  .where("Agent", "==", keywords[0]);
 
     } else if (strArr[1][0] == "+" && !isNaN(strArr[1][1])) {
       let refDate = new Date(strArr[0]).getTime();
       let uDate = refDate + Number(strArr[1].substring(2, len)) * 86400000;
       query = mkturkdataCollection.where("CurrentDateValue", ">=", refDate)
-                          .where("CurrentDateValue", "<=", uDate)
-                          .where("Agent", "==", keywords[0]);
+                                  .where("CurrentDateValue", "<=", uDate)
+                                  .where("Agent", "==", keywords[0]);
     } else if (strArr[1][0] == "-" && !isNaN(strArr[1][1])) {
       let refDate = new Date(strArr[0]).getTime();
       let lDate = refDate - Number(strArr[1].substring(2, len)) * 86400000;
       query = mkturkdataCollection.where("CurrentDateValue", ">=", lDate)
-                          .where("CurrentDateValue", "<=", refDate)
-                          .where("Agent", "==", keywords[0]);
+                                  .where("CurrentDateValue", "<=", refDate)
+                                  .where("Agent", "==", keywords[0]);
     } else {
       let refDate = new Date(strArr[0]).getTime();
       let uDate = refDate + 86400000; //within that day
 
       query = mkturkdataCollection.where("CurrentDateValue", ">=", refDate)
-                          .where("CurrentDateValue", "<=", uDate)
-                          .where("Agent", "==", keywords[0]);
+                                  .where("CurrentDateValue", "<=", uDate)
+                                  .where("Agent", "==", keywords[0]);
     }
 
 
@@ -429,7 +430,6 @@ function displayDatabaseTable(data, database) {
         updateBtn.style.zIndex = 3;
         canvasHolder.style.zIndex = 2;
         webglCanvas.style.zIndex = 1;
-        console.log(row._row.data);
         displayJson(row._row.data);
         trackInEditor("marmosets", row._row.data);
       }
@@ -444,7 +444,7 @@ function displayDatabaseTable(data, database) {
     table.destroy();
     table = new Tabulator("#tabulator", {
       data: data,
-      index: "Agent",
+      index: "CurrentDate",
       layout: "fitColumns",
       initialSort: [
         {column: "Agent", dir: "asc"}
@@ -454,7 +454,7 @@ function displayDatabaseTable(data, database) {
         {title: "Agent", field: "Agent"},
         {title: "Doctype", field: "Doctype"},
         {title: "CurrentDate", field: "CurrentDate"},
-        {title: "FirestoreDocRoot", field: "FirestoreDocRoot", visible: false}
+        {title: "FirestoreDocRoot", field: "FirestoreDocRoot", visible: false},
       ],
       selectable: true,
       selectableRangeMode: "click",
@@ -506,6 +506,8 @@ function handleDate (data, database) {
         if (data[i].hasOwnProperty(key)) {
           if (key.toLowerCase().includes("date") && key != "CurrentDateValue") {
             if (typeof(data[i][key]) != "undefined" && data[i][key] != "" && data[i][key] != null){
+              console.log("handle date debug; data[i][key]:", data[i][key]);
+              console.log("key:", key);
               data[i][key] = data[i][key].toDate().toJSON();            
             }
             else{
@@ -1054,6 +1056,7 @@ async function fetchImage (fileRef) {
   await fileRef.getDownloadURL().then(async url => {
     img.src = await url;
   });
+  console.log("img:", img);
   let li = document.createElement("li");
   li.setAttribute("class", "imageList");
   li.appendChild(img);
