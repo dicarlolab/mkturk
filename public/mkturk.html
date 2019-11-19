@@ -42,7 +42,7 @@ if (typeof(navigator.bluetooth) == "object"){
 <!-- ThreeJS -->
 <script src="http://threejs.org/build/three.js"></script>
 <script src="http://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
-<script src="http://threejs.org/examples/js/controls/OrbitControls.js"></script> 
+<script src="http://threejs.org/examples/js/controls/OrbitControls.js"></script>
 
 <link rel="stylesheet" type="text/css" href="dialog-polyfill.css" />
 <script src="dialog-polyfill.js"></script>
@@ -90,11 +90,11 @@ if (typeof(navigator.bluetooth) == "object"){
    <button class="mdl-button mdl-js-button mdl-button--raised" id="nousb" style="visibility:hidden; background-color:white; z-index: 102; font-size: 25px; position: absolute; top: 15%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
      NO USB
    </button>
- 
+
   <button class="mdl-button mdl-js-button mdl-button--raised" id="pumpflush" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 12%; left: 80%; height: 45px; width: 150px; border-radius: 20px">
      Flush 1 minute
    </button>
- 
+
   <button class="mdl-button mdl-js-button mdl-button--raised" id="pumptrigger" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 17%; left: 80%; height: 45px; width: 150px; border-radius: 11px">
      100Pulses->1mL Milk
    </button>
@@ -179,7 +179,7 @@ firebase.auth().getRedirectResult().then(function(result) {
 	ENV.ResearcherID = firebase.auth().currentUser.uid
 
 	console.log('Sign-In Redirect Result, USER ' + firebase.auth().currentUser.email + ' is signed in')
-	updateHeadsUpDisplay()		
+	updateHeadsUpDisplay()
   }
   else {
     // No user signed in, update your UI, show the redirect sign-in screen.
@@ -264,7 +264,7 @@ textobj.addEventListener('click',headsuptext_listener,false)
 	                            visiblecontext.oBackingStorePixelRatio ||
 	                            visiblecontext.backingStorePixelRatio || 1;
 	ENV.CanvasRatio = backingStoreRatio/ENV.DevicePixelRatio
-	
+
 
 	// Check Availability of Battery API
 	if (ENV.BatteryAPIAvailable){
@@ -323,7 +323,7 @@ function skipHardwareDevice(event){
 		document.querySelector("button[id=nousb]").addEventListener(
 			'pointerup',skipHardwareDevice,false)
 		document.querySelector("button[id=preemptRFID]").addEventListener(
-			'pointerup',preemptRFID_listener,false)	
+			'pointerup',preemptRFID_listener,false)
 
 		//---- for Safari
 		document.querySelector ("button[id=connectusb]").addEventListener(
@@ -331,7 +331,7 @@ function skipHardwareDevice(event){
 		document.querySelector("button[id=nousb]").addEventListener(
 			'click',skipHardwareDevice,false)
 		document.querySelector("button[id=preemptRFID]").addEventListener(
-			'click',preemptRFID_listener,false)	
+			'click',preemptRFID_listener,false)
 		//---- (END) for Safari
 	}
 
@@ -340,11 +340,11 @@ function skipHardwareDevice(event){
 		await blescale_scriptLoaded
 		//Button callback for asynchronous connection to bluetooth scale
 		document.querySelector("button[id=connectblescale]").addEventListener(
-			'pointerup',blescaleconnect,false)	
+			'pointerup',blescaleconnect,false)
 
 		//---- for Safari
 		document.querySelector("button[id=connectblescale]").addEventListener(
-			'click',blescaleconnect,false)	
+			'click',blescaleconnect,false)
 		//---- (END) for Safari
 	}
 
@@ -404,7 +404,7 @@ function skipHardwareDevice(event){
 	} //IF user not running screen at native scaling
 
 	ENV.ViewportPixels[0] = ENV.ScreenPhysicalPixels[0]/ENV.DevicePixelRatio
-	ENV.ViewportPixels[1] = ENV.ScreenPhysicalPixels[1]/ENV.DevicePixelRatio		
+	ENV.ViewportPixels[1] = ENV.ScreenPhysicalPixels[1]/ENV.DevicePixelRatio
 
 	ENV.ViewportPPI = ENV.ViewportPixels[0]/ENV.ScreenSizeInches[0] //viewport pixels per inch
 	updateHeadsUpDisplay()
@@ -428,7 +428,7 @@ function skipHardwareDevice(event){
 			await connectHardwareButtonPromise()
 
 			document.querySelector("button[id=connectusb]").style.display = "none"
-			document.querySelector("button[id=nousb]").style.display = "none"		
+			document.querySelector("button[id=nousb]").style.display = "none"
 		}
 	}
 	else {
@@ -455,8 +455,8 @@ function skipHardwareDevice(event){
 
 	subjectdialog.showModal()
 	await subjectIDPromise()
-	
-	//================== AWAIT LOAD SUBJECT PARAMS ==================//	
+
+	//================== AWAIT LOAD SUBJECT PARAMS ==================//
 	ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.txt";
 	await loadParametersfromFirebase(ENV.ParamFileName)
 
@@ -465,7 +465,7 @@ function skipHardwareDevice(event){
 	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
 	document.querySelector("button[id=doneEditingParams]").style.display = "block"
 	document.querySelector("button[id=doneEditingParams]").style.visibility = "visible"
-	
+
 	await editParamsPromise()
 	document.querySelector("button[id=doneEditingParams]").style.display = "none"
 	var textobj = document.getElementById("headsuptext")
@@ -484,23 +484,23 @@ function skipHardwareDevice(event){
 	var subject_behavior_save_directory = DATA_SAVEPATH + ENV.Subject + '/'
 	if (TASK.Automator != 0){
 		var history_file_paths = await getMostRecentBehavioralFilePathsFromFirebase(ndatafiles2read, ENV.Subject, subject_behavior_save_directory)
-		trialhistory = await readTrialHistoryFromFirebase(history_file_paths);		
+		trialhistory = await readTrialHistoryFromFirebase(history_file_paths);
 	}
 
 	//===================== AWAIT INITIALIZE AUTOMATOR =================//
-	// Initialize automator - change TASK to that specified by TASK.CurrentAutomatorStage. 
+	// Initialize automator - change TASK to that specified by TASK.CurrentAutomatorStage.
 	var num_prebuffer_trials = 200
 	if (TASK.Automator != 0){
 		automator_data = await loadTextfromFirebase(TASK.AutomatorFilePath)
-		automateTask(automator_data, trialhistory) 
-		await saveParameterstoFirebase() 
+		automateTask(automator_data, trialhistory)
+		await saveParameterstoFirebase()
 		await loadParametersfromFirebase(ENV.ParamFileName);
 
 		//========= AWAIT PRELOAD IMAGES FOR AUTOMATOR STAGES =======//
 		// Preload stuff now (to ensure smooth transitions between automator stages)
-		var AutomatorPreBuffer = {}; 
-		AutomatorPreBuffer['TrialQueue'] = {}; 
-		
+		var AutomatorPreBuffer = {};
+		AutomatorPreBuffer['TrialQueue'] = {};
+
 		console.log('Starting to populate automator prebuffer:')
 
 		for (var a = TASK.CurrentAutomatorStage; a < automator_data.length; a++){
@@ -509,7 +509,7 @@ function skipHardwareDevice(event){
 			// Make TrialQueue
 			var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
 
-			AutomatorPreBuffer['TrialQueue'][a] = new TrialQueue(samplingStrategy, automator_data[a].ImageBagsSample, automator_data[a].ImageBagsTest); 
+			AutomatorPreBuffer['TrialQueue'][a] = new TrialQueue(samplingStrategy, automator_data[a].ImageBagsSample, automator_data[a].ImageBagsTest);
 
 			// Populate the stage's imagebuffer with some images
 			await AutomatorPreBuffer['TrialQueue'][a].build(num_prebuffer_trials)
@@ -539,29 +539,61 @@ function skipHardwareDevice(event){
 	EVENTS.trialnum = 0
 	FLAGS.need2loadImagesTrialQueue = 1
 
-// =========================================================================================================== // 
-// ============ MAIN LOOP ==================================================================================== // 
-// =========================================================================================================== // 
+// =========================================================================================================== //
+// ============ MAIN LOOP ==================================================================================== //
+// =========================================================================================================== //
 while(true){
-
-
      //============ LOAD OBJECT MESHES ============//
-		windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
-		windowHeight = document.body.clientHeight;
-		setupCanvas(VISIBLECANVASWEBGL)
+	windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
+	windowHeight = document.body.clientHeight;
+	setupCanvas(VISIBLECANVASWEBGL)
     canvaswebgl = document.querySelector("canvas[id=canvasvisiblewebgl]");
 
     // 0: load scenerenderparams.json from google cloud storage
-	param_path = "mkturkfiles/imagebags/objectome3d/face/scene_renderparams_face_yj_ei_json2.js"
+	param_path = "mkturkfiles/imagebags/objectome3d/face/scene_renderparams_face_yj_ei_json4.js"
    	SCENEdata = await loadTextfromFirebase(param_path)
 
-// 1: load meshfilename for each object from firestore document in SCENE.OBJECTS.objectdoc
-// get number of frames/trials
+     //conversion rate
+    THREEJStoInches = 1.2918253 //a.u = 1 inches in (0,0,10) camera setting
+
+    // 1: load meshfilename for each object from firestore document in SCENE.OBJECTS.objectdoc
+    // get number of frames/trials
 	objectfile_pathlist = []
 	object_materiallist = []
 	numframe = 0
 	// also update parameters so that they all have the same length as numframe
-	// parameters with length smaller than numframe take the initial value of the parameters
+	// parameters with length smaller than numframe take the initial value of the parameters across all frames
+
+
+ //numframe
+    var numframeArray = []
+    for (var obj in SCENEdata.OBJECTS){
+    var object = SCENEdata.OBJECTS[obj]
+    var index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
+    numframeArray[index] = object.visible.length
+}
+    numframe = Math.max.apply(null,numframeArray)
+
+    // divide into sample and test scenes and relevant objects
+
+    numScene = 0;
+    sceneType = [];
+    for (var lt in SCENEdata.LIGHTS){
+        numScene ++ ;
+        var light = SCENEdata.LIGHTS[lt]
+        var index = Object.keys(SCENEdata.LIGHTS).indexOf(lt);
+        sceneType[index] = Object.keys(SCENEdata.LIGHTS)[index].split("light")[0]
+
+        if (light.visible.length<numframe){
+            light.visible = Array.apply(null,Array(numframe)).map(function(){return light.visible[0]})
+        }
+
+        for (var coord in light.positionInches){
+            if (light.positionInches[coord].length < numframe){
+                light.positionInches[coord] = Array.apply(null,Array(numframe)).map(function(){return light.positionInches[coord][0]})
+            }
+        }
+    }
 
 	for (var obj in SCENEdata.OBJECTS){
 		var object = SCENEdata.OBJECTS[obj]
@@ -573,7 +605,11 @@ while(true){
 		var index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
 		objectfile_pathlist[index] = object_path
 		object_materiallist[index] = object.material
-		numframe = object.visible.length
+
+		if (object.visible.length<numframe){
+			object.visible = Array.apply(null,Array(numframe)).map(function(){return object.visible[0]})
+		}
+
 		for (var coord in object.positionInches){
 			if (object.positionInches[coord].length < numframe){
 				object.positionInches[coord] = Array.apply(null,Array(numframe)).map(function(){return object.positionInches[coord][0]})
@@ -586,30 +622,24 @@ while(true){
 		}
 	}
 
-	for (var lt in SCENEdata.LIGHTS){
-		var light = SCENEdata.LIGHTS[lt]
-		for (var coord in light.positionInches){
-			if (light.positionInches[coord].length < numframe){
-				light.positionInches[coord] = Array.apply(null,Array(numframe)).map(function(){return light.positionInches[coord][0]})
-			}
-		}
-	}
-// 2: load meshfile from google cloud storage
+
+
+    // 2: load meshfile from google cloud storage
 		console.time('loadmesh')
 		objectmeshArray = await loadMeshArrayfromFirebase(objectfile_pathlist);
 		console.timeEnd('loadmesh')
 
 	// 3. init scene and camera
 	console.time('init scene')
-	await initThreeJS(SCENEdata.CAMERAS)
+	await initThreeJS(SCENEdata.CAMERAS,numScene,sceneType)
 	console.timeEnd('init scene')
 
-//---------------------------------- ALTERNATIVE : add/remove THREE js object at every frame 
-	// frame = 0 
+//---------------------------------- ALTERNATIVE : add/remove THREE js object at every frame
+	// frame = 0
 	// animate()
 
 	// async function animate(){
-	
+
 	// console.time('frame render')
 	// for (var lt in SCENEdata.LIGHTS){
 	// 	var light = new THREE.DirectionalLight(Number(SCENEdata.LIGHTS[lt].color),SCENEdata.LIGHTS[lt].intensity)
@@ -632,11 +662,11 @@ while(true){
 	// 				}
 	// 			})
 	// 			var nextvisible = SCENEdata.OBJECTS[obj].visible[frame]
-			
+
 	// 		if (nextvisible == 1){
 	// 			object.position.set(SCENEdata.OBJECTS[obj].positionInches.x[frame],SCENEdata.OBJECTS[obj].positionInches.y[frame],SCENEdata.OBJECTS[obj].positionInches.z[frame])
 	// 				object.rotation.set(0,0,0)
-		
+
 	// 		//Object axis changes as object rotates
 	// 			var axis = new THREE.Vector3(1,0,0) //x-axis
 	// 			var angle = THREE.Math.degToRad(SCENEdata.OBJECTS[obj].rotationDegrees.x[frame])
@@ -665,240 +695,70 @@ while(true){
 	// }
 //--------------------------------------------------------------------------------------------
 
-	// 4. add light
+	// 4. add light and object to the scene
 	console.time('add object to scene')
-	lightArray = [];
-	currLightProperties = []
-	for (var lt in SCENEdata.LIGHTS){
-		var index = Object.keys(SCENEdata.LIGHTS).indexOf(lt);
-		currLightProperties[index] = {}
-		var light = new THREE.DirectionalLight(Number(SCENEdata.LIGHTS[lt].color),SCENEdata.LIGHTS[lt].intensity)
-		lightArray[index] = light;
-		scene.add(light)
-		// store current frame light properties
-		currLightProperties[index].position = light.position;
-		currLightProperties[index].color = light.color;
-		currLightProperties[index].intensity = light.intensity;
-		currLightProperties[index].visible = light.visible;
-			}
-
-	// add objects
-	currObjProperties = []
-	for (var obj in SCENEdata.OBJECTS){
-		var index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
-		currObjProperties[index] = {}
-		var object = objectmeshArray[index].scene
-		object.traverse(function(child){
-
-					if (child.material) {
-// 							const textureloader = new THREE.TextureLoader();
-// 							console.log(child.material)
-// 							var material = new THREE.MeshBasicMaterial({
-// 								map: textureloader.load('https://threejsfundamentals.org/threejs/resources/images/wall.jpg')
-
-// 							})
-						const orig = new THREE.MeshPhysicalMaterial()
-						const materialparam = {...orig,...object_materiallist[index]} //parameters update
-						var material = new THREE.MeshPhysicalMaterial(materialparam)
-
-						if (child.name == "Eyeliris" || child.name == "Eyeriris"){
-							material.color.set('#000000')
-						}
-						else if (child.name == "Eyelsclera" || child.name == "Eyersclera"){
-							material.color.set("#ffffff")
-						}
-
-						material.map = child.material.map
-						child.material = material;
-						child.material.needsUpdate = true;
-					}
-				})
-		scene.add(object)
-		console.timeEnd('add object to scene')
-		// store current frame object properties
-		currObjProperties[index].positionInches = object.position
-		currObjProperties[index].rotation = object.rotation
-		currObjProperties[index].visible = true;
-	}
+    for (i=0; i<numScene;i++){
+	await addToScene(scene[i],sceneType)
+}
+	console.timeEnd('add object to scene')
 
 	//5. preload(compile) shaders
 	console.time('compile')
-	renderer.compile(scene,camera)
+     for (i=0; i<numScene;i++){
+  renderer.compile(scene[i],camera)
+}
 	console.timeEnd('compile')
 
-	//6. Animate (100ms, 20ms grey screen)
+	//6. Animate
 	frame = 0
 	animate()
 
-// 	controls.update()
-// 		imgData = renderer.domElement.toDataURL();
-// 		getImageData = false;
-//}
+    function animate(){
 
-// 		objectmesh.scene.traverse(function(child){
-// 		if (child.name == 'Elias_Pt'){
-// 			child.geometry.computeBoundingBox()
-// 			var bb = child.geometry.boundingBox.clone()
-// 			bbdim = new THREE.Vector3();
-// 			bb.getSize(bbdim) // width,height,depth
-// 		}
-// 	})
-	async function animate(){
+// imgData = renderer.domElement.toDataURL();
+//      getImageData = false;
 
-		console.time('frame update')
-		for (var obj in SCENEdata.OBJECTS){
-			var index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
-			var object = objectmeshArray[index].scene
+    if (frame <=numframe-1){
+    setTimeout(animate,500)
+    } else {
+        frame = 0;
+        setTimeout(animate,500)
+    }
+    render()
+    frame ++;
+    }
 
-			var nextobjPosition = [SCENEdata.OBJECTS[obj].positionInches.x[frame],
-			SCENEdata.OBJECTS[obj].positionInches.y[frame],
-			SCENEdata.OBJECTS[obj].positionInches.z[frame]]
 
-			var nextobjRotation = [SCENEdata.OBJECTS[obj].rotationDegrees.x[frame],
-			SCENEdata.OBJECTS[obj].rotationDegrees.y[frame],
-			SCENEdata.OBJECTS[obj].rotationDegrees.z[frame]]
 
-			var nextvisible = SCENEdata.OBJECTS[obj].visible[frame]
+      // update the picking ray with the camera and mouse position
+//     raycaster.setFromCamera( mouse, camera );
 
-			if (nextvisible == 1){
-				object.visible = true
-				updateObjectSingleFrame(index,object,currObjProperties,nextobjPosition,nextobjRotation)
-				}
-			else{
-				currObjProperties[index].visible = false;
-				object.visible = false
-			}
-		}
+//     // calculate objects intersecting the picking ray
+//     var intersects = raycaster.intersectObjects( scene[i].children );
 
-		for (var lt in SCENEdata.LIGHTS){
-		var index = Object.keys(SCENEdata.LIGHTS).indexOf(lt);
-		var light = lightArray[index]
+//     for ( var i = 0; i < intersects.length; i++ ) {
 
-		var nextlightPosition = [SCENEdata.LIGHTS[lt].positionInches.x[frame],
-		SCENEdata.LIGHTS[lt].positionInches.y[frame],
-		SCENEdata.LIGHTS[lt].positionInches.z[frame]]
+//         intersects[ i ].object.material.color.set( 0xff0000 );
 
-		var nextvisible = SCENEdata.LIGHTS[lt].visible[frame];
+//     }
+function render(){
+    // update current frame Light and Obj Properties
 
-		if (nextvisible == 1){
-			light.visible = true
-			updateLightSingleFrame(index,light,currLightProperties,nextlightPosition)
-		}else{
-			currLightProperties[index].visible = false;
-			light.visible = false
-		}
-		}
-		console.timeEnd('frame update')
 
-        console.time('frame render')
-	//requestAnimationFrame(animate)
+    console.log(frame)
+    for (i=0;i<numScene;i++){
+    	console.time('frame update')
+        updateSingleFrame(scene[i])
+        console.timeEnd('frame update')
+    }
+ for (i=0;i<numScene;i++){
 
-	console.log(frame)
-	renderer.render(scene,camera)
-	
+     console.time('frame render')
+    renderer.render(scene[i],camera)
 
-	  frame ++;
-	if (frame <=numframe-1){
-	setTimeout(animate,500)
-	} else {
-		frame = 0;
-		setTimeout(animate,500)
-	}
     console.timeEnd('frame render')
-			
-	}
-
-
-function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objRotation){
-	// update Three js objects only if current properties change
-	// update current properties
-	if (currObjProperties[index].positionInches.x == objPosition[0] &&
-	currObjProperties[index].positionInches.y == objPosition[1] &&
-	currObjProperties[index].positionInches.z == objPosition[2]){
-		console.log('no object position change')
-
-	} else{
-
-		currObjProperties[index].positionInches.x = objPosition[0]
-		currObjProperties[index].positionInches.y == objPosition[1]
-		currObjProperties[index].positionInches.z == objPosition[2]
-
-		object.position.set(objPosition[0],objPosition[1],objPosition[2])
-		console.log('object position change')
-
-	}
-	//rotation
-	if (currObjProperties[index].rotation.x == objRotation[0] &&
-	currObjProperties[index].rotation.y == objRotation[1] &&
-	currObjProperties[index].rotation.z == objRotation[2]){
-		console.log('no object rotation change')
-	} else{
-		currObjProperties[index].rotation.x = objRotation[0]
-		currObjProperties[index].rotation.y == objRotation[1]
-		currObjProperties[index].rotation.z == objRotation[2]
-		//rotate around the World Axis
-		//before rotating set rotation to 0,0,0
-		object.rotation.set(0,0,0)
-		//Object axis changes as object rotates
-			var axis = new THREE.Vector3(1,0,0) //x-axis
-			var angle = THREE.Math.degToRad(objRotation[0])
-			object.rotateOnWorldAxis(axis,angle)
-
-			var axis = new THREE.Vector3(0,1,0) //y-axis
-			var angle = THREE.Math.degToRad(objRotation[1])
-			object.rotateOnWorldAxis(axis,angle)
-
-			var axis = new THREE.Vector3(0,0,1) //z-axis
-			var angle = THREE.Math.degToRad(objRotation[2])
-			object.rotateOnWorldAxis(axis,angle)
-
-			console.log('object rotation change')
-			console.log(objRotation)
-
-	}
 }
-
-// var vFOV = THREE.Math.degToRad( camera.fov ); // convert vertical fov to radians
-// dist = camera.position.y - objectmesh.scene.position.y;
-// //dist = camera.position.z - objectmesh.scene.position.z;
-// height = 2 * Math.tan( vFOV / 2 ) * dist; // visible height
-
-//  width = height * camera.aspect;
-//  fraction = bbdim.y/height;
-
-// 	height_pixel = fraction * renderer.getContext().canvas.height;
-// 	console.time('render')
-// 	animate()
-// 	//renderer.render(scene, camera);
-// 	console.timeEnd('render')
-
-//     proj_pos = toScreenPosition(objectmesh.scene,camera)
-
-//conversion rate
-//1.2918253 a.u = 1 inches in (0,10,0) camera setting
-//createDpiTestElements()
- //dpi = getDpi()
-
-// function toScreenPosition(obj, camera){
-//     var vector = new THREE.Vector3();
-
-//     var widthHalf = 0.5*renderer.getContext().canvas.width;
-//     var heightHalf = 0.5*renderer.getContext().canvas.height;
-
-//     obj.updateMatrixWorld();
-//     vector.setFromMatrixPosition(obj.matrixWorld);
-//     vector.project(camera);
-
-//     vector.x = ( vector.x * widthHalf ) + widthHalf;
-//     vector.y = - ( vector.y * heightHalf ) + heightHalf;
-
-//     return {
-//         x: vector.x,
-//         y: vector.y
-//     };
-
-// };
-
+}
 
 
 	//============= AWAIT LOAD PARAMS =============//
@@ -911,8 +771,8 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 		FLAGS.need2loadParameters = await loadParametersfromFirebase(ENV.ParamFileName);
 
 		//============= SET UP CANVAS =============//
-		// Update canvas based on latest TASK state: 
-		refreshCanvasSettings(TASK); 
+		// Update canvas based on latest TASK state:
+		refreshCanvasSettings(TASK);
 		setupCanvasHeadsUp()
 		setupImageLoadingText()
 		windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
@@ -933,9 +793,9 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 				catch(error){
 					console.log(error)
 					str = {status: "failed"}
-					return str				
+					return str
 				}
-			}			
+			}
 		}
 		else
 		{
@@ -950,12 +810,12 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 		]
 
 		// Check if images were changed
-		if(!old_ImageBagsTest.equals(TASK.ImageBagsTest) || 
+		if(!old_ImageBagsTest.equals(TASK.ImageBagsTest) ||
 			!old_ImageBagsSample.equals(TASK.ImageBagsSample) ||
-			!old_ObjectGridIndex.equals(TASK.ObjectGridIndex) || 
+			!old_ObjectGridIndex.equals(TASK.ObjectGridIndex) ||
 			!old_NTrialsPerBagBlock.equals([TASK.NTrialsPerBagBlock]))
 		{
-			FLAGS.need2loadImagesTrialQueue = 1; 
+			FLAGS.need2loadImagesTrialQueue = 1;
 		}
 		FLAGS.purge = 1
 		FLAGS.createnewfirestore = 1
@@ -964,7 +824,7 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 
 	if (FLAGS.purge == 1){
 		purgeTrackingVariables()
-		FLAGS.purge = 0; 
+		FLAGS.purge = 0;
 	} //if purge
 
 
@@ -975,7 +835,7 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 			var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
 			TQ = new TrialQueue(samplingStrategy, TASK.ImageBagsSample, TASK.ImageBagsTest)
 			await TQ.build(num_prebuffer_trials)
-		}	
+		}
 		else if(TASK.Automator == 1){
 			TQ = AutomatorPreBuffer.TrialQueue[TASK.AutomatorStage]
 		} //if automator
@@ -1020,7 +880,7 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 		// var representative_image = await imagebag.get_by_name(samplebag_paths[0])
 		ENV.ImageWidthPixels = representative_image.width
 		ENV.ImageHeightPixels = representative_image.height
-		
+
 		IMAGES.imagepaths.Ordered_Samplebag_Filenames = samplebag_paths
 		IMAGES.imagepaths.Ordered_Testbag_Filenames = testbag_paths
 		IMAGES.imagepaths.Ordered_SampleImageRewardList = IMAGES.Sample.SampleReward
@@ -1039,7 +899,7 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 	ENV.ChoiceRadius = TASK.ChoiceSizeInches/2 * ENV.ViewportPPI
 
 // 	ENV.FixationRadius=(ENV.ImageWidthPixels/2)*TASK.FixationScale*ENV.CanvasRatio
-// 	ENV.ChoiceRadius=(ENV.ImageWidthPixels/2)*TASK.ChoiceScale*ENV.CanvasRatio	
+// 	ENV.ChoiceRadius=(ENV.ImageWidthPixels/2)*TASK.ChoiceScale*ENV.CanvasRatio
 	// define image display grid
 	funcreturn = defineImageGrid(TASK.NGridPoints, TASK.GridSpacingInches*ENV.ViewportPPI);
 
@@ -1064,19 +924,19 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 	for (var i=0; i<=keys.length-1; i++){
 		CURRTRIAL["sampleobject" + keys[i]] = IMAGES.object.sample[keys[i]][CURRTRIAL.sampleindex]
 	}
-	
+
 	var keys = Object.keys(IMAGES.object.test)
 	if (TASK.TestON <= 0){
 		for (var i=0; i<=keys.length-1; i++){
 			for (var j=0; j<=CURRTRIAL.testindices.length-1; j++){
 				CURRTRIAL["testobject" + keys[i]][j] = IMAGES.object.test[keys[i]][CURRTRIAL.testindices[j]]
-			}		
+			}
 		}
 	} //IF SR2 or M2S
 	else if (TASK.TestON > 0){
 		for (var i=0; i<=keys.length-1; i++){
 			CURRTRIAL["testobject" + keys[i]] = IMAGES.object.test[keys[i]][0]
-		}		
+		}
 	} //IF same-different
 
 	logEVENTS("SampleObjectTy",CURRTRIAL.sampleobjectty,"imageseries")
@@ -1116,20 +976,20 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 	//============ WHILE RUN FIXATION SCREEN ============//
 	FLAGS.waitingforTouches = TASK.NFixations
 	if (TASK.RewardStage == 0){
-		FLAGS.punishOutsideTouch = 1		
+		FLAGS.punishOutsideTouch = 1
 	}
 	CURRTRIAL.allfixationxyt = []
 	while (FLAGS.waitingforTouches > 0){
 		// Choose fixation grid index at random
 		if (TASK.FixationMove > 0){
-			CURRTRIAL.fixationgridindex = Math.floor((ENV.XGridCenter.length)*Math.random()); 
+			CURRTRIAL.fixationgridindex = Math.floor((ENV.XGridCenter.length)*Math.random());
 		}
 		else if (TASK.FixationMove <= 0){
 			CURRTRIAL.fixationgridindex = TASK.StaticFixationGridIndex;
 		}
 		logEVENTS("FixationGridIndex",CURRTRIAL.fixationgridindex,"trialseries")
 
-		// Render fixation screen 
+		// Render fixation screen
 		if(TASK.FixationUsesSample != 1){
 			if (TASK.Species == "macaque" || TASK.Species == "human"){
 				ENV.FixationColor = "white";
@@ -1138,15 +998,15 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 				ENV.FixationColor = "blue";
 			}
 		}
-		
-		// Start timer for this fixation render trial. 
+
+		// Start timer for this fixation render trial.
 		CURRTRIAL.starttime=Date.now() - ENV.CurrentDate.valueOf();
 		logEVENTS("StartTime",CURRTRIAL.starttime,"trialseries")
 
 		frame.shown=[];
 		for (var q in CANVAS.sequencepre){
 			frame.shown[q]=0
-		}; 
+		};
 		frame.current=0;
 
 		//========= AWAIT SHOW FIXATION =========//
@@ -1171,7 +1031,7 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 			FLAGS.waitingforTouches--
 		}
 		else {
-			var touchhold_return = await touchhold_promise(TASK.FixationDuration,boundingBoxesFixation,FLAGS.punishOutsideTouch)			
+			var touchhold_return = await touchhold_promise(TASK.FixationDuration,boundingBoxesFixation,FLAGS.punishOutsideTouch)
 		}
 
 		CURRTRIAL.fixationtouchevent = touchhold_return.type
@@ -1212,7 +1072,7 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 	//============== AWAIT SHOW SAMPLE THEN TEST ==============//
 	if (TASK.RewardStage === 1){
 		frame.shown=[]
-		for (var q in CANVAS.sequence){frame.shown[q]=0} 
+		for (var q in CANVAS.sequence){frame.shown[q]=0}
 		frame.current=0
 		renderScreen(CANVAS.sequence[0],OFFSCREENCANVAS)
 		CURRTRIAL.tsequenceactual = await displayTrial(CANVAS.sequence,CANVAS.tsequence);
@@ -1221,7 +1081,7 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 
 		logEVENTS("TSequenceActual",CURRTRIAL.tsequenceactual,"trialseries")
 		logEVENTS("TSequenceDesired",CURRTRIAL.tsequencedesired,"trialseries")
-	
+
 
 		//========= AWAIT TOUCH RESPONSE =========//
 		FLAGS.waitingforTouches = 1
@@ -1229,7 +1089,7 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 			FLAGS.punishOutsideTouch = 1
 		}
 		else {
-			FLAGS.punishOutsideTouch = 0			
+			FLAGS.punishOutsideTouch = 0
 		}
 		if (FLAGS.stressTest == 1){
 			var race_return = {type: "theld"}
@@ -1329,7 +1189,7 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 
 	ENV.RewardDuration = setReward();
 	logEVENTS("NReward",CURRTRIAL.nreward,"trialseries")
-	
+
 	//============ DELIVER REWARD/PUNISH ============//
 	//NO FEEDBACK
 	if (  CURRTRIAL.nreward == -1 ){
@@ -1394,7 +1254,7 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 		updateTrialHistory() //appends to running trial history
 
 		// Run automator
-		if (TASK.Automator !=0){	
+		if (TASK.Automator !=0){
 			await automateTask(automator_data, trialhistory);
 		}
 
@@ -1420,7 +1280,7 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 			CURRTRIAL.num == 1000){ //in local time
 		updateEventDataonFirestore(EVENTS);
 		FLAGS.need2loadParameters = 1
-	} //if new day, start new file or reached 1000 trials 
+	} //if new day, start new file or reached 1000 trials
 	//================= (end) HOUSEKEEPING =================//
 
 	updateHeadsUpDisplay();
