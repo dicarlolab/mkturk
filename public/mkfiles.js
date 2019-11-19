@@ -67,13 +67,21 @@ var port = {
 
 var serial = {};
 
+function resizeWebglCanvas() {
+  webglCanvas.width = canvasHolder.offsetWidth;
+  webglCanvas.height = canvasHolder.offsetHeight;
+  webglCanvas.style.width = canvasHolder.offsetWidth;
+  webglCanvas.style.height = canvasHolder.offsetHeight;
+}
+
+window.addEventListener("resize", resizeWebglCanvas);
+
 rfidModeBtn.onclick = async function () {
 
   if ( rfidModeBtn.value == "off" ) {
     rfidModeBtn.textContent = "Turn off RFID Mode";
     rfidModeBtn.value = "on";
     document.querySelector("#qry-loc-selector").value = "marmosets";
-    //document.querySelector("#qry-loc-selector").onchange;
     qryLocOnChange();
     document.querySelector("#field-selector").value = "rfid";
     fieldValueOnChange();
@@ -202,7 +210,6 @@ function queryMarmosets (field, keyword) {
 }
 
 function queryMkturkdata (field, keywords) {
-  console.log(keywords);
 
   var query;
 
@@ -361,7 +368,6 @@ function queryMkturkdata (field, keywords) {
              isEmptyObject(keywords[1]) &&
              !isEmptyObject(keywords[2])) {
     //CurrentDateValue
-    console.log("curdate only");
     var strArr = keywords[2].split(";");
     strArr[1] = strArr[1].trim();
     var len = strArr[1].length;
@@ -432,7 +438,18 @@ function displayDatabaseTable(data, database) {
         webglCanvas.style.zIndex = 1;
         displayJson(row._row.data);
         trackInEditor("marmosets", row._row.data);
+      },
+      rowTap: function(e, row) {
+        e.stopPropagation();
+        destroyThreeObjects();
+        editorContainer.style.zIndex = 3;
+        updateBtn.style.zIndex = 3;
+        canvasHolder.style.zIndex = 2;
+        webglCanvas.style.zIndex = 1;
+        displayJson(row._row.data);
+        trackInEditor("marmosets", row._row.data);
       }
+     
     });
     let filterField = document.querySelector("#filter-field");
     let filterValue = document.querySelector("#filter-value");
@@ -467,7 +484,18 @@ function displayDatabaseTable(data, database) {
         webglCanvas.style.zIndex = 1;
         displayJson(row._row.data);
         trackInEditor("mkturkdata", row._row.data);
+      },
+      rowTap: function(e, row) {
+        e.stopPropagation();
+        destroyThreeObjects();
+        editorContainer.style.zIndex = 3;
+        updateBtn.style.zIndex = 3;
+        canvasHolder.style.zIndex = 2;
+        webglCanvas.style.zIndex = 1;
+        displayJson(row._row.data);
+        trackInEditor("mkturkdata", row._row.data);
       }
+
     });
     
     let filterField = document.querySelector("#filter-field");
@@ -506,8 +534,6 @@ function handleDate (data, database) {
         if (data[i].hasOwnProperty(key)) {
           if (key.toLowerCase().includes("date") && key != "CurrentDateValue") {
             if (typeof(data[i][key]) != "undefined" && data[i][key] != "" && data[i][key] != null){
-              console.log("handle date debug; data[i][key]:", data[i][key]);
-              console.log("key:", key);
               data[i][key] = data[i][key].toDate().toJSON();            
             }
             else{
@@ -536,7 +562,13 @@ function qryLocOnChange() {
 
   switch (qryLocation) {
     case "marmosets":
+      
+      document.querySelector("#field-selector").style.visibility = "visible";
+      document.querySelector("#keyword-input-0").style.visibility = "visible";
+      document.querySelector("#keyword-input-1").style.visibility = "hidden";
+      document.querySelector("#keyword-input-2").style.visibility = "hidden";
 
+      resetKeywordPlaceholder();
       removeElementsByClassName("field-options");
 
       let nameMarmosets = document.createElement("option");
@@ -572,35 +604,15 @@ function qryLocOnChange() {
       fieldSelectorMarmosets.appendChild(birthdateMarmosets);
       fieldSelectorMarmosets.onchange();
 
-      //let nameFilter = document.createElement("option");
-      //nameFilter.setAttribute("class", "field-options");
-      //nameFilter.setAttribute("value", "name");
-      //nameFilter.textContent = "name";
-
-      //let sexFilter = document.createElement("option");
-      //sexFilter.setAttribute("class", "field-options");
-      //sexFilter.setAttribute("value", "sex");
-      //sexFilter.textContent = "sex";
-
-      //let rfidFilter = document.createElement("option");
-      //rfidFilter.setAttribute("class", "field-options");
-      //rfidFilter.setAttribute("value", "rfid");
-      //rfidFilter.textContent = "RFID";
-
-      //let birthdateFilter = document.createElement("option");
-      //birthdateFilter.setAttribute("class", "field-options");
-      //birthdateFilter.setAttribute("value", "birthdate");
-      //birthdateFilter.textContent = "birthdate";
-
-      //let filterSelectorMarmosets = document.querySelector("#filter-field");
-      //filterSelectorMarmosets.appendChild(nameFilter);
-      //filterSelectorMarmosets.appendChild(sexFilter);
-      //filterSelectorMarmosets.appendChild(rfidFilter);
-      //filterSelectorMarmosets.appendChild(birthdateFilter);
       break;
 
     case "mkturkdata":
-
+      
+      document.querySelector("#field-selector").style.visibility = "visible";
+      document.querySelector("#keyword-input-0").style.visibility = "visible";
+      document.querySelector("#keyword-input-1").style.visibility = "visible";
+      document.querySelector("#keyword-input-2").style.visibility = "visible";
+      resetKeywordPlaceholder();
       removeElementsByClassName("field-options");
 
       // Abbreviation Legend
@@ -617,40 +629,15 @@ function qryLocOnChange() {
       fieldSelectorMkturk.appendChild(agentTypeCurDate);
       fieldSelectorMkturk.onchange();
       
-      //let agentFilter = document.createElement("option");
-      //agentFilter.setAttribute("class", "field-options");
-      //agentFilter.setAttribute("value", "Agent");
-      //agentFilter.textContent = "Agent";
-
-      //let doctypeFilter = document.createElement("option");
-      //doctypeFilter.setAttribute("class", "field-options");
-      //doctypeFilter.setAttribute("value", "Doctype");
-      //doctypeFilter.textContent = "Doctype";
-
-      //let curdateFilter = document.createElement("option");
-      //curdateFilter.setAttribute("class", "field-options");
-      //curdateFilter.setAttribute("value", "CurrentDate");
-      //curdateFilter.textContent = "CurrentDate";
-
-      //let filterSelectorMkturkdata = document.querySelector("#filter-field");
-      //filterSelectorMkturkdata.appendChild(agentFilter);
-      //filterSelectorMkturkdata.appendChild(doctypeFilter);
-      //filterSelectorMkturkdata.appendChild(curdateFilter);
-
       break;
 
     case "mkturkfiles":
 
       removeElementsByClassName("field-options");
-
-      //let storageNameFilter = document.createElement("option");
-      //storageNameFilter.setAttribute("class", "field-options");
-      //storageNameFilter.setAttribute("value", "name");
-      //storageNameFilter.textContent = "Name";
-
-      //let filterSelectorMkturkfiles = document.querySelector("#filter-field");
-      //filterSelectorMkturkfiles.appendChild(storageNameFilter);
-      
+      document.querySelector("#field-selector").style.visibility = "hidden";
+      document.querySelector("#keyword-input-0").style.visibility = "hidden";
+      document.querySelector("#keyword-input-1").style.visibility = "hidden";
+      document.querySelector("#keyword-input-2").style.visibility = "hidden";
       break;
   }
 }
@@ -714,6 +701,7 @@ function resetKeywordPlaceholder() {
   var keywordInputs = document.getElementsByClassName("keyword-input");
   for ( i = 0; i < keywordInputs.length; i++ ) {
     keywordInputs[i].placeholder = '';
+    keywordInputs[i].value = "";
   }
 }
 
@@ -766,7 +754,7 @@ function jsonDiff(obj1, obj2) {
   return result;
 }
 
-updateBtn.addEventListener("click", ( event ) => {
+updateBtn.addEventListener("click" || "pointerup", ( event ) => {
   event.preventDefault();
   event.stopPropagation();
 
@@ -781,8 +769,10 @@ updateBtn.addEventListener("click", ( event ) => {
       jsonDiff(inEditor[1], editor.get())
     ).then(()=>{
       console.log("Document successfully updated:", inEditor[2]);
+      alert("Document successfully updated:", inEditor[2]);
     }).catch(error => {
       console.error("Error updating document:", error);
+      alert("Error updating document... Check console for more info");
     });
   } else if (inEditor[0] == "mkturkfiles") {
     console.log(editor.get());
@@ -791,14 +781,18 @@ updateBtn.addEventListener("click", ( event ) => {
       contentType: inEditor[3]
     };
     inEditor[2].put(uploadFile, metadata).then(snapshot => {
-      console.log("Uploaded", snapshot);
+      console.log("Uploaded", snapshot.metadata.name);
+      alert("Uploaded");
+    }).catch(error => {
+      console.error("Error uploading:", error);
+      alert("Error uploading... Check console for more info");
     });
   } else {
     console.error("Location Error");
   } 
 });
 
-backBtn.addEventListener("click", event => {
+backBtn.addEventListener("click" || "pointerup", event => {
   event.stopPropagation();
   event.preventDefault();
   console.log(previousPath[0]);
@@ -819,6 +813,21 @@ async function listPrefixesAndItems (ref) {
     previousPath[0] += pathArr[i] + "/";
   }
   console.log(previousPath[0]);
+
+  function formatFileSize (size) {
+    let threshold = 1000;
+    if (Math.abs(size) < threshold) {
+      return size + " B";
+    }
+    let units = ["kB", "MB", "GB", "TB"];
+    let u = -1;
+
+    do {
+      size /= threshold;
+      ++u;
+    } while (Math.abs(size) >= threshold && u < units.length - 1);
+    return size.toFixed(1) + " " + units[u];
+  }
  
   // async function to load metadata into array
   async function loadMetadata (objectArray) {
@@ -827,7 +836,7 @@ async function listPrefixesAndItems (ref) {
         name: md.name,
         contentType: md.contentType,
         fullPath: md.fullPath,
-        size: md.size, 
+        size: formatFileSize(md.size),
         timeCreated: md.timeCreated
       });
     });
@@ -841,7 +850,7 @@ async function listPrefixesAndItems (ref) {
       name: prefix.name,
       contentType: "folder",
       fullPath: prefix.fullPath,
-      size: "null"
+      size: "N/A"
     });
   });
 
@@ -877,55 +886,13 @@ function displayStorageTable(metadataArray) {
       if (row._row.data.contentType == "folder") {
         console.log(row._row.data.fullPath);
         listPrefixesAndItems(storageRef.child(row._row.data.fullPath));
-      } else if (row._row.data.contentType.includes("text") ||
-                 row._row.data.contentType.includes("json")) {
-        
-        destroyThreeObjects();
-
-        editorContainer.style.zIndex = 3;
-        updateBtn.style.zIndex = 3;
-        canvasHolder.style.zIndex = 2;
-        webglCanvas.style.zIndex = 1;
-
-        fetchJson(storageRef.child(row._row.data.fullPath));
-        inEditor[3] = row._row.data.contentType;
-      } else if (row._row.data.contentType.includes("image")) {
-
-        destroyThreeObjects();
-        
-        canvasHolder.style.zIndex = 3;
-        editorContainer.style.zIndex = 2;
-        updateBtn.style.zIndex = 2;
-        webglCanvas.style.zIndex = 1;
-        removeElementsByClassName("imageList");
-
-        let fileRef = storageRef.child(row._row.data.fullPath);
-        gallery.destroy();
-        fetchImage(fileRef);
-      } else if (row._row.data.contentType == "application/octet-stream" &&
-                 row._row.data.name.includes(".glb")) {
-        webglCanvas.style.zIndex = 3;
-        canvasHolder.style.zIndex = 2;
-        editorContainer.style.zIndex = 1;
-        updateBtn.style.zIndex = 1;
-        console.log("do face glb stuff");
-        console.time("loadMesh");
-        objectMesh = await loadMesh(row._row.data.fullPath);
-        console.log("objectMesh:", objectMesh);
-        console.timeEnd("loadMesh");
-
-        console.time("init scene");
-        await initThree();
-        console.timeEnd("init scene");
-
-        scene.add(objectMesh.scene);
-        requestAnimationFrame(animate);
-        renderer.render(scene, camera);
-
-        function animate() {
-          animationID = requestAnimationFrame(animate);
-          renderer.render(scene, camera);
-        }
+      }
+    },
+    rowDblTap: async function(e, row) {
+      e.stopPropagation();
+      if (row._row.data.contentType == "folder") {
+        console.log(row._row.data.fullPath);
+        listPrefixesAndItems(storageRef.child(row._row.data.fullPath));
       }
     },
     rowClick: async function(e, row) {
@@ -956,7 +923,61 @@ function displayStorageTable(metadataArray) {
 
         let fileRef = storageRef.child(row._row.data.fullPath);
         gallery.destroy();
-        fetchImage(fileRef);
+        fetchImage(fileRef, row._row.data.name);
+      } else if (row._row.data.contentType == "application/octet-stream" &&
+                 row._row.data.name.includes(".glb")) {
+        webglCanvas.style.zIndex = 3;
+        canvasHolder.style.zIndex = 2;
+        editorContainer.style.zIndex = 1;
+        updateBtn.style.zIndex = 1;
+        console.time("loadMesh");
+        objectMesh = await loadMesh(row._row.data.fullPath);
+        console.log("objectMesh:", objectMesh);
+        console.timeEnd("loadMesh");
+
+        console.time("init scene");
+        await initThree();
+        console.timeEnd("init scene");
+
+        scene.add(objectMesh.scene);
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+
+        function animate() {
+          animationID = requestAnimationFrame(animate);
+          renderer.render(scene, camera);
+        }
+      }
+    },
+    rowTap: async function(e, row) {
+      e.stopPropagation();
+      if (row._row.data.contentType == "folder") {
+        console.log(row._row.data.fullPath);
+      } else if (row._row.data.contentType.includes("text") ||
+                 row._row.data.contentType.includes("json")) {
+        
+        destroyThreeObjects();
+
+        editorContainer.style.zIndex = 3;
+        updateBtn.style.zIndex = 3;
+        canvasHolder.style.zIndex = 2;
+        webglCanvas.style.zIndex = 1;
+
+        fetchJson(storageRef.child(row._row.data.fullPath));
+        inEditor[3] = row._row.data.contentType;
+      } else if (row._row.data.contentType.includes("image")) {
+
+        destroyThreeObjects();
+        
+        canvasHolder.style.zIndex = 3;
+        editorContainer.style.zIndex = 2;
+        updateBtn.style.zIndex = 2;
+        webglCanvas.style.zIndex = 1;
+        removeElementsByClassName("imageList");
+
+        let fileRef = storageRef.child(row._row.data.fullPath);
+        gallery.destroy();
+        fetchImage(fileRef, row._row.data.name);
       } else if (row._row.data.contentType == "application/octet-stream" &&
                  row._row.data.name.includes(".glb")) {
         webglCanvas.style.zIndex = 3;
@@ -1005,8 +1026,7 @@ function updateSelectAll() {
   }
 }
 
-
-showSelectedImages.addEventListener("click", async event => {
+showSelectedImages.addEventListener("click" || "pointerup", async event => {
 
   destroyThreeObjects();
  
@@ -1020,18 +1040,24 @@ showSelectedImages.addEventListener("click", async event => {
     await storageRef.child(selectedImages[i].fullPath).getDownloadURL().then(async url => {
       selectedImages[i].url = await url;
     });
-    let img = document.createElement("img");
-    img.src = selectedImages[i].url;
     let li = document.createElement("li");
     li.setAttribute("class", "imageList");
-    li.appendChild(img);
+    let imgDiv = document.createElement("div");
+    let img = document.createElement("img");
+    img.src = selectedImages[i].url;
+    //let imgLabel = document.createElement("label");
+    //imgLabel.textContent = selectedImages[i].name;
+    let imgLabel = document.createElement("P");
+    imgLabel.innerHTML = selectedImages[i].name;
+    imgDiv.appendChild(img);
+    imgDiv.appendChild(imgLabel);
+    li.appendChild(imgDiv);
     imageCanvas.appendChild(li);
   }
   console.log(selectedImages);
   gallery.destroy();
   gallery = new Viewer(document.getElementById("image-canvas"));
 });
-
 
 
 function fetchJson (fileRef) {
@@ -1051,15 +1077,23 @@ function fetchJson (fileRef) {
   });
 }
 
-async function fetchImage (fileRef) {
-  let img = document.createElement("img");
-  await fileRef.getDownloadURL().then(async url => {
-    img.src = await url;
-  });
-  console.log("img:", img);
+
+async function fetchImage (fileRef, fileName) {
   let li = document.createElement("li");
   li.setAttribute("class", "imageList");
-  li.appendChild(img);
+  let imgDiv = document.createElement("div");
+  let img = document.createElement("img");
+  //let imgLabel = document.createElement("label");
+  //imgLabel.textContent = fileName;
+  let imgLabel = document.createElement("P");
+  imgLabel.innerHTML = fileName;
+  await fileRef.getDownloadURL().then(async url => {
+    img.src = url;
+  });
+
+  imgDiv.appendChild(img);
+  imgDiv.appendChild(imgLabel);
+  li.appendChild(imgDiv);
   imageCanvas.appendChild(li);
   gallery = new Viewer(document.getElementById("image-canvas"));
 }

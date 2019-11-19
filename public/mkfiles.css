@@ -135,11 +135,12 @@ html, body {
 }
 
 #jsoneditor {
-  //grid-area: editor;
+  grid-area: editor;
   background-color: white;
   overflow: hidden;
   max-height: 100%;
   min-height: 100%;
+  max-width: 100%;
   height: 100%;
   grid-column-start: 1;
   grid-column-end: 2;
@@ -156,11 +157,13 @@ html, body {
   z-index: 2;
   max-height: 100%;
   max-width: 100%;
+  display: block;
 }
 
 #image-canvas {
   min-height: 100%;
   max-height: 100%;
+  width: 100%;
   max-width: 100%;
   background-color: white;
   margin: 0px;
@@ -168,7 +171,7 @@ html, body {
   overflow: hidden;
   overflow-y: scroll;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-gap: 10px;
   list-style-type: none;
 }
@@ -181,18 +184,31 @@ html, body {
   padding-top: 10px;
 }
 
-.imageList img {
+.imageList div {
   height: auto;
   width: 100%;
+  max-width: 100%;
+  display: block;
+}
+
+.imageList div img {
+  height: auto;
+  width: 100%;
+}
+
+.imageList div p {
+  font-size: 12px;
+  color: black;
+  height: auto;
+  display: block;
+  word-wrap: break-word;
 }
 
 #jsoneditor-div {
   grid-area: editor-container;
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: 8fr 0.5fr;
-  //grid-template-areas: "editor"
-  //                     "save-btn";
   padding: 2px;
   max-height: 100%;
   overflow: hidden;
