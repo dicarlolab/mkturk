@@ -889,6 +889,7 @@ function displayStorageTable(metadataArray) {
       }
     },
     rowDblTap: async function(e, row) {
+      e.preventDefault();
       e.stopPropagation();
       if (row._row.data.contentType == "folder") {
         console.log(row._row.data.fullPath);
