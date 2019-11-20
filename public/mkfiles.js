@@ -17,6 +17,7 @@ firebase.auth().getRedirectResult().then(result => {
 /* const variable declarations */
 const db = firebase.firestore();
 const storage = firebase.storage();
+const Timestamp = firebase.firestore.Timestamp;
 
 const marmosetsCollection = db.collection("marmosets");
 const mkturkdataCollection = db.collection("mkturkdata");
@@ -410,7 +411,7 @@ function queryMkturkdata (field, keywords) {
 
 function displayDatabaseTable(data, database) {
 
-  data = handleDate(data, database);
+  data = timestampToDate(data, database);
   if (database == "marmosets") {
     table.destroy();
     table = new Tabulator("#tabulator", {
@@ -507,43 +508,93 @@ function displayDatabaseTable(data, database) {
   }
 }
 
-
-function handleDate (data, database) {
-  if (database == "marmosets") {
-    for (var i in data) {
-      for (var key in data[i]) {
-        if (data[i].hasOwnProperty(key)) {
-          if (key.toLowerCase().includes("date")) {
-            data[i][key] = data[i][key].toDate().toJSON();
-          }
-          switch (key) {
-            case "albumin":
-              data[i].albumin[0] = data[i].albumin[0].toDate().toJSON();
-              break;
-
-            case "grouphoused":
-              data[i].grouphoused[0] = data[i].grouphoused[0].toDate().toJSON();
-              break;
-          }
-        }
+function timestampToDate (datas, database) {
+  switch (database) {
+    case "marmosets":
+      function changeArrayDate(element, idx, arr) {
+        arr[idx] = element.toDate().toJSON();
       }
-    }
-  } else if (database == "mkturkdata") {
-    for (var i in data) {
-      for (var key in data[i]) {
-        if (data[i].hasOwnProperty(key)) {
-          if (key.toLowerCase().includes("date") && key != "CurrentDateValue") {
-            if (typeof(data[i][key]) != "undefined" && data[i][key] != "" && data[i][key] != null){
-              data[i][key] = data[i][key].toDate().toJSON();            
-            }
-            else{
-              data[i][key] = "value unavailable"
+
+      datas.forEach(data => {
+        for (var key of Object.keys(data)) {
+          if (key.includes("date") || key.includes("_dates")) {
+            try {
+              if (Array.isArray(data[key])) {
+                data[key].forEach(changeArrayDate);
+              } else {
+                data[key] = data[key].toDate().toJSON();
+              }
+            } catch (e) {
+              console.error("Date conversion error:", e);
+              console.error("key:", key, "value:", data[key]);
             }
           }
         }
-      }
-    }
+      });
+      break;
+
+    case "mkturkdata":
+      datas.forEach(data => {
+        for (var key of Object.keys(data)) {
+          if ((key.toLowerCase().includes("date") || key.includes("_dates")) && key != "CurrentDateValue") {
+            try {
+              data[key] = data[key].toDate().toJSON();
+            } catch (e) {
+              console.error("Date conversion error:", e);
+              console.error("key:", key, "value:", data[key]);
+            }
+          }
+        }
+      });
+      break;
   }
+
+  return datas;
+}
+
+
+function dateToTimestamp (data, database) {
+  switch (database) {
+    case "marmosets":
+      function changeArrayTimestamp(element, idx, arr) {
+        arr[idx] = Timestamp.fromDate(new Date(element));
+        console.log(arr[idx]);
+      }
+
+      for (var key of Object.keys(data)) {
+        if (key.includes("date") || key.includes("_dates")) {
+          console.log("key:", key);
+          try {
+            if (Array.isArray(data[key])) {
+              data[key].forEach(changeArrayTimestamp);
+            } else {
+              data[key] = Timestamp.fromDate(new Date(data[key]));
+            }
+          } catch (e) {
+            console.error("Date conversion error:", e);
+            console.error("key:", key, "value:", data[key]);
+          }
+        }
+      }
+      break;
+
+    case "mkturkdata":
+      datas.forEach(data => {
+        for (var key of Object.keys(data)) {
+          if ((key.toLowerCase().includes("date") || key.includes("_dates")) && key != "CurrentDateValue") {
+            try {
+              data[key] = Timestamp.fromDate(new Date(data[key]));;
+            } catch (e) {
+              console.error("Date conversion error:", e);
+              console.error("key:", key, "value:", data[key]);
+            }
+          }
+        }
+      });
+      break;
+  }
+
+  console.log(data);
   return data;
 }
 
@@ -758,23 +809,20 @@ updateBtn.addEventListener("click" || "pointerup", ( event ) => {
   event.preventDefault();
   event.stopPropagation();
 
-  //var diff = DeepDiff.noConflict();
-  //var lhs = inEditor[1];
-  //var rhs = editor.get();
+  let loc = inEditor[0];
+  let docRef = inEditor[2]; // doc.id or fileRef
 
-  //var differences = diff(lhs, rhs);
-  //console.log("diff:", differences);
-  if (inEditor[0] == "marmosets" || inEditor[0] == "mkturkdata") {
-    db.collection(inEditor[0]).doc(inEditor[2]).update(
-      jsonDiff(inEditor[1], editor.get())
-    ).then(()=>{
-      console.log("Document successfully updated:", inEditor[2]);
-      alert("Document successfully updated:", inEditor[2]);
-    }).catch(error => {
-      console.error("Error updating document:", error);
-      alert("Error updating document... Check console for more info");
+  if (loc == "marmosets" || loc == "mkturkdata") {
+    db.collection(loc).doc(docRef).set(
+      dateToTimestamp(editor.get(), loc)
+    ).then(() => {
+      console.log("Document successfully updated:", docRef);
+      alert("Updated");
+    }).catch(e => {
+      console.error("Error updating document:", e);
+      alert("Error updating");
     });
-  } else if (inEditor[0] == "mkturkfiles") {
+  } else if (loc == "mkturkfiles") {
     console.log(editor.get());
     let uploadFile = new Blob([JSON.stringify(editor.get(), null, 1)]);
     let metadata = {
