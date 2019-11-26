@@ -17,7 +17,9 @@
   },
   "homepage": "https://github.com/issalab/mkturk#readme",
   "dependencies": {
-    "firebase": "^7.5.0"
+    "@types/tabulator-tables": "^4.5.0",
+    "firebase": "^7.5.0",
+    "tabulator-tables": "^4.5.1"
   },
   "devDependencies": {
     "ts-loader": "^6.2.1",
