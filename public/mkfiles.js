@@ -1,1493 +1,1009 @@
-/* mkquery.js            *
- * version 0.1           *
- * Hector Cho @ Issa Lab */
-
-let provider = new firebase.auth.GoogleAuthProvider();
-provider.addScope("https://www.googleapis.com/auth/contacts.readonly");
-firebase.auth().getRedirectResult().then(result => {
-  if (result.user) {
-    console.log("Sign-In Redirect Result, USER:", result.user.email, "is signed in");
-  } else if (firebase.auth().currentUser) {
-    console.log("Sign-In Redirect Result, USER:", firebase.auth().currentUser.email, "is signed in");
-  } else {
-    firebase.auth().signInWithRedirect(provider);
-  }
-});
-
-/* const variable declarations */
-const db = firebase.firestore();
-const storage = firebase.storage();
-const Timestamp = firebase.firestore.Timestamp;
-
-const marmosetsCollection = db.collection("marmosets");
-const mkturkdataCollection = db.collection("mkturkdata");
-const storageRef = storage.ref();
-const rootRef = storageRef.child("mkturkfiles/");
-
-const queryForm = document.querySelector("#query-form");
-const editorContainer = document.querySelector("#jsoneditor");
-const updateBtn = document.querySelector("#update-json");
-const backBtn = document.querySelector("#back-button");
-const forwardBtn = document.querySelector("#forward-button");
-const showSelectedImages = document.querySelector("#show-images-button");
-const imageCanvas = document.querySelector("#image-canvas");
-const canvasHolder = document.querySelector("#canvas-holder");
-const uploadFileBtn = document.querySelector("#upload-file");
-const downloadFileBtn = document.querySelector("#download-file");
-//const filterField = document.querySelector("#filter-field");
-const filterValue = document.querySelector("#filter-value");
-const webglCanvas = document.querySelector("#webgl-canvas");
-const viewersDiv = document.querySelector("#jsoneditor-div");
-webglCanvas.width = canvasHolder.offsetWidth;
-webglCanvas.height = canvasHolder.offsetHeight;
-webglCanvas.style.width = canvasHolder.offsetWidth;
-webglCanvas.style.height = canvasHolder.offsetHeight;
-
-const rfidModeBtn = document.querySelector("#rfidMode");
-
-const editorOptions = {};
-var editor = new JSONEditor (editorContainer, editorOptions);
-var gallery = new Viewer(document.getElementById("image-canvas"));
-var table = new Tabulator("#tabulator");
-
-var inEditor = new Array(4);
-var previousPath = new Array(1);
-var selectedImages = new Array();
-var objectMesh;
-var animationID;
-/* --- MAIN FUNCTIONS START --- */
-var prevRFIDTag = "";
-var lastReceived = 0;
-var statusCircle = document.querySelector("#status-circle");
-
-var port = {
-  statusTextConnect: "",
-  statusTextSent: "",
-  statusTextReceived: ""
-};
-
-var serial = {};
-
-function resizeWebglCanvas() {
-  webglCanvas.width = canvasHolder.offsetWidth;
-  webglCanvas.height = canvasHolder.offsetHeight;
-  webglCanvas.style.width = canvasHolder.offsetWidth;
-  webglCanvas.style.height = canvasHolder.offsetHeight;
-}
-
-window.addEventListener("resize", resizeWebglCanvas);
-
-rfidModeBtn.onclick = async function () {
-
-  if ( rfidModeBtn.value == "off" ) {
-    rfidModeBtn.textContent = "Turn off RFID Mode";
-    rfidModeBtn.value = "on";
-    document.querySelector("#qry-loc-selector").value = "marmosets";
-    qryLocOnChange();
-    document.querySelector("#field-selector").value = "rfid";
-    fieldValueOnChange();
-
-    port.statusTextConnect = "Reconnecting USB Device";
-    console.log( port.statusTextConnect );
-    var event = {};
-    event.type = "Reconnect";
-    await findUSBDevice ( event );
-     
-  } else if ( rfidModeBtn.value == "on" ) {
-    rfidModeBtn.textContent = "Turn on RFID Mode";
-    rfidModeBtn.value = "off";
-    queryForm.reset();
-    resetKeywordPlaceholder();
-
-    port.connected = false;
-    port.disconnect();
-    port.statusTextConnect = "USB Device Disconnected";
-    console.log( port.statusTextConnect );
-    statusCircle.style.backgroundColor = "black";
-  }
-};
-
-/* query form submission */
-queryForm.addEventListener("submit", event => {
-  event.preventDefault();
-
-  let qryLocation = document.querySelector("#qry-loc-selector").value;
-  let field = document.querySelector("#field-selector").value;
-  let keyword0 = document.querySelector("#keyword-input-0").value;
-  let keyword1 = document.querySelector("#keyword-input-1").value;
-  let keyword2 = document.querySelector("#keyword-input-2").value;
-
-  let keywords = [keyword0, keyword1, keyword2];
-  console.log(keywords);
-
-  mkquery(qryLocation, field, keywords);
-});
-
-async function mkquery (location, field, keywordArr) {  
-  async function loadData(doc, arr) {
-    await arr.push(doc.data());
-  }
-
-  var arr = new Array();
-
-  switch (location) {
-    case "marmosets":
-
-      var marmosetsQuery = queryMarmosets( field, keywordArr[0] );
-      await marmosetsQuery.get().then(async querySnapshot => {
-        if ( !querySnapshot.empty ) {
-          let promises = querySnapshot.docs.map(doc => loadData(doc, arr));
-          await Promise.all(promises);
-        } else {
-          console.log("Found No Documents");
-        }
-      }).catch( error => {
-        console.log( "Error getting document: ", error );
-      });
-      await displayDatabaseTable(arr, "marmosets");
-      console.log(arr);
-      break;
-
-    case "mkturkdata":
-      var mkturkdataQuery = queryMkturkdata(field, keywordArr);
-      var querySnapshot = await mkturkdataQuery.get()
-      .then(async querySnapshot => {
-        if (!querySnapshot.empty) {
-          let promises = querySnapshot.docs.map(doc => loadData(doc, arr));
-          await Promise.all(promises);
-        } else {
-          console.log("Found No Documents");
-        }
-      }).catch(error=> {
-        console.error("Error getting document:", error);
-      });
-//       await querySnapshot.docs.map(doc => loadData(doc, arr));
-
-      await displayDatabaseTable(arr, "mkturkdata");
-      console.log(arr);
-      break;
-
-    case "mkturkfiles":
-      listPrefixesAndItems(rootRef);
-      break;
-  }
-}
-
-function queryMarmosets (field, keyword) {
-  var query;
-  if (field != "birthdate") {
-    query = marmosetsCollection.where( field, "==", keyword );
-  } else if (field == "birthdate") {
-    var strArr = keyword.split(";");
-    strArr[1] = strArr[1].trim();
-    var len = strArr[1].length;
-
-    if (strArr[1][0] == "+" && strArr[1][1] == "-" && !isNaN(strArr[1][2])) {
-      let refDate = new Date(strArr[0]);
-      let lowerDate = 
-        new Date(refDate.getTime() - Number(strArr[1].substring(2, len)) * 86400000);
-    
-      let upperDate = 
-        new Date(refDate.getTime() + Number(strArr[1].substring(2, len)) * 86400000);
-    
-      query = marmosetsCollection.where(field, ">=", lowerDate)
-                         .where(field, "<=", upperDate);
-    } else if (strArr[1][0] == "+" && !isNaN(strArr[1][1])) {
-      let refDate = new Date(strArr[0]);
-      let upperDate =
-        new Date(refDate.getTime() + Number(strArr[1].substring(1, len)) * 86400000);
-      query = marmosetsCollection.where(field, ">=", refDate)
-                         .where(field, "<=", upperDate);
-    } else if (strArr[1][0] == "-" && !isNaN(strArr[1][1])) {
-      let refDate = new Date(strArr[0]);
-      let lowerDate =
-        new Date(refDate.getTime() - Number(strArr[1].substring(1, len)) * 86400000);
-      query = marmosetsCollection.where(field, ">=", lowerDate)
-                         .where(field, "<=", refDate);
-    }
-  }
-  console.log(query);
-  return query;
-}
-
-function queryMkturkdata (field, keywords) {
-
-  var query;
-
-  if (!isEmptyObject(keywords[0]) &&
-      !isEmptyObject(keywords[1]) &&
-      !isEmptyObject(keywords[2])) {
-    //agent, doctype, currentdate
-    var strArr = keywords[2].split(";"); //parse date range based on semicolon
-    if (strArr.length > 1){
-      strArr[1] = strArr[1].trim(); //remove spaces
-    }
-    else{
-      strArr[1]=""
-    }
-    var len = strArr[1].length;
-
-    if (strArr[1][0] == "+" && strArr[1][1] == "-" && !isNaN(strArr[1][2])) {
-      let refDate = new Date(strArr[0]).getTime();
-      let lDate = refDate - Number(strArr[1].substring(2, len)) * 86400000;
-      let uDate = refDate + Number(strArr[1].substring(2, len)) * 86400000;
-
-      query = mkturkdataCollection.where("CurrentDateValue", ">=", lDate)
-                                  .where("CurrentDateValue", "<=", uDate)
-                                  .where("Agent", "==", keywords[0])
-                                  .where("Doctype", "==", keywords[1]);
-
-    } else if (strArr[1][0] == "+" && !isNaN(strArr[1][1])) {
-      let refDate = new Date(strArr[0]).getTime();
-      let uDate = refDate + Number(strArr[1].substring(2, len)) * 86400000;
-
-      query = mkturkdataCollection.where("CurrentDateValue", ">=", refDate)
-                                  .where("CurrentDateValue", "<=", uDate)
-                                  .where("Agent", "==", keywords[0])
-                                  .where("Doctype", "==", keywords[1]);
-    } else if (strArr[1][0] == "-" && !isNaN(strArr[1][1])) {
-      let refDate = new Date(strArr[0]).getTime();
-      let lDate = refDate - Number(strArr[1].substring(2, len)) * 86400000;
-      query = mkturkdataCollection.where("CurrentDateValue", ">=", lDate)
-                                  .where("CurrentDateValue", "<=", refDate)
-                                  .where("Agent", "==", keywords[0])
-                                  .where("Doctype", "==", keywords[1]);
-    } else {
-      let refDate = new Date(strArr[0]).getTime();
-      let uDate = refDate + 86400000; //within that day
-
-      query = mkturkdataCollection.where("CurrentDateValue", ">=", refDate)
-                                  .where("CurrentDateValue", "<=", uDate)
-                                  .where("Agent", "==", keywords[0])
-                                  .where("Doctype", "==", keywords[1]);
-    }
-  } else if (!isEmptyObject(keywords[0]) &&
-             !isEmptyObject(keywords[1]) &&
-             isEmptyObject(keywords[2])) {
-    
-    //agent, doctype
-    query = mkturkdataCollection.where("Agent", "==", keywords[0])
-                                .where("Doctype", "==", keywords[1]);
-
-  } else if (!isEmptyObject(keywords[0]) &&
-             isEmptyObject(keywords[1]) &&
-             !isEmptyObject(keywords[2])) {
-    //agent, curdate
-    var strArr = keywords[2].split(";");
-    if (strArr.length > 1){
-      strArr[1] = strArr[1].trim(); //remove spaces
-    }
-    else{
-      strArr[1]=""
-    }
-    var len = strArr[1].length;
-
-    if (strArr[1][0] == "+" && strArr[1][1] == "-" && !isNaN(strArr[1][2])) {
-      let refDate = new Date(strArr[0]).getTime();
-      let lDate = refDate - Number(strArr[1].substring(2, len)) * 86400000;
-      let uDate = refDate + Number(strArr[1].substring(2, len)) * 86400000;
-
-      query = mkturkdataCollection.where("CurrentDateValue", ">=", lDate)
-                                  .where("CurrentDateValue", "<=", uDate)
-                                  .where("Agent", "==", keywords[0]);
-
-    } else if (strArr[1][0] == "+" && !isNaN(strArr[1][1])) {
-      let refDate = new Date(strArr[0]).getTime();
-      let uDate = refDate + Number(strArr[1].substring(2, len)) * 86400000;
-      query = mkturkdataCollection.where("CurrentDateValue", ">=", refDate)
-                                  .where("CurrentDateValue", "<=", uDate)
-                                  .where("Agent", "==", keywords[0]);
-    } else if (strArr[1][0] == "-" && !isNaN(strArr[1][1])) {
-      let refDate = new Date(strArr[0]).getTime();
-      let lDate = refDate - Number(strArr[1].substring(2, len)) * 86400000;
-      query = mkturkdataCollection.where("CurrentDateValue", ">=", lDate)
-                                  .where("CurrentDateValue", "<=", refDate)
-                                  .where("Agent", "==", keywords[0]);
-    } else {
-      let refDate = new Date(strArr[0]).getTime();
-      let uDate = refDate + 86400000; //within that day
-
-      query = mkturkdataCollection.where("CurrentDateValue", ">=", refDate)
-                                  .where("CurrentDateValue", "<=", uDate)
-                                  .where("Agent", "==", keywords[0]);
-    }
-
-
-  }
-  else if (isEmptyObject(keywords[0]) &&
-             !isEmptyObject(keywords[1]) &&
-             !isEmptyObject(keywords[2])) {
-    //doctype, CurrentDateValue
-    var strArr = keywords[2].split(";");
-    if (strArr.length > 1){
-      strArr[1] = strArr[1].trim(); //remove spaces
-    }
-    else{
-      strArr[1]=""
-    }
-    var len = strArr[1].length;
-
-    if (strArr[1][0] == "+" && strArr[1][1] == "-" && !isNaN(strArr[1][2])) {
-      let refDate = new Date(strArr[0]).getTime();
-      let lDate = refDate - Number(strArr[1].substring(2, len)) * 86400000;
-      let uDate = refDate + Number(strArr[1].substring(2, len)) * 86400000;
-
-      query = mkturkdataCollection.where("CurrentDateValue", ">=", lDate)
-                          .where("CurrentDateValue", "<=", uDate)
-                          .where("Doctype", "==", keywords[1]);
-
-    } else if (strArr[1][0] == "+" && !isNaN(strArr[1][1])) {
-      let refDate = new Date(strArr[0]).getTime();
-      let uDate = refDate + Number(strArr[1].substring(2, len)) * 86400000;
-      query = mkturkdataCollection.where("CurrentDateValue", ">=", refDate)
-                          .where("CurrentDateValue", "<=", uDate)
-                          .where("Doctype", "==", keywords[1]);
-    } else if (strArr[1][0] == "-" && !isNaN(strArr[1][1])) {
-      let refDate = new Date(strArr[0]).getTime();
-      let lDate = refDate - Number(strArr[1].substring(2, len)) * 86400000;
-      query = mkturkdataCollection.where("CurrentDateValue", ">=", lDate)
-                          .where("CurrentDateValue", "<=", refDate)
-                          .where("Doctype", "==", keywords[1]);
-    } else {
-      let refDate = new Date(strArr[0]).getTime();
-      let uDate = refDate + 86400000; //within day
-      query = mkturkdataCollection.where("CurrentDateValue", "==", refDate)
-                          .where("Doctype", "==", keywords[1]);
-    }
-
-  } else if (!isEmptyObject(keywords[0]) &&
-             isEmptyObject(keywords[1]) &&
-             isEmptyObject(keywords[2])) {
-    //agent
-    query = mkturkdataCollection.where("Agent", "==", keywords[0]);
-  } else if (isEmptyObject(keywords[0]) &&
-             !isEmptyObject(keywords[1]) &&
-             isEmptyObject(keywords[2])) {
-    //doctype
-    query = mkturkdataCollection.where("Doctype", "==", keywords[1]);
-  } else if (isEmptyObject(keywords[0]) &&
-             isEmptyObject(keywords[1]) &&
-             !isEmptyObject(keywords[2])) {
-    //CurrentDateValue
-    var strArr = keywords[2].split(";");
-    strArr[1] = strArr[1].trim();
-    var len = strArr[1].length;
-
-    if (strArr[1][0] == "+" && strArr[1][1] == "-" && !isNaN(strArr[1][2])) {
-      let refDate = new Date(strArr[0]).getTime();
-      let lDate = refDate - Number(strArr[1].substring(2, len)) * 86400000;
-      let uDate = refDate + Number(strArr[1].substring(2, len)) * 86400000;
-
-      query = mkturkdataCollection.where("CurrentDateValue", ">=", lDate)
-                          .where("CurrentDateValue", "<=", uDate);
-
-    } else if (strArr[1][0] == "+" && !isNaN(strArr[1][1])) {
-      let refDate = new Date(strArr[0]).getTime();
-      let uDate = refDate + Number(strArr[1].substring(2, len)) * 86400000;
-      query = mkturkdataCollection.where("CurrentDateValue", ">=", refDate)
-                          .where("CurrentDateValue", "<=", uDate);
-    } else if (strArr[1][0] == "-" && !isNaN(strArr[1][1])) {
-      let refDate = new Date(strArr[0]).getTime();
-      let lDate = refDate - Number(strArr[1].substring(2, len)) * 86400000;
-      query = mkturkdataCollection.where("CurrentDateValue", ">=", lDate)
-                          .where("CurrentDateValue", "<=", refDate);
-    } else {
-      let refDate = new Date(strArr[0]).getTime();
-      let uDate = refDate + 86400000; //within day
-
-      query = mkturkdataCollection.where("CurrentDateValue", ">=", refDate)
-                          .where("CurrentDateValue", "<=", uDate)
-    }   
-  }
-  return query;
-}
-
-
-
-
-/* --- MAIN FUNCTIONS END --- */
-
-/* --- HELPER FUNCTIONS START --- */
-
-function displayDatabaseTable(data, database) {
-
-  data = timestampToDate(data, database);
-  if (database == "marmosets") {
-    table.destroy();
-    table = new Tabulator("#tabulator", {
-      data: data,
-      index: "name",
-      layout: "fitColumns",
-      initialSort: [
-        {column: "name", dir: "asc"}
-      ],
-      columns: [
-        {title: "<input id='select-all' type='checkbox' onchange='updateSelectAll()'/>", width: 15, headerSort: false},
-        {title: "Name", field: "name"},
-        {title: "Sex", field: "sex"},
-        {title: "DOB", field: "birthdate"},
-        {title: "RFID", field: "rfid"},
-      ],
-      selectable: true,
-      selectableRangeMode: "click",
-      rowClick: function(e, row) {
-        e.stopPropagation();
-        destroyThreeObjects();
-        editorContainer.style.zIndex = 3;
-        updateBtn.style.zIndex = 3;
-        canvasHolder.style.zIndex = 2;
-        webglCanvas.style.zIndex = 1;
-        displayJson(row._row.data);
-        trackInEditor("marmosets", row._row.data);
-      },
-      rowTap: function(e, row) {
-        e.stopPropagation();
-        destroyThreeObjects();
-        editorContainer.style.zIndex = 3;
-        updateBtn.style.zIndex = 3;
-        canvasHolder.style.zIndex = 2;
-        webglCanvas.style.zIndex = 1;
-        displayJson(row._row.data);
-        trackInEditor("marmosets", row._row.data);
-      }
-     
-    });
-    let filterField = document.querySelector("#filter-field");
-    let filterValue = document.querySelector("#filter-value");
-
-    filterValue.onkeyup = function() {
-      table.setFilter(filterField.value, "like", filterValue.value);
-    }
-  } else if (database == "mkturkdata") {
-    table.destroy();
-    table = new Tabulator("#tabulator", {
-      data: data,
-      index: "CurrentDate",
-      layout: "fitColumns",
-      initialSort: [
-        {column: "Agent", dir: "asc"}
-      ],
-      columns: [
-        {title: "<input id='select-all' type='checkbox' onchange='updateSelectAll()'/>", width: 15, headerSort: false},
-        {title: "Agent", field: "Agent"},
-        {title: "Doctype", field: "Doctype"},
-        {title: "CurrentDate", field: "CurrentDate"},
-        {title: "FirestoreDocRoot", field: "FirestoreDocRoot", visible: false},
-      ],
-      selectable: true,
-      selectableRangeMode: "click",
-      rowClick: function(e, row) {
-        e.stopPropagation();
-        destroyThreeObjects();
-        editorContainer.style.zIndex = 3;
-        updateBtn.style.zIndex = 3;
-        canvasHolder.style.zIndex = 2;
-        webglCanvas.style.zIndex = 1;
-        displayJson(row._row.data);
-        trackInEditor("mkturkdata", row._row.data);
-      },
-      rowTap: function(e, row) {
-        e.stopPropagation();
-        destroyThreeObjects();
-        editorContainer.style.zIndex = 3;
-        updateBtn.style.zIndex = 3;
-        canvasHolder.style.zIndex = 2;
-        webglCanvas.style.zIndex = 1;
-        displayJson(row._row.data);
-        trackInEditor("mkturkdata", row._row.data);
-      }
-
-    });
-    
-    let filterField = document.querySelector("#filter-field");
-    let filterValue = document.querySelector("#filter-value");
-
-    filterValue.onkeyup = function() {
-      table.setFilter(filterField.value, "like", filterValue.value);
-    }  
-  }
-}
-
-function timestampToDate (datas, database) {
-  switch (database) {
-    case "marmosets":
-      function changeArrayDate(element, idx, arr) {
-        arr[idx] = element.toDate().toJSON();
-      }
-
-      datas.forEach(data => {
-        for (var key of Object.keys(data)) {
-          if (key.includes("date") || key.includes("_dates")) {
-            try {
-              if (Array.isArray(data[key])) {
-                data[key].forEach(changeArrayDate);
-              } else {
-                data[key] = data[key].toDate().toJSON();
-              }
-            } catch (e) {
-              console.error("Date conversion error:", e);
-              console.error("key:", key, "value:", data[key]);
-            }
-          }
-        }
-      });
-      break;
-
-    case "mkturkdata":
-      datas.forEach(data => {
-        for (var key of Object.keys(data)) {
-          if ((key.toLowerCase().includes("date") || key.includes("_dates")) && key != "CurrentDateValue") {
-            try {
-              data[key] = data[key].toDate().toJSON();
-            } catch (e) {
-              console.error("Date conversion error:", e);
-              console.error("key:", key, "value:", data[key]);
-            }
-          }
-        }
-      });
-      break;
-  }
-
-  return datas;
-}
-
-
-function dateToTimestamp (data, database) {
-  switch (database) {
-    case "marmosets":
-      function changeArrayTimestamp(element, idx, arr) {
-        arr[idx] = Timestamp.fromDate(new Date(element));
-        console.log(arr[idx]);
-      }
-
-      for (var key of Object.keys(data)) {
-        if (key.includes("date") || key.includes("_dates")) {
-          console.log("key:", key);
-          try {
-            if (Array.isArray(data[key])) {
-              data[key].forEach(changeArrayTimestamp);
-            } else {
-              data[key] = Timestamp.fromDate(new Date(data[key]));
-            }
-          } catch (e) {
-            console.error("Date conversion error:", e);
-            console.error("key:", key, "value:", data[key]);
-          }
-        }
-      }
-      break;
-
-    case "mkturkdata":
-      datas.forEach(data => {
-        for (var key of Object.keys(data)) {
-          if ((key.toLowerCase().includes("date") || key.includes("_dates")) && key != "CurrentDateValue") {
-            try {
-              data[key] = Timestamp.fromDate(new Date(data[key]));;
-            } catch (e) {
-              console.error("Date conversion error:", e);
-              console.error("key:", key, "value:", data[key]);
-            }
-          }
-        }
-      });
-      break;
-  }
-
-  console.log(data);
-  return data;
-}
-
-function displayJson (doc) {
-  try {
-    editor.destroy();
-    editor = new JSONEditor(editorContainer, editorOptions, doc);
-  } catch (error) {
-    console.error("JSONEditor failed:", error);
-  }
-}
-
-
-function qryLocOnChange() {
-  let qryLocation = document.querySelector("#qry-loc-selector").value;
-
-  switch (qryLocation) {
-    case "marmosets":
-      
-      document.querySelector("#field-selector").style.visibility = "visible";
-      document.querySelector("#keyword-input-0").style.visibility = "visible";
-      document.querySelector("#keyword-input-1").style.visibility = "hidden";
-      document.querySelector("#keyword-input-2").style.visibility = "hidden";
-
-      resetKeywordPlaceholder();
-      removeElementsByClassName("field-options");
-
-      let nameMarmosets = document.createElement("option");
-      nameMarmosets.setAttribute("class", "field-options");
-      nameMarmosets.setAttribute("value", "name");
-      nameMarmosets.textContent = "name";
-
-      let sexMarmosets = document.createElement("option");
-      sexMarmosets.setAttribute("class", "field-options");
-      sexMarmosets.setAttribute("value", "sex");
-      sexMarmosets.textContent = "sex";
-
-      let rfidMarmosets = document.createElement("option");
-      rfidMarmosets.setAttribute("class", "field-options");
-      rfidMarmosets.setAttribute("value", "rfid");
-      rfidMarmosets.textContent = "RFID";
-
-      let breedingMarmosets = document.createElement("option");
-      breedingMarmosets.setAttribute("class", "field-options");
-      breedingMarmosets.setAttribute("value", "breeding");
-      breedingMarmosets.textContent = "breeding";
-
-      let birthdateMarmosets = document.createElement("option");
-      birthdateMarmosets.setAttribute("class", "field-options");
-      birthdateMarmosets.setAttribute("value", "birthdate");
-      birthdateMarmosets.textContent = "birthdate";
-
-      let fieldSelectorMarmosets = document.querySelector("#field-selector");
-      fieldSelectorMarmosets.appendChild(nameMarmosets);
-      fieldSelectorMarmosets.appendChild(sexMarmosets);
-      fieldSelectorMarmosets.appendChild(rfidMarmosets);
-      fieldSelectorMarmosets.appendChild(breedingMarmosets);
-      fieldSelectorMarmosets.appendChild(birthdateMarmosets);
-      fieldSelectorMarmosets.onchange();
-
-      break;
-
-    case "mkturkdata":
-      
-      document.querySelector("#field-selector").style.visibility = "visible";
-      document.querySelector("#keyword-input-0").style.visibility = "visible";
-      document.querySelector("#keyword-input-1").style.visibility = "visible";
-      document.querySelector("#keyword-input-2").style.visibility = "visible";
-      resetKeywordPlaceholder();
-      removeElementsByClassName("field-options");
-
-      // Abbreviation Legend
-      // Doctype & CurrentDateValue => typeCurDateValue
-      // Agent & Doctype & CurrentDate => agentTypeCurDate
-      // Agent & CurrentDateValue => agentCurDateValue
-
-      let agentTypeCurDate = document.createElement("option");
-      agentTypeCurDate.setAttribute("class", "field-options");
-      agentTypeCurDate.setAttribute("value", "agentTypeCurDate");
-      agentTypeCurDate.textContent = "Agent & Doctype & CurrentDate";
-
-      let fieldSelectorMkturk = document.querySelector("#field-selector");
-      fieldSelectorMkturk.appendChild(agentTypeCurDate);
-      fieldSelectorMkturk.onchange();
-      
-      break;
-
-    case "mkturkfiles":
-
-      removeElementsByClassName("field-options");
-      document.querySelector("#field-selector").style.visibility = "hidden";
-      document.querySelector("#keyword-input-0").style.visibility = "hidden";
-      document.querySelector("#keyword-input-1").style.visibility = "hidden";
-      document.querySelector("#keyword-input-2").style.visibility = "hidden";
-      break;
-  }
-}
-
-function fieldValueOnChange() {
-  let field = document.querySelector("#field-selector").value;
-
-  switch (field) {
-    case "name":
-      resetKeywordPlaceholder();
-      let case0 = document.querySelector("#keyword-input-0");
-      case0.setAttribute("placeholder", "name");
-      break;
-
-    case "sex":
-      resetKeywordPlaceholder();
-      let case1 = document.querySelector("#keyword-input-0");
-      case1.setAttribute("placeholder", "sex");
-      break;
-
-    case "rfid":
-      resetKeywordPlaceholder();
-      let case2 = document.querySelector("#keyword-input-0");
-      case2.setAttribute("placeholder", "RFID");
-      break;
-
-    case "breeding":
-      resetKeywordPlaceholder();
-      let case3 = document.querySelector("#keyword-input-0");
-      case3.setAttribute("placeholder", "breeding");
-      break;
-
-    case "birthdate":
-      resetKeywordPlaceholder();
-      let case4 = document.querySelector("#keyword-input-0");
-      case4.setAttribute("placeholder", "birthdate (e.g. July 8, 2019; +-7)");
-      break;
-
-    case "agentTypeCurDate":
-      resetKeywordPlaceholder();
-
-      let case6_0 = document.querySelector("#keyword-input-0");
-      let case6_1 = document.querySelector("#keyword-input-1");
-      let case6_2 = document.querySelector("#keyword-input-2");
-
-      case6_0.setAttribute("placeholder", "Agent");
-      case6_1.setAttribute("placeholder", "Doctype");
-      case6_2.setAttribute("placeholder", "CurrentDate (e.g. July 8, 2019; +-7)");
-      break;
-  }
-}
-
-function removeElementsByClassName(className) {
-  var elements = document.getElementsByClassName(className);
-  while (elements.length > 0) {
-    elements[0].parentNode.removeChild(elements[0]);
-  }
-}
-
-function resetKeywordPlaceholder() {
-  var keywordInputs = document.getElementsByClassName("keyword-input");
-  for ( i = 0; i < keywordInputs.length; i++ ) {
-    keywordInputs[i].placeholder = '';
-    keywordInputs[i].value = "";
-  }
-}
-
-function isEmptyObject(obj) {
-  var name;
-  for (name in obj) {
-    return false;
-  }
-  return true;
-}
-
-function trackInEditor(loc, data) {
-  // inEditor[0] = location
-  // inEditor[1] = data
-  // inEditor[2] = doc.id
-  
-  if (loc == "marmosets") {
-    inEditor[0] = "marmosets";
-    inEditor[1] = data;
-    inEditor[2] = data.name;
-  } else if (loc == "mkturkdata") {
-    inEditor[0] = "mkturkdata";
-    inEditor[1] = data;
-    if (data.Doctype == "images")
-      inEditor[2] = data.Imagesdoc;
-    else if (data.Doctype == "task")
-      inEditor[2] = data.Taskdoc;
-  } else if (loc == "mkturkfiles") {
-    //handled in fetchFile();
-    //inEditor[3] = metadata.contentType
-  } else {
-    console.error("Wrong Location");
-  }
-}
-
-function jsonDiff(obj1, obj2) {
-  var result = {};
-  var change;
-
-  for (var key in obj1) {
-    if (typeof obj2[key] == "object" && typeof obj1[key] == "object") {
-      change = jsonDiff(obj1[key], obj2[key]);
-      if (isEmptyObject(change) === false) {
-        result[key] = change;
-      }
-    } else if (obj2[key] != obj1[key]) {
-      result[key] = obj2[key];
-    }
-  }
-  return result;
-}
-
-updateBtn.addEventListener("click" || "pointerup", ( event ) => {
-  event.preventDefault();
-  event.stopPropagation();
-
-  let loc = inEditor[0];
-  let docRef = inEditor[2]; // doc.id or fileRef
-
-  if (loc == "marmosets" || loc == "mkturkdata") {
-    db.collection(loc).doc(docRef).set(
-      dateToTimestamp(editor.get(), loc)
-    ).then(() => {
-      console.log("Document successfully updated:", docRef);
-      alert("Updated");
-    }).catch(e => {
-      console.error("Error updating document:", e);
-      alert("Error updating");
-    });
-  } else if (loc == "mkturkfiles") {
-    console.log(editor.get());
-    let uploadFile = new Blob([JSON.stringify(editor.get(), null, 1)]);
-    let metadata = {
-      contentType: inEditor[3]
-    };
-    inEditor[2].put(uploadFile, metadata).then(snapshot => {
-      console.log("Uploaded", snapshot.metadata.name);
-      alert("Uploaded");
-    }).catch(error => {
-      console.error("Error uploading:", error);
-      alert("Error uploading... Check console for more info");
-    });
-  } else {
-    console.error("Location Error");
-  } 
-});
-
-backBtn.addEventListener("click" || "pointerup", event => {
-  event.stopPropagation();
-  event.preventDefault();
-  console.log(previousPath[0]);
-  listPrefixesAndItems(storageRef.child(previousPath[0]));
-});
-
-async function listPrefixesAndItems (ref) {
-
-  backBtn.disabled = (ref.fullPath == "mkturkfiles") ? true: false;
-
-  var pathArr = await ref.fullPath.split("/");
-  console.log("pathArr:", pathArr);
-  var metadataArray = new Array();
-  var timeA, list, promises;
-  previousPath[0] = "";
-
-  for (var i = 0; i < pathArr.length - 1; i++) {
-    previousPath[0] += pathArr[i] + "/";
-  }
-  console.log(previousPath[0]);
-
-  function formatFileSize (size) {
-    let threshold = 1000;
-    if (Math.abs(size) < threshold) {
-      return size + " B";
-    }
-    let units = ["kB", "MB", "GB", "TB"];
-    let u = -1;
-
-    do {
-      size /= threshold;
-      ++u;
-    } while (Math.abs(size) >= threshold && u < units.length - 1);
-    return size.toFixed(1) + " " + units[u];
-  }
- 
-  // async function to load metadata into array
-  async function loadMetadata (objectArray) {
-    await objectArray.getMetadata().then(md => {
-      metadataArray.push({
-        name: md.name,
-        contentType: md.contentType,
-        fullPath: md.fullPath,
-        size: formatFileSize(md.size),
-        timeCreated: md.timeCreated
-      });
-    });
-  }
-
-  timeA = Date.now();
-  list = await ref.listAll();
-
-  list.prefixes.forEach(prefix => {
-    metadataArray.push({
-      name: prefix.name,
-      contentType: "folder",
-      fullPath: prefix.fullPath,
-      size: "N/A"
-    });
-  });
-
-  promises = list.items.map(loadMetadata);
-  await Promise.all(promises);
-  console.log("TIME:", Date.now() - timeA);
-
-  displayStorageTable(metadataArray);
-}
-
-function displayStorageTable(metadataArray) {
-  table.destroy();
-  table = new Tabulator("#tabulator", {
-    data: metadataArray,
-    index: "name",
-    responsiveLayout: true,
-    layout: "fitColumns",
-    resizableColumns: true,
-    initialSort: [
-      {column: "name", dir: "des"}
-    ],
-    columns: [
-      {title: "<input id='select-all' type='checkbox' onchange='updateSelectAll()'/>", width: 15, headerSort: false}, 
-      {title: "Name", field: "name"},
-      {title: "Type", field: "contentType"},
-      {title: "Path", field: "fullPath"},
-      {title: "Size", field: "size"},
-    ],
-    selectable: true,
-    selectableRangeMode: "click",
-    rowDblClick: async function(e, row) {
-      e.stopPropagation();
-      if (row._row.data.contentType == "folder") {
-        console.log(row._row.data.fullPath);
-        listPrefixesAndItems(storageRef.child(row._row.data.fullPath));
-      }
-    },
-    rowDblTap: async function(e, row) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (row._row.data.contentType == "folder") {
-        console.log(row._row.data.fullPath);
-        listPrefixesAndItems(storageRef.child(row._row.data.fullPath));
-      }
-    },
-    rowClick: async function(e, row) {
-      e.stopPropagation();
-      if (row._row.data.contentType == "folder") {
-        console.log(row._row.data.fullPath);
-      } else if (row._row.data.contentType.includes("text") ||
-                 row._row.data.contentType.includes("json")) {
-        
-        destroyThreeObjects();
-
-        editorContainer.style.zIndex = 3;
-        updateBtn.style.zIndex = 3;
-        canvasHolder.style.zIndex = 2;
-        webglCanvas.style.zIndex = 1;
-
-        fetchJson(storageRef.child(row._row.data.fullPath));
-        inEditor[3] = row._row.data.contentType;
-      } else if (row._row.data.contentType.includes("image")) {
-
-        destroyThreeObjects();
-        
-        canvasHolder.style.zIndex = 3;
-        editorContainer.style.zIndex = 2;
-        updateBtn.style.zIndex = 2;
-        webglCanvas.style.zIndex = 1;
-        removeElementsByClassName("imageList");
-
-        let fileRef = storageRef.child(row._row.data.fullPath);
-        gallery.destroy();
-        fetchImage(fileRef, row._row.data.name);
-      } else if (row._row.data.contentType == "application/octet-stream" &&
-                 row._row.data.name.includes(".glb")) {
-        webglCanvas.style.zIndex = 3;
-        canvasHolder.style.zIndex = 2;
-        editorContainer.style.zIndex = 1;
-        updateBtn.style.zIndex = 1;
-        console.time("loadMesh");
-        objectMesh = await loadMesh(row._row.data.fullPath);
-        console.log("objectMesh:", objectMesh);
-        console.timeEnd("loadMesh");
-
-        console.time("init scene");
-        await initThree();
-        console.timeEnd("init scene");
-
-        scene.add(objectMesh.scene);
-        requestAnimationFrame(animate);
-        renderer.render(scene, camera);
-
-        function animate() {
-          animationID = requestAnimationFrame(animate);
-          renderer.render(scene, camera);
-        }
-      }
-    },
-    rowTap: async function(e, row) {
-      e.stopPropagation();
-      if (row._row.data.contentType == "folder") {
-        console.log(row._row.data.fullPath);
-      } else if (row._row.data.contentType.includes("text") ||
-                 row._row.data.contentType.includes("json")) {
-        
-        destroyThreeObjects();
-
-        editorContainer.style.zIndex = 3;
-        updateBtn.style.zIndex = 3;
-        canvasHolder.style.zIndex = 2;
-        webglCanvas.style.zIndex = 1;
-
-        fetchJson(storageRef.child(row._row.data.fullPath));
-        inEditor[3] = row._row.data.contentType;
-      } else if (row._row.data.contentType.includes("image")) {
-
-        destroyThreeObjects();
-        
-        canvasHolder.style.zIndex = 3;
-        editorContainer.style.zIndex = 2;
-        updateBtn.style.zIndex = 2;
-        webglCanvas.style.zIndex = 1;
-        removeElementsByClassName("imageList");
-
-        let fileRef = storageRef.child(row._row.data.fullPath);
-        gallery.destroy();
-        fetchImage(fileRef, row._row.data.name);
-      } else if (row._row.data.contentType == "application/octet-stream" &&
-                 row._row.data.name.includes(".glb")) {
-        webglCanvas.style.zIndex = 3;
-        canvasHolder.style.zIndex = 2;
-        editorContainer.style.zIndex = 1;
-        updateBtn.style.zIndex = 1;
-        console.log("do face glb stuff");
-        console.time("loadMesh");
-        objectMesh = await loadMesh(row._row.data.fullPath);
-        console.log("objectMesh:", objectMesh);
-        console.timeEnd("loadMesh");
-
-        console.time("init scene");
-        await initThree();
-        console.timeEnd("init scene");
-
-        scene.add(objectMesh.scene);
-        requestAnimationFrame(animate);
-        renderer.render(scene, camera);
-
-        function animate() {
-          animationID = requestAnimationFrame(animate);
-          renderer.render(scene, camera);
-        }
-      }
-    },
-    rowSelectionChanged: function(data, rows) {
-      let isNotImage = !imageTypeTest(data) ? true: false;
-      showSelectedImages.disabled = isNotImage;
-      if (!isNotImage) {
-        selectedImages = data;
-      }
-    },
-  });
-  filterValue.onkeyup = function () {
-    table.setFilter("name", "like", filterValue.value);
-  }
-}
-
-function updateSelectAll() {
-  let selectAllBox = document.querySelector("#select-all");
-  if (selectAllBox.checked == true) {
-    table.selectRow();
-  } else {
-    table.deselectRow();
-  }
-}
-
-showSelectedImages.addEventListener("click" || "pointerup", async event => {
-
-  destroyThreeObjects();
- 
-  canvasHolder.style.zIndex = 3;
-  editorContainer.style.zIndex = 2;
-  updateBtn.style.zIndex = 2;
-  webglCanvas.style.zIndex = 1;
-
-  removeElementsByClassName("imageList");
-  for (var i = 0; i < selectedImages.length; i++) {
-    await storageRef.child(selectedImages[i].fullPath).getDownloadURL().then(async url => {
-      selectedImages[i].url = await url;
-    });
-    let li = document.createElement("li");
-    li.setAttribute("class", "imageList");
-    let imgDiv = document.createElement("div");
-    let img = document.createElement("img");
-    img.src = selectedImages[i].url;
-    //let imgLabel = document.createElement("label");
-    //imgLabel.textContent = selectedImages[i].name;
-    let imgLabel = document.createElement("P");
-    imgLabel.innerHTML = selectedImages[i].name;
-    imgDiv.appendChild(img);
-    imgDiv.appendChild(imgLabel);
-    li.appendChild(imgDiv);
-    imageCanvas.appendChild(li);
-  }
-  console.log(selectedImages);
-  gallery.destroy();
-  gallery = new Viewer(document.getElementById("image-canvas"));
-});
-
-
-function fetchJson (fileRef) {
-  fileRef.getDownloadURL().then(url => {
-    let xhr = new XMLHttpRequest();
-    xhr.open("GET", url);
-    xhr.onload = function () {
-      let response = JSON.parse(xhr.responseText);
-
-      editor.destroy();
-      editor = new JSONEditor(editorContainer, editorOptions, response);
-      inEditor[0] = "mkturkfiles";
-      inEditor[1] = response;
-      inEditor[2] = fileRef;
-    }
-    xhr.send();
-  });
-}
-
-
-async function fetchImage (fileRef, fileName) {
-  let li = document.createElement("li");
-  li.setAttribute("class", "imageList");
-  let imgDiv = document.createElement("div");
-  let img = document.createElement("img");
-  //let imgLabel = document.createElement("label");
-  //imgLabel.textContent = fileName;
-  let imgLabel = document.createElement("P");
-  imgLabel.innerHTML = fileName;
-  await fileRef.getDownloadURL().then(async url => {
-    img.src = url;
-  });
-
-  imgDiv.appendChild(img);
-  imgDiv.appendChild(imgLabel);
-  li.appendChild(imgDiv);
-  imageCanvas.appendChild(li);
-  gallery = new Viewer(document.getElementById("image-canvas"));
-}
-
-function imageTypeTest(data) {
-  if (data.length == 0 || data.length == 1) {
-    return false;
-  } else {
-    for (var i = 0; i < data.length; i++) {
-      if (!data[i].contentType.includes("image")) {
-        return false;
-      }
-    }
-    return true;
-  }
-}
-
-downloadFileBtn.onclick = async function() {
-  let row = table.getSelectedRows();
-  let qryLocation = document.querySelector("#qry-loc-selector");
-
-  if ( qryLocation.value == "mkturkfiles" && !row[0]._row.data.contentType.includes("folder") ) {
-    console.log("yes");
-    storageRef.child(row[0]._row.data.fullPath).getDownloadURL().then(async url => {
-      //let fname = window.prompt("Save As..");
-      //console.log("fname", fname);
-      console.log("url", url);
-      let res = await fetch(url);
-      let blob = await res.blob();
-      saveAs(blob, row[0]._row.data.name);
-    });
-  } else if ( qryLocation.value == "marmosets" ) {
-    let docRef = marmosetsCollection.doc(row[0]._row.data.name);
-    docRef.get().then(doc => {
-      console.log(doc.data());
-      let blob = new Blob([JSON.stringify(doc.data(), null, 1)], {type: "application/json; charset=utf-8"});
-      let fname = row[0]._row.data.name;
-      saveAs(blob, fname);
-    });
-  } else if (qryLocation.value == "mkturkdata" ) {
-    var docName = row[0]._row.data.FirestoreDocRoot + "_" + row[0]._row.data.Doctype;
-    let docRef = mkturkdataCollection.doc(docName);
-    docRef.get().then(doc => {
-      let blob = new Blob([JSON.stringify(doc.data(), null, 1)], {type: "application/json; charset=utf-8"});
-      saveAs(blob, docName);
-    });
-  }
-}
-
-
-function destroyThreeObjects() {
-  try {
-    objectMesh = null;
-    camera = null;
-    controls = null;
-    material = null;
-    renderer = null;
-    scene = null;
-    lightPos = null;
-    loader = null;
-    light = null;
-    cancelAnimationFrame(animationID);
-    console.log( "ThreeJS Objects destroyed" );
-  } catch ( error ) {
-    console.error( "Error:", error );
-  }
-}
-
-var renderer, camera, scene, controls, material, model, modelPos, light;
-const directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
-
-async function initThree () {
-  console.time("start");
-  renderer = new THREE.WebGLRenderer({ canvas: webglCanvas, antialias: true });
-
-  /* FROM YOUNAH'S THREEJS SETUP PARAM */
-  //renderer.setPixelRatio(window.devicePixelRatio);
-  //renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setClearColor(0xFFFFFF);
-  /* YOUNAH'S THREEJS SETUP PARAM (END)*/
-
-
-
-  //renderer.setClearColor( 0x7F7F7F );
-  renderer.physicallyCorrectLight = true;
-  renderer.toneMappingExposure = 10;
-  renderer.gammaOutput = true;
-  renderer.gammaFactor = 2.2;
-
-  scene = new THREE.Scene();
-
-  camera = new THREE.PerspectiveCamera( 45, webglCanvas.width/webglCanvas.height, 0.1, 2000 );
-  cameraPos = new THREE.Vector3(0, 0, 10);
-  camera.position.set( cameraPos.x, cameraPos.y, cameraPos.z );
-
-  scene.add(camera);
-
-  lightPos = new THREE.Vector3(0, 2, 0);
-  directionalLight.position.set( lightPos.x, lightPos.y, lightPos.z );
-
-  scene.add( directionalLight );
-
-  // ambient light
-  light = new THREE.AmbientLight( 0x404040, 0.1 );
-  scene.add( light );
-
-  controls = new THREE.OrbitControls( camera, renderer.domElement );
-  controls.target = new THREE.Vector3( 0, 0, 0 );
-
-  console.timeEnd("start");
-  console.log("scene:", scene);
-}
-
-var loader, material;
-async function loadMesh(filePath) {
-
-  try {
-    var meshRef = await storageRef.child(filePath);
-    var meshUrl = await meshRef.getDownloadURL().catch( e => console.error("Error:", e) );
-
-    loader = new THREE.GLTFLoader();
-
-    return new Promise( function (resolve, reject) {
-      try {
-        loader.load(meshUrl, function(gltfmesh){
-          gltfmesh.scene.traverse(child => {
-            if (child.material) {
-              console.log("child material:", child.material);
-              material = 
-                new THREE.MeshPhongMaterial({ color: 0xFF0000, map: child.material.map });
-              child.material = material;
-              child.material.needsUpdate = true;
-            }
-          });
-          resolve(gltfmesh);
-        });
-      } catch (e) {
-        console.error("Error:", e);
-      }
-    });
-
-  } catch (e) {
-    console.error("Error:", e);
-  }
-}
-
-/* --- HELPER FUNCTIONS END --- */
-
-async function findUSBDevice ( event ) {
-  if ( event.type == "AutoConnect" || event.type == "Reconnect") {
-    //devices = await navigator.usb.getDevices();
-    //console.log ("devices:", devices);
-    //ports = devices.map ( device => new serial.Port ( device ) );
-    //console.log ("ports:", ports);
-    //if ( ports.length == 0 ) {
-      //port.statusTextConnect = "NO USB DEVICE";
-      //console.log ( port.statusTextConnect );
-    //} else {
-      //var statusText = "";
-
-      //if ( ports.length == 0 ) {
-        //port.statusTextConnect = "NO USB DEVICE AUTO FOUND";
-        //console.log ( port.statusTextConnect );
-      //} else {
-        //var statusText = "";
-
-        //if ( event.type == "AutoConnect" ) {
-          //statusText = "AUTO-CONNECTED USB DEVICE ON PAGE LOAD";
-        //} else if ( event.type == "Reconnect" ){
-          //statusText = "RECONNECTED USB DEVICE";
-        //}
-
-        //port = ports[0];
-      //}
-
-      //try {
-        //await port.connect();
-      //} catch ( error ) {
-        //console.error ( error );
-      //}
-
-      //port.statusTextConnect = statusText;
-      //console.log ( port.statusTextConnect );
-    try {
-      const filters = [
-        { "vendorId": 0x2341 },
-      ];
-
-      device = await navigator.usb.requestDevice({ "filters": filters });
-      console.log("device:", device);
-      port = new serial.Port ( device );
-      console.log("port:", port);
-
-      await port.connect();
-      port.statusTextConnect = "USB DEVICE AUTO CONNECTED";
-      console.log ( port.statusTextConnect );
-    } catch ( error ) {
-      console.log ( error );  
-    }   
-  }
-
-  if ( event.type == "pointerup" || event.type == "touchend" || 
-    event.type == "mouseup" ) {
-    event.preventDefault();
-
-    try {
-      const filters = [
-        { "vendorId": 0x2341, "productId": 0x8036 },
-        { "vendorId": 0x2341, "productId": 0x8037 }
-      ];
-
-      device = await navigator.usb.requestDevice({ "filters": filters });
-      port = new serial.Port ( device );
-
-      await port.connect();
-      port.statusTextConnect = "USB DEVICE CONNECTED BY USER ACTION";
-      console.log ( port.statusTextConnect );
-    } catch ( error ) {
-      console.log ( error );
-    }
-    waitforClick.next(1);
-  }
-
-}
-
-serial.Port = function ( device ) {
-  this.device_ = device;
-};
-
-serial.Port.prototype.connect = async function() {
-  //console.log("this.device_:", this.device_);
-  await this.device_.open();
-
-  if ( this.device_.configuration === null ) {
-    return this.device_.selectConfiguration(1);
-  }
-
-  await this.device_.claimInterface(2);
-  await this.device_.selectAlternateInterface(2,0);
-  await this.device_.controlTransferOut({
-    "requestType": "class",
-    "recipient": "interface",
-    "request": 0x22,
-    "value": 0x01,
-    "index": 0x02,
-  });
-
-  this.connected = true;
-  inRangeTest();
-  readLoop ( this );
-};
-
-serial.Port.prototype.onReceive = async data => {
-  let textDecoder = new TextDecoder();
-
-  port.statusTextReceived = "RECEIVED CHAR <-- USB: " 
-    + textDecoder.decode ( data );
-  
-  console.log ( "port.statusTextReceived:", port.statusTextReceived );
-
-  var tagStart = port.statusTextReceived.indexOf( "{tag", 0 );
-  if ( tagStart > 0 ) {
-    var tagEnd = port.statusTextReceived.indexOf( "}", 0 );
-  }
-
-  let rfid = port.statusTextReceived.slice( tagStart + 4, tagEnd );
-
-  statusCircle.style.backgroundColor = "green";
-
-  if (rfid != prevRFIDTag || Date.now() - lastReceived > 3000) {
-    document.querySelector("#keyword-input-0").value = rfid;
-    document.querySelector("#field-selector").value = "rfid";
-    prevRFIDTag = rfid;
-    
-    let qryLocation = document.querySelector("#qry-loc-selector").value;
-    let field = document.querySelector("#field-selector").value;
-    let keyword0 = document.querySelector("#keyword-input-0").value;
-    let keyword1 = document.querySelector("#keyword-input-1").value;
-    let keyword2 = document.querySelector("#keyword-input-2").value;
-
-    let keywords = [keyword0, keyword1, keyword2];
-
-    await mkquery(qryLocation, field, keywords);
-
-    displayJson(table.rowManager.rows[0].data);
-    trackInEditor("marmosets", table.rowManager.rows[0].data);
-  }
-  lastReceived = Date.now();
-};
-
-serial.Port.prototype.onReceiveError = error => {
-  console.error ( "onReceiveError:", error );
-};
-
-serial.Port.prototype.disconnect = async function() {
-  await this.device_.controlTransferOut({
-    "requestType": "class",
-    "recipient": "interface",
-    "request": 0x22,
-    "value": 0x00,
-    "index": 0x02
-  });
-
-  await this.device_.close();
-  console.log("after close device:", this.device_);
-
-  port.statusTextConnect = "USB DEVICE DISCONNECTED";
-  console.log( port.statusTextConnect );
-};
-
-async function readLoop ( port ) {
-  try {
-    let result = await port.device_.transferIn(5, 128);
-    port.onReceive ( result.data );
-    readLoop ( port );
-  } catch ( error ) {
-    port.onReceiveError ( error );
-  }
-}
-
-function pingUSB () {
-  if ( port.connected == true ) {
-    var pingdur = 100;
-    var msgstr = "{" + pingdur.toString() + "}";
-    let textEncoder = new textEncoder();
-    port.device_.trnasferOut( 4, textEncoder.encode ( msgstr ) );
-
-    port.statusTextSent = "Pinging! Transferred Char --> USB:" + msgstr;
-    console.log ( port.statusTextSent );
-
-    pingTimer = setTimeout ( () => {
-      clearTimeout ( pingTimer )
-      pingUSB()}, 5000 )
-  }
-}
-
-function inRangeTest() {
-
-  if (port.connected && (Date.now() - lastReceived > 1000)) {
-    console.log(port.connected);
-    console.log("Status: (RED) No Tag in Range");
-    statusCircle.style.backgroundColor = "red";
-  }
-
-  if (port.connected) {
-    setTimeout(inRangeTest, 1500);
-  }
-}
+!function(t){var e={};function n(r){if(e[r])return e[r].exports;var i=e[r]={i:r,l:!1,exports:{}};return t[r].call(i.exports,i,i.exports,n),i.l=!0,i.exports}n.m=t,n.c=e,n.d=function(t,e,r){n.o(t,e)||Object.defineProperty(t,e,{enumerable:!0,get:r})},n.r=function(t){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(t,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(t,"__esModule",{value:!0})},n.t=function(t,e){if(1&e&&(t=n(t)),8&e)return t;if(4&e&&"object"==typeof t&&t&&t.__esModule)return t;var r=Object.create(null);if(n.r(r),Object.defineProperty(r,"default",{enumerable:!0,value:t}),2&e&&"string"!=typeof t)for(var i in t)n.d(r,i,function(e){return t[e]}.bind(null,i));return r},n.n=function(t){var e=t&&t.__esModule?function(){return t.default}:function(){return t};return n.d(e,"a",e),e},n.o=function(t,e){return Object.prototype.hasOwnProperty.call(t,e)},n.p="",n(n.s=5)}([function(t,e,n){"use strict";n.r(e),n.d(e,"__extends",(function(){return i})),n.d(e,"__assign",(function(){return o})),n.d(e,"__rest",(function(){return a})),n.d(e,"__decorate",(function(){return s})),n.d(e,"__param",(function(){return u})),n.d(e,"__metadata",(function(){return c})),n.d(e,"__awaiter",(function(){return h})),n.d(e,"__generator",(function(){return l})),n.d(e,"__exportStar",(function(){return f})),n.d(e,"__values",(function(){return d})),n.d(e,"__read",(function(){return p})),n.d(e,"__spread",(function(){return m})),n.d(e,"__spreadArrays",(function(){return y})),n.d(e,"__await",(function(){return g})),n.d(e,"__asyncGenerator",(function(){return v})),n.d(e,"__asyncDelegator",(function(){return b})),n.d(e,"__asyncValues",(function(){return w})),n.d(e,"__makeTemplateObject",(function(){return T})),n.d(e,"__importStar",(function(){return E})),n.d(e,"__importDefault",(function(){return S}));
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
+
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */
+var r=function(t,e){return(r=Object.setPrototypeOf||{__proto__:[]}instanceof Array&&function(t,e){t.__proto__=e}||function(t,e){for(var n in e)e.hasOwnProperty(n)&&(t[n]=e[n])})(t,e)};function i(t,e){function n(){this.constructor=t}r(t,e),t.prototype=null===e?Object.create(e):(n.prototype=e.prototype,new n)}var o=function(){return(o=Object.assign||function(t){for(var e,n=1,r=arguments.length;n<r;n++)for(var i in e=arguments[n])Object.prototype.hasOwnProperty.call(e,i)&&(t[i]=e[i]);return t}).apply(this,arguments)};function a(t,e){var n={};for(var r in t)Object.prototype.hasOwnProperty.call(t,r)&&e.indexOf(r)<0&&(n[r]=t[r]);if(null!=t&&"function"==typeof Object.getOwnPropertySymbols){var i=0;for(r=Object.getOwnPropertySymbols(t);i<r.length;i++)e.indexOf(r[i])<0&&Object.prototype.propertyIsEnumerable.call(t,r[i])&&(n[r[i]]=t[r[i]])}return n}function s(t,e,n,r){var i,o=arguments.length,a=o<3?e:null===r?r=Object.getOwnPropertyDescriptor(e,n):r;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)a=Reflect.decorate(t,e,n,r);else for(var s=t.length-1;s>=0;s--)(i=t[s])&&(a=(o<3?i(a):o>3?i(e,n,a):i(e,n))||a);return o>3&&a&&Object.defineProperty(e,n,a),a}function u(t,e){return function(n,r){e(n,r,t)}}function c(t,e){if("object"==typeof Reflect&&"function"==typeof Reflect.metadata)return Reflect.metadata(t,e)}function h(t,e,n,r){return new(n||(n=Promise))((function(i,o){function a(t){try{u(r.next(t))}catch(t){o(t)}}function s(t){try{u(r.throw(t))}catch(t){o(t)}}function u(t){t.done?i(t.value):new n((function(e){e(t.value)})).then(a,s)}u((r=r.apply(t,e||[])).next())}))}function l(t,e){var n,r,i,o,a={label:0,sent:function(){if(1&i[0])throw i[1];return i[1]},trys:[],ops:[]};return o={next:s(0),throw:s(1),return:s(2)},"function"==typeof Symbol&&(o[Symbol.iterator]=function(){return this}),o;function s(o){return function(s){return function(o){if(n)throw new TypeError("Generator is already executing.");for(;a;)try{if(n=1,r&&(i=2&o[0]?r.return:o[0]?r.throw||((i=r.return)&&i.call(r),0):r.next)&&!(i=i.call(r,o[1])).done)return i;switch(r=0,i&&(o=[2&o[0],i.value]),o[0]){case 0:case 1:i=o;break;case 4:return a.label++,{value:o[1],done:!1};case 5:a.label++,r=o[1],o=[0];continue;case 7:o=a.ops.pop(),a.trys.pop();continue;default:if(!(i=(i=a.trys).length>0&&i[i.length-1])&&(6===o[0]||2===o[0])){a=0;continue}if(3===o[0]&&(!i||o[1]>i[0]&&o[1]<i[3])){a.label=o[1];break}if(6===o[0]&&a.label<i[1]){a.label=i[1],i=o;break}if(i&&a.label<i[2]){a.label=i[2],a.ops.push(o);break}i[2]&&a.ops.pop(),a.trys.pop();continue}o=e.call(t,a)}catch(t){o=[6,t],r=0}finally{n=i=0}if(5&o[0])throw o[1];return{value:o[0]?o[1]:void 0,done:!0}}([o,s])}}}function f(t,e){for(var n in t)e.hasOwnProperty(n)||(e[n]=t[n])}function d(t){var e="function"==typeof Symbol&&t[Symbol.iterator],n=0;return e?e.call(t):{next:function(){return t&&n>=t.length&&(t=void 0),{value:t&&t[n++],done:!t}}}}function p(t,e){var n="function"==typeof Symbol&&t[Symbol.iterator];if(!n)return t;var r,i,o=n.call(t),a=[];try{for(;(void 0===e||e-- >0)&&!(r=o.next()).done;)a.push(r.value)}catch(t){i={error:t}}finally{try{r&&!r.done&&(n=o.return)&&n.call(o)}finally{if(i)throw i.error}}return a}function m(){for(var t=[],e=0;e<arguments.length;e++)t=t.concat(p(arguments[e]));return t}function y(){for(var t=0,e=0,n=arguments.length;e<n;e++)t+=arguments[e].length;var r=Array(t),i=0;for(e=0;e<n;e++)for(var o=arguments[e],a=0,s=o.length;a<s;a++,i++)r[i]=o[a];return r}function g(t){return this instanceof g?(this.v=t,this):new g(t)}function v(t,e,n){if(!Symbol.asyncIterator)throw new TypeError("Symbol.asyncIterator is not defined.");var r,i=n.apply(t,e||[]),o=[];return r={},a("next"),a("throw"),a("return"),r[Symbol.asyncIterator]=function(){return this},r;function a(t){i[t]&&(r[t]=function(e){return new Promise((function(n,r){o.push([t,e,n,r])>1||s(t,e)}))})}function s(t,e){try{(n=i[t](e)).value instanceof g?Promise.resolve(n.value.v).then(u,c):h(o[0][2],n)}catch(t){h(o[0][3],t)}var n}function u(t){s("next",t)}function c(t){s("throw",t)}function h(t,e){t(e),o.shift(),o.length&&s(o[0][0],o[0][1])}}function b(t){var e,n;return e={},r("next"),r("throw",(function(t){throw t})),r("return"),e[Symbol.iterator]=function(){return this},e;function r(r,i){e[r]=t[r]?function(e){return(n=!n)?{value:g(t[r](e)),done:"return"===r}:i?i(e):e}:i}}function w(t){if(!Symbol.asyncIterator)throw new TypeError("Symbol.asyncIterator is not defined.");var e,n=t[Symbol.asyncIterator];return n?n.call(t):(t=d(t),e={},r("next"),r("throw"),r("return"),e[Symbol.asyncIterator]=function(){return this},e);function r(n){e[n]=t[n]&&function(e){return new Promise((function(r,i){(function(t,e,n,r){Promise.resolve(r).then((function(e){t({value:e,done:n})}),e)})(r,i,(e=t[n](e)).done,e.value)}))}}}function T(t,e){return Object.defineProperty?Object.defineProperty(t,"raw",{value:e}):t.raw=e,t}function E(t){if(t&&t.__esModule)return t;var e={};if(null!=t)for(var n in t)Object.hasOwnProperty.call(t,n)&&(e[n]=t[n]);return e.default=t,e}function S(t){return t&&t.__esModule?t:{default:t}}},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var r,i=n(0),o=n(2),a=n(4),s=((r={})["no-app"]="No Firebase App '{$appName}' has been created - call Firebase App.initializeApp()",r["bad-app-name"]="Illegal App name: '{$appName}",r["duplicate-app"]="Firebase App named '{$appName}' already exists",r["app-deleted"]="Firebase App named '{$appName}' already deleted",r["invalid-app-argument"]="firebase.{$appName}() takes either no argument or a Firebase App instance.",r),u=new o.ErrorFactory("app","Firebase",s),c="[DEFAULT]",h=function(){function t(t,e,n){var r=this;this.firebase_=n,this.isDeleted_=!1,this.services_={},this.tokenListeners_=[],this.analyticsEventRequests_=[],this.name_=e.name,this.automaticDataCollectionEnabled_=e.automaticDataCollectionEnabled||!1,this.options_=o.deepCopy(t);var i=this;this.INTERNAL={getUid:function(){return null},getToken:function(){return Promise.resolve(null)},addAuthTokenListener:function(t){r.tokenListeners_.push(t),setTimeout((function(){return t(null)}),0)},removeAuthTokenListener:function(t){r.tokenListeners_=r.tokenListeners_.filter((function(e){return e!==t}))},analytics:{logEvent:function(){i.analyticsEventRequests_.push(arguments)}}}}return Object.defineProperty(t.prototype,"automaticDataCollectionEnabled",{get:function(){return this.checkDestroyed_(),this.automaticDataCollectionEnabled_},set:function(t){this.checkDestroyed_(),this.automaticDataCollectionEnabled_=t},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"name",{get:function(){return this.checkDestroyed_(),this.name_},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"options",{get:function(){return this.checkDestroyed_(),this.options_},enumerable:!0,configurable:!0}),t.prototype.delete=function(){var t=this;return new Promise((function(e){t.checkDestroyed_(),e()})).then((function(){t.firebase_.INTERNAL.removeApp(t.name_);for(var e=[],n=0,r=Object.keys(t.services_);n<r.length;n++)for(var i=r[n],o=0,a=Object.keys(t.services_[i]);o<a.length;o++){var s=a[o];e.push(t.services_[i][s])}return Promise.all(e.filter((function(t){return"INTERNAL"in t})).map((function(t){return t.INTERNAL.delete()})))})).then((function(){t.isDeleted_=!0,t.services_={}}))},t.prototype._getService=function(t,e){if(void 0===e&&(e=c),this.checkDestroyed_(),this.services_[t]||(this.services_[t]={}),!this.services_[t][e]){var n=e!==c?e:void 0,r=this.firebase_.INTERNAL.factories[t](this,this.extendApp.bind(this),n);this.services_[t][e]=r}return this.services_[t][e]},t.prototype._removeServiceInstance=function(t,e){void 0===e&&(e=c),this.services_[t]&&this.services_[t][e]&&delete this.services_[t][e]},t.prototype.extendApp=function(t){if(o.deepExtend(this,t),t.INTERNAL){if(t.INTERNAL.addAuthTokenListener){for(var e=0,n=this.tokenListeners_;e<n.length;e++){var r=n[e];this.INTERNAL.addAuthTokenListener(r)}this.tokenListeners_=[]}if(t.INTERNAL.analytics){for(var i=0,a=this.analyticsEventRequests_;i<a.length;i++){var s=a[i];this.INTERNAL.analytics.logEvent.apply(void 0,s)}this.analyticsEventRequests_=[]}}},t.prototype.checkDestroyed_=function(){if(this.isDeleted_)throw u.create("app-deleted",{appName:this.name_})},t}();h.prototype.name&&h.prototype.options||h.prototype.delete||console.log("dc");var l="7.5.0",f=new a.Logger("@firebase/app");
+/**
+ * @license
+ * Copyright 2019 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+if(o.isBrowser()&&void 0!==self.firebase){f.warn("\n    Warning: Firebase is already defined in the global scope. Please make sure\n    Firebase library is only loaded once.\n  ");var d=self.firebase.SDK_VERSION;d&&d.indexOf("LITE")>=0&&f.warn("\n    Warning: You are trying to load Firebase while using Firebase Performance standalone script.\n    You should load Firebase Performance with this instance of Firebase to avoid loading duplicate code.\n    ")}var p=
+/**
+ * @license
+ * Copyright 2019 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+function t(){var e=
+/**
+ * @license
+ * Copyright 2019 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+function(t){var e={},n={},r={},i={__esModule:!0,initializeApp:function(n,r){void 0===r&&(r={});if("object"!=typeof r||null===r){r={name:r}}var a=r;void 0===a.name&&(a.name=c);var s=a.name;if("string"!=typeof s||!s)throw u.create("bad-app-name",{appName:String(s)});if(o.contains(e,s))throw u.create("duplicate-app",{appName:s});var l=new t(n,a,i);return e[s]=l,h(l,"create"),l},app:a,apps:null,SDK_VERSION:l,INTERNAL:{registerService:function(e,c,h,l,d){void 0===d&&(d=!1);if(n[e])return f.debug("There were multiple attempts to register service "+e+"."),i[e];n[e]=c,l&&(r[e]=l,s().forEach((function(t){l("create",t)})));function p(t){if(void 0===t&&(t=a()),"function"!=typeof t[e])throw u.create("invalid-app-argument",{appName:e});return t[e]()}void 0!==h&&o.deepExtend(p,h);return i[e]=p,t.prototype[e]=function(){for(var t=[],n=0;n<arguments.length;n++)t[n]=arguments[n];var r=this._getService.bind(this,e);return r.apply(this,d?t:[])},p},removeApp:function(t){h(e[t],"delete"),delete e[t]},factories:n,useAsService:d}};function a(t){if(t=t||c,!o.contains(e,t))throw u.create("no-app",{appName:t});return e[t]}function s(){return Object.keys(e).map((function(t){return e[t]}))}function h(t,e){for(var i=0,o=Object.keys(n);i<o.length;i++){var a=d(t,o[i]);if(null===a)return;r[a]&&r[a](e,t)}}function d(t,e){return"serverAuth"===e?null:e}return(i.default=i,Object.defineProperty(i,"apps",{get:s}),a.App=t,i)}(h);return e.INTERNAL=i.__assign(i.__assign({},e.INTERNAL),{createFirebaseNamespace:t,extendNamespace:function(t){o.deepExtend(e,t)},createSubscribe:o.createSubscribe,ErrorFactory:o.ErrorFactory,deepExtend:o.deepExtend}),e}(),m=p.initializeApp;p.initializeApp=function(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];return o.isNode()&&f.warn('\n      Warning: This is a browser-targeted Firebase bundle but it appears it is being\n      run in a Node environment.  If running in a Node environment, make sure you\n      are using the bundle specified by the "main" field in package.json.\n      \n      If you are using Webpack, you can specify "main" as the first item in\n      "resolve.mainFields":\n      https://webpack.js.org/configuration/resolve/#resolvemainfields\n      \n      If using Rollup, use the rollup-plugin-node-resolve plugin and specify "main"\n      as the first item in "mainFields", e.g. [\'main\', \'module\'].\n      https://github.com/rollup/rollup-plugin-node-resolve\n      '),m.apply(void 0,t)};var y=p;e.default=y,e.firebase=y},function(t,e,n){"use strict";(function(t){Object.defineProperty(e,"__esModule",{value:!0});var r=n(0),i={NODE_CLIENT:!1,NODE_ADMIN:!1,SDK_VERSION:"${JSCORE_VERSION}"},o=function(t,e){if(!t)throw a(e)},a=function(t){return new Error("Firebase Database ("+i.SDK_VERSION+") INTERNAL ASSERT FAILED: "+t)},s=function(t){for(var e=[],n=0,r=0;r<t.length;r++){var i=t.charCodeAt(r);i<128?e[n++]=i:i<2048?(e[n++]=i>>6|192,e[n++]=63&i|128):55296==(64512&i)&&r+1<t.length&&56320==(64512&t.charCodeAt(r+1))?(i=65536+((1023&i)<<10)+(1023&t.charCodeAt(++r)),e[n++]=i>>18|240,e[n++]=i>>12&63|128,e[n++]=i>>6&63|128,e[n++]=63&i|128):(e[n++]=i>>12|224,e[n++]=i>>6&63|128,e[n++]=63&i|128)}return e},u={byteToCharMap_:null,charToByteMap_:null,byteToCharMapWebSafe_:null,charToByteMapWebSafe_:null,ENCODED_VALS_BASE:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",get ENCODED_VALS(){return this.ENCODED_VALS_BASE+"+/="},get ENCODED_VALS_WEBSAFE(){return this.ENCODED_VALS_BASE+"-_."},HAS_NATIVE_SUPPORT:"function"==typeof atob,encodeByteArray:function(t,e){if(!Array.isArray(t))throw Error("encodeByteArray takes an array as a parameter");this.init_();for(var n=e?this.byteToCharMapWebSafe_:this.byteToCharMap_,r=[],i=0;i<t.length;i+=3){var o=t[i],a=i+1<t.length,s=a?t[i+1]:0,u=i+2<t.length,c=u?t[i+2]:0,h=o>>2,l=(3&o)<<4|s>>4,f=(15&s)<<2|c>>6,d=63&c;u||(d=64,a||(f=64)),r.push(n[h],n[l],n[f],n[d])}return r.join("")},encodeString:function(t,e){return this.HAS_NATIVE_SUPPORT&&!e?btoa(t):this.encodeByteArray(s(t),e)},decodeString:function(t,e){return this.HAS_NATIVE_SUPPORT&&!e?atob(t):function(t){for(var e=[],n=0,r=0;n<t.length;){var i=t[n++];if(i<128)e[r++]=String.fromCharCode(i);else if(i>191&&i<224){var o=t[n++];e[r++]=String.fromCharCode((31&i)<<6|63&o)}else if(i>239&&i<365){var a=((7&i)<<18|(63&(o=t[n++]))<<12|(63&(s=t[n++]))<<6|63&t[n++])-65536;e[r++]=String.fromCharCode(55296+(a>>10)),e[r++]=String.fromCharCode(56320+(1023&a))}else{o=t[n++];var s=t[n++];e[r++]=String.fromCharCode((15&i)<<12|(63&o)<<6|63&s)}}return e.join("")}(this.decodeStringToByteArray(t,e))},decodeStringToByteArray:function(t,e){this.init_();for(var n=e?this.charToByteMapWebSafe_:this.charToByteMap_,r=[],i=0;i<t.length;){var o=n[t.charAt(i++)],a=i<t.length?n[t.charAt(i)]:0,s=++i<t.length?n[t.charAt(i)]:64,u=++i<t.length?n[t.charAt(i)]:64;if(++i,null==o||null==a||null==s||null==u)throw Error();var c=o<<2|a>>4;if(r.push(c),64!==s){var h=a<<4&240|s>>2;if(r.push(h),64!==u){var l=s<<6&192|u;r.push(l)}}}return r},init_:function(){if(!this.byteToCharMap_){this.byteToCharMap_={},this.charToByteMap_={},this.byteToCharMapWebSafe_={},this.charToByteMapWebSafe_={};for(var t=0;t<this.ENCODED_VALS.length;t++)this.byteToCharMap_[t]=this.ENCODED_VALS.charAt(t),this.charToByteMap_[this.byteToCharMap_[t]]=t,this.byteToCharMapWebSafe_[t]=this.ENCODED_VALS_WEBSAFE.charAt(t),this.charToByteMapWebSafe_[this.byteToCharMapWebSafe_[t]]=t,t>=this.ENCODED_VALS_BASE.length&&(this.charToByteMap_[this.ENCODED_VALS_WEBSAFE.charAt(t)]=t,this.charToByteMapWebSafe_[this.ENCODED_VALS.charAt(t)]=t)}}},c=function(t){try{return u.decodeString(t,!0)}catch(t){console.error("base64Decode failed: ",t)}return null};
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */function h(t,e){if(!(e instanceof Object))return e;switch(e.constructor){case Date:return new Date(e.getTime());case Object:void 0===t&&(t={});break;case Array:t=[];break;default:return e}for(var n in e)e.hasOwnProperty(n)&&(t[n]=h(t[n],e[n]));return t}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */var l=function(){function t(){var t=this;this.reject=function(){},this.resolve=function(){},this.promise=new Promise((function(e,n){t.resolve=e,t.reject=n}))}return t.prototype.wrapCallback=function(t){var e=this;return function(n,r){n?e.reject(n):e.resolve(r),"function"==typeof t&&(e.promise.catch((function(){})),1===t.length?t(n):t(n,r))}},t}();
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */function f(){return"undefined"!=typeof navigator&&"string"==typeof navigator.userAgent?navigator.userAgent:""}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var d="FirebaseError",p=function(t){function e(n,r){var i=t.call(this,r)||this;return i.code=n,i.name=d,Object.setPrototypeOf(i,e.prototype),Error.captureStackTrace&&Error.captureStackTrace(i,m.prototype.create),i}return r.__extends(e,t),e}(Error),m=function(){function t(t,e,n){this.service=t,this.serviceName=e,this.errors=n}return t.prototype.create=function(t){for(var e=[],n=1;n<arguments.length;n++)e[n-1]=arguments[n];for(var r=e[0]||{},i=this.service+"/"+t,o=this.errors[t],a=o?y(o,r):"Error",s=this.serviceName+": "+a+" ("+i+").",u=new p(i,s),c=0,h=Object.keys(r);c<h.length;c++){var l=h[c];"_"!==l.slice(-1)&&(l in u&&console.warn('Overwriting FirebaseError base field "'+l+'" can cause unexpected behavior.'),u[l]=r[l])}return u},t}();function y(t,e){return t.replace(g,(function(t,n){var r=e[n];return null!=r?r.toString():"<"+n+"?>"}))}var g=/\{\$([^}]+)}/g;
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */function v(t){return JSON.parse(t)}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var b=function(t){var e={},n={},r={},i="";try{var o=t.split(".");e=v(c(o[0])||""),n=v(c(o[1])||""),i=o[2],r=n.d||{},delete n.d}catch(t){}return{header:e,claims:n,data:r,signature:i}};
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var w=function(){function t(){this.chain_=[],this.buf_=[],this.W_=[],this.pad_=[],this.inbuf_=0,this.total_=0,this.blockSize=64,this.pad_[0]=128;for(var t=1;t<this.blockSize;++t)this.pad_[t]=0;this.reset()}return t.prototype.reset=function(){this.chain_[0]=1732584193,this.chain_[1]=4023233417,this.chain_[2]=2562383102,this.chain_[3]=271733878,this.chain_[4]=3285377520,this.inbuf_=0,this.total_=0},t.prototype.compress_=function(t,e){e||(e=0);var n=this.W_;if("string"==typeof t)for(var r=0;r<16;r++)n[r]=t.charCodeAt(e)<<24|t.charCodeAt(e+1)<<16|t.charCodeAt(e+2)<<8|t.charCodeAt(e+3),e+=4;else for(r=0;r<16;r++)n[r]=t[e]<<24|t[e+1]<<16|t[e+2]<<8|t[e+3],e+=4;for(r=16;r<80;r++){var i=n[r-3]^n[r-8]^n[r-14]^n[r-16];n[r]=4294967295&(i<<1|i>>>31)}var o,a,s=this.chain_[0],u=this.chain_[1],c=this.chain_[2],h=this.chain_[3],l=this.chain_[4];for(r=0;r<80;r++){r<40?r<20?(o=h^u&(c^h),a=1518500249):(o=u^c^h,a=1859775393):r<60?(o=u&c|h&(u|c),a=2400959708):(o=u^c^h,a=3395469782);i=(s<<5|s>>>27)+o+l+a+n[r]&4294967295;l=h,h=c,c=4294967295&(u<<30|u>>>2),u=s,s=i}this.chain_[0]=this.chain_[0]+s&4294967295,this.chain_[1]=this.chain_[1]+u&4294967295,this.chain_[2]=this.chain_[2]+c&4294967295,this.chain_[3]=this.chain_[3]+h&4294967295,this.chain_[4]=this.chain_[4]+l&4294967295},t.prototype.update=function(t,e){if(null!=t){void 0===e&&(e=t.length);for(var n=e-this.blockSize,r=0,i=this.buf_,o=this.inbuf_;r<e;){if(0===o)for(;r<=n;)this.compress_(t,r),r+=this.blockSize;if("string"==typeof t){for(;r<e;)if(i[o]=t.charCodeAt(r),++r,++o===this.blockSize){this.compress_(i),o=0;break}}else for(;r<e;)if(i[o]=t[r],++r,++o===this.blockSize){this.compress_(i),o=0;break}}this.inbuf_=o,this.total_+=e}},t.prototype.digest=function(){var t=[],e=8*this.total_;this.inbuf_<56?this.update(this.pad_,56-this.inbuf_):this.update(this.pad_,this.blockSize-(this.inbuf_-56));for(var n=this.blockSize-1;n>=56;n--)this.buf_[n]=255&e,e/=256;this.compress_(this.buf_);var r=0;for(n=0;n<5;n++)for(var i=24;i>=0;i-=8)t[r]=this.chain_[n]>>i&255,++r;return t},t}();var T=function(){function t(t,e){var n=this;this.observers=[],this.unsubscribes=[],this.observerCount=0,this.task=Promise.resolve(),this.finalized=!1,this.onNoObservers=e,this.task.then((function(){t(n)})).catch((function(t){n.error(t)}))}return t.prototype.next=function(t){this.forEachObserver((function(e){e.next(t)}))},t.prototype.error=function(t){this.forEachObserver((function(e){e.error(t)})),this.close(t)},t.prototype.complete=function(){this.forEachObserver((function(t){t.complete()})),this.close()},t.prototype.subscribe=function(t,e,n){var r,i=this;if(void 0===t&&void 0===e&&void 0===n)throw new Error("Missing Observer.");void 0===(r=function(t,e){if("object"!=typeof t||null===t)return!1;for(var n=0,r=e;n<r.length;n++){var i=r[n];if(i in t&&"function"==typeof t[i])return!0}return!1}(t,["next","error","complete"])?t:{next:t,error:e,complete:n}).next&&(r.next=E),void 0===r.error&&(r.error=E),void 0===r.complete&&(r.complete=E);var o=this.unsubscribeOne.bind(this,this.observers.length);return this.finalized&&this.task.then((function(){try{i.finalError?r.error(i.finalError):r.complete()}catch(t){}})),this.observers.push(r),o},t.prototype.unsubscribeOne=function(t){void 0!==this.observers&&void 0!==this.observers[t]&&(delete this.observers[t],this.observerCount-=1,0===this.observerCount&&void 0!==this.onNoObservers&&this.onNoObservers(this))},t.prototype.forEachObserver=function(t){if(!this.finalized)for(var e=0;e<this.observers.length;e++)this.sendOne(e,t)},t.prototype.sendOne=function(t,e){var n=this;this.task.then((function(){if(void 0!==n.observers&&void 0!==n.observers[t])try{e(n.observers[t])}catch(t){"undefined"!=typeof console&&console.error&&console.error(t)}}))},t.prototype.close=function(t){var e=this;this.finalized||(this.finalized=!0,void 0!==t&&(this.finalError=t),this.task.then((function(){e.observers=void 0,e.onNoObservers=void 0})))},t}();function E(){}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */function S(t,e,n){var r="";switch(e){case 1:r=n?"first":"First";break;case 2:r=n?"second":"Second";break;case 3:r=n?"third":"Third";break;case 4:r=n?"fourth":"Fourth";break;default:throw new Error("errorPrefix called with argumentNumber > 4.  Need to update it?")}var i=t+" failed: ";return i+=r+" argument "}e.CONSTANTS=i,e.Deferred=l,e.ErrorFactory=m,e.FirebaseError=p,e.Sha1=w,e.assert=o,e.assertionError=a,e.async=function(t,e){return function(){for(var n=[],r=0;r<arguments.length;r++)n[r]=arguments[r];Promise.resolve(!0).then((function(){t.apply(void 0,n)})).catch((function(t){e&&e(t)}))}},e.base64=u,e.base64Decode=c,e.base64Encode=function(t){var e=s(t);return u.encodeByteArray(e,!0)},e.contains=
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+function(t,e){return Object.prototype.hasOwnProperty.call(t,e)},e.createSubscribe=function(t,e){var n=new T(t,e);return n.subscribe.bind(n)},e.decode=b,e.deepCopy=
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+function(t){return h(void 0,t)},e.deepExtend=h,e.errorPrefix=S,e.getUA=f,e.isAdmin=function(t){var e=b(t).claims;return"object"==typeof e&&!0===e.admin},e.isBrowser=function(){return"object"==typeof self&&self.self===self},e.isEmpty=function(t){for(var e in t)if(Object.prototype.hasOwnProperty.call(t,e))return!1;return!0},e.isMobileCordova=function(){return"undefined"!=typeof window&&!!(window.cordova||window.phonegap||window.PhoneGap)&&/ios|iphone|ipod|ipad|android|blackberry|iemobile/i.test(f())},e.isNode=function(){try{return"[object process]"===Object.prototype.toString.call(t.process)}catch(t){return!1}},e.isNodeSdk=function(){return!0===i.NODE_CLIENT||!0===i.NODE_ADMIN},e.isReactNative=function(){return"object"==typeof navigator&&"ReactNative"===navigator.product},e.isValidFormat=function(t){var e=b(t).claims;return!!e&&"object"==typeof e&&e.hasOwnProperty("iat")},e.isValidTimestamp=function(t){var e=b(t).claims,n=Math.floor((new Date).getTime()/1e3),r=0,i=0;return"object"==typeof e&&(e.hasOwnProperty("nbf")?r=e.nbf:e.hasOwnProperty("iat")&&(r=e.iat),i=e.hasOwnProperty("exp")?e.exp:r+86400),!!n&&!!r&&!!i&&n>=r&&n<=i},e.issuedAtTime=function(t){var e=b(t).claims;return"object"==typeof e&&e.hasOwnProperty("iat")?e.iat:null},e.jsonEval=v,e.map=function(t,e,n){var r={};for(var i in t)Object.prototype.hasOwnProperty.call(t,i)&&(r[i]=e.call(n,t[i],i,t));return r}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */,e.querystring=function(t){for(var e=[],n=function(t,n){Array.isArray(n)?n.forEach((function(n){e.push(encodeURIComponent(t)+"="+encodeURIComponent(n))})):e.push(encodeURIComponent(t)+"="+encodeURIComponent(n))},r=0,i=Object.entries(t);r<i.length;r++){var o=i[r];n(o[0],o[1])}return e.length?"&"+e.join("&"):""},e.querystringDecode=function(t){var e={};return t.replace(/^\?/,"").split("&").forEach((function(t){if(t){var n=t.split("=");e[n[0]]=n[1]}})),e},e.safeGet=function(t,e){return Object.prototype.hasOwnProperty.call(t,e)?t[e]:void 0},e.stringLength=function(t){for(var e=0,n=0;n<t.length;n++){var r=t.charCodeAt(n);r<128?e++:r<2048?e+=2:r>=55296&&r<=56319?(e+=4,n++):e+=3}return e},e.stringToByteArray=function(t){for(var e=[],n=0,r=0;r<t.length;r++){var i=t.charCodeAt(r);if(i>=55296&&i<=56319){var a=i-55296;r++,o(r<t.length,"Surrogate pair missing trail surrogate."),i=65536+(a<<10)+(t.charCodeAt(r)-56320)}i<128?e[n++]=i:i<2048?(e[n++]=i>>6|192,e[n++]=63&i|128):i<65536?(e[n++]=i>>12|224,e[n++]=i>>6&63|128,e[n++]=63&i|128):(e[n++]=i>>18|240,e[n++]=i>>12&63|128,e[n++]=i>>6&63|128,e[n++]=63&i|128)}return e},e.stringify=function(t){return JSON.stringify(t)},e.validateArgCount=function(t,e,n,r){var i;if(r<e?i="at least "+e:r>n&&(i=0===n?"none":"no more than "+n),i)throw new Error(t+" failed: Was called with "+r+(1===r?" argument.":" arguments.")+" Expects "+i+".")},e.validateCallback=function(t,e,n,r){if((!r||n)&&"function"!=typeof n)throw new Error(S(t,e,r)+"must be a valid function.")},e.validateContextObject=function(t,e,n,r){if((!r||n)&&("object"!=typeof n||null===n))throw new Error(S(t,e,r)+"must be a valid context object.")}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */,e.validateNamespace=function(t,e,n,r){if((!r||n)&&"string"!=typeof n)throw new Error(S(t,e,r)+"must be a valid firebase namespace.")}}).call(this,n(3))},function(t,e){var n;n=function(){return this}();try{n=n||new Function("return this")()}catch(t){"object"==typeof window&&(n=window)}t.exports=n},function(t,e,n){"use strict";
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
+
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */
+function r(){for(var t=0,e=0,n=arguments.length;e<n;e++)t+=arguments[e].length;var r=Array(t),i=0;for(e=0;e<n;e++)for(var o=arguments[e],a=0,s=o.length;a<s;a++,i++)r[i]=o[a];return r}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */n.r(e),n.d(e,"LogLevel",(function(){return i})),n.d(e,"Logger",(function(){return u})),n.d(e,"setLogLevel",(function(){return c}));var i,o=[];!function(t){t[t.DEBUG=0]="DEBUG",t[t.VERBOSE=1]="VERBOSE",t[t.INFO=2]="INFO",t[t.WARN=3]="WARN",t[t.ERROR=4]="ERROR",t[t.SILENT=5]="SILENT"}(i||(i={}));var a=i.INFO,s=function(t,e){for(var n=[],o=2;o<arguments.length;o++)n[o-2]=arguments[o];if(!(e<t.logLevel)){var a=(new Date).toISOString();switch(e){case i.DEBUG:case i.VERBOSE:console.log.apply(console,r(["["+a+"]  "+t.name+":"],n));break;case i.INFO:console.info.apply(console,r(["["+a+"]  "+t.name+":"],n));break;case i.WARN:console.warn.apply(console,r(["["+a+"]  "+t.name+":"],n));break;case i.ERROR:console.error.apply(console,r(["["+a+"]  "+t.name+":"],n));break;default:throw new Error("Attempted to log a message with an invalid logType (value: "+e+")")}}},u=function(){function t(t){this.name=t,this._logLevel=a,this._logHandler=s,o.push(this)}return Object.defineProperty(t.prototype,"logLevel",{get:function(){return this._logLevel},set:function(t){if(!(t in i))throw new TypeError("Invalid value assigned to `logLevel`");this._logLevel=t},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"logHandler",{get:function(){return this._logHandler},set:function(t){if("function"!=typeof t)throw new TypeError("Value assigned to `logHandler` must be a function");this._logHandler=t},enumerable:!0,configurable:!0}),t.prototype.debug=function(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];this._logHandler.apply(this,r([this,i.DEBUG],t))},t.prototype.log=function(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];this._logHandler.apply(this,r([this,i.VERBOSE],t))},t.prototype.info=function(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];this._logHandler.apply(this,r([this,i.INFO],t))},t.prototype.warn=function(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];this._logHandler.apply(this,r([this,i.WARN],t))},t.prototype.error=function(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];this._logHandler.apply(this,r([this,i.ERROR],t))},t}();
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+function c(t){o.forEach((function(e){e.logLevel=t}))}},function(t,e,n){"use strict";var r=this&&this.__importStar||function(t){if(t&&t.__esModule)return t;var e={};if(null!=t)for(var n in t)Object.hasOwnProperty.call(t,n)&&(e[n]=t[n]);return e.default=t,e};Object.defineProperty(e,"__esModule",{value:!0});const i=r(n(6));n(7);i.initializeApp({apiKey:"AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",authDomain:"sandbox-ce2c5.firebaseapp.com",databaseURL:"https://sandbox-ce2c5.firebaseio.com",projectId:"sandbox-ce2c5",storageBucket:"sandbox-ce2c5.appspot.com",messagingSenderId:"1003719887944"});class o{constructor(){this.rfidMode=!1}mkquery(t){let e;return e="",t.forEach(t=>{e+=this._mkquery(t.field,t.keyword)}),e}_mkquery(t,e){if(!t.toLowerCase().includes("date")){let n;return n=".where("+`"${t}"`+", '==', "+`"${e}"`+")"}{const n=864e5;let r,i;if(2===(r=e.split(";")).length?r[1].trim():r[1]="",i=new Date(r[0]),r[1].includes("+-")){let e,o,a,s;return a=Number(r[1].substring(2,r[1].length)),e=new Date(i.getTime()+a*n),o=new Date(i.getTime()-a*n),s=".where("+`"${t}"`+", '>=', new Date("+String(o.getTime())+")).where("+`"${t}"`+", '<=', new Date("+String(e.getTime())+"))"}if(r[1].includes("+")&&!r[1].includes("-")){let e,o,a;return o=Number(r[1].substring(1,r[1].length)),e=new Date(i.getTime()+o*n),a=".where("+`"${t}"`+", '>=', new Date("+String(i.getTime())+")).where("+`"${t}"`+", '<=', new Date("+String(e.getTime())+"))"}if(r[1].includes("-")&&!r[1].includes("+")){let e,o,a;return o=Number(r[1].substring(1,r[1].length)),e=new Date(i.getTime()+o*n),a=".where("+`"${t}"`+", '>=', new Date("+String(e.getTime())+")).where("+`"${t}"`+", '<=', new Date("+String(i.getTime())+"))"}if(!r[1].includes("+")&&!r[1].includes("-")){let e,r;return e=new Date(i.getTime()+n),r=".where("+`"${t}"`+", '>=', new Date("+String(i.getTime())+")).where("+`"${t}"`+", '<=', new Date("+String(e.getTime())+"))"}}}}e.Mkquery=o;let a=(new o).mkquery([{field:"birthdate",keyword:"1/1/2015; +-100"},{field:"name",keyword:"Hector"}]);console.log(a)},function(t,e,n){"use strict";var r,i=(r=n(1))&&"object"==typeof r&&"default"in r?r.default:r;
+/**
+ * @license
+ * Copyright 2018 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */t.exports=i},function(t,e,n){"use strict";n.r(e);n(8)},function(t,e,n){"use strict";(function(t){Object.defineProperty(e,"__esModule",{value:!0});var r,i,o=(r=n(1))&&"object"==typeof r&&"default"in r?r.default:r,a=n(0),s=n(4),u=n(2),c=n(10),h=o.SDK_VERSION,l=new s.Logger("@firebase/firestore");function f(){return l.logLevel===s.LogLevel.DEBUG?i.DEBUG:l.logLevel===s.LogLevel.SILENT?i.SILENT:i.ERROR}function d(t){switch(t){case i.DEBUG:l.logLevel=s.LogLevel.DEBUG;break;case i.ERROR:l.logLevel=s.LogLevel.ERROR;break;case i.SILENT:l.logLevel=s.LogLevel.SILENT;break;default:l.error("Firestore ("+h+"): Invalid value passed to `setLogLevel`")}}function p(t,e){for(var n=[],r=2;r<arguments.length;r++)n[r-2]=arguments[r];if(l.logLevel<=s.LogLevel.DEBUG){var i=n.map(y);l.debug.apply(l,a.__spreadArrays(["Firestore ("+h+") ["+t+"]: "+e],i))}}function m(t){for(var e=[],n=1;n<arguments.length;n++)e[n-1]=arguments[n];if(l.logLevel<=s.LogLevel.ERROR){var r=e.map(y);l.error.apply(l,a.__spreadArrays(["Firestore ("+h+"): "+t],r))}}function y(t){if("string"==typeof t)return t;var e=b.getPlatform();try{return e.formatJSON(t)}catch(e){return t}}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */function g(t){var e="FIRESTORE ("+h+") INTERNAL ASSERTION FAILED: "+t;throw m(e),new Error(e)}function v(t,e){t||g(e)}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */!function(t){t[t.DEBUG=0]="DEBUG",t[t.ERROR=1]="ERROR",t[t.SILENT=2]="SILENT"}(i||(i={}));var b=function(){function t(){}return t.setPlatform=function(e){t.platform&&g("Platform already defined"),t.platform=e},t.getPlatform=function(){return t.platform||g("Platform not set"),t.platform},t}();function w(){return b.getPlatform().emptyByteString}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */var T={OK:"ok",CANCELLED:"cancelled",UNKNOWN:"unknown",INVALID_ARGUMENT:"invalid-argument",DEADLINE_EXCEEDED:"deadline-exceeded",NOT_FOUND:"not-found",ALREADY_EXISTS:"already-exists",PERMISSION_DENIED:"permission-denied",UNAUTHENTICATED:"unauthenticated",RESOURCE_EXHAUSTED:"resource-exhausted",FAILED_PRECONDITION:"failed-precondition",ABORTED:"aborted",OUT_OF_RANGE:"out-of-range",UNIMPLEMENTED:"unimplemented",INTERNAL:"internal",UNAVAILABLE:"unavailable",DATA_LOSS:"data-loss"},E=function(t){function e(e,n){var r=t.call(this,n)||this;return r.code=e,r.message=n,r.name="FirebaseError",r.toString=function(){return r.name+": [code="+r.code+"]: "+r.message},r}return a.__extends(e,t),e}(Error);
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+function S(t,e){function n(){var t="This constructor is private.";throw e&&(t+=" ",t+=e),new E(T.INVALID_ARGUMENT,t)}for(var r in n.prototype=t.prototype,t)t.hasOwnProperty(r)&&(n[r]=t[r]);return n}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */function I(t,e){return Object.prototype.hasOwnProperty.call(t,e)}function _(t,e){return void 0!==t?t:e}function C(t,e){for(var n in t)if(Object.prototype.hasOwnProperty.call(t,n)){var r=Number(n);isNaN(r)||e(r,t[n])}}function D(t,e){for(var n in t)Object.prototype.hasOwnProperty.call(t,n)&&e(n,t[n])}function A(t){for(var e in v(null!=t&&"object"==typeof t,"isEmpty() expects object parameter."),t)if(Object.prototype.hasOwnProperty.call(t,e))return!1;return!0}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+function N(t,e){if(0!==e.length)throw new E(T.INVALID_ARGUMENT,"Function "+t+"() does not support arguments, but was called with "+H(e.length,"argument")+".")}function k(t,e,n){if(e.length!==n)throw new E(T.INVALID_ARGUMENT,"Function "+t+"() requires "+H(n,"argument")+", but was called with "+H(e.length,"argument")+".")}function R(t,e,n){if(e.length<n)throw new E(T.INVALID_ARGUMENT,"Function "+t+"() requires at least "+H(n,"argument")+", but was called with "+H(e.length,"argument")+".")}function O(t,e,n,r){if(e.length<n||e.length>r)throw new E(T.INVALID_ARGUMENT,"Function "+t+"() requires between "+n+" and "+r+" arguments, but was called with "+H(e.length,"argument")+".")}function M(t,e,n,r){B(t,e,z(n)+" argument",r)}function L(t,e,n,r){void 0!==r&&M(t,e,n,r)}function P(t,e,n,r){B(t,e,n+" option",r)}function x(t,e,n,r){void 0!==r&&P(t,e,n,r)}function F(t,e,n,r,i){void 0!==r&&function(t,e,n,r,i){if(!(r instanceof Array))throw new E(T.INVALID_ARGUMENT,"Function "+t+"() requires its "+e+" option to be an array, but it was: "+j(r));for(var o=0;o<r.length;++o)if(!i(r[o]))throw new E(T.INVALID_ARGUMENT,"Function "+t+"() requires all "+e+" elements to be "+n+", but the value at index "+o+" was: "+j(r[o]))}(t,e,n,r,i)}function q(t,e,n,r,i){void 0!==r&&function(t,e,n,r,i){for(var o=[],a=0,s=i;a<s.length;a++){var u=s[a];if(u===r)return;o.push(j(u))}var c=j(r);throw new E(T.INVALID_ARGUMENT,"Invalid value "+c+" provided to function "+t+'() for option "'+n+'". Acceptable values: '+o.join(", "))}(t,0,n,r,i)}function V(t,e,n,r){if(!e.some((function(t){return t===r})))throw new E(T.INVALID_ARGUMENT,"Invalid value "+j(r)+" provided to function "+t+"() for its "+z(n)+" argument. Acceptable values: "+e.join(", "))}function B(t,e,n,r){if(!("object"===e?U(r):"non-empty string"===e?"string"==typeof r&&""!==r:typeof r===e)){var i=j(r);throw new E(T.INVALID_ARGUMENT,"Function "+t+"() requires its "+n+" to be of type "+e+", but it was: "+i)}}function U(t){return"object"==typeof t&&null!==t&&(Object.getPrototypeOf(t)===Object.prototype||null===Object.getPrototypeOf(t))}function j(t){if(void 0===t)return"undefined";if(null===t)return"null";if("string"==typeof t)return t.length>20&&(t=t.substring(0,20)+"..."),JSON.stringify(t);if("number"==typeof t||"boolean"==typeof t)return""+t;if("object"==typeof t){if(t instanceof Array)return"an array";var e=function(t){if(t.constructor){var e=/function\s+([^\s(]+)\s*\(/.exec(t.constructor.toString());if(e&&e.length>1)return e[1]}return null}(t);return e?"a custom "+e+" object":"an object"}return"function"==typeof t?"a function":g("Unknown wrong type: "+typeof t)}function K(t,e,n){if(void 0===n)throw new E(T.INVALID_ARGUMENT,"Function "+t+"() requires a valid "+z(e)+" argument, but it was undefined.")}function W(t,e,n){D(e,(function(e,r){if(n.indexOf(e)<0)throw new E(T.INVALID_ARGUMENT,"Unknown option '"+e+"' passed to function "+t+"(). Available options: "+n.join(", "))}))}function Q(t,e,n,r){var i=j(r);return new E(T.INVALID_ARGUMENT,"Function "+t+"() requires its "+z(n)+" argument to be a "+e+", but it was: "+i)}function G(t,e,n){if(n<=0)throw new E(T.INVALID_ARGUMENT,'Function "'+t+'()" requires its '+z(e)+" argument to be a positive number, but it was: "+n+".")}function z(t){switch(t){case 1:return"first";case 2:return"second";case 3:return"third";default:return t+"th"}}function H(t,e){return t+" "+e+(1===t?"":"s")}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */var Y=function(){function t(){}return t.newId=function(){for(var t="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",e="",n=0;n<20;n++)e+=t.charAt(Math.floor(Math.random()*t.length));return v(20===e.length,"Invalid auto ID: "+e),e},t}();function X(t,e){return t<e?-1:t>e?1:0}function J(t,e){if(t.length!==e.length)return!1;for(var n=0;n<t.length;n++)if(!t[n].isEqual(e[n]))return!1;return!0}function $(t){return t+"\0"}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */function Z(){if("undefined"==typeof Uint8Array)throw new E(T.UNIMPLEMENTED,"Uint8Arrays are not available in this environment.")}function tt(){if(!b.getPlatform().base64Available)throw new E(T.UNIMPLEMENTED,"Blobs are unavailable in Firestore in this environment.")}var et,nt=function(){function t(t){tt(),this._binaryString=t}return t.fromBase64String=function(e){k("Blob.fromBase64String",arguments,1),M("Blob.fromBase64String","string",1,e),tt();try{var n=b.getPlatform().atob(e);return new t(n)}catch(t){throw new E(T.INVALID_ARGUMENT,"Failed to construct Blob from Base64 string: "+t)}},t.fromUint8Array=function(e){if(k("Blob.fromUint8Array",arguments,1),Z(),!(e instanceof Uint8Array))throw Q("Blob.fromUint8Array","Uint8Array",1,e);var n=Array.prototype.map.call(e,(function(t){return String.fromCharCode(t)})).join("");return new t(n)},t.prototype.toBase64=function(){return k("Blob.toBase64",arguments,0),tt(),b.getPlatform().btoa(this._binaryString)},t.prototype.toUint8Array=function(){k("Blob.toUint8Array",arguments,0),Z();for(var t=new Uint8Array(this._binaryString.length),e=0;e<this._binaryString.length;e++)t[e]=this._binaryString.charCodeAt(e);return t},t.prototype.toString=function(){return"Blob(base64: "+this.toBase64()+")"},t.prototype.isEqual=function(t){return this._binaryString===t._binaryString},t.prototype._compareTo=function(t){return X(this._binaryString,t._binaryString)},t}(),rt=S(nt,"Use Blob.fromUint8Array() or Blob.fromBase64String() instead."),it=function(t,e,n,r,i){this.databaseId=t,this.persistenceKey=e,this.host=n,this.ssl=r,this.forceLongPolling=i},ot="(default)",at=function(){function t(t,e){this.projectId=t,this.database=e||ot}return Object.defineProperty(t.prototype,"isDefaultDatabase",{get:function(){return this.database===ot},enumerable:!0,configurable:!0}),t.prototype.isEqual=function(e){return e instanceof t&&e.projectId===this.projectId&&e.database===this.database},t.prototype.compareTo=function(t){return X(this.projectId,t.projectId)||X(this.database,t.database)},t}(),st=function(){function t(t,e){var n=this;this.previousValue=t,e&&(e.sequenceNumberHandler=function(t){return n.setPreviousValue(t)},this.writeNewSequenceNumber=function(t){return e.writeSequenceNumber(t)})}return t.prototype.setPreviousValue=function(t){return this.previousValue=Math.max(t,this.previousValue),this.previousValue},t.prototype.next=function(){var t=++this.previousValue;return this.writeNewSequenceNumber&&this.writeNewSequenceNumber(t),t},t.INVALID=-1,t}(),ut=function(){function t(t,e,n){void 0===e?e=0:e>t.length&&g("offset "+e+" out of range "+t.length),void 0===n?n=t.length-e:n>t.length-e&&g("length "+n+" out of range "+(t.length-e)),this.segments=t,this.offset=e,this.len=n}return Object.defineProperty(t.prototype,"length",{get:function(){return this.len},enumerable:!0,configurable:!0}),t.prototype.isEqual=function(e){return 0===t.comparator(this,e)},t.prototype.child=function(e){var n=this.segments.slice(this.offset,this.limit());return e instanceof t?e.forEach((function(t){n.push(t)})):n.push(e),this.construct(n)},t.prototype.limit=function(){return this.offset+this.length},t.prototype.popFirst=function(t){return t=void 0===t?1:t,v(this.length>=t,"Can't call popFirst() with less segments"),this.construct(this.segments,this.offset+t,this.length-t)},t.prototype.popLast=function(){return v(!this.isEmpty(),"Can't call popLast() on empty path"),this.construct(this.segments,this.offset,this.length-1)},t.prototype.firstSegment=function(){return v(!this.isEmpty(),"Can't call firstSegment() on empty path"),this.segments[this.offset]},t.prototype.lastSegment=function(){return this.get(this.length-1)},t.prototype.get=function(t){return v(t<this.length,"Index out of range"),this.segments[this.offset+t]},t.prototype.isEmpty=function(){return 0===this.length},t.prototype.isPrefixOf=function(t){if(t.length<this.length)return!1;for(var e=0;e<this.length;e++)if(this.get(e)!==t.get(e))return!1;return!0},t.prototype.isImmediateParentOf=function(t){if(this.length+1!==t.length)return!1;for(var e=0;e<this.length;e++)if(this.get(e)!==t.get(e))return!1;return!0},t.prototype.forEach=function(t){for(var e=this.offset,n=this.limit();e<n;e++)t(this.segments[e])},t.prototype.toArray=function(){return this.segments.slice(this.offset,this.limit())},t.comparator=function(t,e){for(var n=Math.min(t.length,e.length),r=0;r<n;r++){var i=t.get(r),o=e.get(r);if(i<o)return-1;if(i>o)return 1}return t.length<e.length?-1:t.length>e.length?1:0},t}(),ct=function(t){function e(){return null!==t&&t.apply(this,arguments)||this}return a.__extends(e,t),e.prototype.construct=function(t,n,r){return new e(t,n,r)},e.prototype.canonicalString=function(){return this.toArray().join("/")},e.prototype.toString=function(){return this.canonicalString()},e.fromString=function(t){if(t.indexOf("//")>=0)throw new E(T.INVALID_ARGUMENT,"Invalid path ("+t+"). Paths must not contain // in them.");return new e(t.split("/").filter((function(t){return t.length>0})))},e.EMPTY_PATH=new e([]),e}(ut),ht=/^[_a-zA-Z][_a-zA-Z0-9]*$/,lt=function(t){function e(){return null!==t&&t.apply(this,arguments)||this}return a.__extends(e,t),e.prototype.construct=function(t,n,r){return new e(t,n,r)},e.isValidIdentifier=function(t){return ht.test(t)},e.prototype.canonicalString=function(){return this.toArray().map((function(t){return t=t.replace("\\","\\\\").replace("`","\\`"),e.isValidIdentifier(t)||(t="`"+t+"`"),t})).join(".")},e.prototype.toString=function(){return this.canonicalString()},e.prototype.isKeyField=function(){return 1===this.length&&"__name__"===this.get(0)},e.keyField=function(){return new e(["__name__"])},e.fromServerFormat=function(t){for(var n=[],r="",i=0,o=function(){if(0===r.length)throw new E(T.INVALID_ARGUMENT,"Invalid field path ("+t+"). Paths must not be empty, begin with '.', end with '.', or contain '..'");n.push(r),r=""},a=!1;i<t.length;){var s=t[i];if("\\"===s){if(i+1===t.length)throw new E(T.INVALID_ARGUMENT,"Path has trailing escape character: "+t);var u=t[i+1];if("\\"!==u&&"."!==u&&"`"!==u)throw new E(T.INVALID_ARGUMENT,"Path has invalid escape sequence: "+t);r+=u,i+=2}else"`"===s?(a=!a,i++):"."!==s||a?(r+=s,i++):(o(),i++)}if(o(),a)throw new E(T.INVALID_ARGUMENT,"Unterminated ` in path: "+t);return new e(n)},e.EMPTY_PATH=new e([]),e}(ut),ft=function(){function t(e){this.path=e,v(t.isDocumentKey(e),"Invalid DocumentKey with an odd number of segments: "+e.toArray().join("/"))}return t.prototype.hasCollectionId=function(t){return this.path.length>=2&&this.path.get(this.path.length-2)===t},t.prototype.isEqual=function(t){return null!==t&&0===ct.comparator(this.path,t.path)},t.prototype.toString=function(){return this.path.toString()},t.comparator=function(t,e){return ct.comparator(t.path,e.path)},t.isDocumentKey=function(t){return t.length%2==0},t.fromSegments=function(e){return new t(new ct(e.slice()))},t.fromPathString=function(e){return new t(ct.fromString(e))},t.EMPTY=new t(new ct([])),t}(),dt=function(){var t=this;this.promise=new Promise((function(e,n){t.resolve=e,t.reject=n}))};!function(t){t.All="all",t.ListenStreamIdle="listen_stream_idle",t.ListenStreamConnectionBackoff="listen_stream_connection_backoff",t.WriteStreamIdle="write_stream_idle",t.WriteStreamConnectionBackoff="write_stream_connection_backoff",t.OnlineStateTimeout="online_state_timeout",t.ClientMetadataRefresh="client_metadata_refresh",t.LruGarbageCollection="lru_garbage_collection",t.RetryTransaction="retry_transaction"}(et||(et={}));var pt=function(){function t(t,e,n,r,i){this.asyncQueue=t,this.timerId=e,this.targetTimeMs=n,this.op=r,this.removalCallback=i,this.deferred=new dt,this.then=this.deferred.promise.then.bind(this.deferred.promise),this.catch=this.deferred.promise.catch.bind(this.deferred.promise),this.deferred.promise.catch((function(t){}))}return t.createAndSchedule=function(e,n,r,i,o){var a=new t(e,n,Date.now()+r,i,o);return a.start(r),a},t.prototype.start=function(t){var e=this;this.timerHandle=setTimeout((function(){return e.handleDelayElapsed()}),t)},t.prototype.skipDelay=function(){return this.handleDelayElapsed()},t.prototype.cancel=function(t){null!==this.timerHandle&&(this.clearTimeout(),this.deferred.reject(new E(T.CANCELLED,"Operation cancelled"+(t?": "+t:""))))},t.prototype.handleDelayElapsed=function(){var t=this;this.asyncQueue.enqueueAndForget((function(){return null!==t.timerHandle?(t.clearTimeout(),t.op().then((function(e){return t.deferred.resolve(e)}))):Promise.resolve()}))},t.prototype.clearTimeout=function(){null!==this.timerHandle&&(this.removalCallback(this),clearTimeout(this.timerHandle),this.timerHandle=null)},t}(),mt=function(){function t(){this.tail=Promise.resolve(),this._isShuttingDown=!1,this.delayedOperations=[],this.failure=null,this.operationInProgress=!1,this.timerIdsToSkip=[]}return Object.defineProperty(t.prototype,"isShuttingDown",{get:function(){return this._isShuttingDown},enumerable:!0,configurable:!0}),t.prototype.enqueueAndForget=function(t){this.enqueue(t)},t.prototype.enqueueAndForgetEvenAfterShutdown=function(t){this.verifyNotFailed(),this.enqueueInternal(t)},t.prototype.enqueueEvenAfterShutdown=function(t){return this.verifyNotFailed(),this.enqueueInternal(t)},t.prototype.enqueueAndInitiateShutdown=function(t){return a.__awaiter(this,void 0,void 0,(function(){return a.__generator(this,(function(e){switch(e.label){case 0:return this.verifyNotFailed(),this._isShuttingDown?[3,2]:(this._isShuttingDown=!0,[4,this.enqueueEvenAfterShutdown(t)]);case 1:e.sent(),e.label=2;case 2:return[2]}}))}))},t.prototype.enqueue=function(t){return this.verifyNotFailed(),this._isShuttingDown?new Promise((function(t){})):this.enqueueInternal(t)},t.prototype.enqueueInternal=function(t){var e=this,n=this.tail.then((function(){return e.operationInProgress=!0,t().catch((function(t){e.failure=t,e.operationInProgress=!1;var n=t.stack||t.message||"";throw m("INTERNAL UNHANDLED ERROR: ",n),n.indexOf("Firestore Test Simulated Error")<0&&setTimeout((function(){throw t}),0),t})).then((function(t){return e.operationInProgress=!1,t}))}));return this.tail=n,n},t.prototype.enqueueAfterDelay=function(t,e,n){var r=this;this.verifyNotFailed(),v(e>=0,"Attempted to schedule an operation with a negative delay of "+e),this.timerIdsToSkip.indexOf(t)>-1&&(e=0);var i=pt.createAndSchedule(this,t,e,n,(function(t){return r.removeDelayedOperation(t)}));return this.delayedOperations.push(i),i},t.prototype.verifyNotFailed=function(){this.failure&&g("AsyncQueue is already failed: "+(this.failure.stack||this.failure.message))},t.prototype.verifyOperationInProgress=function(){v(this.operationInProgress,"verifyOpInProgress() called when no op in progress on this queue.")},t.prototype.drain=function(){return this.enqueueEvenAfterShutdown((function(){return Promise.resolve()}))},t.prototype.containsDelayedOperation=function(t){for(var e=0,n=this.delayedOperations;e<n.length;e++){if(n[e].timerId===t)return!0}return!1},t.prototype.runDelayedOperationsEarly=function(t){var e=this;return this.drain().then((function(){v(t===et.All||e.containsDelayedOperation(t),"Attempted to drain to missing operation "+t),e.delayedOperations.sort((function(t,e){return t.targetTimeMs-e.targetTimeMs}));for(var n=0,r=e.delayedOperations;n<r.length;n++){var i=r[n];if(i.skipDelay(),t!==et.All&&i.timerId===t)break}return e.drain()}))},t.prototype.skipDelaysForTimerId=function(t){this.timerIdsToSkip.push(t)},t.prototype.removeDelayedOperation=function(t){var e=this.delayedOperations.indexOf(t);v(e>=0,"Delayed operation not found."),this.delayedOperations.splice(e,1)},t}(),yt="",gt="",vt="",bt="";function wt(t){for(var e="",n=0;n<t.length;n++)e.length>0&&(e=Et(e)),e=Tt(t.get(n),e);return Et(e)}function Tt(t,e){for(var n=e,r=t.length,i=0;i<r;i++){var o=t.charAt(i);switch(o){case"\0":n+=yt+vt;break;case yt:n+=yt+bt;break;default:n+=o}}return n}function Et(t){return t+yt+gt}function St(t){var e=t.length;if(v(e>=2,"Invalid path "+t),2===e)return v(t.charAt(0)===yt&&t.charAt(1)===gt,"Non-empty path "+t+" had length 2"),ct.EMPTY_PATH;for(var n=e-2,r=[],i="",o=0;o<e;){var a=t.indexOf(yt,o);switch((a<0||a>n)&&g('Invalid encoded resource path: "'+t+'"'),t.charAt(a+1)){case gt:var s=t.substring(o,a),u=void 0;0===i.length?u=s:(u=i+=s,i=""),r.push(u);break;case vt:i+=t.substring(o,a),i+="\0";break;case bt:i+=t.substring(o,a+1);break;default:g('Invalid encoded resource path: "'+t+'"')}o=a+2}return new ct(r)}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */var It=function(){function t(t,e){if(this.seconds=t,this.nanoseconds=e,e<0)throw new E(T.INVALID_ARGUMENT,"Timestamp nanoseconds out of range: "+e);if(e>=1e9)throw new E(T.INVALID_ARGUMENT,"Timestamp nanoseconds out of range: "+e);if(t<-62135596800)throw new E(T.INVALID_ARGUMENT,"Timestamp seconds out of range: "+t);if(t>=253402300800)throw new E(T.INVALID_ARGUMENT,"Timestamp seconds out of range: "+t)}return t.now=function(){return t.fromMillis(Date.now())},t.fromDate=function(e){return t.fromMillis(e.getTime())},t.fromMillis=function(e){var n=Math.floor(e/1e3);return new t(n,1e6*(e-1e3*n))},t.prototype.toDate=function(){return new Date(this.toMillis())},t.prototype.toMillis=function(){return 1e3*this.seconds+this.nanoseconds/1e6},t.prototype._compareTo=function(t){return this.seconds===t.seconds?X(this.nanoseconds,t.nanoseconds):X(this.seconds,t.seconds)},t.prototype.isEqual=function(t){return t.seconds===this.seconds&&t.nanoseconds===this.nanoseconds},t.prototype.toString=function(){return"Timestamp(seconds="+this.seconds+", nanoseconds="+this.nanoseconds+")"},t}(),_t=function(){function t(t){this.timestamp=t}return t.fromMicroseconds=function(e){var n=Math.floor(e/1e6);return new t(new It(n,e%1e6*1e3))},t.fromTimestamp=function(e){return new t(e)},t.forDeletedDoc=function(){return t.MIN},t.prototype.compareTo=function(t){return this.timestamp._compareTo(t.timestamp)},t.prototype.isEqual=function(t){return this.timestamp.isEqual(t.timestamp)},t.prototype.toMicroseconds=function(){return 1e6*this.timestamp.seconds+this.timestamp.nanoseconds/1e3},t.prototype.toString=function(){return"SnapshotVersion("+this.timestamp.toString()+")"},t.prototype.toTimestamp=function(){return this.timestamp},t.MIN=new t(new It(0,0)),t}(),Ct=function(){function t(t,e){this.comparator=t,this.root=e||At.EMPTY}return t.prototype.insert=function(e,n){return new t(this.comparator,this.root.insert(e,n,this.comparator).copy(null,null,At.BLACK,null,null))},t.prototype.remove=function(e){return new t(this.comparator,this.root.remove(e,this.comparator).copy(null,null,At.BLACK,null,null))},t.prototype.get=function(t){for(var e=this.root;!e.isEmpty();){var n=this.comparator(t,e.key);if(0===n)return e.value;n<0?e=e.left:n>0&&(e=e.right)}return null},t.prototype.indexOf=function(t){for(var e=0,n=this.root;!n.isEmpty();){var r=this.comparator(t,n.key);if(0===r)return e+n.left.size;r<0?n=n.left:(e+=n.left.size+1,n=n.right)}return-1},t.prototype.isEmpty=function(){return this.root.isEmpty()},Object.defineProperty(t.prototype,"size",{get:function(){return this.root.size},enumerable:!0,configurable:!0}),t.prototype.minKey=function(){return this.root.minKey()},t.prototype.maxKey=function(){return this.root.maxKey()},t.prototype.inorderTraversal=function(t){return this.root.inorderTraversal(t)},t.prototype.forEach=function(t){this.inorderTraversal((function(e,n){return t(e,n),!1}))},t.prototype.toString=function(){var t=[];return this.inorderTraversal((function(e,n){return t.push(e+":"+n),!1})),"{"+t.join(", ")+"}"},t.prototype.reverseTraversal=function(t){return this.root.reverseTraversal(t)},t.prototype.getIterator=function(){return new Dt(this.root,null,this.comparator,!1)},t.prototype.getIteratorFrom=function(t){return new Dt(this.root,t,this.comparator,!1)},t.prototype.getReverseIterator=function(){return new Dt(this.root,null,this.comparator,!0)},t.prototype.getReverseIteratorFrom=function(t){return new Dt(this.root,t,this.comparator,!0)},t}(),Dt=function(){function t(t,e,n,r){this.isReverse=r,this.nodeStack=[];for(var i=1;!t.isEmpty();)if(i=e?n(t.key,e):1,r&&(i*=-1),i<0)t=this.isReverse?t.left:t.right;else{if(0===i){this.nodeStack.push(t);break}this.nodeStack.push(t),t=this.isReverse?t.right:t.left}}return t.prototype.getNext=function(){v(this.nodeStack.length>0,"getNext() called on iterator when hasNext() is false.");var t=this.nodeStack.pop(),e={key:t.key,value:t.value};if(this.isReverse)for(t=t.left;!t.isEmpty();)this.nodeStack.push(t),t=t.right;else for(t=t.right;!t.isEmpty();)this.nodeStack.push(t),t=t.left;return e},t.prototype.hasNext=function(){return this.nodeStack.length>0},t.prototype.peek=function(){if(0===this.nodeStack.length)return null;var t=this.nodeStack[this.nodeStack.length-1];return{key:t.key,value:t.value}},t}(),At=function(){function t(e,n,r,i,o){this.key=e,this.value=n,this.color=null!=r?r:t.RED,this.left=null!=i?i:t.EMPTY,this.right=null!=o?o:t.EMPTY,this.size=this.left.size+1+this.right.size}return t.prototype.copy=function(e,n,r,i,o){return new t(null!=e?e:this.key,null!=n?n:this.value,null!=r?r:this.color,null!=i?i:this.left,null!=o?o:this.right)},t.prototype.isEmpty=function(){return!1},t.prototype.inorderTraversal=function(t){return this.left.inorderTraversal(t)||t(this.key,this.value)||this.right.inorderTraversal(t)},t.prototype.reverseTraversal=function(t){return this.right.reverseTraversal(t)||t(this.key,this.value)||this.left.reverseTraversal(t)},t.prototype.min=function(){return this.left.isEmpty()?this:this.left.min()},t.prototype.minKey=function(){return this.min().key},t.prototype.maxKey=function(){return this.right.isEmpty()?this.key:this.right.maxKey()},t.prototype.insert=function(t,e,n){var r=this,i=n(t,r.key);return(r=i<0?r.copy(null,null,null,r.left.insert(t,e,n),null):0===i?r.copy(null,e,null,null,null):r.copy(null,null,null,null,r.right.insert(t,e,n))).fixUp()},t.prototype.removeMin=function(){if(this.left.isEmpty())return t.EMPTY;var e=this;return e.left.isRed()||e.left.left.isRed()||(e=e.moveRedLeft()),(e=e.copy(null,null,null,e.left.removeMin(),null)).fixUp()},t.prototype.remove=function(e,n){var r,i=this;if(n(e,i.key)<0)i.left.isEmpty()||i.left.isRed()||i.left.left.isRed()||(i=i.moveRedLeft()),i=i.copy(null,null,null,i.left.remove(e,n),null);else{if(i.left.isRed()&&(i=i.rotateRight()),i.right.isEmpty()||i.right.isRed()||i.right.left.isRed()||(i=i.moveRedRight()),0===n(e,i.key)){if(i.right.isEmpty())return t.EMPTY;r=i.right.min(),i=i.copy(r.key,r.value,null,null,i.right.removeMin())}i=i.copy(null,null,null,null,i.right.remove(e,n))}return i.fixUp()},t.prototype.isRed=function(){return this.color},t.prototype.fixUp=function(){var t=this;return t.right.isRed()&&!t.left.isRed()&&(t=t.rotateLeft()),t.left.isRed()&&t.left.left.isRed()&&(t=t.rotateRight()),t.left.isRed()&&t.right.isRed()&&(t=t.colorFlip()),t},t.prototype.moveRedLeft=function(){var t=this.colorFlip();return t.right.left.isRed()&&(t=(t=(t=t.copy(null,null,null,null,t.right.rotateRight())).rotateLeft()).colorFlip()),t},t.prototype.moveRedRight=function(){var t=this.colorFlip();return t.left.left.isRed()&&(t=(t=t.rotateRight()).colorFlip()),t},t.prototype.rotateLeft=function(){var e=this.copy(null,null,t.RED,null,this.right.left);return this.right.copy(null,null,this.color,e,null)},t.prototype.rotateRight=function(){var e=this.copy(null,null,t.RED,this.left.right,null);return this.left.copy(null,null,this.color,null,e)},t.prototype.colorFlip=function(){var t=this.left.copy(null,null,!this.left.color,null,null),e=this.right.copy(null,null,!this.right.color,null,null);return this.copy(null,null,!this.color,t,e)},t.prototype.checkMaxDepth=function(){var t=this.check();return Math.pow(2,t)<=this.size+1},t.prototype.check=function(){if(this.isRed()&&this.left.isRed())throw g("Red node has red child("+this.key+","+this.value+")");if(this.right.isRed())throw g("Right child of ("+this.key+","+this.value+") is red");var t=this.left.check();if(t!==this.right.check())throw g("Black depths differ");return t+(this.isRed()?0:1)},t.EMPTY=null,t.RED=!0,t.BLACK=!1,t}(),Nt=function(){function t(){this.size=0}return Object.defineProperty(t.prototype,"key",{get:function(){throw g("LLRBEmptyNode has no key.")},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"value",{get:function(){throw g("LLRBEmptyNode has no value.")},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"color",{get:function(){throw g("LLRBEmptyNode has no color.")},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"left",{get:function(){throw g("LLRBEmptyNode has no left child.")},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"right",{get:function(){throw g("LLRBEmptyNode has no right child.")},enumerable:!0,configurable:!0}),t.prototype.copy=function(t,e,n,r,i){return this},t.prototype.insert=function(t,e,n){return new At(t,e)},t.prototype.remove=function(t,e){return this},t.prototype.isEmpty=function(){return!0},t.prototype.inorderTraversal=function(t){return!1},t.prototype.reverseTraversal=function(t){return!1},t.prototype.minKey=function(){return null},t.prototype.maxKey=function(){return null},t.prototype.isRed=function(){return!1},t.prototype.checkMaxDepth=function(){return!0},t.prototype.check=function(){return 0},t}();
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */At.EMPTY=new Nt;
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var kt=function(){function t(t){this.comparator=t,this.data=new Ct(this.comparator)}return t.fromMapKeys=function(e){var n=new t(e.comparator);return e.forEach((function(t){n=n.add(t)})),n},t.prototype.has=function(t){return null!==this.data.get(t)},t.prototype.first=function(){return this.data.minKey()},t.prototype.last=function(){return this.data.maxKey()},Object.defineProperty(t.prototype,"size",{get:function(){return this.data.size},enumerable:!0,configurable:!0}),t.prototype.indexOf=function(t){return this.data.indexOf(t)},t.prototype.forEach=function(t){this.data.inorderTraversal((function(e,n){return t(e),!1}))},t.prototype.forEachInRange=function(t,e){for(var n=this.data.getIteratorFrom(t[0]);n.hasNext();){var r=n.getNext();if(this.comparator(r.key,t[1])>=0)return;e(r.key)}},t.prototype.forEachWhile=function(t,e){var n;for(n=void 0!==e?this.data.getIteratorFrom(e):this.data.getIterator();n.hasNext();){if(!t(n.getNext().key))return}},t.prototype.firstAfterOrEqual=function(t){var e=this.data.getIteratorFrom(t);return e.hasNext()?e.getNext().key:null},t.prototype.getIterator=function(){return new Rt(this.data.getIterator())},t.prototype.getIteratorFrom=function(t){return new Rt(this.data.getIteratorFrom(t))},t.prototype.add=function(t){return this.copy(this.data.remove(t).insert(t,!0))},t.prototype.delete=function(t){return this.has(t)?this.copy(this.data.remove(t)):this},t.prototype.isEmpty=function(){return this.data.isEmpty()},t.prototype.unionWith=function(t){var e=this;return t.forEach((function(t){e=e.add(t)})),e},t.prototype.isEqual=function(e){if(!(e instanceof t))return!1;if(this.size!==e.size)return!1;for(var n=this.data.getIterator(),r=e.data.getIterator();n.hasNext();){var i=n.getNext().key,o=r.getNext().key;if(0!==this.comparator(i,o))return!1}return!0},t.prototype.toArray=function(){var t=[];return this.forEach((function(e){t.push(e)})),t},t.prototype.toString=function(){var t=[];return this.forEach((function(e){return t.push(e)})),"SortedSet("+t.toString()+")"},t.prototype.copy=function(e){var n=new t(this.comparator);return n.data=e,n},t}(),Rt=function(){function t(t){this.iter=t}return t.prototype.getNext=function(){return this.iter.getNext().key},t.prototype.hasNext=function(){return this.iter.hasNext()},t}(),Ot=new Ct(ft.comparator);function Mt(){return Ot}function Lt(){return Mt()}var Pt=new Ct(ft.comparator);function xt(){return Pt}var Ft=new Ct(ft.comparator);function qt(){return Ft}var Vt=new kt(ft.comparator);function Bt(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];for(var n=Vt,r=0,i=t;r<i.length;r++){var o=i[r];n=n.add(o)}return n}var Ut=new kt(X);function jt(){return Ut}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */var Kt=function(){function t(t,e,n,r){this.batchId=t,this.localWriteTime=e,this.baseMutations=n,this.mutations=r,v(r.length>0,"Cannot create an empty mutation batch")}return t.prototype.applyToRemoteDocument=function(t,e,n){e&&v(e.key.isEqual(t),"applyToRemoteDocument: key "+t+" should match maybeDoc key\n        "+e.key);var r=n.mutationResults;v(r.length===this.mutations.length,"Mismatch between mutations length\n      ("+this.mutations.length+") and mutation results length\n      ("+r.length+").");for(var i=0;i<this.mutations.length;i++){var o=this.mutations[i];if(o.key.isEqual(t)){var a=r[i];e=o.applyToRemoteDocument(e,a)}}return e},t.prototype.applyToLocalView=function(t,e){e&&v(e.key.isEqual(t),"applyToLocalDocument: key "+t+" should match maybeDoc key\n        "+e.key);for(var n=0,r=this.baseMutations;n<r.length;n++){(s=r[n]).key.isEqual(t)&&(e=s.applyToLocalView(e,e,this.localWriteTime))}for(var i=e,o=0,a=this.mutations;o<a.length;o++){var s;(s=a[o]).key.isEqual(t)&&(e=s.applyToLocalView(e,i,this.localWriteTime))}return e},t.prototype.applyToLocalDocumentSet=function(t){var e=this,n=t;return this.mutations.forEach((function(r){var i=e.applyToLocalView(r.key,t.get(r.key));i&&(n=n.insert(r.key,i))})),n},t.prototype.keys=function(){return this.mutations.reduce((function(t,e){return t.add(e.key)}),Bt())},t.prototype.isEqual=function(t){return this.batchId===t.batchId&&J(this.mutations,t.mutations)&&J(this.baseMutations,t.baseMutations)},t}(),Wt=function(){function t(t,e,n,r,i){this.batch=t,this.commitVersion=e,this.mutationResults=n,this.streamToken=r,this.docVersions=i}return t.from=function(e,n,r,i){v(e.mutations.length===r.length,"Mutations sent "+e.mutations.length+" must equal results received "+r.length);for(var o=qt(),a=e.mutations,s=0;s<a.length;s++)o=o.insert(a[s].key,r[s].version);return new t(e,n,r,i,o)},t}(),Qt=function(){function t(t){var e=this;this.nextCallback=null,this.catchCallback=null,this.result=void 0,this.error=void 0,this.isDone=!1,this.callbackAttached=!1,t((function(t){e.isDone=!0,e.result=t,e.nextCallback&&e.nextCallback(t)}),(function(t){e.isDone=!0,e.error=t,e.catchCallback&&e.catchCallback(t)}))}return t.prototype.catch=function(t){return this.next(void 0,t)},t.prototype.next=function(e,n){var r=this;return this.callbackAttached&&g("Called next() or catch() twice for PersistencePromise"),this.callbackAttached=!0,this.isDone?this.error?this.wrapFailure(n,this.error):this.wrapSuccess(e,this.result):new t((function(t,i){r.nextCallback=function(n){r.wrapSuccess(e,n).next(t,i)},r.catchCallback=function(e){r.wrapFailure(n,e).next(t,i)}}))},t.prototype.toPromise=function(){var t=this;return new Promise((function(e,n){t.next(e,n)}))},t.prototype.wrapUserFunction=function(e){try{var n=e();return n instanceof t?n:t.resolve(n)}catch(e){return t.reject(e)}},t.prototype.wrapSuccess=function(e,n){return e?this.wrapUserFunction((function(){return e(n)})):t.resolve(n)},t.prototype.wrapFailure=function(e,n){return e?this.wrapUserFunction((function(){return e(n)})):t.reject(n)},t.resolve=function(e){return new t((function(t,n){t(e)}))},t.reject=function(e){return new t((function(t,n){n(e)}))},t.waitFor=function(e){return new t((function(t,n){var r=0,i=0,o=!1;e.forEach((function(e){++r,e.next((function(){++i,o&&i===r&&t()}),(function(t){return n(t)}))})),o=!0,i===r&&t()}))},t.or=function(e){for(var n=t.resolve(!1),r=function(e){n=n.next((function(n){return n?t.resolve(n):e()}))},i=0,o=e;i<o.length;i++){r(o[i])}return n},t.forEach=function(t,e){var n=this,r=[];return t.forEach((function(t,i){r.push(e.call(n,t,i))})),this.waitFor(r)},t}(),Gt="SimpleDb",zt=function(){function e(t){this.db=t,12.2===e.getIOSVersion(u.getUA())&&m("Firestore persistence suffers from a bug in iOS 12.2 Safari that may cause your app to stop working. See https://stackoverflow.com/q/56496296/110915 for details and a potential workaround.")}return e.openOrCreate=function(t,n,r){return v(e.isAvailable(),"IndexedDB not supported in current environment."),p(Gt,"Opening database:",t),new Qt((function(i,o){var a=window.indexedDB.open(t,n);a.onsuccess=function(t){var n=t.target.result;i(new e(n))},a.onblocked=function(){o(new E(T.FAILED_PRECONDITION,"Cannot upgrade IndexedDB schema while another tab is open. Close all tabs that access Firestore and reload this page to proceed."))},a.onerror=function(t){var e=t.target.error;"VersionError"===e.name?o(new E(T.FAILED_PRECONDITION,"A newer version of the Firestore SDK was previously used and so the persisted data is not compatible with the version of the SDK you are now using. The SDK will operate with persistence disabled. If you need persistence, please re-upgrade to a newer version of the SDK or else clear the persisted IndexedDB data for your app to start fresh.")):o(e)},a.onupgradeneeded=function(e){p(Gt,'Database "'+t+'" requires upgrade from version:',e.oldVersion);var n=e.target.result;r.createOrUpgrade(n,a.transaction,e.oldVersion,nn).next((function(){p(Gt,"Database upgrade to version "+nn+" complete")}))}})).toPromise()},e.delete=function(t){return p(Gt,"Removing database:",t),Jt(window.indexedDB.deleteDatabase(t)).toPromise()},e.isAvailable=function(){if("undefined"==typeof window||null==window.indexedDB)return!1;if(e.isMockPersistence())return!0;if(void 0===window.navigator)return!1;var t=u.getUA(),n=e.getIOSVersion(t),r=0<n&&n<10,i=e.getAndroidVersion(t),o=0<i&&i<4.5;return!(t.indexOf("MSIE ")>0||t.indexOf("Trident/")>0||t.indexOf("Edge/")>0||r||o)},e.isMockPersistence=function(){return void 0!==t&&"YES"===t.env.USE_MOCK_PERSISTENCE},e.getStore=function(t,e){return t.store(e)},e.getIOSVersion=function(t){var e=t.match(/i(?:phone|pad|pod) os ([\d_]+)/i),n=e?e[1].split("_").slice(0,2).join("."):"-1";return Number(n)},e.getAndroidVersion=function(t){var e=t.match(/Android ([\d.]+)/i),n=e?e[1].split(".").slice(0,2).join("."):"-1";return Number(n)},e.prototype.setVersionChangeListener=function(t){this.db.onversionchange=function(e){return t(e)}},e.prototype.runTransaction=function(t,e,n){return a.__awaiter(this,void 0,void 0,(function(){var r,i,o,s,u,c;return a.__generator(this,(function(h){switch(h.label){case 0:r=t.startsWith("readonly"),i=t.endsWith("idempotent"),o=0,s=function(){var t,s,c,h;return a.__generator(this,(function(a){switch(a.label){case 0:++o,t=Yt.open(u.db,r?"readonly":"readwrite",e),a.label=1;case 1:return a.trys.push([1,3,,4]),(s=n(t).catch((function(e){return t.abort(e),Qt.reject(e)})).toPromise()).catch((function(){})),[4,t.completionPromise];case 2:return a.sent(),[2,{value:s}];case 3:return c=a.sent(),h=i&&"FirebaseError"!==c.name&&o<3,p(Gt,"Transaction failed with error: %s. Retrying: %s.",c.message,h),h?[3,4]:[2,{value:Promise.reject(c)}];case 4:return[2]}}))},u=this,h.label=1;case 1:return[5,s()];case 2:return"object"==typeof(c=h.sent())?[2,c.value]:[3,1];case 3:return[2]}}))}))},e.prototype.close=function(){this.db.close()},e}(),Ht=function(){function t(t){this.dbCursor=t,this.shouldStop=!1,this.nextKey=null}return Object.defineProperty(t.prototype,"isDone",{get:function(){return this.shouldStop},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"skipToKey",{get:function(){return this.nextKey},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"cursor",{set:function(t){this.dbCursor=t},enumerable:!0,configurable:!0}),t.prototype.done=function(){this.shouldStop=!0},t.prototype.skip=function(t){this.nextKey=t},t.prototype.delete=function(){return Jt(this.dbCursor.delete())},t}(),Yt=function(){function t(t){var e=this;this.transaction=t,this.aborted=!1,this.completionDeferred=new dt,this.transaction.oncomplete=function(){e.completionDeferred.resolve()},this.transaction.onabort=function(){t.error?e.completionDeferred.reject(t.error):e.completionDeferred.resolve()},this.transaction.onerror=function(t){var n=Zt(t.target.error);e.completionDeferred.reject(n)}}return t.open=function(e,n,r){return new t(e.transaction(r,n))},Object.defineProperty(t.prototype,"completionPromise",{get:function(){return this.completionDeferred.promise},enumerable:!0,configurable:!0}),t.prototype.abort=function(t){t&&this.completionDeferred.reject(t),this.aborted||(p(Gt,"Aborting transaction:",t?t.message:"Client-initiated abort"),this.aborted=!0,this.transaction.abort())},t.prototype.store=function(t){var e=this.transaction.objectStore(t);return v(!!e,"Object store not part of transaction: "+t),new Xt(e)},t}(),Xt=function(){function t(t){this.store=t}return t.prototype.put=function(t,e){var n;return void 0!==e?(p(Gt,"PUT",this.store.name,t,e),n=this.store.put(e,t)):(p(Gt,"PUT",this.store.name,"<auto-key>",t),n=this.store.put(t)),Jt(n)},t.prototype.add=function(t){return p(Gt,"ADD",this.store.name,t,t),Jt(this.store.add(t))},t.prototype.get=function(t){var e=this;return Jt(this.store.get(t)).next((function(n){return void 0===n&&(n=null),p(Gt,"GET",e.store.name,t,n),n}))},t.prototype.delete=function(t){return p(Gt,"DELETE",this.store.name,t),Jt(this.store.delete(t))},t.prototype.count=function(){return p(Gt,"COUNT",this.store.name),Jt(this.store.count())},t.prototype.loadAll=function(t,e){var n=this.cursor(this.options(t,e)),r=[];return this.iterateCursor(n,(function(t,e){r.push(e)})).next((function(){return r}))},t.prototype.deleteAll=function(t,e){p(Gt,"DELETE ALL",this.store.name);var n=this.options(t,e);n.keysOnly=!1;var r=this.cursor(n);return this.iterateCursor(r,(function(t,e,n){return n.delete()}))},t.prototype.iterate=function(t,e){var n;e?n=t:(n={},e=t);var r=this.cursor(n);return this.iterateCursor(r,e)},t.prototype.iterateSerial=function(t){var e=this.cursor({});return new Qt((function(n,r){e.onerror=function(t){var e=Zt(t.target.error);r(e)},e.onsuccess=function(e){var r=e.target.result;r?t(r.primaryKey,r.value).next((function(t){t?r.continue():n()})):n()}}))},t.prototype.iterateCursor=function(t,e){var n=[];return new Qt((function(r,i){t.onerror=function(t){i(t.target.error)},t.onsuccess=function(t){var i=t.target.result;if(i){var o=new Ht(i),a=e(i.primaryKey,i.value,o);if(a instanceof Qt){var s=a.catch((function(t){return o.done(),Qt.reject(t)}));n.push(s)}o.isDone?r():null===o.skipToKey?i.continue():i.continue(o.skipToKey)}else r()}})).next((function(){return Qt.waitFor(n)}))},t.prototype.options=function(t,e){var n=void 0;return void 0!==t&&("string"==typeof t?n=t:(v(void 0===e,"3rd argument must not be defined if 2nd is a range."),e=t)),{index:n,range:e}},t.prototype.cursor=function(t){var e="next";if(t.reverse&&(e="prev"),t.index){var n=this.store.index(t.index);return t.keysOnly?n.openKeyCursor(t.range,e):n.openCursor(t.range,e)}return this.store.openCursor(t.range,e)},t}();function Jt(t){return new Qt((function(e,n){t.onsuccess=function(t){var n=t.target.result;e(n)},t.onerror=function(t){var e=Zt(t.target.error);n(e)}}))}var $t=!1;function Zt(t){var e=zt.getIOSVersion(u.getUA());if(e>=12.2&&e<13){var n="An internal error was encountered in the Indexed Database server";if(t.message.indexOf(n)>=0){var r=new E("internal","IOS_INDEXEDDB_BUG1: IndexedDb has thrown '"+n+"'. This is likely due to an unavoidable bug in iOS. See https://stackoverflow.com/q/56496296/110915 for details and a potential workaround.");return $t||($t=!0,setTimeout((function(){throw r}),0)),r}}return t}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */var te=function(){function t(t,e,n,r){this.userId=t,this.serializer=e,this.indexManager=n,this.referenceDelegate=r,this.documentKeysByBatchId={}}return t.forUser=function(e,n,r,i){return v(""!==e.uid,"UserID must not be an empty string."),new t(e.isAuthenticated()?e.uid:"",n,r,i)},t.prototype.checkEmpty=function(t){var e=!0,n=IDBKeyRange.bound([this.userId,Number.NEGATIVE_INFINITY],[this.userId,Number.POSITIVE_INFINITY]);return ie(t).iterate({index:un.userMutationsIndex,range:n},(function(t,n,r){e=!1,r.done()})).next((function(){return e}))},t.prototype.acknowledgeBatch=function(t,e,n){return this.getMutationQueueMetadata(t).next((function(e){return e.lastStreamToken=re(n),ae(t).put(e)}))},t.prototype.getLastStreamToken=function(t){return this.getMutationQueueMetadata(t).next((function(t){return t.lastStreamToken}))},t.prototype.setLastStreamToken=function(t,e){return this.getMutationQueueMetadata(t).next((function(n){return n.lastStreamToken=re(e),ae(t).put(n)}))},t.prototype.addMutationBatch=function(t,e,n,r){var i=this,o=oe(t),a=ie(t);return a.add({}).next((function(s){v("number"==typeof s,"Auto-generated key is not a number");for(var u=new Kt(s,e,n,r),c=i.serializer.toDbMutationBatch(i.userId,u),h=[],l=new kt((function(t,e){return X(t.canonicalString(),e.canonicalString())})),f=0,d=r;f<d.length;f++){var p=d[f],m=cn.key(i.userId,p.key.path,s);l=l.add(p.key.path.popLast()),h.push(a.put(c)),h.push(o.put(m,cn.PLACEHOLDER))}return l.forEach((function(e){h.push(i.indexManager.addToCollectionParentIndex(t,e))})),t.addOnCommittedListener((function(){i.documentKeysByBatchId[s]=u.keys()})),Qt.waitFor(h).next((function(){return u}))}))},t.prototype.lookupMutationBatch=function(t,e){var n=this;return ie(t).get(e).next((function(t){return t?(v(t.userId===n.userId,"Unexpected user '"+t.userId+"' for mutation batch "+e),n.serializer.fromDbMutationBatch(t)):null}))},t.prototype.lookupMutationKeys=function(t,e){var n=this;return this.documentKeysByBatchId[e]?Qt.resolve(this.documentKeysByBatchId[e]):this.lookupMutationBatch(t,e).next((function(t){if(t){var r=t.keys();return n.documentKeysByBatchId[e]=r,r}return null}))},t.prototype.getNextMutationBatchAfterBatchId=function(t,e){var n=this,r=e+1,i=IDBKeyRange.lowerBound([this.userId,r]),o=null;return ie(t).iterate({index:un.userMutationsIndex,range:i},(function(t,e,i){e.userId===n.userId&&(v(e.batchId>=r,"Should have found mutation after "+r),o=n.serializer.fromDbMutationBatch(e)),i.done()})).next((function(){return o}))},t.prototype.getHighestUnacknowledgedBatchId=function(t){var e=IDBKeyRange.upperBound([this.userId,Number.POSITIVE_INFINITY]),n=-1;return ie(t).iterate({index:un.userMutationsIndex,range:e,reverse:!0},(function(t,e,r){n=e.batchId,r.done()})).next((function(){return n}))},t.prototype.getAllMutationBatches=function(t){var e=this,n=IDBKeyRange.bound([this.userId,-1],[this.userId,Number.POSITIVE_INFINITY]);return ie(t).loadAll(un.userMutationsIndex,n).next((function(t){return t.map((function(t){return e.serializer.fromDbMutationBatch(t)}))}))},t.prototype.getAllMutationBatchesAffectingDocumentKey=function(t,e){var n=this,r=cn.prefixForPath(this.userId,e.path),i=IDBKeyRange.lowerBound(r),o=[];return oe(t).iterate({range:i},(function(r,i,a){var s=r[0],u=r[1],c=r[2],h=St(u);if(s===n.userId&&e.path.isEqual(h))return ie(t).get(c).next((function(t){if(!t)throw g("Dangling document-mutation reference found: "+r+" which points to "+c);v(t.userId===n.userId,"Unexpected user '"+t.userId+"' for mutation batch "+c),o.push(n.serializer.fromDbMutationBatch(t))}));a.done()})).next((function(){return o}))},t.prototype.getAllMutationBatchesAffectingDocumentKeys=function(t,e){var n=this,r=new kt(X),i=[];return e.forEach((function(e){var o=cn.prefixForPath(n.userId,e.path),a=IDBKeyRange.lowerBound(o),s=oe(t).iterate({range:a},(function(t,i,o){var a=t[0],s=t[1],u=t[2],c=St(s);a===n.userId&&e.path.isEqual(c)?r=r.add(u):o.done()}));i.push(s)})),Qt.waitFor(i).next((function(){return n.lookupMutationBatches(t,r)}))},t.prototype.getAllMutationBatchesAffectingQuery=function(t,e){var n=this;v(!e.isDocumentQuery(),"Document queries shouldn't go down this path"),v(!e.isCollectionGroupQuery(),"CollectionGroup queries should be handled in LocalDocumentsView");var r=e.path,i=r.length+1,o=cn.prefixForPath(this.userId,r),a=IDBKeyRange.lowerBound(o),s=new kt(X);return oe(t).iterate({range:a},(function(t,e,o){var a=t[0],u=t[1],c=t[2],h=St(u);a===n.userId&&r.isPrefixOf(h)?h.length===i&&(s=s.add(c)):o.done()})).next((function(){return n.lookupMutationBatches(t,s)}))},t.prototype.lookupMutationBatches=function(t,e){var n=this,r=[],i=[];return e.forEach((function(e){i.push(ie(t).get(e).next((function(t){if(null===t)throw g("Dangling document-mutation reference found, which points to "+e);v(t.userId===n.userId,"Unexpected user '"+t.userId+"' for mutation batch "+e),r.push(n.serializer.fromDbMutationBatch(t))})))})),Qt.waitFor(i).next((function(){return r}))},t.prototype.removeMutationBatch=function(t,e){var n=this;return ne(t.simpleDbTransaction,this.userId,e).next((function(r){return t.addOnCommittedListener((function(){n.removeCachedMutationKeys(e.batchId)})),Qt.forEach(r,(function(e){return n.referenceDelegate.removeMutationReference(t,e)}))}))},t.prototype.removeCachedMutationKeys=function(t){delete this.documentKeysByBatchId[t]},t.prototype.performConsistencyCheck=function(t){var e=this;return this.checkEmpty(t).next((function(n){if(!n)return Qt.resolve();var r=IDBKeyRange.lowerBound(cn.prefixForUser(e.userId)),i=[];return oe(t).iterate({range:r},(function(t,n,r){if(t[0]===e.userId){var o=St(t[1]);i.push(o)}else r.done()})).next((function(){v(0===i.length,"Document leak -- detected dangling mutation references when queue is empty. Dangling keys: "+i.map((function(t){return t.canonicalString()})))}))}))},t.prototype.containsKey=function(t,e){return ee(t,this.userId,e)},t.prototype.getMutationQueueMetadata=function(t){var e=this;return ae(t).get(this.userId).next((function(t){return t||new sn(e.userId,-1,"")}))},t}();function ee(t,e,n){var r=cn.prefixForPath(e,n.path),i=r[1],o=IDBKeyRange.lowerBound(r),a=!1;return oe(t).iterate({range:o,keysOnly:!0},(function(t,n,r){var o=t[0],s=t[1];t[2];o===e&&s===i&&(a=!0),r.done()})).next((function(){return a}))}function ne(t,e,n){var r=t.store(un.store),i=t.store(cn.store),o=[],a=IDBKeyRange.only(n.batchId),s=0,u=r.iterate({range:a},(function(t,e,n){return s++,n.delete()}));o.push(u.next((function(){v(1===s,"Dangling document-mutation reference found: Missing batch "+n.batchId)})));for(var c=[],h=0,l=n.mutations;h<l.length;h++){var f=l[h],d=cn.key(e,f.key.path,n.batchId);o.push(i.delete(d)),c.push(f.key)}return Qt.waitFor(o).next((function(){return c}))}function re(t){return t instanceof Uint8Array?(v(zt.isMockPersistence(),"Persisting non-string stream tokens is only supported with mock persistence."),t.toString()):t}function ie(t){return Bn.getStore(t,un.store)}function oe(t){return Bn.getStore(t,cn.store)}function ae(t){return Bn.getStore(t,sn.store)}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */var se,ue=1;!function(t){t[t.QueryCache=0]="QueryCache",t[t.SyncEngine=1]="SyncEngine"}(se||(se={}));var ce=function(){function t(t,e){this.generatorId=t,v((t&ue)===t,"Generator ID "+t+" contains more than "+ue+" reserved bits"),this.seek(void 0!==e?e:this.generatorId)}return t.prototype.next=function(){var t=this.nextId;return this.nextId+=1<<ue,t},t.prototype.after=function(t){return this.seek(t+(1<<ue)),this.next()},t.prototype.seek=function(t){v((t&ue)===this.generatorId,"Cannot supply target ID from different generator ID"),this.nextId=t},t.forTargetCache=function(){return new t(se.QueryCache,2)},t.forSyncEngine=function(){return new t(se.SyncEngine)},t}(),he=function(){function t(t,e){this.referenceDelegate=t,this.serializer=e,this.targetIdGenerator=ce.forTargetCache()}return t.prototype.allocateTargetId=function(t){var e=this;return this.retrieveMetadata(t).next((function(n){return n.highestTargetId=e.targetIdGenerator.after(n.highestTargetId),e.saveMetadata(t,n).next((function(){return n.highestTargetId}))}))},t.prototype.getLastRemoteSnapshotVersion=function(t){return this.retrieveMetadata(t).next((function(t){return _t.fromTimestamp(new It(t.lastRemoteSnapshotVersion.seconds,t.lastRemoteSnapshotVersion.nanoseconds))}))},t.prototype.getHighestSequenceNumber=function(t){return de(t.simpleDbTransaction)},t.prototype.setTargetsMetadata=function(t,e,n){var r=this;return this.retrieveMetadata(t).next((function(i){return i.highestListenSequenceNumber=e,n&&(i.lastRemoteSnapshotVersion=n.toTimestamp()),e>i.highestListenSequenceNumber&&(i.highestListenSequenceNumber=e),r.saveMetadata(t,i)}))},t.prototype.addTargetData=function(t,e){var n=this;return this.saveTargetData(t,e).next((function(){return n.retrieveMetadata(t).next((function(r){return r.targetCount+=1,n.updateMetadataFromTargetData(e,r),n.saveMetadata(t,r)}))}))},t.prototype.updateTargetData=function(t,e){return this.saveTargetData(t,e)},t.prototype.removeTargetData=function(t,e){var n=this;return this.removeMatchingKeysForTargetId(t,e.targetId).next((function(){return le(t).delete(e.targetId)})).next((function(){return n.retrieveMetadata(t)})).next((function(e){return v(e.targetCount>0,"Removing from an empty target cache"),e.targetCount-=1,n.saveMetadata(t,e)}))},t.prototype.removeTargets=function(t,e,n){var r=this,i=0,o=[];return le(t).iterate((function(a,s){var u=r.serializer.fromDbTarget(s);u.sequenceNumber<=e&&null===n.get(u.targetId)&&(i++,o.push(r.removeTargetData(t,u)))})).next((function(){return Qt.waitFor(o)})).next((function(){return i}))},t.prototype.forEachTarget=function(t,e){var n=this;return le(t).iterate((function(t,r){var i=n.serializer.fromDbTarget(r);e(i)}))},t.prototype.retrieveMetadata=function(t){return fe(t.simpleDbTransaction)},t.prototype.saveMetadata=function(t,e){return(n=t,Bn.getStore(n,yn.store)).put(yn.key,e);var n},t.prototype.saveTargetData=function(t,e){return le(t).put(this.serializer.toDbTarget(e))},t.prototype.updateMetadataFromTargetData=function(t,e){var n=!1;return t.targetId>e.highestTargetId&&(e.highestTargetId=t.targetId,n=!0),t.sequenceNumber>e.highestListenSequenceNumber&&(e.highestListenSequenceNumber=t.sequenceNumber,n=!0),n},t.prototype.getTargetCount=function(t){return this.retrieveMetadata(t).next((function(t){return t.targetCount}))},t.prototype.getTargetData=function(t,e){var n=this,r=e.canonicalId(),i=IDBKeyRange.bound([r,Number.NEGATIVE_INFINITY],[r,Number.POSITIVE_INFINITY]),o=null;return le(t).iterate({range:i,index:pn.queryTargetsIndexName},(function(t,r,i){var a=n.serializer.fromDbTarget(r);e.isEqual(a.target)&&(o=a,i.done())})).next((function(){return o}))},t.prototype.addMatchingKeys=function(t,e,n){var r=this,i=[],o=pe(t);return e.forEach((function(e){var a=wt(e.path);i.push(o.put(new mn(n,a))),i.push(r.referenceDelegate.addReference(t,e))})),Qt.waitFor(i)},t.prototype.removeMatchingKeys=function(t,e,n){var r=this,i=pe(t);return Qt.forEach(e,(function(e){var o=wt(e.path);return Qt.waitFor([i.delete([n,o]),r.referenceDelegate.removeReference(t,e)])}))},t.prototype.removeMatchingKeysForTargetId=function(t,e){var n=pe(t),r=IDBKeyRange.bound([e],[e+1],!1,!0);return n.delete(r)},t.prototype.getMatchingKeysForTargetId=function(t,e){var n=IDBKeyRange.bound([e],[e+1],!1,!0),r=pe(t),i=Bt();return r.iterate({range:n,keysOnly:!0},(function(t,e,n){var r=St(t[1]),o=new ft(r);i=i.add(o)})).next((function(){return i}))},t.prototype.containsKey=function(t,e){var n=wt(e.path),r=IDBKeyRange.bound([n],[$(n)],!1,!0),i=0;return pe(t).iterate({index:mn.documentTargetsIndex,keysOnly:!0,range:r},(function(t,e,n){var r=t[0];t[1];0!==r&&(i++,n.done())})).next((function(){return i>0}))},t.prototype.getTargetDataForTarget=function(t,e){var n=this;return le(t).get(e).next((function(t){return t?n.serializer.fromDbTarget(t):null}))},t}();
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */function le(t){return Bn.getStore(t,pn.store)}function fe(t){return zt.getStore(t,yn.store).get(yn.key).next((function(t){return v(null!==t,"Missing metadata row."),t}))}function de(t){return fe(t).next((function(t){return t.highestListenSequenceNumber}))}function pe(t){return Bn.getStore(t,mn.store)}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */var me,ye=function(){function t(t){this.fields=t}return t.fromSet=function(e){return new t(e)},t.fromArray=function(e){var n=new kt(lt.comparator);return e.forEach((function(t){return n=n.add(t)})),new t(n)},t.prototype.covers=function(t){var e=!1;return this.fields.forEach((function(n){n.isPrefixOf(t)&&(e=!0)})),e},t.prototype.isEqual=function(t){return this.fields.isEqual(t.fields)},t}(),ge=function(){function t(t,e){this.field=t,this.transform=e}return t.prototype.isEqual=function(t){return this.field.isEqual(t.field)&&this.transform.isEqual(t.transform)},t}(),ve=function(t,e){this.version=t,this.transformResults=e};!function(t){t[t.Set=0]="Set",t[t.Patch=1]="Patch",t[t.Transform=2]="Transform",t[t.Delete=3]="Delete"}(me||(me={}));var be,we,Te=function(){function t(t,e){this.updateTime=t,this.exists=e,v(void 0===t||void 0===e,'Precondition can specify "exists" or "updateTime" but not both')}return t.exists=function(e){return new t(void 0,e)},t.updateTime=function(e){return new t(e)},Object.defineProperty(t.prototype,"isNone",{get:function(){return void 0===this.updateTime&&void 0===this.exists},enumerable:!0,configurable:!0}),t.prototype.isValidFor=function(t){return void 0!==this.updateTime?t instanceof We&&t.version.isEqual(this.updateTime):void 0!==this.exists?this.exists===t instanceof We:(v(this.isNone,"Precondition should be empty"),!0)},t.prototype.isEqual=function(t){return e=this.updateTime,n=t.updateTime,(null!=e?!(!n||!e.isEqual(n)):e===n)&&this.exists===t.exists;var e,n},t.NONE=new t,t}(),Ee=function(){function t(){}return t.prototype.verifyKeyMatches=function(t){null!=t&&v(t.key.isEqual(this.key),"Can only apply a mutation to a document with the same key")},t.getPostMutationVersion=function(t){return t instanceof We?t.version:_t.MIN},t}(),Se=function(t){function e(e,n,r){var i=t.call(this)||this;return i.key=e,i.value=n,i.precondition=r,i.type=me.Set,i}return a.__extends(e,t),e.prototype.applyToRemoteDocument=function(t,e){this.verifyKeyMatches(t),v(null==e.transformResults,"Transform results received by SetMutation.");var n=e.version;return new We(this.key,n,{hasCommittedMutations:!0},this.value)},e.prototype.applyToLocalView=function(t,e,n){if(this.verifyKeyMatches(t),!this.precondition.isValidFor(t))return t;var r=Ee.getPostMutationVersion(t);return new We(this.key,r,{hasLocalMutations:!0},this.value)},e.prototype.extractBaseValue=function(t){return null},e.prototype.isEqual=function(t){return t instanceof e&&this.key.isEqual(t.key)&&this.value.isEqual(t.value)&&this.precondition.isEqual(t.precondition)},e}(Ee),Ie=function(t){function e(e,n,r,i){var o=t.call(this)||this;return o.key=e,o.data=n,o.fieldMask=r,o.precondition=i,o.type=me.Patch,o}return a.__extends(e,t),e.prototype.applyToRemoteDocument=function(t,e){if(this.verifyKeyMatches(t),v(null==e.transformResults,"Transform results received by PatchMutation."),!this.precondition.isValidFor(t))return new Ge(this.key,e.version);var n=this.patchDocument(t);return new We(this.key,e.version,{hasCommittedMutations:!0},n)},e.prototype.applyToLocalView=function(t,e,n){if(this.verifyKeyMatches(t),!this.precondition.isValidFor(t))return t;var r=Ee.getPostMutationVersion(t),i=this.patchDocument(t);return new We(this.key,r,{hasLocalMutations:!0},i)},e.prototype.extractBaseValue=function(t){return null},e.prototype.isEqual=function(t){return t instanceof e&&this.key.isEqual(t.key)&&this.fieldMask.isEqual(t.fieldMask)&&this.precondition.isEqual(t.precondition)},e.prototype.patchDocument=function(t){var e;return e=t instanceof We?t.data():Ue.EMPTY,this.patchObject(e)},e.prototype.patchObject=function(t){var e=this;return this.fieldMask.fields.forEach((function(n){if(!n.isEmpty()){var r=e.data.field(n);t=null!==r?t.set(n,r):t.delete(n)}})),t},e}(Ee),_e=function(t){function e(e,n){var r=t.call(this)||this;return r.key=e,r.fieldTransforms=n,r.type=me.Transform,r.precondition=Te.exists(!0),r}return a.__extends(e,t),e.prototype.applyToRemoteDocument=function(t,e){if(this.verifyKeyMatches(t),v(null!=e.transformResults,"Transform results missing for TransformMutation."),!this.precondition.isValidFor(t))return new Ge(this.key,e.version);var n=this.requireDocument(t),r=this.serverTransformResults(t,e.transformResults),i=e.version,o=this.transformObject(n.data(),r);return new We(this.key,i,{hasCommittedMutations:!0},o)},e.prototype.applyToLocalView=function(t,e,n){if(this.verifyKeyMatches(t),!this.precondition.isValidFor(t))return t;var r=this.requireDocument(t),i=this.localTransformResults(n,t,e),o=this.transformObject(r.data(),i);return new We(this.key,r.version,{hasLocalMutations:!0},o)},e.prototype.extractBaseValue=function(t){for(var e=null,n=0,r=this.fieldTransforms;n<r.length;n++){var i=r[n],o=t instanceof We?t.field(i.field):void 0,a=i.transform.computeBaseValue(o||null);null!=a&&(e=null==e?Ue.EMPTY.set(i.field,a):e.set(i.field,a))}return e},e.prototype.isEqual=function(t){return t instanceof e&&this.key.isEqual(t.key)&&J(this.fieldTransforms,t.fieldTransforms)&&this.precondition.isEqual(t.precondition)},e.prototype.requireDocument=function(t){v(t instanceof We,"Unknown MaybeDocument type "+t);var e=t;return v(e.key.isEqual(this.key),"Can only transform a document with the same key"),e},e.prototype.serverTransformResults=function(t,e){var n=[];v(this.fieldTransforms.length===e.length,"server transform result count ("+e.length+") should match field transform count ("+this.fieldTransforms.length+")");for(var r=0;r<e.length;r++){var i=this.fieldTransforms[r],o=i.transform,a=null;t instanceof We&&(a=t.field(i.field)),n.push(o.applyToRemoteDocument(a,e[r]))}return n},e.prototype.localTransformResults=function(t,e,n){for(var r=[],i=0,o=this.fieldTransforms;i<o.length;i++){var a=o[i],s=a.transform,u=null;e instanceof We&&(u=e.field(a.field)),null===u&&n instanceof We&&(u=n.field(a.field)),r.push(s.applyToLocalView(u,t))}return r},e.prototype.transformObject=function(t,e){v(e.length===this.fieldTransforms.length,"TransformResults length mismatch.");for(var n=0;n<this.fieldTransforms.length;n++){var r=this.fieldTransforms[n].field;t=t.set(r,e[n])}return t},e}(Ee),Ce=function(t){function e(e,n){var r=t.call(this)||this;return r.key=e,r.precondition=n,r.type=me.Delete,r}return a.__extends(e,t),e.prototype.applyToRemoteDocument=function(t,e){return this.verifyKeyMatches(t),v(null==e.transformResults,"Transform results received by DeleteMutation."),new Qe(this.key,e.version,{hasCommittedMutations:!0})},e.prototype.applyToLocalView=function(t,e,n){return this.verifyKeyMatches(t),this.precondition.isValidFor(t)?(t&&v(t.key.isEqual(this.key),"Can only apply mutation to document with same key"),new Qe(this.key,_t.forDeletedDoc())):t},e.prototype.extractBaseValue=function(t){return null},e.prototype.isEqual=function(t){return t instanceof e&&this.key.isEqual(t.key)&&this.precondition.isEqual(t.precondition)},e}(Ee);!function(t){t[t.NullValue=0]="NullValue",t[t.BooleanValue=1]="BooleanValue",t[t.NumberValue=2]="NumberValue",t[t.TimestampValue=3]="TimestampValue",t[t.StringValue=4]="StringValue",t[t.BlobValue=5]="BlobValue",t[t.RefValue=6]="RefValue",t[t.GeoPointValue=7]="GeoPointValue",t[t.ArrayValue=8]="ArrayValue",t[t.ObjectValue=9]="ObjectValue"}(be||(be={})),function(t){t[t.Default=0]="Default",t[t.Estimate=1]="Estimate",t[t.Previous=2]="Previous"}(we||(we={}));var De=function(){function t(t,e){this.serverTimestampBehavior=t,this.timestampsInSnapshots=e}return t.fromSnapshotOptions=function(e,n){switch(e.serverTimestamps){case"estimate":return new t(we.Estimate,n);case"previous":return new t(we.Previous,n);case"none":case void 0:return new t(we.Default,n);default:return g("fromSnapshotOptions() called with invalid options.")}},t}(),Ae=function(){function t(){}return t.prototype.toString=function(){var t=this.value();return null===t?"null":t.toString()},t.prototype.defaultCompareTo=function(t){return v(this.typeOrder!==t.typeOrder,"Default compareTo should not be used for values of same type."),X(this.typeOrder,t.typeOrder)},t}(),Ne=function(t){function e(){var e=t.call(this)||this;return e.typeOrder=be.NullValue,e.internalValue=null,e}return a.__extends(e,t),e.prototype.value=function(t){return null},e.prototype.isEqual=function(t){return t instanceof e},e.prototype.compareTo=function(t){return t instanceof e?0:this.defaultCompareTo(t)},e.INSTANCE=new e,e}(Ae),ke=function(t){function e(e){var n=t.call(this)||this;return n.internalValue=e,n.typeOrder=be.BooleanValue,n}return a.__extends(e,t),e.prototype.value=function(t){return this.internalValue},e.prototype.isEqual=function(t){return t instanceof e&&this.internalValue===t.internalValue},e.prototype.compareTo=function(t){return t instanceof e?X(this,t):this.defaultCompareTo(t)},e.of=function(t){return t?e.TRUE:e.FALSE},e.TRUE=new e(!0),e.FALSE=new e(!1),e}(Ae),Re=function(t){function e(e){var n=t.call(this)||this;return n.internalValue=e,n.typeOrder=be.NumberValue,n}return a.__extends(e,t),e.prototype.value=function(t){return this.internalValue},e.prototype.compareTo=function(t){return t instanceof e?(n=this.internalValue,r=t.internalValue,n<r?-1:n>r?1:n===r?0:isNaN(n)?isNaN(r)?0:-1:1):this.defaultCompareTo(t);var n,r},e}(Ae);function Oe(t,e){return t===e?0!==t||1/t==1/e:t!=t&&e!=e}var Me=function(t){function e(){return null!==t&&t.apply(this,arguments)||this}return a.__extends(e,t),e.prototype.isEqual=function(t){return t instanceof e&&Oe(this.internalValue,t.internalValue)},e}(Re),Le=function(t){function e(){return null!==t&&t.apply(this,arguments)||this}return a.__extends(e,t),e.prototype.isEqual=function(t){return t instanceof e&&Oe(this.internalValue,t.internalValue)},e.NAN=new e(NaN),e.POSITIVE_INFINITY=new e(1/0),e.NEGATIVE_INFINITY=new e(-1/0),e}(Re),Pe=function(t){function e(e){var n=t.call(this)||this;return n.internalValue=e,n.typeOrder=be.StringValue,n}return a.__extends(e,t),e.prototype.value=function(t){return this.internalValue},e.prototype.isEqual=function(t){return t instanceof e&&this.internalValue===t.internalValue},e.prototype.compareTo=function(t){return t instanceof e?X(this.internalValue,t.internalValue):this.defaultCompareTo(t)},e}(Ae),xe=function(t){function e(e){var n=t.call(this)||this;return n.internalValue=e,n.typeOrder=be.TimestampValue,n}return a.__extends(e,t),e.prototype.value=function(t){return!t||t.timestampsInSnapshots?this.internalValue:this.internalValue.toDate()},e.prototype.isEqual=function(t){return t instanceof e&&this.internalValue.isEqual(t.internalValue)},e.prototype.compareTo=function(t){return t instanceof e?this.internalValue._compareTo(t.internalValue):t instanceof Fe?-1:this.defaultCompareTo(t)},e}(Ae),Fe=function(t){function e(e,n){var r=t.call(this)||this;return r.localWriteTime=e,r.previousValue=n,r.typeOrder=be.TimestampValue,r}return a.__extends(e,t),e.prototype.value=function(t){return t&&t.serverTimestampBehavior===we.Estimate?new xe(this.localWriteTime).value(t):t&&t.serverTimestampBehavior===we.Previous&&this.previousValue?this.previousValue.value(t):null},e.prototype.isEqual=function(t){return t instanceof e&&this.localWriteTime.isEqual(t.localWriteTime)},e.prototype.compareTo=function(t){return t instanceof e?this.localWriteTime._compareTo(t.localWriteTime):t instanceof xe?1:this.defaultCompareTo(t)},e.prototype.toString=function(){return"<ServerTimestamp localTime="+this.localWriteTime.toString()+">"},e}(Ae),qe=function(t){function e(e){var n=t.call(this)||this;return n.internalValue=e,n.typeOrder=be.BlobValue,n}return a.__extends(e,t),e.prototype.value=function(t){return this.internalValue},e.prototype.isEqual=function(t){return t instanceof e&&this.internalValue.isEqual(t.internalValue)},e.prototype.compareTo=function(t){return t instanceof e?this.internalValue._compareTo(t.internalValue):this.defaultCompareTo(t)},e}(Ae),Ve=function(t){function e(e,n){var r=t.call(this)||this;return r.databaseId=e,r.key=n,r.typeOrder=be.RefValue,r}return a.__extends(e,t),e.prototype.value=function(t){return this.key},e.prototype.isEqual=function(t){return t instanceof e&&(this.key.isEqual(t.key)&&this.databaseId.isEqual(t.databaseId))},e.prototype.compareTo=function(t){if(t instanceof e){var n=this.databaseId.compareTo(t.databaseId);return 0!==n?n:ft.comparator(this.key,t.key)}return this.defaultCompareTo(t)},e}(Ae),Be=function(t){function e(e){var n=t.call(this)||this;return n.internalValue=e,n.typeOrder=be.GeoPointValue,n}return a.__extends(e,t),e.prototype.value=function(t){return this.internalValue},e.prototype.isEqual=function(t){return t instanceof e&&this.internalValue.isEqual(t.internalValue)},e.prototype.compareTo=function(t){return t instanceof e?this.internalValue._compareTo(t.internalValue):this.defaultCompareTo(t)},e}(Ae),Ue=function(t){function e(e){var n=t.call(this)||this;return n.internalValue=e,n.typeOrder=be.ObjectValue,n}return a.__extends(e,t),e.prototype.value=function(t){var e={};return this.internalValue.inorderTraversal((function(n,r){e[n]=r.value(t)})),e},e.prototype.forEach=function(t){this.internalValue.inorderTraversal(t)},e.prototype.isEqual=function(t){if(t instanceof e){for(var n=this.internalValue.getIterator(),r=t.internalValue.getIterator();n.hasNext()&&r.hasNext();){var i=n.getNext(),o=r.getNext();if(i.key!==o.key||!i.value.isEqual(o.value))return!1}return!n.hasNext()&&!r.hasNext()}return!1},e.prototype.compareTo=function(t){if(t instanceof e){for(var n=this.internalValue.getIterator(),r=t.internalValue.getIterator();n.hasNext()&&r.hasNext();){var i=n.getNext(),o=r.getNext(),a=X(i.key,o.key)||i.value.compareTo(o.value);if(a)return a}return X(n.hasNext(),r.hasNext())}return this.defaultCompareTo(t)},e.prototype.set=function(t,n){if(v(!t.isEmpty(),"Cannot set field for empty path on ObjectValue"),1===t.length)return this.setChild(t.firstSegment(),n);var r=this.child(t.firstSegment());r instanceof e||(r=e.EMPTY);var i=r.set(t.popFirst(),n);return this.setChild(t.firstSegment(),i)},e.prototype.delete=function(t){if(v(!t.isEmpty(),"Cannot delete field for empty path on ObjectValue"),1===t.length)return new e(this.internalValue.remove(t.firstSegment()));var n=this.child(t.firstSegment());if(n instanceof e){var r=n.delete(t.popFirst());return new e(this.internalValue.insert(t.firstSegment(),r))}return this},e.prototype.contains=function(t){return null!==this.field(t)},e.prototype.field=function(t){v(!t.isEmpty(),"Can't get field of empty path");var n=this;return t.forEach((function(t){n=n instanceof e?n.internalValue.get(t):null})),n},e.prototype.fieldMask=function(){var t=new kt(lt.comparator);return this.internalValue.forEach((function(n,r){var i=new lt([n]);if(r instanceof e){var o=r.fieldMask().fields;o.isEmpty()?t=t.add(i):o.forEach((function(e){t=t.add(i.child(e))}))}else t=t.add(i)})),ye.fromSet(t)},e.prototype.toString=function(){return this.internalValue.toString()},e.prototype.child=function(t){return this.internalValue.get(t)||void 0},e.prototype.setChild=function(t,n){return new e(this.internalValue.insert(t,n))},e.EMPTY=new e(new Ct(X)),e}(Ae),je=function(t){function e(e){var n=t.call(this)||this;return n.internalValue=e,n.typeOrder=be.ArrayValue,n}return a.__extends(e,t),e.prototype.value=function(t){return this.internalValue.map((function(e){return e.value(t)}))},e.prototype.contains=function(t){for(var e=0,n=this.internalValue;e<n.length;e++){if(n[e].isEqual(t))return!0}return!1},e.prototype.forEach=function(t){this.internalValue.forEach(t)},e.prototype.isEqual=function(t){if(t instanceof e){if(this.internalValue.length!==t.internalValue.length)return!1;for(var n=0;n<this.internalValue.length;n++)if(!this.internalValue[n].isEqual(t.internalValue[n]))return!1;return!0}return!1},e.prototype.compareTo=function(t){if(t instanceof e){for(var n=Math.min(this.internalValue.length,t.internalValue.length),r=0;r<n;r++){var i=this.internalValue[r].compareTo(t.internalValue[r]);if(i)return i}return X(this.internalValue.length,t.internalValue.length)}return this.defaultCompareTo(t)},e.prototype.toString=function(){return"["+this.internalValue.map((function(t){return t.toString()})).join(",")+"]"},e}(Ae),Ke=function(){function t(t,e){this.key=t,this.version=e}return t.compareByKey=function(t,e){return ft.comparator(t.key,e.key)},t}(),We=function(t){function e(e,n,r,i,o,a){var s=t.call(this,e,n)||this;return s.objectValue=i,s.proto=o,s.converter=a,v(void 0!==s.objectValue||void 0!==s.proto&&void 0!==s.converter,"If objectValue is not defined, proto and converter need to be set."),s.hasLocalMutations=!!r.hasLocalMutations,s.hasCommittedMutations=!!r.hasCommittedMutations,s}return a.__extends(e,t),e.prototype.field=function(t){if(this.objectValue)return this.objectValue.field(t);this.fieldValueCache||(this.fieldValueCache=new Map);var e=t.canonicalString(),n=this.fieldValueCache.get(e);if(void 0===n){var r=this.getProtoField(t);n=void 0===r?null:this.converter(r),this.fieldValueCache.set(e,n)}return n},e.prototype.data=function(){var t=this;if(!this.objectValue){var e=Ue.EMPTY;D(this.proto.fields||{},(function(n,r){e=e.set(new lt([n]),t.converter(r))})),this.objectValue=e,this.fieldValueCache=void 0}return this.objectValue},e.prototype.value=function(){return this.data().value()},e.prototype.isEqual=function(t){return t instanceof e&&this.key.isEqual(t.key)&&this.version.isEqual(t.version)&&this.hasLocalMutations===t.hasLocalMutations&&this.hasCommittedMutations===t.hasCommittedMutations&&this.data().isEqual(t.data())},e.prototype.toString=function(){return"Document("+this.key+", "+this.version+", "+this.data().toString()+", {hasLocalMutations: "+this.hasLocalMutations+"}), {hasCommittedMutations: "+this.hasCommittedMutations+"})"},Object.defineProperty(e.prototype,"hasPendingWrites",{get:function(){return this.hasLocalMutations||this.hasCommittedMutations},enumerable:!0,configurable:!0}),e.prototype.getProtoField=function(t){v(void 0!==this.proto,"Can only call getProtoField() when proto is defined");for(var e=this.proto.fields?this.proto.fields[t.firstSegment()]:void 0,n=1;n<t.length;++n){if(!e||!e.mapValue||!e.mapValue.fields)return;e=e.mapValue.fields[t.get(n)]}return e},e.compareByField=function(t,e,n){var r=e.field(t),i=n.field(t);return null!==r&&null!==i?r.compareTo(i):g("Trying to compare documents on fields that don't exist")},e}(Ke),Qe=function(t){function e(e,n,r){var i=t.call(this,e,n)||this;return i.hasCommittedMutations=!(!r||!r.hasCommittedMutations),i}return a.__extends(e,t),e.prototype.toString=function(){return"NoDocument("+this.key+", "+this.version+")"},Object.defineProperty(e.prototype,"hasPendingWrites",{get:function(){return this.hasCommittedMutations},enumerable:!0,configurable:!0}),e.prototype.isEqual=function(t){return t instanceof e&&t.hasCommittedMutations===this.hasCommittedMutations&&t.version.isEqual(this.version)&&t.key.isEqual(this.key)},e}(Ke),Ge=function(t){function e(){return null!==t&&t.apply(this,arguments)||this}return a.__extends(e,t),e.prototype.toString=function(){return"UnknownDocument("+this.key+", "+this.version+")"},Object.defineProperty(e.prototype,"hasPendingWrites",{get:function(){return!0},enumerable:!0,configurable:!0}),e.prototype.isEqual=function(t){return t instanceof e&&t.version.isEqual(this.version)&&t.key.isEqual(this.key)},e}(Ke),ze=function(){function t(t){this.mapKeyFn=t,this.inner={}}return t.prototype.get=function(t){var e=this.mapKeyFn(t),n=this.inner[e];if(void 0!==n)for(var r=0,i=n;r<i.length;r++){var o=i[r],a=o[0],s=o[1];if(a.isEqual(t))return s}},t.prototype.has=function(t){return void 0!==this.get(t)},t.prototype.set=function(t,e){var n=this.mapKeyFn(t),r=this.inner[n];if(void 0!==r){for(var i=0;i<r.length;i++)if(r[i][0].isEqual(t))return void(r[i]=[t,e]);r.push([t,e])}else this.inner[n]=[[t,e]]},t.prototype.delete=function(t){var e=this.mapKeyFn(t),n=this.inner[e];if(void 0===n)return!1;for(var r=0;r<n.length;r++)if(n[r][0].isEqual(t))return 1===n.length?delete this.inner[e]:n.splice(r,1),!0;return!1},t.prototype.forEach=function(t){D(this.inner,(function(e,n){for(var r=0,i=n;r<i.length;r++){var o=i[r],a=o[0],s=o[1];t(a,s)}}))},t.prototype.isEmpty=function(){return A(this.inner)},t}(),He=function(){function t(){this.changes=new ze((function(t){return t.toString()})),this.changesApplied=!1}return Object.defineProperty(t.prototype,"readTime",{get:function(){return v(void 0!==this._readTime,"Read time is not set. All removeEntry() calls must include a readTime if `trackRemovals` is used."),this._readTime},set:function(t){v(void 0===this._readTime||this._readTime.isEqual(t),"All changes in a RemoteDocumentChangeBuffer must have the same read time"),this._readTime=t},enumerable:!0,configurable:!0}),t.prototype.addEntry=function(t,e){this.assertNotApplied(),this.readTime=e,this.changes.set(t.key,t)},t.prototype.removeEntry=function(t,e){this.assertNotApplied(),e&&(this.readTime=e),this.changes.set(t,null)},t.prototype.getEntry=function(t,e){this.assertNotApplied();var n=this.changes.get(e);return void 0!==n?Qt.resolve(n):this.getFromCache(t,e)},t.prototype.getEntries=function(t,e){return this.getAllFromCache(t,e)},t.prototype.apply=function(t){return this.assertNotApplied(),this.changesApplied=!0,this.applyChanges(t)},t.prototype.assertNotApplied=function(){v(!this.changesApplied,"Changes have already been applied.")},t}(),Ye=function(){function t(t,e){this.serializer=t,this.indexManager=e}return t.prototype.addEntry=function(t,e,n){return Je(t).put($e(e),n)},t.prototype.removeEntry=function(t,e){var n=Je(t),r=$e(e);return n.delete(r)},t.prototype.updateMetadata=function(t,e){var n=this;return this.getMetadata(t).next((function(r){return r.byteSize+=e,n.setMetadata(t,r)}))},t.prototype.getEntry=function(t,e){var n=this;return Je(t).get($e(e)).next((function(t){return n.maybeDecodeDocument(t)}))},t.prototype.getSizedEntry=function(t,e){var n=this;return Je(t).get($e(e)).next((function(t){var e=n.maybeDecodeDocument(t);return e?{maybeDocument:e,size:Ze(t)}:null}))},t.prototype.getEntries=function(t,e){var n=this,r=Lt();return this.forEachDbEntry(t,e,(function(t,e){var i=n.maybeDecodeDocument(e);r=r.insert(t,i)})).next((function(){return r}))},t.prototype.getSizedEntries=function(t,e){var n=this,r=Lt(),i=new Ct(ft.comparator);return this.forEachDbEntry(t,e,(function(t,e){var o=n.maybeDecodeDocument(e);o?(r=r.insert(t,o),i=i.insert(t,Ze(e))):(r=r.insert(t,null),i=i.insert(t,0))})).next((function(){return{maybeDocuments:r,sizeMap:i}}))},t.prototype.forEachDbEntry=function(t,e,n){if(e.isEmpty())return Qt.resolve();var r=IDBKeyRange.bound(e.first().path.toArray(),e.last().path.toArray()),i=e.getIterator(),o=i.getNext();return Je(t).iterate({range:r},(function(t,e,r){for(var a=ft.fromSegments(t);o&&ft.comparator(o,a)<0;)n(o,null),o=i.getNext();o&&o.isEqual(a)&&(n(o,e),o=i.hasNext()?i.getNext():null),o?r.skip(o.path.toArray()):r.done()})).next((function(){for(;o;)n(o,null),o=i.hasNext()?i.getNext():null}))},t.prototype.getDocumentsMatchingQuery=function(t,e,n){var r=this;v(!e.isCollectionGroupQuery(),"CollectionGroup queries should be handled in LocalDocumentsView");var i=xt(),o=e.path.length+1,a={};if(n.isEqual(_t.MIN)){var s=e.path.toArray();a.range=IDBKeyRange.lowerBound(s)}else{var u=e.path.toArray(),c=this.serializer.toDbTimestampKey(n);a.range=IDBKeyRange.lowerBound([u,c],!0),a.index=fn.collectionReadTimeIndex}return Je(t).iterate(a,(function(t,n,a){if(t.length===o){var s=r.serializer.fromDbRemoteDocument(n);e.path.isPrefixOf(s.key.path)?s instanceof We&&e.matches(s)&&(i=i.insert(s.key,s)):a.done()}})).next((function(){return i}))},t.prototype.getNewDocumentChanges=function(t,e){var n=this,r=Mt(),i=this.serializer.toDbTimestampKey(e),o=Je(t),a=IDBKeyRange.lowerBound(i,!0);return o.iterate({index:fn.readTimeIndex,range:a},(function(t,e){var o=n.serializer.fromDbRemoteDocument(e);r=r.insert(o.key,o),i=e.readTime})).next((function(){return{changedDocs:r,readTime:n.serializer.fromDbTimestampKey(i)}}))},t.prototype.getLastDocumentChange=function(t){var e,n=this,r=Je(t),i=_t.MIN;return r.iterate({index:fn.readTimeIndex,reverse:!0},(function(t,r,o){e=n.serializer.fromDbRemoteDocument(r),r.readTime&&(i=n.serializer.fromDbTimestampKey(r.readTime)),o.done()})).next((function(){return{changedDoc:e,readTime:i}}))},t.prototype.newChangeBuffer=function(e){return new t.RemoteDocumentChangeBuffer(this,!!e&&e.trackRemovals)},t.prototype.getSize=function(t){return this.getMetadata(t).next((function(t){return t.byteSize}))},t.prototype.getMetadata=function(t){return Xe(t).get(dn.key).next((function(t){return v(!!t,"Missing document cache metadata"),t}))},t.prototype.setMetadata=function(t,e){return Xe(t).put(dn.key,e)},t.prototype.maybeDecodeDocument=function(t){if(t){var e=this.serializer.fromDbRemoteDocument(t);return e instanceof Qe&&e.version.isEqual(_t.forDeletedDoc())?null:e}return null},t.RemoteDocumentChangeBuffer=function(t){function e(e,n){var r=t.call(this)||this;return r.documentCache=e,r.trackRemovals=n,r.documentSizes=new ze((function(t){return t.toString()})),r}return a.__extends(e,t),e.prototype.applyChanges=function(t){var e=this,n=[],r=0,i=new kt((function(t,e){return X(t.canonicalString(),e.canonicalString())}));return this.changes.forEach((function(o,a){var s=e.documentSizes.get(o);if(v(void 0!==s,"Cannot modify a document that wasn't read (for "+o+")"),a){v(!e.readTime.isEqual(_t.MIN),"Cannot add a document with a read time of zero");var u=e.documentCache.serializer.toDbRemoteDocument(a,e.readTime);i=i.add(o.path.popLast());var c=Ze(u);r+=c-s,n.push(e.documentCache.addEntry(t,o,u))}else if(r-=s,e.trackRemovals){var h=e.documentCache.serializer.toDbRemoteDocument(new Qe(o,_t.forDeletedDoc()),e.readTime);n.push(e.documentCache.addEntry(t,o,h))}else n.push(e.documentCache.removeEntry(t,o))})),i.forEach((function(r){n.push(e.documentCache.indexManager.addToCollectionParentIndex(t,r))})),n.push(this.documentCache.updateMetadata(t,r)),Qt.waitFor(n)},e.prototype.getFromCache=function(t,e){var n=this;return this.documentCache.getSizedEntry(t,e).next((function(t){return null===t?(n.documentSizes.set(e,0),null):(n.documentSizes.set(e,t.size),t.maybeDocument)}))},e.prototype.getAllFromCache=function(t,e){var n=this;return this.documentCache.getSizedEntries(t,e).next((function(t){var e=t.maybeDocuments;return t.sizeMap.forEach((function(t,e){n.documentSizes.set(t,e)})),e}))},e}(He),t}();function Xe(t){return Bn.getStore(t,dn.store)}function Je(t){return Bn.getStore(t,fn.store)}function $e(t){return t.path.toArray()}function Ze(t){var e;if(t.document)e=t.document;else if(t.unknownDocument)e=t.unknownDocument;else{if(!t.noDocument)throw g("Unknown remote document type");e=t.noDocument}return JSON.stringify(e).length}
+/**
+ * @license
+ * Copyright 2019 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */var tn=function(){function t(){this.collectionParentIndex=new en}return t.prototype.addToCollectionParentIndex=function(t,e){return this.collectionParentIndex.add(e),Qt.resolve()},t.prototype.getCollectionParents=function(t,e){return Qt.resolve(this.collectionParentIndex.getEntries(e))},t}(),en=function(){function t(){this.index={}}return t.prototype.add=function(t){v(t.length%2==1,"Expected a collection path.");var e=t.lastSegment(),n=t.popLast(),r=this.index[e]||new kt(ct.comparator),i=!r.has(n);return this.index[e]=r.add(n),i},t.prototype.has=function(t){var e=t.lastSegment(),n=t.popLast(),r=this.index[e];return r&&r.has(n)},t.prototype.getEntries=function(t){return(this.index[t]||new kt(ct.comparator)).toArray()},t}(),nn=9,rn=function(){function t(t){this.serializer=t}return t.prototype.createOrUpgrade=function(t,e,n,r){var i=this;v(n<r&&n>=0&&r<=nn,"Unexpected schema upgrade from v"+n+" to v{toVersion}.");var o=new Yt(e);n<1&&r>=1&&(function(t){t.createObjectStore(an.store)}(t),function(t){t.createObjectStore(sn.store,{keyPath:sn.keyPath}),t.createObjectStore(un.store,{keyPath:un.keyPath,autoIncrement:!0}).createIndex(un.userMutationsIndex,un.userMutationsKeyPath,{unique:!0}),t.createObjectStore(cn.store)}(t),vn(t),function(t){t.createObjectStore(fn.store)}(t));var a=Qt.resolve();return n<3&&r>=3&&(0!==n&&(!function(t){t.deleteObjectStore(mn.store),t.deleteObjectStore(pn.store),t.deleteObjectStore(yn.store)}(t),vn(t)),a=a.next((function(){return function(t){var e=t.store(yn.store),n=new yn(0,0,_t.MIN.toTimestamp(),0);return e.put(yn.key,n)}(o)}))),n<4&&r>=4&&(0!==n&&(a=a.next((function(){return function(t,e){return e.store(un.store).loadAll().next((function(n){t.deleteObjectStore(un.store),t.createObjectStore(un.store,{keyPath:un.keyPath,autoIncrement:!0}).createIndex(un.userMutationsIndex,un.userMutationsKeyPath,{unique:!0});var r=e.store(un.store),i=n.map((function(t){return r.put(t)}));return Qt.waitFor(i)}))}(t,o)}))),a=a.next((function(){!function(t){t.createObjectStore(bn.store,{keyPath:bn.keyPath})}(t)}))),n<5&&r>=5&&(a=a.next((function(){return i.removeAcknowledgedMutations(o)}))),n<6&&r>=6&&(a=a.next((function(){return function(t){t.createObjectStore(dn.store)}(t),i.addDocumentGlobal(o)}))),n<7&&r>=7&&(a=a.next((function(){return i.ensureSequenceNumbers(o)}))),n<8&&r>=8&&(a=a.next((function(){return i.createCollectionParentIndex(t,o)}))),n<9&&r>=9&&(a=a.next((function(){!function(t){t.objectStoreNames.contains("remoteDocumentChanges")&&t.deleteObjectStore("remoteDocumentChanges")}(t),function(t){var e=t.objectStore(fn.store);e.createIndex(fn.readTimeIndex,fn.readTimeIndexPath,{unique:!1}),e.createIndex(fn.collectionReadTimeIndex,fn.collectionReadTimeIndexPath,{unique:!1})}(e)}))),a},t.prototype.addDocumentGlobal=function(t){var e=0;return t.store(fn.store).iterate((function(t,n){e+=Ze(n)})).next((function(){var n=new dn(e);return t.store(dn.store).put(dn.key,n)}))},t.prototype.removeAcknowledgedMutations=function(t){var e=this,n=t.store(sn.store),r=t.store(un.store);return n.loadAll().next((function(n){return Qt.forEach(n,(function(n){var i=IDBKeyRange.bound([n.userId,-1],[n.userId,n.lastAcknowledgedBatchId]);return r.loadAll(un.userMutationsIndex,i).next((function(r){return Qt.forEach(r,(function(r){v(r.userId===n.userId,"Cannot process batch "+r.batchId+" from unexpected user");var i=e.serializer.fromDbMutationBatch(r);return ne(t,n.userId,i).next((function(){}))}))}))}))}))},t.prototype.ensureSequenceNumbers=function(t){var e=t.store(mn.store),n=t.store(fn.store);return de(t).next((function(t){var r=[];return n.iterate((function(n,i){var o=new ct(n),a=function(t){return[0,wt(t)]}(o);r.push(e.get(a).next((function(n){return n?Qt.resolve():function(n){return e.put(new mn(0,wt(n),t))}(o)})))})).next((function(){return Qt.waitFor(r)}))}))},t.prototype.createCollectionParentIndex=function(t,e){t.createObjectStore(gn.store,{keyPath:gn.keyPath});var n=e.store(gn.store),r=new en,i=function(t){if(r.add(t)){var e=t.lastSegment(),i=t.popLast();return n.put({collectionId:e,parent:wt(i)})}};return e.store(fn.store).iterate({keysOnly:!0},(function(t,e){var n=new ct(t);return i(n.popLast())})).next((function(){return e.store(cn.store).iterate({keysOnly:!0},(function(t,e){t[0];var n=t[1],r=(t[2],St(n));return i(r.popLast())}))}))},t}();var on=function(t,e){this.seconds=t,this.nanoseconds=e},an=function(){function t(t,e,n){this.ownerId=t,this.allowTabSynchronization=e,this.leaseTimestampMs=n}return t.store="owner",t.key="owner",t}();var sn=function(){function t(t,e,n){this.userId=t,this.lastAcknowledgedBatchId=e,this.lastStreamToken=n}return t.store="mutationQueues",t.keyPath="userId",t}(),un=function(){function t(t,e,n,r,i){this.userId=t,this.batchId=e,this.localWriteTimeMs=n,this.baseMutations=r,this.mutations=i}return t.store="mutations",t.keyPath="batchId",t.userMutationsIndex="userMutationsIndex",t.userMutationsKeyPath=["userId","batchId"],t}();var cn=function(){function t(){}return t.prefixForUser=function(t){return[t]},t.prefixForPath=function(t,e){return[t,wt(e)]},t.key=function(t,e,n){return[t,wt(e),n]},t.store="documentMutations",t.PLACEHOLDER=new t,t}();var hn=function(t,e){this.path=t,this.readTime=e},ln=function(t,e){this.path=t,this.version=e},fn=function(){function t(t,e,n,r,i,o){this.unknownDocument=t,this.noDocument=e,this.document=n,this.hasCommittedMutations=r,this.readTime=i,this.parentPath=o}return t.store="remoteDocuments",t.readTimeIndex="readTimeIndex",t.readTimeIndexPath="readTime",t.collectionReadTimeIndex="collectionReadTimeIndex",t.collectionReadTimeIndexPath=["parentPath","readTime"],t}(),dn=function(){function t(t){this.byteSize=t}return t.store="remoteDocumentGlobal",t.key="remoteDocumentGlobalKey",t}();var pn=function(){function t(t,e,n,r,i,o,a){this.targetId=t,this.canonicalId=e,this.readTime=n,this.resumeToken=r,this.lastListenSequenceNumber=i,this.lastLimboFreeSnapshotVersion=o,this.query=a}return t.store="targets",t.keyPath="targetId",t.queryTargetsIndexName="queryTargetsIndex",t.queryTargetsKeyPath=["canonicalId","targetId"],t}(),mn=function(){function t(t,e,n){this.targetId=t,this.path=e,this.sequenceNumber=n,v(0===t==(void 0!==n),"A target-document row must either have targetId == 0 and a defined sequence number, or a non-zero targetId and no sequence number")}return t.store="targetDocuments",t.keyPath=["targetId","path"],t.documentTargetsIndex="documentTargetsIndex",t.documentTargetsKeyPath=["path","targetId"],t}(),yn=function(){function t(t,e,n,r){this.highestTargetId=t,this.highestListenSequenceNumber=e,this.lastRemoteSnapshotVersion=n,this.targetCount=r}return t.key="targetGlobalKey",t.store="targetGlobal",t}(),gn=function(){function t(t,e){this.collectionId=t,this.parent=e}return t.store="collectionParents",t.keyPath=["collectionId","parent"],t}();function vn(t){t.createObjectStore(mn.store,{keyPath:mn.keyPath}).createIndex(mn.documentTargetsIndex,mn.documentTargetsKeyPath,{unique:!0}),t.createObjectStore(pn.store,{keyPath:pn.keyPath}).createIndex(pn.queryTargetsIndexName,pn.queryTargetsKeyPath,{unique:!0}),t.createObjectStore(yn.store)}var bn=function(){function t(t,e,n,r){this.clientId=t,this.updateTimeMs=e,this.networkEnabled=n,this.inForeground=r}return t.store="clientMetadata",t.keyPath="clientId",t}();var wn,Tn=[sn.store,un.store,cn.store,fn.store,pn.store,an.store,yn.store,mn.store],En=a.__spreadArrays(Tn,[bn.store]),Sn=a.__spreadArrays(En,[dn.store]),In=a.__spreadArrays(Sn,[gn.store]),_n=function(){function t(){this.collectionParentsCache=new en}return t.prototype.addToCollectionParentIndex=function(t,e){var n=this;if(v(e.length%2==1,"Expected a collection path."),!this.collectionParentsCache.has(e)){var r=e.lastSegment(),i=e.popLast();return t.addOnCommittedListener((function(){n.collectionParentsCache.add(e)})),Cn(t).put({collectionId:r,parent:wt(i)})}return Qt.resolve()},t.prototype.getCollectionParents=function(t,e){var n=[],r=IDBKeyRange.bound([e,""],[$(e),""],!1,!0);return Cn(t).loadAll(r).next((function(t){for(var r=0,i=t;r<i.length;r++){var o=i[r];if(o.collectionId!==e)break;n.push(St(o.parent))}return n}))},t}();function Cn(t){return Bn.getStore(t,gn.store)}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */!function(t){t[t.Listen=0]="Listen",t[t.ExistenceFilterMismatch=1]="ExistenceFilterMismatch",t[t.LimboResolution=2]="LimboResolution"}(wn||(wn={}));var Dn=function(){function t(t,e,n,r,i,o,a){void 0===i&&(i=_t.MIN),void 0===o&&(o=_t.MIN),void 0===a&&(a=w()),this.target=t,this.targetId=e,this.purpose=n,this.sequenceNumber=r,this.snapshotVersion=i,this.lastLimboFreeSnapshotVersion=o,this.resumeToken=a}return t.prototype.withSequenceNumber=function(e){return new t(this.target,this.targetId,this.purpose,e,this.snapshotVersion,this.lastLimboFreeSnapshotVersion,this.resumeToken)},t.prototype.withResumeToken=function(e,n){return new t(this.target,this.targetId,this.purpose,this.sequenceNumber,n,this.lastLimboFreeSnapshotVersion,e)},t.prototype.withLastLimboFreeSnapshotVersion=function(e){return new t(this.target,this.targetId,this.purpose,this.sequenceNumber,this.snapshotVersion,e,this.resumeToken)},t.prototype.isEqual=function(t){return this.targetId===t.targetId&&this.purpose===t.purpose&&this.sequenceNumber===t.sequenceNumber&&this.snapshotVersion.isEqual(t.snapshotVersion)&&this.lastLimboFreeSnapshotVersion.isEqual(t.lastLimboFreeSnapshotVersion)&&this.resumeToken===t.resumeToken&&this.target.isEqual(t.target)},t}(),An=function(){function t(t){this.remoteSerializer=t}return t.prototype.fromDbRemoteDocument=function(t){if(t.document)return this.remoteSerializer.fromDocument(t.document,!!t.hasCommittedMutations);if(t.noDocument){var e=ft.fromSegments(t.noDocument.path),n=this.fromDbTimestamp(t.noDocument.readTime);return new Qe(e,n,{hasCommittedMutations:!!t.hasCommittedMutations})}if(t.unknownDocument){e=ft.fromSegments(t.unknownDocument.path),n=this.fromDbTimestamp(t.unknownDocument.version);return new Ge(e,n)}return g("Unexpected DbRemoteDocument")},t.prototype.toDbRemoteDocument=function(t,e){var n=this.toDbTimestampKey(e),r=t.key.path.popLast().toArray();if(t instanceof We){var i=t.proto?t.proto:this.remoteSerializer.toDocument(t),o=t.hasCommittedMutations;return new fn(null,null,i,o,n,r)}if(t instanceof Qe){var a=t.key.path.toArray(),s=this.toDbTimestamp(t.version);o=t.hasCommittedMutations;return new fn(null,new hn(a,s),null,o,n,r)}if(t instanceof Ge){a=t.key.path.toArray();var u=this.toDbTimestamp(t.version);return new fn(new ln(a,u),null,null,!0,n,r)}return g("Unexpected MaybeDocument")},t.prototype.toDbTimestampKey=function(t){var e=t.toTimestamp();return[e.seconds,e.nanoseconds]},t.prototype.fromDbTimestampKey=function(t){var e=new It(t[0],t[1]);return _t.fromTimestamp(e)},t.prototype.toDbTimestamp=function(t){var e=t.toTimestamp();return new on(e.seconds,e.nanoseconds)},t.prototype.fromDbTimestamp=function(t){var e=new It(t.seconds,t.nanoseconds);return _t.fromTimestamp(e)},t.prototype.toDbMutationBatch=function(t,e){var n=this,r=e.baseMutations.map((function(t){return n.remoteSerializer.toMutation(t)})),i=e.mutations.map((function(t){return n.remoteSerializer.toMutation(t)}));return new un(t,e.batchId,e.localWriteTime.toMillis(),r,i)},t.prototype.fromDbMutationBatch=function(t){var e=this,n=(t.baseMutations||[]).map((function(t){return e.remoteSerializer.fromMutation(t)})),r=t.mutations.map((function(t){return e.remoteSerializer.fromMutation(t)})),i=It.fromMillis(t.localWriteTimeMs);return new Kt(t.batchId,i,n,r)},t.prototype.toDbResourcePaths=function(t){var e=[];return t.forEach((function(t){e.push(wt(t.path))})),e},t.prototype.fromDbResourcePaths=function(t){for(var e=Bt(),n=0,r=t;n<r.length;n++){var i=r[n];e=e.add(new ft(St(i)))}return e},t.prototype.fromDbTarget=function(t){var e,n=this.fromDbTimestamp(t.readTime),r=void 0!==t.lastLimboFreeSnapshotVersion?this.fromDbTimestamp(t.lastLimboFreeSnapshotVersion):_t.MIN,i=t.resumeToken;return e=void 0!==t.query.documents?this.remoteSerializer.fromDocumentsTarget(t.query):this.remoteSerializer.fromQueryTarget(t.query),new Dn(e,t.targetId,wn.Listen,t.lastListenSequenceNumber,n,r,i)},t.prototype.toDbTarget=function(t){v(wn.Listen===t.purpose,"Only queries with purpose "+wn.Listen+" may be stored, got "+t.purpose);var e,n,r=this.toDbTimestamp(t.snapshotVersion),i=this.toDbTimestamp(t.lastLimboFreeSnapshotVersion);return e=t.target.isDocumentQuery()?this.remoteSerializer.toDocumentsTarget(t.target):this.remoteSerializer.toQueryTarget(t.target),t.resumeToken instanceof Uint8Array?(v(zt.isMockPersistence(),"Persisting non-string stream tokens is only supported with mock persistence ."),n=t.resumeToken.toString()):n=t.resumeToken,new pn(t.targetId,t.target.canonicalId(),r,n,t.sequenceNumber,i,e)},t}();
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * @license
+ * Copyright 2018 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+function Nn(t,e){var n=t[0],r=t[1],i=e[0],o=e[1],a=X(n,i);return 0===a?X(r,o):a}var kn=function(){function t(t){this.maxElements=t,this.buffer=new kt(Nn),this.previousIndex=0}return t.prototype.nextIndex=function(){return++this.previousIndex},t.prototype.addElement=function(t){var e=[t,this.nextIndex()];if(this.buffer.size<this.maxElements)this.buffer=this.buffer.add(e);else{var n=this.buffer.last();Nn(e,n)<0&&(this.buffer=this.buffer.delete(n).add(e))}},Object.defineProperty(t.prototype,"maxValue",{get:function(){return this.buffer.last()[0]},enumerable:!0,configurable:!0}),t}(),Rn={didRun:!1,sequenceNumbersCollected:0,targetsRemoved:0,documentsRemoved:0},On=function(){function t(t,e,n){this.cacheSizeCollectionThreshold=t,this.percentileToCollect=e,this.maximumSequenceNumbersToCollect=n}return t.withCacheSize=function(e){return new t(e,t.DEFAULT_COLLECTION_PERCENTILE,t.DEFAULT_MAX_SEQUENCE_NUMBERS_TO_COLLECT)},t.COLLECTION_DISABLED=-1,t.MINIMUM_CACHE_SIZE_BYTES=1048576,t.DEFAULT_CACHE_SIZE_BYTES=41943040,t.DEFAULT_COLLECTION_PERCENTILE=10,t.DEFAULT_MAX_SEQUENCE_NUMBERS_TO_COLLECT=1e3,t.DEFAULT=new t(t.DEFAULT_CACHE_SIZE_BYTES,t.DEFAULT_COLLECTION_PERCENTILE,t.DEFAULT_MAX_SEQUENCE_NUMBERS_TO_COLLECT),t.DISABLED=new t(t.COLLECTION_DISABLED,0,0),t}(),Mn=function(){function t(t,e,n){this.garbageCollector=t,this.asyncQueue=e,this.localStore=n,this.hasRun=!1,this.gcTask=null}return t.prototype.start=function(){v(null===this.gcTask,"Cannot start an already started LruScheduler"),this.garbageCollector.params.cacheSizeCollectionThreshold!==On.COLLECTION_DISABLED&&this.scheduleGC()},t.prototype.stop=function(){this.gcTask&&(this.gcTask.cancel(),this.gcTask=null)},Object.defineProperty(t.prototype,"started",{get:function(){return null!==this.gcTask},enumerable:!0,configurable:!0}),t.prototype.scheduleGC=function(){var t=this;v(null===this.gcTask,"Cannot schedule GC while a task is pending");var e=this.hasRun?3e5:6e4;p("LruGarbageCollector","Garbage collection scheduled in "+e+"ms"),this.gcTask=this.asyncQueue.enqueueAfterDelay(et.LruGarbageCollection,e,(function(){return t.gcTask=null,t.hasRun=!0,t.localStore.collectGarbage(t.garbageCollector).then((function(){return t.scheduleGC()})).catch(Un)}))},t}(),Ln=function(){function t(t,e){this.delegate=t,this.params=e}return t.prototype.calculateTargetCount=function(t,e){return this.delegate.getSequenceNumberCount(t).next((function(t){return Math.floor(e/100*t)}))},t.prototype.nthSequenceNumber=function(t,e){var n=this;if(0===e)return Qt.resolve(st.INVALID);var r=new kn(e);return this.delegate.forEachTarget(t,(function(t){return r.addElement(t.sequenceNumber)})).next((function(){return n.delegate.forEachOrphanedDocumentSequenceNumber(t,(function(t){return r.addElement(t)}))})).next((function(){return r.maxValue}))},t.prototype.removeTargets=function(t,e,n){return this.delegate.removeTargets(t,e,n)},t.prototype.removeOrphanedDocuments=function(t,e){return this.delegate.removeOrphanedDocuments(t,e)},t.prototype.collect=function(t,e){var n=this;return this.params.cacheSizeCollectionThreshold===On.COLLECTION_DISABLED?(p("LruGarbageCollector","Garbage collection skipped; disabled"),Qt.resolve(Rn)):this.getCacheSize(t).next((function(r){return r<n.params.cacheSizeCollectionThreshold?(p("LruGarbageCollector","Garbage collection skipped; Cache size "+r+" is lower than threshold "+n.params.cacheSizeCollectionThreshold),Rn):n.runGarbageCollection(t,e)}))},t.prototype.getCacheSize=function(t){return this.delegate.getCacheSize(t)},t.prototype.runGarbageCollection=function(t,e){var n,r,o,a,s,u,c,h=this,l=Date.now();return this.calculateTargetCount(t,this.params.percentileToCollect).next((function(e){return e>h.params.maximumSequenceNumbersToCollect?(p("LruGarbageCollector","Capping sequence numbers to collect down to the maximum of "+h.params.maximumSequenceNumbersToCollect+" from "+e),r=h.params.maximumSequenceNumbersToCollect):r=e,a=Date.now(),h.nthSequenceNumber(t,r)})).next((function(r){return n=r,s=Date.now(),h.removeTargets(t,n,e)})).next((function(e){return o=e,u=Date.now(),h.removeOrphanedDocuments(t,n)})).next((function(t){(c=Date.now(),f()<=i.DEBUG)&&p("LruGarbageCollector","LRU Garbage Collection\n\tCounted targets in "+(a-l)+"ms\n\tDetermined least recently used "+r+" in "+(s-a)+"ms\n\tRemoved "+o+" targets in "+(u-s)+"ms\n\tRemoved "+t+" documents in "+(c-u)+"ms\nTotal Duration: "+(c-l)+"ms");return Qt.resolve({didRun:!0,sequenceNumbersCollected:r,targetsRemoved:o,documentsRemoved:t})}))},t}(),Pn=function(){function t(){this.onCommittedListeners=[]}return t.prototype.addOnCommittedListener=function(t){this.onCommittedListeners.push(t)},t.prototype.raiseOnCommittedEvent=function(){this.onCommittedListeners.forEach((function(t){return t()}))},t}(),xn="IndexedDbPersistence",Fn="The current tab is not in the required state to perform this operation. It might be necessary to refresh the browser tab.",qn="Another tab has exclusive access to the persistence layer. To allow shared access, make sure to invoke `enablePersistence()` with `synchronizeTabs:true` in all tabs.",Vn=function(t){function e(e,n){var r=t.call(this)||this;return r.simpleDbTransaction=e,r.currentSequenceNumber=n,r}return a.__extends(e,t),e}(Pn),Bn=function(){function t(e,n,r,i,o,a,s,u){if(this.allowTabSynchronization=e,this.persistenceKey=n,this.clientId=r,this.queue=a,this.sequenceNumberSyncer=u,this._started=!1,this.isPrimary=!1,this.networkEnabled=!0,this.windowUnloadHandler=null,this.inForeground=!1,this.documentVisibilityHandler=null,this.clientMetadataRefresher=null,this.lastGarbageCollectionTime=Number.NEGATIVE_INFINITY,this.primaryStateListener=function(t){return Promise.resolve()},this.referenceDelegate=new Wn(this,o),this.dbName=n+t.MAIN_DATABASE,this.serializer=new An(s),this.document=i.document,this.targetCache=new he(this.referenceDelegate,this.serializer),this.indexManager=new _n,this.remoteDocumentCache=new Ye(this.serializer,this.indexManager),!i.window||!i.window.localStorage)throw new E(T.UNIMPLEMENTED,"IndexedDB persistence is only available on platforms that support LocalStorage.");this.window=i.window,this.webStorage=this.window.localStorage}return t.getStore=function(t,e){if(t instanceof Vn)return zt.getStore(t.simpleDbTransaction,e);throw g("IndexedDbPersistence must use instances of IndexedDbTransaction")},t.createIndexedDbPersistence=function(e){return a.__awaiter(this,void 0,void 0,(function(){var n;return a.__generator(this,(function(r){switch(r.label){case 0:if(!t.isAvailable())throw new E(T.UNIMPLEMENTED,"This platform is either missing IndexedDB or is known to have an incomplete implementation. Offline persistence has been disabled.");return[4,(n=new t(e.allowTabSynchronization,e.persistenceKey,e.clientId,e.platform,e.lruParams,e.queue,e.serializer,e.sequenceNumberSyncer)).start()];case 1:return r.sent(),[2,n]}}))}))},t.prototype.start=function(){var t=this;return v(!this.started,"IndexedDbPersistence double-started!"),v(null!==this.window,"Expected 'window' to be defined"),zt.openOrCreate(this.dbName,nn,new rn(this.serializer)).then((function(e){return t.simpleDb=e,t.updateClientMetadataAndTryBecomePrimary()})).then((function(){return t.attachVisibilityHandler(),t.attachWindowUnloadHook(),t.scheduleClientMetadataAndPrimaryLeaseRefreshes(),t.simpleDb.runTransaction("readonly-idempotent",[yn.store],(function(t){return de(t)}))})).then((function(e){t.listenSequence=new st(e,t.sequenceNumberSyncer)})).then((function(){t._started=!0})).catch((function(e){return t.simpleDb&&t.simpleDb.close(),Promise.reject(e)}))},t.prototype.setPrimaryStateListener=function(t){var e=this;return this.primaryStateListener=function(n){return a.__awaiter(e,void 0,void 0,(function(){return a.__generator(this,(function(e){return this.started?[2,t(n)]:[2]}))}))},t(this.isPrimary)},t.prototype.setDatabaseDeletedListener=function(t){var e=this;this.simpleDb.setVersionChangeListener((function(n){return a.__awaiter(e,void 0,void 0,(function(){return a.__generator(this,(function(e){switch(e.label){case 0:return null!==n.newVersion?[3,2]:[4,t()];case 1:e.sent(),e.label=2;case 2:return[2]}}))}))}))},t.prototype.setNetworkEnabled=function(t){var e=this;this.networkEnabled!==t&&(this.networkEnabled=t,this.queue.enqueueAndForget((function(){return a.__awaiter(e,void 0,void 0,(function(){return a.__generator(this,(function(t){switch(t.label){case 0:return this.started?[4,this.updateClientMetadataAndTryBecomePrimary()]:[3,2];case 1:t.sent(),t.label=2;case 2:return[2]}}))}))})))},t.prototype.updateClientMetadataAndTryBecomePrimary=function(){var t=this;return this.simpleDb.runTransaction("readwrite-idempotent",In,(function(e){return Kn(e).put(new bn(t.clientId,Date.now(),t.networkEnabled,t.inForeground)).next((function(){if(t.isPrimary)return t.verifyPrimaryLease(e).next((function(e){e||(t.isPrimary=!1,t.queue.enqueueAndForget((function(){return t.primaryStateListener(!1)})))}))})).next((function(){return t.canActAsPrimary(e)})).next((function(n){return t.isPrimary&&!n?t.releasePrimaryLeaseIfHeld(e).next((function(){return!1})):!!n&&t.acquireOrExtendPrimaryLease(e).next((function(){return!0}))}))})).catch((function(e){if(!t.allowTabSynchronization)throw e;return p(xn,"Releasing owner lease after error during lease refresh",e),!1})).then((function(e){t.isPrimary!==e&&t.queue.enqueueAndForget((function(){return t.primaryStateListener(e)})),t.isPrimary=e}))},t.prototype.verifyPrimaryLease=function(t){var e=this;return jn(t).get(an.key).next((function(t){return Qt.resolve(e.isLocalClient(t))}))},t.prototype.removeClientMetadata=function(t){return Kn(t).delete(this.clientId)},t.prototype.maybeGarbageCollectMultiClientState=function(){return a.__awaiter(this,void 0,void 0,(function(){var e=this;return a.__generator(this,(function(n){switch(n.label){case 0:return!this.isPrimary||this.isWithinAge(this.lastGarbageCollectionTime,18e5)?[3,2]:(this.lastGarbageCollectionTime=Date.now(),[4,this.runTransaction("maybeGarbageCollectMultiClientState","readwrite-primary-idempotent",(function(n){var r=t.getStore(n,bn.store);return r.loadAll().next((function(t){var n=e.filterActiveClients(t,18e5),i=t.filter((function(t){return-1===n.indexOf(t)}));return Qt.forEach(i,(function(t){return r.delete(t.clientId)})).next((function(){return i}))}))}))]);case 1:n.sent().forEach((function(t){e.window.localStorage.removeItem(e.zombiedClientLocalStorageKey(t.clientId))})),n.label=2;case 2:return[2]}}))}))},t.prototype.scheduleClientMetadataAndPrimaryLeaseRefreshes=function(){var t=this;this.clientMetadataRefresher=this.queue.enqueueAfterDelay(et.ClientMetadataRefresh,4e3,(function(){return t.updateClientMetadataAndTryBecomePrimary().then((function(){return t.maybeGarbageCollectMultiClientState()})).then((function(){return t.scheduleClientMetadataAndPrimaryLeaseRefreshes()}))}))},t.prototype.isLocalClient=function(t){return!!t&&t.ownerId===this.clientId},t.prototype.canActAsPrimary=function(t){var e=this;return jn(t).get(an.key).next((function(n){if(null!==n&&e.isWithinAge(n.leaseTimestampMs,5e3)&&!e.isClientZombied(n.ownerId)){if(e.isLocalClient(n)&&e.networkEnabled)return!0;if(!e.isLocalClient(n)){if(!n.allowTabSynchronization)throw new E(T.FAILED_PRECONDITION,qn);return!1}}return!(!e.networkEnabled||!e.inForeground)||Kn(t).loadAll().next((function(t){return void 0===e.filterActiveClients(t,5e3).find((function(t){if(e.clientId!==t.clientId){var n=!e.networkEnabled&&t.networkEnabled,r=!e.inForeground&&t.inForeground,i=e.networkEnabled===t.networkEnabled;if(n||r&&i)return!0}return!1}))}))})).next((function(t){return e.isPrimary!==t&&p(xn,"Client "+(t?"is":"is not")+" eligible for a primary lease."),t}))},t.prototype.shutdown=function(){return a.__awaiter(this,void 0,void 0,(function(){var t=this;return a.__generator(this,(function(e){switch(e.label){case 0:return this._started=!1,this.markClientZombied(),this.clientMetadataRefresher&&(this.clientMetadataRefresher.cancel(),this.clientMetadataRefresher=null),this.detachVisibilityHandler(),this.detachWindowUnloadHook(),[4,this.simpleDb.runTransaction("readwrite-idempotent",[an.store,bn.store],(function(e){return t.releasePrimaryLeaseIfHeld(e).next((function(){return t.removeClientMetadata(e)}))}))];case 1:return e.sent(),this.simpleDb.close(),this.removeClientZombiedEntry(),[2]}}))}))},t.prototype.filterActiveClients=function(t,e){var n=this;return t.filter((function(t){return n.isWithinAge(t.updateTimeMs,e)&&!n.isClientZombied(t.clientId)}))},t.prototype.getActiveClients=function(){var t=this;return this.simpleDb.runTransaction("readonly-idempotent",[bn.store],(function(e){return Kn(e).loadAll().next((function(e){return t.filterActiveClients(e,18e5).map((function(t){return t.clientId}))}))}))},t.clearPersistence=function(e){return a.__awaiter(this,void 0,void 0,(function(){var n;return a.__generator(this,(function(r){switch(r.label){case 0:return t.isAvailable()?(n=e+t.MAIN_DATABASE,[4,zt.delete(n)]):[2,Promise.resolve()];case 1:return r.sent(),[2]}}))}))},Object.defineProperty(t.prototype,"started",{get:function(){return this._started},enumerable:!0,configurable:!0}),t.prototype.getMutationQueue=function(t){return v(this.started,"Cannot initialize MutationQueue before persistence is started."),te.forUser(t,this.serializer,this.indexManager,this.referenceDelegate)},t.prototype.getTargetCache=function(){return v(this.started,"Cannot initialize TargetCache before persistence is started."),this.targetCache},t.prototype.getRemoteDocumentCache=function(){return v(this.started,"Cannot initialize RemoteDocumentCache before persistence is started."),this.remoteDocumentCache},t.prototype.getIndexManager=function(){return v(this.started,"Cannot initialize IndexManager before persistence is started."),this.indexManager},t.prototype.runTransaction=function(t,e,n){var r=this;p(xn,"Starting transaction:",t);var i,o=e.endsWith("idempotent"),a=e.startsWith("readonly")?o?"readonly-idempotent":"readonly":o?"readwrite-idempotent":"readwrite";return this.simpleDb.runTransaction(a,In,(function(o){return i=new Vn(o,r.listenSequence.next()),"readwrite-primary"===e||"readwrite-primary-idempotent"===e?r.verifyPrimaryLease(o).next((function(t){return!!t||r.canActAsPrimary(o)})).next((function(e){if(!e)throw m("Failed to obtain primary lease for action '"+t+"'."),r.isPrimary=!1,r.queue.enqueueAndForget((function(){return r.primaryStateListener(!1)})),new E(T.FAILED_PRECONDITION,Fn);return n(i)})).next((function(t){return r.acquireOrExtendPrimaryLease(o).next((function(){return t}))})):r.verifyAllowTabSynchronization(o).next((function(){return n(i)}))})).then((function(t){return i.raiseOnCommittedEvent(),t}))},t.prototype.verifyAllowTabSynchronization=function(t){var e=this;return jn(t).get(an.key).next((function(t){if(null!==t&&e.isWithinAge(t.leaseTimestampMs,5e3)&&!e.isClientZombied(t.ownerId)&&!e.isLocalClient(t)&&!t.allowTabSynchronization)throw new E(T.FAILED_PRECONDITION,qn)}))},t.prototype.acquireOrExtendPrimaryLease=function(t){var e=new an(this.clientId,this.allowTabSynchronization,Date.now());return jn(t).put(an.key,e)},t.isAvailable=function(){return zt.isAvailable()},t.buildStoragePrefix=function(t){var e=t.databaseId.projectId;return t.databaseId.isDefaultDatabase||(e+="."+t.databaseId.database),"firestore/"+t.persistenceKey+"/"+e+"/"},t.prototype.releasePrimaryLeaseIfHeld=function(t){var e=this,n=jn(t);return n.get(an.key).next((function(t){return e.isLocalClient(t)?(p(xn,"Releasing primary lease."),n.delete(an.key)):Qt.resolve()}))},t.prototype.isWithinAge=function(t,e){var n=Date.now();return!(t<n-e)&&(!(t>n)||(m("Detected an update time that is in the future: "+t+" > "+n),!1))},t.prototype.attachVisibilityHandler=function(){var t=this;null!==this.document&&"function"==typeof this.document.addEventListener&&(this.documentVisibilityHandler=function(){t.queue.enqueueAndForget((function(){return t.inForeground="visible"===t.document.visibilityState,t.updateClientMetadataAndTryBecomePrimary()}))},this.document.addEventListener("visibilitychange",this.documentVisibilityHandler),this.inForeground="visible"===this.document.visibilityState)},t.prototype.detachVisibilityHandler=function(){this.documentVisibilityHandler&&(v(null!==this.document&&"function"==typeof this.document.addEventListener,"Expected 'document.addEventListener' to be a function"),this.document.removeEventListener("visibilitychange",this.documentVisibilityHandler),this.documentVisibilityHandler=null)},t.prototype.attachWindowUnloadHook=function(){var t=this;"function"==typeof this.window.addEventListener&&(this.windowUnloadHandler=function(){t.markClientZombied(),t.queue.enqueueAndForget((function(){return t.shutdown()}))},this.window.addEventListener("unload",this.windowUnloadHandler))},t.prototype.detachWindowUnloadHook=function(){this.windowUnloadHandler&&(v("function"==typeof this.window.removeEventListener,"Expected 'window.removeEventListener' to be a function"),this.window.removeEventListener("unload",this.windowUnloadHandler),this.windowUnloadHandler=null)},t.prototype.isClientZombied=function(t){try{var e=null!==this.webStorage.getItem(this.zombiedClientLocalStorageKey(t));return p(xn,"Client '"+t+"' "+(e?"is":"is not")+" zombied in LocalStorage"),e}catch(t){return m(xn,"Failed to get zombied client id.",t),!1}},t.prototype.markClientZombied=function(){try{this.webStorage.setItem(this.zombiedClientLocalStorageKey(this.clientId),String(Date.now()))}catch(t){m("Failed to set zombie client id.",t)}},t.prototype.removeClientZombiedEntry=function(){try{this.webStorage.removeItem(this.zombiedClientLocalStorageKey(this.clientId))}catch(t){}},t.prototype.zombiedClientLocalStorageKey=function(t){return"firestore_zombie_"+this.persistenceKey+"_"+t},t.MAIN_DATABASE="main",t}();function Un(t){return a.__awaiter(this,void 0,void 0,(function(){return a.__generator(this,(function(e){if(!function(t){return t.code===T.FAILED_PRECONDITION&&t.message===Fn}(t))throw t;return p(xn,"Unexpectedly lost primary lease"),[2]}))}))}function jn(t){return t.store(an.store)}function Kn(t){return t.store(bn.store)}var Wn=function(){function t(t,e){this.db=t,this.inMemoryPins=null,this.garbageCollector=new Ln(this,e)}return t.prototype.getSequenceNumberCount=function(t){var e=this.orphanedDocmentCount(t);return this.db.getTargetCache().getTargetCount(t).next((function(t){return e.next((function(e){return t+e}))}))},t.prototype.orphanedDocmentCount=function(t){var e=0;return this.forEachOrphanedDocumentSequenceNumber(t,(function(t){e++})).next((function(){return e}))},t.prototype.forEachTarget=function(t,e){return this.db.getTargetCache().forEachTarget(t,e)},t.prototype.forEachOrphanedDocumentSequenceNumber=function(t,e){return this.forEachOrphanedDocument(t,(function(t,n){return e(n)}))},t.prototype.setInMemoryPins=function(t){this.inMemoryPins=t},t.prototype.addReference=function(t,e){return Qn(t,e)},t.prototype.removeReference=function(t,e){return Qn(t,e)},t.prototype.removeTargets=function(t,e,n){return this.db.getTargetCache().removeTargets(t,e,n)},t.prototype.removeMutationReference=function(t,e){return Qn(t,e)},t.prototype.isPinned=function(t,e){return this.inMemoryPins.containsKey(e)?Qt.resolve(!0):function(t,e){var n=!1;return ae(t).iterateSerial((function(r){return ee(t,r,e).next((function(t){return t&&(n=!0),Qt.resolve(!t)}))})).next((function(){return n}))}(t,e)},t.prototype.removeOrphanedDocuments=function(t,e){var n=this,r=this.db.getRemoteDocumentCache().newChangeBuffer(),i=[],o=0;return this.forEachOrphanedDocument(t,(function(a,s){if(s<=e){var u=n.isPinned(t,a).next((function(e){if(!e)return o++,r.getEntry(t,a).next((function(){return r.removeEntry(a),pe(t).delete([0,wt(a.path)])}))}));i.push(u)}})).next((function(){return Qt.waitFor(i)})).next((function(){return r.apply(t)})).next((function(){return o}))},t.prototype.removeTarget=function(t,e){var n=e.withSequenceNumber(t.currentSequenceNumber);return this.db.getTargetCache().updateTargetData(t,n)},t.prototype.updateLimboDocument=function(t,e){return Qn(t,e)},t.prototype.forEachOrphanedDocument=function(t,e){var n,r=pe(t),i=st.INVALID;return r.iterate({index:mn.documentTargetsIndex},(function(t,r){var o=t[0],a=(t[1],r.path),s=r.sequenceNumber;0===o?(i!==st.INVALID&&e(new ft(St(n)),i),i=s,n=a):i=st.INVALID})).next((function(){i!==st.INVALID&&e(new ft(St(n)),i)}))},t.prototype.getCacheSize=function(t){return this.db.getRemoteDocumentCache().getSize(t)},t}();function Qn(t,e){return pe(t).put(function(t,e){return new mn(0,wt(t.path),e)}(e,t.currentSequenceNumber))}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */var Gn=Number,zn=Gn.MIN_SAFE_INTEGER||-(Math.pow(2,53)-1),Hn=Gn.MAX_SAFE_INTEGER||Math.pow(2,53)-1,Yn=Gn.isInteger||function(t){return"number"==typeof t&&isFinite(t)&&Math.floor(t)===t};function Xn(t){return null==t}function Jn(t){return Yn(t)&&t<=Hn&&t>=zn}
+/**
+ * @license
+ * Copyright 2019 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */var $n,Zn=function(){function t(t,e,n,r,i,o,a){void 0===e&&(e=null),void 0===n&&(n=[]),void 0===r&&(r=[]),void 0===i&&(i=null),void 0===o&&(o=null),void 0===a&&(a=null),this.path=t,this.collectionGroup=e,this.orderBy=n,this.filters=r,this.limit=i,this.startAt=o,this.endAt=a,this.memoizedCanonicalId=null}return t.prototype.canonicalId=function(){if(null===this.memoizedCanonicalId){var t=this.path.canonicalString();null!==this.collectionGroup&&(t+="|cg:"+this.collectionGroup),t+="|f:";for(var e=0,n=this.filters;e<n.length;e++){t+=n[e].canonicalId(),t+=","}t+="|ob:";for(var r=0,i=this.orderBy;r<i.length;r++){t+=i[r].canonicalId(),t+=","}Xn(this.limit)||(t+="|l:",t+=this.limit),this.startAt&&(t+="|lb:",t+=this.startAt.canonicalId()),this.endAt&&(t+="|ub:",t+=this.endAt.canonicalId()),this.memoizedCanonicalId=t}return this.memoizedCanonicalId},t.prototype.toString=function(){var t=this.path.canonicalString();return null!==this.collectionGroup&&(t+=" collectionGroup="+this.collectionGroup),this.filters.length>0&&(t+=", filters: ["+this.filters.join(", ")+"]"),Xn(this.limit)||(t+=", limit: "+this.limit),this.orderBy.length>0&&(t+=", orderBy: ["+this.orderBy.join(", ")+"]"),this.startAt&&(t+=", startAt: "+this.startAt.canonicalId()),this.endAt&&(t+=", endAt: "+this.endAt.canonicalId()),"Target("+t+")"},t.prototype.isEqual=function(t){if(this.limit!==t.limit)return!1;if(this.orderBy.length!==t.orderBy.length)return!1;for(var e=0;e<this.orderBy.length;e++)if(!this.orderBy[e].isEqual(t.orderBy[e]))return!1;if(this.filters.length!==t.filters.length)return!1;for(e=0;e<this.filters.length;e++)if(!this.filters[e].isEqual(t.filters[e]))return!1;return this.collectionGroup===t.collectionGroup&&(!!this.path.isEqual(t.path)&&(!(null!==this.startAt?!this.startAt.isEqual(t.startAt):null!==t.startAt)&&(null!==this.endAt?this.endAt.isEqual(t.endAt):null===t.endAt)))},t.prototype.isDocumentQuery=function(){return ft.isDocumentKey(this.path)&&null===this.collectionGroup&&0===this.filters.length},t}();
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */!function(t){t.First="F",t.Last="L"}($n||($n={}));var tr=function(){function t(t,e,n,r,i,o,a,s){void 0===e&&(e=null),void 0===n&&(n=[]),void 0===r&&(r=[]),void 0===i&&(i=null),void 0===o&&(o=$n.First),void 0===a&&(a=null),void 0===s&&(s=null),this.path=t,this.collectionGroup=e,this.explicitOrderBy=n,this.filters=r,this.limit=i,this.limitType=o,this.startAt=a,this.endAt=s,this.memoizedOrderBy=null,this.memorizedTarget=null,this.startAt&&this.assertValidBound(this.startAt),this.endAt&&this.assertValidBound(this.endAt)}return t.atPath=function(e){return new t(e)},Object.defineProperty(t.prototype,"orderBy",{get:function(){if(null===this.memoizedOrderBy){var t=this.getInequalityFilterField(),e=this.getFirstOrderByField();if(null!==t&&null===e)t.isKeyField()?this.memoizedOrderBy=[fr]:this.memoizedOrderBy=[new lr(t),fr];else{v(null===t||null!==e&&t.isEqual(e),"First orderBy should match inequality field."),this.memoizedOrderBy=[];for(var n=!1,r=0,i=this.explicitOrderBy;r<i.length;r++){var o=i[r];this.memoizedOrderBy.push(o),o.field.isKeyField()&&(n=!0)}if(!n){var a=this.explicitOrderBy.length>0?this.explicitOrderBy[this.explicitOrderBy.length-1].dir:cr.ASCENDING;this.memoizedOrderBy.push(a===cr.ASCENDING?fr:dr)}}}return this.memoizedOrderBy},enumerable:!0,configurable:!0}),t.prototype.addFilter=function(e){v(null==this.getInequalityFilterField()||!(e instanceof rr)||!e.isInequality()||e.field.isEqual(this.getInequalityFilterField()),"Query must only have one inequality field."),v(!this.isDocumentQuery(),"No filtering allowed for document query");var n=this.filters.concat([e]);return new t(this.path,this.collectionGroup,this.explicitOrderBy.slice(),n,this.limit,this.limitType,this.startAt,this.endAt)},t.prototype.addOrderBy=function(e){v(!this.startAt&&!this.endAt,"Bounds must be set after orderBy");var n=this.explicitOrderBy.concat([e]);return new t(this.path,this.collectionGroup,n,this.filters.slice(),this.limit,this.limitType,this.startAt,this.endAt)},t.prototype.withLimitToFirst=function(e){return new t(this.path,this.collectionGroup,this.explicitOrderBy.slice(),this.filters.slice(),e,$n.First,this.startAt,this.endAt)},t.prototype.withLimitToLast=function(e){return new t(this.path,this.collectionGroup,this.explicitOrderBy.slice(),this.filters.slice(),e,$n.Last,this.startAt,this.endAt)},t.prototype.withStartAt=function(e){return new t(this.path,this.collectionGroup,this.explicitOrderBy.slice(),this.filters.slice(),this.limit,this.limitType,e,this.endAt)},t.prototype.withEndAt=function(e){return new t(this.path,this.collectionGroup,this.explicitOrderBy.slice(),this.filters.slice(),this.limit,this.limitType,this.startAt,e)},t.prototype.asCollectionQueryAtPath=function(e){return new t(e,null,this.explicitOrderBy.slice(),this.filters.slice(),this.limit,this.limitType,this.startAt,this.endAt)},t.prototype.matchesAllDocuments=function(){return 0===this.filters.length&&null===this.limit&&null==this.startAt&&null==this.endAt&&(0===this.explicitOrderBy.length||1===this.explicitOrderBy.length&&this.explicitOrderBy[0].field.isKeyField())},t.prototype.canonicalId=function(){return this.toTarget().canonicalId()+"|lt:"+this.limitType},t.prototype.toString=function(){return"Query(target="+this.toTarget().toString()+"; limitType="+this.limitType+")"},t.prototype.isEqual=function(t){return this.toTarget().isEqual(t.toTarget())&&this.limitType===t.limitType},t.prototype.docComparator=function(t,e){for(var n=!1,r=0,i=this.orderBy;r<i.length;r++){var o=i[r],a=o.compare(t,e);if(0!==a)return a;n=n||o.field.isKeyField()}return v(n,"orderBy used that doesn't compare on key field"),0},t.prototype.matches=function(t){return this.matchesPathAndCollectionGroup(t)&&this.matchesOrderBy(t)&&this.matchesFilters(t)&&this.matchesBounds(t)},t.prototype.hasLimitToFirst=function(){return!Xn(this.limit)&&this.limitType===$n.First},t.prototype.hasLimitToLast=function(){return!Xn(this.limit)&&this.limitType===$n.Last},t.prototype.getFirstOrderByField=function(){return this.explicitOrderBy.length>0?this.explicitOrderBy[0].field:null},t.prototype.getInequalityFilterField=function(){for(var t=0,e=this.filters;t<e.length;t++){var n=e[t];if(n instanceof rr&&n.isInequality())return n.field}return null},t.prototype.findFilterOperator=function(t){for(var e=0,n=this.filters;e<n.length;e++){var r=n[e];if(r instanceof rr&&t.indexOf(r.op)>=0)return r.op}return null},t.prototype.isDocumentQuery=function(){return this.toTarget().isDocumentQuery()},t.prototype.isCollectionGroupQuery=function(){return null!==this.collectionGroup},t.prototype.toTarget=function(){if(!this.memorizedTarget)if(this.limitType===$n.First)this.memorizedTarget=new Zn(this.path,this.collectionGroup,this.orderBy,this.filters,this.limit,this.startAt,this.endAt);else{for(var t=[],e=0,n=this.orderBy;e<n.length;e++){var r=n[e],i=r.dir===cr.DESCENDING?cr.ASCENDING:cr.DESCENDING;t.push(new lr(r.field,i))}var o=this.endAt?new hr(this.endAt.position,!this.endAt.before):null,a=this.startAt?new hr(this.startAt.position,!this.startAt.before):null;this.memorizedTarget=new Zn(this.path,this.collectionGroup,t,this.filters,this.limit,o,a)}return this.memorizedTarget},t.prototype.matchesPathAndCollectionGroup=function(t){var e=t.key.path;return null!==this.collectionGroup?t.key.hasCollectionId(this.collectionGroup)&&this.path.isPrefixOf(e):ft.isDocumentKey(this.path)?this.path.isEqual(e):this.path.isImmediateParentOf(e)},t.prototype.matchesOrderBy=function(t){for(var e=0,n=this.explicitOrderBy;e<n.length;e++){var r=n[e];if(!r.field.isKeyField()&&null===t.field(r.field))return!1}return!0},t.prototype.matchesFilters=function(t){for(var e=0,n=this.filters;e<n.length;e++){if(!n[e].matches(t))return!1}return!0},t.prototype.matchesBounds=function(t){return!(this.startAt&&!this.startAt.sortsBeforeDocument(this.orderBy,t))&&(!this.endAt||!this.endAt.sortsBeforeDocument(this.orderBy,t))},t.prototype.assertValidBound=function(t){v(t.position.length<=this.orderBy.length,"Bound is longer than orderBy")},t}(),er=function(){},nr=function(){function t(t){this.name=t}return t.fromString=function(e){switch(e){case"<":return t.LESS_THAN;case"<=":return t.LESS_THAN_OR_EQUAL;case"==":return t.EQUAL;case">=":return t.GREATER_THAN_OR_EQUAL;case">":return t.GREATER_THAN;case"array-contains":return t.ARRAY_CONTAINS;case"in":return t.IN;case"array-contains-any":return t.ARRAY_CONTAINS_ANY;default:return g("Unknown FieldFilter operator: "+e)}},t.prototype.toString=function(){return this.name},t.prototype.isEqual=function(t){return this.name===t.name},t.LESS_THAN=new t("<"),t.LESS_THAN_OR_EQUAL=new t("<="),t.EQUAL=new t("=="),t.GREATER_THAN=new t(">"),t.GREATER_THAN_OR_EQUAL=new t(">="),t.ARRAY_CONTAINS=new t("array-contains"),t.IN=new t("in"),t.ARRAY_CONTAINS_ANY=new t("array-contains-any"),t}(),rr=function(t){function e(e,n,r){var i=t.call(this)||this;return i.field=e,i.op=n,i.value=r,i}return a.__extends(e,t),e.create=function(t,n,r){if(t.isKeyField())return n===nr.IN?(v(r instanceof je,"Comparing on key with IN, but filter value not an ArrayValue"),v(r.internalValue.every((function(t){return t instanceof Ve})),"Comparing on key with IN, but an array value was not a RefValue"),new or(t,r)):(v(r instanceof Ve,"Comparing on key, but filter value not a RefValue"),v(n!==nr.ARRAY_CONTAINS&&n!==nr.ARRAY_CONTAINS_ANY,"'"+n.toString()+"' queries don't make sense on document keys."),new ir(t,n,r));if(r.isEqual(Ne.INSTANCE)){if(n!==nr.EQUAL)throw new E(T.INVALID_ARGUMENT,"Invalid query. Null supports only equality comparisons.");return new e(t,n,r)}if(r.isEqual(Le.NAN)){if(n!==nr.EQUAL)throw new E(T.INVALID_ARGUMENT,"Invalid query. NaN supports only equality comparisons.");return new e(t,n,r)}return n===nr.ARRAY_CONTAINS?new ar(t,r):n===nr.IN?(v(r instanceof je,"IN filter has invalid value: "+r.toString()),new sr(t,r)):n===nr.ARRAY_CONTAINS_ANY?(v(r instanceof je,"ARRAY_CONTAINS_ANY filter has invalid value: "+r.toString()),new ur(t,r)):new e(t,n,r)},e.prototype.matches=function(t){var e=t.field(this.field);return null!==e&&this.value.typeOrder===e.typeOrder&&this.matchesComparison(e.compareTo(this.value))},e.prototype.matchesComparison=function(t){switch(this.op){case nr.LESS_THAN:return t<0;case nr.LESS_THAN_OR_EQUAL:return t<=0;case nr.EQUAL:return 0===t;case nr.GREATER_THAN:return t>0;case nr.GREATER_THAN_OR_EQUAL:return t>=0;default:return g("Unknown FieldFilter operator: "+this.op)}},e.prototype.isInequality=function(){return[nr.LESS_THAN,nr.LESS_THAN_OR_EQUAL,nr.GREATER_THAN,nr.GREATER_THAN_OR_EQUAL].indexOf(this.op)>=0},e.prototype.canonicalId=function(){return this.field.canonicalString()+this.op.toString()+this.value.toString()},e.prototype.isEqual=function(t){return t instanceof e&&(this.op.isEqual(t.op)&&this.field.isEqual(t.field)&&this.value.isEqual(t.value))},e.prototype.toString=function(){return this.field.canonicalString()+" "+this.op+" "+this.value.value()},e}(er),ir=function(t){function e(){return null!==t&&t.apply(this,arguments)||this}return a.__extends(e,t),e.prototype.matches=function(t){var e=this.value,n=ft.comparator(t.key,e.key);return this.matchesComparison(n)},e}(rr),or=function(t){function e(e,n){var r=t.call(this,e,nr.IN,n)||this;return r.value=n,r}return a.__extends(e,t),e.prototype.matches=function(t){return this.value.internalValue.some((function(e){return t.key.isEqual(e.key)}))},e}(rr),ar=function(t){function e(e,n){return t.call(this,e,nr.ARRAY_CONTAINS,n)||this}return a.__extends(e,t),e.prototype.matches=function(t){var e=t.field(this.field);return e instanceof je&&e.contains(this.value)},e}(rr),sr=function(t){function e(e,n){var r=t.call(this,e,nr.IN,n)||this;return r.value=n,r}return a.__extends(e,t),e.prototype.matches=function(t){var e=this.value,n=t.field(this.field);return null!==n&&e.contains(n)},e}(rr),ur=function(t){function e(e,n){var r=t.call(this,e,nr.ARRAY_CONTAINS_ANY,n)||this;return r.value=n,r}return a.__extends(e,t),e.prototype.matches=function(t){var e=this,n=t.field(this.field);return n instanceof je&&n.internalValue.some((function(t){return e.value.contains(t)}))},e}(rr),cr=function(){function t(t){this.name=t}return t.prototype.toString=function(){return this.name},t.ASCENDING=new t("asc"),t.DESCENDING=new t("desc"),t}(),hr=function(){function t(t,e){this.position=t,this.before=e}return t.prototype.canonicalId=function(){for(var t=this.before?"b:":"a:",e=0,n=this.position;e<n.length;e++){t+=n[e].toString()}return t},t.prototype.sortsBeforeDocument=function(t,e){v(this.position.length<=t.length,"Bound has more components than query's orderBy");for(var n=0,r=0;r<this.position.length;r++){var i=t[r],o=this.position[r];if(i.field.isKeyField())v(o instanceof Ve,"Bound has a non-key value where the key path is being used."),n=ft.comparator(o.key,e.key);else{var a=e.field(i.field);v(null!==a,"Field should exist since document matched the orderBy already."),n=o.compareTo(a)}if(i.dir===cr.DESCENDING&&(n*=-1),0!==n)break}return this.before?n<=0:n<0},t.prototype.isEqual=function(t){if(null===t)return!1;if(this.before!==t.before||this.position.length!==t.position.length)return!1;for(var e=0;e<this.position.length;e++){var n=this.position[e],r=t.position[e];if(!n.isEqual(r))return!1}return!0},t}(),lr=function(){function t(t,e){this.field=t,void 0===e&&(e=cr.ASCENDING),this.dir=e,this.isKeyOrderBy=t.isKeyField()}return t.prototype.compare=function(t,e){var n=this.isKeyOrderBy?We.compareByKey(t,e):We.compareByField(this.field,t,e);switch(this.dir){case cr.ASCENDING:return n;case cr.DESCENDING:return-1*n;default:return g("Unknown direction: "+this.dir)}},t.prototype.canonicalId=function(){return this.field.canonicalString()+this.dir.toString()},t.prototype.toString=function(){return this.field.canonicalString()+" ("+this.dir+")"},t.prototype.isEqual=function(t){return this.dir===t.dir&&this.field.isEqual(t.field)},t}(),fr=new lr(lt.keyField(),cr.ASCENDING),dr=new lr(lt.keyField(),cr.DESCENDING),pr=function(){function t(){}return t.prototype.setLocalDocumentsView=function(t){this.localDocumentsView=t},t.prototype.getDocumentsMatchingQuery=function(t,e,n,r){var o=this;return v(void 0!==this.localDocumentsView,"setLocalDocumentsView() not called"),e.matchesAllDocuments()?this.executeFullCollectionScan(t,e):n.isEqual(_t.MIN)?this.executeFullCollectionScan(t,e):this.localDocumentsView.getDocuments(t,r).next((function(a){var s=o.applyQuery(e,a);return(e.hasLimitToFirst()||e.hasLimitToLast())&&o.needsRefill(e.limitType,s,r,n)?o.executeFullCollectionScan(t,e):(f()<=i.DEBUG&&p("IndexFreeQueryEngine","Re-using previous result from %s to execute query: %s",n.toString(),e.toString()),o.localDocumentsView.getDocumentsMatchingQuery(t,e,n).next((function(t){return s.forEach((function(e){t=t.insert(e.key,e)})),t})))}))},t.prototype.applyQuery=function(t,e){var n=new kt((function(e,n){return t.docComparator(e,n)}));return e.forEach((function(e,r){r instanceof We&&t.matches(r)&&(n=n.add(r))})),n},t.prototype.needsRefill=function(t,e,n,r){if(n.size!==e.size)return!0;var i=t===$n.First?e.last():e.first();return!!i&&(i.hasPendingWrites||i.version.compareTo(r)>0)},t.prototype.executeFullCollectionScan=function(t,e){return f()<=i.DEBUG&&p("IndexFreeQueryEngine","Using full collection scan to execute query: %s",e.toString()),this.localDocumentsView.getDocumentsMatchingQuery(t,e,_t.MIN)},t}(),mr=function(){function t(t,e,n){this.remoteDocumentCache=t,this.mutationQueue=e,this.indexManager=n}return t.prototype.getDocument=function(t,e){var n=this;return this.mutationQueue.getAllMutationBatchesAffectingDocumentKey(t,e).next((function(r){return n.getDocumentInternal(t,e,r)}))},t.prototype.getDocumentInternal=function(t,e,n){return this.remoteDocumentCache.getEntry(t,e).next((function(t){for(var r=0,i=n;r<i.length;r++){t=i[r].applyToLocalView(e,t)}return t}))},t.prototype.applyLocalMutationsToDocuments=function(t,e,n){var r=Lt();return e.forEach((function(t,e){for(var i=0,o=n;i<o.length;i++){e=o[i].applyToLocalView(t,e)}r=r.insert(t,e)})),r},t.prototype.getDocuments=function(t,e){var n=this;return this.remoteDocumentCache.getEntries(t,e).next((function(e){return n.getLocalViewOfDocuments(t,e)}))},t.prototype.getLocalViewOfDocuments=function(t,e){var n=this;return this.mutationQueue.getAllMutationBatchesAffectingDocumentKeys(t,e).next((function(r){var i=n.applyLocalMutationsToDocuments(t,e,r),o=Mt();return i.forEach((function(t,e){e||(e=new Qe(t,_t.forDeletedDoc())),o=o.insert(t,e)})),o}))},t.prototype.getDocumentsMatchingQuery=function(t,e,n){return e.isDocumentQuery()?this.getDocumentsMatchingDocumentQuery(t,e.path):e.isCollectionGroupQuery()?this.getDocumentsMatchingCollectionGroupQuery(t,e,n):this.getDocumentsMatchingCollectionQuery(t,e,n)},t.prototype.getDocumentsMatchingDocumentQuery=function(t,e){return this.getDocument(t,new ft(e)).next((function(t){var e=xt();return t instanceof We&&(e=e.insert(t.key,t)),e}))},t.prototype.getDocumentsMatchingCollectionGroupQuery=function(t,e,n){var r=this;v(e.path.isEmpty(),"Currently we only support collection group queries at the root.");var i=e.collectionGroup,o=xt();return this.indexManager.getCollectionParents(t,i).next((function(a){return Qt.forEach(a,(function(a){var s=e.asCollectionQueryAtPath(a.child(i));return r.getDocumentsMatchingCollectionQuery(t,s,n).next((function(t){t.forEach((function(t,e){o=o.insert(t,e)}))}))})).next((function(){return o}))}))},t.prototype.getDocumentsMatchingCollectionQuery=function(t,e,n){var r,i,o=this;return this.remoteDocumentCache.getDocumentsMatchingQuery(t,e,n).next((function(n){return r=n,o.mutationQueue.getAllMutationBatchesAffectingQuery(t,e)})).next((function(e){return i=e,o.addMissingBaseDocuments(t,i,r).next((function(t){r=t;for(var e=0,n=i;e<n.length;e++)for(var o=n[e],a=0,s=o.mutations;a<s.length;a++){var u=s[a],c=u.key,h=r.get(c),l=u.applyToLocalView(h,h,o.localWriteTime);r=l instanceof We?r.insert(c,l):r.remove(c)}}))})).next((function(){return r.forEach((function(t,n){e.matches(n)||(r=r.remove(t))})),r}))},t.prototype.addMissingBaseDocuments=function(t,e,n){for(var r=Bt(),i=0,o=e;i<o.length;i++)for(var a=0,s=o[i].mutations;a<s.length;a++){var u=s[a];u instanceof Ie&&null===n.get(u.key)&&(r=r.add(u.key))}var c=n;return this.remoteDocumentCache.getEntries(t,r).next((function(t){return t.forEach((function(t,e){null!==e&&e instanceof We&&(c=c.insert(t,e))})),c}))},t}(),yr=function(){function t(){this.refsByKey=new kt(gr.compareByKey),this.refsByTarget=new kt(gr.compareByTargetId)}return t.prototype.isEmpty=function(){return this.refsByKey.isEmpty()},t.prototype.addReference=function(t,e){var n=new gr(t,e);this.refsByKey=this.refsByKey.add(n),this.refsByTarget=this.refsByTarget.add(n)},t.prototype.addReferences=function(t,e){var n=this;t.forEach((function(t){return n.addReference(t,e)}))},t.prototype.removeReference=function(t,e){this.removeRef(new gr(t,e))},t.prototype.removeReferences=function(t,e){var n=this;t.forEach((function(t){return n.removeReference(t,e)}))},t.prototype.removeReferencesForId=function(t){var e=this,n=ft.EMPTY,r=new gr(n,t),i=new gr(n,t+1),o=[];return this.refsByTarget.forEachInRange([r,i],(function(t){e.removeRef(t),o.push(t.key)})),o},t.prototype.removeAllReferences=function(){var t=this;this.refsByKey.forEach((function(e){return t.removeRef(e)}))},t.prototype.removeRef=function(t){this.refsByKey=this.refsByKey.delete(t),this.refsByTarget=this.refsByTarget.delete(t)},t.prototype.referencesForId=function(t){var e=ft.EMPTY,n=new gr(e,t),r=new gr(e,t+1),i=Bt();return this.refsByTarget.forEachInRange([n,r],(function(t){i=i.add(t.key)})),i},t.prototype.containsKey=function(t){var e=new gr(t,0),n=this.refsByKey.firstAfterOrEqual(e);return null!==n&&t.isEqual(n.key)},t}(),gr=function(){function t(t,e){this.key=t,this.targetOrBatchId=e}return t.compareByKey=function(t,e){return ft.comparator(t.key,e.key)||X(t.targetOrBatchId,e.targetOrBatchId)},t.compareByTargetId=function(t,e){return X(t.targetOrBatchId,e.targetOrBatchId)||ft.comparator(t.key,e.key)},t}(),vr=function(){function t(t,e,n){this.persistence=t,this.queryEngine=e,this.localViewReferences=new yr,this.targetDataByTarget=new Ct(X),this.targetIdByTarget=new ze((function(t){return t.canonicalId()})),this.lastDocumentChangeReadTime=_t.MIN,v(t.started,"LocalStore was passed an unstarted persistence implementation"),this.persistence.referenceDelegate.setInMemoryPins(this.localViewReferences),this.mutationQueue=t.getMutationQueue(n),this.remoteDocuments=t.getRemoteDocumentCache(),this.targetCache=t.getTargetCache(),this.localDocuments=new mr(this.remoteDocuments,this.mutationQueue,this.persistence.getIndexManager()),this.queryEngine.setLocalDocumentsView(this.localDocuments)}return t.prototype.start=function(){return this.synchronizeLastDocumentChangeReadTime()},t.prototype.handleUserChange=function(t){return a.__awaiter(this,void 0,void 0,(function(){var e,n,r,i=this;return a.__generator(this,(function(o){switch(o.label){case 0:return e=this.mutationQueue,n=this.localDocuments,[4,this.persistence.runTransaction("Handle user change","readonly-idempotent",(function(r){var o;return i.mutationQueue.getAllMutationBatches(r).next((function(a){return o=a,e=i.persistence.getMutationQueue(t),n=new mr(i.remoteDocuments,e,i.persistence.getIndexManager()),e.getAllMutationBatches(r)})).next((function(t){for(var e=[],i=[],a=Bt(),s=0,u=o;s<u.length;s++){var c=u[s];e.push(c.batchId);for(var h=0,l=c.mutations;h<l.length;h++){var f=l[h];a=a.add(f.key)}}for(var d=0,p=t;d<p.length;d++){c=p[d];i.push(c.batchId);for(var m=0,y=c.mutations;m<y.length;m++){f=y[m];a=a.add(f.key)}}return n.getDocuments(r,a).next((function(t){return{affectedDocuments:t,removedBatchIds:e,addedBatchIds:i}}))}))}))];case 1:return r=o.sent(),this.mutationQueue=e,this.localDocuments=n,this.queryEngine.setLocalDocumentsView(this.localDocuments),[2,r]}}))}))},t.prototype.localWrite=function(t){var e,n=this,r=It.now(),i=t.reduce((function(t,e){return t.add(e.key)}),Bt());return this.persistence.runTransaction("Locally write mutations","readwrite-idempotent",(function(o){return n.localDocuments.getDocuments(o,i).next((function(i){e=i;for(var a=[],s=0,u=t;s<u.length;s++){var c=u[s],h=c.extractBaseValue(e.get(c.key));null!=h&&a.push(new Ie(c.key,h,h.fieldMask(),Te.exists(!0)))}return n.mutationQueue.addMutationBatch(o,r,a,t)}))})).then((function(t){var n=t.applyToLocalDocumentSet(e);return{batchId:t.batchId,changes:n}}))},t.prototype.lookupMutationDocuments=function(t){var e=this;return this.persistence.runTransaction("Lookup mutation documents","readonly-idempotent",(function(n){return e.mutationQueue.lookupMutationKeys(n,t).next((function(t){return t?e.localDocuments.getDocuments(n,t):Qt.resolve(null)}))}))},t.prototype.acknowledgeBatch=function(t){var e=this;return this.persistence.runTransaction("Acknowledge batch","readwrite-primary-idempotent",(function(n){var r=t.batch.keys(),i=e.remoteDocuments.newChangeBuffer({trackRemovals:!0});return e.mutationQueue.acknowledgeBatch(n,t.batch,t.streamToken).next((function(){return e.applyWriteToRemoteDocuments(n,t,i)})).next((function(){return i.apply(n)})).next((function(){return e.mutationQueue.performConsistencyCheck(n)})).next((function(){return e.localDocuments.getDocuments(n,r)}))}))},t.prototype.rejectBatch=function(t){var e=this;return this.persistence.runTransaction("Reject batch","readwrite-primary-idempotent",(function(n){var r;return e.mutationQueue.lookupMutationBatch(n,t).next((function(t){return v(null!==t,"Attempt to reject nonexistent batch!"),r=t.keys(),e.mutationQueue.removeMutationBatch(n,t)})).next((function(){return e.mutationQueue.performConsistencyCheck(n)})).next((function(){return e.localDocuments.getDocuments(n,r)}))}))},t.prototype.getHighestUnacknowledgedBatchId=function(){var t=this;return this.persistence.runTransaction("Get highest unacknowledged batch id","readonly-idempotent",(function(e){return t.mutationQueue.getHighestUnacknowledgedBatchId(e)}))},t.prototype.getLastStreamToken=function(){var t=this;return this.persistence.runTransaction("Get last stream token","readonly-idempotent",(function(e){return t.mutationQueue.getLastStreamToken(e)}))},t.prototype.setLastStreamToken=function(t){var e=this;return this.persistence.runTransaction("Set last stream token","readwrite-primary-idempotent",(function(n){return e.mutationQueue.setLastStreamToken(n,t)}))},t.prototype.getLastRemoteSnapshotVersion=function(){var t=this;return this.persistence.runTransaction("Get last remote snapshot version","readonly-idempotent",(function(e){return t.targetCache.getLastRemoteSnapshotVersion(e)}))},t.prototype.applyRemoteEvent=function(e){var n=this,r=e.snapshotVersion,i=this.targetDataByTarget;return this.persistence.runTransaction("Apply remote event","readwrite-primary-idempotent",(function(o){var a=n.remoteDocuments.newChangeBuffer({trackRemovals:!0});i=n.targetDataByTarget;var s=[];C(e.targetChanges,(function(e,a){var u=i.get(e);if(u){s.push(n.targetCache.removeMatchingKeys(o,a.removedDocuments,e).next((function(){return n.targetCache.addMatchingKeys(o,a.addedDocuments,e)})));var c=a.resumeToken;if(c.length>0){var h=u.withResumeToken(c,r).withSequenceNumber(o.currentSequenceNumber);i=i.insert(e,h),t.shouldPersistTargetData(u,h,a)&&s.push(n.targetCache.updateTargetData(o,h))}}}));var u=Mt(),c=Bt();if(e.documentUpdates.forEach((function(t,e){c=c.add(t)})),s.push(a.getEntries(o,c).next((function(t){e.documentUpdates.forEach((function(i,c){var h=t.get(i);c instanceof Qe&&c.version.isEqual(_t.MIN)?(a.removeEntry(i,r),u=u.insert(i,c)):null==h||c.version.compareTo(h.version)>0||0===c.version.compareTo(h.version)&&h.hasPendingWrites?(v(!_t.MIN.isEqual(r),"Cannot add a document when the remote version is zero"),a.addEntry(c,r),u=u.insert(i,c)):p("LocalStore","Ignoring outdated watch update for ",i,". Current version:",h.version," Watch version:",c.version),e.resolvedLimboDocuments.has(i)&&s.push(n.persistence.referenceDelegate.updateLimboDocument(o,i))}))}))),!r.isEqual(_t.MIN)){var h=n.targetCache.getLastRemoteSnapshotVersion(o).next((function(t){return v(r.compareTo(t)>=0,"Watch stream reverted to previous snapshot?? "+r+" < "+t),n.targetCache.setTargetsMetadata(o,o.currentSequenceNumber,r)}));s.push(h)}return Qt.waitFor(s).next((function(){return a.apply(o)})).next((function(){return n.localDocuments.getLocalViewOfDocuments(o,u)}))})).then((function(t){return n.targetDataByTarget=i,t}))},t.shouldPersistTargetData=function(t,e,n){return v(e.resumeToken.length>0,"Attempted to persist target data with no resume token"),0===t.resumeToken.length||(e.snapshotVersion.toMicroseconds()-t.snapshotVersion.toMicroseconds()>=this.RESUME_TOKEN_MAX_AGE_MICROS||n.addedDocuments.size+n.modifiedDocuments.size+n.removedDocuments.size>0)},t.prototype.notifyLocalViewChanges=function(t){for(var e=this,n=0,r=t;n<r.length;n++){var i=r[n],o=i.targetId;if(this.localViewReferences.addReferences(i.addedKeys,o),this.localViewReferences.removeReferences(i.removedKeys,o),!i.fromCache){var a=this.targetDataByTarget.get(o);v(null!==a,"Can't set limbo-free snapshot version for unknown target: "+o);var s=a.snapshotVersion,u=a.withLastLimboFreeSnapshotVersion(s);this.targetDataByTarget=this.targetDataByTarget.insert(o,u)}}return this.persistence.runTransaction("notifyLocalViewChanges","readwrite-idempotent",(function(n){return Qt.forEach(t,(function(t){return Qt.forEach(t.removedKeys,(function(t){return e.persistence.referenceDelegate.removeReference(n,t)}))}))}))},t.prototype.nextMutationBatch=function(t){var e=this;return this.persistence.runTransaction("Get next mutation batch","readonly-idempotent",(function(n){return void 0===t&&(t=-1),e.mutationQueue.getNextMutationBatchAfterBatchId(n,t)}))},t.prototype.readDocument=function(t){var e=this;return this.persistence.runTransaction("read document","readonly-idempotent",(function(n){return e.localDocuments.getDocument(n,t)}))},t.prototype.allocateTarget=function(t){var e=this;return this.persistence.runTransaction("Allocate target","readwrite-idempotent",(function(n){var r;return e.targetCache.getTargetData(n,t).next((function(i){return i?(r=i,Qt.resolve(r)):e.targetCache.allocateTargetId(n).next((function(i){return r=new Dn(t,i,wn.Listen,n.currentSequenceNumber),e.targetCache.addTargetData(n,r).next((function(){return r}))}))}))})).then((function(n){return null===e.targetDataByTarget.get(n.targetId)&&(e.targetDataByTarget=e.targetDataByTarget.insert(n.targetId,n),e.targetIdByTarget.set(t,n.targetId)),n}))},t.prototype.getTargetData=function(t,e){var n=this.targetIdByTarget.get(e);return void 0!==n?Qt.resolve(this.targetDataByTarget.get(n)):this.targetCache.getTargetData(t,e)},t.prototype.releaseTarget=function(t,e){var n=this,r=this.targetDataByTarget.get(t);if(!r)return Promise.resolve();var i=e?"readwrite-idempotent":"readwrite-primary-idempotent";return this.persistence.runTransaction("Release target",i,(function(i){var o=n.localViewReferences.removeReferencesForId(t);return e?Qt.resolve():Qt.forEach(o,(function(t){return n.persistence.referenceDelegate.removeReference(i,t)})).next((function(){n.persistence.referenceDelegate.removeTarget(i,r)}))})).then((function(){n.targetDataByTarget=n.targetDataByTarget.remove(t),n.targetIdByTarget.delete(r.target)}))},t.prototype.executeQuery=function(t,e){var n=this,r=_t.MIN,i=Bt();return this.persistence.runTransaction("Execute query","readonly-idempotent",(function(o){return n.getTargetData(o,t.toTarget()).next((function(t){if(t)return r=t.lastLimboFreeSnapshotVersion,n.targetCache.getMatchingKeysForTargetId(o,t.targetId).next((function(t){i=t}))})).next((function(){return n.queryEngine.getDocumentsMatchingQuery(o,t,e?r:_t.MIN,e?i:Bt())})).next((function(t){return{documents:t,remoteKeys:i}}))}))},t.prototype.remoteDocumentKeys=function(t){var e=this;return this.persistence.runTransaction("Remote document keys","readonly-idempotent",(function(n){return e.targetCache.getMatchingKeysForTargetId(n,t)}))},t.prototype.getActiveClients=function(){return this.persistence.getActiveClients()},t.prototype.removeCachedMutationBatchMetadata=function(t){this.mutationQueue.removeCachedMutationKeys(t)},t.prototype.setNetworkEnabled=function(t){this.persistence.setNetworkEnabled(t)},t.prototype.applyWriteToRemoteDocuments=function(t,e,n){var r=this,i=e.batch,o=i.keys(),a=Qt.resolve();return o.forEach((function(r){a=a.next((function(){return n.getEntry(t,r)})).next((function(t){var o=t,a=e.docVersions.get(r);v(null!==a,"ackVersions should contain every doc in the write."),(!o||o.version.compareTo(a)<0)&&((o=i.applyToRemoteDocument(r,o,e))?n.addEntry(o,e.commitVersion):v(!t,"Mutation batch "+i+" applied to document "+t+" resulted in null"))}))})),a.next((function(){return r.mutationQueue.removeMutationBatch(t,i)}))},t.prototype.collectGarbage=function(t){var e=this;return this.persistence.runTransaction("Collect garbage","readwrite-primary-idempotent",(function(n){return t.collect(n,e.targetDataByTarget)}))},t.prototype.getTarget=function(t){var e=this,n=this.targetDataByTarget.get(t);return n?Promise.resolve(n.target):this.persistence.runTransaction("Get target data","readonly-idempotent",(function(n){return e.targetCache.getTargetDataForTarget(n,t).next((function(t){return t?t.target:null}))}))},t.prototype.getNewDocumentChanges=function(){var t=this;return this.persistence.runTransaction("Get new document changes","readonly-idempotent",(function(e){return t.remoteDocuments.getNewDocumentChanges(e,t.lastDocumentChangeReadTime)})).then((function(e){var n=e.changedDocs,r=e.readTime;return t.lastDocumentChangeReadTime=r,n}))},t.prototype.synchronizeLastDocumentChangeReadTime=function(){return a.__awaiter(this,void 0,void 0,(function(){var t,e=this;return a.__generator(this,(function(n){return this.remoteDocuments instanceof Ye?(t=this.remoteDocuments,[2,this.persistence.runTransaction("Synchronize last document change read time","readonly-idempotent",(function(e){return t.getLastDocumentChange(e)})).then((function(t){var n=t.readTime;e.lastDocumentChangeReadTime=n}))]):[2]}))}))},t.RESUME_TOKEN_MAX_AGE_MICROS=3e8,t}(),br=function(){function t(t,e){this.indexManager=t,this.referenceDelegate=e,this.mutationQueue=[],this.nextBatchId=1,this.lastStreamToken=w(),this.batchesByDocumentKey=new kt(gr.compareByKey)}return t.prototype.checkEmpty=function(t){return Qt.resolve(0===this.mutationQueue.length)},t.prototype.acknowledgeBatch=function(t,e,n){var r=e.batchId,i=this.indexOfExistingBatchId(r,"acknowledged");v(0===i,"Can only acknowledge the first batch in the mutation queue");var o=this.mutationQueue[i];return v(r===o.batchId,"Queue ordering failure: expected batch "+r+", got batch "+o.batchId),this.lastStreamToken=n,Qt.resolve()},t.prototype.getLastStreamToken=function(t){return Qt.resolve(this.lastStreamToken)},t.prototype.setLastStreamToken=function(t,e){return this.lastStreamToken=e,Qt.resolve()},t.prototype.addMutationBatch=function(t,e,n,r){v(0!==r.length,"Mutation batches should not be empty");var i=this.nextBatchId;(this.nextBatchId++,this.mutationQueue.length>0)&&v(this.mutationQueue[this.mutationQueue.length-1].batchId<i,"Mutation batchIDs must be monotonically increasing order");var o=new Kt(i,e,n,r);this.mutationQueue.push(o);for(var a=0,s=r;a<s.length;a++){var u=s[a];this.batchesByDocumentKey=this.batchesByDocumentKey.add(new gr(u.key,i)),this.indexManager.addToCollectionParentIndex(t,u.key.path.popLast())}return Qt.resolve(o)},t.prototype.lookupMutationBatch=function(t,e){return Qt.resolve(this.findMutationBatch(e))},t.prototype.lookupMutationKeys=function(t,e){var n=this.findMutationBatch(e);return v(null!=n,"Failed to find local mutation batch."),Qt.resolve(n.keys())},t.prototype.getNextMutationBatchAfterBatchId=function(t,e){var n=e+1,r=this.indexOfBatchId(n),i=r<0?0:r;return Qt.resolve(this.mutationQueue.length>i?this.mutationQueue[i]:null)},t.prototype.getHighestUnacknowledgedBatchId=function(){return Qt.resolve(0===this.mutationQueue.length?-1:this.nextBatchId-1)},t.prototype.getAllMutationBatches=function(t){return Qt.resolve(this.mutationQueue.slice())},t.prototype.getAllMutationBatchesAffectingDocumentKey=function(t,e){var n=this,r=new gr(e,0),i=new gr(e,Number.POSITIVE_INFINITY),o=[];return this.batchesByDocumentKey.forEachInRange([r,i],(function(t){v(e.isEqual(t.key),"Should only iterate over a single key's batches");var r=n.findMutationBatch(t.targetOrBatchId);v(null!==r,"Batches in the index must exist in the main table"),o.push(r)})),Qt.resolve(o)},t.prototype.getAllMutationBatchesAffectingDocumentKeys=function(t,e){var n=this,r=new kt(X);return e.forEach((function(t){var e=new gr(t,0),i=new gr(t,Number.POSITIVE_INFINITY);n.batchesByDocumentKey.forEachInRange([e,i],(function(e){v(t.isEqual(e.key),"For each key, should only iterate over a single key's batches"),r=r.add(e.targetOrBatchId)}))})),Qt.resolve(this.findMutationBatches(r))},t.prototype.getAllMutationBatchesAffectingQuery=function(t,e){v(!e.isCollectionGroupQuery(),"CollectionGroup queries should be handled in LocalDocumentsView");var n=e.path,r=n.length+1,i=n;ft.isDocumentKey(i)||(i=i.child(""));var o=new gr(new ft(i),0),a=new kt(X);return this.batchesByDocumentKey.forEachWhile((function(t){var e=t.key.path;return!!n.isPrefixOf(e)&&(e.length===r&&(a=a.add(t.targetOrBatchId)),!0)}),o),Qt.resolve(this.findMutationBatches(a))},t.prototype.findMutationBatches=function(t){var e=this,n=[];return t.forEach((function(t){var r=e.findMutationBatch(t);null!==r&&n.push(r)})),n},t.prototype.removeMutationBatch=function(t,e){var n=this;v(0===this.indexOfExistingBatchId(e.batchId,"removed"),"Can only remove the first entry of the mutation queue"),this.mutationQueue.shift();var r=this.batchesByDocumentKey;return Qt.forEach(e.mutations,(function(i){var o=new gr(i.key,e.batchId);return r=r.delete(o),n.referenceDelegate.removeMutationReference(t,i.key)})).next((function(){n.batchesByDocumentKey=r}))},t.prototype.removeCachedMutationKeys=function(t){},t.prototype.containsKey=function(t,e){var n=new gr(e,0),r=this.batchesByDocumentKey.firstAfterOrEqual(n);return Qt.resolve(e.isEqual(r&&r.key))},t.prototype.performConsistencyCheck=function(t){return 0===this.mutationQueue.length&&v(this.batchesByDocumentKey.isEmpty(),"Document leak -- detected dangling mutation references when queue is empty."),Qt.resolve()},t.prototype.indexOfExistingBatchId=function(t,e){var n=this.indexOfBatchId(t);return v(n>=0&&n<this.mutationQueue.length,"Batches must exist to be "+e),n},t.prototype.indexOfBatchId=function(t){return 0===this.mutationQueue.length?0:t-this.mutationQueue[0].batchId},t.prototype.findMutationBatch=function(t){var e=this.indexOfBatchId(t);if(e<0||e>=this.mutationQueue.length)return null;var n=this.mutationQueue[e];return v(n.batchId===t,"If found batch must match"),n},t}();var wr,Tr=function(){function t(t,e){this.indexManager=t,this.sizer=e,this.docs=new Ct(ft.comparator),this.size=0}return t.prototype.addEntry=function(t,e,n){v(!n.isEqual(_t.MIN),"Cannot add a document with a read time of zero");var r=e.key,i=this.docs.get(r),o=i?i.size:0,a=this.sizer(e);return this.docs=this.docs.insert(r,{maybeDocument:e,size:a,readTime:n}),this.size+=a-o,this.indexManager.addToCollectionParentIndex(t,r.path.popLast())},t.prototype.removeEntry=function(t){var e=this.docs.get(t);e&&(this.docs=this.docs.remove(t),this.size-=e.size)},t.prototype.getEntry=function(t,e){var n=this.docs.get(e);return Qt.resolve(n?n.maybeDocument:null)},t.prototype.getEntries=function(t,e){var n=this,r=Lt();return e.forEach((function(t){var e=n.docs.get(t);r=r.insert(t,e?e.maybeDocument:null)})),Qt.resolve(r)},t.prototype.getDocumentsMatchingQuery=function(t,e,n){v(!e.isCollectionGroupQuery(),"CollectionGroup queries should be handled in LocalDocumentsView");for(var r=xt(),i=new ft(e.path.child("")),o=this.docs.getIteratorFrom(i);o.hasNext();){var a=o.getNext(),s=a.key,u=a.value,c=u.maybeDocument,h=u.readTime;if(!e.path.isPrefixOf(s.path))break;h.compareTo(n)<=0||c instanceof We&&e.matches(c)&&(r=r.insert(c.key,c))}return Qt.resolve(r)},t.prototype.forEachDocumentKey=function(t,e){return Qt.forEach(this.docs,(function(t){return e(t)}))},t.prototype.getNewDocumentChanges=function(t,e){throw new Error("getNewDocumentChanges() is not supported with MemoryPersistence")},t.prototype.newChangeBuffer=function(e){return new t.RemoteDocumentChangeBuffer(this)},t.prototype.getSize=function(t){return Qt.resolve(this.size)},t.RemoteDocumentChangeBuffer=function(t){function e(e){var n=t.call(this)||this;return n.documentCache=e,n}return a.__extends(e,t),e.prototype.applyChanges=function(t){var e=this,n=[];return this.changes.forEach((function(r,i){i?n.push(e.documentCache.addEntry(t,i,e.readTime)):e.documentCache.removeEntry(r)})),Qt.waitFor(n)},e.prototype.getFromCache=function(t,e){return this.documentCache.getEntry(t,e)},e.prototype.getAllFromCache=function(t,e){return this.documentCache.getEntries(t,e)},e}(He),t}(),Er=function(){function t(t){this.persistence=t,this.targets=new ze((function(t){return t.canonicalId()})),this.lastRemoteSnapshotVersion=_t.MIN,this.highestTargetId=0,this.highestSequenceNumber=0,this.references=new yr,this.targetCount=0,this.targetIdGenerator=ce.forTargetCache()}return t.prototype.forEachTarget=function(t,e){return this.targets.forEach((function(t,n){return e(n)})),Qt.resolve()},t.prototype.getLastRemoteSnapshotVersion=function(t){return Qt.resolve(this.lastRemoteSnapshotVersion)},t.prototype.getHighestSequenceNumber=function(t){return Qt.resolve(this.highestSequenceNumber)},t.prototype.allocateTargetId=function(t){var e=this.targetIdGenerator.after(this.highestTargetId);return this.highestTargetId=e,Qt.resolve(e)},t.prototype.setTargetsMetadata=function(t,e,n){return n&&(this.lastRemoteSnapshotVersion=n),e>this.highestSequenceNumber&&(this.highestSequenceNumber=e),Qt.resolve()},t.prototype.saveTargetData=function(t){this.targets.set(t.target,t);var e=t.targetId;e>this.highestTargetId&&(this.highestTargetId=e),t.sequenceNumber>this.highestSequenceNumber&&(this.highestSequenceNumber=t.sequenceNumber)},t.prototype.addTargetData=function(t,e){return v(!this.targets.has(e.target),"Adding a target that already exists"),this.saveTargetData(e),this.targetCount+=1,Qt.resolve()},t.prototype.updateTargetData=function(t,e){return v(this.targets.has(e.target),"Updating a non-existent target"),this.saveTargetData(e),Qt.resolve()},t.prototype.removeTargetData=function(t,e){return v(this.targetCount>0,"Removing a target from an empty cache"),v(this.targets.has(e.target),"Removing a non-existent target from the cache"),this.targets.delete(e.target),this.references.removeReferencesForId(e.targetId),this.targetCount-=1,Qt.resolve()},t.prototype.removeTargets=function(t,e,n){var r=this,i=0,o=[];return this.targets.forEach((function(a,s){s.sequenceNumber<=e&&null===n.get(s.targetId)&&(r.targets.delete(a),o.push(r.removeMatchingKeysForTargetId(t,s.targetId)),i++)})),Qt.waitFor(o).next((function(){return i}))},t.prototype.getTargetCount=function(t){return Qt.resolve(this.targetCount)},t.prototype.getTargetData=function(t,e){var n=this.targets.get(e)||null;return Qt.resolve(n)},t.prototype.getTargetDataForTarget=function(t,e){return g("Not yet implemented.")},t.prototype.addMatchingKeys=function(t,e,n){this.references.addReferences(e,n);var r=this.persistence.referenceDelegate,i=[];return r&&e.forEach((function(e){i.push(r.addReference(t,e))})),Qt.waitFor(i)},t.prototype.removeMatchingKeys=function(t,e,n){this.references.removeReferences(e,n);var r=this.persistence.referenceDelegate,i=[];return r&&e.forEach((function(e){i.push(r.removeReference(t,e))})),Qt.waitFor(i)},t.prototype.removeMatchingKeysForTargetId=function(t,e){return this.references.removeReferencesForId(e),Qt.resolve()},t.prototype.getMatchingKeysForTargetId=function(t,e){var n=this.references.referencesForId(e);return Qt.resolve(n)},t.prototype.containsKey=function(t,e){return Qt.resolve(this.references.containsKey(e))},t}(),Sr=function(){function t(t,e){var n=this;this.clientId=t,this.mutationQueues={},this.listenSequence=new st(0),this._started=!1,this._started=!0,this.referenceDelegate=e(this),this.targetCache=new Er(this);this.indexManager=new tn,this.remoteDocumentCache=new Tr(this.indexManager,(function(t){return n.referenceDelegate.documentSize(t)}))}return t.createLruPersistence=function(e,n,r){return new t(e,(function(t){return new Cr(t,new An(n),r)}))},t.createEagerPersistence=function(e){return new t(e,(function(t){return new _r(t)}))},t.prototype.shutdown=function(){return this._started=!1,Promise.resolve()},Object.defineProperty(t.prototype,"started",{get:function(){return this._started},enumerable:!0,configurable:!0}),t.prototype.getActiveClients=function(){return a.__awaiter(this,void 0,void 0,(function(){return a.__generator(this,(function(t){return[2,[this.clientId]]}))}))},t.prototype.setPrimaryStateListener=function(t){return t(!0)},t.prototype.setDatabaseDeletedListener=function(){},t.prototype.setNetworkEnabled=function(t){},t.prototype.getIndexManager=function(){return this.indexManager},t.prototype.getMutationQueue=function(t){var e=this.mutationQueues[t.toKey()];return e||(e=new br(this.indexManager,this.referenceDelegate),this.mutationQueues[t.toKey()]=e),e},t.prototype.getTargetCache=function(){return this.targetCache},t.prototype.getRemoteDocumentCache=function(){return this.remoteDocumentCache},t.prototype.runTransaction=function(t,e,n){var r=this;p("MemoryPersistence","Starting transaction:",t);var i=new Ir(this.listenSequence.next());return this.referenceDelegate.onTransactionStarted(),n(i).next((function(t){return r.referenceDelegate.onTransactionCommitted(i).next((function(){return t}))})).toPromise().then((function(t){return i.raiseOnCommittedEvent(),t}))},t.prototype.mutationQueuesContainKey=function(t,e){return Qt.or((n=this.mutationQueues,r=[],D(n,(function(t,e){return r.push(e)})),r).map((function(n){return function(){return n.containsKey(t,e)}})));var n,r},t}(),Ir=function(t){function e(e){var n=t.call(this)||this;return n.currentSequenceNumber=e,n}return a.__extends(e,t),e}(Pn),_r=function(){function t(t){this.persistence=t,this.inMemoryPins=null,this._orphanedDocuments=null}return Object.defineProperty(t.prototype,"orphanedDocuments",{get:function(){if(this._orphanedDocuments)return this._orphanedDocuments;throw g("orphanedDocuments is only valid during a transaction.")},enumerable:!0,configurable:!0}),t.prototype.setInMemoryPins=function(t){this.inMemoryPins=t},t.prototype.addReference=function(t,e){return this.orphanedDocuments.delete(e),Qt.resolve()},t.prototype.removeReference=function(t,e){return this.orphanedDocuments.add(e),Qt.resolve()},t.prototype.removeMutationReference=function(t,e){return this.orphanedDocuments.add(e),Qt.resolve()},t.prototype.removeTarget=function(t,e){var n=this,r=this.persistence.getTargetCache();return r.getMatchingKeysForTargetId(t,e.targetId).next((function(t){t.forEach((function(t){return n.orphanedDocuments.add(t)}))})).next((function(){return r.removeTargetData(t,e)}))},t.prototype.onTransactionStarted=function(){this._orphanedDocuments=new Set},t.prototype.onTransactionCommitted=function(t){var e=this,n=this.persistence.getRemoteDocumentCache().newChangeBuffer();return Qt.forEach(this.orphanedDocuments,(function(r){return e.isReferenced(t,r).next((function(t){t||n.removeEntry(r)}))})).next((function(){return e._orphanedDocuments=null,n.apply(t)}))},t.prototype.updateLimboDocument=function(t,e){var n=this;return this.isReferenced(t,e).next((function(t){t?n.orphanedDocuments.delete(e):n.orphanedDocuments.add(e)}))},t.prototype.documentSize=function(t){return 0},t.prototype.isReferenced=function(t,e){var n=this;return Qt.or([function(){return n.persistence.getTargetCache().containsKey(t,e)},function(){return n.persistence.mutationQueuesContainKey(t,e)},function(){return Qt.resolve(n.inMemoryPins.containsKey(e))}])},t}(),Cr=function(){function t(t,e,n){this.persistence=t,this.serializer=e,this.inMemoryPins=null,this.orphanedSequenceNumbers=new ze((function(t){return wt(t.path)})),this.garbageCollector=new Ln(this,n)}return t.prototype.onTransactionStarted=function(){},t.prototype.onTransactionCommitted=function(t){return Qt.resolve()},t.prototype.forEachTarget=function(t,e){return this.persistence.getTargetCache().forEachTarget(t,e)},t.prototype.getSequenceNumberCount=function(t){var e=this.orphanedDocumentCount(t);return this.persistence.getTargetCache().getTargetCount(t).next((function(t){return e.next((function(e){return t+e}))}))},t.prototype.orphanedDocumentCount=function(t){var e=0;return this.forEachOrphanedDocumentSequenceNumber(t,(function(t){e++})).next((function(){return e}))},t.prototype.forEachOrphanedDocumentSequenceNumber=function(t,e){var n=this;return Qt.forEach(this.orphanedSequenceNumbers,(function(r,i){return n.isPinned(t,r,i).next((function(t){return t?Qt.resolve():e(i)}))}))},t.prototype.setInMemoryPins=function(t){this.inMemoryPins=t},t.prototype.removeTargets=function(t,e,n){return this.persistence.getTargetCache().removeTargets(t,e,n)},t.prototype.removeOrphanedDocuments=function(t,e){var n=this,r=0,i=this.persistence.getRemoteDocumentCache(),o=i.newChangeBuffer();return i.forEachDocumentKey(t,(function(i){return n.isPinned(t,i,e).next((function(t){t||(r++,o.removeEntry(i))}))})).next((function(){return o.apply(t)})).next((function(){return r}))},t.prototype.removeMutationReference=function(t,e){return this.orphanedSequenceNumbers.set(e,t.currentSequenceNumber),Qt.resolve()},t.prototype.removeTarget=function(t,e){var n=e.withSequenceNumber(t.currentSequenceNumber);return this.persistence.getTargetCache().updateTargetData(t,n)},t.prototype.addReference=function(t,e){return this.orphanedSequenceNumbers.set(e,t.currentSequenceNumber),Qt.resolve()},t.prototype.removeReference=function(t,e){return this.orphanedSequenceNumbers.set(e,t.currentSequenceNumber),Qt.resolve()},t.prototype.updateLimboDocument=function(t,e){return this.orphanedSequenceNumbers.set(e,t.currentSequenceNumber),Qt.resolve()},t.prototype.documentSize=function(t){var e,n=this.serializer.toDbRemoteDocument(t,t.version);if(n.document)e=n.document;else if(n.unknownDocument)e=n.unknownDocument;else{if(!n.noDocument)throw g("Unknown remote document type");e=n.noDocument}return JSON.stringify(e).length},t.prototype.isPinned=function(t,e,n){var r=this;return Qt.or([function(){return r.persistence.mutationQueuesContainKey(t,e)},function(){return Qt.resolve(r.inMemoryPins.containsKey(e))},function(){return r.persistence.getTargetCache().containsKey(t,e)},function(){var t=r.orphanedSequenceNumbers.get(e);return Qt.resolve(void 0!==t&&t>n)}])},t.prototype.getCacheSize=function(t){return this.persistence.getRemoteDocumentCache().getSize(t)},t}(),Dr=1e3,Ar=1.5,Nr=6e4,kr=function(){function t(t,e,n,r,i){void 0===n&&(n=Dr),void 0===r&&(r=Ar),void 0===i&&(i=Nr),this.queue=t,this.timerId=e,this.initialDelayMs=n,this.backoffFactor=r,this.maxDelayMs=i,this.currentBaseMs=0,this.timerPromise=null,this.lastAttemptTime=Date.now(),this.reset()}return t.prototype.reset=function(){this.currentBaseMs=0},t.prototype.resetToMax=function(){this.currentBaseMs=this.maxDelayMs},t.prototype.backoffAndRun=function(t){var e=this;this.cancel();var n=Math.floor(this.currentBaseMs+this.jitterDelayMs()),r=Math.max(0,Date.now()-this.lastAttemptTime),i=Math.max(0,n-r);this.currentBaseMs>0&&p("ExponentialBackoff","Backing off for "+i+" ms (base delay: "+this.currentBaseMs+" ms, delay with jitter: "+n+" ms, last attempt: "+r+" ms ago)"),this.timerPromise=this.queue.enqueueAfterDelay(this.timerId,i,(function(){return e.lastAttemptTime=Date.now(),t()})),this.currentBaseMs*=this.backoffFactor,this.currentBaseMs<this.initialDelayMs&&(this.currentBaseMs=this.initialDelayMs),this.currentBaseMs>this.maxDelayMs&&(this.currentBaseMs=this.maxDelayMs)},t.prototype.cancel=function(){null!==this.timerPromise&&(this.timerPromise.cancel(),this.timerPromise=null)},t.prototype.jitterDelayMs=function(){return(Math.random()-.5)*this.currentBaseMs},t}();
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */!function(t){t[t.Initial=0]="Initial",t[t.Starting=1]="Starting",t[t.Open=2]="Open",t[t.Error=3]="Error",t[t.Backoff=4]="Backoff"}(wr||(wr={}));var Rr,Or,Mr=function(){function t(t,e,n,r,i,o){this.queue=t,this.idleTimerId=n,this.connection=r,this.credentialsProvider=i,this.listener=o,this.state=wr.Initial,this.closeCount=0,this.idleTimer=null,this.stream=null,this.backoff=new kr(t,e)}return t.prototype.isStarted=function(){return this.state===wr.Starting||this.state===wr.Open||this.state===wr.Backoff},t.prototype.isOpen=function(){return this.state===wr.Open},t.prototype.start=function(){this.state!==wr.Error?(v(this.state===wr.Initial,"Already started"),this.auth()):this.performBackoff()},t.prototype.stop=function(){return a.__awaiter(this,void 0,void 0,(function(){return a.__generator(this,(function(t){switch(t.label){case 0:return this.isStarted()?[4,this.close(wr.Initial)]:[3,2];case 1:t.sent(),t.label=2;case 2:return[2]}}))}))},t.prototype.inhibitBackoff=function(){v(!this.isStarted(),"Can only inhibit backoff in a stopped state"),this.state=wr.Initial,this.backoff.reset()},t.prototype.markIdle=function(){var t=this;this.isOpen()&&null===this.idleTimer&&(this.idleTimer=this.queue.enqueueAfterDelay(this.idleTimerId,6e4,(function(){return t.handleIdleCloseTimer()})))},t.prototype.sendRequest=function(t){this.cancelIdleCheck(),this.stream.send(t)},t.prototype.handleIdleCloseTimer=function(){return a.__awaiter(this,void 0,void 0,(function(){return a.__generator(this,(function(t){return this.isOpen()?[2,this.close(wr.Initial)]:[2]}))}))},t.prototype.cancelIdleCheck=function(){this.idleTimer&&(this.idleTimer.cancel(),this.idleTimer=null)},t.prototype.close=function(t,e){return a.__awaiter(this,void 0,void 0,(function(){return a.__generator(this,(function(n){switch(n.label){case 0:return v(this.isStarted(),"Only started streams should be closed."),v(t===wr.Error||Xn(e),"Can't provide an error when not in an error state."),this.cancelIdleCheck(),this.backoff.cancel(),this.closeCount++,t!==wr.Error?this.backoff.reset():e&&e.code===T.RESOURCE_EXHAUSTED?(m(e.toString()),m("Using maximum backoff delay to prevent overloading the backend."),this.backoff.resetToMax()):e&&e.code===T.UNAUTHENTICATED&&this.credentialsProvider.invalidateToken(),null!==this.stream&&(this.tearDown(),this.stream.close(),this.stream=null),this.state=t,[4,this.listener.onClose(e)];case 1:return n.sent(),[2]}}))}))},t.prototype.tearDown=function(){},t.prototype.auth=function(){var t=this;v(this.state===wr.Initial,"Must be in initial state to auth"),this.state=wr.Starting;var e=this.getCloseGuardedDispatcher(this.closeCount),n=this.closeCount;this.credentialsProvider.getToken().then((function(e){t.closeCount===n&&t.startStream(e)}),(function(n){e((function(){var e=new E(T.UNKNOWN,"Fetching auth token failed: "+n.message);return t.handleStreamClose(e)}))}))},t.prototype.startStream=function(t){var e=this;v(this.state===wr.Starting,"Trying to start stream in a non-starting state");var n=this.getCloseGuardedDispatcher(this.closeCount);this.stream=this.startRpc(t),this.stream.onOpen((function(){n((function(){return v(e.state===wr.Starting,"Expected stream to be in state Starting, but was "+e.state),e.state=wr.Open,e.listener.onOpen()}))})),this.stream.onClose((function(t){n((function(){return e.handleStreamClose(t)}))})),this.stream.onMessage((function(t){n((function(){return e.onMessage(t)}))}))},t.prototype.performBackoff=function(){var t=this;v(this.state===wr.Error,"Should only perform backoff when in Error state"),this.state=wr.Backoff,this.backoff.backoffAndRun((function(){return a.__awaiter(t,void 0,void 0,(function(){return a.__generator(this,(function(t){return v(this.state===wr.Backoff,"Backoff elapsed but state is now: "+this.state),this.state=wr.Initial,this.start(),v(this.isStarted(),"PersistentStream should have started"),[2]}))}))}))},t.prototype.handleStreamClose=function(t){return v(this.isStarted(),"Can't handle server close on non-started stream"),p("PersistentStream","close with error: "+t),this.stream=null,this.close(wr.Error,t)},t.prototype.getCloseGuardedDispatcher=function(t){var e=this;return function(n){e.queue.enqueueAndForget((function(){return e.closeCount===t?n():(p("PersistentStream","stream callback skipped by getCloseGuardedDispatcher."),Promise.resolve())}))}},t}(),Lr=function(t){function e(e,n,r,i,o){var a=t.call(this,e,et.ListenStreamConnectionBackoff,et.ListenStreamIdle,n,r,o)||this;return a.serializer=i,a}return a.__extends(e,t),e.prototype.startRpc=function(t){return this.connection.openStream("Listen",t)},e.prototype.onMessage=function(t){this.backoff.reset();var e=this.serializer.fromWatchChange(t),n=this.serializer.versionFromListenResponse(t);return this.listener.onWatchChange(e,n)},e.prototype.watch=function(t){var e={};e.database=this.serializer.encodedDatabaseId,e.addTarget=this.serializer.toTarget(t);var n=this.serializer.toListenRequestLabels(t);n&&(e.labels=n),this.sendRequest(e)},e.prototype.unwatch=function(t){var e={};e.database=this.serializer.encodedDatabaseId,e.removeTarget=t,this.sendRequest(e)},e}(Mr),Pr=function(t){function e(e,n,r,i,o){var a=t.call(this,e,et.WriteStreamConnectionBackoff,et.WriteStreamIdle,n,r,o)||this;return a.serializer=i,a.handshakeComplete_=!1,a.lastStreamToken=w(),a}return a.__extends(e,t),Object.defineProperty(e.prototype,"handshakeComplete",{get:function(){return this.handshakeComplete_},enumerable:!0,configurable:!0}),e.prototype.start=function(){this.handshakeComplete_=!1,t.prototype.start.call(this)},e.prototype.tearDown=function(){this.handshakeComplete_&&this.writeMutations([])},e.prototype.startRpc=function(t){return this.connection.openStream("Write",t)},e.prototype.onMessage=function(t){if(v(!!t.streamToken,"Got a write response without a stream token"),this.lastStreamToken=t.streamToken,this.handshakeComplete_){this.backoff.reset();var e=this.serializer.fromWriteResults(t.writeResults,t.commitTime),n=this.serializer.fromVersion(t.commitTime);return this.listener.onMutationResult(n,e)}return v(!t.writeResults||0===t.writeResults.length,"Got mutation results for handshake"),this.handshakeComplete_=!0,this.listener.onHandshakeComplete()},e.prototype.writeHandshake=function(){v(this.isOpen(),"Writing handshake requires an opened stream"),v(!this.handshakeComplete_,"Handshake already completed");var t={};t.database=this.serializer.encodedDatabaseId,this.sendRequest(t)},e.prototype.writeMutations=function(t){var e=this;v(this.isOpen(),"Writing mutations requires an opened stream"),v(this.handshakeComplete_,"Handshake must be complete before writing mutations"),v(this.lastStreamToken.length>0,"Trying to write mutation without a token");var n={streamToken:this.lastStreamToken,writes:t.map((function(t){return e.serializer.toMutation(t)}))};this.sendRequest(n)},e}(Mr),xr=function(){function t(t,e,n,r){this.queue=t,this.connection=e,this.credentials=n,this.serializer=r}return t.prototype.newPersistentWriteStream=function(t){return new Pr(this.queue,this.connection,this.credentials,this.serializer,t)},t.prototype.newPersistentWatchStream=function(t){return new Lr(this.queue,this.connection,this.credentials,this.serializer,t)},t.prototype.commit=function(t){var e=this,n={database:this.serializer.encodedDatabaseId,writes:t.map((function(t){return e.serializer.toMutation(t)}))};return this.invokeRPC("Commit",n).then((function(t){return e.serializer.fromWriteResults(t.writeResults,t.commitTime)}))},t.prototype.lookup=function(t){var e=this,n={database:this.serializer.encodedDatabaseId,documents:t.map((function(t){return e.serializer.toName(t)}))};return this.invokeStreamingRPC("BatchGetDocuments",n).then((function(n){var r=Mt();n.forEach((function(t){var n=e.serializer.fromMaybeDocument(t);r=r.insert(n.key,n)}));var i=[];return t.forEach((function(t){var e=r.get(t);v(!!e,"Missing entity in write response for "+t),i.push(e)})),i}))},t.prototype.invokeRPC=function(t,e){var n=this;return this.credentials.getToken().then((function(r){return n.connection.invokeRPC(t,e,r)})).catch((function(t){throw t.code===T.UNAUTHENTICATED&&n.credentials.invalidateToken(),t}))},t.prototype.invokeStreamingRPC=function(t,e){var n=this;return this.credentials.getToken().then((function(r){return n.connection.invokeStreamingRPC(t,e,r)})).catch((function(t){throw t.code===T.UNAUTHENTICATED&&n.credentials.invalidateToken(),t}))},t}(),Fr=function(){function t(t){this.datastore=t,this.readVersions=qt(),this.mutations=[],this.committed=!1,this.lastWriteError=null,this.writtenDocs=new Set}return t.prototype.lookup=function(t){return a.__awaiter(this,void 0,void 0,(function(){var e,n=this;return a.__generator(this,(function(r){switch(r.label){case 0:if(this.ensureCommitNotCalled(),this.mutations.length>0)throw new E(T.INVALID_ARGUMENT,"Firestore transactions require all reads to be executed before all writes.");return[4,this.datastore.lookup(t)];case 1:return(e=r.sent()).forEach((function(t){t instanceof Qe||t instanceof We?n.recordVersion(t):g("Document in a transaction was a "+t.constructor.name)})),[2,e]}}))}))},t.prototype.set=function(t,e){this.write(e.toMutations(t,this.precondition(t))),this.writtenDocs.add(t)},t.prototype.update=function(t,e){try{this.write(e.toMutations(t,this.preconditionForUpdate(t)))}catch(t){this.lastWriteError=t}this.writtenDocs.add(t)},t.prototype.delete=function(t){this.write([new Ce(t,this.precondition(t))]),this.writtenDocs.add(t)},t.prototype.commit=function(){return a.__awaiter(this,void 0,void 0,(function(){var t;return a.__generator(this,(function(e){switch(e.label){case 0:if(this.ensureCommitNotCalled(),this.lastWriteError)throw this.lastWriteError;if(t=this.readVersions,this.mutations.forEach((function(e){t=t.remove(e.key)})),!t.isEmpty())throw new E(T.INVALID_ARGUMENT,"Every document read in a transaction must also be written.");return[4,this.datastore.commit(this.mutations)];case 1:return e.sent(),this.committed=!0,[2]}}))}))},t.prototype.recordVersion=function(t){var e;if(t instanceof We)e=t.version;else{if(!(t instanceof Qe))throw g("Document in a transaction was a "+t.constructor.name);e=_t.forDeletedDoc()}var n=this.readVersions.get(t.key);if(null!==n){if(!e.isEqual(n))throw new E(T.ABORTED,"Document version changed between two reads.")}else this.readVersions=this.readVersions.insert(t.key,e)},t.prototype.precondition=function(t){var e=this.readVersions.get(t);return!this.writtenDocs.has(t)&&e?Te.updateTime(e):Te.NONE},t.prototype.preconditionForUpdate=function(t){var e=this.readVersions.get(t);if(!this.writtenDocs.has(t)&&e){if(e.isEqual(_t.forDeletedDoc()))throw new E(T.INVALID_ARGUMENT,"Can't update a document that doesn't exist.");return Te.updateTime(e)}return Te.exists(!0)},t.prototype.write=function(t){this.ensureCommitNotCalled(),this.mutations=this.mutations.concat(t)},t.prototype.ensureCommitNotCalled=function(){v(!this.committed,"A transaction object cannot be used after its update callback has been invoked.")},t}();!function(t){t[t.Unknown=0]="Unknown",t[t.Online=1]="Online",t[t.Offline=2]="Offline"}(Rr||(Rr={})),function(t){t[t.RemoteStore=0]="RemoteStore",t[t.SharedClientState=1]="SharedClientState"}(Or||(Or={}));
+/**
+ * @license
+ * Copyright 2018 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var qr,Vr=function(){function t(t,e){this.asyncQueue=t,this.onlineStateHandler=e,this.state=Rr.Unknown,this.watchStreamFailures=0,this.onlineStateTimer=null,this.shouldWarnClientIsOffline=!0}return t.prototype.handleWatchStreamStart=function(){var t=this;0===this.watchStreamFailures&&(this.setAndBroadcast(Rr.Unknown),v(null===this.onlineStateTimer,"onlineStateTimer shouldn't be started yet"),this.onlineStateTimer=this.asyncQueue.enqueueAfterDelay(et.OnlineStateTimeout,1e4,(function(){return t.onlineStateTimer=null,v(t.state===Rr.Unknown,"Timer should be canceled if we transitioned to a different state."),t.logClientOfflineWarningIfNecessary("Backend didn't respond within 10 seconds."),t.setAndBroadcast(Rr.Offline),Promise.resolve()})))},t.prototype.handleWatchStreamFailure=function(t){this.state===Rr.Online?(this.setAndBroadcast(Rr.Unknown),v(0===this.watchStreamFailures,"watchStreamFailures must be 0"),v(null===this.onlineStateTimer,"onlineStateTimer must be null")):(this.watchStreamFailures++,this.watchStreamFailures>=1&&(this.clearOnlineStateTimer(),this.logClientOfflineWarningIfNecessary("Connection failed 1 times. Most recent error: "+t.toString()),this.setAndBroadcast(Rr.Offline)))},t.prototype.set=function(t){this.clearOnlineStateTimer(),this.watchStreamFailures=0,t===Rr.Online&&(this.shouldWarnClientIsOffline=!1),this.setAndBroadcast(t)},t.prototype.setAndBroadcast=function(t){t!==this.state&&(this.state=t,this.onlineStateHandler(t))},t.prototype.logClientOfflineWarningIfNecessary=function(t){var e="Could not reach Cloud Firestore backend. "+t+"\nThis typically indicates that your device does not have a healthy Internet connection at the moment. The client will operate in offline mode until it is able to successfully connect to the backend.";this.shouldWarnClientIsOffline?(m(e),this.shouldWarnClientIsOffline=!1):p("OnlineStateTracker",e)},t.prototype.clearOnlineStateTimer=function(){null!==this.onlineStateTimer&&(this.onlineStateTimer.cancel(),this.onlineStateTimer=null)},t}();function Br(t){switch(t){case T.OK:return g("Treated status OK as error");case T.CANCELLED:case T.UNKNOWN:case T.DEADLINE_EXCEEDED:case T.RESOURCE_EXHAUSTED:case T.INTERNAL:case T.UNAVAILABLE:case T.UNAUTHENTICATED:return!1;case T.INVALID_ARGUMENT:case T.NOT_FOUND:case T.ALREADY_EXISTS:case T.PERMISSION_DENIED:case T.FAILED_PRECONDITION:case T.ABORTED:case T.OUT_OF_RANGE:case T.UNIMPLEMENTED:case T.DATA_LOSS:return!0;default:return g("Unknown status code: "+t)}}function Ur(t){if(void 0===t)return m("GRPC error has no .code"),T.UNKNOWN;switch(t){case qr.OK:return T.OK;case qr.CANCELLED:return T.CANCELLED;case qr.UNKNOWN:return T.UNKNOWN;case qr.DEADLINE_EXCEEDED:return T.DEADLINE_EXCEEDED;case qr.RESOURCE_EXHAUSTED:return T.RESOURCE_EXHAUSTED;case qr.INTERNAL:return T.INTERNAL;case qr.UNAVAILABLE:return T.UNAVAILABLE;case qr.UNAUTHENTICATED:return T.UNAUTHENTICATED;case qr.INVALID_ARGUMENT:return T.INVALID_ARGUMENT;case qr.NOT_FOUND:return T.NOT_FOUND;case qr.ALREADY_EXISTS:return T.ALREADY_EXISTS;case qr.PERMISSION_DENIED:return T.PERMISSION_DENIED;case qr.FAILED_PRECONDITION:return T.FAILED_PRECONDITION;case qr.ABORTED:return T.ABORTED;case qr.OUT_OF_RANGE:return T.OUT_OF_RANGE;case qr.UNIMPLEMENTED:return T.UNIMPLEMENTED;case qr.DATA_LOSS:return T.DATA_LOSS;default:return g("Unknown status code: "+t)}}function jr(t){if(void 0===t)return qr.OK;switch(t){case T.OK:return qr.OK;case T.CANCELLED:return qr.CANCELLED;case T.UNKNOWN:return qr.UNKNOWN;case T.DEADLINE_EXCEEDED:return qr.DEADLINE_EXCEEDED;case T.RESOURCE_EXHAUSTED:return qr.RESOURCE_EXHAUSTED;case T.INTERNAL:return qr.INTERNAL;case T.UNAVAILABLE:return qr.UNAVAILABLE;case T.UNAUTHENTICATED:return qr.UNAUTHENTICATED;case T.INVALID_ARGUMENT:return qr.INVALID_ARGUMENT;case T.NOT_FOUND:return qr.NOT_FOUND;case T.ALREADY_EXISTS:return qr.ALREADY_EXISTS;case T.PERMISSION_DENIED:return qr.PERMISSION_DENIED;case T.FAILED_PRECONDITION:return qr.FAILED_PRECONDITION;case T.ABORTED:return qr.ABORTED;case T.OUT_OF_RANGE:return qr.OUT_OF_RANGE;case T.UNIMPLEMENTED:return qr.UNIMPLEMENTED;case T.DATA_LOSS:return qr.DATA_LOSS;default:return g("Unknown status code: "+t)}}!function(t){t[t.OK=0]="OK",t[t.CANCELLED=1]="CANCELLED",t[t.UNKNOWN=2]="UNKNOWN",t[t.INVALID_ARGUMENT=3]="INVALID_ARGUMENT",t[t.DEADLINE_EXCEEDED=4]="DEADLINE_EXCEEDED",t[t.NOT_FOUND=5]="NOT_FOUND",t[t.ALREADY_EXISTS=6]="ALREADY_EXISTS",t[t.PERMISSION_DENIED=7]="PERMISSION_DENIED",t[t.UNAUTHENTICATED=16]="UNAUTHENTICATED",t[t.RESOURCE_EXHAUSTED=8]="RESOURCE_EXHAUSTED",t[t.FAILED_PRECONDITION=9]="FAILED_PRECONDITION",t[t.ABORTED=10]="ABORTED",t[t.OUT_OF_RANGE=11]="OUT_OF_RANGE",t[t.UNIMPLEMENTED=12]="UNIMPLEMENTED",t[t.INTERNAL=13]="INTERNAL",t[t.UNAVAILABLE=14]="UNAVAILABLE",t[t.DATA_LOSS=15]="DATA_LOSS"}(qr||(qr={}));
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var Kr,Wr,Qr=function(){function t(t){this.comparator=t?function(e,n){return t(e,n)||ft.comparator(e.key,n.key)}:function(t,e){return ft.comparator(t.key,e.key)},this.keyedMap=xt(),this.sortedSet=new Ct(this.comparator)}return t.emptySet=function(e){return new t(e.comparator)},t.prototype.has=function(t){return null!=this.keyedMap.get(t)},t.prototype.get=function(t){return this.keyedMap.get(t)},t.prototype.first=function(){return this.sortedSet.minKey()},t.prototype.last=function(){return this.sortedSet.maxKey()},t.prototype.isEmpty=function(){return this.sortedSet.isEmpty()},t.prototype.indexOf=function(t){var e=this.keyedMap.get(t);return e?this.sortedSet.indexOf(e):-1},Object.defineProperty(t.prototype,"size",{get:function(){return this.sortedSet.size},enumerable:!0,configurable:!0}),t.prototype.forEach=function(t){this.sortedSet.inorderTraversal((function(e,n){return t(e),!1}))},t.prototype.add=function(t){var e=this.delete(t.key);return e.copy(e.keyedMap.insert(t.key,t),e.sortedSet.insert(t,null))},t.prototype.delete=function(t){var e=this.get(t);return e?this.copy(this.keyedMap.remove(t),this.sortedSet.remove(e)):this},t.prototype.isEqual=function(e){if(!(e instanceof t))return!1;if(this.size!==e.size)return!1;for(var n=this.sortedSet.getIterator(),r=e.sortedSet.getIterator();n.hasNext();){var i=n.getNext().key,o=r.getNext().key;if(!i.isEqual(o))return!1}return!0},t.prototype.toString=function(){var t=[];return this.forEach((function(e){t.push(e.toString())})),0===t.length?"DocumentSet ()":"DocumentSet (\n  "+t.join("  \n")+"\n)"},t.prototype.copy=function(e,n){var r=new t;return r.comparator=this.comparator,r.keyedMap=e,r.sortedSet=n,r},t}();
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */!function(t){t[t.Added=0]="Added",t[t.Removed=1]="Removed",t[t.Modified=2]="Modified",t[t.Metadata=3]="Metadata"}(Kr||(Kr={})),function(t){t[t.Local=0]="Local",t[t.Synced=1]="Synced"}(Wr||(Wr={}));var Gr,zr=function(){function t(){this.changeMap=new Ct(ft.comparator)}return t.prototype.track=function(t){var e=t.doc.key,n=this.changeMap.get(e);n?t.type!==Kr.Added&&n.type===Kr.Metadata?this.changeMap=this.changeMap.insert(e,t):t.type===Kr.Metadata&&n.type!==Kr.Removed?this.changeMap=this.changeMap.insert(e,{type:n.type,doc:t.doc}):t.type===Kr.Modified&&n.type===Kr.Modified?this.changeMap=this.changeMap.insert(e,{type:Kr.Modified,doc:t.doc}):t.type===Kr.Modified&&n.type===Kr.Added?this.changeMap=this.changeMap.insert(e,{type:Kr.Added,doc:t.doc}):t.type===Kr.Removed&&n.type===Kr.Added?this.changeMap=this.changeMap.remove(e):t.type===Kr.Removed&&n.type===Kr.Modified?this.changeMap=this.changeMap.insert(e,{type:Kr.Removed,doc:n.doc}):t.type===Kr.Added&&n.type===Kr.Removed?this.changeMap=this.changeMap.insert(e,{type:Kr.Modified,doc:t.doc}):g("unsupported combination of changes: "+JSON.stringify(t)+" after "+JSON.stringify(n)):this.changeMap=this.changeMap.insert(e,t)},t.prototype.getChanges=function(){var t=[];return this.changeMap.inorderTraversal((function(e,n){t.push(n)})),t},t}(),Hr=function(){function t(t,e,n,r,i,o,a,s){this.query=t,this.docs=e,this.oldDocs=n,this.docChanges=r,this.mutatedKeys=i,this.fromCache=o,this.syncStateChanged=a,this.excludesMetadataChanges=s}return t.fromInitialDocuments=function(e,n,r,i){var o=[];return n.forEach((function(t){o.push({type:Kr.Added,doc:t})})),new t(e,n,Qr.emptySet(n),o,r,i,!0,!1)},Object.defineProperty(t.prototype,"hasPendingWrites",{get:function(){return!this.mutatedKeys.isEmpty()},enumerable:!0,configurable:!0}),t.prototype.isEqual=function(t){if(!(this.fromCache===t.fromCache&&this.syncStateChanged===t.syncStateChanged&&this.mutatedKeys.isEqual(t.mutatedKeys)&&this.query.isEqual(t.query)&&this.docs.isEqual(t.docs)&&this.oldDocs.isEqual(t.oldDocs)))return!1;var e=this.docChanges,n=t.docChanges;if(e.length!==n.length)return!1;for(var r=0;r<e.length;r++)if(e[r].type!==n[r].type||!e[r].doc.isEqual(n[r].doc))return!1;return!0},t}(),Yr=function(){function t(t,e,n,r,i){this.snapshotVersion=t,this.targetChanges=e,this.targetMismatches=n,this.documentUpdates=r,this.resolvedLimboDocuments=i}return t.createSynthesizedRemoteEventForCurrentChange=function(e,n){var r,i=((r={})[e]=Xr.createSynthesizedTargetChangeForCurrentChange(e,n),r);return new t(_t.MIN,i,jt(),Mt(),Bt())},t}(),Xr=function(){function t(t,e,n,r,i){this.resumeToken=t,this.current=e,this.addedDocuments=n,this.modifiedDocuments=r,this.removedDocuments=i}return t.createSynthesizedTargetChangeForCurrentChange=function(e,n){return new t(w(),n,Bt(),Bt(),Bt())},t}(),Jr=function(t,e,n,r){this.updatedTargetIds=t,this.removedTargetIds=e,this.key=n,this.newDoc=r},$r=function(t,e){this.targetId=t,this.existenceFilter=e};!function(t){t[t.NoChange=0]="NoChange",t[t.Added=1]="Added",t[t.Removed=2]="Removed",t[t.Current=3]="Current",t[t.Reset=4]="Reset"}(Gr||(Gr={}));var Zr=function(t,e,n,r){void 0===n&&(n=w()),void 0===r&&(r=null),this.state=t,this.targetIds=e,this.resumeToken=n,this.cause=r},ti=function(){function t(){this.pendingResponses=0,this.documentChanges=ri(),this._resumeToken=w(),this._current=!1,this._hasPendingChanges=!0}return Object.defineProperty(t.prototype,"current",{get:function(){return this._current},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"resumeToken",{get:function(){return this._resumeToken},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"isPending",{get:function(){return 0!==this.pendingResponses},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"hasPendingChanges",{get:function(){return this._hasPendingChanges},enumerable:!0,configurable:!0}),t.prototype.updateResumeToken=function(t){t.length>0&&(this._hasPendingChanges=!0,this._resumeToken=t)},t.prototype.toTargetChange=function(){var t=Bt(),e=Bt(),n=Bt();return this.documentChanges.forEach((function(r,i){switch(i){case Kr.Added:t=t.add(r);break;case Kr.Modified:e=e.add(r);break;case Kr.Removed:n=n.add(r);break;default:g("Encountered invalid change type: "+i)}})),new Xr(this._resumeToken,this._current,t,e,n)},t.prototype.clearPendingChanges=function(){this._hasPendingChanges=!1,this.documentChanges=ri()},t.prototype.addDocumentChange=function(t,e){this._hasPendingChanges=!0,this.documentChanges=this.documentChanges.insert(t,e)},t.prototype.removeDocumentChange=function(t){this._hasPendingChanges=!0,this.documentChanges=this.documentChanges.remove(t)},t.prototype.recordPendingTargetRequest=function(){this.pendingResponses+=1},t.prototype.recordTargetResponse=function(){this.pendingResponses-=1},t.prototype.markCurrent=function(){this._hasPendingChanges=!0,this._current=!0},t}(),ei=function(){function t(t){this.metadataProvider=t,this.targetStates={},this.pendingDocumentUpdates=Mt(),this.pendingDocumentTargetMapping=ni(),this.pendingTargetResets=new kt(X)}return t.prototype.handleDocumentChange=function(t){for(var e=0,n=t.updatedTargetIds;e<n.length;e++){var r=n[e];t.newDoc instanceof We?this.addDocumentToTarget(r,t.newDoc):t.newDoc instanceof Qe&&this.removeDocumentFromTarget(r,t.key,t.newDoc)}for(var i=0,o=t.removedTargetIds;i<o.length;i++){r=o[i];this.removeDocumentFromTarget(r,t.key,t.newDoc)}},t.prototype.handleTargetChange=function(t){var e=this;this.forEachTarget(t,(function(n){var r=e.ensureTargetState(n);switch(t.state){case Gr.NoChange:e.isActiveTarget(n)&&r.updateResumeToken(t.resumeToken);break;case Gr.Added:r.recordTargetResponse(),r.isPending||r.clearPendingChanges(),r.updateResumeToken(t.resumeToken);break;case Gr.Removed:r.recordTargetResponse(),r.isPending||e.removeTarget(n),v(!t.cause,"WatchChangeAggregator does not handle errored targets");break;case Gr.Current:e.isActiveTarget(n)&&(r.markCurrent(),r.updateResumeToken(t.resumeToken));break;case Gr.Reset:e.isActiveTarget(n)&&(e.resetTarget(n),r.updateResumeToken(t.resumeToken));break;default:g("Unknown target watch change state: "+t.state)}}))},t.prototype.forEachTarget=function(t,e){t.targetIds.length>0?t.targetIds.forEach(e):C(this.targetStates,e)},t.prototype.handleExistenceFilter=function(t){var e=t.targetId,n=t.existenceFilter.count,r=this.targetDataForActiveTarget(e);if(r){var i=r.target;if(i.isDocumentQuery())if(0===n){var o=new ft(i.path);this.removeDocumentFromTarget(e,o,new Qe(o,_t.forDeletedDoc()))}else v(1===n,"Single document existence filter with count: "+n);else this.getCurrentDocumentCountForTarget(e)!==n&&(this.resetTarget(e),this.pendingTargetResets=this.pendingTargetResets.add(e))}},t.prototype.createRemoteEvent=function(t){var e=this,n={};C(this.targetStates,(function(r,i){var o=e.targetDataForActiveTarget(r);if(o){if(i.current&&o.target.isDocumentQuery()){var a=new ft(o.target.path);null!==e.pendingDocumentUpdates.get(a)||e.targetContainsDocument(r,a)||e.removeDocumentFromTarget(r,a,new Qe(a,t))}i.hasPendingChanges&&(n[r]=i.toTargetChange(),i.clearPendingChanges())}}));var r=Bt();this.pendingDocumentTargetMapping.forEach((function(t,n){var i=!0;n.forEachWhile((function(t){var n=e.targetDataForActiveTarget(t);return!n||n.purpose===wn.LimboResolution||(i=!1,!1)})),i&&(r=r.add(t))}));var i=new Yr(t,n,this.pendingTargetResets,this.pendingDocumentUpdates,r);return this.pendingDocumentUpdates=Mt(),this.pendingDocumentTargetMapping=ni(),this.pendingTargetResets=new kt(X),i},t.prototype.addDocumentToTarget=function(t,e){if(this.isActiveTarget(t)){var n=this.targetContainsDocument(t,e.key)?Kr.Modified:Kr.Added;this.ensureTargetState(t).addDocumentChange(e.key,n),this.pendingDocumentUpdates=this.pendingDocumentUpdates.insert(e.key,e),this.pendingDocumentTargetMapping=this.pendingDocumentTargetMapping.insert(e.key,this.ensureDocumentTargetMapping(e.key).add(t))}},t.prototype.removeDocumentFromTarget=function(t,e,n){if(this.isActiveTarget(t)){var r=this.ensureTargetState(t);this.targetContainsDocument(t,e)?r.addDocumentChange(e,Kr.Removed):r.removeDocumentChange(e),this.pendingDocumentTargetMapping=this.pendingDocumentTargetMapping.insert(e,this.ensureDocumentTargetMapping(e).delete(t)),n&&(this.pendingDocumentUpdates=this.pendingDocumentUpdates.insert(e,n))}},t.prototype.removeTarget=function(t){delete this.targetStates[t]},t.prototype.getCurrentDocumentCountForTarget=function(t){var e=this.ensureTargetState(t).toTargetChange();return this.metadataProvider.getRemoteKeysForTarget(t).size+e.addedDocuments.size-e.removedDocuments.size},t.prototype.recordPendingTargetRequest=function(t){this.ensureTargetState(t).recordPendingTargetRequest()},t.prototype.ensureTargetState=function(t){return this.targetStates[t]||(this.targetStates[t]=new ti),this.targetStates[t]},t.prototype.ensureDocumentTargetMapping=function(t){var e=this.pendingDocumentTargetMapping.get(t);return e||(e=new kt(X),this.pendingDocumentTargetMapping=this.pendingDocumentTargetMapping.insert(t,e)),e},t.prototype.isActiveTarget=function(t){var e=null!==this.targetDataForActiveTarget(t);return e||p("WatchChangeAggregator","Detected inactive target",t),e},t.prototype.targetDataForActiveTarget=function(t){var e=this.targetStates[t];return e&&e.isPending?null:this.metadataProvider.getTargetDataForTarget(t)},t.prototype.resetTarget=function(t){var e=this;v(!this.targetStates[t].isPending,"Should only reset active targets"),this.targetStates[t]=new ti,this.metadataProvider.getRemoteKeysForTarget(t).forEach((function(n){e.removeDocumentFromTarget(t,n,null)}))},t.prototype.targetContainsDocument=function(t,e){return this.metadataProvider.getRemoteKeysForTarget(t).has(e)},t}();function ni(){return new Ct(ft.comparator)}function ri(){return new Ct(ft.comparator)}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */var ii="RemoteStore",oi=function(){function t(t,e,n,r,i){var o=this;this.localStore=t,this.datastore=e,this.writePipeline=[],this.listenTargets={},this.watchChangeAggregator=null,this.networkEnabled=!1,this.isPrimary=!1,this.connectivityMonitor=i,this.connectivityMonitor.addCallback((function(t){n.enqueueAndForget((function(){return a.__awaiter(o,void 0,void 0,(function(){return a.__generator(this,(function(t){switch(t.label){case 0:return this.canUseNetwork()?(p(ii,"Restarting streams for network reachability change."),[4,this.restartNetwork()]):[3,2];case 1:t.sent(),t.label=2;case 2:return[2]}}))}))}))})),this.onlineStateTracker=new Vr(n,r),this.watchStream=this.datastore.newPersistentWatchStream({onOpen:this.onWatchStreamOpen.bind(this),onClose:this.onWatchStreamClose.bind(this),onWatchChange:this.onWatchStreamChange.bind(this)}),this.writeStream=this.datastore.newPersistentWriteStream({onOpen:this.onWriteStreamOpen.bind(this),onClose:this.onWriteStreamClose.bind(this),onHandshakeComplete:this.onWriteHandshakeComplete.bind(this),onMutationResult:this.onMutationResult.bind(this)})}return t.prototype.start=function(){return this.enableNetwork()},t.prototype.enableNetwork=function(){return a.__awaiter(this,void 0,void 0,(function(){var t;return a.__generator(this,(function(e){switch(e.label){case 0:return this.networkEnabled=!0,this.canUseNetwork()?(t=this.writeStream,[4,this.localStore.getLastStreamToken()]):[3,3];case 1:return t.lastStreamToken=e.sent(),this.shouldStartWatchStream()?this.startWatchStream():this.onlineStateTracker.set(Rr.Unknown),[4,this.fillWritePipeline()];case 2:e.sent(),e.label=3;case 3:return[2]}}))}))},t.prototype.disableNetwork=function(){return a.__awaiter(this,void 0,void 0,(function(){return a.__generator(this,(function(t){switch(t.label){case 0:return this.networkEnabled=!1,[4,this.disableNetworkInternal()];case 1:return t.sent(),this.onlineStateTracker.set(Rr.Offline),[2]}}))}))},t.prototype.disableNetworkInternal=function(){return a.__awaiter(this,void 0,void 0,(function(){return a.__generator(this,(function(t){switch(t.label){case 0:return[4,this.writeStream.stop()];case 1:return t.sent(),[4,this.watchStream.stop()];case 2:return t.sent(),this.writePipeline.length>0&&(p(ii,"Stopping write stream with "+this.writePipeline.length+" pending writes"),this.writePipeline=[]),this.cleanUpWatchStreamState(),[2]}}))}))},t.prototype.shutdown=function(){return a.__awaiter(this,void 0,void 0,(function(){return a.__generator(this,(function(t){switch(t.label){case 0:return p(ii,"RemoteStore shutting down."),this.networkEnabled=!1,[4,this.disableNetworkInternal()];case 1:return t.sent(),this.connectivityMonitor.shutdown(),this.onlineStateTracker.set(Rr.Unknown),[2]}}))}))},t.prototype.listen=function(t){I(this.listenTargets,t.targetId)||(this.listenTargets[t.targetId]=t,this.shouldStartWatchStream()?this.startWatchStream():this.watchStream.isOpen()&&this.sendWatchRequest(t))},t.prototype.unlisten=function(t){I(this.listenTargets,t)&&(delete this.listenTargets[t],this.watchStream.isOpen()&&this.sendUnwatchRequest(t),A(this.listenTargets)&&(this.watchStream.isOpen()?this.watchStream.markIdle():this.canUseNetwork()&&this.onlineStateTracker.set(Rr.Unknown)))},t.prototype.getTargetDataForTarget=function(t){return this.listenTargets[t]||null},t.prototype.getRemoteKeysForTarget=function(t){return this.syncEngine.getRemoteKeysForTarget(t)},t.prototype.sendWatchRequest=function(t){this.watchChangeAggregator.recordPendingTargetRequest(t.targetId),this.watchStream.watch(t)},t.prototype.sendUnwatchRequest=function(t){this.watchChangeAggregator.recordPendingTargetRequest(t),this.watchStream.unwatch(t)},t.prototype.startWatchStream=function(){v(this.shouldStartWatchStream(),"startWatchStream() called when shouldStartWatchStream() is false."),this.watchChangeAggregator=new ei(this),this.watchStream.start(),this.onlineStateTracker.handleWatchStreamStart()},t.prototype.shouldStartWatchStream=function(){return this.canUseNetwork()&&!this.watchStream.isStarted()&&!A(this.listenTargets)},t.prototype.canUseNetwork=function(){return this.isPrimary&&this.networkEnabled},t.prototype.cleanUpWatchStreamState=function(){this.watchChangeAggregator=null},t.prototype.onWatchStreamOpen=function(){return a.__awaiter(this,void 0,void 0,(function(){var t=this;return a.__generator(this,(function(e){return C(this.listenTargets,(function(e,n){t.sendWatchRequest(n)})),[2]}))}))},t.prototype.onWatchStreamClose=function(t){return a.__awaiter(this,void 0,void 0,(function(){return a.__generator(this,(function(e){return void 0===t&&v(!this.shouldStartWatchStream(),"Watch stream was stopped gracefully while still needed."),this.cleanUpWatchStreamState(),this.shouldStartWatchStream()?(this.onlineStateTracker.handleWatchStreamFailure(t),this.startWatchStream()):this.onlineStateTracker.set(Rr.Unknown),[2]}))}))},t.prototype.onWatchStreamChange=function(t,e){return a.__awaiter(this,void 0,void 0,(function(){var n;return a.__generator(this,(function(r){switch(r.label){case 0:return this.onlineStateTracker.set(Rr.Online),t instanceof Zr&&t.state===Gr.Removed&&t.cause?[2,this.handleTargetError(t)]:(t instanceof Jr?this.watchChangeAggregator.handleDocumentChange(t):t instanceof $r?this.watchChangeAggregator.handleExistenceFilter(t):(v(t instanceof Zr,"Expected watchChange to be an instance of WatchTargetChange"),this.watchChangeAggregator.handleTargetChange(t)),e.isEqual(_t.MIN)?[3,3]:[4,this.localStore.getLastRemoteSnapshotVersion()]);case 1:return n=r.sent(),e.compareTo(n)>=0?[4,this.raiseWatchSnapshot(e)]:[3,3];case 2:r.sent(),r.label=3;case 3:return[2]}}))}))},t.prototype.raiseWatchSnapshot=function(t){var e=this;v(!t.isEqual(_t.MIN),"Can't raise event for unknown SnapshotVersion");var n=this.watchChangeAggregator.createRemoteEvent(t);return C(n.targetChanges,(function(n,r){if(r.resumeToken.length>0){var i=e.listenTargets[n];i&&(e.listenTargets[n]=i.withResumeToken(r.resumeToken,t))}})),n.targetMismatches.forEach((function(t){var n=e.listenTargets[t];if(n){e.listenTargets[t]=n.withResumeToken(w(),n.snapshotVersion),e.sendUnwatchRequest(t);var r=new Dn(n.target,t,wn.ExistenceFilterMismatch,n.sequenceNumber);e.sendWatchRequest(r)}})),this.syncEngine.applyRemoteEvent(n)},t.prototype.handleTargetError=function(t){var e=this;v(!!t.cause,"Handling target error without a cause");var n=t.cause,r=Promise.resolve();return t.targetIds.forEach((function(t){r=r.then((function(){return a.__awaiter(e,void 0,void 0,(function(){return a.__generator(this,(function(e){return I(this.listenTargets,t)?(delete this.listenTargets[t],this.watchChangeAggregator.removeTarget(t),[2,this.syncEngine.rejectListen(t,n)]):[2]}))}))}))})),r},t.prototype.fillWritePipeline=function(){return a.__awaiter(this,void 0,void 0,(function(){var t,e;return a.__generator(this,(function(n){switch(n.label){case 0:return this.canAddToWritePipeline()?(t=this.writePipeline.length>0?this.writePipeline[this.writePipeline.length-1].batchId:-1,[4,this.localStore.nextMutationBatch(t)]):[3,4];case 1:return null!==(e=n.sent())?[3,2]:(0===this.writePipeline.length&&this.writeStream.markIdle(),[3,4]);case 2:return this.addToWritePipeline(e),[4,this.fillWritePipeline()];case 3:n.sent(),n.label=4;case 4:return this.shouldStartWriteStream()&&this.startWriteStream(),[2]}}))}))},t.prototype.canAddToWritePipeline=function(){return this.canUseNetwork()&&this.writePipeline.length<10},t.prototype.outstandingWrites=function(){return this.writePipeline.length},t.prototype.addToWritePipeline=function(t){v(this.canAddToWritePipeline(),"addToWritePipeline called when pipeline is full"),this.writePipeline.push(t),this.writeStream.isOpen()&&this.writeStream.handshakeComplete&&this.writeStream.writeMutations(t.mutations)},t.prototype.shouldStartWriteStream=function(){return this.canUseNetwork()&&!this.writeStream.isStarted()&&this.writePipeline.length>0},t.prototype.startWriteStream=function(){v(this.shouldStartWriteStream(),"startWriteStream() called when shouldStartWriteStream() is false."),this.writeStream.start()},t.prototype.onWriteStreamOpen=function(){return a.__awaiter(this,void 0,void 0,(function(){return a.__generator(this,(function(t){return this.writeStream.writeHandshake(),[2]}))}))},t.prototype.onWriteHandshakeComplete=function(){var t=this;return this.localStore.setLastStreamToken(this.writeStream.lastStreamToken).then((function(){for(var e=0,n=t.writePipeline;e<n.length;e++){var r=n[e];t.writeStream.writeMutations(r.mutations)}})).catch(Un)},t.prototype.onMutationResult=function(t,e){var n=this;v(this.writePipeline.length>0,"Got result for empty write pipeline");var r=this.writePipeline.shift(),i=Wt.from(r,t,e,this.writeStream.lastStreamToken);return this.syncEngine.applySuccessfulWrite(i).then((function(){return n.fillWritePipeline()}))},t.prototype.onWriteStreamClose=function(t){return a.__awaiter(this,void 0,void 0,(function(){var e=this;return a.__generator(this,(function(n){return void 0===t&&v(!this.shouldStartWriteStream(),"Write stream was stopped gracefully while still needed."),t&&this.writePipeline.length>0?(void 0,[2,(this.writeStream.handshakeComplete?this.handleWriteError(t):this.handleHandshakeError(t)).then((function(){e.shouldStartWriteStream()&&e.startWriteStream()}))]):[2]}))}))},t.prototype.handleHandshakeError=function(t){return a.__awaiter(this,void 0,void 0,(function(){return a.__generator(this,(function(e){return Br(t.code)?(p(ii,"RemoteStore error before completed handshake; resetting stream token: ",this.writeStream.lastStreamToken),this.writeStream.lastStreamToken=w(),[2,this.localStore.setLastStreamToken(w()).catch(Un)]):[2]}))}))},t.prototype.handleWriteError=function(t){return a.__awaiter(this,void 0,void 0,(function(){var e,n=this;return a.__generator(this,(function(r){return Br(i=t.code)&&i!==T.ABORTED?(e=this.writePipeline.shift(),this.writeStream.inhibitBackoff(),[2,this.syncEngine.rejectFailedWrite(e.batchId,t).then((function(){return n.fillWritePipeline()}))]):[2];var i}))}))},t.prototype.createTransaction=function(){return new Fr(this.datastore)},t.prototype.restartNetwork=function(){return a.__awaiter(this,void 0,void 0,(function(){return a.__generator(this,(function(t){switch(t.label){case 0:return this.networkEnabled=!1,[4,this.disableNetworkInternal()];case 1:return t.sent(),this.onlineStateTracker.set(Rr.Unknown),[4,this.enableNetwork()];case 2:return t.sent(),[2]}}))}))},t.prototype.handleCredentialChange=function(){return a.__awaiter(this,void 0,void 0,(function(){return a.__generator(this,(function(t){switch(t.label){case 0:return this.canUseNetwork()?(p(ii,"RemoteStore restarting streams for new credential"),[4,this.restartNetwork()]):[3,2];case 1:t.sent(),t.label=2;case 2:return[2]}}))}))},t.prototype.applyPrimaryState=function(t){return a.__awaiter(this,void 0,void 0,(function(){return a.__generator(this,(function(e){switch(e.label){case 0:return this.isPrimary=t,t&&this.networkEnabled?[4,this.enableNetwork()]:[3,2];case 1:return e.sent(),[3,4];case 2:return t?[3,4]:[4,this.disableNetworkInternal()];case 3:e.sent(),this.onlineStateTracker.set(Rr.Unknown),e.label=4;case 4:return[2]}}))}))},t}(),ai=function(){function t(t,e){if(k("GeoPoint",arguments,2),M("GeoPoint","number",1,t),M("GeoPoint","number",2,e),!isFinite(t)||t<-90||t>90)throw new E(T.INVALID_ARGUMENT,"Latitude must be a number between -90 and 90, but was: "+t);if(!isFinite(e)||e<-180||e>180)throw new E(T.INVALID_ARGUMENT,"Longitude must be a number between -180 and 180, but was: "+e);this._lat=t,this._long=e}return Object.defineProperty(t.prototype,"latitude",{get:function(){return this._lat},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"longitude",{get:function(){return this._long},enumerable:!0,configurable:!0}),t.prototype.isEqual=function(t){return this._lat===t._lat&&this._long===t._long},t.prototype._compareTo=function(t){return X(this._lat,t._lat)||X(this._long,t._long)},t}(),si=function(){function t(){}return t.prototype.applyToLocalView=function(t,e){return new Fe(e,t)},t.prototype.applyToRemoteDocument=function(t,e){return e},t.prototype.computeBaseValue=function(t){return null},t.prototype.isEqual=function(e){return e instanceof t},t.instance=new t,t}(),ui=function(){function t(t){this.elements=t}return t.prototype.applyToLocalView=function(t,e){return this.apply(t)},t.prototype.applyToRemoteDocument=function(t,e){return this.apply(t)},t.prototype.apply=function(t){for(var e=li(t),n=function(t){e.find((function(e){return e.isEqual(t)}))||e.push(t)},r=0,i=this.elements;r<i.length;r++){n(i[r])}return new je(e)},t.prototype.computeBaseValue=function(t){return null},t.prototype.isEqual=function(e){return e instanceof t&&J(e.elements,this.elements)},t}(),ci=function(){function t(t){this.elements=t}return t.prototype.applyToLocalView=function(t,e){return this.apply(t)},t.prototype.applyToRemoteDocument=function(t,e){return this.apply(t)},t.prototype.apply=function(t){for(var e=li(t),n=function(t){e=e.filter((function(e){return!e.isEqual(t)}))},r=0,i=this.elements;r<i.length;r++){n(i[r])}return new je(e)},t.prototype.computeBaseValue=function(t){return null},t.prototype.isEqual=function(e){return e instanceof t&&J(e.elements,this.elements)},t}(),hi=function(){function t(t){this.operand=t}return t.prototype.applyToLocalView=function(t,e){var n=this.computeBaseValue(t);if(n instanceof Me&&this.operand instanceof Me){var r=n.internalValue+this.operand.internalValue;return new Me(r)}r=n.internalValue+this.operand.internalValue;return new Le(r)},t.prototype.applyToRemoteDocument=function(t,e){return v(null!==e,"Didn't receive transformResult for NUMERIC_ADD transform"),e},t.prototype.computeBaseValue=function(t){return t instanceof Re?t:new Me(0)},t.prototype.isEqual=function(e){return e instanceof t&&this.operand.isEqual(e.operand)},t}();function li(t){return t instanceof je?t.internalValue.slice():[]}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */var fi,di,pi=function(){function t(t){this.count=t}return t.prototype.isEqual=function(t){return t&&t.count===this.count},t}(),mi=((fi={})[cr.ASCENDING.name]="ASCENDING",fi[cr.DESCENDING.name]="DESCENDING",fi),yi=((di={})[nr.LESS_THAN.name]="LESS_THAN",di[nr.LESS_THAN_OR_EQUAL.name]="LESS_THAN_OR_EQUAL",di[nr.GREATER_THAN.name]="GREATER_THAN",di[nr.GREATER_THAN_OR_EQUAL.name]="GREATER_THAN_OR_EQUAL",di[nr.EQUAL.name]="EQUAL",di[nr.ARRAY_CONTAINS.name]="ARRAY_CONTAINS",di[nr.IN.name]="IN",di[nr.ARRAY_CONTAINS_ANY.name]="ARRAY_CONTAINS_ANY",di),gi=new RegExp(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.(\d+))?Z$/);
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */function vi(t,e){v(!Xn(t),e+" is missing")}function bi(t){return"number"==typeof t?t:"string"==typeof t?Number(t):g("can't parse "+t)}var wi=function(){function t(t,e){this.databaseId=t,this.options=e}return t.prototype.emptyByteString=function(){return this.options.useProto3Json?"":new Uint8Array(0)},t.prototype.unsafeCastProtoByteString=function(t){return t},t.prototype.fromRpcStatus=function(t){var e=void 0===t.code?T.UNKNOWN:Ur(t.code);return new E(e,t.message||"")},t.prototype.toInt32Value=function(t){return this.options.useProto3Json||Xn(t)?t:{value:t}},t.prototype.fromInt32Value=function(t){var e;return Xn(e="object"==typeof t?t.value:t)?null:e},t.prototype.toTimestamp=function(t){return this.options.useProto3Json?new Date(1e3*t.seconds).toISOString().replace(/\.\d*/,"").replace("Z","")+"."+("000000000"+t.nanoseconds).slice(-9)+"Z":{seconds:""+t.seconds,nanos:t.nanoseconds}},t.prototype.fromTimestamp=function(t){if("string"==typeof t)return this.fromIso8601String(t);v(!!t,"Cannot deserialize null or undefined timestamp.");var e=bi(t.seconds||"0"),n=t.nanos||0;return new It(e,n)},t.prototype.fromIso8601String=function(t){var e=0,n=gi.exec(t);if(v(!!n,"invalid timestamp: "+t),n[1]){var r=n[1];r=(r+"000000000").substr(0,9),e=Number(r)}var i=new Date(t),o=Math.floor(i.getTime()/1e3);return new It(o,e)},t.prototype.toBytes=function(t){return this.options.useProto3Json?t.toBase64():this.unsafeCastProtoByteString(t.toUint8Array())},t.prototype.fromBlob=function(t){return"string"==typeof t?(v(this.options.useProto3Json,"Expected bytes to be passed in as Uint8Array, but got a string instead."),nt.fromBase64String(t)):(v(!this.options.useProto3Json,"Expected bytes to be passed in as Uint8Array, but got a string instead."),nt.fromUint8Array(t))},t.prototype.toVersion=function(t){return this.toTimestamp(t.toTimestamp())},t.prototype.fromVersion=function(t){return v(!!t,"Trying to deserialize version that isn't set"),_t.fromTimestamp(this.fromTimestamp(t))},t.prototype.toResourceName=function(t,e){return this.fullyQualifiedPrefixPath(t).child("documents").child(e).canonicalString()},t.prototype.fromResourceName=function(t){var e=ct.fromString(t);return v(this.isValidResourceName(e),"Tried to deserialize invalid key "+e.toString()),e},t.prototype.toName=function(t){return this.toResourceName(this.databaseId,t.path)},t.prototype.fromName=function(t){var e=this.fromResourceName(t);return v(e.get(1)===this.databaseId.projectId,"Tried to deserialize key from different project: "+e.get(1)+" vs "+this.databaseId.projectId),v(!e.get(3)&&!this.databaseId.database||e.get(3)===this.databaseId.database,"Tried to deserialize key from different database: "+e.get(3)+" vs "+this.databaseId.database),new ft(this.extractLocalPathFromResourceName(e))},t.prototype.toQueryPath=function(t){return this.toResourceName(this.databaseId,t)},t.prototype.fromQueryPath=function(t){var e=this.fromResourceName(t);return 4===e.length?ct.EMPTY_PATH:this.extractLocalPathFromResourceName(e)},Object.defineProperty(t.prototype,"encodedDatabaseId",{get:function(){return new ct(["projects",this.databaseId.projectId,"databases",this.databaseId.database]).canonicalString()},enumerable:!0,configurable:!0}),t.prototype.fullyQualifiedPrefixPath=function(t){return new ct(["projects",t.projectId,"databases",t.database])},t.prototype.extractLocalPathFromResourceName=function(t){return v(t.length>4&&"documents"===t.get(4),"tried to deserialize invalid key "+t.toString()),t.popFirst(5)},t.prototype.isValidResourceName=function(t){return t.length>=4&&"projects"===t.get(0)&&"databases"===t.get(2)},t.prototype.toValue=function(t){if(t instanceof Ne)return{nullValue:"NULL_VALUE"};if(t instanceof ke)return{booleanValue:t.value()};if(t instanceof Me)return{integerValue:""+t.value()};if(t instanceof Le){var e=t.value();if(this.options.useProto3Json){if(isNaN(e))return{doubleValue:"NaN"};if(e===1/0)return{doubleValue:"Infinity"};if(e===-1/0)return{doubleValue:"-Infinity"}}return{doubleValue:t.value()}}return t instanceof Pe?{stringValue:t.value()}:t instanceof Ue?{mapValue:this.toMapValue(t)}:t instanceof je?{arrayValue:this.toArrayValue(t)}:t instanceof xe?{timestampValue:this.toTimestamp(t.internalValue)}:t instanceof Be?{geoPointValue:{latitude:t.value().latitude,longitude:t.value().longitude}}:t instanceof qe?{bytesValue:this.toBytes(t.value())}:t instanceof Ve?{referenceValue:this.toResourceName(t.databaseId,t.key.path)}:g("Unknown FieldValue "+JSON.stringify(t))},t.prototype.fromValue=function(t){var e=this;if("nullValue"in t)return Ne.INSTANCE;if("booleanValue"in t)return ke.of(t.booleanValue);if("integerValue"in t)return new Me(bi(t.integerValue));if("doubleValue"in t){if(this.options.useProto3Json){if("NaN"===t.doubleValue)return Le.NAN;if("Infinity"===t.doubleValue)return Le.POSITIVE_INFINITY;if("-Infinity"===t.doubleValue)return Le.NEGATIVE_INFINITY}return new Le(t.doubleValue)}if("stringValue"in t)return new Pe(t.stringValue);if("mapValue"in t)return this.fromFields(t.mapValue.fields||{});if("arrayValue"in t){vi(t.arrayValue,"arrayValue");var n=t.arrayValue.values||[];return new je(n.map((function(t){return e.fromValue(t)})))}if("timestampValue"in t)return vi(t.timestampValue,"timestampValue"),new xe(this.fromTimestamp(t.timestampValue));if("geoPointValue"in t){vi(t.geoPointValue,"geoPointValue");var r=t.geoPointValue.latitude||0,i=t.geoPointValue.longitude||0;return new Be(new ai(r,i))}if("bytesValue"in t){vi(t.bytesValue,"bytesValue");var o=this.fromBlob(t.bytesValue);return new qe(o)}if("referenceValue"in t){vi(t.referenceValue,"referenceValue");var a=this.fromResourceName(t.referenceValue),s=new at(a.get(1),a.get(3)),u=new ft(this.extractLocalPathFromResourceName(a));return new Ve(s,u)}return g("Unknown Value proto "+JSON.stringify(t))},t.prototype.toMutationDocument=function(t,e){return{name:this.toName(t),fields:this.toFields(e)}},t.prototype.toDocument=function(t){return v(!t.hasLocalMutations,"Can't serialize documents with mutations."),{name:this.toName(t.key),fields:this.toFields(t.data()),updateTime:this.toTimestamp(t.version.toTimestamp())}},t.prototype.fromDocument=function(t,e){var n=this,r=this.fromName(t.name),i=this.fromVersion(t.updateTime);return new We(r,i,{hasCommittedMutations:!!e},void 0,t,(function(t){return n.fromValue(t)}))},t.prototype.toFields=function(t){var e=this,n={};return t.forEach((function(t,r){n[t]=e.toValue(r)})),n},t.prototype.fromFields=function(t){var e=this,n=t,r=Ue.EMPTY;return D(n,(function(t,n){r=r.set(new lt([t]),e.fromValue(n))})),r},t.prototype.toMapValue=function(t){return{fields:this.toFields(t)}},t.prototype.toArrayValue=function(t){var e=this,n=[];return t.forEach((function(t){n.push(e.toValue(t))})),{values:n}},t.prototype.fromFound=function(t){var e=this;v(!!t.found,"Tried to deserialize a found document from a missing document."),vi(t.found.name,"doc.found.name"),vi(t.found.updateTime,"doc.found.updateTime");var n=this.fromName(t.found.name),r=this.fromVersion(t.found.updateTime);return new We(n,r,{},void 0,t.found,(function(t){return e.fromValue(t)}))},t.prototype.fromMissing=function(t){v(!!t.missing,"Tried to deserialize a missing document from a found document."),v(!!t.readTime,"Tried to deserialize a missing document without a read time.");var e=this.fromName(t.missing),n=this.fromVersion(t.readTime);return new Qe(e,n)},t.prototype.fromMaybeDocument=function(t){return"found"in t?this.fromFound(t):"missing"in t?this.fromMissing(t):g("invalid batch get response: "+JSON.stringify(t))},t.prototype.toWatchTargetChangeState=function(t){switch(t){case Gr.Added:return"ADD";case Gr.Current:return"CURRENT";case Gr.NoChange:return"NO_CHANGE";case Gr.Removed:return"REMOVE";case Gr.Reset:return"RESET";default:return g("Unknown WatchTargetChangeState: "+t)}},t.prototype.toTestWatchChange=function(t){if(t instanceof $r)return{filter:{count:t.existenceFilter.count,targetId:t.targetId}};if(t instanceof Jr){if(t.newDoc instanceof We){var e=t.newDoc;return{documentChange:{document:{name:this.toName(e.key),fields:this.toFields(e.data()),updateTime:this.toVersion(e.version)},targetIds:t.updatedTargetIds,removedTargetIds:t.removedTargetIds}}}if(t.newDoc instanceof Qe){e=t.newDoc;return{documentDelete:{document:this.toName(e.key),readTime:this.toVersion(e.version),removedTargetIds:t.removedTargetIds}}}if(null===t.newDoc)return{documentRemove:{document:this.toName(t.key),removedTargetIds:t.removedTargetIds}}}if(t instanceof Zr){var n=void 0;return t.cause&&(n={code:jr(t.cause.code),message:t.cause.message}),{targetChange:{targetChangeType:this.toWatchTargetChangeState(t.state),targetIds:t.targetIds,resumeToken:this.unsafeCastProtoByteString(t.resumeToken),cause:n}}}return g("Unrecognized watch change: "+JSON.stringify(t))},t.prototype.fromWatchChange=function(t){var e,n=this;if("targetChange"in t){vi(t.targetChange,"targetChange");var r=this.fromWatchTargetChangeState(t.targetChange.targetChangeType||"NO_CHANGE"),i=t.targetChange.targetIds||[],o=t.targetChange.resumeToken||this.emptyByteString(),a=t.targetChange.cause,s=a&&this.fromRpcStatus(a);e=new Zr(r,i,o,s||null)}else if("documentChange"in t){vi(t.documentChange,"documentChange"),vi(t.documentChange.document,"documentChange.name"),vi(t.documentChange.document.name,"documentChange.document.name"),vi(t.documentChange.document.updateTime,"documentChange.document.updateTime");var u=t.documentChange,c=this.fromName(u.document.name),h=this.fromVersion(u.document.updateTime),l=new We(c,h,{},void 0,u.document,(function(t){return n.fromValue(t)})),f=u.targetIds||[],d=u.removedTargetIds||[];e=new Jr(f,d,l.key,l)}else if("documentDelete"in t){vi(t.documentDelete,"documentDelete"),vi(t.documentDelete.document,"documentDelete.document");var p=t.documentDelete;c=this.fromName(p.document),h=p.readTime?this.fromVersion(p.readTime):_t.forDeletedDoc(),l=new Qe(c,h),d=p.removedTargetIds||[];e=new Jr([],d,l.key,l)}else if("documentRemove"in t){vi(t.documentRemove,"documentRemove"),vi(t.documentRemove.document,"documentRemove");var m=t.documentRemove;c=this.fromName(m.document),d=m.removedTargetIds||[];e=new Jr([],d,c,null)}else{if(!("filter"in t))return g("Unknown change type "+JSON.stringify(t));vi(t.filter,"filter"),vi(t.filter.targetId,"filter.targetId");var y=t.filter,v=y.count||0,b=new pi(v),w=y.targetId;e=new $r(w,b)}return e},t.prototype.fromWatchTargetChangeState=function(t){return"NO_CHANGE"===t?Gr.NoChange:"ADD"===t?Gr.Added:"REMOVE"===t?Gr.Removed:"CURRENT"===t?Gr.Current:"RESET"===t?Gr.Reset:g("Got unexpected TargetChange.state: "+t)},t.prototype.versionFromListenResponse=function(t){if(!("targetChange"in t))return _t.MIN;var e=t.targetChange;return e.targetIds&&e.targetIds.length?_t.MIN:e.readTime?this.fromVersion(e.readTime):_t.MIN},t.prototype.toMutation=function(t){var e,n=this;if(t instanceof Se)e={update:this.toMutationDocument(t.key,t.value)};else if(t instanceof Ce)e={delete:this.toName(t.key)};else if(t instanceof Ie)e={update:this.toMutationDocument(t.key,t.data),updateMask:this.toDocumentMask(t.fieldMask)};else{if(!(t instanceof _e))return g("Unknown mutation type "+t.type);e={transform:{document:this.toName(t.key),fieldTransforms:t.fieldTransforms.map((function(t){return n.toFieldTransform(t)}))}}}return t.precondition.isNone||(e.currentDocument=this.toPrecondition(t.precondition)),e},t.prototype.fromMutation=function(t){var e=this,n=t.currentDocument?this.fromPrecondition(t.currentDocument):Te.NONE;if(t.update){vi(t.update.name,"name");var r=this.fromName(t.update.name),i=this.fromFields(t.update.fields||{});if(t.updateMask){var o=this.fromDocumentMask(t.updateMask);return new Ie(r,i,o,n)}return new Se(r,i,n)}if(t.delete){r=this.fromName(t.delete);return new Ce(r,n)}if(t.transform){r=this.fromName(t.transform.document);var a=t.transform.fieldTransforms.map((function(t){return e.fromFieldTransform(t)}));return v(!0===n.exists,'Transforms only support precondition "exists == true"'),new _e(r,a)}return g("unknown mutation proto: "+JSON.stringify(t))},t.prototype.toPrecondition=function(t){return v(!t.isNone,"Can't serialize an empty precondition"),void 0!==t.updateTime?{updateTime:this.toVersion(t.updateTime)}:void 0!==t.exists?{exists:t.exists}:g("Unknown precondition")},t.prototype.fromPrecondition=function(t){return void 0!==t.updateTime?Te.updateTime(this.fromVersion(t.updateTime)):void 0!==t.exists?Te.exists(t.exists):Te.NONE},t.prototype.fromWriteResult=function(t,e){var n=this,r=t.updateTime?this.fromVersion(t.updateTime):this.fromVersion(e);r.isEqual(_t.MIN)&&(r=this.fromVersion(e));var i=null;return t.transformResults&&t.transformResults.length>0&&(i=t.transformResults.map((function(t){return n.fromValue(t)}))),new ve(r,i)},t.prototype.fromWriteResults=function(t,e){var n=this;return t&&t.length>0?(v(void 0!==e,"Received a write result without a commit time"),t.map((function(t){return n.fromWriteResult(t,e)}))):[]},t.prototype.toFieldTransform=function(t){var e=this,n=t.transform;if(n instanceof si)return{fieldPath:t.field.canonicalString(),setToServerValue:"REQUEST_TIME"};if(n instanceof ui)return{fieldPath:t.field.canonicalString(),appendMissingElements:{values:n.elements.map((function(t){return e.toValue(t)}))}};if(n instanceof ci)return{fieldPath:t.field.canonicalString(),removeAllFromArray:{values:n.elements.map((function(t){return e.toValue(t)}))}};if(n instanceof hi)return{fieldPath:t.field.canonicalString(),increment:this.toValue(n.operand)};throw g("Unknown transform: "+t.transform)},t.prototype.fromFieldTransform=function(t){var e=this,n=null;if("setToServerValue"in t)v("REQUEST_TIME"===t.setToServerValue,"Unknown server value transform proto: "+JSON.stringify(t)),n=si.instance;else if("appendMissingElements"in t){var r=t.appendMissingElements.values||[];n=new ui(r.map((function(t){return e.fromValue(t)})))}else if("removeAllFromArray"in t){r=t.removeAllFromArray.values||[];n=new ci(r.map((function(t){return e.fromValue(t)})))}else if("increment"in t){var i=this.fromValue(t.increment);v(i instanceof Re,"NUMERIC_ADD transform requires a NumberValue"),n=new hi(i)}else g("Unknown transform proto: "+JSON.stringify(t));var o=lt.fromServerFormat(t.fieldPath);return new ge(o,n)},t.prototype.toDocumentsTarget=function(t){return{documents:[this.toQueryPath(t.path)]}},t.prototype.fromDocumentsTarget=function(t){var e=t.documents.length;v(1===e,"DocumentsTarget contained other than 1 document: "+e);var n=t.documents[0];return tr.atPath(this.fromQueryPath(n)).toTarget()},t.prototype.toQueryTarget=function(t){var e={structuredQuery:{}},n=t.path;null!==t.collectionGroup?(v(n.length%2==0,"Collection Group queries should be within a document path or root."),e.parent=this.toQueryPath(n),e.structuredQuery.from=[{collectionId:t.collectionGroup,allDescendants:!0}]):(v(n.length%2!=0,"Document queries with filters are not supported."),e.parent=this.toQueryPath(n.popLast()),e.structuredQuery.from=[{collectionId:n.lastSegment()}]);var r=this.toFilter(t.filters);r&&(e.structuredQuery.where=r);var i=this.toOrder(t.orderBy);i&&(e.structuredQuery.orderBy=i);var o=this.toInt32Value(t.limit);return null!==o&&(e.structuredQuery.limit=o),t.startAt&&(e.structuredQuery.startAt=this.toCursor(t.startAt)),t.endAt&&(e.structuredQuery.endAt=this.toCursor(t.endAt)),e},t.prototype.fromQueryTarget=function(t){var e=this.fromQueryPath(t.parent),n=t.structuredQuery,r=n.from?n.from.length:0,i=null;if(r>0){v(1===r,"StructuredQuery.from with more than one collection is not supported.");var o=n.from[0];o.allDescendants?i=o.collectionId:e=e.child(o.collectionId)}var a=[];n.where&&(a=this.fromFilter(n.where));var s=[];n.orderBy&&(s=this.fromOrder(n.orderBy));var u=null;n.limit&&(u=this.fromInt32Value(n.limit));var c=null;n.startAt&&(c=this.fromCursor(n.startAt));var h=null;return n.endAt&&(h=this.fromCursor(n.endAt)),new tr(e,i,s,a,u,$n.First,c,h).toTarget()},t.prototype.toListenRequestLabels=function(t){var e=this.toLabel(t.purpose);return null==e?null:{"goog-listen-tags":e}},t.prototype.toLabel=function(t){switch(t){case wn.Listen:return null;case wn.ExistenceFilterMismatch:return"existence-filter-mismatch";case wn.LimboResolution:return"limbo-document";default:return g("Unrecognized query purpose: "+t)}},t.prototype.toTarget=function(t){var e,n=t.target;return(e=n.isDocumentQuery()?{documents:this.toDocumentsTarget(n)}:{query:this.toQueryTarget(n)}).targetId=t.targetId,t.resumeToken.length>0&&(e.resumeToken=this.unsafeCastProtoByteString(t.resumeToken)),e},t.prototype.toFilter=function(t){var e=this;if(0!==t.length){var n=t.map((function(t){return t instanceof rr?e.toUnaryOrFieldFilter(t):g("Unrecognized filter: "+JSON.stringify(t))}));return 1===n.length?n[0]:{compositeFilter:{op:"AND",filters:n}}}},t.prototype.fromFilter=function(t){var e=this;return t?void 0!==t.unaryFilter?[this.fromUnaryFilter(t)]:void 0!==t.fieldFilter?[this.fromFieldFilter(t)]:void 0!==t.compositeFilter?t.compositeFilter.filters.map((function(t){return e.fromFilter(t)})).reduce((function(t,e){return t.concat(e)})):g("Unknown filter: "+JSON.stringify(t)):[]},t.prototype.toOrder=function(t){var e=this;if(0!==t.length)return t.map((function(t){return e.toPropertyOrder(t)}))},t.prototype.fromOrder=function(t){var e=this;return t.map((function(t){return e.fromPropertyOrder(t)}))},t.prototype.toCursor=function(t){var e=this;return{before:t.before,values:t.position.map((function(t){return e.toValue(t)}))}},t.prototype.fromCursor=function(t){var e=this,n=!!t.before,r=t.values.map((function(t){return e.fromValue(t)}));return new hr(r,n)},t.prototype.toDirection=function(t){return mi[t.name]},t.prototype.fromDirection=function(t){switch(t){case"ASCENDING":return cr.ASCENDING;case"DESCENDING":return cr.DESCENDING;default:return}},t.prototype.toOperatorName=function(t){return yi[t.name]},t.prototype.fromOperatorName=function(t){switch(t){case"EQUAL":return nr.EQUAL;case"GREATER_THAN":return nr.GREATER_THAN;case"GREATER_THAN_OR_EQUAL":return nr.GREATER_THAN_OR_EQUAL;case"LESS_THAN":return nr.LESS_THAN;case"LESS_THAN_OR_EQUAL":return nr.LESS_THAN_OR_EQUAL;case"ARRAY_CONTAINS":return nr.ARRAY_CONTAINS;case"IN":return nr.IN;case"ARRAY_CONTAINS_ANY":return nr.ARRAY_CONTAINS_ANY;case"OPERATOR_UNSPECIFIED":return g("Unspecified operator");default:return g("Unknown operator")}},t.prototype.toFieldPathReference=function(t){return{fieldPath:t.canonicalString()}},t.prototype.fromFieldPathReference=function(t){return lt.fromServerFormat(t.fieldPath)},t.prototype.toPropertyOrder=function(t){return{field:this.toFieldPathReference(t.field),direction:this.toDirection(t.dir)}},t.prototype.fromPropertyOrder=function(t){return new lr(this.fromFieldPathReference(t.field),this.fromDirection(t.direction))},t.prototype.fromFieldFilter=function(t){return rr.create(this.fromFieldPathReference(t.fieldFilter.field),this.fromOperatorName(t.fieldFilter.op),this.fromValue(t.fieldFilter.value))},t.prototype.toUnaryOrFieldFilter=function(t){if(t.op===nr.EQUAL){if(t.value.isEqual(Le.NAN))return{unaryFilter:{field:this.toFieldPathReference(t.field),op:"IS_NAN"}};if(t.value.isEqual(Ne.INSTANCE))return{unaryFilter:{field:this.toFieldPathReference(t.field),op:"IS_NULL"}}}return{fieldFilter:{field:this.toFieldPathReference(t.field),op:this.toOperatorName(t.op),value:this.toValue(t.value)}}},t.prototype.fromUnaryFilter=function(t){switch(t.unaryFilter.op){case"IS_NAN":var e=this.fromFieldPathReference(t.unaryFilter.field);return rr.create(e,nr.EQUAL,Le.NAN);case"IS_NULL":var n=this.fromFieldPathReference(t.unaryFilter.field);return rr.create(n,nr.EQUAL,Ne.INSTANCE);case"OPERATOR_UNSPECIFIED":return g("Unspecified filter");default:return g("Unknown filter")}},t.prototype.toDocumentMask=function(t){var e=[];return t.fields.forEach((function(t){return e.push(t.canonicalString())})),{fieldPaths:e}},t.prototype.fromDocumentMask=function(t){var e=(t.fieldPaths||[]).map((function(t){return lt.fromServerFormat(t)}));return ye.fromArray(e)},t}(),Ti=function(){this.viewSnap=null,this.targetId=0,this.listeners=[]},Ei=function(){function t(t){this.syncEngine=t,this.queries=new ze((function(t){return t.canonicalId()})),this.onlineState=Rr.Unknown,this.snapshotsInSyncListeners=new Set,this.syncEngine.subscribe(this)}return t.prototype.listen=function(t){var e=t.query,n=!1,r=this.queries.get(e);(r||(n=!0,r=new Ti,this.queries.set(e,r)),r.listeners.push(t),v(!t.applyOnlineStateChange(this.onlineState),"applyOnlineStateChange() shouldn't raise an event for brand-new listeners."),r.viewSnap)&&(t.onViewSnapshot(r.viewSnap)&&this.raiseSnapshotsInSyncEvent());return n?this.syncEngine.listen(e).then((function(t){return r.targetId=t,t})):Promise.resolve(r.targetId)},t.prototype.unlisten=function(t){return a.__awaiter(this,void 0,void 0,(function(){var e,n,r,i;return a.__generator(this,(function(o){return e=t.query,n=!1,(r=this.queries.get(e))&&(i=r.listeners.indexOf(t))>=0&&(r.listeners.splice(i,1),n=0===r.listeners.length),n?(this.queries.delete(e),[2,this.syncEngine.unlisten(e)]):[2]}))}))},t.prototype.onWatchChange=function(t){for(var e=!1,n=0,r=t;n<r.length;n++){var i=r[n],o=i.query,a=this.queries.get(o);if(a){for(var s=0,u=a.listeners;s<u.length;s++){u[s].onViewSnapshot(i)&&(e=!0)}a.viewSnap=i}}e&&this.raiseSnapshotsInSyncEvent()},t.prototype.onWatchError=function(t,e){var n=this.queries.get(t);if(n)for(var r=0,i=n.listeners;r<i.length;r++){i[r].onError(e)}this.queries.delete(t)},t.prototype.onOnlineStateChange=function(t){this.onlineState=t;var e=!1;this.queries.forEach((function(n,r){for(var i=0,o=r.listeners;i<o.length;i++){o[i].applyOnlineStateChange(t)&&(e=!0)}})),e&&this.raiseSnapshotsInSyncEvent()},t.prototype.addSnapshotsInSyncListener=function(t){this.snapshotsInSyncListeners.add(t),t.next()},t.prototype.removeSnapshotsInSyncListener=function(t){this.snapshotsInSyncListeners.delete(t)},t.prototype.raiseSnapshotsInSyncEvent=function(){this.snapshotsInSyncListeners.forEach((function(t){t.next()}))},t}(),Si=function(){function t(t,e,n){this.query=t,this.queryObserver=e,this.raisedInitialEvent=!1,this.snap=null,this.onlineState=Rr.Unknown,this.options=n||{}}return t.prototype.onViewSnapshot=function(t){if(v(t.docChanges.length>0||t.syncStateChanged,"We got a new snapshot with no changes?"),!this.options.includeMetadataChanges){for(var e=[],n=0,r=t.docChanges;n<r.length;n++){var i=r[n];i.type!==Kr.Metadata&&e.push(i)}t=new Hr(t.query,t.docs,t.oldDocs,e,t.mutatedKeys,t.fromCache,t.syncStateChanged,!0)}var o=!1;return this.raisedInitialEvent?this.shouldRaiseEvent(t)&&(this.queryObserver.next(t),o=!0):this.shouldRaiseInitialEvent(t,this.onlineState)&&(this.raiseInitialEvent(t),o=!0),this.snap=t,o},t.prototype.onError=function(t){this.queryObserver.error(t)},t.prototype.applyOnlineStateChange=function(t){this.onlineState=t;var e=!1;return this.snap&&!this.raisedInitialEvent&&this.shouldRaiseInitialEvent(this.snap,t)&&(this.raiseInitialEvent(this.snap),e=!0),e},t.prototype.shouldRaiseInitialEvent=function(t,e){if(v(!this.raisedInitialEvent,"Determining whether to raise first event but already had first event"),!t.fromCache)return!0;var n=e!==Rr.Offline;return this.options.waitForSyncWhenOnline&&n?(v(t.fromCache,"Waiting for sync, but snapshot is not from cache"),!1):!t.docs.isEmpty()||e===Rr.Offline},t.prototype.shouldRaiseEvent=function(t){if(t.docChanges.length>0)return!0;var e=this.snap&&this.snap.hasPendingWrites!==t.hasPendingWrites;return!(!t.syncStateChanged&&!e)&&!0===this.options.includeMetadataChanges},t.prototype.raiseInitialEvent=function(t){v(!this.raisedInitialEvent,"Trying to raise initial events for second time"),t=Hr.fromInitialDocuments(t.query,t.docs,t.mutatedKeys,t.fromCache),this.raisedInitialEvent=!0,this.queryObserver.next(t)},t}(),Ii=function(){function t(t,e,n,r){this.targetId=t,this.fromCache=e,this.addedKeys=n,this.removedKeys=r}return t.fromSnapshot=function(e,n){for(var r=Bt(),i=Bt(),o=0,a=n.docChanges;o<a.length;o++){var s=a[o];switch(s.type){case Kr.Added:r=r.add(s.doc.key);break;case Kr.Removed:i=i.add(s.doc.key)}}return new t(e,n.fromCache,r,i)},t}(),_i=function(t){this.key=t},Ci=function(t){this.key=t},Di=function(){function t(t,e){this.query=t,this._syncedDocuments=e,this.syncState=null,this.current=!1,this.limboDocuments=Bt(),this.mutatedKeys=Bt(),this.documentSet=new Qr(t.docComparator.bind(t))}return Object.defineProperty(t.prototype,"syncedDocuments",{get:function(){return this._syncedDocuments},enumerable:!0,configurable:!0}),t.prototype.computeDocChanges=function(t,e){var n=this,r=e?e.changeSet:new zr,i=e?e.documentSet:this.documentSet,o=e?e.mutatedKeys:this.mutatedKeys,a=i,s=!1,u=this.query.hasLimitToFirst()&&i.size===this.query.limit?i.last():null,c=this.query.hasLimitToLast()&&i.size===this.query.limit?i.first():null;if(t.inorderTraversal((function(t,e){var h=i.get(t),l=e instanceof We?e:null;l&&(v(t.isEqual(l.key),"Mismatching keys found in document changes: "+t+" != "+l.key),l=n.query.matches(l)?l:null);var f=!!h&&n.mutatedKeys.has(h.key),d=!!l&&(l.hasLocalMutations||n.mutatedKeys.has(l.key)&&l.hasCommittedMutations),p=!1;h&&l?h.data().isEqual(l.data())?f!==d&&(r.track({type:Kr.Metadata,doc:l}),p=!0):n.shouldWaitForSyncedDocument(h,l)||(r.track({type:Kr.Modified,doc:l}),p=!0,(u&&n.query.docComparator(l,u)>0||c&&n.query.docComparator(l,c)<0)&&(s=!0)):!h&&l?(r.track({type:Kr.Added,doc:l}),p=!0):h&&!l&&(r.track({type:Kr.Removed,doc:h}),p=!0,(u||c)&&(s=!0));p&&(l?(a=a.add(l),o=d?o.add(t):o.delete(t)):(a=a.delete(t),o=o.delete(t)))})),this.query.hasLimitToFirst()||this.query.hasLimitToLast())for(;a.size>this.query.limit;){var h=this.query.hasLimitToFirst()?a.last():a.first();a=a.delete(h.key),o=o.delete(h.key),r.track({type:Kr.Removed,doc:h})}return v(!s||!e,"View was refilled using docs that themselves needed refilling."),{documentSet:a,changeSet:r,needsRefill:s,mutatedKeys:o}},t.prototype.shouldWaitForSyncedDocument=function(t,e){return t.hasLocalMutations&&e.hasCommittedMutations&&!e.hasLocalMutations},t.prototype.applyChanges=function(t,e,n){var r=this;v(!t.needsRefill,"Cannot apply changes that need a refill");var i=this.documentSet;this.documentSet=t.documentSet,this.mutatedKeys=t.mutatedKeys;var o=t.changeSet.getChanges();o.sort((function(t,e){return function(t,e){var n=function(t){switch(t){case Kr.Added:return 1;case Kr.Modified:case Kr.Metadata:return 2;case Kr.Removed:return 0;default:return g("Unknown ChangeType: "+t)}};return n(t)-n(e)}
+/**
+ * @license
+ * Copyright 2019 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */(t.type,e.type)||r.query.docComparator(t.doc,e.doc)})),this.applyTargetChange(n);var a=e?this.updateLimboDocuments():[],s=0===this.limboDocuments.size&&this.current?Wr.Synced:Wr.Local,u=s!==this.syncState;return this.syncState=s,0!==o.length||u?{snapshot:new Hr(this.query,t.documentSet,i,o,t.mutatedKeys,s===Wr.Local,u,!1),limboChanges:a}:{limboChanges:a}},t.prototype.applyOnlineStateChange=function(t){return this.current&&t===Rr.Offline?(this.current=!1,this.applyChanges({documentSet:this.documentSet,changeSet:new zr,mutatedKeys:this.mutatedKeys,needsRefill:!1},!1)):{limboChanges:[]}},t.prototype.shouldBeInLimbo=function(t){return!this._syncedDocuments.has(t)&&(!!this.documentSet.has(t)&&!this.documentSet.get(t).hasLocalMutations)},t.prototype.applyTargetChange=function(t){var e=this;t&&(t.addedDocuments.forEach((function(t){return e._syncedDocuments=e._syncedDocuments.add(t)})),t.modifiedDocuments.forEach((function(t){return v(e._syncedDocuments.has(t),"Modified document "+t+" not found in view.")})),t.removedDocuments.forEach((function(t){return e._syncedDocuments=e._syncedDocuments.delete(t)})),this.current=t.current)},t.prototype.updateLimboDocuments=function(){var t=this;if(!this.current)return[];var e=this.limboDocuments;this.limboDocuments=Bt(),this.documentSet.forEach((function(e){t.shouldBeInLimbo(e.key)&&(t.limboDocuments=t.limboDocuments.add(e.key))}));var n=[];return e.forEach((function(e){t.limboDocuments.has(e)||n.push(new Ci(e))})),this.limboDocuments.forEach((function(t){e.has(t)||n.push(new _i(t))})),n},t.prototype.synchronizeWithPersistedState=function(t){this._syncedDocuments=t.remoteKeys,this.limboDocuments=Bt();var e=this.computeDocChanges(t.documents);return this.applyChanges(e,!0)},t.prototype.computeInitialSnapshot=function(){return Hr.fromInitialDocuments(this.query,this.documentSet,this.mutatedKeys,this.syncState===Wr.Local)},t}();
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */var Ai=5,Ni=function(){function t(t,e,n,r){this.asyncQueue=t,this.remoteStore=e,this.updateFunction=n,this.deferred=r,this.retries=Ai,this.backoff=new kr(this.asyncQueue,et.RetryTransaction)}return t.prototype.run=function(){this.runWithBackOff()},t.prototype.runWithBackOff=function(){var t=this;this.backoff.backoffAndRun((function(){return a.__awaiter(t,void 0,void 0,(function(){var t,e,n=this;return a.__generator(this,(function(r){return t=this.remoteStore.createTransaction(),(e=this.tryRunUpdateFunction(t))&&e.then((function(e){n.asyncQueue.enqueueAndForget((function(){return t.commit().then((function(){n.deferred.resolve(e)})).catch((function(t){n.handleTransactionError(t)}))}))})).catch((function(t){n.handleTransactionError(t)})),[2]}))}))}))},t.prototype.tryRunUpdateFunction=function(t){try{var e=this.updateFunction(t);return!Xn(e)&&e.catch&&e.then?e:(this.deferred.reject(Error("Transaction callback must return a Promise")),null)}catch(t){return this.deferred.reject(t),null}},t.prototype.handleTransactionError=function(t){var e=this;this.retries>0&&this.isRetryableTransactionError(t)?(this.retries-=1,this.asyncQueue.enqueueAndForget((function(){return e.runWithBackOff(),Promise.resolve()}))):this.deferred.reject(t)},t.prototype.isRetryableTransactionError=function(t){if("FirebaseError"===t.name){var e=t.code;return"aborted"===e||"failed-precondition"===e||!Br(e)}return!1},t}(),ki=function(t,e,n){this.query=t,this.targetId=e,this.view=n},Ri=function(t){this.key=t,this.receivedDocument=!1},Oi=function(){function t(t,e,n,r){this.localStore=t,this.remoteStore=e,this.sharedClientState=n,this.currentUser=r,this.syncEngineListener=null,this.queryViewsByQuery=new ze((function(t){return t.canonicalId()})),this.queriesByTarget={},this.limboTargetsByKey=new Ct(ft.comparator),this.limboResolutionsByTarget={},this.limboDocumentRefs=new yr,this.mutationUserCallbacks={},this.pendingWritesCallbacks=new Map,this.limboTargetIdGenerator=ce.forSyncEngine(),this.isPrimary=void 0,this.onlineState=Rr.Unknown}return Object.defineProperty(t.prototype,"isPrimaryClient",{get:function(){return!0===this.isPrimary},enumerable:!0,configurable:!0}),t.prototype.subscribe=function(t){v(null!==t,"SyncEngine listener cannot be null"),v(null===this.syncEngineListener,"SyncEngine already has a subscriber."),this.syncEngineListener=t},t.prototype.listen=function(t){return a.__awaiter(this,void 0,void 0,(function(){var e,n,r,i,o;return a.__generator(this,(function(a){switch(a.label){case 0:return this.assertSubscribed("listen()"),(r=this.queryViewsByQuery.get(t))?(e=r.targetId,this.sharedClientState.addLocalQueryTarget(e),n=r.view.computeInitialSnapshot(),[3,4]):[3,1];case 1:return[4,this.localStore.allocateTarget(t.toTarget())];case 2:return i=a.sent(),o=this.sharedClientState.addLocalQueryTarget(i.targetId),e=i.targetId,[4,this.initializeViewAndComputeSnapshot(t,e,"current"===o)];case 3:n=a.sent(),this.isPrimary&&this.remoteStore.listen(i),a.label=4;case 4:return this.syncEngineListener.onWatchChange([n]),[2,e]}}))}))},t.prototype.initializeViewAndComputeSnapshot=function(t,e,n){return a.__awaiter(this,void 0,void 0,(function(){var r,i,o,s,u,c;return a.__generator(this,(function(a){switch(a.label){case 0:return[4,this.localStore.executeQuery(t,!0)];case 1:return r=a.sent(),i=new Di(t,r.remoteKeys),o=i.computeDocChanges(r.documents),s=Xr.createSynthesizedTargetChangeForCurrentChange(e,n&&this.onlineState!==Rr.Offline),v(0===(u=i.applyChanges(o,!0===this.isPrimary,s)).limboChanges.length,"View returned limbo docs before target ack from the server."),v(!!u.snapshot,"applyChanges for new view should always return a snapshot"),c=new ki(t,e,i),this.queryViewsByQuery.set(t,c),this.queriesByTarget[e]||(this.queriesByTarget[e]=[]),this.queriesByTarget[e].push(t),[2,u.snapshot]}}))}))},t.prototype.synchronizeViewAndComputeSnapshot=function(t){return a.__awaiter(this,void 0,void 0,(function(){var e,n;return a.__generator(this,(function(r){switch(r.label){case 0:return[4,this.localStore.executeQuery(t.query,!0)];case 1:return e=r.sent(),n=t.view.synchronizeWithPersistedState(e),this.isPrimary&&this.updateTrackedLimbos(t.targetId,n.limboChanges),[2,n]}}))}))},t.prototype.unlisten=function(t){return a.__awaiter(this,void 0,void 0,(function(){var e,n,r=this;return a.__generator(this,(function(i){switch(i.label){case 0:return this.assertSubscribed("unlisten()"),v(!!(e=this.queryViewsByQuery.get(t)),"Trying to unlisten on query not found:"+t),(n=this.queriesByTarget[e.targetId]).length>1?(this.queriesByTarget[e.targetId]=n.filter((function(e){return!e.isEqual(t)})),this.queryViewsByQuery.delete(t),[2]):this.isPrimary?(this.sharedClientState.removeLocalQueryTarget(e.targetId),this.sharedClientState.isActiveQueryTarget(e.targetId)?[3,2]:[4,this.localStore.releaseTarget(e.targetId,!1).then((function(){r.sharedClientState.clearQueryState(e.targetId),r.remoteStore.unlisten(e.targetId),r.removeAndCleanupTarget(e.targetId)})).catch(Un)]):[3,3];case 1:i.sent(),i.label=2;case 2:return[3,5];case 3:return this.removeAndCleanupTarget(e.targetId),[4,this.localStore.releaseTarget(e.targetId,!0)];case 4:i.sent(),i.label=5;case 5:return[2]}}))}))},t.prototype.write=function(t,e){return a.__awaiter(this,void 0,void 0,(function(){var n;return a.__generator(this,(function(r){switch(r.label){case 0:return this.assertSubscribed("write()"),[4,this.localStore.localWrite(t)];case 1:return n=r.sent(),this.sharedClientState.addPendingMutation(n.batchId),this.addMutationCallback(n.batchId,e),[4,this.emitNewSnapsAndNotifyLocalStore(n.changes)];case 2:return r.sent(),[4,this.remoteStore.fillWritePipeline()];case 3:return r.sent(),[2]}}))}))},t.prototype.runTransaction=function(t,e,n){new Ni(t,this.remoteStore,e,n).run()},t.prototype.applyRemoteEvent=function(t){return a.__awaiter(this,void 0,void 0,(function(){var e,n=this;return a.__generator(this,(function(r){switch(r.label){case 0:this.assertSubscribed("applyRemoteEvent()"),r.label=1;case 1:return r.trys.push([1,4,,6]),[4,this.localStore.applyRemoteEvent(t)];case 2:return e=r.sent(),D(t.targetChanges,(function(t,e){var r=n.limboResolutionsByTarget[Number(t)];r&&(v(e.addedDocuments.size+e.modifiedDocuments.size+e.removedDocuments.size<=1,"Limbo resolution for single document contains multiple changes."),e.addedDocuments.size>0?r.receivedDocument=!0:e.modifiedDocuments.size>0?v(r.receivedDocument,"Received change for limbo target document without add."):e.removedDocuments.size>0&&(v(r.receivedDocument,"Received remove for limbo target document without add."),r.receivedDocument=!1))})),[4,this.emitNewSnapsAndNotifyLocalStore(e,t)];case 3:return r.sent(),[3,6];case 4:return[4,Un(r.sent())];case 5:return r.sent(),[3,6];case 6:return[2]}}))}))},t.prototype.applyOnlineStateChange=function(t,e){if(this.isPrimary&&e===Or.RemoteStore||!this.isPrimary&&e===Or.SharedClientState){this.assertSubscribed("applyOnlineStateChange()");var n=[];this.queryViewsByQuery.forEach((function(e,r){var i=r.view.applyOnlineStateChange(t);v(0===i.limboChanges.length,"OnlineState should not affect limbo documents."),i.snapshot&&n.push(i.snapshot)})),this.syncEngineListener.onOnlineStateChange(t),this.syncEngineListener.onWatchChange(n),this.onlineState=t,this.isPrimary&&this.sharedClientState.setOnlineState(t)}},t.prototype.rejectListen=function(t,e){return a.__awaiter(this,void 0,void 0,(function(){var n,r,i,o,s,u=this;return a.__generator(this,(function(a){switch(a.label){case 0:return this.assertSubscribed("rejectListens()"),this.sharedClientState.updateQueryState(t,"rejected",e),n=this.limboResolutionsByTarget[t],(r=n&&n.key)?(this.limboTargetsByKey=this.limboTargetsByKey.remove(r),delete this.limboResolutionsByTarget[t],i=(i=new Ct(ft.comparator)).insert(r,new Qe(r,_t.forDeletedDoc())),o=Bt().add(r),s=new Yr(_t.MIN,{},new kt(X),i,o),[2,this.applyRemoteEvent(s)]):[3,1];case 1:return[4,this.localStore.releaseTarget(t,!1).then((function(){return u.removeAndCleanupTarget(t,e)})).catch(Un)];case 2:a.sent(),a.label=3;case 3:return[2]}}))}))},t.prototype.applyBatchState=function(t,e,n){return a.__awaiter(this,void 0,void 0,(function(){var r;return a.__generator(this,(function(i){switch(i.label){case 0:return this.assertSubscribed("applyBatchState()"),[4,this.localStore.lookupMutationDocuments(t)];case 1:return null===(r=i.sent())?(p("SyncEngine","Cannot apply mutation batch with id: "+t),[2]):"pending"!==e?[3,3]:[4,this.remoteStore.fillWritePipeline()];case 2:return i.sent(),[3,4];case 3:"acknowledged"===e||"rejected"===e?(this.processUserCallback(t,n||null),this.localStore.removeCachedMutationBatchMetadata(t)):g("Unknown batchState: "+e),i.label=4;case 4:return[4,this.emitNewSnapsAndNotifyLocalStore(r)];case 5:return i.sent(),[2]}}))}))},t.prototype.applySuccessfulWrite=function(t){return a.__awaiter(this,void 0,void 0,(function(){var e,n;return a.__generator(this,(function(r){switch(r.label){case 0:this.assertSubscribed("applySuccessfulWrite()"),e=t.batch.batchId,this.processUserCallback(e,null),this.triggerPendingWritesCallbacks(e),r.label=1;case 1:return r.trys.push([1,4,,6]),[4,this.localStore.acknowledgeBatch(t)];case 2:return n=r.sent(),this.sharedClientState.updateMutationState(e,"acknowledged"),[4,this.emitNewSnapsAndNotifyLocalStore(n)];case 3:return r.sent(),[3,6];case 4:return[4,Un(r.sent())];case 5:return r.sent(),[3,6];case 6:return[2]}}))}))},t.prototype.rejectFailedWrite=function(t,e){return a.__awaiter(this,void 0,void 0,(function(){var n;return a.__generator(this,(function(r){switch(r.label){case 0:this.assertSubscribed("rejectFailedWrite()"),this.processUserCallback(t,e),this.triggerPendingWritesCallbacks(t),r.label=1;case 1:return r.trys.push([1,4,,6]),[4,this.localStore.rejectBatch(t)];case 2:return n=r.sent(),this.sharedClientState.updateMutationState(t,"rejected",e),[4,this.emitNewSnapsAndNotifyLocalStore(n)];case 3:return r.sent(),[3,6];case 4:return[4,Un(r.sent())];case 5:return r.sent(),[3,6];case 6:return[2]}}))}))},t.prototype.registerPendingWritesCallback=function(t){return a.__awaiter(this,void 0,void 0,(function(){var e,n;return a.__generator(this,(function(r){switch(r.label){case 0:return this.remoteStore.canUseNetwork()||p("SyncEngine","The network is disabled. The task returned by 'awaitPendingWrites()' will not complete until the network is enabled."),[4,this.localStore.getHighestUnacknowledgedBatchId()];case 1:return-1===(e=r.sent())?(t.resolve(),[2]):((n=this.pendingWritesCallbacks.get(e)||[]).push(t),this.pendingWritesCallbacks.set(e,n),[2])}}))}))},t.prototype.triggerPendingWritesCallbacks=function(t){(this.pendingWritesCallbacks.get(t)||[]).forEach((function(t){t.resolve()})),this.pendingWritesCallbacks.delete(t)},t.prototype.rejectOutstandingPendingWritesCallbacks=function(t){this.pendingWritesCallbacks.forEach((function(e){e.forEach((function(e){e.reject(new E(T.CANCELLED,t))}))})),this.pendingWritesCallbacks.clear()},t.prototype.addMutationCallback=function(t,e){var n=this.mutationUserCallbacks[this.currentUser.toKey()];n||(n=new Ct(X)),n=n.insert(t,e),this.mutationUserCallbacks[this.currentUser.toKey()]=n},t.prototype.processUserCallback=function(t,e){var n=this.mutationUserCallbacks[this.currentUser.toKey()];if(n){var r=n.get(t);r&&(v(t===n.minKey(),"Mutation callbacks processed out-of-order?"),e?r.reject(e):r.resolve(),n=n.remove(t)),this.mutationUserCallbacks[this.currentUser.toKey()]=n}},t.prototype.removeAndCleanupTarget=function(t,e){var n=this;void 0===e&&(e=null),this.sharedClientState.removeLocalQueryTarget(t),v(this.queriesByTarget[t]&&0!==this.queriesByTarget[t].length,"There are no queries mapped to target id "+t);for(var r=0,i=this.queriesByTarget[t];r<i.length;r++){var o=i[r];this.queryViewsByQuery.delete(o),e&&this.syncEngineListener.onWatchError(o,e)}if(delete this.queriesByTarget[t],this.isPrimary){var a=this.limboDocumentRefs.referencesForId(t);this.limboDocumentRefs.removeReferencesForId(t),a.forEach((function(t){n.limboDocumentRefs.containsKey(t)||n.removeLimboTarget(t)}))}},t.prototype.removeLimboTarget=function(t){var e=this.limboTargetsByKey.get(t);null!==e&&(this.remoteStore.unlisten(e),this.limboTargetsByKey=this.limboTargetsByKey.remove(t),delete this.limboResolutionsByTarget[e])},t.prototype.updateTrackedLimbos=function(t,e){for(var n=0,r=e;n<r.length;n++){var i=r[n];if(i instanceof _i)this.limboDocumentRefs.addReference(i.key,t),this.trackLimboChange(i);else if(i instanceof Ci){p("SyncEngine","Document no longer in limbo: "+i.key),this.limboDocumentRefs.removeReference(i.key,t),this.limboDocumentRefs.containsKey(i.key)||this.removeLimboTarget(i.key)}else g("Unknown limbo change: "+JSON.stringify(i))}},t.prototype.trackLimboChange=function(t){var e=t.key;if(!this.limboTargetsByKey.get(e)){p("SyncEngine","New document in limbo: "+e);var n=this.limboTargetIdGenerator.next(),r=tr.atPath(e.path);this.limboResolutionsByTarget[n]=new Ri(e),this.remoteStore.listen(new Dn(r.toTarget(),n,wn.LimboResolution,st.INVALID)),this.limboTargetsByKey=this.limboTargetsByKey.insert(e,n)}},t.prototype.currentLimboDocs=function(){return this.limboTargetsByKey},t.prototype.emitNewSnapsAndNotifyLocalStore=function(t,e){return a.__awaiter(this,void 0,void 0,(function(){var n,r,i,o=this;return a.__generator(this,(function(a){switch(a.label){case 0:return n=[],r=[],i=[],this.queryViewsByQuery.forEach((function(a,s){i.push(Promise.resolve().then((function(){var e=s.view.computeDocChanges(t);return e.needsRefill?o.localStore.executeQuery(s.query,!1).then((function(t){var n=t.documents;return s.view.computeDocChanges(n,e)})):e})).then((function(t){var i=e&&e.targetChanges[s.targetId],a=s.view.applyChanges(t,!0===o.isPrimary,i);if(o.updateTrackedLimbos(s.targetId,a.limboChanges),a.snapshot){o.isPrimary&&o.sharedClientState.updateQueryState(s.targetId,a.snapshot.fromCache?"not-current":"current"),n.push(a.snapshot);var u=Ii.fromSnapshot(s.targetId,a.snapshot);r.push(u)}})))})),[4,Promise.all(i)];case 1:return a.sent(),this.syncEngineListener.onWatchChange(n),[4,this.localStore.notifyLocalViewChanges(r)];case 2:return a.sent(),[2]}}))}))},t.prototype.assertSubscribed=function(t){v(null!==this.syncEngineListener,"Trying to call "+t+" before calling subscribe().")},t.prototype.handleCredentialChange=function(t){return a.__awaiter(this,void 0,void 0,(function(){var e,n;return a.__generator(this,(function(r){switch(r.label){case 0:return e=!this.currentUser.isEqual(t),this.currentUser=t,e?(this.rejectOutstandingPendingWritesCallbacks("'waitForPendingWrites' promise is rejected due to a user change."),[4,this.localStore.handleUserChange(t)]):[3,3];case 1:return n=r.sent(),this.sharedClientState.handleUserChange(t,n.removedBatchIds,n.addedBatchIds),[4,this.emitNewSnapsAndNotifyLocalStore(n.affectedDocuments)];case 2:r.sent(),r.label=3;case 3:return[4,this.remoteStore.handleCredentialChange()];case 4:return r.sent(),[2]}}))}))},t.prototype.applyPrimaryState=function(t){return a.__awaiter(this,void 0,void 0,(function(){var e,n,r,i,o,s,u,c=this;return a.__generator(this,(function(a){switch(a.label){case 0:return!0!==t||!0===this.isPrimary?[3,3]:(this.isPrimary=!0,[4,this.remoteStore.applyPrimaryState(!0)]);case 1:return a.sent(),e=this.sharedClientState.getAllActiveQueryTargets(),[4,this.synchronizeQueryViewsAndRaiseSnapshots(e.toArray())];case 2:for(n=a.sent(),r=0,i=n;r<i.length;r++)o=i[r],this.remoteStore.listen(o);return[3,7];case 3:return!1!==t||!1===this.isPrimary?[3,7]:(this.isPrimary=!1,s=[],u=Promise.resolve(),C(this.queriesByTarget,(function(t,e){c.sharedClientState.isLocalQueryTarget(t)?s.push(t):u=u.then((function(){return c.removeAndCleanupTarget(t),c.localStore.releaseTarget(t,!0)})),c.remoteStore.unlisten(t)})),[4,u]);case 4:return a.sent(),[4,this.synchronizeQueryViewsAndRaiseSnapshots(s)];case 5:return a.sent(),this.resetLimboDocuments(),[4,this.remoteStore.applyPrimaryState(!1)];case 6:a.sent(),a.label=7;case 7:return[2]}}))}))},t.prototype.resetLimboDocuments=function(){var t=this;C(this.limboResolutionsByTarget,(function(e){t.remoteStore.unlisten(e)})),this.limboDocumentRefs.removeAllReferences(),this.limboResolutionsByTarget=[],this.limboTargetsByKey=new Ct(ft.comparator)},t.prototype.synchronizeQueryViewsAndRaiseSnapshots=function(t){return a.__awaiter(this,void 0,void 0,(function(){var e,n,r,i,o,s,u,c,h,l,f,d,p;return a.__generator(this,(function(a){switch(a.label){case 0:e=[],n=[],r=0,i=t,a.label=1;case 1:return r<i.length?(o=i[r],s=void 0,(u=this.queriesByTarget[o])&&0!==u.length?[4,this.localStore.releaseTarget(o,!0)]:[3,8]):[3,14];case 2:return a.sent(),[4,this.localStore.allocateTarget(u[0].toTarget())];case 3:s=a.sent(),c=0,h=u,a.label=4;case 4:return c<h.length?(l=h[c],v(!!(f=this.queryViewsByQuery.get(l)),"No query view found for "+l),[4,this.synchronizeViewAndComputeSnapshot(f)]):[3,7];case 5:(d=a.sent()).snapshot&&n.push(d.snapshot),a.label=6;case 6:return c++,[3,4];case 7:return[3,12];case 8:return v(!0===this.isPrimary,"A secondary tab should never have an active target without an active query."),[4,this.localStore.getTarget(o)];case 9:return v(!!(p=a.sent()),"Target for id "+o+" not found"),[4,this.localStore.allocateTarget(p)];case 10:return s=a.sent(),[4,this.initializeViewAndComputeSnapshot(this.synthesizeTargetToQuery(p),o,!1)];case 11:a.sent(),a.label=12;case 12:e.push(s),a.label=13;case 13:return r++,[3,1];case 14:return this.syncEngineListener.onWatchChange(n),[2,e]}}))}))},t.prototype.synthesizeTargetToQuery=function(t){return new tr(t.path,t.collectionGroup,t.orderBy,t.filters,t.limit,$n.First,t.startAt,t.endAt)},t.prototype.getActiveClients=function(){return this.localStore.getActiveClients()},t.prototype.applyTargetState=function(t,e,n){return a.__awaiter(this,void 0,void 0,(function(){var r,i;return a.__generator(this,(function(o){switch(o.label){case 0:if(this.isPrimary)return p("SyncEngine","Ignoring unexpected query state notification."),[2];if(!this.queriesByTarget[t])return[3,7];switch(e){case"current":case"not-current":return[3,1];case"rejected":return[3,4]}return[3,6];case 1:return[4,this.localStore.getNewDocumentChanges()];case 2:return r=o.sent(),i=Yr.createSynthesizedRemoteEventForCurrentChange(t,"current"===e),[4,this.emitNewSnapsAndNotifyLocalStore(r,i)];case 3:return o.sent(),[3,7];case 4:return[4,this.localStore.releaseTarget(t,!0)];case 5:return o.sent(),this.removeAndCleanupTarget(t,n),[3,7];case 6:g("Unexpected target state: "+e),o.label=7;case 7:return[2]}}))}))},t.prototype.applyActiveTargetsChange=function(t,e){return a.__awaiter(this,void 0,void 0,(function(){var n,r,i,o,s,u,c,h,l,f=this;return a.__generator(this,(function(d){switch(d.label){case 0:if(!this.isPrimary)return[2];n=0,r=t,d.label=1;case 1:return n<r.length?(l=r[n],v(!this.queriesByTarget[l],"Trying to add an already active target"),[4,this.localStore.getTarget(l)]):[3,6];case 2:return v(!!(i=d.sent()),"Query data for active target "+l+" not found"),[4,this.localStore.allocateTarget(i)];case 3:return o=d.sent(),[4,this.initializeViewAndComputeSnapshot(this.synthesizeTargetToQuery(i),o.targetId,!1)];case 4:d.sent(),this.remoteStore.listen(o),d.label=5;case 5:return n++,[3,1];case 6:s=function(t){return a.__generator(this,(function(e){switch(e.label){case 0:return u.queriesByTarget[t]?[4,u.localStore.releaseTarget(t,!1).then((function(){f.remoteStore.unlisten(t),f.removeAndCleanupTarget(t)})).catch(Un)]:[2,"continue"];case 1:return e.sent(),[2]}}))},u=this,c=0,h=e,d.label=7;case 7:return c<h.length?(l=h[c],[5,s(l)]):[3,10];case 8:d.sent(),d.label=9;case 9:return c++,[3,7];case 10:return[2]}}))}))},t.prototype.enableNetwork=function(){return this.localStore.setNetworkEnabled(!0),this.remoteStore.enableNetwork()},t.prototype.disableNetwork=function(){return this.localStore.setNetworkEnabled(!1),this.remoteStore.disableNetwork()},t.prototype.getRemoteKeysForTarget=function(t){var e=this.limboResolutionsByTarget[t];if(e&&e.receivedDocument)return Bt().add(e.key);var n=Bt(),r=this.queriesByTarget[t];if(!r)return n;for(var i=0,o=r;i<o.length;i++){var a=o[i],s=this.queryViewsByQuery.get(a);v(!!s,"No query view found for "+a),n=n.unionWith(s.view.syncedDocuments)}return n},t}(),Mi=function(){function t(t){this.uid=t}return t.prototype.isAuthenticated=function(){return null!=this.uid},t.prototype.toKey=function(){return this.isAuthenticated()?"uid:"+this.uid:"anonymous-user"},t.prototype.isEqual=function(t){return t.uid===this.uid},t.UNAUTHENTICATED=new t(null),t.GOOGLE_CREDENTIALS=new t("google-credentials-uid"),t.FIRST_PARTY=new t("first-party-uid"),t}(),Li="SharedClientState",Pi="firestore_clients",xi="firestore_mutations",Fi="firestore_targets",qi="firestore_online_state",Vi="firestore_sequence_number",Bi=function(){function t(t,e,n,r){this.user=t,this.batchId=e,this.state=n,this.error=r,v(void 0!==r==("rejected"===n),"MutationMetadata must contain an error iff state is 'rejected'")}return t.fromWebStorageEntry=function(e,n,r){var i=JSON.parse(r),o="object"==typeof i&&-1!==["pending","acknowledged","rejected"].indexOf(i.state)&&(void 0===i.error||"object"==typeof i.error),a=void 0;return o&&i.error&&(o="string"==typeof i.error.message&&"string"==typeof i.error.code)&&(a=new E(i.error.code,i.error.message)),o?new t(e,n,i.state,a):(m(Li,"Failed to parse mutation state for ID '"+n+"': "+r),null)},t.prototype.toWebStorageJSON=function(){var t={state:this.state,updateTimeMs:Date.now()};return this.error&&(t.error={code:this.error.code,message:this.error.message}),JSON.stringify(t)},t}(),Ui=function(){function t(t,e,n){this.targetId=t,this.state=e,this.error=n,v(void 0!==n==("rejected"===e),"QueryTargetMetadata must contain an error iff state is 'rejected'")}return t.fromWebStorageEntry=function(e,n){var r=JSON.parse(n),i="object"==typeof r&&-1!==["not-current","current","rejected"].indexOf(r.state)&&(void 0===r.error||"object"==typeof r.error),o=void 0;return i&&r.error&&(i="string"==typeof r.error.message&&"string"==typeof r.error.code)&&(o=new E(r.error.code,r.error.message)),i?new t(e,r.state,o):(m(Li,"Failed to parse target state for ID '"+e+"': "+n),null)},t.prototype.toWebStorageJSON=function(){var t={state:this.state,updateTimeMs:Date.now()};return this.error&&(t.error={code:this.error.code,message:this.error.message}),JSON.stringify(t)},t}(),ji=function(){function t(t,e){this.clientId=t,this.activeTargetIds=e}return t.fromWebStorageEntry=function(e,n){for(var r=JSON.parse(n),i="object"==typeof r&&r.activeTargetIds instanceof Array,o=jt(),a=0;i&&a<r.activeTargetIds.length;++a)i=Jn(r.activeTargetIds[a]),o=o.add(r.activeTargetIds[a]);return i?new t(e,o):(m(Li,"Failed to parse client data for instance '"+e+"': "+n),null)},t}(),Ki=function(){function t(t,e){this.clientId=t,this.onlineState=e}return t.fromWebStorageEntry=function(e){var n=JSON.parse(e);return"object"==typeof n&&n.onlineState in Rr&&"string"==typeof n.clientId?new t(n.clientId,Rr[n.onlineState]):(m(Li,"Failed to parse online state: "+e),null)},t}(),Wi=function(){function t(){this.activeTargetIds=jt()}return t.prototype.addQueryTarget=function(t){this.activeTargetIds=this.activeTargetIds.add(t)},t.prototype.removeQueryTarget=function(t){this.activeTargetIds=this.activeTargetIds.delete(t)},t.prototype.toWebStorageJSON=function(){var t={activeTargetIds:this.activeTargetIds.toArray(),updateTimeMs:Date.now()};return JSON.stringify(t)},t}(),Qi=function(){function t(e,n,r,i,o){if(this.queue=e,this.platform=n,this.persistenceKey=r,this.localClientId=i,this.syncEngine=null,this.onlineStateHandler=null,this.sequenceNumberHandler=null,this.activeClients={},this.storageListener=this.handleWebStorageEvent.bind(this),this.started=!1,this.earlyEvents=[],!t.isAvailable(this.platform))throw new E(T.UNIMPLEMENTED,"LocalStorage is not available on this platform.");var a=r.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");this.storage=this.platform.window.localStorage,this.currentUser=o,this.localClientStorageKey=this.toWebStorageClientStateKey(this.localClientId),this.sequenceNumberKey=Vi+"_"+r,this.activeClients[this.localClientId]=new Wi,this.clientStateKeyRe=new RegExp("^"+Pi+"_"+a+"_([^_]*)$"),this.mutationBatchKeyRe=new RegExp("^"+xi+"_"+a+"_(\\d+)(?:_(.*))?$"),this.queryTargetKeyRe=new RegExp("^"+Fi+"_"+a+"_(\\d+)$"),this.onlineStateKey=qi+"_"+r,this.platform.window.addEventListener("storage",this.storageListener)}return t.isAvailable=function(t){return!(!t.window||null==t.window.localStorage)},t.prototype.start=function(){return a.__awaiter(this,void 0,void 0,(function(){var t,e,n,r,i,o,s,u,c,h,l,f=this;return a.__generator(this,(function(a){switch(a.label){case 0:return v(!this.started,"WebStorageSharedClientState already started"),v(null!==this.syncEngine,"syncEngine property must be set before calling start()"),v(null!==this.onlineStateHandler,"onlineStateHandler property must be set before calling start()"),[4,this.syncEngine.getActiveClients()];case 1:for(t=a.sent(),e=0,n=t;e<n.length;e++)(r=n[e])!==this.localClientId&&(i=this.getItem(this.toWebStorageClientStateKey(r)))&&(o=ji.fromWebStorageEntry(r,i))&&(this.activeClients[o.clientId]=o);for(this.persistClientState(),(s=this.storage.getItem(this.onlineStateKey))&&(u=this.fromWebStorageOnlineState(s))&&this.handleOnlineStateEvent(u),c=0,h=this.earlyEvents;c<h.length;c++)l=h[c],this.handleWebStorageEvent(l);return this.earlyEvents=[],this.platform.window.addEventListener("unload",(function(){return f.shutdown()})),this.started=!0,[2]}}))}))},t.prototype.writeSequenceNumber=function(t){this.setItem(this.sequenceNumberKey,JSON.stringify(t))},t.prototype.getAllActiveQueryTargets=function(){var t=jt();return D(this.activeClients,(function(e,n){t=t.unionWith(n.activeTargetIds)})),t},t.prototype.isActiveQueryTarget=function(t){for(var e in this.activeClients)if(this.activeClients.hasOwnProperty(e)&&this.activeClients[e].activeTargetIds.has(t))return!0;return!1},t.prototype.addPendingMutation=function(t){this.persistMutationState(t,"pending")},t.prototype.updateMutationState=function(t,e,n){this.persistMutationState(t,e,n),this.removeMutationState(t)},t.prototype.addLocalQueryTarget=function(t){var e="not-current";if(this.isActiveQueryTarget(t)){var n=this.storage.getItem(this.toWebStorageQueryTargetMetadataKey(t));if(n){var r=Ui.fromWebStorageEntry(t,n);r&&(e=r.state)}}return this.localClientState.addQueryTarget(t),this.persistClientState(),e},t.prototype.removeLocalQueryTarget=function(t){this.localClientState.removeQueryTarget(t),this.persistClientState()},t.prototype.isLocalQueryTarget=function(t){return this.localClientState.activeTargetIds.has(t)},t.prototype.clearQueryState=function(t){this.removeItem(this.toWebStorageQueryTargetMetadataKey(t))},t.prototype.updateQueryState=function(t,e,n){this.persistQueryTargetState(t,e,n)},t.prototype.handleUserChange=function(t,e,n){var r=this;e.forEach((function(t){r.removeMutationState(t)})),this.currentUser=t,n.forEach((function(t){r.addPendingMutation(t)}))},t.prototype.setOnlineState=function(t){this.persistOnlineState(t)},t.prototype.shutdown=function(){this.started&&(this.platform.window.removeEventListener("storage",this.storageListener),this.removeItem(this.localClientStorageKey),this.started=!1)},t.prototype.getItem=function(t){var e=this.storage.getItem(t);return p(Li,"READ",t,e),e},t.prototype.setItem=function(t,e){p(Li,"SET",t,e),this.storage.setItem(t,e)},t.prototype.removeItem=function(t){p(Li,"REMOVE",t),this.storage.removeItem(t)},t.prototype.handleWebStorageEvent=function(t){var e=this;if(t.storageArea===this.storage){if(p(Li,"EVENT",t.key,t.newValue),t.key===this.localClientStorageKey)return void m("Received WebStorage notification for local change. Another client might have garbage-collected our state");this.queue.enqueueAndForget((function(){return a.__awaiter(e,void 0,void 0,(function(){var e,n,r,i,o,s;return a.__generator(this,(function(a){if(!this.started)return this.earlyEvents.push(t),[2];if(null===t.key)return[2];if(this.clientStateKeyRe.test(t.key)){if(null==t.newValue)return n=this.fromWebStorageClientStateKey(t.key),[2,this.handleClientStateEvent(n,null)];if(e=this.fromWebStorageClientState(t.key,t.newValue))return[2,this.handleClientStateEvent(e.clientId,e)]}else if(this.mutationBatchKeyRe.test(t.key)){if(null!==t.newValue&&(r=this.fromWebStorageMutationMetadata(t.key,t.newValue)))return[2,this.handleMutationBatchEvent(r)]}else if(this.queryTargetKeyRe.test(t.key)){if(null!==t.newValue&&(i=this.fromWebStorageQueryTargetMetadata(t.key,t.newValue)))return[2,this.handleQueryTargetEvent(i)]}else if(t.key===this.onlineStateKey){if(null!==t.newValue&&(o=this.fromWebStorageOnlineState(t.newValue)))return[2,this.handleOnlineStateEvent(o)]}else t.key===this.sequenceNumberKey&&(v(!!this.sequenceNumberHandler,"Missing sequenceNumberHandler"),(s=function(t){var e=st.INVALID;if(null!=t)try{var n=JSON.parse(t);v("number"==typeof n,"Found non-numeric sequence number"),e=n}catch(t){m(Li,"Failed to read sequence number from WebStorage",t)}return e}(t.newValue))!==st.INVALID&&this.sequenceNumberHandler(s));return[2]}))}))}))}},Object.defineProperty(t.prototype,"localClientState",{get:function(){return this.activeClients[this.localClientId]},enumerable:!0,configurable:!0}),t.prototype.persistClientState=function(){this.setItem(this.localClientStorageKey,this.localClientState.toWebStorageJSON())},t.prototype.persistMutationState=function(t,e,n){var r=new Bi(this.currentUser,t,e,n),i=this.toWebStorageMutationBatchKey(t);this.setItem(i,r.toWebStorageJSON())},t.prototype.removeMutationState=function(t){var e=this.toWebStorageMutationBatchKey(t);this.removeItem(e)},t.prototype.persistOnlineState=function(t){var e={clientId:this.localClientId,onlineState:Rr[t]};this.storage.setItem(this.onlineStateKey,JSON.stringify(e))},t.prototype.persistQueryTargetState=function(t,e,n){var r=this.toWebStorageQueryTargetMetadataKey(t),i=new Ui(t,e,n);this.setItem(r,i.toWebStorageJSON())},t.prototype.toWebStorageClientStateKey=function(t){return v(-1===t.indexOf("_"),"Client key cannot contain '_', but was '"+t+"'"),Pi+"_"+this.persistenceKey+"_"+t},t.prototype.toWebStorageQueryTargetMetadataKey=function(t){return Fi+"_"+this.persistenceKey+"_"+t},t.prototype.toWebStorageMutationBatchKey=function(t){var e=xi+"_"+this.persistenceKey+"_"+t;return this.currentUser.isAuthenticated()&&(e+="_"+this.currentUser.uid),e},t.prototype.fromWebStorageClientStateKey=function(t){var e=this.clientStateKeyRe.exec(t);return e?e[1]:null},t.prototype.fromWebStorageClientState=function(t,e){var n=this.fromWebStorageClientStateKey(t);return v(null!==n,"Cannot parse client state key '"+t+"'"),ji.fromWebStorageEntry(n,e)},t.prototype.fromWebStorageMutationMetadata=function(t,e){var n=this.mutationBatchKeyRe.exec(t);v(null!==n,"Cannot parse mutation batch key '"+t+"'");var r=Number(n[1]),i=void 0!==n[2]?n[2]:null;return Bi.fromWebStorageEntry(new Mi(i),r,e)},t.prototype.fromWebStorageQueryTargetMetadata=function(t,e){var n=this.queryTargetKeyRe.exec(t);v(null!==n,"Cannot parse query target key '"+t+"'");var r=Number(n[1]);return Ui.fromWebStorageEntry(r,e)},t.prototype.fromWebStorageOnlineState=function(t){return Ki.fromWebStorageEntry(t)},t.prototype.handleMutationBatchEvent=function(t){return a.__awaiter(this,void 0,void 0,(function(){return a.__generator(this,(function(e){return t.user.uid!==this.currentUser.uid?(p(Li,"Ignoring mutation for non-active user "+t.user.uid),[2]):[2,this.syncEngine.applyBatchState(t.batchId,t.state,t.error)]}))}))},t.prototype.handleQueryTargetEvent=function(t){return this.syncEngine.applyTargetState(t.targetId,t.state,t.error)},t.prototype.handleClientStateEvent=function(t,e){var n=this,r=this.getAllActiveQueryTargets();e?this.activeClients[t]=e:delete this.activeClients[t];var i=this.getAllActiveQueryTargets(),o=[],s=[];return i.forEach((function(t){return a.__awaiter(n,void 0,void 0,(function(){return a.__generator(this,(function(e){return r.has(t)||o.push(t),[2]}))}))})),r.forEach((function(t){return a.__awaiter(n,void 0,void 0,(function(){return a.__generator(this,(function(e){return i.has(t)||s.push(t),[2]}))}))})),this.syncEngine.applyActiveTargetsChange(o,s)},t.prototype.handleOnlineStateEvent=function(t){this.activeClients[t.clientId]&&this.onlineStateHandler(t.onlineState)},t}();var Gi=function(){function t(){this.localState=new Wi,this.queryState={},this.syncEngine=null,this.onlineStateHandler=null,this.sequenceNumberHandler=null}return t.prototype.addPendingMutation=function(t){},t.prototype.updateMutationState=function(t,e,n){},t.prototype.addLocalQueryTarget=function(t){return this.localState.addQueryTarget(t),this.queryState[t]||"not-current"},t.prototype.updateQueryState=function(t,e,n){this.queryState[t]=e},t.prototype.removeLocalQueryTarget=function(t){this.localState.removeQueryTarget(t)},t.prototype.isLocalQueryTarget=function(t){return this.localState.activeTargetIds.has(t)},t.prototype.clearQueryState=function(t){delete this.queryState[t]},t.prototype.getAllActiveQueryTargets=function(){return this.localState.activeTargetIds},t.prototype.isActiveQueryTarget=function(t){return this.localState.activeTargetIds.has(t)},t.prototype.start=function(){return this.localState=new Wi,Promise.resolve()},t.prototype.handleUserChange=function(t,e,n){},t.prototype.setOnlineState=function(t){},t.prototype.shutdown=function(){},t.prototype.writeSequenceNumber=function(t){},t}(),zi=function(){function t(t,e){this.cacheSizeBytes=t,this.synchronizeTabs=e}return t.prototype.lruParams=function(){return On.withCacheSize(this.cacheSizeBytes)},t}(),Hi=function(){},Yi=function(){function t(t,e,n,r){this.platform=t,this.databaseInfo=e,this.credentials=n,this.asyncQueue=r,this.clientId=Y.newId()}return t.prototype.start=function(t){var e=this;this.verifyNotTerminated();var n=new dt,r=new dt,i=!1;return this.credentials.setChangeListener((function(o){i?e.asyncQueue.enqueueAndForget((function(){return e.handleCredentialChange(o)})):(i=!0,e.initializePersistence(t,r,o).then((function(t){return e.initializeRest(o,t)})).then(n.resolve,n.reject))})),this.asyncQueue.enqueueAndForget((function(){return n.promise})),r.promise},t.prototype.enableNetwork=function(){var t=this;return this.verifyNotTerminated(),this.asyncQueue.enqueue((function(){return t.syncEngine.enableNetwork()}))},t.prototype.initializePersistence=function(t,e,n){var r=this;return t instanceof zi?this.startIndexedDbPersistence(n,t).then((function(t){return e.resolve(),t})).catch((function(t){if(e.reject(t),!r.canFallback(t))throw t;return console.warn("Error enabling offline persistence. Falling back to persistence disabled: "+t),r.startMemoryPersistence()})):(e.resolve(),this.startMemoryPersistence())},t.prototype.canFallback=function(t){return t instanceof E?t.code===T.FAILED_PRECONDITION||t.code===T.UNIMPLEMENTED:!("undefined"!=typeof DOMException&&t instanceof DOMException)||(22===t.code||20===t.code||11===t.code)},t.prototype.verifyNotTerminated=function(){if(this.asyncQueue.isShuttingDown)throw new E(T.FAILED_PRECONDITION,"The client has already been terminated.")},t.prototype.startIndexedDbPersistence=function(t,e){var n=this,r=Bn.buildStoragePrefix(this.databaseInfo),i=new wi(this.databaseInfo.databaseId,{useProto3Json:!0});return Promise.resolve().then((function(){return a.__awaiter(n,void 0,void 0,(function(){var n,o;return a.__generator(this,(function(a){switch(a.label){case 0:if(e.synchronizeTabs&&!Qi.isAvailable(this.platform))throw new E(T.UNIMPLEMENTED,"IndexedDB persistence is only available on platforms that support LocalStorage.");return n=e.lruParams(),this.sharedClientState=e.synchronizeTabs?new Qi(this.asyncQueue,this.platform,r,this.clientId,t):new Gi,[4,Bn.createIndexedDbPersistence({allowTabSynchronization:e.synchronizeTabs,persistenceKey:r,clientId:this.clientId,platform:this.platform,queue:this.asyncQueue,serializer:i,lruParams:n,sequenceNumberSyncer:this.sharedClientState})];case 1:return o=a.sent(),this.persistence=o,[2,o.referenceDelegate.garbageCollector]}}))}))}))},t.prototype.startMemoryPersistence=function(){return this.persistence=Sr.createEagerPersistence(this.clientId),this.sharedClientState=new Gi,Promise.resolve(null)},t.prototype.initializeRest=function(t,e){var n=this;return p("FirestoreClient","Initializing. user=",t.uid),this.platform.loadConnection(this.databaseInfo).then((function(r){return a.__awaiter(n,void 0,void 0,(function(){var n,i,o,s,u,c,h=this;return a.__generator(this,(function(l){switch(l.label){case 0:return n=new pr,this.localStore=new vr(this.persistence,n,t),[4,this.localStore.start()];case 1:return l.sent(),e&&(this.lruScheduler=new Mn(e,this.asyncQueue,this.localStore)),i=this.platform.newConnectivityMonitor(),o=this.platform.newSerializer(this.databaseInfo.databaseId),s=new xr(this.asyncQueue,r,this.credentials,o),u=function(t){return h.syncEngine.applyOnlineStateChange(t,Or.RemoteStore)},c=function(t){return h.syncEngine.applyOnlineStateChange(t,Or.SharedClientState)},this.remoteStore=new oi(this.localStore,s,this.asyncQueue,u,i),this.syncEngine=new Oi(this.localStore,this.remoteStore,this.sharedClientState,t),this.sharedClientState.onlineStateHandler=c,this.remoteStore.syncEngine=this.syncEngine,this.sharedClientState.syncEngine=this.syncEngine,this.eventMgr=new Ei(this.syncEngine),[4,this.sharedClientState.start()];case 2:return l.sent(),[4,this.remoteStore.start()];case 3:return l.sent(),[4,this.persistence.setPrimaryStateListener((function(t){return a.__awaiter(h,void 0,void 0,(function(){return a.__generator(this,(function(e){switch(e.label){case 0:return[4,this.syncEngine.applyPrimaryState(t)];case 1:return e.sent(),this.lruScheduler&&(t&&!this.lruScheduler.started?this.lruScheduler.start():t||this.lruScheduler.stop()),[2]}}))}))}))];case 4:return l.sent(),[4,this.persistence.setDatabaseDeletedListener((function(){return a.__awaiter(h,void 0,void 0,(function(){return a.__generator(this,(function(t){switch(t.label){case 0:return[4,this.terminate()];case 1:return t.sent(),[2]}}))}))}))];case 5:return l.sent(),[2]}}))}))}))},t.prototype.handleCredentialChange=function(t){return this.asyncQueue.verifyOperationInProgress(),p("FirestoreClient","Credential Changed. Current user: "+t.uid),this.syncEngine.handleCredentialChange(t)},t.prototype.disableNetwork=function(){var t=this;return this.verifyNotTerminated(),this.asyncQueue.enqueue((function(){return t.syncEngine.disableNetwork()}))},t.prototype.terminate=function(){var t=this;return this.asyncQueue.enqueueAndInitiateShutdown((function(){return a.__awaiter(t,void 0,void 0,(function(){return a.__generator(this,(function(t){switch(t.label){case 0:return this.lruScheduler&&this.lruScheduler.stop(),[4,this.remoteStore.shutdown()];case 1:return t.sent(),[4,this.sharedClientState.shutdown()];case 2:return t.sent(),[4,this.persistence.shutdown()];case 3:return t.sent(),this.credentials.removeChangeListener(),[2]}}))}))}))},t.prototype.waitForPendingWrites=function(){var t=this;this.verifyNotTerminated();var e=new dt;return this.asyncQueue.enqueueAndForget((function(){return t.syncEngine.registerPendingWritesCallback(e)})),e.promise},t.prototype.listen=function(t,e,n){var r=this;this.verifyNotTerminated();var i=new Si(t,e,n);return this.asyncQueue.enqueueAndForget((function(){return r.eventMgr.listen(i)})),i},t.prototype.unlisten=function(t){var e=this;this.clientTerminated||this.asyncQueue.enqueueAndForget((function(){return e.eventMgr.unlisten(t)}))},t.prototype.getDocumentFromLocalCache=function(t){var e=this;return this.verifyNotTerminated(),this.asyncQueue.enqueue((function(){return e.localStore.readDocument(t)})).then((function(t){if(t instanceof We)return t;if(t instanceof Qe)return null;throw new E(T.UNAVAILABLE,"Failed to get document from cache. (However, this document may exist on the server. Run again without setting 'source' in the GetOptions to attempt to retrieve the document from the server.)")}))},t.prototype.getDocumentsFromLocalCache=function(t){var e=this;return this.verifyNotTerminated(),this.asyncQueue.enqueue((function(){return a.__awaiter(e,void 0,void 0,(function(){var e,n,r;return a.__generator(this,(function(i){switch(i.label){case 0:return[4,this.localStore.executeQuery(t,!0)];case 1:return e=i.sent(),n=new Di(t,e.remoteKeys),r=n.computeDocChanges(e.documents),[2,n.applyChanges(r,!1).snapshot]}}))}))}))},t.prototype.write=function(t){var e=this;this.verifyNotTerminated();var n=new dt;return this.asyncQueue.enqueueAndForget((function(){return e.syncEngine.write(t,n)})),n.promise},t.prototype.databaseId=function(){return this.databaseInfo.databaseId},t.prototype.addSnapshotsInSyncListener=function(t){var e=this;this.verifyNotTerminated(),this.asyncQueue.enqueueAndForget((function(){return e.eventMgr.addSnapshotsInSyncListener(t),Promise.resolve()}))},t.prototype.removeSnapshotsInSyncListener=function(t){this.clientTerminated||this.eventMgr.removeSnapshotsInSyncListener(t)},Object.defineProperty(t.prototype,"clientTerminated",{get:function(){return this.asyncQueue.isShuttingDown},enumerable:!0,configurable:!0}),t.prototype.transaction=function(t){var e=this;this.verifyNotTerminated();var n=new dt;return this.asyncQueue.enqueueAndForget((function(){return e.syncEngine.runTransaction(e.asyncQueue,t,n),Promise.resolve()})),n.promise},t}(),Xi=function(){function t(t){this.observer=t,this.muted=!1}return t.prototype.next=function(t){this.scheduleEvent(this.observer.next,t)},t.prototype.error=function(t){this.scheduleEvent(this.observer.error,t)},t.prototype.mute=function(){this.muted=!0},t.prototype.scheduleEvent=function(t,e){var n=this;this.muted||setTimeout((function(){n.muted||t(e)}),0)},t}(),Ji=function(){function t(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];!function(t,e,n,r){if(!(e instanceof Array)||e.length<r)throw new E(T.INVALID_ARGUMENT,"Function "+t+"() requires its "+n+" argument to be an array with at least "+H(r,"element")+".")}("FieldPath",t,"fieldNames",1);for(var n=0;n<t.length;++n)if(M("FieldPath","string",n,t[n]),0===t[n].length)throw new E(T.INVALID_ARGUMENT,"Invalid field name at argument $(i + 1). Field names must not be empty.");this._internalPath=new lt(t)}return t.documentId=function(){return t._DOCUMENT_ID},t.prototype.isEqual=function(e){if(!(e instanceof t))throw Q("isEqual","FieldPath",1,e);return this._internalPath.isEqual(e._internalPath)},t._DOCUMENT_ID=new t(lt.keyField().canonicalString()),t}(),$i=new RegExp("[~\\*/\\[\\]]");
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var Zi=function(t,e){this.user=e,this.type="OAuth",this.authHeaders={Authorization:"Bearer "+t}},to=function(){function t(){this.changeListener=null}return t.prototype.getToken=function(){return Promise.resolve(null)},t.prototype.invalidateToken=function(){},t.prototype.setChangeListener=function(t){v(!this.changeListener,"Can only call setChangeListener() once."),this.changeListener=t,t(Mi.UNAUTHENTICATED)},t.prototype.removeChangeListener=function(){v(null!==this.changeListener,"removeChangeListener() when no listener registered"),this.changeListener=null},t}(),eo=function(){function t(t){var e=this;this.app=t,this.tokenListener=null,this.currentUser=Mi.UNAUTHENTICATED,this.receivedInitialUser=!1,this.tokenCounter=0,this.changeListener=null,this.forceRefresh=!1,this.tokenListener=function(){e.tokenCounter++,e.currentUser=e.getUser(),e.receivedInitialUser=!0,e.changeListener&&e.changeListener(e.currentUser)},this.tokenCounter=0,this.app.INTERNAL.addAuthTokenListener(this.tokenListener)}return t.prototype.getToken=function(){var t=this;v(null!=this.tokenListener,"getToken cannot be called after listener removed.");var e=this.tokenCounter,n=this.forceRefresh;return this.forceRefresh=!1,this.app.INTERNAL.getToken(n).then((function(n){if(t.tokenCounter!==e)throw new E(T.ABORTED,"getToken aborted due to token change.");return n?(v("string"==typeof n.accessToken,"Invalid tokenData returned from getToken():"+n),new Zi(n.accessToken,t.currentUser)):null}))},t.prototype.invalidateToken=function(){this.forceRefresh=!0},t.prototype.setChangeListener=function(t){v(!this.changeListener,"Can only call setChangeListener() once."),this.changeListener=t,this.receivedInitialUser&&t(this.currentUser)},t.prototype.removeChangeListener=function(){v(null!=this.tokenListener,"removeChangeListener() called twice"),v(null!==this.changeListener,"removeChangeListener() called when no listener registered"),this.app.INTERNAL.removeAuthTokenListener(this.tokenListener),this.tokenListener=null,this.changeListener=null},t.prototype.getUser=function(){var t=this.app.INTERNAL.getUid();return v(null===t||"string"==typeof t,"Received invalid UID: "+t),new Mi(t)},t}(),no=function(){function t(t,e){this.gapi=t,this.sessionIndex=e,this.type="FirstParty",this.user=Mi.FIRST_PARTY}return Object.defineProperty(t.prototype,"authHeaders",{get:function(){var t={"X-Goog-AuthUser":this.sessionIndex},e=this.gapi.auth.getAuthHeaderValueForFirstParty([]);return e&&(t.Authorization=e),t},enumerable:!0,configurable:!0}),t}(),ro=function(){function t(t,e){this.gapi=t,this.sessionIndex=e}return t.prototype.getToken=function(){return Promise.resolve(new no(this.gapi,this.sessionIndex))},t.prototype.setChangeListener=function(t){t(Mi.FIRST_PARTY)},t.prototype.removeChangeListener=function(){},t.prototype.invalidateToken=function(){},t}();function io(t){if(!t)return new to;switch(t.type){case"gapi":var e=t.client;return v(!("object"!=typeof e||null===e||!e.auth||!e.auth.getAuthHeaderValueForFirstParty),"unexpected gapi interface"),new ro(e,t.sessionIndex||"0");case"provider":return t.client;default:throw new E(T.INVALID_ARGUMENT,"makeCredentialsProvider failed due to invalid credential type")}}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */function oo(t){return function(t,e){if("object"!=typeof t||null===t)return!1;for(var n=t,r=0,i=e;r<i.length;r++){var o=i[r];if(o in n&&"function"==typeof n[o])return!0}return!1}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */(t,["next","error","complete"])}var ao,so=function(){function t(t){this._methodName=t}return t.delete=function(){return N("FieldValue.delete",arguments),uo.instance},t.serverTimestamp=function(){return N("FieldValue.serverTimestamp",arguments),co.instance},t.arrayUnion=function(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];return R("FieldValue.arrayUnion",arguments,1),new ho(t)},t.arrayRemove=function(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];return R("FieldValue.arrayRemove",arguments,1),new lo(t)},t.increment=function(t){return M("FieldValue.increment","number",1,t),k("FieldValue.increment",arguments,1),new fo(t)},t.prototype.isEqual=function(t){return this===t},t}(),uo=function(t){function e(){return t.call(this,"FieldValue.delete")||this}return a.__extends(e,t),e.instance=new e,e}(so),co=function(t){function e(){return t.call(this,"FieldValue.serverTimestamp")||this}return a.__extends(e,t),e.instance=new e,e}(so),ho=function(t){function e(e){var n=t.call(this,"FieldValue.arrayUnion")||this;return n._elements=e,n}return a.__extends(e,t),e}(so),lo=function(t){function e(e){var n=t.call(this,"FieldValue.arrayRemove")||this;return n._elements=e,n}return a.__extends(e,t),e}(so),fo=function(t){function e(e){var n=t.call(this,"FieldValue.increment")||this;return n._operand=e,n}return a.__extends(e,t),e}(so),po=S(so,"Use FieldValue.<field>() instead."),mo=/^__.*__$/,yo=function(){function t(t,e,n){this.data=t,this.fieldMask=e,this.fieldTransforms=n}return t.prototype.toMutations=function(t,e){var n=[];return null!==this.fieldMask?n.push(new Ie(t,this.data,this.fieldMask,e)):n.push(new Se(t,this.data,e)),this.fieldTransforms.length>0&&n.push(new _e(t,this.fieldTransforms)),n},t}(),go=function(){function t(t,e,n){this.data=t,this.fieldMask=e,this.fieldTransforms=n}return t.prototype.toMutations=function(t,e){var n=[new Ie(t,this.data,this.fieldMask,e)];return this.fieldTransforms.length>0&&n.push(new _e(t,this.fieldTransforms)),n},t}();function vo(t){switch(t){case ao.Set:case ao.MergeSet:case ao.Update:return!0;case ao.Argument:case ao.ArrayArgument:return!1;default:throw g("Unexpected case for UserDataSource: "+t)}}!function(t){t[t.Set=0]="Set",t[t.Update=1]="Update",t[t.MergeSet=2]="MergeSet",t[t.Argument=3]="Argument",t[t.ArrayArgument=4]="ArrayArgument"}(ao||(ao={}));var bo=function(){function t(t,e,n,r,i,o){this.dataSource=t,this.methodName=e,this.path=n,this.arrayElement=r,void 0===i&&this.validatePath(),this.arrayElement=void 0!==r&&r,this.fieldTransforms=i||[],this.fieldMask=o||[]}return t.prototype.childContextForField=function(e){var n=null==this.path?null:this.path.child(e),r=new t(this.dataSource,this.methodName,n,!1,this.fieldTransforms,this.fieldMask);return r.validatePathSegment(e),r},t.prototype.childContextForFieldPath=function(e){var n=null==this.path?null:this.path.child(e),r=new t(this.dataSource,this.methodName,n,!1,this.fieldTransforms,this.fieldMask);return r.validatePath(),r},t.prototype.childContextForArray=function(e){return new t(this.dataSource,this.methodName,null,!0,this.fieldTransforms,this.fieldMask)},t.prototype.createError=function(t){var e=null===this.path||this.path.isEmpty()?"":" (found in field "+this.path.toString()+")";return new E(T.INVALID_ARGUMENT,"Function "+this.methodName+"() called with invalid data. "+t+e)},t.prototype.contains=function(t){return void 0!==this.fieldMask.find((function(e){return t.isPrefixOf(e)}))||void 0!==this.fieldTransforms.find((function(e){return t.isPrefixOf(e.field)}))},t.prototype.validatePath=function(){if(null!==this.path)for(var t=0;t<this.path.length;t++)this.validatePathSegment(this.path.get(t))},t.prototype.validatePathSegment=function(t){if(0===t.length)throw this.createError("Document fields must not be empty");if(vo(this.dataSource)&&mo.test(t))throw this.createError('Document fields cannot begin and end with "__"')},t}(),wo=function(t,e){this.databaseId=t,this.key=e},To=function(){function t(t){this.preConverter=t}return t.prototype.parseSetData=function(t,e){var n=new bo(ao.Set,t,lt.EMPTY_PATH);So("Data must be an object, but it was:",n,e);var r=this.parseData(e,n);return new yo(r,null,n.fieldTransforms)},t.prototype.parseMergeData=function(t,e,n){var r=new bo(ao.MergeSet,t,lt.EMPTY_PATH);So("Data must be an object, but it was:",r,e);var i,o,a=this.parseData(e,r);if(n){for(var s=new kt(lt.comparator),u=0,c=n;u<c.length;u++){var h=c[u],l=void 0;if(h instanceof Ji)l=h._internalPath;else{if("string"!=typeof h)throw g("Expected stringOrFieldPath to be a string or a FieldPath");l=_o(t,h)}if(!r.contains(l))throw new E(T.INVALID_ARGUMENT,"Field '"+l+"' is specified in your field mask but missing from your input data.");s=s.add(l)}i=ye.fromSet(s),o=r.fieldTransforms.filter((function(t){return i.covers(t.field)}))}else i=ye.fromArray(r.fieldMask),o=r.fieldTransforms;return new yo(a,i,o)},t.prototype.parseUpdateData=function(t,e){var n=this,r=new bo(ao.Update,t,lt.EMPTY_PATH);So("Data must be an object, but it was:",r,e);var i=new kt(lt.comparator),o=Ue.EMPTY;D(e,(function(e,a){var s=_o(t,e),u=r.childContextForFieldPath(s);if((a=n.runPreConverter(a,u))instanceof uo)i=i.add(s);else{var c=n.parseData(a,u);null!=c&&(i=i.add(s),o=o.set(s,c))}}));var a=ye.fromSet(i);return new go(o,a,r.fieldTransforms)},t.prototype.parseUpdateVarargs=function(t,e,n,r){var i=new bo(ao.Update,t,lt.EMPTY_PATH),o=[Io(t,e)],a=[n];if(r.length%2!=0)throw new E(T.INVALID_ARGUMENT,"Function "+t+"() needs to be called with an even number of arguments that alternate between field names and values.");for(var s=0;s<r.length;s+=2)o.push(Io(t,r[s])),a.push(r[s+1]);var u=new kt(lt.comparator),c=Ue.EMPTY;for(s=0;s<o.length;++s){var h=o[s],l=i.childContextForFieldPath(h),f=this.runPreConverter(a[s],l);if(f instanceof uo)u=u.add(h);else{var d=this.parseData(f,l);null!=d&&(u=u.add(h),c=c.set(h,d))}}var p=ye.fromSet(u);return new go(c,p,i.fieldTransforms)},t.prototype.parseQueryValue=function(t,e,n){void 0===n&&(n=!1);var r=new bo(n?ao.ArrayArgument:ao.Argument,t,lt.EMPTY_PATH),i=this.parseData(e,r);return v(null!=i,"Parsed data should not be null."),v(0===r.fieldTransforms.length,"Field transforms should have been disallowed."),i},t.prototype.runPreConverter=function(t,e){try{return this.preConverter(t)}catch(t){var n=Co(t);throw e.createError(n)}},t.prototype.parseData=function(t,e){if(Eo(t=this.runPreConverter(t,e)))return So("Unsupported field value:",e,t),this.parseObject(t,e);if(t instanceof so)return this.parseSentinelFieldValue(t,e),null;if(e.path&&e.fieldMask.push(e.path),t instanceof Array){if(e.arrayElement&&e.dataSource!==ao.ArrayArgument)throw e.createError("Nested arrays are not supported");return this.parseArray(t,e)}return this.parseScalarValue(t,e)},t.prototype.parseObject=function(t,e){var n=this,r=new Ct(X);return A(t)?e.path&&e.path.length>0&&e.fieldMask.push(e.path):D(t,(function(t,i){var o=n.parseData(i,e.childContextForField(t));null!=o&&(r=r.insert(t,o))})),new Ue(r)},t.prototype.parseArray=function(t,e){for(var n=[],r=0,i=0,o=t;i<o.length;i++){var a=o[i],s=this.parseData(a,e.childContextForArray(r));null==s&&(s=Ne.INSTANCE),n.push(s),r++}return new je(n)},t.prototype.parseSentinelFieldValue=function(t,e){if(!vo(e.dataSource))throw e.createError(t._methodName+"() can only be used with update() and set()");if(null===e.path)throw e.createError(t._methodName+"() is not currently supported inside arrays");if(t instanceof uo){if(e.dataSource!==ao.MergeSet)throw e.dataSource===ao.Update?(v(e.path.length>0,"FieldValue.delete() at the top level should have already been handled."),e.createError("FieldValue.delete() can only appear at the top level of your update data")):e.createError("FieldValue.delete() cannot be used with set() unless you pass {merge:true}");e.fieldMask.push(e.path)}else if(t instanceof co)e.fieldTransforms.push(new ge(e.path,si.instance));else if(t instanceof ho){var n=this.parseArrayTransformElements(t._methodName,t._elements),r=new ui(n);e.fieldTransforms.push(new ge(e.path,r))}else if(t instanceof lo){n=this.parseArrayTransformElements(t._methodName,t._elements);var i=new ci(n);e.fieldTransforms.push(new ge(e.path,i))}else if(t instanceof fo){var o=this.parseQueryValue("FieldValue.increment",t._operand),a=new hi(o);e.fieldTransforms.push(new ge(e.path,a))}else g("Unknown FieldValue type: "+t)},t.prototype.parseScalarValue=function(t,e){if(null===t)return Ne.INSTANCE;if("number"==typeof t)return Jn(t)?new Me(t):new Le(t);if("boolean"==typeof t)return ke.of(t);if("string"==typeof t)return new Pe(t);if(t instanceof Date)return new xe(It.fromDate(t));if(t instanceof It)return new xe(new It(t.seconds,1e3*Math.floor(t.nanoseconds/1e3)));if(t instanceof ai)return new Be(t);if(t instanceof nt)return new qe(t);if(t instanceof wo)return new Ve(t.databaseId,t.key);throw e.createError("Unsupported field value: "+j(t))},t.prototype.parseArrayTransformElements=function(t,e){var n=this;return e.map((function(e,r){var i=new bo(ao.Argument,t,lt.EMPTY_PATH);return n.parseData(e,i.childContextForArray(r))}))},t}();function Eo(t){return!("object"!=typeof t||null===t||t instanceof Array||t instanceof Date||t instanceof It||t instanceof ai||t instanceof nt||t instanceof wo||t instanceof so)}function So(t,e,n){if(!Eo(n)||!U(n)){var r=j(n);throw"an object"===r?e.createError(t+" a custom object"):e.createError(t+" "+r)}}function Io(t,e){if(e instanceof Ji)return e._internalPath;if("string"==typeof e)return _o(t,e);throw new E(T.INVALID_ARGUMENT,"Function "+t+"() called with invalid data. Field path arguments must be of type string or FieldPath.")}function _o(t,e){try{return function(t){if(t.search($i)>=0)throw new E(T.INVALID_ARGUMENT,"Invalid field path ("+t+"). Paths must not contain '~', '*', '/', '[', or ']'");try{return new(Ji.bind.apply(Ji,a.__spreadArrays([void 0],t.split("."))))}catch(e){throw new E(T.INVALID_ARGUMENT,"Invalid field path ("+t+"). Paths must not be empty, begin with '.', end with '.', or contain '..'")}}(e)._internalPath}catch(e){var n=Co(e);throw new E(T.INVALID_ARGUMENT,"Function "+t+"() called with invalid data. "+n)}}function Co(t){return t instanceof Error?t.message:t.toString()}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */var Do="firestore.googleapis.com",Ao=!0,No=!0,ko=!1,Ro=On.COLLECTION_DISABLED,Oo=function(){function t(t){if(void 0===t.host){if(void 0!==t.ssl)throw new E(T.INVALID_ARGUMENT,"Can't provide ssl option if host option is not set");this.host=Do,this.ssl=Ao}else P("settings","non-empty string","host",t.host),this.host=t.host,x("settings","boolean","ssl",t.ssl),this.ssl=_(t.ssl,Ao);if(W("settings",t,["host","ssl","credentials","timestampsInSnapshots","cacheSizeBytes","experimentalForceLongPolling"]),x("settings","object","credentials",t.credentials),this.credentials=t.credentials,x("settings","boolean","timestampsInSnapshots",t.timestampsInSnapshots),!0===t.timestampsInSnapshots?m("\n  The timestampsInSnapshots setting now defaults to true and you no\n  longer need to explicitly set it. In a future release, the setting\n  will be removed entirely and so it is recommended that you remove it\n  from your firestore.settings() call now."):!1===t.timestampsInSnapshots&&m("\n  The timestampsInSnapshots setting will soon be removed. YOU MUST UPDATE\n  YOUR CODE.\n\n  To hide this warning, stop using the timestampsInSnapshots setting in your\n  firestore.settings({ ... }) call.\n\n  Once you remove the setting, Timestamps stored in Cloud Firestore will be\n  read back as Firebase Timestamp objects instead of as system Date objects.\n  So you will also need to update code expecting a Date to instead expect a\n  Timestamp. For example:\n\n  // Old:\n  const date = snapshot.get('created_at');\n  // New:\n  const timestamp = snapshot.get('created_at'); const date =\n  timestamp.toDate();\n\n  Please audit all existing usages of Date when you enable the new\n  behavior."),this.timestampsInSnapshots=_(t.timestampsInSnapshots,No),x("settings","number","cacheSizeBytes",t.cacheSizeBytes),void 0===t.cacheSizeBytes)this.cacheSizeBytes=On.DEFAULT_CACHE_SIZE_BYTES;else{if(t.cacheSizeBytes!==Ro&&t.cacheSizeBytes<On.MINIMUM_CACHE_SIZE_BYTES)throw new E(T.INVALID_ARGUMENT,"cacheSizeBytes must be at least "+On.MINIMUM_CACHE_SIZE_BYTES);this.cacheSizeBytes=t.cacheSizeBytes}x("settings","boolean","experimentalForceLongPolling",t.experimentalForceLongPolling),this.forceLongPolling=void 0===t.experimentalForceLongPolling?ko:t.experimentalForceLongPolling}return t.prototype.isEqual=function(t){return this.host===t.host&&this.ssl===t.ssl&&this.timestampsInSnapshots===t.timestampsInSnapshots&&this.credentials===t.credentials&&this.cacheSizeBytes===t.cacheSizeBytes&&this.forceLongPolling===t.forceLongPolling},t}(),Mo=function(){function t(e){var n=this;if(this._firebaseApp=null,this._queue=new mt,this.INTERNAL={delete:function(){return a.__awaiter(n,void 0,void 0,(function(){return a.__generator(this,(function(t){switch(t.label){case 0:return this.ensureClientConfigured(),[4,this._firestoreClient.terminate()];case 1:return t.sent(),[2]}}))}))}},"object"==typeof e.options){var r=e;this._firebaseApp=r,this._databaseId=t.databaseIdFromApp(r),this._persistenceKey=r.name,this._credentials=new eo(r)}else{var i=e;if(!i.projectId)throw new E(T.INVALID_ARGUMENT,"Must provide projectId");this._databaseId=new at(i.projectId,i.database),this._persistenceKey="[DEFAULT]",this._credentials=new to}this._settings=new Oo({}),this._dataConverter=this.createDataConverter(this._databaseId)}return t.prototype.settings=function(t){if(k("Firestore.settings",arguments,1),M("Firestore.settings","object",1,t),I(t,"persistence"))throw new E(T.INVALID_ARGUMENT,'"persistence" is now specified with a separate call to firestore.enablePersistence().');var e=new Oo(t);if(this._firestoreClient&&!this._settings.isEqual(e))throw new E(T.FAILED_PRECONDITION,"Firestore has already been started and its settings can no longer be changed. You can only call settings() before calling any other methods on a Firestore object.");this._settings=e,void 0!==e.credentials&&(this._credentials=io(e.credentials))},t.prototype.enableNetwork=function(){return this.ensureClientConfigured(),this._firestoreClient.enableNetwork()},t.prototype.disableNetwork=function(){return this.ensureClientConfigured(),this._firestoreClient.disableNetwork()},t.prototype.enablePersistence=function(t){if(this._firestoreClient)throw new E(T.FAILED_PRECONDITION,"Firestore has already been started and persistence can no longer be enabled. You can only call enablePersistence() before calling any other methods on a Firestore object.");var e=!1;return t&&(void 0!==t.experimentalTabSynchronization&&m("The 'experimentalTabSynchronization' setting has been renamed to 'synchronizeTabs'. In a future release, the setting will be removed and it is recommended that you update your firestore.enablePersistence() call to use 'synchronizeTabs'."),e=_(void 0!==t.synchronizeTabs?t.synchronizeTabs:t.experimentalTabSynchronization,!1)),this.configureClient(new zi(this._settings.cacheSizeBytes,e))},t.prototype.clearPersistence=function(){var t=this,e=Bn.buildStoragePrefix(this.makeDatabaseInfo()),n=new dt;return this._queue.enqueueAndForgetEvenAfterShutdown((function(){return a.__awaiter(t,void 0,void 0,(function(){var t;return a.__generator(this,(function(r){switch(r.label){case 0:if(r.trys.push([0,2,,3]),void 0!==this._firestoreClient&&!this._firestoreClient.clientTerminated)throw new E(T.FAILED_PRECONDITION,"Persistence cannot be cleared after this Firestore instance is initialized.");return[4,Bn.clearPersistence(e)];case 1:return r.sent(),n.resolve(),[3,3];case 2:return t=r.sent(),n.reject(t),[3,3];case 3:return[2]}}))}))})),n.promise},t.prototype.terminate=function(){return this.app._removeServiceInstance("firestore"),this.INTERNAL.delete()},Object.defineProperty(t.prototype,"_isTerminated",{get:function(){return this.ensureClientConfigured(),this._firestoreClient.clientTerminated},enumerable:!0,configurable:!0}),t.prototype.waitForPendingWrites=function(){return this.ensureClientConfigured(),this._firestoreClient.waitForPendingWrites()},t.prototype.onSnapshotsInSync=function(t){if(this.ensureClientConfigured(),oo(t))return this.onSnapshotsInSyncInternal(t);M("Firestore.onSnapshotsInSync","function",1,t);var e={next:t};return this.onSnapshotsInSyncInternal(e)},t.prototype.onSnapshotsInSyncInternal=function(t){var e=this,n=new Xi({next:function(){t.next&&t.next()},error:function(t){throw g("Uncaught Error in onSnapshotsInSync")}});return this._firestoreClient.addSnapshotsInSyncListener(n),function(){n.mute(),e._firestoreClient.removeSnapshotsInSyncListener(n)}},t.prototype.ensureClientConfigured=function(){return this._firestoreClient||this.configureClient(new Hi),this._firestoreClient},t.prototype.makeDatabaseInfo=function(){return new it(this._databaseId,this._persistenceKey,this._settings.host,this._settings.ssl,this._settings.forceLongPolling)},t.prototype.configureClient=function(t){v(!!this._settings.host,"FirestoreSettings.host is not set"),v(!this._firestoreClient,"configureClient() called multiple times");var e=this.makeDatabaseInfo();return this._firestoreClient=new Yi(b.getPlatform(),e,this._credentials,this._queue),this._firestoreClient.start(t)},t.prototype.createDataConverter=function(t){return new To((function(e){if(e instanceof xo){var n=t,r=e.firestore._databaseId;if(!r.isEqual(n))throw new E(T.INVALID_ARGUMENT,"Document reference is for database "+r.projectId+"/"+r.database+" but should be for database "+n.projectId+"/"+n.database);return new wo(t,e._key)}return e}))},t.databaseIdFromApp=function(t){var e=t.options;if(!I(e,"projectId"))throw new E(T.INVALID_ARGUMENT,'"projectId" not provided in firebase.initializeApp.');var n=e.projectId;if(!n||"string"!=typeof n)throw new E(T.INVALID_ARGUMENT,"projectId must be a string in FirebaseApp.options");return new at(n)},Object.defineProperty(t.prototype,"app",{get:function(){if(!this._firebaseApp)throw new E(T.FAILED_PRECONDITION,"Firestore was not initialized using the Firebase SDK. 'app' is not available");return this._firebaseApp},enumerable:!0,configurable:!0}),t.prototype.collection=function(t){return k("Firestore.collection",arguments,1),M("Firestore.collection","non-empty string",1,t),this.ensureClientConfigured(),new jo(ct.fromString(t),this)},t.prototype.doc=function(t){return k("Firestore.doc",arguments,1),M("Firestore.doc","non-empty string",1,t),this.ensureClientConfigured(),xo.forPath(ct.fromString(t),this)},t.prototype.collectionGroup=function(t){if(k("Firestore.collectionGroup",arguments,1),M("Firestore.collectionGroup","non-empty string",1,t),t.indexOf("/")>=0)throw new E(T.INVALID_ARGUMENT,"Invalid collection ID '"+t+"' passed to function Firestore.collectionGroup(). Collection IDs must not contain '/'.");return this.ensureClientConfigured(),new Bo(new tr(ct.EMPTY_PATH,t),this)},t.prototype.runTransaction=function(t){var e=this;return k("Firestore.runTransaction",arguments,1),M("Firestore.runTransaction","function",1,t),this.ensureClientConfigured().transaction((function(n){return t(new Lo(e,n))}))},t.prototype.batch=function(){return this.ensureClientConfigured(),new Po(this)},Object.defineProperty(t,"logLevel",{get:function(){switch(f()){case i.DEBUG:return"debug";case i.ERROR:return"error";case i.SILENT:return"silent";default:return g("Unknown log level: "+f())}},enumerable:!0,configurable:!0}),t.setLogLevel=function(t){switch(k("Firestore.setLogLevel",arguments,1),M("Firestore.setLogLevel","non-empty string",1,t),t){case"debug":d(i.DEBUG);break;case"error":d(i.ERROR);break;case"silent":d(i.SILENT);break;default:throw new E(T.INVALID_ARGUMENT,"Invalid log level: "+t)}},t.prototype._areTimestampsInSnapshotsEnabled=function(){return this._settings.timestampsInSnapshots},t}(),Lo=function(){function t(t,e){this._firestore=t,this._transaction=e}return t.prototype.get=function(t){var e=this;k("Transaction.get",arguments,1);var n=Go("Transaction.get",t,this._firestore);return this._transaction.lookup([n._key]).then((function(t){if(!t||1!==t.length)return g("Mismatch in docs returned from document lookup.");var r=t[0];if(r instanceof Qe)return new qo(e._firestore,n._key,null,!1,!1);if(r instanceof We)return new qo(e._firestore,n._key,r,!1,!1);throw g("BatchGetDocumentsRequest returned unexpected document type: "+r.constructor.name)}))},t.prototype.set=function(t,e,n){O("Transaction.set",arguments,2,3);var r=Go("Transaction.set",t,this._firestore),i=(n=Ko("Transaction.set",n)).merge||n.mergeFields?this._firestore._dataConverter.parseMergeData("Transaction.set",e,n.mergeFields):this._firestore._dataConverter.parseSetData("Transaction.set",e);return this._transaction.set(r._key,i),this},t.prototype.update=function(t,e,n){for(var r,i,o=[],a=3;a<arguments.length;a++)o[a-3]=arguments[a];return"string"==typeof e||e instanceof Ji?(R("Transaction.update",arguments,3),r=Go("Transaction.update",t,this._firestore),i=this._firestore._dataConverter.parseUpdateVarargs("Transaction.update",e,n,o)):(k("Transaction.update",arguments,2),r=Go("Transaction.update",t,this._firestore),i=this._firestore._dataConverter.parseUpdateData("Transaction.update",e)),this._transaction.update(r._key,i),this},t.prototype.delete=function(t){k("Transaction.delete",arguments,1);var e=Go("Transaction.delete",t,this._firestore);return this._transaction.delete(e._key),this},t}(),Po=function(){function t(t){this._firestore=t,this._mutations=[],this._committed=!1}return t.prototype.set=function(t,e,n){O("WriteBatch.set",arguments,2,3),this.verifyNotCommitted();var r=Go("WriteBatch.set",t,this._firestore),i=(n=Ko("WriteBatch.set",n)).merge||n.mergeFields?this._firestore._dataConverter.parseMergeData("WriteBatch.set",e,n.mergeFields):this._firestore._dataConverter.parseSetData("WriteBatch.set",e);return this._mutations=this._mutations.concat(i.toMutations(r._key,Te.NONE)),this},t.prototype.update=function(t,e,n){for(var r,i,o=[],a=3;a<arguments.length;a++)o[a-3]=arguments[a];return this.verifyNotCommitted(),"string"==typeof e||e instanceof Ji?(R("WriteBatch.update",arguments,3),r=Go("WriteBatch.update",t,this._firestore),i=this._firestore._dataConverter.parseUpdateVarargs("WriteBatch.update",e,n,o)):(k("WriteBatch.update",arguments,2),r=Go("WriteBatch.update",t,this._firestore),i=this._firestore._dataConverter.parseUpdateData("WriteBatch.update",e)),this._mutations=this._mutations.concat(i.toMutations(r._key,Te.exists(!0))),this},t.prototype.delete=function(t){k("WriteBatch.delete",arguments,1),this.verifyNotCommitted();var e=Go("WriteBatch.delete",t,this._firestore);return this._mutations=this._mutations.concat(new Ce(e._key,Te.NONE)),this},t.prototype.commit=function(){return a.__awaiter(this,void 0,void 0,(function(){return a.__generator(this,(function(t){return this.verifyNotCommitted(),this._committed=!0,this._mutations.length>0?[2,this._firestore.ensureClientConfigured().write(this._mutations)]:[2]}))}))},t.prototype.verifyNotCommitted=function(){if(this._committed)throw new E(T.FAILED_PRECONDITION,"A write batch can no longer be used after commit() has been called.")},t}(),xo=function(){function t(t,e){this._key=t,this.firestore=e,this._firestoreClient=this.firestore.ensureClientConfigured()}return t.forPath=function(e,n){if(e.length%2!=0)throw new E(T.INVALID_ARGUMENT,"Invalid document reference. Document references must have an even number of segments, but "+e.canonicalString()+" has "+e.length);return new t(new ft(e),n)},Object.defineProperty(t.prototype,"id",{get:function(){return this._key.path.lastSegment()},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"parent",{get:function(){return new jo(this._key.path.popLast(),this.firestore)},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"path",{get:function(){return this._key.path.canonicalString()},enumerable:!0,configurable:!0}),t.prototype.collection=function(t){if(k("DocumentReference.collection",arguments,1),M("DocumentReference.collection","non-empty string",1,t),!t)throw new E(T.INVALID_ARGUMENT,"Must provide a non-empty collection name to collection()");var e=ct.fromString(t);return new jo(this._key.path.child(e),this.firestore)},t.prototype.isEqual=function(e){if(!(e instanceof t))throw Q("isEqual","DocumentReference",1,e);return this.firestore===e.firestore&&this._key.isEqual(e._key)},t.prototype.set=function(t,e){O("DocumentReference.set",arguments,1,2);var n=(e=Ko("DocumentReference.set",e)).merge||e.mergeFields?this.firestore._dataConverter.parseMergeData("DocumentReference.set",t,e.mergeFields):this.firestore._dataConverter.parseSetData("DocumentReference.set",t);return this._firestoreClient.write(n.toMutations(this._key,Te.NONE))},t.prototype.update=function(t,e){for(var n,r=[],i=2;i<arguments.length;i++)r[i-2]=arguments[i];return"string"==typeof t||t instanceof Ji?(R("DocumentReference.update",arguments,2),n=this.firestore._dataConverter.parseUpdateVarargs("DocumentReference.update",t,e,r)):(k("DocumentReference.update",arguments,1),n=this.firestore._dataConverter.parseUpdateData("DocumentReference.update",t)),this._firestoreClient.write(n.toMutations(this._key,Te.exists(!0)))},t.prototype.delete=function(){return k("DocumentReference.delete",arguments,0),this._firestoreClient.write([new Ce(this._key,Te.NONE)])},t.prototype.onSnapshot=function(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];O("DocumentReference.onSnapshot",arguments,1,4);var n,r={includeMetadataChanges:!1},i=0;"object"!=typeof t[i]||oo(t[i])||(W("DocumentReference.onSnapshot",r=t[i],["includeMetadataChanges"]),x("DocumentReference.onSnapshot","boolean","includeMetadataChanges",r.includeMetadataChanges),i++);var o={includeMetadataChanges:r.includeMetadataChanges};return oo(t[i])?n=t[i]:(M("DocumentReference.onSnapshot","function",i,t[i]),L("DocumentReference.onSnapshot","function",i+1,t[i+1]),L("DocumentReference.onSnapshot","function",i+2,t[i+2]),n={next:t[i],error:t[i+1],complete:t[i+2]}),this.onSnapshotInternal(o,n)},t.prototype.onSnapshotInternal=function(t,e){var n=this,r=function(t){console.error("Uncaught Error in onSnapshot:",t)};e.error&&(r=e.error.bind(e));var i=new Xi({next:function(t){if(e.next){v(t.docs.size<=1,"Too many documents returned on a document query");var r=t.docs.get(n._key);e.next(new qo(n.firestore,n._key,r,t.fromCache,t.hasPendingWrites))}},error:r}),o=this._firestoreClient.listen(tr.atPath(this._key.path),i,t);return function(){i.mute(),n._firestoreClient.unlisten(o)}},t.prototype.get=function(t){var e=this;return O("DocumentReference.get",arguments,0,1),Qo("DocumentReference.get",t),new Promise((function(n,r){t&&"cache"===t.source?e.firestore.ensureClientConfigured().getDocumentFromLocalCache(e._key).then((function(t){n(new qo(e.firestore,e._key,t,!0,t instanceof We&&t.hasLocalMutations))}),r):e.getViaSnapshotListener(n,r,t)}))},t.prototype.getViaSnapshotListener=function(t,e,n){var r=this.onSnapshotInternal({includeMetadataChanges:!0,waitForSyncWhenOnline:!0},{next:function(i){r(),!i.exists&&i.metadata.fromCache?e(new E(T.UNAVAILABLE,"Failed to get document because the client is offline.")):i.exists&&i.metadata.fromCache&&n&&"server"===n.source?e(new E(T.UNAVAILABLE,'Failed to get document from server. (However, this document does exist in the local cache. Run again without setting source to "server" to retrieve the cached document.)')):t(i)},error:e})},t}(),Fo=function(){function t(t,e){this.hasPendingWrites=t,this.fromCache=e}return t.prototype.isEqual=function(t){return this.hasPendingWrites===t.hasPendingWrites&&this.fromCache===t.fromCache},t}(),qo=function(){function t(t,e,n,r,i){this._firestore=t,this._key=e,this._document=n,this._fromCache=r,this._hasPendingWrites=i}return t.prototype.data=function(t){return O("DocumentSnapshot.data",arguments,0,1),t=Wo("DocumentSnapshot.data",t),this._document?this.convertObject(this._document.data(),De.fromSnapshotOptions(t,this._firestore._areTimestampsInSnapshotsEnabled())):void 0},t.prototype.get=function(t,e){if(O("DocumentSnapshot.get",arguments,1,2),e=Wo("DocumentSnapshot.get",e),this._document){var n=this._document.data().field(Io("DocumentSnapshot.get",t));if(null!==n)return this.convertValue(n,De.fromSnapshotOptions(e,this._firestore._areTimestampsInSnapshotsEnabled()))}},Object.defineProperty(t.prototype,"id",{get:function(){return this._key.path.lastSegment()},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"ref",{get:function(){return new xo(this._key,this._firestore)},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"exists",{get:function(){return null!==this._document},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"metadata",{get:function(){return new Fo(this._hasPendingWrites,this._fromCache)},enumerable:!0,configurable:!0}),t.prototype.isEqual=function(e){if(!(e instanceof t))throw Q("isEqual","DocumentSnapshot",1,e);return this._firestore===e._firestore&&this._fromCache===e._fromCache&&this._key.isEqual(e._key)&&(null===this._document?null===e._document:this._document.isEqual(e._document))},t.prototype.convertObject=function(t,e){var n=this,r={};return t.forEach((function(t,i){r[t]=n.convertValue(i,e)})),r},t.prototype.convertValue=function(t,e){if(t instanceof Ue)return this.convertObject(t,e);if(t instanceof je)return this.convertArray(t,e);if(t instanceof Ve){var n=t.value(e),r=this._firestore.ensureClientConfigured().databaseId();return t.databaseId.isEqual(r)||m("Document "+this._key.path+" contains a document reference within a different database ("+t.databaseId.projectId+"/"+t.databaseId.database+") which is not supported. It will be treated as a reference in the current database ("+r.projectId+"/"+r.database+") instead."),new xo(n,this._firestore)}return t.value(e)},t.prototype.convertArray=function(t,e){var n=this;return t.internalValue.map((function(t){return n.convertValue(t,e)}))},t}(),Vo=function(t){function e(){return null!==t&&t.apply(this,arguments)||this}return a.__extends(e,t),e.prototype.data=function(e){var n=t.prototype.data.call(this,e);return v("object"==typeof n,"Document in a QueryDocumentSnapshot should exist"),n},e}(qo),Bo=function(){function t(t,e){this._query=t,this.firestore=e}return t.prototype.where=function(e,n,r){k("Query.where",arguments,3),K("Query.where",3,r);var i,o=["<","<=","==",">=",">","array-contains","in","array-contains-any"];V("Query.where",o,2,n);var a=Io("Query.where",e),s=nr.fromString(n);if(a.isKeyField()){if(s===nr.ARRAY_CONTAINS||s===nr.ARRAY_CONTAINS_ANY)throw new E(T.INVALID_ARGUMENT,"Invalid Query. You can't perform '"+s.toString()+"' queries on FieldPath.documentId().");if(s===nr.IN){this.validateDisjunctiveFilterElements(r,s);for(var u=[],c=0,h=r;c<h.length;c++){var l=h[c];u.push(this.parseDocumentIdValue(l))}i=new je(u)}else i=this.parseDocumentIdValue(r)}else s!==nr.IN&&s!==nr.ARRAY_CONTAINS_ANY||this.validateDisjunctiveFilterElements(r,s),i=this.firestore._dataConverter.parseQueryValue("Query.where",r,s===nr.IN);var f=rr.create(a,s,i);return this.validateNewFilter(f),new t(this._query.addFilter(f),this.firestore)},t.prototype.orderBy=function(e,n){var r;if(O("Query.orderBy",arguments,1,2),L("Query.orderBy","non-empty string",2,n),void 0===n||"asc"===n)r=cr.ASCENDING;else{if("desc"!==n)throw new E(T.INVALID_ARGUMENT,"Function Query.orderBy() has unknown direction '"+n+"', expected 'asc' or 'desc'.");r=cr.DESCENDING}if(null!==this._query.startAt)throw new E(T.INVALID_ARGUMENT,"Invalid query. You must not call Query.startAt() or Query.startAfter() before calling Query.orderBy().");if(null!==this._query.endAt)throw new E(T.INVALID_ARGUMENT,"Invalid query. You must not call Query.endAt() or Query.endBefore() before calling Query.orderBy().");var i=Io("Query.orderBy",e),o=new lr(i,r);return this.validateNewOrderBy(o),new t(this._query.addOrderBy(o),this.firestore)},t.prototype.limit=function(e){return k("Query.limit",arguments,1),M("Query.limit","number",1,e),G("Query.limit",1,e),new t(this._query.withLimitToFirst(e),this.firestore)},t.prototype.limitToLast=function(e){return k("Query.limitToLast",arguments,1),M("Query.limitToLast","number",1,e),G("Query.limitToLast",1,e),new t(this._query.withLimitToLast(e),this.firestore)},t.prototype.startAt=function(e){for(var n=[],r=1;r<arguments.length;r++)n[r-1]=arguments[r];R("Query.startAt",arguments,1);var i=this.boundFromDocOrFields("Query.startAt",e,n,!0);return new t(this._query.withStartAt(i),this.firestore)},t.prototype.startAfter=function(e){for(var n=[],r=1;r<arguments.length;r++)n[r-1]=arguments[r];R("Query.startAfter",arguments,1);var i=this.boundFromDocOrFields("Query.startAfter",e,n,!1);return new t(this._query.withStartAt(i),this.firestore)},t.prototype.endBefore=function(e){for(var n=[],r=1;r<arguments.length;r++)n[r-1]=arguments[r];R("Query.endBefore",arguments,1);var i=this.boundFromDocOrFields("Query.endBefore",e,n,!0);return new t(this._query.withEndAt(i),this.firestore)},t.prototype.endAt=function(e){for(var n=[],r=1;r<arguments.length;r++)n[r-1]=arguments[r];R("Query.endAt",arguments,1);var i=this.boundFromDocOrFields("Query.endAt",e,n,!1);return new t(this._query.withEndAt(i),this.firestore)},t.prototype.isEqual=function(e){if(!(e instanceof t))throw Q("isEqual","Query",1,e);return this.firestore===e.firestore&&this._query.isEqual(e._query)},t.prototype.boundFromDocOrFields=function(t,e,n,r){if(K(t,1,e),e instanceof qo){if(n.length>0)throw new E(T.INVALID_ARGUMENT,"Too many arguments provided to "+t+"().");var i=e;if(!i.exists)throw new E(T.NOT_FOUND,"Can't use a DocumentSnapshot that doesn't exist for "+t+"().");return this.boundFromDocument(t,i._document,r)}var o=[e].concat(n);return this.boundFromFields(t,o,r)},t.prototype.boundFromDocument=function(t,e,n){for(var r=[],i=0,o=this._query.orderBy;i<o.length;i++){var a=o[i];if(a.field.isKeyField())r.push(new Ve(this.firestore._databaseId,e.key));else{var s=e.field(a.field);if(s instanceof Fe)throw new E(T.INVALID_ARGUMENT,'Invalid query. You are trying to start or end a query using a document for which the field "'+a.field+'" is an uncommitted server timestamp. (Since the value of this field is unknown, you cannot start/end a query with it.)');if(null===s){var u=a.field.canonicalString();throw new E(T.INVALID_ARGUMENT,"Invalid query. You are trying to start or end a query using a document for which the field '"+u+"' (used as the orderBy) does not exist.")}r.push(s)}}return new hr(r,n)},t.prototype.boundFromFields=function(t,e,n){var r=this._query.explicitOrderBy;if(e.length>r.length)throw new E(T.INVALID_ARGUMENT,"Too many arguments provided to "+t+"(). The number of arguments must be less than or equal to the number of Query.orderBy() clauses");for(var i=[],o=0;o<e.length;o++){var a=e[o];if(r[o].field.isKeyField()){if("string"!=typeof a)throw new E(T.INVALID_ARGUMENT,"Invalid query. Expected a string for document ID in "+t+"(), but got a "+typeof a);if(!this._query.isCollectionGroupQuery()&&-1!==a.indexOf("/"))throw new E(T.INVALID_ARGUMENT,"Invalid query. When querying a collection and ordering by FieldPath.documentId(), the value passed to "+t+"() must be a plain document ID, but '"+a+"' contains a slash.");var s=this._query.path.child(ct.fromString(a));if(!ft.isDocumentKey(s))throw new E(T.INVALID_ARGUMENT,"Invalid query. When querying a collection group and ordering by FieldPath.documentId(), the value passed to "+t+"() must result in a valid document path, but '"+s+"' is not because it contains an odd number of segments.");var u=new ft(s);i.push(new Ve(this.firestore._databaseId,u))}else{var c=this.firestore._dataConverter.parseQueryValue(t,a);i.push(c)}}return new hr(i,n)},t.prototype.onSnapshot=function(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];O("Query.onSnapshot",arguments,1,4);var n,r={},i=0;return"object"!=typeof t[i]||oo(t[i])||(W("Query.onSnapshot",r=t[i],["includeMetadataChanges"]),x("Query.onSnapshot","boolean","includeMetadataChanges",r.includeMetadataChanges),i++),oo(t[i])?n=t[i]:(M("Query.onSnapshot","function",i,t[i]),L("Query.onSnapshot","function",i+1,t[i+1]),L("Query.onSnapshot","function",i+2,t[i+2]),n={next:t[i],error:t[i+1],complete:t[i+2]}),this.validateHasExplicitOrderByForLimitToLast(this._query),this.onSnapshotInternal(r,n)},t.prototype.onSnapshotInternal=function(t,e){var n=this,r=function(t){console.error("Uncaught Error in onSnapshot:",t)};e.error&&(r=e.error.bind(e));var i=new Xi({next:function(t){e.next&&e.next(new Uo(n.firestore,n._query,t))},error:r}),o=this.firestore.ensureClientConfigured(),a=o.listen(this._query,i,t);return function(){i.mute(),o.unlisten(a)}},t.prototype.validateHasExplicitOrderByForLimitToLast=function(t){if(t.hasLimitToLast()&&0===t.explicitOrderBy.length)throw new E(T.UNIMPLEMENTED,"limitToLast() queries require specifying at least one orderBy() clause")},t.prototype.get=function(t){var e=this;return O("Query.get",arguments,0,1),Qo("Query.get",t),this.validateHasExplicitOrderByForLimitToLast(this._query),new Promise((function(n,r){t&&"cache"===t.source?e.firestore.ensureClientConfigured().getDocumentsFromLocalCache(e._query).then((function(t){n(new Uo(e.firestore,e._query,t))}),r):e.getViaSnapshotListener(n,r,t)}))},t.prototype.getViaSnapshotListener=function(t,e,n){var r=this.onSnapshotInternal({includeMetadataChanges:!0,waitForSyncWhenOnline:!0},{next:function(i){r(),i.metadata.fromCache&&n&&"server"===n.source?e(new E(T.UNAVAILABLE,'Failed to get documents from server. (However, these documents may exist in the local cache. Run again without setting source to "server" to retrieve the cached documents.)')):t(i)},error:e})},t.prototype.parseDocumentIdValue=function(t){if("string"==typeof t){if(""===t)throw new E(T.INVALID_ARGUMENT,"Invalid query. When querying with FieldPath.documentId(), you must provide a valid document ID, but it was an empty string.");if(!this._query.isCollectionGroupQuery()&&-1!==t.indexOf("/"))throw new E(T.INVALID_ARGUMENT,"Invalid query. When querying a collection by FieldPath.documentId(), you must provide a plain document ID, but '"+t+"' contains a '/' character.");var e=this._query.path.child(ct.fromString(t));if(!ft.isDocumentKey(e))throw new E(T.INVALID_ARGUMENT,"Invalid query. When querying a collection group by FieldPath.documentId(), the value provided must result in a valid document path, but '"+e+"' is not because it has an odd number of segments ("+e.length+").");return new Ve(this.firestore._databaseId,new ft(e))}if(t instanceof xo){var n=t;return new Ve(this.firestore._databaseId,n._key)}throw new E(T.INVALID_ARGUMENT,"Invalid query. When querying with FieldPath.documentId(), you must provide a valid string or a DocumentReference, but it was: "+j(t)+".")},t.prototype.validateDisjunctiveFilterElements=function(t,e){if(!Array.isArray(t)||0===t.length)throw new E(T.INVALID_ARGUMENT,"Invalid Query. A non-empty array is required for '"+e.toString()+"' filters.");if(t.length>10)throw new E(T.INVALID_ARGUMENT,"Invalid Query. '"+e.toString()+"' filters support a maximum of 10 elements in the value array.");if(t.indexOf(null)>=0)throw new E(T.INVALID_ARGUMENT,"Invalid Query. '"+e.toString()+"' filters cannot contain 'null' in the value array.");if(t.filter((function(t){return Number.isNaN(t)})).length>0)throw new E(T.INVALID_ARGUMENT,"Invalid Query. '"+e.toString()+"' filters cannot contain 'NaN' in the value array.")},t.prototype.validateNewFilter=function(t){if(t instanceof rr){var e=[nr.ARRAY_CONTAINS,nr.ARRAY_CONTAINS_ANY],n=[nr.IN,nr.ARRAY_CONTAINS_ANY],r=e.indexOf(t.op)>=0,i=n.indexOf(t.op)>=0;if(t.isInequality()){var o=this._query.getInequalityFilterField();if(null!==o&&!o.isEqual(t.field))throw new E(T.INVALID_ARGUMENT,"Invalid query. All where filters with an inequality (<, <=, >, or >=) must be on the same field. But you have inequality filters on '"+o.toString()+"' and '"+t.field.toString()+"'");var a=this._query.getFirstOrderByField();null!==a&&this.validateOrderByAndInequalityMatch(t.field,a)}else if(i||r){var s=null;if(i&&(s=this._query.findFilterOperator(n)),null===s&&r&&(s=this._query.findFilterOperator(e)),null!=s)throw s===t.op?new E(T.INVALID_ARGUMENT,"Invalid query. You cannot use more than one '"+t.op.toString()+"' filter."):new E(T.INVALID_ARGUMENT,"Invalid query. You cannot use '"+t.op.toString()+"' filters with '"+s.toString()+"' filters.")}}},t.prototype.validateNewOrderBy=function(t){if(null===this._query.getFirstOrderByField()){var e=this._query.getInequalityFilterField();null!==e&&this.validateOrderByAndInequalityMatch(e,t.field)}},t.prototype.validateOrderByAndInequalityMatch=function(t,e){if(!e.isEqual(t))throw new E(T.INVALID_ARGUMENT,"Invalid query. You have a where filter with an inequality (<, <=, >, or >=) on field '"+t.toString()+"' and so you must also use '"+t.toString()+"' as your first Query.orderBy(), but your first Query.orderBy() is on field '"+e.toString()+"' instead.")},t}(),Uo=function(){function t(t,e,n){this._firestore=t,this._originalQuery=e,this._snapshot=n,this._cachedChanges=null,this._cachedChangesIncludeMetadataChanges=null,this.metadata=new Fo(n.hasPendingWrites,n.fromCache)}return Object.defineProperty(t.prototype,"docs",{get:function(){var t=[];return this.forEach((function(e){return t.push(e)})),t},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"empty",{get:function(){return this._snapshot.docs.isEmpty()},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"size",{get:function(){return this._snapshot.docs.size},enumerable:!0,configurable:!0}),t.prototype.forEach=function(t,e){var n=this;O("QuerySnapshot.forEach",arguments,1,2),M("QuerySnapshot.forEach","function",1,t),this._snapshot.docs.forEach((function(r){t.call(e,n.convertToDocumentImpl(r))}))},Object.defineProperty(t.prototype,"query",{get:function(){return new Bo(this._originalQuery,this._firestore)},enumerable:!0,configurable:!0}),t.prototype.docChanges=function(t){t&&(W("QuerySnapshot.docChanges",t,["includeMetadataChanges"]),x("QuerySnapshot.docChanges","boolean","includeMetadataChanges",t.includeMetadataChanges));var e=!(!t||!t.includeMetadataChanges);if(e&&this._snapshot.excludesMetadataChanges)throw new E(T.INVALID_ARGUMENT,"To include metadata changes with your document changes, you must also pass { includeMetadataChanges:true } to onSnapshot().");return this._cachedChanges&&this._cachedChangesIncludeMetadataChanges===e||(this._cachedChanges=function(t,e,n){if(n.oldDocs.isEmpty()){var r,i=0;return n.docChanges.map((function(e){var o=new Vo(t,e.doc.key,e.doc,n.fromCache,n.mutatedKeys.has(e.doc.key));return v(e.type===Kr.Added,"Invalid event type for first snapshot"),v(!r||n.query.docComparator(r,e.doc)<0,"Got added events in wrong order"),r=e.doc,{type:"added",doc:o,oldIndex:-1,newIndex:i++}}))}var o=n.oldDocs;return n.docChanges.filter((function(t){return e||t.type!==Kr.Metadata})).map((function(e){var r=new Vo(t,e.doc.key,e.doc,n.fromCache,n.mutatedKeys.has(e.doc.key)),i=-1,a=-1;return e.type!==Kr.Added&&(v((i=o.indexOf(e.doc.key))>=0,"Index for document not found"),o=o.delete(e.doc.key)),e.type!==Kr.Removed&&(a=(o=o.add(e.doc)).indexOf(e.doc.key)),{type:zo(e.type),doc:r,oldIndex:i,newIndex:a}}))}(this._firestore,e,this._snapshot),this._cachedChangesIncludeMetadataChanges=e),this._cachedChanges},t.prototype.isEqual=function(e){if(!(e instanceof t))throw Q("isEqual","QuerySnapshot",1,e);return this._firestore===e._firestore&&this._originalQuery.isEqual(e._originalQuery)&&this._snapshot.isEqual(e._snapshot)},t.prototype.convertToDocumentImpl=function(t){return new Vo(this._firestore,t.key,t,this.metadata.fromCache,this._snapshot.mutatedKeys.has(t.key))},t}();a.__spreadArrays(["length","forEach","map"],"undefined"!=typeof Symbol?[Symbol.iterator]:[]).forEach((function(t){try{Object.defineProperty(Uo.prototype.docChanges,t,{get:function(){return function(){throw new E(T.INVALID_ARGUMENT,'QuerySnapshot.docChanges has been changed from a property into a method, so usages like "querySnapshot.docChanges" should become "querySnapshot.docChanges()"')}()}})}catch(t){}}));var jo=function(t){function e(e,n){var r=t.call(this,tr.atPath(e),n)||this;if(e.length%2!=1)throw new E(T.INVALID_ARGUMENT,"Invalid collection reference. Collection references must have an odd number of segments, but "+e.canonicalString()+" has "+e.length);return r}return a.__extends(e,t),Object.defineProperty(e.prototype,"id",{get:function(){return this._query.path.lastSegment()},enumerable:!0,configurable:!0}),Object.defineProperty(e.prototype,"parent",{get:function(){var t=this._query.path.popLast();return t.isEmpty()?null:new xo(new ft(t),this.firestore)},enumerable:!0,configurable:!0}),Object.defineProperty(e.prototype,"path",{get:function(){return this._query.path.canonicalString()},enumerable:!0,configurable:!0}),e.prototype.doc=function(t){if(O("CollectionReference.doc",arguments,0,1),0===arguments.length&&(t=Y.newId()),M("CollectionReference.doc","non-empty string",1,t),""===t)throw new E(T.INVALID_ARGUMENT,"Document path must be a non-empty string");var e=ct.fromString(t);return xo.forPath(this._query.path.child(e),this.firestore)},e.prototype.add=function(t){k("CollectionReference.add",arguments,1),M("CollectionReference.add","object",1,t);var e=this.doc();return e.set(t).then((function(){return e}))},e}(Bo);function Ko(t,e){if(void 0===e)return{merge:!1};if(W(t,e,["merge","mergeFields"]),x(t,"boolean","merge",e.merge),F(t,"mergeFields","a string or a FieldPath",e.mergeFields,(function(t){return"string"==typeof t||t instanceof Ji})),void 0!==e.mergeFields&&void 0!==e.merge)throw new E(T.INVALID_ARGUMENT,"Invalid options passed to function "+t+'(): You cannot specify both "merge" and "mergeFields".');return e}function Wo(t,e){return void 0===e?{}:(W(t,e,["serverTimestamps"]),q(t,0,"serverTimestamps",e.serverTimestamps,["estimate","previous","none"]),e)}function Qo(t,e){L(t,"object",1,e),e&&(W(t,e,["source"]),q(t,0,"source",e.source,["default","server","cache"]))}function Go(t,e,n){if(e instanceof xo){if(e.firestore!==n)throw new E(T.INVALID_ARGUMENT,"Provided document reference is from a different Firestore instance.");return e}throw Q(t,"DocumentReference",1,e)}function zo(t){switch(t){case Kr.Added:return"added";case Kr.Modified:case Kr.Metadata:return"modified";case Kr.Removed:return"removed";default:return g("Unknown change type: "+t)}}var Ho=S(Mo,"Use firebase.firestore() instead."),Yo=S(Lo,"Use firebase.firestore().runTransaction() instead."),Xo=S(Po,"Use firebase.firestore().batch() instead."),Jo=S(xo,"Use firebase.firestore().doc() instead."),$o=S(qo),Zo=S(Vo),ta=S(Bo),ea=S(Uo),na=S(jo,"Use firebase.firestore().collection() instead."),ra={Firestore:Ho,GeoPoint:ai,Timestamp:It,Blob:rt,Transaction:Yo,WriteBatch:Xo,DocumentReference:Jo,DocumentSnapshot:$o,Query:ta,QueryDocumentSnapshot:Zo,QuerySnapshot:ea,CollectionReference:na,FieldPath:Ji,FieldValue:po,setLogLevel:Mo.setLogLevel,CACHE_SIZE_UNLIMITED:Ro};function ia(t){t.INTERNAL.registerService("firestore",(function(t){return new Mo(t)}),function(t){v(t&&"object"==typeof t,"shallowCopy() expects object parameter.");var e={};for(var n in t)Object.prototype.hasOwnProperty.call(t,n)&&(e[n]=t[n]);return e}(ra))}
+/**
+ * @license
+ * Copyright 2019 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */var oa=function(){function t(){}return t.prototype.addCallback=function(t){},t.prototype.shutdown=function(){},t}(),aa=function(){function t(){var t=this;this.networkAvailableListener=function(){return t.onNetworkAvailable()},this.networkUnavailableListener=function(){return t.onNetworkUnavailable()},this.callbacks=[],this.configureNetworkMonitoring()}return t.prototype.addCallback=function(t){this.callbacks.push(t)},t.prototype.shutdown=function(){window.removeEventListener("online",this.networkAvailableListener),window.removeEventListener("offline",this.networkUnavailableListener)},t.prototype.configureNetworkMonitoring=function(){window.addEventListener("online",this.networkAvailableListener),window.addEventListener("offline",this.networkUnavailableListener)},t.prototype.onNetworkAvailable=function(){p("ConnectivityMonitor","Network connectivity changed: AVAILABLE");for(var t=0,e=this.callbacks;t<e.length;t++){(0,e[t])(0)}},t.prototype.onNetworkUnavailable=function(){p("ConnectivityMonitor","Network connectivity changed: UNAVAILABLE");for(var t=0,e=this.callbacks;t<e.length;t++){(0,e[t])(1)}},t.isAvailable=function(){return"undefined"!=typeof window&&void 0!==window.addEventListener&&void 0!==window.removeEventListener},t}(),sa=function(){function t(t){this.sendFn=t.sendFn,this.closeFn=t.closeFn}return t.prototype.onOpen=function(t){v(!this.wrappedOnOpen,"Called onOpen on stream twice!"),this.wrappedOnOpen=t},t.prototype.onClose=function(t){v(!this.wrappedOnClose,"Called onClose on stream twice!"),this.wrappedOnClose=t},t.prototype.onMessage=function(t){v(!this.wrappedOnMessage,"Called onMessage on stream twice!"),this.wrappedOnMessage=t},t.prototype.close=function(){this.closeFn()},t.prototype.send=function(t){this.sendFn(t)},t.prototype.callOnOpen=function(){v(void 0!==this.wrappedOnOpen,"Cannot call onOpen because no callback was set"),this.wrappedOnOpen()},t.prototype.callOnClose=function(t){v(void 0!==this.wrappedOnClose,"Cannot call onClose because no callback was set"),this.wrappedOnClose(t)},t.prototype.callOnMessage=function(t){v(void 0!==this.wrappedOnMessage,"Cannot call onMessage because no callback was set"),this.wrappedOnMessage(t)},t}(),ua="Connection",ca={BatchGetDocuments:"batchGet",Commit:"commit"},ha="gl-js/ fire/"+h,la=function(){function t(t){this.databaseId=t.databaseId;var e=t.ssl?"https":"http";this.baseUrl=e+"://"+t.host,this.forceLongPolling=t.forceLongPolling}return t.prototype.modifyHeadersForRequest=function(t,e){if(e)for(var n in e.authHeaders)e.authHeaders.hasOwnProperty(n)&&(t[n]=e.authHeaders[n]);t["X-Goog-Api-Client"]=ha},t.prototype.invokeRPC=function(t,e,n){var r=this,i=this.makeUrl(t);return new Promise((function(o,s){var u=new c.XhrIo;u.listenOnce(c.EventType.COMPLETE,(function(){try{switch(u.getLastErrorCode()){case c.ErrorCode.NO_ERROR:var e=u.getResponseJson();p(ua,"XHR received:",JSON.stringify(e)),o(e);break;case c.ErrorCode.TIMEOUT:p(ua,'RPC "'+t+'" timed out'),s(new E(T.DEADLINE_EXCEEDED,"Request time out"));break;case c.ErrorCode.HTTP_ERROR:var n=u.getStatus();if(p(ua,'RPC "'+t+'" failed with status:',n,"response text:",u.getResponseText()),n>0){var r=u.getResponseJson().error;if(r&&r.status&&r.message){var i=(a=r.status,h=a.toLowerCase().replace("_","-"),Object.values(T).indexOf(h)>=0?h:T.UNKNOWN);s(new E(i,r.message))}else s(new E(T.UNKNOWN,"Server responded with status "+u.getStatus()))}else p(ua,'RPC "'+t+'" failed'),s(new E(T.UNAVAILABLE,"Connection failed."));break;default:g('RPC "'+t+'" failed with unanticipated webchannel error '+u.getLastErrorCode()+": "+u.getLastError()+", giving up.")}}finally{p(ua,'RPC "'+t+'" completed.')}var a,h}));var h=a.__assign({},e);delete h.database;var l=JSON.stringify(h);p(ua,"XHR sending: ",i+" "+l);var f={"Content-Type":"text/plain"};r.modifyHeadersForRequest(f,n),u.send(i,"POST",l,f,15)}))},t.prototype.invokeStreamingRPC=function(t,e,n){return this.invokeRPC(t,e,n)},t.prototype.openStream=function(t,e){var n=[this.baseUrl,"/","google.firestore.v1.Firestore","/",t,"/channel"],r=c.createWebChannelTransport(),i={backgroundChannelTest:!0,httpSessionIdParam:"gsessionid",initMessageHeaders:{},messageUrlParams:{database:"projects/"+this.databaseId.projectId+"/databases/"+this.databaseId.database},sendRawJson:!0,supportsCrossDomainXhr:!0,internalChannelParams:{forwardChannelRequestTimeoutMs:6e5},forceLongPolling:this.forceLongPolling};this.modifyHeadersForRequest(i.initMessageHeaders,e),u.isReactNative()||(i.httpHeadersOverwriteParam="$httpHeaders");var o=n.join("");p(ua,"Creating WebChannel: "+o+" "+i);var a=r.createWebChannel(o,i),s=!1,h=!1,l=new sa({sendFn:function(t){h?p(ua,"Not sending because WebChannel is closed:",t):(s||(p(ua,"Opening WebChannel transport."),a.open(),s=!0),p(ua,"WebChannel sending:",t),a.send(t))},closeFn:function(){return a.close()}}),f=function(t,e){a.listen(t,(function(t){try{e(t)}catch(t){setTimeout((function(){throw t}),0)}}))};return f(c.WebChannel.EventType.OPEN,(function(){h||p(ua,"WebChannel transport opened.")})),f(c.WebChannel.EventType.CLOSE,(function(){h||(h=!0,p(ua,"WebChannel transport closed"),l.callOnClose())})),f(c.WebChannel.EventType.ERROR,(function(t){h||(h=!0,p(ua,"WebChannel transport errored:",t),l.callOnClose(new E(T.UNAVAILABLE,"The operation could not be completed")))})),f(c.WebChannel.EventType.MESSAGE,(function(t){if(!h){var e=t.data[0];v(!!e,"Got a webchannel message without data.");var n=e,r=n.error||n[0]&&n[0].error;if(r){p(ua,"WebChannel received error:",r);var i=r.status,o=function(t){var e=qr[t];if(void 0!==e)return Ur(e)}(i),s=r.message;void 0===o&&(o=T.INTERNAL,s="Unknown error status: "+i+" with message "+r.message),h=!0,l.callOnClose(new E(o,s)),a.close()}else p(ua,"WebChannel received:",e),l.callOnMessage(e)}})),setTimeout((function(){l.callOnOpen()}),0),l},t.prototype.makeUrl=function(t){var e=ca[t];return v(void 0!==e,"Unknown REST mapping for: "+t),this.baseUrl+"/v1/projects/"+this.databaseId.projectId+"/databases/"+this.databaseId.database+"/documents:"+e},t}(),fa=function(){function t(){this.emptyByteString="",this.base64Available="undefined"!=typeof atob}return Object.defineProperty(t.prototype,"document",{get:function(){return"undefined"!=typeof document?document:null},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"window",{get:function(){return"undefined"!=typeof window?window:null},enumerable:!0,configurable:!0}),t.prototype.loadConnection=function(t){return Promise.resolve(new la(t))},t.prototype.newConnectivityMonitor=function(){return aa.isAvailable()?new aa:new oa},t.prototype.newSerializer=function(t){return new wi(t,{useProto3Json:!0})},t.prototype.formatJSON=function(t){return JSON.stringify(t)},t.prototype.atob=function(t){return atob(t)},t.prototype.btoa=function(t){return btoa(t)},t}();
+/**
+ * @license
+ * Copyright 2019 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+function da(t){ia(t)}
+/**
+ * @license
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+b.setPlatform(new fa),da(o),e.registerFirestore=da}).call(this,n(9))},function(t,e){var n,r,i=t.exports={};function o(){throw new Error("setTimeout has not been defined")}function a(){throw new Error("clearTimeout has not been defined")}function s(t){if(n===setTimeout)return setTimeout(t,0);if((n===o||!n)&&setTimeout)return n=setTimeout,setTimeout(t,0);try{return n(t,0)}catch(e){try{return n.call(null,t,0)}catch(e){return n.call(this,t,0)}}}!function(){try{n="function"==typeof setTimeout?setTimeout:o}catch(t){n=o}try{r="function"==typeof clearTimeout?clearTimeout:a}catch(t){r=a}}();var u,c=[],h=!1,l=-1;function f(){h&&u&&(h=!1,u.length?c=u.concat(c):l=-1,c.length&&d())}function d(){if(!h){var t=s(f);h=!0;for(var e=c.length;e;){for(u=c,c=[];++l<e;)u&&u[l].run();l=-1,e=c.length}u=null,h=!1,function(t){if(r===clearTimeout)return clearTimeout(t);if((r===a||!r)&&clearTimeout)return r=clearTimeout,clearTimeout(t);try{r(t)}catch(e){try{return r.call(null,t)}catch(e){return r.call(this,t)}}}(t)}}function p(t,e){this.fun=t,this.array=e}function m(){}i.nextTick=function(t){var e=new Array(arguments.length-1);if(arguments.length>1)for(var n=1;n<arguments.length;n++)e[n-1]=arguments[n];c.push(new p(t,e)),1!==c.length||h||s(d)},p.prototype.run=function(){this.fun.apply(null,this.array)},i.title="browser",i.browser=!0,i.env={},i.argv=[],i.version="",i.versions={},i.on=m,i.addListener=m,i.once=m,i.off=m,i.removeListener=m,i.removeAllListeners=m,i.emit=m,i.prependListener=m,i.prependOnceListener=m,i.listeners=function(t){return[]},i.binding=function(t){throw new Error("process.binding is not supported")},i.cwd=function(){return"/"},i.chdir=function(t){throw new Error("process.chdir is not supported")},i.umask=function(){return 0}},function(t,e,n){"use strict";n.r(e),function(t){n.d(e,"ErrorCode",(function(){return cr})),n.d(e,"EventType",(function(){return hr})),n.d(e,"WebChannel",(function(){return lr})),n.d(e,"XhrIo",(function(){return fr})),n.d(e,"createWebChannelTransport",(function(){return ur}));var r,i="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof window?window:void 0!==t?t:"undefined"!=typeof self?self:{},o=o||{},a=i;function s(t){return"string"==typeof t}function u(t){return"number"==typeof t}function c(t,e){t=t.split("."),e=e||a;for(var n=0;n<t.length;n++)if(null==(e=e[t[n]]))return null;return e}function h(){}function l(t){var e=typeof t;if("object"==e){if(!t)return"null";if(t instanceof Array)return"array";if(t instanceof Object)return e;var n=Object.prototype.toString.call(t);if("[object Window]"==n)return"object";if("[object Array]"==n||"number"==typeof t.length&&void 0!==t.splice&&void 0!==t.propertyIsEnumerable&&!t.propertyIsEnumerable("splice"))return"array";if("[object Function]"==n||void 0!==t.call&&void 0!==t.propertyIsEnumerable&&!t.propertyIsEnumerable("call"))return"function"}else if("function"==e&&void 0===t.call)return"object";return e}function f(t){return"array"==l(t)}function d(t){var e=l(t);return"array"==e||"object"==e&&"number"==typeof t.length}function p(t){var e=typeof t;return"object"==e&&null!=t||"function"==e}var m="closure_uid_"+(1e9*Math.random()>>>0),y=0;function g(t,e,n){return t.call.apply(t.bind,arguments)}function v(t,e,n){if(!t)throw Error();if(2<arguments.length){var r=Array.prototype.slice.call(arguments,2);return function(){var n=Array.prototype.slice.call(arguments);return Array.prototype.unshift.apply(n,r),t.apply(e,n)}}return function(){return t.apply(e,arguments)}}function b(t,e,n){return(b=Function.prototype.bind&&-1!=Function.prototype.bind.toString().indexOf("native code")?g:v).apply(null,arguments)}function w(t,e){var n=Array.prototype.slice.call(arguments,1);return function(){var e=n.slice();return e.push.apply(e,arguments),t.apply(this,e)}}var T=Date.now||function(){return+new Date};function E(t,e){function n(){}n.prototype=e.prototype,t.N=e.prototype,t.prototype=new n,t.prototype.constructor=t,t.yb=function(t,n,r){for(var i=Array(arguments.length-2),o=2;o<arguments.length;o++)i[o-2]=arguments[o];return e.prototype[n].apply(t,i)}}function S(){this.j=this.j,this.i=this.i}S.prototype.j=!1,S.prototype.la=function(){if(!this.j&&(this.j=!0,this.G(),0))this[m]||(this[m]=++y)},S.prototype.G=function(){if(this.i)for(;this.i.length;)this.i.shift()()};var I=Array.prototype.indexOf?function(t,e){return Array.prototype.indexOf.call(t,e,void 0)}:function(t,e){if(s(t))return s(e)&&1==e.length?t.indexOf(e,0):-1;for(var n=0;n<t.length;n++)if(n in t&&t[n]===e)return n;return-1},_=Array.prototype.forEach?function(t,e,n){Array.prototype.forEach.call(t,e,n)}:function(t,e,n){for(var r=t.length,i=s(t)?t.split(""):t,o=0;o<r;o++)o in i&&e.call(n,i[o],o,t)};function C(t){return Array.prototype.concat.apply([],arguments)}function D(t){var e=t.length;if(0<e){for(var n=Array(e),r=0;r<e;r++)n[r]=t[r];return n}return[]}function A(t){return/^[\s\xa0]*$/.test(t)}var N,k=String.prototype.trim?function(t){return t.trim()}:function(t){return/^[\s\xa0]*([\s\S]*?)[\s\xa0]*$/.exec(t)[1]};function R(t,e){return-1!=t.indexOf(e)}function O(t,e){return t<e?-1:t>e?1:0}t:{var M=a.navigator;if(M){var L=M.userAgent;if(L){N=L;break t}}N=""}function P(t,e,n){for(var r in t)e.call(n,t[r],r,t)}function x(t){var e,n={};for(e in t)n[e]=t[e];return n}var F="constructor hasOwnProperty isPrototypeOf propertyIsEnumerable toLocaleString toString valueOf".split(" ");function q(t,e){for(var n,r,i=1;i<arguments.length;i++){for(n in r=arguments[i])t[n]=r[n];for(var o=0;o<F.length;o++)n=F[o],Object.prototype.hasOwnProperty.call(r,n)&&(t[n]=r[n])}}function V(t){return V[" "](t),t}V[" "]=h;var B,U,j=R(N,"Opera"),K=R(N,"Trident")||R(N,"MSIE"),W=R(N,"Edge"),Q=W||K,G=R(N,"Gecko")&&!(R(N.toLowerCase(),"webkit")&&!R(N,"Edge"))&&!(R(N,"Trident")||R(N,"MSIE"))&&!R(N,"Edge"),z=R(N.toLowerCase(),"webkit")&&!R(N,"Edge");function H(){var t=a.document;return t?t.documentMode:void 0}t:{var Y="",X=(U=N,G?/rv:([^\);]+)(\)|;)/.exec(U):W?/Edge\/([\d\.]+)/.exec(U):K?/\b(?:MSIE|rv)[: ]([^\);]+)(\)|;)/.exec(U):z?/WebKit\/(\S+)/.exec(U):j?/(?:Version)[ \/]?(\S+)/.exec(U):void 0);if(X&&(Y=X?X[1]:""),K){var J=H();if(null!=J&&J>parseFloat(Y)){B=String(J);break t}}B=Y}var $,Z={};function tt(t){return function(t,e){var n=Z;return Object.prototype.hasOwnProperty.call(n,t)?n[t]:n[t]=e(t)}(t,(function(){for(var e=0,n=k(String(B)).split("."),r=k(String(t)).split("."),i=Math.max(n.length,r.length),o=0;0==e&&o<i;o++){var a=n[o]||"",s=r[o]||"";do{if(a=/(\d*)(\D*)(.*)/.exec(a)||["","","",""],s=/(\d*)(\D*)(.*)/.exec(s)||["","","",""],0==a[0].length&&0==s[0].length)break;e=O(0==a[1].length?0:parseInt(a[1],10),0==s[1].length?0:parseInt(s[1],10))||O(0==a[2].length,0==s[2].length)||O(a[2],s[2]),a=a[3],s=s[3]}while(0==e)}return 0<=e}))}var et=a.document;$=et&&K?H()||("CSS1Compat"==et.compatMode?parseInt(B,10):5):void 0;var nt=!K||9<=Number($),rt=K&&!tt("9"),it=function(){if(!a.addEventListener||!Object.defineProperty)return!1;var t=!1,e=Object.defineProperty({},"passive",{get:function(){t=!0}});try{a.addEventListener("test",h,e),a.removeEventListener("test",h,e)}catch(t){}return t}();function ot(t,e){this.type=t,this.a=this.target=e,this.Ja=!0}function at(t,e){if(ot.call(this,t?t.type:""),this.relatedTarget=this.a=this.target=null,this.button=this.screenY=this.screenX=this.clientY=this.clientX=0,this.key="",this.metaKey=this.shiftKey=this.altKey=this.ctrlKey=!1,this.pointerId=0,this.pointerType="",this.c=null,t){var n=this.type=t.type,r=t.changedTouches&&t.changedTouches.length?t.changedTouches[0]:null;if(this.target=t.target||t.srcElement,this.a=e,e=t.relatedTarget){if(G){t:{try{V(e.nodeName);var i=!0;break t}catch(t){}i=!1}i||(e=null)}}else"mouseover"==n?e=t.fromElement:"mouseout"==n&&(e=t.toElement);this.relatedTarget=e,r?(this.clientX=void 0!==r.clientX?r.clientX:r.pageX,this.clientY=void 0!==r.clientY?r.clientY:r.pageY,this.screenX=r.screenX||0,this.screenY=r.screenY||0):(this.clientX=void 0!==t.clientX?t.clientX:t.pageX,this.clientY=void 0!==t.clientY?t.clientY:t.pageY,this.screenX=t.screenX||0,this.screenY=t.screenY||0),this.button=t.button,this.key=t.key||"",this.ctrlKey=t.ctrlKey,this.altKey=t.altKey,this.shiftKey=t.shiftKey,this.metaKey=t.metaKey,this.pointerId=t.pointerId||0,this.pointerType=s(t.pointerType)?t.pointerType:st[t.pointerType]||"",this.c=t,t.defaultPrevented&&this.b()}}ot.prototype.b=function(){this.Ja=!1},E(at,ot);var st={2:"touch",3:"pen",4:"mouse"};at.prototype.b=function(){at.N.b.call(this);var t=this.c;if(t.preventDefault)t.preventDefault();else if(t.returnValue=!1,rt)try{(t.ctrlKey||112<=t.keyCode&&123>=t.keyCode)&&(t.keyCode=-1)}catch(t){}};var ut="closure_listenable_"+(1e6*Math.random()|0),ct=0;function ht(t,e,n,r,i){this.listener=t,this.proxy=null,this.src=e,this.type=n,this.capture=!!r,this.da=i,this.key=++ct,this.X=this.Z=!1}function lt(t){t.X=!0,t.listener=null,t.proxy=null,t.src=null,t.da=null}function ft(t){this.src=t,this.a={},this.b=0}function dt(t,e){var n=e.type;if(n in t.a){var r,i=t.a[n],o=I(i,e);(r=0<=o)&&Array.prototype.splice.call(i,o,1),r&&(lt(e),0==t.a[n].length&&(delete t.a[n],t.b--))}}function pt(t,e,n,r){for(var i=0;i<t.length;++i){var o=t[i];if(!o.X&&o.listener==e&&o.capture==!!n&&o.da==r)return i}return-1}ft.prototype.add=function(t,e,n,r,i){var o=t.toString();(t=this.a[o])||(t=this.a[o]=[],this.b++);var a=pt(t,e,r,i);return-1<a?(e=t[a],n||(e.Z=!1)):((e=new ht(e,this.src,o,!!r,i)).Z=n,t.push(e)),e};var mt="closure_lm_"+(1e6*Math.random()|0),yt={};function gt(t,e,n,r,i){if(r&&r.once)return function t(e,n,r,i,o){if(f(n)){for(var a=0;a<n.length;a++)t(e,n[a],r,i,o);return null}return r=_t(r),e&&e[ut]?e.Ba(n,r,p(i)?!!i.capture:!!i,o):vt(e,n,r,!0,i,o)}(t,e,n,r,i);if(f(e)){for(var o=0;o<e.length;o++)gt(t,e[o],n,r,i);return null}return n=_t(n),t&&t[ut]?t.Aa(e,n,p(r)?!!r.capture:!!r,i):vt(t,e,n,!1,r,i)}function vt(t,e,n,r,i,o){if(!e)throw Error("Invalid event type");var a=p(i)?!!i.capture:!!i;if(a&&!nt)return null;var s=St(t);if(s||(t[mt]=s=new ft(t)),(n=s.add(e,n,r,a,o)).proxy)return n;if(r=function(){var t=Et,e=nt?function(n){return t.call(e.src,e.listener,n)}:function(n){if(!(n=t.call(e.src,e.listener,n)))return n};return e}(),n.proxy=r,r.src=t,r.listener=n,t.addEventListener)it||(i=a),void 0===i&&(i=!1),t.addEventListener(e.toString(),r,i);else if(t.attachEvent)t.attachEvent(wt(e.toString()),r);else{if(!t.addListener||!t.removeListener)throw Error("addEventListener and attachEvent are unavailable.");t.addListener(r)}return n}function bt(t){if(!u(t)&&t&&!t.X){var e=t.src;if(e&&e[ut])dt(e.c,t);else{var n=t.type,r=t.proxy;e.removeEventListener?e.removeEventListener(n,r,t.capture):e.detachEvent?e.detachEvent(wt(n),r):e.addListener&&e.removeListener&&e.removeListener(r),(n=St(e))?(dt(n,t),0==n.b&&(n.src=null,e[mt]=null)):lt(t)}}}function wt(t){return t in yt?yt[t]:yt[t]="on"+t}function Tt(t,e){var n=t.listener,r=t.da||t.src;return t.Z&&bt(t),n.call(r,e)}function Et(t,e){return!!t.X||(nt?Tt(t,new at(e,this)):Tt(t,e=new at(e||c("window.event"),this)))}function St(t){return(t=t[mt])instanceof ft?t:null}var It="__closure_events_fn_"+(1e9*Math.random()>>>0);function _t(t){return"function"==l(t)?t:(t[It]||(t[It]=function(e){return t.handleEvent(e)}),t[It])}function Ct(){S.call(this),this.c=new ft(this),this.J=this,this.B=null}function Dt(t,e,n,r){if(!(e=t.c.a[String(e)]))return!0;e=e.concat();for(var i=!0,o=0;o<e.length;++o){var a=e[o];if(a&&!a.X&&a.capture==n){var s=a.listener,u=a.da||a.src;a.Z&&dt(t.c,a),i=!1!==s.call(u,r)&&i}}return i&&0!=r.Ja}E(Ct,S),Ct.prototype[ut]=!0,(r=Ct.prototype).addEventListener=function(t,e,n,r){gt(this,t,e,n,r)},r.removeEventListener=function(t,e,n,r){!function t(e,n,r,i,o){if(f(n))for(var a=0;a<n.length;a++)t(e,n[a],r,i,o);else i=p(i)?!!i.capture:!!i,r=_t(r),e&&e[ut]?(e=e.c,(n=String(n).toString())in e.a&&(-1<(r=pt(a=e.a[n],r,i,o))&&(lt(a[r]),Array.prototype.splice.call(a,r,1),0==a.length&&(delete e.a[n],e.b--)))):e&&(e=St(e))&&(n=e.a[n.toString()],e=-1,n&&(e=pt(n,r,i,o)),(r=-1<e?n[e]:null)&&bt(r))}(this,t,e,n,r)},r.dispatchEvent=function(t){var e,n=this.B;if(n)for(e=[];n;n=n.B)e.push(n);n=this.J;var r=t.type||t;if(s(t))t=new ot(t,n);else if(t instanceof ot)t.target=t.target||n;else{var i=t;q(t=new ot(r,n),i)}if(i=!0,e)for(var o=e.length-1;0<=o;o--){var a=t.a=e[o];i=Dt(a,r,!0,t)&&i}if(i=Dt(a=t.a=n,r,!0,t)&&i,i=Dt(a,r,!1,t)&&i,e)for(o=0;o<e.length;o++)i=Dt(a=t.a=e[o],r,!1,t)&&i;return i},r.G=function(){if(Ct.N.G.call(this),this.c){var t,e=this.c;for(t in e.a){for(var n=e.a[t],r=0;r<n.length;r++)lt(n[r]);delete e.a[t],e.b--}}this.B=null},r.Aa=function(t,e,n,r){return this.c.add(String(t),e,!1,n,r)},r.Ba=function(t,e,n,r){return this.c.add(String(t),e,!0,n,r)};var At=a.JSON.stringify;function Nt(t,e){this.c=t,this.f=e,this.b=0,this.a=null}function kt(){this.b=this.a=null}Nt.prototype.get=function(){if(0<this.b){this.b--;var t=this.a;this.a=t.next,t.next=null}else t=this.c();return t};var Rt,Ot=new Nt((function(){return new Lt}),(function(t){t.reset()}));function Mt(){var t=qt,e=null;return t.a&&(e=t.a,t.a=t.a.next,t.a||(t.b=null),e.next=null),e}function Lt(){this.next=this.b=this.a=null}function Pt(t){a.setTimeout((function(){throw t}),0)}function xt(t,e){Rt||function(){var t=a.Promise.resolve(void 0);Rt=function(){t.then(Vt)}}(),Ft||(Rt(),Ft=!0),qt.add(t,e)}kt.prototype.add=function(t,e){var n=Ot.get();n.set(t,e),this.b?this.b.next=n:this.a=n,this.b=n},Lt.prototype.set=function(t,e){this.a=t,this.b=e,this.next=null},Lt.prototype.reset=function(){this.next=this.b=this.a=null};var Ft=!1,qt=new kt;function Vt(){for(var t;t=Mt();){try{t.a.call(t.b)}catch(t){Pt(t)}var e=Ot;e.f(t),100>e.b&&(e.b++,t.next=e.a,e.a=t)}Ft=!1}function Bt(t,e){Ct.call(this),this.b=t||1,this.a=e||a,this.f=b(this.gb,this),this.g=T()}function Ut(t){t.ba=!1,t.L&&(t.a.clearTimeout(t.L),t.L=null)}function jt(t,e,n){if("function"==l(t))n&&(t=b(t,n));else{if(!t||"function"!=typeof t.handleEvent)throw Error("Invalid listener argument");t=b(t.handleEvent,t)}return 2147483647<Number(e)?-1:a.setTimeout(t,e||0)}function Kt(t,e,n){S.call(this),this.f=null!=n?b(t,n):t,this.c=e,this.b=b(this.ab,this),this.a=[]}function Wt(t){t.U=jt(t.b,t.c),t.f.apply(null,t.a)}function Qt(t){S.call(this),this.b=t,this.a={}}E(Bt,Ct),(r=Bt.prototype).ba=!1,r.L=null,r.gb=function(){if(this.ba){var t=T()-this.g;0<t&&t<.8*this.b?this.L=this.a.setTimeout(this.f,this.b-t):(this.L&&(this.a.clearTimeout(this.L),this.L=null),this.dispatchEvent("tick"),this.ba&&(Ut(this),this.start()))}},r.start=function(){this.ba=!0,this.L||(this.L=this.a.setTimeout(this.f,this.b),this.g=T())},r.G=function(){Bt.N.G.call(this),Ut(this),delete this.a},E(Kt,S),(r=Kt.prototype).ea=!1,r.U=null,r.Ua=function(t){this.a=arguments,this.U?this.ea=!0:Wt(this)},r.G=function(){Kt.N.G.call(this),this.U&&(a.clearTimeout(this.U),this.U=null,this.ea=!1,this.a=[])},r.ab=function(){this.U=null,this.ea&&(this.ea=!1,Wt(this))},E(Qt,S);var Gt=[];function zt(t,e,n,r){f(n)||(n&&(Gt[0]=n.toString()),n=Gt);for(var i=0;i<n.length;i++){var o=gt(e,n[i],r||t.handleEvent,!1,t.b||t);if(!o)break;t.a[o.key]=o}}function Ht(t){P(t.a,(function(t,e){this.a.hasOwnProperty(e)&&bt(t)}),t),t.a={}}function Yt(){}Qt.prototype.G=function(){Qt.N.G.call(this),Ht(this)},Qt.prototype.handleEvent=function(){throw Error("EventHandler.handleEvent not implemented")};var Xt=new Ct;function Jt(t){ot.call(this,"serverreachability",t)}function $t(t){Xt.dispatchEvent(new Jt(Xt,t))}function Zt(t){ot.call(this,"statevent",t)}function te(t){Xt.dispatchEvent(new Zt(Xt,t))}function ee(t){ot.call(this,"timingevent",t)}function ne(t,e){if("function"!=l(t))throw Error("Fn must not be null and must be a function");return a.setTimeout((function(){t()}),e)}E(Jt,ot),E(Zt,ot),E(ee,ot);var re={NO_ERROR:0,hb:1,ob:2,nb:3,kb:4,mb:5,pb:6,Ma:7,TIMEOUT:8,sb:9},ie={jb:"complete",wb:"success",Na:"error",Ma:"abort",ub:"ready",vb:"readystatechange",TIMEOUT:"timeout",qb:"incrementaldata",tb:"progress",lb:"downloadprogress",xb:"uploadprogress"};function oe(){}function ae(t){var e;return(e=t.a)||(e=t.a={}),e}function se(){}oe.prototype.a=null;var ue,ce={OPEN:"a",ib:"b",Na:"c",rb:"d"};function he(){ot.call(this,"d")}function le(){ot.call(this,"c")}function fe(){}function de(t,e,n){this.g=t,this.W=e,this.V=n||1,this.I=new Qt(this),this.O=pe,t=Q?125:void 0,this.P=new Bt(t),this.h=null,this.b=!1,this.l=this.D=this.f=this.F=this.v=this.R=this.i=null,this.j=[],this.a=null,this.A=0,this.c=this.w=null,this.o=-1,this.m=!1,this.J=0,this.B=null,this.s=this.S=this.H=!1}E(he,ot),E(le,ot),E(fe,oe),ue=new fe;var pe=45e3,me={},ye={};function ge(t,e,n){t.F=1,t.f=je(Pe(e)),t.l=n,t.H=!0,be(t,null)}function ve(t,e,n,r){t.F=1,t.f=je(Pe(e)),t.l=null,t.H=n,be(t,r)}function be(t,e){t.v=T(),Ee(t),t.D=Pe(t.f),Ue(t.D,"t",t.V),t.A=0,t.a=t.g.$(t.g.Y()?e:null),0<t.J&&(t.B=new Kt(b(t.Ka,t,t.a),t.J)),zt(t.I,t.a,"readystatechange",t.eb),e=t.h?x(t.h):{},t.l?(t.w||(t.w="POST"),e["Content-Type"]="application/x-www-form-urlencoded",t.a.ca(t.D,t.w,t.l,e)):(t.w="GET",t.a.ca(t.D,t.w,null,e)),$t(1)}function we(t,e,n){for(var r=!0;!t.m&&t.A<n.length;){var i=Te(t,n);if(i==ye){4==e&&(t.c=4,te(14),r=!1);break}if(i==me){t.c=4,te(15),r=!1;break}De(t,i)}4==e&&0==n.length&&(t.c=1,te(16),r=!1),t.b=t.b&&r,r||(Ce(t),_e(t))}function Te(t,e){var n=t.A,r=e.indexOf("\n",n);return-1==r?ye:(n=Number(e.substring(n,r)),isNaN(n)?me:(r+=1)+n>e.length?ye:(e=e.substr(r,n),t.A=r+n,e))}function Ee(t){t.R=T()+t.O,Se(t,t.O)}function Se(t,e){if(null!=t.i)throw Error("WatchDog timer not null");t.i=ne(b(t.bb,t),e)}function Ie(t){t.i&&(a.clearTimeout(t.i),t.i=null)}function _e(t){t.g.Da()||t.m||t.g.na(t)}function Ce(t){Ie(t);var e=t.B;e&&"function"==typeof e.la&&e.la(),t.B=null,Ut(t.P),Ht(t.I),t.a&&(e=t.a,t.a=null,e.abort(),e.la())}function De(t,e){try{t.g.Ga(t,e),$t(4)}catch(t){}}function Ae(t,e){if(t.forEach&&"function"==typeof t.forEach)t.forEach(e,void 0);else if(d(t)||s(t))_(t,e,void 0);else{if(t.K&&"function"==typeof t.K)var n=t.K();else if(t.C&&"function"==typeof t.C)n=void 0;else if(d(t)||s(t)){n=[];for(var r=t.length,i=0;i<r;i++)n.push(i)}else for(i in n=[],r=0,t)n[r++]=i;i=(r=function(t){if(t.C&&"function"==typeof t.C)return t.C();if(s(t))return t.split("");if(d(t)){for(var e=[],n=t.length,r=0;r<n;r++)e.push(t[r]);return e}for(r in e=[],n=0,t)e[n++]=t[r];return e}(t)).length;for(var o=0;o<i;o++)e.call(void 0,r[o],n&&n[o],t)}}function Ne(t,e){this.b={},this.a=[],this.c=0;var n=arguments.length;if(1<n){if(n%2)throw Error("Uneven number of arguments");for(var r=0;r<n;r+=2)this.set(arguments[r],arguments[r+1])}else if(t)if(t instanceof Ne)for(n=t.K(),r=0;r<n.length;r++)this.set(n[r],t.get(n[r]));else for(r in t)this.set(r,t[r])}function ke(t,e){Oe(t.b,e)&&(delete t.b[e],t.c--,t.a.length>2*t.c&&Re(t))}function Re(t){if(t.c!=t.a.length){for(var e=0,n=0;e<t.a.length;){var r=t.a[e];Oe(t.b,r)&&(t.a[n++]=r),e++}t.a.length=n}if(t.c!=t.a.length){var i={};for(n=e=0;e<t.a.length;)Oe(i,r=t.a[e])||(t.a[n++]=r,i[r]=1),e++;t.a.length=n}}function Oe(t,e){return Object.prototype.hasOwnProperty.call(t,e)}(r=de.prototype).setTimeout=function(t){this.O=t},r.eb=function(t){t=t.target;var e=this.B;e&&3==Pn(t)?e.Ua():this.Ka(t)},r.Ka=function(t){try{if(t==this.a)t:{var e=Pn(this.a),n=this.a.ya(),r=this.a.T();if(!(3>e||3==e&&!Q&&!this.a.aa())){this.m||4!=e||7==n||$t(8==n||0>=r?3:2),Ie(this);var i=this.a.T();this.o=i;var o=this.a.aa();if(this.b=200==i){if(this.S&&!this.s){e:{if(this.a){var a=xn(this.a,"X-HTTP-Initial-Response");if(a&&!A(a)){var s=a;break e}}s=null}if(!s){this.b=!1,this.c=3,te(12),Ce(this),_e(this);break t}this.s=!0,De(this,s)}this.H?(we(this,e,o),Q&&this.b&&3==e&&(zt(this.I,this.P,"tick",this.cb),this.P.start())):De(this,o),4==e&&Ce(this),this.b&&!this.m&&(4==e?this.g.na(this):(this.b=!1,Ee(this)))}else 400==i&&0<o.indexOf("Unknown SID")?(this.c=3,te(12)):(this.c=0,te(13)),Ce(this),_e(this)}}}catch(t){}},r.cb=function(){if(this.a){var t=Pn(this.a),e=this.a.aa();this.A<e.length&&(Ie(this),we(this,t,e),this.b&&4!=t&&Ee(this))}},r.cancel=function(){this.m=!0,Ce(this)},r.bb=function(){this.i=null;var t=T();0<=t-this.R?(2!=this.F&&($t(3),te(17)),Ce(this),this.c=2,_e(this)):Se(this,this.R-t)},(r=Ne.prototype).C=function(){Re(this);for(var t=[],e=0;e<this.a.length;e++)t.push(this.b[this.a[e]]);return t},r.K=function(){return Re(this),this.a.concat()},r.get=function(t,e){return Oe(this.b,t)?this.b[t]:e},r.set=function(t,e){Oe(this.b,t)||(this.c++,this.a.push(t)),this.b[t]=e},r.forEach=function(t,e){for(var n=this.K(),r=0;r<n.length;r++){var i=n[r],o=this.get(i);t.call(e,o,i,this)}};var Me=/^(?:([^:/?#.]+):)?(?:\/\/(?:([^/?#]*)@)?([^/#?]*?)(?::([0-9]+))?(?=[/#?]|$))?([^?#]+)?(?:\?([^#]*))?(?:#([\s\S]*))?$/;function Le(t,e){var n;this.b=this.j=this.f="",this.i=null,this.g=this.a="",this.h=!1,t instanceof Le?(this.h=void 0!==e?e:t.h,xe(this,t.f),this.j=t.j,Fe(this,t.b),qe(this,t.i),this.a=t.a,Ve(this,nn(t.c)),this.g=t.g):t&&(n=String(t).match(Me))?(this.h=!!e,xe(this,n[1]||"",!0),this.j=Ke(n[2]||""),Fe(this,n[3]||"",!0),qe(this,n[4]),this.a=Ke(n[5]||"",!0),Ve(this,n[6]||"",!0),this.g=Ke(n[7]||"")):(this.h=!!e,this.c=new Je(null,this.h))}function Pe(t){return new Le(t)}function xe(t,e,n){t.f=n?Ke(e,!0):e,t.f&&(t.f=t.f.replace(/:$/,""))}function Fe(t,e,n){t.b=n?Ke(e,!0):e}function qe(t,e){if(e){if(e=Number(e),isNaN(e)||0>e)throw Error("Bad port number "+e);t.i=e}else t.i=null}function Ve(t,e,n){e instanceof Je?(t.c=e,function(t,e){e&&!t.f&&($e(t),t.c=null,t.a.forEach((function(t,e){var n=e.toLowerCase();e!=n&&(Ze(this,e),en(this,n,t))}),t)),t.f=e}(t.c,t.h)):(n||(e=We(e,Ye)),t.c=new Je(e,t.h))}function Be(t,e,n){t.c.set(e,n)}function Ue(t,e,n){f(n)||(n=[String(n)]),en(t.c,e,n)}function je(t){return Be(t,"zx",Math.floor(2147483648*Math.random()).toString(36)+Math.abs(Math.floor(2147483648*Math.random())^T()).toString(36)),t}function Ke(t,e){return t?e?decodeURI(t.replace(/%25/g,"%2525")):decodeURIComponent(t):""}function We(t,e,n){return s(t)?(t=encodeURI(t).replace(e,Qe),n&&(t=t.replace(/%25([0-9a-fA-F]{2})/g,"%$1")),t):null}function Qe(t){return"%"+((t=t.charCodeAt(0))>>4&15).toString(16)+(15&t).toString(16)}Le.prototype.toString=function(){var t=[],e=this.f;e&&t.push(We(e,Ge,!0),":");var n=this.b;return(n||"file"==e)&&(t.push("//"),(e=this.j)&&t.push(We(e,Ge,!0),"@"),t.push(encodeURIComponent(String(n)).replace(/%25([0-9a-fA-F]{2})/g,"%$1")),null!=(n=this.i)&&t.push(":",String(n))),(n=this.a)&&(this.b&&"/"!=n.charAt(0)&&t.push("/"),t.push(We(n,"/"==n.charAt(0)?He:ze,!0))),(n=this.c.toString())&&t.push("?",n),(n=this.g)&&t.push("#",We(n,Xe)),t.join("")},Le.prototype.resolve=function(t){var e=Pe(this),n=!!t.f;n?xe(e,t.f):n=!!t.j,n?e.j=t.j:n=!!t.b,n?Fe(e,t.b):n=null!=t.i;var r=t.a;if(n)qe(e,t.i);else if(n=!!t.a){if("/"!=r.charAt(0))if(this.b&&!this.a)r="/"+r;else{var i=e.a.lastIndexOf("/");-1!=i&&(r=e.a.substr(0,i+1)+r)}if(".."==(i=r)||"."==i)r="";else if(R(i,"./")||R(i,"/.")){r=0==i.lastIndexOf("/",0),i=i.split("/");for(var o=[],a=0;a<i.length;){var s=i[a++];"."==s?r&&a==i.length&&o.push(""):".."==s?((1<o.length||1==o.length&&""!=o[0])&&o.pop(),r&&a==i.length&&o.push("")):(o.push(s),r=!0)}r=o.join("/")}else r=i}return n?e.a=r:n=""!==t.c.toString(),n?Ve(e,nn(t.c)):n=!!t.g,n&&(e.g=t.g),e};var Ge=/[#\/\?@]/g,ze=/[#\?:]/g,He=/[#\?]/g,Ye=/[#\?@]/g,Xe=/#/g;function Je(t,e){this.b=this.a=null,this.c=t||null,this.f=!!e}function $e(t){t.a||(t.a=new Ne,t.b=0,t.c&&function(t,e){if(t){t=t.split("&");for(var n=0;n<t.length;n++){var r=t[n].indexOf("="),i=null;if(0<=r){var o=t[n].substring(0,r);i=t[n].substring(r+1)}else o=t[n];e(o,i?decodeURIComponent(i.replace(/\+/g," ")):"")}}}(t.c,(function(e,n){t.add(decodeURIComponent(e.replace(/\+/g," ")),n)})))}function Ze(t,e){$e(t),e=rn(t,e),Oe(t.a.b,e)&&(t.c=null,t.b-=t.a.get(e).length,ke(t.a,e))}function tn(t,e){return $e(t),e=rn(t,e),Oe(t.a.b,e)}function en(t,e,n){Ze(t,e),0<n.length&&(t.c=null,t.a.set(rn(t,e),D(n)),t.b+=n.length)}function nn(t){var e=new Je;return e.c=t.c,t.a&&(e.a=new Ne(t.a),e.b=t.b),e}function rn(t,e){return e=String(e),t.f&&(e=e.toLowerCase()),e}function on(t){this.a=t,this.b=this.h=null,this.g=!1,this.i=null,this.c=-1,this.l=this.f=null}function an(t){var e=t.a.F.a;if(null!=e)te(4),e?(te(10),Hn(t.a,t,!1)):(te(11),Hn(t.a,t,!0));else{t.b=new de(t,void 0,void 0),t.b.h=t.h,e=Zn(e=t.a,e.Y()?t.f:null,t.i),te(4),Ue(e,"TYPE","xmlhttp");var n=t.a.j,r=t.a.I;n&&r&&Be(e,n,r),ve(t.b,e,!1,t.f)}}function sn(){this.a=this.b=null}function un(){this.a=new Ne}function cn(t){var e=typeof t;return"object"==e&&t||"function"==e?"o"+(t[m]||(t[m]=++y)):e.charAt(0)+t}function hn(t,e){this.b=t,this.a=e}function ln(t){this.g=t||fn,a.PerformanceNavigationTiming?t=0<(t=a.performance.getEntriesByType("navigation")).length&&("hq"==t[0].nextHopProtocol||"h2"==t[0].nextHopProtocol):t=!!(a.ka&&a.ka.Ea&&a.ka.Ea()&&a.ka.Ea().zb),this.f=t?this.g:1,this.a=null,1<this.f&&(this.a=new un),this.b=null,this.c=[]}(r=Je.prototype).add=function(t,e){$e(this),this.c=null,t=rn(this,t);var n=this.a.get(t);return n||this.a.set(t,n=[]),n.push(e),this.b+=1,this},r.forEach=function(t,e){$e(this),this.a.forEach((function(n,r){_(n,(function(n){t.call(e,n,r,this)}),this)}),this)},r.K=function(){$e(this);for(var t=this.a.C(),e=this.a.K(),n=[],r=0;r<e.length;r++)for(var i=t[r],o=0;o<i.length;o++)n.push(e[r]);return n},r.C=function(t){$e(this);var e=[];if(s(t))tn(this,t)&&(e=C(e,this.a.get(rn(this,t))));else{t=this.a.C();for(var n=0;n<t.length;n++)e=C(e,t[n])}return e},r.set=function(t,e){return $e(this),this.c=null,tn(this,t=rn(this,t))&&(this.b-=this.a.get(t).length),this.a.set(t,[e]),this.b+=1,this},r.get=function(t,e){return t&&0<(t=this.C(t)).length?String(t[0]):e},r.toString=function(){if(this.c)return this.c;if(!this.a)return"";for(var t=[],e=this.a.K(),n=0;n<e.length;n++){var r=e[n],i=encodeURIComponent(String(r));r=this.C(r);for(var o=0;o<r.length;o++){var a=i;""!==r[o]&&(a+="="+encodeURIComponent(String(r[o]))),t.push(a)}}return this.c=t.join("&")},E((function(){}),(function(){})),(r=on.prototype).M=null,r.$=function(t){return this.a.$(t)},r.abort=function(){this.b&&(this.b.cancel(),this.b=null),this.c=-1},r.Da=function(){return!1},r.Ga=function(t,e){if(this.c=t.o,0==this.M){if(!this.a.o&&(t=t.a)){var n=xn(t,"X-Client-Wire-Protocol");this.l=n||null,this.a.j&&(t=xn(t,"X-HTTP-Session-Id"))&&(this.a.I=t)}if(e){try{var r=this.a.ja.a.parse(e)}catch(t){return(e=this.a).m=this.c,void Jn(e,2)}this.f=r[0]}else(e=this.a).m=this.c,Jn(e,2)}else 1==this.M&&(this.g?te(6):"11111"==e?(te(5),this.g=!0,(!K||10<=Number($))&&(this.c=200,this.b.cancel(),te(11),Hn(this.a,this,!0))):(te(7),this.g=!1))},r.na=function(){if(this.c=this.b.o,this.b.b)0==this.M?(this.M=1,an(this)):1==this.M&&(this.g?(te(11),Hn(this.a,this,!0)):(te(10),Hn(this.a,this,!1)));else{0==this.M?te(8):1==this.M&&te(9);var t=this.a;t.m=this.c,Jn(t,2)}},r.Y=function(){return this.a.Y()},r.ma=function(){return this.a.ma()},un.prototype.add=function(t){this.a.set(cn(t),t)},un.prototype.C=function(){return this.a.C()};var fn=10;function dn(t,e){!t.a&&(R(e,"spdy")||R(e,"quic")||R(e,"h2"))&&(t.f=t.g,t.a=new un,t.b&&(gn(t,t.b),t.b=null))}function pn(t){return!!t.b||!!t.a&&t.a.a.c>=t.f}function mn(t){return t.b?1:t.a?t.a.a.c:0}function yn(t,e){return t.b?t=t.b==e:t.a?(e=cn(e),t=Oe(t.a.a.b,e)):t=!1,t}function gn(t,e){t.a?t.a.add(e):t.b=e}function vn(t,e){var n;t.b&&t.b==e?t.b=null:((n=t.a)&&(n=cn(e),n=Oe(t.a.a.b,n)),n&&ke(t.a.a,cn(e)))}function bn(t){if(null!=t.b)return t.c.concat(t.b.j);if(null!=t.a&&0!=t.a.a.c){var e=t.c;return _(t.a.C(),(function(t){e=e.concat(t.j)})),e}return D(t.c)}function wn(){}function Tn(){this.a=new wn}function En(t,e,n){var r=n||"";try{Ae(t,(function(t,n){var i=t;p(t)&&(i=At(t)),e.push(r+n+"="+encodeURIComponent(i))}))}catch(t){throw e.push(r+"type="+encodeURIComponent("_badmap")),t}}function Sn(t,e,n,r,i){try{e.onload=null,e.onerror=null,e.onabort=null,e.ontimeout=null,i(r)}catch(t){}}ln.prototype.cancel=function(){this.c=bn(this),this.b?(this.b.cancel(),this.b=null):this.a&&0!=this.a.a.c&&(_(this.a.C(),(function(t){t.cancel()})),function(t){t.b={},t.a.length=0,t.c=0}(this.a.a))},wn.prototype.stringify=function(t){return a.JSON.stringify(t,void 0)},wn.prototype.parse=function(t){return a.JSON.parse(t,void 0)};var In=a.JSON.parse;function _n(t){Ct.call(this),this.headers=new Ne,this.H=t||null,this.b=!1,this.s=this.a=null,this.A="",this.h=0,this.f="",this.g=this.w=this.l=this.v=!1,this.o=0,this.m=null,this.I=Cn,this.D=this.F=!1}E(_n,Ct);var Cn="",Dn=/^https?$/i,An=["POST","PUT"];function Nn(t){return"content-type"==t.toLowerCase()}function kn(t,e){t.b=!1,t.a&&(t.g=!0,t.a.abort(),t.g=!1),t.f=e,t.h=5,Rn(t),Mn(t)}function Rn(t){t.v||(t.v=!0,t.dispatchEvent("complete"),t.dispatchEvent("error"))}function On(t){if(t.b&&void 0!==o&&(!t.s[1]||4!=Pn(t)||2!=t.T()))if(t.l&&4==Pn(t))jt(t.Fa,0,t);else if(t.dispatchEvent("readystatechange"),4==Pn(t)){t.b=!1;try{var e,n=t.T();t:switch(n){case 200:case 201:case 202:case 204:case 206:case 304:case 1223:var r=!0;break t;default:r=!1}if(!(e=r)){var i;if(i=0===n){var s=String(t.A).match(Me)[1]||null;if(!s&&a.self&&a.self.location){var u=a.self.location.protocol;s=u.substr(0,u.length-1)}i=!Dn.test(s?s.toLowerCase():"")}e=i}e?(t.dispatchEvent("complete"),t.dispatchEvent("success")):(t.h=6,t.f=t.za()+" ["+t.T()+"]",Rn(t))}finally{Mn(t)}}}function Mn(t,e){if(t.a){Ln(t);var n=t.a,r=t.s[0]?h:null;t.a=null,t.s=null,e||t.dispatchEvent("ready");try{n.onreadystatechange=r}catch(t){}}}function Ln(t){t.a&&t.D&&(t.a.ontimeout=null),t.m&&(a.clearTimeout(t.m),t.m=null)}function Pn(t){return t.a?t.a.readyState:0}function xn(t,e){return t.a?t.a.getResponseHeader(e):null}function Fn(t,e,n){t:{for(r in n){var r=!1;break t}r=!0}if(r)return t;if(n=function(t){var e="";return P(t,(function(t,n){e+=n,e+=":",e+=t,e+="\r\n"})),e}(n),s(t)){if(e=encodeURIComponent(String(e)),e+=n=null!=n?"="+encodeURIComponent(String(n)):""){if(0>(n=t.indexOf("#"))&&(n=t.length),0>(r=t.indexOf("?"))||r>n){r=n;var i=""}else i=t.substring(r+1,n);n=(t=[t.substr(0,r),i,t.substr(n)])[1],t[1]=e?n?n+"&"+e:e:n,t=t[0]+(t[1]?"?"+t[1]:"")+t[2]}return t}return Be(t,e,n),t}function qn(t){this.f=[],this.F=new sn,this.ga=this.pa=this.B=this.ha=this.a=this.I=this.j=this.V=this.g=this.J=this.i=null,this.Ra=this.P=0,this.Pa=!!c("internalChannelParams.failFast",t),this.ia=this.w=this.s=this.l=this.h=this.c=null,this.oa=!0,this.m=this.ra=this.O=-1,this.S=this.v=this.A=0,this.Oa=c("internalChannelParams.baseRetryDelayMs",t)||5e3,this.Sa=c("internalChannelParams.retryDelaySeedMs",t)||1e4,this.Qa=c("internalChannelParams.forwardChannelMaxRetries",t)||2,this.qa=c("internalChannelParams.forwardChannelRequestTimeoutMs",t)||2e4,this.La=t&&t.Ab||void 0,this.D=void 0,this.R=t&&t.supportsCrossDomainXhr||!1,this.H="",this.b=new ln(t&&t.concurrentRequestLimit),this.ja=new Tn,this.o=!t||void 0===t.backgroundChannelTest||t.backgroundChannelTest,(this.W=t&&t.fastHandshake||!1)&&!this.o&&(this.o=!0),t&&t.forceLongPolling&&(this.oa=!1),this.fa=void 0}function Vn(t){if(Bn(t),3==t.u){var e=t.P++,n=Pe(t.B);Be(n,"SID",t.H),Be(n,"RID",e),Be(n,"TYPE","terminate"),Wn(t,n),(e=new de(t,e,void 0)).F=2,e.f=je(Pe(n)),n=!1,a.navigator&&a.navigator.sendBeacon&&(n=a.navigator.sendBeacon(e.f.toString(),"")),!n&&a.Image&&((new Image).src=e.f,n=!0),n||(e.a=e.g.$(null),e.a.ca(e.f)),e.v=T(),Ee(e)}$n(t)}function Bn(t){t.w&&(t.w.abort(),t.w=null),t.a&&(t.a.cancel(),t.a=null),t.l&&(a.clearTimeout(t.l),t.l=null),Yn(t),t.b.cancel(),t.h&&(u(t.h)&&a.clearTimeout(t.h),t.h=null)}function Un(t,e){t.f.push(new hn(t.Ra++,e)),3==t.u&&jn(t)}function jn(t){pn(t.b)||t.h||(t.h=!0,xt(t.Ia,t),t.A=0)}function Kn(t,e){var n;n=e?e.W:t.P++;var r=Pe(t.B);Be(r,"SID",t.H),Be(r,"RID",n),Be(r,"AID",t.O),Wn(t,r),t.g&&t.i&&Fn(r,t.g,t.i),n=new de(t,n,t.A+1),null===t.g&&(n.h=t.i),e&&(t.f=e.j.concat(t.f)),e=Qn(t,n,1e3),n.setTimeout(Math.round(.5*t.qa)+Math.round(.5*t.qa*Math.random())),gn(t.b,n),ge(n,r,e)}function Wn(t,e){t.c&&Ae({},(function(t,n){Be(e,n,t)}))}function Qn(t,e,n){n=Math.min(t.f.length,n);var r=t.c?b(t.c.Ta,t.c,t):null;t:for(var i=t.f,o=-1;;){var a=["count="+n];-1==o?0<n?(o=i[0].b,a.push("ofs="+o)):o=0:a.push("ofs="+o);for(var s=!0,u=0;u<n;u++){var c=i[u].b,h=i[u].a;if(0>(c-=o))o=Math.max(0,i[u].b-100),s=!1;else try{En(h,a,"req"+c+"_")}catch(t){r&&r(h)}}if(s){r=a.join("&");break t}}return t=t.f.splice(0,n),e.j=t,r}function Gn(t){t.a||t.l||(t.S=1,xt(t.Ha,t),t.v=0)}function zn(t){return!(t.a||t.l||3<=t.v)&&(t.S++,t.l=ne(b(t.Ha,t),Xn(t,t.v)),t.v++,!0)}function Hn(t,e,n){var r=e.l;r&&dn(t.b,r),t.ia=t.oa&&n,t.m=e.c,t.B=Zn(t,null,t.ha),jn(t)}function Yn(t){null!=t.s&&(a.clearTimeout(t.s),t.s=null)}function Xn(t,e){var n=t.Oa+Math.floor(Math.random()*t.Sa);return t.ma()||(n*=2),n*e}function Jn(t,e){if(2==e){var n=null;t.c&&(n=null);var r=b(t.fb,t);n||(n=new Le("//www.google.com/images/cleardot.gif"),a.location&&"http"==a.location.protocol||xe(n,"https"),je(n)),function(t,e){var n=new Yt;if(a.Image){var r=new Image;r.onload=w(Sn,n,r,"TestLoadImage: loaded",!0,e),r.onerror=w(Sn,n,r,"TestLoadImage: error",!1,e),r.onabort=w(Sn,n,r,"TestLoadImage: abort",!1,e),r.ontimeout=w(Sn,n,r,"TestLoadImage: timeout",!1,e),a.setTimeout((function(){r.ontimeout&&r.ontimeout()}),1e4),r.src=t}else e(!1)}(n.toString(),r)}else te(2);t.u=0,t.c&&t.c.ta(e),$n(t),Bn(t)}function $n(t){t.u=0,t.m=-1,t.c&&(0==bn(t.b).length&&0==t.f.length||(t.b.c.length=0,D(t.f),t.f.length=0),t.c.sa())}function Zn(t,e,n){var r=function(t){return t instanceof Le?Pe(t):new Le(t,void 0)}(n);if(""!=r.b)e&&Fe(r,e+"."+r.b),qe(r,r.i);else{var i,o=a.location;i=e?e+"."+o.hostname:o.hostname,r=function(t,e,n,r){var i=new Le(null,void 0);return t&&xe(i,t),e&&Fe(i,e),n&&qe(i,n),r&&(i.a=r),i}(o.protocol,i,+o.port,n)}return t.V&&P(t.V,(function(t,e){Be(r,e,t)})),e=t.j,n=t.I,e&&n&&Be(r,e,n),Be(r,"VER",t.wa),Wn(t,r),r}function tr(){}function er(){if(K&&!(10<=Number($)))throw Error("Environmental error: no available transport.")}function nr(t,e){Ct.call(this),this.a=new qn(e),this.g=t,this.m=e&&e.testUrl?e.testUrl:function(t){for(var e=arguments[0],n=1;n<arguments.length;n++){var r,i=arguments[n];if(0==i.lastIndexOf("/",0))e=i;else(r=""==e)||(r=0<=(r=e.length-1)&&e.indexOf("/",r)==r),e+=r?i:"/"+i}return e}(this.g,"test"),this.b=e&&e.messageUrlParams||null,t=e&&e.messageHeaders||null,e&&e.clientProtocolHeaderRequired&&(t?t["X-Client-Protocol"]="webchannel":t={"X-Client-Protocol":"webchannel"}),this.a.i=t,t=e&&e.initMessageHeaders||null,e&&e.messageContentType&&(t?t["X-WebChannel-Content-Type"]=e.messageContentType:t={"X-WebChannel-Content-Type":e.messageContentType}),e&&e.xa&&(t?t["X-WebChannel-Client-Profile"]=e.xa:t={"X-WebChannel-Client-Profile":e.xa}),this.a.J=t,(t=e&&e.httpHeadersOverwriteParam)&&!A(t)&&(this.a.g=t),this.l=e&&e.supportsCrossDomainXhr||!1,this.h=e&&e.sendRawJson||!1,(e=e&&e.httpSessionIdParam)&&!A(e)&&(this.a.j=e,null!==(t=this.b)&&e in t&&(e in(t=this.b)&&delete t[e])),this.f=new or(this)}function rr(t){he.call(this);var e=t.__sm__;if(e){t:{for(var n in e){t=n;break t}t=void 0}(this.c=t)?(t=this.c,this.data=null!==e&&t in e?e[t]:void 0):this.data=e}else this.data=t}function ir(){le.call(this),this.status=1}function or(t){this.a=t}(r=_n.prototype).ca=function(t,e,n,r){if(this.a)throw Error("[goog.net.XhrIo] Object is active with another request="+this.A+"; newUri="+t);e=e?e.toUpperCase():"GET",this.A=t,this.f="",this.h=0,this.v=!1,this.b=!0,this.a=new XMLHttpRequest,this.s=this.H?ae(this.H):ae(ue),this.a.onreadystatechange=b(this.Fa,this);try{this.w=!0,this.a.open(e,String(t),!0),this.w=!1}catch(t){return void kn(this,t)}t=n||"";var i=new Ne(this.headers);r&&Ae(r,(function(t,e){i.set(e,t)})),r=function(t){t:{for(var e=Nn,n=t.length,r=s(t)?t.split(""):t,i=0;i<n;i++)if(i in r&&e.call(void 0,r[i],i,t)){e=i;break t}e=-1}return 0>e?null:s(t)?t.charAt(e):t[e]}(i.K()),n=a.FormData&&t instanceof a.FormData,!(0<=I(An,e))||r||n||i.set("Content-Type","application/x-www-form-urlencoded;charset=utf-8"),i.forEach((function(t,e){this.a.setRequestHeader(e,t)}),this),this.I&&(this.a.responseType=this.I),"withCredentials"in this.a&&this.a.withCredentials!==this.F&&(this.a.withCredentials=this.F);try{Ln(this),0<this.o&&((this.D=function(t){return K&&tt(9)&&u(t.timeout)&&void 0!==t.ontimeout}(this.a))?(this.a.timeout=this.o,this.a.ontimeout=b(this.Ca,this)):this.m=jt(this.Ca,this.o,this)),this.l=!0,this.a.send(t),this.l=!1}catch(t){kn(this,t)}},r.Ca=function(){void 0!==o&&this.a&&(this.f="Timed out after "+this.o+"ms, aborting",this.h=8,this.dispatchEvent("timeout"),this.abort(8))},r.abort=function(t){this.a&&this.b&&(this.b=!1,this.g=!0,this.a.abort(),this.g=!1,this.h=t||7,this.dispatchEvent("complete"),this.dispatchEvent("abort"),Mn(this))},r.G=function(){this.a&&(this.b&&(this.b=!1,this.g=!0,this.a.abort(),this.g=!1),Mn(this,!0)),_n.N.G.call(this)},r.Fa=function(){this.j||(this.w||this.l||this.g?On(this):this.$a())},r.$a=function(){On(this)},r.T=function(){try{return 2<Pn(this)?this.a.status:-1}catch(t){return-1}},r.za=function(){try{return 2<Pn(this)?this.a.statusText:""}catch(t){return""}},r.aa=function(){try{return this.a?this.a.responseText:""}catch(t){return""}},r.Va=function(t){if(this.a){var e=this.a.responseText;return t&&0==e.indexOf(t)&&(e=e.substring(t.length)),In(e)}},r.ya=function(){return this.h},r.Ya=function(){return s(this.f)?this.f:String(this.f)},(r=qn.prototype).wa=8,r.u=1,r.Da=function(){return 0==this.u},r.Ia=function(t){if(this.h)if(this.h=null,1==this.u){if(!t){this.P=Math.floor(1e5*Math.random());var e,n=new de(this,t=this.P++,void 0),r=this.i;if(this.J&&(r?q(r=x(r),this.J):r=this.J),null===this.g&&(n.h=r),this.W)t:{for(var i=e=0;i<this.f.length;i++){var o=this.f[i];if(void 0===(o="__data__"in o.a&&s(o=o.a.__data__)?o.length:void 0))break;if(4096<(e+=o)){e=i;break t}if(4096===e||i===this.f.length-1){e=i+1;break t}}e=1e3}else e=1e3;e=Qn(this,n,e),Be(i=Pe(this.B),"RID",t),Be(i,"CVER",22),this.o&&this.j&&Be(i,"X-HTTP-Session-Id",this.j),Wn(this,i),this.g&&r&&Fn(i,this.g,r),gn(this.b,n),this.W?(Be(i,"$req",e),Be(i,"SID","null"),n.S=!0,ge(n,i,null)):ge(n,i,e),this.u=2}}else 3==this.u&&(t?Kn(this,t):0==this.f.length||pn(this.b)||Kn(this))},r.Ha=function(){this.l=null,this.a=new de(this,"rpc",this.S),null===this.g&&(this.a.h=this.i),this.a.J=0;var t=Pe(this.pa);Be(t,"RID","rpc"),Be(t,"SID",this.H),Be(t,"CI",this.ia?"0":"1"),Be(t,"AID",this.O),Wn(this,t),Be(t,"TYPE","xmlhttp"),this.g&&this.i&&Fn(t,this.g,this.i),this.D&&this.a.setTimeout(this.D),ve(this.a,t,!0,this.ga)},r.Ga=function(t,e){if(0!=this.u&&(this.a==t||yn(this.b,t)))if(this.m=t.o,!t.s&&yn(this.b,t)&&3==this.u){try{var n=this.ja.a.parse(e)}catch(t){n=null}if(f(n)&&3==n.length){if(0==(e=n)[0]){t:if(!this.l){if(this.a){if(!(this.a.v+3e3<t.v))break t;Yn(this),this.a.cancel(),this.a=null}zn(this),te(18)}}else this.ra=e[1],0<this.ra-this.O&&37500>e[2]&&this.ia&&0==this.v&&!this.s&&(this.s=ne(b(this.Za,this),6e3));if(1>=mn(this.b)&&this.fa){try{this.fa()}catch(t){}this.fa=void 0}}else Jn(this,11)}else if((t.s||this.a==t)&&Yn(this),!A(e))for(e=n=this.ja.a.parse(e),n=0;n<e.length;n++){var r=e[n];if(this.O=r[0],r=r[1],2==this.u)if("c"==r[0]){this.H=r[1],this.ga=r[2];var i=r[3];null!=i&&(this.wa=i),null!=(r=r[5])&&u(r)&&0<r&&(this.D=1.5*r),this.o&&(r=t.a)&&((i=xn(r,"X-Client-Wire-Protocol"))&&dn(this.b,i),this.j&&(r=xn(r,"X-HTTP-Session-Id")))&&(this.I=r,Be(this.B,this.j,r)),this.u=3,this.c&&this.c.va(),r=t,this.pa=Zn(this,this.Y()?this.ga:null,this.ha),r.s?(vn(this.b,r),(i=this.D)&&r.setTimeout(i),r.i&&(Ie(r),Ee(r)),this.a=r):Gn(this),0<this.f.length&&jn(this)}else"stop"!=r[0]&&"close"!=r[0]||Jn(this,7);else 3==this.u&&("stop"==r[0]||"close"==r[0]?"stop"==r[0]?Jn(this,7):Vn(this):"noop"!=r[0]&&this.c&&this.c.ua(r),this.v=0)}},r.Za=function(){null!=this.s&&(this.s=null,this.a.cancel(),this.a=null,zn(this),te(19))},r.na=function(t){var e=null;if(this.a==t){Yn(this),this.a=null;var n=2}else{if(!yn(this.b,t))return;e=t.j,vn(this.b,t),n=1}if(this.m=t.o,0!=this.u)if(t.b)1==n?(e=T()-t.v,Xt.dispatchEvent(new ee(Xt,t.l?t.l.length:0,e,this.A)),jn(this)):Gn(this);else{var r=t.c;if(3==r||0==r&&0<this.m||!(1==n&&function(t,e){return!(mn(t.b)>=t.b.f-(t.h?1:0))&&(t.h?(t.f=e.j.concat(t.f),!0):!(1==t.u||2==t.u||t.A>=(t.Pa?0:t.Qa))&&(t.h=ne(b(t.Ia,t,e),Xn(t,t.A)),t.A++,!0))}(this,t)||2==n&&zn(this)))switch(e&&0<e.length&&(t=this.b,t.c=t.c.concat(e)),r){case 1:Jn(this,5);break;case 4:Jn(this,10);break;case 3:Jn(this,6);break;default:Jn(this,2)}}},r.fb=function(t){te(t?2:1)},r.$=function(t){if(t&&!this.R)throw Error("Can't create secondary domain capable XhrIo object.");return(t=new _n(this.La)).F=this.R,t},r.ma=function(){return!!this.c&&!0},r.Y=function(){return this.R},(r=tr.prototype).va=function(){},r.ua=function(){},r.ta=function(){},r.sa=function(){},r.Ta=function(){},er.prototype.a=function(t,e){return new nr(t,e)},E(nr,Ct),(r=nr.prototype).addEventListener=function(t,e,n,r){nr.N.addEventListener.call(this,t,e,n,r)},r.removeEventListener=function(t,e,n,r){nr.N.removeEventListener.call(this,t,e,n,r)},r.Wa=function(){this.a.c=this.f,this.l&&(this.a.R=!0);var t=this.a,e=this.m,n=this.g,r=this.b||void 0;te(0),t.ha=n,t.V=r||{},t.o&&(t.F.b=[],t.F.a=!1),t.w=new on(t),null===t.g&&(t.w.h=t.i),n=e,t.g&&t.i&&(n=Fn(e,t.g,t.i)),(t=t.w).i=n,e=Zn(t.a,null,t.i),te(3),null!=(n=t.a.F.b)?(t.f=n[0],t.M=1,an(t)):(Ue(e,"MODE","init"),!t.a.o&&t.a.j&&Ue(e,"X-HTTP-Session-Id",t.a.j),t.b=new de(t,void 0,void 0),t.b.h=t.h,ve(t.b,e,!1,null),t.M=0)},r.close=function(){Vn(this.a)},r.Xa=function(t){if(s(t)){var e={};e.__data__=t,Un(this.a,e)}else this.h?((e={}).__data__=At(t),Un(this.a,e)):Un(this.a,t)},r.G=function(){this.a.c=null,delete this.f,Vn(this.a),delete this.a,nr.N.G.call(this)},E(rr,he),E(ir,le),E(or,tr),or.prototype.va=function(){this.a.dispatchEvent("a")},or.prototype.ua=function(t){this.a.dispatchEvent(new rr(t))},or.prototype.ta=function(t){this.a.dispatchEvent(new ir(t))},or.prototype.sa=function(){this.a.dispatchEvent("b")};var ar=w((function(t,e){function n(){}n.prototype=t.prototype;var r=new n;return t.apply(r,Array.prototype.slice.call(arguments,1)),r}),er);er.prototype.createWebChannel=er.prototype.a,nr.prototype.send=nr.prototype.Xa,nr.prototype.open=nr.prototype.Wa,nr.prototype.close=nr.prototype.close,re.NO_ERROR=0,re.TIMEOUT=8,re.HTTP_ERROR=6,ie.COMPLETE="complete",se.EventType=ce,ce.OPEN="a",ce.CLOSE="b",ce.ERROR="c",ce.MESSAGE="d",Ct.prototype.listen=Ct.prototype.Aa,_n.prototype.listenOnce=_n.prototype.Ba,_n.prototype.getLastError=_n.prototype.Ya,_n.prototype.getLastErrorCode=_n.prototype.ya,_n.prototype.getStatus=_n.prototype.T,_n.prototype.getStatusText=_n.prototype.za,_n.prototype.getResponseJson=_n.prototype.Va,_n.prototype.getResponseText=_n.prototype.aa,_n.prototype.send=_n.prototype.ca;var sr={createWebChannelTransport:ar,ErrorCode:re,EventType:ie,WebChannel:se,XhrIo:_n},ur=sr.createWebChannelTransport,cr=sr.ErrorCode,hr=sr.EventType,lr=sr.WebChannel,fr=sr.XhrIo;e.default=sr}.call(this,n(3))}]);

@@ -1,0 +1,28 @@
+{
+  "name": "mkturk",
+  "version": "1.0.0",
+  "description": "Wireless touchscreen behavioral training",
+  "main": "mkfiles.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/issalab/mkturk.git"
+  },
+  "author": "Hector Cho",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/issalab/mkturk/issues"
+  },
+  "homepage": "https://github.com/issalab/mkturk#readme",
+  "dependencies": {
+    "firebase": "^7.5.0"
+  },
+  "devDependencies": {
+    "ts-loader": "^6.2.1",
+    "typescript": "^3.8.0-dev.20191125",
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.10"
+  }
+}

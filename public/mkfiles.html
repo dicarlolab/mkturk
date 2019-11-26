@@ -5,96 +5,9 @@
     <meta name="viewport">
     <meta content="width=device-width, initial-scale=1">
     <meta http-equiv="Content-Type">
-
-    <script src="lib_mkfiles/jsoneditor/jsoneditor.min.js"></script>
-    <link href="lib_mkfiles/jsoneditor/jsoneditor.css" rel="stylesheet" type="text/css">
-    <link href="mkfiles.css" rel="stylesheet" type="text/css">
-
-    <link href="lib_mkfiles/tabulator/dist/css/tabulator.css" rel="stylesheet">
-    <script src="lib_mkfiles/tabulator/dist/js/tabulator.js"></script>
-    <script src="mkfiles_extendKeys.js"></script>
-
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.3.7/viewer.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.3.7/viewer.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/deep-diff@1/dist/deep-diff.min.js"></script>
-
-    <script src="https://threejs.org/build/three.js"></script>
-    <script src="https://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
-
-    <script src="https://bgrins.github.io/filereader.js/filereader.js"></script>
-    <script src="lib_mkfiles/FileSaver/FileSaver.js"></script>
-
-
-
-    <title>MKFILES</title>
   </head>
 
   <body>
-    <div class="main-container">
-      
-      <header class="mastheader">
-        <span>MKQUERY</span>
-        <button type="button" id="rfidMode" value="off">Turn on RFID Mode</button>
-        <span id="status-circle"></span>
-      </header>
-
-      <form class="mkquery-form" id="query-form">
-        
-        <select class="selector" id="qry-loc-selector" onchange="qryLocOnChange()">
-          <option disabled selected>Query Location</option>
-          <optgroup label="Firestore/DB">
-            <option value="marmosets">firestore/marmosets</option>
-            <option value="mkturkdata">firestore/mkturkdata</option>
-          </optgroup>
-          <optgroup label="Cloud Storage">
-            <option value="mkturkfiles">gcs/mkturkfiles</option>
-          </optgroup>
-        </select>
-        
-        <select class="selector" id="field-selector" onchange="fieldValueOnChange()">
-          <option disabled selected>Field Value</option>
-        </select>
-        
-        <input type="submit" id="go-btn" value="Go">
-        <input type="text" class="keyword-input" id="keyword-input-0">
-        <input type="text" class="keyword-input" id="keyword-input-1">
-        <input type="text" class="keyword-input" id="keyword-input-2">
-        
-      </form>
-
-      <div id="tabulator-div">
-        <div id="tabulator-controls">
-          <button type="button" id="back-button" disabled>BACK</button>
-          <button type="button" id="forward-button" disabled>FORWARD</button>
-          <input id="filter-value" type="search" placeholder="search">
-          <button type="button" id="upload-file">UPLOAD FILE ...</button>
-          <button type="button" id="download-file">DOWNLOAD FILE</button>
-          <button type="button" id="show-images-button" disabled>SHOW SELECTED IMAGES</button>
-        </div>
-        <div id="tabulator"></div>
-      </div>
-      
-      <div id="jsoneditor-div">
-        <div id="canvas-holder">
-          <ul id="image-canvas"></ul>
-        </div>
-        <div id="jsoneditor"></div>
-        <button type="button" id="update-json">UPDATE</button>
-        <canvas id="webgl-canvas"></canvas>
-        
-      </div>
-
-    </div>
-
-    <script src="/__/firebase/7.3.0/firebase-app.js"></script>
-    <script src="/__/firebase/7.3.0/firebase-auth.js"></script>
-    <script src="/__/firebase/7.3.0/firebase-database.js"></script>
-    <script src="/__/firebase/7.3.0/firebase-storage.js"></script>
-    <script src="/__/firebase/7.3.0/firebase-firestore.js"></script>
-    <script src="/__/firebase/init.js"></script>
-
     <script src="mkfiles.js"></script>
   </body>
 </html>
