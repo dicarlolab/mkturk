@@ -88,6 +88,7 @@ var FLAGS = {} // Global that keeps track of the task's requests to the Dropbox/
 // The scientist does not care about tracking this variable into the behavioral files. 
 FLAGS.consecutivehits = 0;
 FLAGS.need2loadImagesTrialQueue = 1; 
+FLAGS.need2loadScenes = 1; 
 FLAGS.need2loadParameters = 1; 
 FLAGS.savedata = 0; 
 FLAGS.stage = 0; 

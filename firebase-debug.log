@@ -1,54 +1,64 @@
-[debug] [2019-11-18T17:18:42.509Z] ----------------------------------------------------------------------
-[debug] [2019-11-18T17:18:42.510Z] Command:       /usr/local/bin/node /usr/local/bin/firebase serve
-[debug] [2019-11-18T17:18:42.511Z] CLI Version:   6.10.0
-[debug] [2019-11-18T17:18:42.511Z] Platform:      darwin
-[debug] [2019-11-18T17:18:42.511Z] Node Version:  v8.9.4
-[debug] [2019-11-18T17:18:42.511Z] Time:          Mon Nov 18 2019 12:18:42 GMT-0500 (EST)
-[debug] [2019-11-18T17:18:42.511Z] ----------------------------------------------------------------------
+[debug] [2019-11-22T16:49:49.160Z] ----------------------------------------------------------------------
+[debug] [2019-11-22T16:49:49.162Z] Command:       /usr/local/bin/node /usr/local/bin/firebase serve
+[debug] [2019-11-22T16:49:49.162Z] CLI Version:   6.10.0
+[debug] [2019-11-22T16:49:49.163Z] Platform:      darwin
+[debug] [2019-11-22T16:49:49.163Z] Node Version:  v8.9.4
+[debug] [2019-11-22T16:49:49.164Z] Time:          Fri Nov 22 2019 11:49:49 GMT-0500 (EST)
+[debug] [2019-11-22T16:49:49.164Z] ----------------------------------------------------------------------
 [debug] 
-[debug] [2019-11-18T17:18:42.519Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2019-11-18T17:18:42.519Z] > authorizing via signed-in user
-[debug] [2019-11-18T17:18:42.519Z] [iam] checking project sandbox-ce2c5 for permissions ["firebase.projects.get"]
-[debug] [2019-11-18T17:18:42.521Z] >>> HTTP REQUEST POST https://cloudresourcemanager.googleapis.com/v1/projects/sandbox-ce2c5:testIamPermissions  
+[debug] [2019-11-22T16:49:49.175Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2019-11-22T16:49:49.175Z] > authorizing via signed-in user
+[debug] [2019-11-22T16:49:49.175Z] [iam] checking project sandbox-ce2c5 for permissions ["firebase.projects.get"]
+[debug] [2019-11-22T16:49:49.177Z] >>> HTTP REQUEST POST https://cloudresourcemanager.googleapis.com/v1/projects/sandbox-ce2c5:testIamPermissions  
 
-[debug] [2019-11-18T17:18:42.773Z] <<< HTTP RESPONSE 200
-[debug] [2019-11-18T17:18:42.775Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/sandbox-ce2c5  
+[debug] [2019-11-22T16:49:52.460Z] <<< HTTP RESPONSE 200
+[debug] [2019-11-22T16:49:52.463Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/sandbox-ce2c5  
  
-[debug] [2019-11-18T17:18:42.971Z] <<< HTTP RESPONSE 200
+[debug] [2019-11-22T16:49:52.720Z] <<< HTTP RESPONSE 200
 [info] 
 [info] === Serving from '/Users/issa/liondrive/code/github/mkturk'...
 [info] 
-[debug] [2019-11-18T17:18:42.974Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/1003719887944/clients/_:getWebAppConfig  
+[debug] [2019-11-22T16:49:52.722Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/1003719887944/clients/_:getWebAppConfig  
  
-[debug] [2019-11-18T17:18:43.374Z] <<< HTTP RESPONSE 200
+[debug] [2019-11-22T16:49:53.044Z] <<< HTTP RESPONSE 200
 [info] i  hosting: Serving hosting files from: public
 [info] ✔  hosting: Local server: http://localhost:5000
-[debug] [2019-11-18T18:52:22.320Z] ----------------------------------------------------------------------
-[debug] [2019-11-18T18:52:22.321Z] Command:       /home/hector/.nvm/versions/node/v8.16.1/bin/node /home/hector/.nvm/versions/node/v8.16.1/bin/firebase serve
-[debug] [2019-11-18T18:52:22.322Z] CLI Version:   7.7.0
-[debug] [2019-11-18T18:52:22.322Z] Platform:      linux
-[debug] [2019-11-18T18:52:22.322Z] Node Version:  v8.16.1
-[debug] [2019-11-18T18:52:22.322Z] Time:          Mon Nov 18 2019 13:52:22 GMT-0500 (EST)
-[debug] [2019-11-18T18:52:22.322Z] ----------------------------------------------------------------------
-[debug] [2019-11-18T18:52:22.322Z] 
-[debug] [2019-11-18T18:52:22.326Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2019-11-18T18:52:22.326Z] > authorizing via signed-in user
-[debug] [2019-11-18T18:52:22.326Z] [iam] checking project sandbox-ce2c5 for permissions ["firebase.projects.get"]
-[debug] [2019-11-18T18:52:22.327Z] > refreshing access token with scopes: ["email","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","openid"]
-[debug] [2019-11-18T18:52:22.328Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token  
+[debug] [2019-11-22T17:36:07.217Z] Error: socket hang up
+    at TLSSocket.onHangUp (_tls_wrap.js:1135:19)
+    at Object.onceWrapper (events.js:313:30)
+    at emitNone (events.js:111:20)
+    at TLSSocket.emit (events.js:208:7)
+    at endReadableNT (_stream_readable.js:1055:12)
+    at _combinedTickCallback (internal/process/next_tick.js:138:11)
+    at process._tickDomainCallback (internal/process/next_tick.js:218:9)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2019-11-22T19:42:14.912Z] ----------------------------------------------------------------------
+[debug] [2019-11-22T19:42:14.916Z] Command:       /usr/local/bin/node /usr/local/bin/firebase serve
+[debug] [2019-11-22T19:42:14.916Z] CLI Version:   6.10.0
+[debug] [2019-11-22T19:42:14.916Z] Platform:      darwin
+[debug] [2019-11-22T19:42:14.916Z] Node Version:  v8.9.4
+[debug] [2019-11-22T19:42:14.917Z] Time:          Fri Nov 22 2019 14:42:14 GMT-0500 (EST)
+[debug] [2019-11-22T19:42:14.917Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2019-11-22T19:42:14.927Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2019-11-22T19:42:14.927Z] > authorizing via signed-in user
+[debug] [2019-11-22T19:42:14.927Z] [iam] checking project sandbox-ce2c5 for permissions ["firebase.projects.get"]
+[debug] [2019-11-22T19:42:14.929Z] > refreshing access token with scopes: ["email","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","openid"]
+[debug] [2019-11-22T19:42:14.929Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token  
  <request body omitted>
-[debug] [2019-11-18T18:52:22.478Z] <<< HTTP RESPONSE 200
-[debug] [2019-11-18T18:52:22.488Z] >>> HTTP REQUEST POST https://cloudresourcemanager.googleapis.com/v1/projects/sandbox-ce2c5:testIamPermissions  
+[debug] [2019-11-22T19:42:15.070Z] <<< HTTP RESPONSE 200
+[debug] [2019-11-22T19:42:15.080Z] >>> HTTP REQUEST POST https://cloudresourcemanager.googleapis.com/v1/projects/sandbox-ce2c5:testIamPermissions  
 
-[debug] [2019-11-18T18:52:22.879Z] <<< HTTP RESPONSE 200
-[debug] [2019-11-18T18:52:22.883Z] >>> HTTP REQUEST GET https://firebase.googleapis.com/v1beta1/projects/sandbox-ce2c5  
+[debug] [2019-11-22T19:42:15.321Z] <<< HTTP RESPONSE 200
+[debug] [2019-11-22T19:42:15.322Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/sandbox-ce2c5  
  
-[debug] [2019-11-18T18:52:23.189Z] <<< HTTP RESPONSE 200
+[debug] [2019-11-22T19:42:15.520Z] <<< HTTP RESPONSE 200
 [info] 
-[info] === Serving from '/home/hector/work/mkturk'...
+[info] === Serving from '/Users/issa/liondrive/code/github/mkturk'...
 [info] 
-[debug] [2019-11-18T18:52:23.194Z] >>> HTTP REQUEST GET https://firebase.googleapis.com/v1beta1/projects/sandbox-ce2c5/webApps/-/config  
+[debug] [2019-11-22T19:42:15.522Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/1003719887944/clients/_:getWebAppConfig  
  
-[debug] [2019-11-18T18:52:23.632Z] <<< HTTP RESPONSE 200
+[debug] [2019-11-22T19:42:15.879Z] <<< HTTP RESPONSE 200
 [info] i  hosting: Serving hosting files from: public
 [info] ✔  hosting: Local server: http://localhost:5000

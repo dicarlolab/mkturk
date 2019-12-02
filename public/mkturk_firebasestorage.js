@@ -38,57 +38,50 @@ catch (error){
 
 
 //------------- LOAD MESH --------------//
-async function loadMeshfromFirebase(meshfile_path,ext){
-//file ext = gltf or obj
-try{
-	var meshfileRef = await storage.ref().child(meshfile_path)
-	var url = await meshfileRef.getDownloadURL().catch((error) => console.log(error));
+async function loadMeshfromFirebase(meshfile_path){
+	//file ext = gltf or obj
+	try{
+		var meshfileRef = await storage.ref().child(meshfile_path)
+		var url = await meshfileRef.getDownloadURL().catch((error) => console.log(error));
 
+		var strs = meshfile_path.split(".")
+		var ext = strs[1]
 
-	if (ext == 'gltf' || ext == 'glb'){
-		var loader = new THREE.GLTFLoader()
+		if (ext == 'gltf' || ext == 'glb'){
+			var loader = new THREE.GLTFLoader()
 
-		return new Promise(
-			function(resolve, reject){
-				try {
+			return new Promise(
+				function(resolve, reject){
+					try {
 
-				loader.load(url, function(gltfmesh){
-
-//----- scene.traverse is optional (begin)
-					gltfmesh.scene.traverse(function(child){
-					if (child.material) {
-							console.log(child.material)
-// 							var material = new THREE.MeshPhongMaterial({
-// 							color:  0x7F7F7F, //0x202020,
-// 							map : child.material.map
-// 						});
-
-							var material = new THREE.MeshPhysicalMaterial({
-								color: 0xc58c85,// 0x7F7F7F, //0x202020,
-								map : child.material.map,
-								metalness: 0.25,
-								roughness: 0.65
-							});
-
-						child.material = material;
-						child.material.needsUpdate = true;
-					}
+					loader.load(url, function(gltfmesh){
+					resolve(gltfmesh)
 				})
-//----- scene.traverse is optional (end)
+				} //try
+				catch (error){
+				} //catch
+			}
+			) //promise
+		} //gltf loader
+	} catch (error){
+		console.log(error)
+	}
+}//FUNCTION loadMeshFromFirebase
+	
+async function loadMeshArrayfromFirebase(meshfile_pathlist){
+	try{
+		var object_requests = meshfile_pathlist.map(loadMeshfromFirebase);
+		console.log('FIREBASE: buffering ' + meshfile_pathlist.length + ' objects')
+		var tstart = performance.now()
+		var object_array = await Promise.all(object_requests)
+		.catch(function(error){ console.log(error)}).then()
 
-				resolve(gltfmesh)
-			})
-			} //try
-			catch (error){
-					console.log(error)
-			} //catch
-		}) //Promise
-	} //if gltf or glb
-} //try
-catch (error){
-	console.log(error)
-} //catch
-} //loadMeshFromFirebase
+		return object_array
+		}
+	catch(err){
+		console.log(err)
+	}
+} //FUNCTION loadMeshArrayfromFirebase
 
 
 //------------- GET METADATA --------------//

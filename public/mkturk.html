@@ -62,6 +62,12 @@ if (typeof(navigator.bluetooth) == "object"){
   var storage = firebase.storage();
 </script>
 </head>
+
+<!-- Add ThreeJS -->
+<script src="http://threejs.org/build/three.js"></script>
+<script src="http://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
+<script src="http://threejs.org/examples/js/controls/OrbitControls.js"></script>
+
 <!-- ************* (END) HEAD *************** -->
 
 
@@ -132,6 +138,7 @@ if (typeof(navigator.bluetooth) == "object"){
 
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasvisible" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvasvisiblewebgl" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
 </div>
 
 <script src="mkturk_globalvariables.js"></script>
@@ -144,6 +151,7 @@ if (typeof(navigator.bluetooth) == "object"){
 <script src="mkturk_firebase.js" type="text/javascript"></script>
 <script src="mkturk_firestore.js" type="text/javascript"></script>
 <script src="mkturk_firebasestorage.js" type="text/javascript"></script>
+<script src="mkturk_threejs.js" type="text/javascript"></script>
 <script>
 
 //================== AUTHENTICATE GOOGLE ==================//
@@ -561,7 +569,15 @@ function skipHardwareDevice(event){
 	FLAGS.need2loadParameters = 1
 	CURRTRIAL.num = 0
 	EVENTS.trialnum = 0
+
 	FLAGS.need2loadImagesTrialQueue = 1
+	if (typeof(TASK.ImageBagsSample) == "undefined"){
+		FLAGS.need2loadImagesTrialQueue = 0
+	}
+	FLAGS.need2loadScenes = 1
+	if (typeof(TASK.SceneBagsSample) == "undefined"){
+		FLAGS.need2loadScenes = 0
+	}
 
 // =========================================================================================================== // 
 // ============ MAIN LOOP ==================================================================================== // 
@@ -572,6 +588,9 @@ while(true){
 	if (FLAGS.need2loadParameters == 1){
 		var old_ImageBagsSample = TASK.ImageBagsSample
 		var old_ImageBagsTest = TASK.ImageBagsTest
+
+		var old_SceneBagsSample = TASK.SceneBagsSample
+		var old_SceneBagsTest = TASK.SceneBagsTest
 
 		var old_ObjectGridIndex = TASK.ObjectGridIndex
 		var old_NTrialsPerBagBlock = [TASK.NTrialsPerBagBlock]
@@ -585,6 +604,9 @@ while(true){
 		windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
 		windowHeight = document.body.clientHeight;
 		setupCanvas(VISIBLECANVAS);
+
+		setupCanvas(VISIBLECANVASWEBGL)
+
 		if (ENV.DevicePixelRatio !== 1){
 			scaleCanvasforHiDPI(VISIBLECANVAS);
 		}
@@ -624,6 +646,16 @@ while(true){
 		{
 			FLAGS.need2loadImagesTrialQueue = 1; 
 		}
+
+		// Check if object meshes were changed
+		if(typeof(TASK.SceneBagsTest) != "undefined" && (!old_SceneBagsTest.equals(TASK.SceneBagsTest) || 
+			!old_SceneBagsSample.equals(TASK.SceneBagsSample) ||
+			!old_ObjectGridIndex.equals(TASK.ObjectGridIndex) || 
+			!old_NTrialsPerBagBlock.equals([TASK.NTrialsPerBagBlock])))
+		{
+			FLAGS.need2loadScenes = 1; 
+		}
+
 		FLAGS.purge = 1
 		FLAGS.createnewfirestore = 1
 		EVENTS.reset()
@@ -715,6 +747,83 @@ while(true){
 	ENV.XGridCenter = funcreturn[2]
 	ENV.YGridCenter = funcreturn[3]
 	//============ (end) CREATE IMAGE BAG & DISPLAY GRID ============//
+
+
+	//============ 3D SCENE SET-UP ============//
+	SCENEdata = { Sample: [], Test: [] }
+	if (FLAGS.need2loadScenes){
+
+	// STEPS FOR 3D SCENE SET-UP
+	// ---- 0: load scene params from JSON
+	// 0: expand trial params & get mesh paths
+	// ---- 1: load meshes
+	// ---- 2: init scene & camera
+	// ---- 3: add all lights & objects
+	// ---- 4: compile shaders
+	// 5: select frame to render
+	// 5: animate <--> render loop within trial
+
+		//============ 0: LOAD SCENES from JSON ============//
+		for (var f = 0; f <= TASK.SceneBagsSample.length-1; f++){
+			SCENEdata.Sample[f] = await loadTextfromFirebase(TASK.SceneBagsSample[f])
+		}
+		for (var f = 0; f <= TASK.SceneBagsTest.length-1; f++){
+			SCENEdata.Test[f] = await loadTextfromFirebase(TASK.SceneBagsTest[f])
+		}
+	// 	//find longest scene param array in SCENEdata (ie # of trials)
+	// 	var ntrials = ??
+		//============ (END) 0: LOAD SCENES from JSON ============//
+
+		//============ 1: LOAD MESHES FOR SCENES ============//
+		var samplemesh_paths = []
+		for (var j = 0; j <= SCENEdata.Sample.length-1; j++){
+			for (const m in SCENEdata.Sample[j].OBJECTS){
+				samplemesh_paths.push(SCENEdata.Sample[j].OBJECTS[m].meshpath)
+			} //for m meshes in sample scene j		
+		} //for j sample scenes
+		var set_of_samplemesh_paths = new Set(samplemesh_paths)
+
+		var testmesh_paths = []
+		for (var j = 0; j <= SCENEdata.Test.length-1; j++){
+			for (const m in SCENEdata.Test[j].OBJECTS){
+				testmesh_paths.push(SCENEdata.Test[j].OBJECTS[m].meshpath)
+			} //for m meshes in sample scene j		
+		} //for j sample scenes
+		var set_of_testmesh_paths = new Set(testmesh_paths)
+
+
+		// load meshfile from google cloud storage
+		var OBJECTS = {Sample: {meshes: []}, Test: {meshes:[]}}
+		OBJECTS.Sample.meshes = await loadMeshArrayfromFirebase([...set_of_samplemesh_paths]);
+		console.log('load test mesh)')
+		OBJECTS.Test.meshes = await loadMeshArrayfromFirebase([...set_of_testmesh_paths]);
+		//============ (END) 1: LOAD MESHES FOR SCENES ============//
+
+
+		//============ 2: INIT SCENE & CAMERA ============//
+		await initThreeJS(SCENEdata)
+		//============ (END) 2: INIT SCENE & CAMERA ============//
+
+
+		//============ 3: ADD ALL LIGHTS/OBJECTS TO SCENE ============//
+		console.time('add lights & objects')
+		for (scenetype in scene){
+			await addToScene(scenetype)
+		}
+		console.timeEnd('add lights & objects')	
+		//============ (END) 3: ADD ALL LIGHTS/OBJECTS TO SCENE ============//
+
+
+		//============ 4: PRELOAD SHADERS (COMPILE) ============//
+		console.time('compile')
+		for (scenetype in scene){
+			renderer.compile(scene[scenetype],camera)
+		}
+		console.timeEnd('compile')
+		//============ (END) 4: PRELOAD SHADERS (COMPILE) ============//
+	} //IF load scenes
+	//============(END) 3D SCENE SET-UP ============//
+
 
 	//============ SELECT SAMPLE & TEST IMAGES ============//
 	// Draw one (1) sample image from samplebag
