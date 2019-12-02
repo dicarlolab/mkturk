@@ -17,10 +17,29 @@ let m = new Mkquery();
 let retval = m.mkquery([{field: "birthdate", keyword: "1/1/2015; +-100"}, {field: "name", keyword: "Hector"}]);
 console.log(retval);
 
-let aLink = document.querySelector("#hi");
-aLink?.addEventListener("click", event => {
+
+/* Quick Links */
+let marmosetsLink = document.querySelector("#quick-link-marmosets");
+let mkturkdataLink = document.querySelector("#quick-link-mkturkdata");
+let mkturkfilesLink = document.querySelector("#quick-link-mkturkfiles");
+
+marmosetsLink?.addEventListener("click", event => {
   event.preventDefault();
   event.stopPropagation();
 
-  console.log("hello");
-})
+  console.log("marmosets quick link");
+});
+
+mkturkdataLink?.addEventListener("click", event => {
+  event.preventDefault();
+  event.stopPropagation();
+
+  console.log("mkturkdata quick link");
+});
+
+mkturkfilesLink?.addEventListener("click", event => {
+  event.preventDefault();
+  event.stopPropagation();
+
+  console.log("mkturkfiles quick link");
+});

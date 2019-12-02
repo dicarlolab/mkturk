@@ -1,0 +1,14 @@
+.demo-card-wide.mdl-card {
+  width: 1024px;
+  height: 512px;
+  display: inline-block;
+}
+
+.demo-card-wide > mdl-card__title {
+  color: black;
+  height: 96px;
+}
+
+.mdl-card__supporting-text {
+  height: 100%;
+}
