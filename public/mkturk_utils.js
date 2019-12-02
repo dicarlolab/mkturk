@@ -306,13 +306,13 @@ async function runPump(str){
   if (FLAGS.runPump == 0){
     FLAGS.runPump = 1
     if (str == "flush"){
-      dur = 1000 //milliseconds
-      npulse = 6
+      dur = 5000 //milliseconds
+      npulse = 12
     }
     else if (str == "trigger"){
       // dur = ENV.RewardDuration*1000 //milliseconds
-      dur = 190; //50 pulse * 190 ms/pulse = 1 mL milk, 1.24 mL water
-      npulse = 100
+      dur = 190; //50 pulse * 20 uL/pulse = 1 mL milk, 1.24 mL water
+      npulse = 50
     }
     document.querySelector("button[id=pumpflush]").innerHTML = "Stop Pump"
     document.querySelector("button[id=pumptrigger]").innerHTML = "Stop Pump"
@@ -320,8 +320,8 @@ async function runPump(str){
   else if (FLAGS.runPump == 1){ //user pressed button again to stop pump
     FLAGS.runPump = 0
     port.statustext_connect = "!!!! USER STOPPED PUMP !!!!"
-    document.querySelector("button[id=pumpflush]").innerHTML = 'Flush 1 minute'
-    document.querySelector("button[id=pumptrigger]").innerHTML = '100Pulses->1mL Milk'
+    document.querySelector("button[id=pumpflush]").innerHTML = 'Flush 1min'
+    document.querySelector("button[id=pumptrigger]").innerHTML = 'Calibrate 1mL milk'
     updateHeadsUpDisplayDevices()
     return
   }
@@ -334,8 +334,8 @@ async function runPump(str){
     else if (FLAGS.runPump == 0){
       FLAGS.runPump = 0
       port.statustext_connect = "!!!! USER STOPPED PUMP !!!!"
-      document.querySelector("button[id=pumpflush]").innerHTML = 'Flush 1 minute'
-      document.querySelector("button[id=pumptrigger]").innerHTML = '100Pulses->1mL Milk'
+      document.querySelector("button[id=pumpflush]").innerHTML = 'Flush 1min'
+      document.querySelector("button[id=pumptrigger]").innerHTML = 'Calibrate 1mL milk'
       updateHeadsUpDisplayDevices()
       return //pump was stopped by user
     }
@@ -369,8 +369,8 @@ async function runPump(str){
       + Math.round([endweight-startweight]*100)/100 + "g vs (1, 1.24) for 100 pulse (milk,water) calibration"
     } //if blescale
     console.log(port.statustext_sent)
-    document.querySelector("button[id=pumpflush]").innerHTML = 'Flush 1 minute'
-    document.querySelector("button[id=pumptrigger]").innerHTML = '100Pulses->1mL Milk'
+    document.querySelector("button[id=pumpflush]").innerHTML = 'Flush 1min'
+    document.querySelector("button[id=pumptrigger]").innerHTML = 'Calibrate 1mL milk'
     FLAGS.runPump = 0
     updateHeadsUpDisplayDevices()
   } //if usb pump

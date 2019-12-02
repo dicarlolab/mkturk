@@ -45,12 +45,25 @@ function refreshCanvasSettings(TASK){
 	CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+ENV.RewardDuration*1000;
 
 	// Adjust location of CANVAS based on species-specific setup
-	if (TASK.Species == "macaque" || TASK.Species == "human"){
-		CANVAS.headsupfraction=0;
+	if (typeof(TASK.HeadsupDisplayFraction) != "undefined"){
+		CANVAS.headsupfraction=TASK.HeadsupDisplayFraction
+	} //IF headsupdisplayfraction specified
+	else{
+		if (TASK.Species == "macaque" || TASK.Species == "human"){
+			CANVAS.headsupfraction=0;
+		}
+		else if (TASK.Species == "marmoset"){
+			CANVAS.headsupfraction=1/3-0.06;
+		}		
 	}
-	else if (TASK.Species == "marmoset"){
-		CANVAS.headsupfraction=1/3-0.06;
+
+	if (CANVAS.headsupfraction == 0){
+		var textobj = document.getElementById("headsuptext");
+		textobj.innerHTML = ''
+		var textobj = document.getElementById("headsuptextdevices");
+		textobj.innerHTML = ''
 	}
+
 }
 
 function writeTextonBlankCanvas(textstr,x,y){
@@ -189,7 +202,7 @@ function updateHeadsUpDisplay(){
 		}
 	}
 	else if (CANVAS.headsupfraction == 0){
-		textobj.innerHTML = port.statustext_connect + blescale.statustext_connect
+		textobj.innerHTML = '' //port.statustext_connect + blescale.statustext_connect
 	}
 	else if (isNaN(CANVAS.headsupfraction)){ //before task params load
 	if (ENV.ScreenRatio == -1) {
@@ -233,7 +246,7 @@ function updateHeadsUpDisplayDevices(){
 		+ "<font color=blue><b>" + blescale.statustext_received + "<br></font>"
 	}
 	else if (CANVAS.headsupfraction == 0){
-		textobj.innerHTML = port.statustext_connect + blescale.statustext_connect
+		textobj.innerHTML = '' //port.statustext_connect + blescale.statustext_connect
 	}
 	else if (isNaN(CANVAS.headsupfraction)){
 		//before task params load
@@ -543,11 +556,11 @@ function renderScreen(screenType,canvasobj){
 			ENV.ImageWidthPixels, ENV.CanvasRatio,canvasobj);
 	}
 	else if (FLAGS.savedata == 1){
-		renderBlank(canvasobj)
+		renderBlank(canvasobj,TASK.BackgroundColor2D)
 	}
 	switch (screenType) {
 	case 'blank':
-		renderBlank(canvasobj)
+		renderBlank(canvasobj,TASK.BackgroundColor2D)
 		break
 	case 'blankWithGridMarkers':
 		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter, 
@@ -591,9 +604,9 @@ function renderScreen(screenType,canvasobj){
 
 }
 
-function renderBlank(canvasobj){
+function renderBlank(canvasobj,bkgdcolor){
 	var context=canvasobj.getContext('2d');
-	context.fillStyle="#7F7F7F";
+	context.fillStyle=bkgdcolor;
 	context.fillRect(0,100,canvasobj.width,canvasobj.height);
 	// context.clearRect(0,0,canvasobj.width,canvasobj.height);
 }
@@ -706,7 +719,7 @@ function renderReward(canvasobj){
 
 function renderPunish(canvasobj){
 	var context=canvasobj.getContext('2d');
-	context.fillStyle="black";
+	context.fillStyle="#3c3c3c";
 	context.fillRect(xcanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,
 					ycanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,400/ENV.CanvasRatio,400/ENV.CanvasRatio);
 }

@@ -101,11 +101,11 @@ if (typeof(navigator.bluetooth) == "object"){
    </button>
  
   <button class="mdl-button mdl-js-button mdl-button--raised" id="pumpflush" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 12%; left: 80%; height: 45px; width: 150px; border-radius: 20px">
-     Flush 1 minute
+     Flush 1min
    </button>
  
   <button class="mdl-button mdl-js-button mdl-button--raised" id="pumptrigger" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 17%; left: 80%; height: 45px; width: 150px; border-radius: 11px">
-     100Pulses->1mL Milk
+     Calibrate 1mL milk
    </button>
 
   <button class="mdl-button mdl-js-button mdl-button--raised" id="connectblescale" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 22%; left: 80%; height: 45px; width: 150px; border-radius: 20px">
@@ -726,6 +726,11 @@ while(true){
 
 		FLAGS.need2loadImagesTrialQueue = 0;
 	} //if need2loadImagesTrialQueue
+
+	if (typeof(TASK.BackgroundColor2D) == "undefined"){
+		TASK.BackgroundColor2D = "#7F7F7F"
+	}
+	document.body.style.background = TASK.BackgroundColor2D;
 
 	ENV.InchScale = ENV.ViewportPPI/(ENV.ImageWidthPixels*ENV.CanvasRatio)
 
