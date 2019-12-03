@@ -39,13 +39,6 @@ export class Mkfinder {
         selectableRangeMode: "click",
         rowClick: function(event, row) {
           event.stopPropagation();
-          destroyThreeObjects();
-          editorContainer.style.zIndex = 3;
-          updateBtn.style.zIndex = 3;
-          canvasHolder.style.zIndex = 2;
-          webglCanvas.style.zIndex = 1;
-          displayJson(row._row.data);
-          trackInEditor("marmosets", row._row.data);
         }
       })
     }

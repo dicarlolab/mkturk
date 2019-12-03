@@ -15,9 +15,11 @@ export class Mkthree {
   private dirLightPos: THREE.Vector3 | null;
   private light: THREE.AmbientLight | null;
   private loader: GLTFLoader | null;
-  private static material: THREE.MeshPhongMaterial | null;
   private renderer: THREE.WebGLRenderer | null;
-  private storageRef: firebase.storage.Reference;
+
+  public animationID: number;
+
+  public active: boolean;
   
 
 
@@ -31,11 +33,16 @@ export class Mkthree {
     this.light = null;
     this.loader = null;
     this.renderer = null;
-    this.storageRef = firebase.storage().ref();
+    this.animationID = -1;
+    this.active = false;
   }
 
-  public async initThree(webglCanvas: HTMLCanvasElement) {
-    console.time("initThree()");
+  public async displayMesh(filePath: string, webglCanvas: HTMLCanvasElement) {
+    console.time("displayMesh()");
+
+    if (this.active) {
+      this.destroy();
+    }
 
     /* renderer setup */
     this.renderer = new THREE.WebGLRenderer({ canvas: webglCanvas, antialias: true });
@@ -67,42 +74,80 @@ export class Mkthree {
     this.scene.add(this.dirLight);
     this.scene.add(this.light);
 
-    console.timeEnd("initThree()")
+    /* load mesh */
+    let objectMesh: any = await this.loadMesh(filePath);
+
+    /* add loaded mesh to scene */
+    this.scene.add(objectMesh.scene)
+    console.log("hi1");
+    requestAnimationFrame(this.animate.bind(this));
+    this.renderer.render(this.scene, this.camera);
+    this.active = true;
+
+    console.timeEnd("displayMesh()")
   }
 
-  public async loadMesh(filePath: string) {
-
+  private async loadMesh(filePath: string) {
+    
+    let storageRef = firebase.storage().ref();
+    
     try {
-      let meshRef = this.storageRef.child(filePath);
-      let meshUrl = await meshRef.getDownloadURL().catch((e: any) => {
-        console.error("Error retrieving Mesh URL:", e);
+      let meshRef = storageRef.child(filePath);
+      let meshUrl = await meshRef.getDownloadURL().catch(e => {
+        console.error("Error:", e);
       });
-
-      let returnValue: any;
 
       this.loader = new GLTFLoader();
 
-      returnValue = this.loader.load(
-        meshUrl,
-        function (gltf) {
-          gltf.scene.traverse((child: any) => {
-            if (child.material) {
-              console.log("child material:", child.material);
-              Mkthree.material = new THREE.MeshPhongMaterial({ color: 0xFF0000, map: child.material.map });
-              child.material = Mkthree.material;
-              child.material.needsUpdate = true;
-            }
+      return new Promise((resolve, reject) => {
+        try {
+          this.loader?.load(meshUrl, function(gltf) {
+            gltf.scene.traverse((child: any) => {
+              if (child.material) {
+                let material = new THREE.MeshPhongMaterial({ color: 0xFF0000, map: child.material.map });
+                child.material = material;
+                child.material.needsUpdate = true;
+              }
+            });
+            resolve(gltf);
           });
-          return gltf;
+        } catch (error) {
+          console.error("Error:", error);
         }
-      );
-
-
-    }
-
-    catch (error) {
+      });
+    } catch (error) {
       console.error("Error:", error);
     }
   }
 
+  private animate() {
+    this.animationID = requestAnimationFrame(this.animate.bind(this));
+    if (this.scene && this.camera) {
+      console.log("hi");
+      this.renderer?.render(this.scene, this.camera);
+    }
+  }
+
+  public getAnimationID () {
+    return this.animationID;
+  }
+
+  public destroy() {
+    try {
+      this.scene = null;
+      this.camera = null;
+      this.cameraPos = null;
+      this.controls = null;
+      this.dirLight = null;
+      this.dirLightPos = null;
+      this.light = null;
+      this.loader = null;
+      this.renderer = null;
+      this.animationID = -1;
+      this.active = false;
+      cancelAnimationFrame(this.animationID);
+    } catch (error) {
+      console.error("Error destroying THREE Objects:", error);
+    }
+  }
 }

@@ -1,6 +1,7 @@
 import * as firebase from "firebase/app";
 import "firebase/firestore";
 import { Mkquery } from "./mkquery";
+import { Mkthree } from "./mkthree";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",
@@ -43,3 +44,11 @@ mkturkfilesLink?.addEventListener("click", event => {
 
   console.log("mkturkfiles quick link");
 });
+
+/* Mkthree tester */
+let mt = new Mkthree();
+let canvas = document.querySelector("#webgl-canvas") as HTMLCanvasElement;
+async function runner() {
+  await mt.displayMesh("mkturkfiles/scenebags/objectome3d/face/marmoset.glb", canvas);
+}
+runner();
