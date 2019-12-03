@@ -16,13 +16,10 @@ export class Mkthree {
   private light: THREE.AmbientLight | null;
   private loader: GLTFLoader | null;
   private renderer: THREE.WebGLRenderer | null;
-
   public animationID: number;
-
   public active: boolean;
   
-
-
+  /* constructor */
   constructor() {
     this.scene = null;
     this.camera = null;
@@ -37,7 +34,15 @@ export class Mkthree {
     this.active = false;
   }
 
-  public async displayMesh(filePath: string, webglCanvas: HTMLCanvasElement) {
+  /**
+   * Public function to display mesh specified by filepath to a canvas
+   * specified by canvas
+   * 
+   * @param {string} filePath
+   * @param {HTMLCanvasElement} canvas
+   * @public
+   */
+  public async displayMesh(filePath: string, canvas: HTMLCanvasElement) {
     console.time("displayMesh()");
 
     if (this.active) {
@@ -45,7 +50,7 @@ export class Mkthree {
     }
 
     /* renderer setup */
-    this.renderer = new THREE.WebGLRenderer({ canvas: webglCanvas, antialias: true });
+    this.renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
     this.renderer.setClearColor( 0xFFFFFF );
     this.renderer.physicallyCorrectLights = true;
     this.renderer.toneMappingExposure = 10;
@@ -55,7 +60,7 @@ export class Mkthree {
     /* camera setup */
     this.cameraPos = new THREE.Vector3( 0, 0, 10 );
     this.camera = 
-      new THREE.PerspectiveCamera( 45, webglCanvas.width / webglCanvas.height, 0.1, 2000 );
+      new THREE.PerspectiveCamera( 45, canvas.width / canvas.height, 0.1, 2000 );
     this.camera.position.set( this.cameraPos.x, this.cameraPos.y, this.cameraPos.z );
 
     /* light setup */
@@ -87,6 +92,13 @@ export class Mkthree {
     console.timeEnd("displayMesh()")
   }
 
+  /**
+   * Private function to load and return mesh specified by filepath 
+   * 
+   * @param {string} filePath
+   * @returns {Promise}
+   * @private
+   */
   private async loadMesh(filePath: string) {
     
     let storageRef = firebase.storage().ref();
@@ -126,10 +138,6 @@ export class Mkthree {
       console.log("hi");
       this.renderer?.render(this.scene, this.camera);
     }
-  }
-
-  public getAnimationID () {
-    return this.animationID;
   }
 
   public destroy() {

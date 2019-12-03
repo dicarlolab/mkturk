@@ -12,3 +12,7 @@
 .mdl-card__supporting-text {
   height: 100%;
 }
+
+#tabulator {
+  height: 100px;
+}

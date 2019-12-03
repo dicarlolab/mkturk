@@ -36,7 +36,7 @@ export class Mkquery {
       let refDate: Date;
 
       dateStr = keyword.split(";");
-      dateStr.length === 2 ? dateStr[1].trim() : dateStr[1] = "";
+      dateStr.length === 2 ? dateStr[1] = dateStr[1].trim() : dateStr[1] = "";
       refDate = new Date(dateStr[0]);
 
       if (dateStr[1].includes("+-")) {

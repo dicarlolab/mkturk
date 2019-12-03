@@ -1,16 +1,14 @@
+///<reference path="../node_modules/@types/tabulator-tables/index.d.ts"
+
 import * as firebase from "firebase/app";
 import "firebase/firestore";
-import "tabulator-tables";
-import "extendKeys";
+
+
 
 type Timestamp = firebase.firestore.Timestamp;
 
-export function keys<O extends object>(obj: O): Array<keyof O> {
-  return Object.keys(obj) as Array<keyof O>;
-}
-
 export class Mkfinder {
-  finder: Tabulator;
+  finder: any;
   
 
   constructor() {
@@ -39,11 +37,37 @@ export class Mkfinder {
         selectableRangeMode: "click",
         rowClick: function(event, row) {
           event.stopPropagation();
+        },
+        rowTap: function(event, row)  {
+          event.stopPropagation();
         }
       })
     }
     else if (database == "mkturkdata") {
-
+      this.finder.destroy();
+      this.finder = new Tabulator("#tabulator", {
+        data: dataArr,
+        index: "CurrentDate",
+        layout: "fitColumns",
+        initialSort: [
+          {column: "Agent", dir: "asc"}
+        ],
+        columns: [
+          {title: "<input id='select-all' type='checkbox' onchange='updateSelectAll()'/>", width: 15, headerSort: false},
+          {title: "Agent", field: "Agent"},
+          {title: "Doctype", field: "Doctype"},
+          {title: "CurrentDate", field: "CurrentDate"},
+          {title: "FirestoreDocRoot", field: "FirestoreDocRoot", visible: false},
+        ],
+        selectable: true,
+        selectableRangeMode: "click",
+        rowClick: function(event, row) {
+          event.stopPropagation();
+        },
+        rowTap: function(event, row) {
+          event.stopPropagation();
+        }
+      });
     }
     else {
       console.error("Wrong or Invalid database trying to be tabularized");
