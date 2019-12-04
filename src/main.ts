@@ -1,5 +1,7 @@
 import * as firebase from "firebase/app";
 import "firebase/firestore";
+import "firebase/storage";
+import "firebase/auth";
 import { Mkquery } from "./mkquery";
 import { Mkthree } from "./mkthree";
 import { Mkfinder } from "./mkfinder";
@@ -15,7 +17,28 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 
+let provider = new firebase.auth.GoogleAuthProvider();
+provider.addScope("https://www.googleapis.com/auth/contacts.readonly");
+firebase.auth().getRedirectResult().then(result => {
+  if (result.user) {
+    console.log("Sign-In Redirect Result, USER:", result.user.email, "is signed in");
+  } else if (firebase.auth().currentUser) {
+    console.log("Sign-In Redirect Result, USER:", "is signed in");
+  } else {
+    firebase.auth().signInWithRedirect(provider);
+  }
+});
+
+
+
+
+
 const db = firebase.firestore();
+const storage = firebase.storage();
+const storageRef = storage.ref();
+
+let fileRef = storageRef.child("mkturkfiles/parameterfiles/subjects/AJ_params.txt");
+
 
 let m = new Mkquery();
 let retval = m.mkquery([{field: "CurrentDate", keyword: "4/3/2018; +-5"}]);
@@ -26,6 +49,8 @@ let query = eval(retval);
 console.log("query", query);
 
 let mkf = new Mkfinder();
+let json = mkf.foo(fileRef);
+console.log("json", json);
 
 
 /* Quick Links */
@@ -35,7 +60,6 @@ let mkturkfilesLink = document.querySelector("#quick-link-mkturkfiles");
 
 marmosetsLink?.addEventListener("click", async event => {
   event.preventDefault();
-  event.stopPropagation();
 
   async function loadData(doc: any, arr: any[]) {
     await arr.push(doc.data());

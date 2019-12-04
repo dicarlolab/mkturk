@@ -1,19 +1,26 @@
-///<reference path="../node_modules/@types/tabulator-tables/index.d.ts"
-
 import * as firebase from "firebase/app";
 import "firebase/firestore";
-
-
-
+import JSONEditor from "jsoneditor";
 type Timestamp = firebase.firestore.Timestamp;
 
 export class Mkfinder {
   finder: any;
-  
 
   constructor() {
     this.finder = new Tabulator("#tabulator");
+
   }
+
+  public async foo(fileRef: any) {
+    let url = await fileRef.getDownloadURL().then((url: any) => {
+      return url;
+    });
+
+    let response = await fetch(url);
+    let doc = await response.json();
+    return JSON.stringify(doc);
+  }
+
 
   public displayFirestoreTable(dataArr: any[], database: string) {
     dataArr = this.timestampToDate(dataArr, database);
@@ -47,7 +54,7 @@ export class Mkfinder {
       this.finder.destroy();
       this.finder = new Tabulator("#tabulator", {
         data: dataArr,
-        index: "CurrentDate",
+        index: "index",
         layout: "fitColumns",
         initialSort: [
           {column: "Agent", dir: "asc"}
@@ -102,8 +109,10 @@ export class Mkfinder {
 
       case "mkturkdata":
         dataArr.forEach(data => {
+          data.index = data.Agent + data.Doctype + data.CurrentDateValue;
           for (let key of Object.keys(data)) {
-            if ((key.toLowerCase().includes("date") || key.includes("_dates")) && key != "CurrentDateValue") {
+            if ((key.toLowerCase().includes("date") || key.includes("_dates")) 
+                && key != "CurrentDateValue" && key != "ParamFileDate") {
               try {
                 data[key] = data[key].toDate().toJSON();
               }
