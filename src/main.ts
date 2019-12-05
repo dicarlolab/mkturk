@@ -5,6 +5,7 @@ import "firebase/auth";
 import { Mkquery } from "./mkquery";
 import { Mkthree } from "./mkthree";
 import { Mkfinder } from "./mkfinder";
+import { Mkeditor } from "./mkmedia";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",
@@ -31,69 +32,67 @@ firebase.auth().getRedirectResult().then(result => {
 
 
 
-
-
 const db = firebase.firestore();
-const storage = firebase.storage();
-const storageRef = storage.ref();
+// const storage = firebase.storage();
+// const storageRef = storage.ref();
 
-let fileRef = storageRef.child("mkturkfiles/parameterfiles/subjects/AJ_params.txt");
-
-
-let m = new Mkquery();
-let retval = m.mkquery([{field: "CurrentDate", keyword: "4/3/2018; +-5"}]);
-retval = "db.collection('mkturkdata')" + retval;
-console.log("retval:", retval);
-
-let query = eval(retval);
-console.log("query", query);
-
-let mkf = new Mkfinder();
-let json = mkf.foo(fileRef);
-console.log("json", json);
+// let fileRef = storageRef.child("mkturkfiles/parameterfiles/subjects/AJ_params.txt");
 
 
-/* Quick Links */
-let marmosetsLink = document.querySelector("#quick-link-marmosets");
-let mkturkdataLink = document.querySelector("#quick-link-mkturkdata");
-let mkturkfilesLink = document.querySelector("#quick-link-mkturkfiles");
+// let m = new Mkquery();
+// let retval = m.mkquery([{field: "CurrentDate", keyword: "4/3/2018; +-5"}]);
+// retval = "db.collection('mkturkdata')" + retval;
+// console.log("retval:", retval);
 
-marmosetsLink?.addEventListener("click", async event => {
-  event.preventDefault();
+// let query = eval(retval);
+// console.log("query", query);
 
-  async function loadData(doc: any, arr: any[]) {
-    await arr.push(doc.data());
-  }
+// let mkf = new Mkfinder();
+// let json = mkf.foo(fileRef);
+// console.log("json", json);
 
-  let arr = new Array();
 
-  await query.get().then(async (snapshot: any) => {
-    if (!query.empty) {
-      let promises = snapshot.docs.map((doc: any) => loadData(doc, arr));
-      await Promise.all(promises);
-    }
-  });
+// /* Quick Links */
+// let marmosetsLink = document.querySelector("#quick-link-marmosets");
+// let mkturkdataLink = document.querySelector("#quick-link-mkturkdata");
+// let mkturkfilesLink = document.querySelector("#quick-link-mkturkfiles");
 
-  console.log("arr:", arr);
+// marmosetsLink?.addEventListener("click", async event => {
+//   event.preventDefault();
 
-  mkf.displayFirestoreTable(arr, "mkturkdata");
+//   async function loadData(doc: any, arr: any[]) {
+//     await arr.push(doc.data());
+//   }
 
-  console.log("marmosets quick link");
-});
+//   let arr = new Array();
 
-mkturkdataLink?.addEventListener("click", event => {
-  event.preventDefault();
-  event.stopPropagation();
+//   await query.get().then(async (snapshot: any) => {
+//     if (!query.empty) {
+//       let promises = snapshot.docs.map((doc: any) => loadData(doc, arr));
+//       await Promise.all(promises);
+//     }
+//   });
 
-  console.log("mkturkdata quick link");
-});
+//   console.log("arr:", arr);
 
-mkturkfilesLink?.addEventListener("click", event => {
-  event.preventDefault();
-  event.stopPropagation();
+//   mkf.displayFirestoreTable(arr, "mkturkdata");
 
-  console.log("mkturkfiles quick link");
-});
+//   console.log("marmosets quick link");
+// });
+
+// mkturkdataLink?.addEventListener("click", event => {
+//   event.preventDefault();
+//   event.stopPropagation();
+
+//   console.log("mkturkdata quick link");
+// });
+
+// mkturkfilesLink?.addEventListener("click", event => {
+//   event.preventDefault();
+//   event.stopPropagation();
+
+//   console.log("mkturkfiles quick link");
+// });
 
 /* Mkthree tester */
 // let mt = new Mkthree();
@@ -102,3 +101,14 @@ mkturkfilesLink?.addEventListener("click", event => {
 //   await mt.displayMesh("mkturkfiles/scenebags/objectome3d/face/marmoset.glb", canvas);
 // }
 // runner();
+
+/* Mkeditor Tester */
+
+let mkeditor = new Mkeditor();
+const marm = db.collection("marmosets").doc("AJ").get().then(doc => {
+  let ret = doc.data();
+
+  if (ret) {
+    console.log(ret.birthdate);
+  }
+});
