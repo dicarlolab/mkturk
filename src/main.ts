@@ -105,10 +105,22 @@ const db = firebase.firestore();
 /* Mkeditor Tester */
 
 let mkeditor = new Mkeditor();
-const marm = db.collection("marmosets").doc("AJ").get().then(doc => {
+const marm = db.collection("marmosets").doc("Ollie").get().then(doc => {
   let ret = doc.data();
 
-  if (ret) {
-    console.log(ret.birthdate);
-  }
+  console.log(ret);
+  console.log(ret?.headSize);
+  console.log(typeof ret?.father);
+
+  // if (ret) {
+  //   console.log("ret", ret);
+  //   console.log(ret.birthdate.toString());
+  //   console.log(ret.birthdate.toDate());
+
+  //   try {
+  //     console.log(ret.colony.toDate());
+  //   } catch (e) {
+  //     console.log("Not Timestamp Object", e);
+  //   }
+  // }
 });

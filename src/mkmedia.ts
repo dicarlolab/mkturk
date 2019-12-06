@@ -70,4 +70,51 @@ export class Mkeditor {
 //       }
 //     }
 //   }
+
+  private isDict(val: any) {
+    return val && typeof val === "object" && val.constructor === Object;
+  }
+
+  private isString(val: any) {
+    return typeof val === "string" || val.constructor === String;
+  }
+
+  private isNumber(val: any) {
+    return typeof val === "number" && isFinite(val);
+  }
+
+  public timestampToDate(dataArr: any[], database: string) {
+    switch(database) {
+      case "marmosets":
+        function tsToDate(element: Timestamp, idx: number, arr: any[]) {
+          try {
+            arr[idx] = element.toDate().toJSON();
+          } catch (e) {
+            console.log("Not Timestamp Obj");
+          }
+        }
+
+        dataArr.forEach(data => {
+          for (let key of Object.keys(data)) {
+            if (Array.isArray(data[key])) {
+              data[key].forEach(tsToDate);
+            }
+
+            else if (this.isDict(data[key])) {
+              for (let key2 of Object.keys(data[key])) {
+                try {
+                  data[key][key2] = data[key][key2].toDate().toJSON();
+                } catch {
+                  console.log("Not Timestamp Object");
+                }
+              }
+            }
+
+            else if (!this.isString(data[key]) && !this.isNumber(data[key])) {
+
+            }
+          }
+        })
+    }
+  }
 }
