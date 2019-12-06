@@ -108,9 +108,7 @@ let mkeditor = new Mkeditor();
 const marm = db.collection("marmosets").doc("Ollie").get().then(doc => {
   let ret = doc.data();
 
-  console.log(ret);
-  console.log(ret?.headSize);
-  console.log(typeof ret?.father);
+  mkeditor.displayDoc(mkeditor.foo(ret));
 
   // if (ret) {
   //   console.log("ret", ret);
