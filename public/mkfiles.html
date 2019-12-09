@@ -41,21 +41,33 @@
           <canvas id="webgl-canvas"></canvas>
           <div id="tabulator"></div>
           <div id="editor-container"></div>
-          <button id="update-btn"></button>
+          <!-- <button id="update-btn"></button> -->
           <div class="demo-card-wide mdl-card mdl-shadow--2dp">
             <div class="mdl-card__title">
               <h2 class="mdl-card__title-text">MKQUERY</h2>
             </div>
             <div class="mdl-card__supporting-text">
-              <div class="mdl-textfield mdl-js-textfield getmdl-select">
-                <input type="text" value="" class="mdl-textfield__input" id="sample1" readonly>
-                <input type="hidden" value="" name="sample1">
-                <label for="sample1" class="mdl-textfield__label">Country</label>
-                <ul for="sample1" class="mdl-menu mdl-menu--bottom-left mdl-js-menu">
-                    <li class="mdl-menu__item" data-val="DEU">Germany</li>
-                    <li class="mdl-menu__item" data-val="BLR">Belarus</li>
-                    <li class="mdl-menu__item" data-val="RUS">Russia</li>
-                </ul>
+              <form class="mkquery-form" id="query-form">
+                <select class="selector" id="qry-loc-selector">
+                  <option disabled selected>Query Location</option>
+                    <optgroup label="Firestore/DB">
+                    <option value="marmosets">firestore/marmosets</option>
+                    <option value="mkturkdata">firestore/mkturkdata</option>
+                  </optgroup>
+                  <optgroup label="Cloud Storage">
+                    <option value="mkturkfiles">gcs/mkturkfiles</option>
+                  </optgroup>
+                </select>
+
+                <select class="selector" id="field-selector">
+                  <option disabled selected>Field Value</option>
+                </select>
+
+                <button type="submit" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="go-btn">Go</button>
+                <input type="text" class="mdl-textfield__input keyword-input" id="keyword-input-0">
+                <input type="text" class="mdl-textfield__input keyword-input" id="keyword-input-1">
+                <input type="text" class="mdl-textfield__input keyword-input" id="keyword-input-2">
+              </form>
             </div>
             </div>
           </div>

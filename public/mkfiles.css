@@ -16,3 +16,39 @@
 #tabulator {
   height: 100px;
 }
+
+#query-form {
+  grid-area: mkquery;
+  
+  display: grid;
+  grid-gap: 5px;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  grid-template-areas: "qry-selector field-selector keyword-0 go"
+                       " . . keyword-1 ."
+                       " . . keyword-2 ."; 
+}
+
+#qry-loc-selector {
+  grid-area: qry-selector;
+}
+
+#field-selector {
+  grid-area: field-selector;
+}
+
+#keyword-input-0 {
+  grid-area: keyword-0;
+}
+
+#keyword-input-1 {
+  grid-area: keyword-1;
+}
+
+#keyword-input-2 {
+  grid-area: keyword-2;
+}
+
+#go-btn {
+  grid-area: go;
+}

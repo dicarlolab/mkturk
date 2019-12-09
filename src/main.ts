@@ -5,7 +5,7 @@ import "firebase/auth";
 import { Mkquery } from "./mkquery";
 import { Mkthree } from "./mkthree";
 import { Mkfinder } from "./mkfinder";
-import { Mkeditor } from "./mkmedia";
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",
@@ -30,13 +30,15 @@ firebase.auth().getRedirectResult().then(result => {
   }
 });
 
-
+import { Mkeditor } from "./mkmedia";
 
 const db = firebase.firestore();
 // const storage = firebase.storage();
 // const storageRef = storage.ref();
 
 // let fileRef = storageRef.child("mkturkfiles/parameterfiles/subjects/AJ_params.txt");
+
+let mkquery = new Mkquery();
 
 
 // let m = new Mkquery();
@@ -104,21 +106,216 @@ const db = firebase.firestore();
 
 /* Mkeditor Tester */
 
-let mkeditor = new Mkeditor();
-const marm = db.collection("marmosets").doc("Ollie").get().then(doc => {
-  let ret = doc.data();
+// let mkeditor = new Mkeditor();
+// const marm = db.collection("mkturkdata").doc("2018-04-03T20:26:45_Barb_images").get().then(doc => {
+//   let ret = doc.data();
 
-  mkeditor.displayDoc(mkeditor.foo(ret));
+//   mkeditor.displayDoc(mkeditor.foo(ret));
 
-  // if (ret) {
-  //   console.log("ret", ret);
-  //   console.log(ret.birthdate.toString());
-  //   console.log(ret.birthdate.toDate());
+//   // if (ret) {
+//   //   console.log("ret", ret);
+//   //   console.log(ret.birthdate.toString());
+//   //   console.log(ret.birthdate.toDate());
 
-  //   try {
-  //     console.log(ret.colony.toDate());
-  //   } catch (e) {
-  //     console.log("Not Timestamp Object", e);
-  //   }
-  // }
+//   //   try {
+//   //     console.log(ret.colony.toDate());
+//   //   } catch (e) {
+//   //     console.log("Not Timestamp Object", e);
+//   //   }
+//   // }
+// });
+
+// let dt_bloodDNA = new firebase.firestore.Timestamp(1574456636, 147000000);
+// console.log(dt_bloodDNA.toDate());
+
+// let dt_semiannual = new firebase.firestore.Timestamp(1574456656, 748000000)
+// console.log(dt_semiannual.toDate());
+
+
+let qryLocSelc = document.querySelector<HTMLSelectElement>("#qry-loc-selector");
+qryLocSelc?.addEventListener("change", ev => {
+
+  let fs = document.querySelector("#field-selector") as HTMLSelectElement;
+  let ki0 = document.querySelector("#keyword-input-0") as HTMLInputElement;
+  let ki1 = document.querySelector("#keyword-input-1") as HTMLInputElement;
+  let ki2 = document.querySelector("#keyword-input-2") as HTMLInputElement;
+  switch(qryLocSelc?.value) {
+    case "marmosets":
+      
+      fs.style.visibility = "visible";
+      ki0.style.visibility = "visible";
+      ki1.style.visibility = "hidden";
+      ki2.style.visibility = "hidden";
+
+      resetPlaceholder();
+      removeElementsByClassName("field-options");
+
+      let nameMarmosets = document.createElement("option");
+      nameMarmosets.setAttribute("class", "field-options");
+      nameMarmosets.setAttribute("value", "name");
+      nameMarmosets.setAttribute("selected", "true");
+      nameMarmosets.textContent = "name";
+
+      let sexMarmosets = document.createElement("option");
+      sexMarmosets.setAttribute("class", "field-options");
+      sexMarmosets.setAttribute("value", "sex");
+      sexMarmosets.textContent = "sex";
+
+      let rfidMarmosets = document.createElement("option");
+      rfidMarmosets.setAttribute("class", "field-options");
+      rfidMarmosets.setAttribute("value", "rfid");
+      rfidMarmosets.textContent = "RFID";
+
+      let breedingMarmosets = document.createElement("option");
+      breedingMarmosets.setAttribute("class", "field-options");
+      breedingMarmosets.setAttribute("value", "breeding");
+      breedingMarmosets.textContent = "breeding";
+
+      let birthdateMarmosets = document.createElement("option");
+      birthdateMarmosets.setAttribute("class", "field-options");
+      birthdateMarmosets.setAttribute("value", "birthdate");
+      birthdateMarmosets.textContent = "birthdate";
+
+      let fieldSelectorMarmosets
+        = document.querySelector("#field-selector") as HTMLSelectElement;
+      fieldSelectorMarmosets.appendChild(nameMarmosets);
+      fieldSelectorMarmosets.appendChild(sexMarmosets);
+      fieldSelectorMarmosets.appendChild(rfidMarmosets);
+      fieldSelectorMarmosets.appendChild(breedingMarmosets);
+      fieldSelectorMarmosets.appendChild(birthdateMarmosets);
+      fieldSelectorMarmosets.dispatchEvent(new Event("change"));
+  
+      break;
+
+    case "mkturkdata":
+      fs.style.visibility = "visible";
+      ki0.style.visibility = "visible";
+      ki1.style.visibility = "visible";
+      ki2.style.visibility = "visible";
+
+      resetPlaceholder();
+      removeElementsByClassName("field-options");
+
+      let agentTypeCurDate = document.createElement("option");
+      agentTypeCurDate.setAttribute("class", "field-options");
+      agentTypeCurDate.setAttribute("value", "agentTypeCurDate");
+      agentTypeCurDate.setAttribute("selected", "true");
+      agentTypeCurDate.textContent = "Agent & Doctype & CurrentDate";
+
+      let fieldSelectorMkturk 
+        = document.querySelector("#field-selector") as HTMLSelectElement;
+      fieldSelectorMkturk.appendChild(agentTypeCurDate);
+      fieldSelectorMkturk.dispatchEvent(new Event("change"));
+
+      break;
+
+    case "mkturkfiles":
+      fs.style.visibility = "hidden";
+      ki0.style.visibility = "hidden";
+      ki1.style.visibility = "hidden";
+      ki2.style.visibility = "hidden";
+
+      removeElementsByClassName("field-options");
+
+      break;
+
+  }
 });
+
+let fieldSelector
+  = document.querySelector<HTMLSelectElement>("#field-selector");
+fieldSelector?.addEventListener("change", ev => {
+  let field = fieldSelector?.value;
+  let ki0 = document.querySelector("#keyword-input-0") as HTMLInputElement;
+  let ki1 = document.querySelector("#keyword-input-1") as HTMLInputElement;
+  let ki2 = document.querySelector("#keyword-input-2") as HTMLInputElement;
+
+  switch (field) {
+    case "name":
+      resetPlaceholder();
+      ki0.setAttribute("placeholder", "name");
+      break;
+
+    case "sex":
+      resetPlaceholder();
+      ki0.setAttribute("placeholder", "sex");
+      break;
+
+    case "rfid":
+      resetPlaceholder();
+      ki0.setAttribute("placeholder", "RFID");
+      break;
+
+    case "breeding":
+      resetPlaceholder();
+      ki0.setAttribute("placeholder", "breeding");
+      break;
+
+    case "birthdate":
+      resetPlaceholder();
+      ki0.setAttribute(
+        "placeholder", "birthdate (e.g. 04/17/2019; +-7)"
+      );
+      break;
+
+    case "agentTypeCurDate":
+      ki0.setAttribute("placeholder", "Agent");
+      ki1.setAttribute("placeholder", "Doctype");
+      ki2.setAttribute(
+        "placeholder", "CurrentDate (e.g. 04/17/2019; +-7)"
+      );
+      break;
+  }
+});
+
+let queryForm = document.querySelector<HTMLFormElement>("#query-form");
+queryForm?.addEventListener("submit", ev => {
+  ev.preventDefault();
+  let qryLoc = qryLocSelc?.value;
+  let field = fieldSelector?.value;
+  let k0 = document.querySelector<HTMLInputElement>("#keyword-input-0")?.value;
+  let k1 = document.querySelector<HTMLInputElement>("#keyword-input-1")?.value;
+  let k2 = document.querySelector<HTMLInputElement>("#keyword-input-2")?.value;
+
+  if (qryLoc === "marmosets" && field && k0) {
+    let queryParam = [ { field: field, keyword: k0 } ]
+    let queryStr = mkquery.mkquery(queryParam);
+    console.log(queryStr);
+  }
+
+  else if (qryLoc === "mkturkdata" && field) {
+    if (k0 && k1 && k2) {
+      let queryParam = [ 
+        { field: "Agent", keyword: k0 },
+        { field: "Doctype", keyword: k1 },
+        { field: "CurrentDate", keyword: k2 }
+      ];
+
+      let queryStr = mkquery.mkquery(queryParam);
+      console.log(queryStr);
+    }
+
+   
+  }
+
+
+});
+
+
+
+function resetPlaceholder() {
+  let keywordInputs = 
+    [...document.querySelectorAll<HTMLInputElement>(".keyword-input")];
+
+  for (let i = 0; i < keywordInputs.length; i++) {
+    keywordInputs[i].placeholder = "";
+    keywordInputs[i].value = "";
+  }
+}
+
+function removeElementsByClassName(cName: string) {
+  let elements = document.getElementsByClassName(cName);
+  while (elements.length > 0) {
+    elements[0].parentNode?.removeChild(elements[0]);
+  }
+}
