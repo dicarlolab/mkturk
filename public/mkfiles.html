@@ -20,11 +20,13 @@
     <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
       <header class="mdl-layout__header">
         <div class="mdl-layout__header-row">
-          <!-- Title -->
+          <!-- TITLE -->
           <span class="mdl-layout-title">MKFILES</span>
-          <!-- Add spacer, to align navigation to the right -->
+
+          <!-- Add spacer to align navigation to the right -->
           <div class="mdl-layout-spacer"></div>
-          <!-- Navigation -->
+
+          <!-- NAVIGATION -->
           <nav class="mdl-navigation">
             <a class="mdl-navigation__link" id="quick-link-marmosets" href="">firestore/marmosets</a>
             <a class="mdl-navigation__link" id="quick-link-mkturkdata" href="">firestore/mkturkdata</a>
@@ -34,29 +36,34 @@
               <span class="mdl-switch__label">RFID TOGGLED</span>
             </label>
           </nav>
-        </div>
-      </header>
+
+        </div> <!-- mdl-layout__header-row -->
+
+      </header> <!-- mdl-layout__header -->
+
       <main class="mdl-layout__content">
-        <div class="page-content">
-          <canvas id="webgl-canvas"></canvas>
-          <div id="tabulator"></div>
-          <div id="editor-container"></div>
-          <!-- <button id="update-btn"></button> -->
-          <div class="demo-card-wide mdl-card mdl-shadow--2dp">
-            <div class="mdl-card__title">
+        <div class="page-content mdl-grid">
+
+
+
+          <!-- MKQUERY CARD -->
+          <div id="mkquery-card" class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-cell--8-col-tablet mdl-cell--4-col-phone">
+            <div class="mdk-card__title">
               <h2 class="mdl-card__title-text">MKQUERY</h2>
             </div>
+
             <div class="mdl-card__supporting-text">
-              <form class="mkquery-form" id="query-form">
+              <form id="mkquery-form">
+                
                 <select class="selector" id="qry-loc-selector">
                   <option disabled selected>Query Location</option>
                     <optgroup label="Firestore/DB">
-                    <option value="marmosets">firestore/marmosets</option>
-                    <option value="mkturkdata">firestore/mkturkdata</option>
-                  </optgroup>
-                  <optgroup label="Cloud Storage">
-                    <option value="mkturkfiles">gcs/mkturkfiles</option>
-                  </optgroup>
+                      <option value="marmosets">firestore/marmosets</option>
+                      <option value="mkturkdata">firestore/mkturkdate</option>
+                    </optgroup>
+                    <optgroup label="Cloud Storage">
+                      <option value="mkturkfiles">gcs/mkturkfiles</option>
+                    </optgroup>
                 </select>
 
                 <select class="selector" id="field-selector">
@@ -67,13 +74,41 @@
                 <input type="text" class="mdl-textfield__input keyword-input" id="keyword-input-0">
                 <input type="text" class="mdl-textfield__input keyword-input" id="keyword-input-1">
                 <input type="text" class="mdl-textfield__input keyword-input" id="keyword-input-2">
+
               </form>
             </div>
+
+
+          </div> <!-- mkquery-card -->
+
+          <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--6-col mdl-cell--4-col-tablet mdl-cell--2-col-phone" id="finder-card">
+            <div id="finder-controls">
+              <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="back-button" disabled>BACK</button>
+              <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="forward-button" disabled>FORWARD</button>
+              <input type="search" class="mdl-textfield__input keyword-input" id="filter-value" placeholder="search">
+              <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="upload-file">UPLOAD FILE ...</button>
+              <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="download-file">DOWNLOAD FILE</button>
+              <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="show-images-button" disabled>SHOW SELECTED IMAGES</button>
             </div>
+            <div id="finder"></div>
+
+          </div> <!-- finder card -->
+
+          <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--6-col mdl-cell--4-col-tablet mdl-cell--2-col-phone">
+            <div id="editor"></div>
+
           </div>
-        </div>
-      </main>
-    </div>
+
+
+
+
+
+
+
+        </div> <!-- page-content -->
+      </main> <!-- mdl-layout__content-->
+
+    </div> <!-- mdl-layout mdl-js-layout mdl-layout--fixed-header -->
 
 
 

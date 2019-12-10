@@ -201,3 +201,32 @@
 [debug] [2019-12-09T15:57:04.256Z] <<< HTTP RESPONSE 200
 [info] i  hosting: Serving hosting files from: public
 [info] ✔  hosting: Local server: http://localhost:5000
+[debug] [2019-12-10T03:43:55.397Z] ----------------------------------------------------------------------
+[debug] [2019-12-10T03:43:55.399Z] Command:       /Users/hector/.nvm/versions/node/v8.16.0/bin/node /Users/hector/.nvm/versions/node/v8.16.0/bin/firebase serve
+[debug] [2019-12-10T03:43:55.399Z] CLI Version:   7.2.2
+[debug] [2019-12-10T03:43:55.399Z] Platform:      darwin
+[debug] [2019-12-10T03:43:55.399Z] Node Version:  v8.16.0
+[debug] [2019-12-10T03:43:55.400Z] Time:          Mon Dec 09 2019 22:43:55 GMT-0500 (EST)
+[debug] [2019-12-10T03:43:55.400Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2019-12-10T03:43:55.411Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2019-12-10T03:43:55.411Z] > authorizing via signed-in user
+[debug] [2019-12-10T03:43:55.411Z] [iam] checking project sandbox-ce2c5 for permissions ["firebase.projects.get"]
+[debug] [2019-12-10T03:43:55.413Z] > refreshing access token with scopes: ["email","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","openid"]
+[debug] [2019-12-10T03:43:55.413Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token  
+ <request body omitted>
+[debug] [2019-12-10T03:43:55.569Z] <<< HTTP RESPONSE 200
+[debug] [2019-12-10T03:43:55.588Z] >>> HTTP REQUEST POST https://cloudresourcemanager.googleapis.com/v1/projects/sandbox-ce2c5:testIamPermissions  
+
+[debug] [2019-12-10T03:43:55.834Z] <<< HTTP RESPONSE 200
+[debug] [2019-12-10T03:43:55.835Z] >>> HTTP REQUEST GET https://firebase.googleapis.com/v1beta1/projects/sandbox-ce2c5  
+ 
+[debug] [2019-12-10T03:43:56.063Z] <<< HTTP RESPONSE 200
+[info] 
+[info] === Serving from '/Users/hector/issalab/mkturk'...
+[info] 
+[debug] [2019-12-10T03:43:56.065Z] >>> HTTP REQUEST GET https://firebase.googleapis.com/v1beta1/projects/sandbox-ce2c5/webApps/-/config  
+ 
+[debug] [2019-12-10T03:43:56.655Z] <<< HTTP RESPONSE 200
+[info] i  hosting: Serving hosting files from: public
+[info] ✔  hosting: Local server: http://localhost:5000

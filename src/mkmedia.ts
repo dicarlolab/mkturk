@@ -15,7 +15,8 @@ export class Mkeditor {
   private activeDoc: { loc: string, id: string };
 
   constructor() {
-    this.editorContainer = document.querySelector("#editor-container") as HTMLElement;
+    console.log("mkeditor");
+    this.editorContainer = document.querySelector("#editor") as HTMLElement;
     this.editor = new JSONEditor(this.editorContainer);
     //this.updateBtn = document.querySelector("#update-btn") as HTMLElement;
     this.activeDoc = { loc: "", id: "" };

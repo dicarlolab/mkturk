@@ -1,27 +1,28 @@
-.demo-card-wide.mdl-card {
+/* #mkquery-card {
   width: 1024px;
   height: 512px;
   display: inline-block;
 }
 
-.demo-card-wide > mdl-card__title {
+#mkquery-card > mdl-card__title {
   color: black;
   height: 96px;
 }
 
 .mdl-card__supporting-text {
   height: 100%;
-}
+} */
 
-#tabulator {
-  height: 100px;
-}
 
-#query-form {
-  grid-area: mkquery;
-  
+
+
+
+
+
+#mkquery-form {
   display: grid;
   grid-gap: 5px;
+
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(3, 1fr);
   grid-template-areas: "qry-selector field-selector keyword-0 go"
@@ -51,4 +52,59 @@
 
 #go-btn {
   grid-area: go;
+}
+
+#finder-card {
+  display: grid;
+  grid-template-rows: 1fr 16fr;
+  grid-template-areas: "controls"
+                       "finder";
+}
+
+#finder-controls {
+  grid-area: controls;
+  border: solid 2px white;
+
+
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr 2fr;
+  grid-template-rows: 1fr 1fr;
+  grid-template-areas: "back forward filter filter"
+                       "upload upload download show-images";
+  grid-gap: 2px;
+}
+
+#filter-value {
+  grid-area: filter;
+}
+
+#back-button {
+  grid-area: back;
+  text-align: center;
+}
+
+#forward-button {
+  grid-area: forward;
+  text-align: center;
+}
+
+#upload-file {
+  grid-area: upload;
+  text-align: center;
+}
+
+#download-file {
+  grid-area: download;
+  text-align: center;
+}
+
+#show-images-button {
+  grid-area: show-images;
+  text-align: center;
+}
+
+#finder {
+  grid-area: finder;
+  padding: 2px;
+  border: 0px;
 }

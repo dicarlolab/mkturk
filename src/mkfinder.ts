@@ -2,13 +2,16 @@ import * as firebase from "firebase/app";
 import "firebase/firestore";
 import JSONEditor from "jsoneditor";
 type Timestamp = firebase.firestore.Timestamp;
+import { Mkeditor } from "./mkmedia";
 
 export class Mkfinder {
   finder: any;
+  editor: Mkeditor;
 
   constructor() {
-    this.finder = new Tabulator("#tabulator");
-
+    this.finder = new Tabulator("#finder");
+    this.editor = new Mkeditor();
+    
   }
 
   public async foo(fileRef: any) {
@@ -22,11 +25,29 @@ export class Mkfinder {
   }
 
 
+  public test(dataArr: any[]) {
+    this.finder.destroy();
+    let edi = this.editor;
+    this.finder = new Tabulator("#finder", {
+      data: dataArr,
+      columns: [
+        {title: "Name", field: "name"}
+      ],
+      layout: "fitColumns",
+      rowClick: function(ev, row) {
+        ev.stopPropagation();
+        console.log(row);
+        edi.displayDoc(row.getData());
+      }
+    })
+  }
+
+
   public displayFirestoreTable(dataArr: any[], database: string) {
     dataArr = this.timestampToDate(dataArr, database);
     if (database == "marmosets") {
       this.finder.destroy();
-      this.finder = new Tabulator("#tabulator", {
+      this.finder = new Tabulator("#finder", {
         data: dataArr,
         index: "name",
         layout: "fitColumns",
@@ -52,7 +73,7 @@ export class Mkfinder {
     }
     else if (database == "mkturkdata") {
       this.finder.destroy();
-      this.finder = new Tabulator("#tabulator", {
+      this.finder = new Tabulator("#finder", {
         data: dataArr,
         index: "index",
         layout: "fitColumns",

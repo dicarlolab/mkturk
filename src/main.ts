@@ -4,7 +4,6 @@ import "firebase/storage";
 import "firebase/auth";
 import { Mkquery } from "./mkquery";
 import { Mkthree } from "./mkthree";
-import { Mkfinder } from "./mkfinder";
 
 
 const firebaseConfig = {
@@ -18,6 +17,8 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 
+import { Mkfinder } from "./mkfinder";
+
 let provider = new firebase.auth.GoogleAuthProvider();
 provider.addScope("https://www.googleapis.com/auth/contacts.readonly");
 firebase.auth().getRedirectResult().then(result => {
@@ -30,13 +31,12 @@ firebase.auth().getRedirectResult().then(result => {
   }
 });
 
-import { Mkeditor } from "./mkmedia";
 
 const db = firebase.firestore();
-// const storage = firebase.storage();
-// const storageRef = storage.ref();
+const storage = firebase.storage();
+const storageRef = storage.ref();
 
-// let fileRef = storageRef.child("mkturkfiles/parameterfiles/subjects/AJ_params.txt");
+let fileRef = storageRef.child("mkturkfiles/parameterfiles/subjects/AJ_params.txt");
 
 let mkquery = new Mkquery();
 
@@ -49,8 +49,8 @@ let mkquery = new Mkquery();
 // let query = eval(retval);
 // console.log("query", query);
 
-// let mkf = new Mkfinder();
-// let json = mkf.foo(fileRef);
+let mkf = new Mkfinder();
+mkf.test([{name: "hello"}])
 // console.log("json", json);
 
 
@@ -268,7 +268,7 @@ fieldSelector?.addEventListener("change", ev => {
   }
 });
 
-let queryForm = document.querySelector<HTMLFormElement>("#query-form");
+let queryForm = document.querySelector<HTMLFormElement>("#mkquery-form");
 queryForm?.addEventListener("submit", ev => {
   ev.preventDefault();
   let qryLoc = qryLocSelc?.value;
