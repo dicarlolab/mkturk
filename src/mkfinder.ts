@@ -14,37 +14,10 @@ export class Mkfinder {
     
   }
 
-  public async foo(fileRef: any) {
-    let url = await fileRef.getDownloadURL().then((url: any) => {
-      return url;
-    });
-
-    let response = await fetch(url);
-    let doc = await response.json();
-    return JSON.stringify(doc);
-  }
-
-
-  public test(dataArr: any[]) {
-    this.finder.destroy();
-    let edi = this.editor;
-    this.finder = new Tabulator("#finder", {
-      data: dataArr,
-      columns: [
-        {title: "Name", field: "name"}
-      ],
-      layout: "fitColumns",
-      rowClick: function(ev, row) {
-        ev.stopPropagation();
-        console.log(row);
-        edi.displayDoc(row.getData());
-      }
-    })
-  }
-
-
   public displayFirestoreTable(dataArr: any[], database: string) {
-    dataArr = this.timestampToDate(dataArr, database);
+    
+    dataArr = this.timestampToDate(dataArr);
+
     if (database == "marmosets") {
       this.finder.destroy();
       this.finder = new Tabulator("#finder", {
@@ -55,7 +28,7 @@ export class Mkfinder {
           {column: "name", dir: "asc"}
         ],
         columns: [
-          {title: "<input id='select-all' type='checkbox' onchange='updateSelectAll()'/>", width: 15, headerSort: false},
+          {title: "<input id='select-all' type='checkbox'/>", width: 15, headerSort: false},
           {title: "Name", field: "name"},
           {title: "Sex", field: "sex"},
           {title: "DOB", field: "birthdate"},
@@ -63,13 +36,27 @@ export class Mkfinder {
         ],
         selectable: true,
         selectableRangeMode: "click",
-        rowClick: function(event, row) {
+        rowClick: (event, row) => {
           event.stopPropagation();
+          this.editor.displayDoc(row.getData());
         },
-        rowTap: function(event, row)  {
+        rowTap: (event, row) => {
           event.stopPropagation();
+          this.editor.displayDoc(row.getData());
+        },
+        tableBuilt: () => {
+          /* selectAllBox function */
+          let selectAllBox 
+            = document.querySelector("#select-all") as HTMLInputElement;
+          selectAllBox.addEventListener("change", ev => {
+            if (selectAllBox.checked == true) {
+              this.finder.selectRow();
+            } else {
+              this.finder.deselectRow();
+            }
+          });
         }
-      })
+      });
     }
     else if (database == "mkturkdata") {
       this.finder.destroy();
@@ -81,7 +68,7 @@ export class Mkfinder {
           {column: "Agent", dir: "asc"}
         ],
         columns: [
-          {title: "<input id='select-all' type='checkbox' onchange='updateSelectAll()'/>", width: 15, headerSort: false},
+          {title: "<input id='select-all' type='checkbox'/>", width: 15, headerSort: false},
           {title: "Agent", field: "Agent"},
           {title: "Doctype", field: "Doctype"},
           {title: "CurrentDate", field: "CurrentDate"},
@@ -89,11 +76,26 @@ export class Mkfinder {
         ],
         selectable: true,
         selectableRangeMode: "click",
-        rowClick: function(event, row) {
+        rowClick: (event, row) => {
           event.stopPropagation();
+          this.editor.displayDoc(row.getData());
+          
         },
-        rowTap: function(event, row) {
+        rowTap: (event, row) => {
           event.stopPropagation();
+          this.editor.displayDoc(row.getData());
+        },
+        tableBuilt: () => {          
+          /* selectAllBox function */
+          let selectAllBox 
+            = document.querySelector("#select-all") as HTMLInputElement;
+          selectAllBox.addEventListener("change", ev => {
+            if (selectAllBox.checked == true) {
+              this.finder.selectRow();
+            } else {
+              this.finder.deselectRow();
+            }
+          });
         }
       });
     }
@@ -101,93 +103,107 @@ export class Mkfinder {
       console.error("Wrong or Invalid database trying to be tabularized");
     }
   }
-  private timestampToDate(dataArr: any[], database: string) {
-    switch (database) {
-      case "marmosets":
-        function dateToJSON(element: Timestamp, idx: number, arr: any[]) {
-          arr[idx] = element.toDate().toJSON();
-        }
+  
 
-        dataArr.forEach(data => {
-          for (let key of Object.keys(data)) {
-            if (key.includes("data") || key.includes("_dates")) {
-              try {
-                if (Array.isArray(data[key])) {
-                  data[key].forEach(dateToJSON);
-                }
-                else {
-                  data[key] = data[key].toDate().toJSON();
-                }
-              }
-              catch (error) {
-                console.error("Date conversion error:", error);
-                console.error("key:", key, "value:", data[key]);
-              }
-            }
-          }
-        });
-        break;
+  private timestampToDate(dataArr: any[]) {
+    function _timestampToDate(element: Timestamp, idx: number, arr: any[]) {
+      try {
+        arr[idx] = element.toDate().toJSON();
+      } catch {
 
-      case "mkturkdata":
-        dataArr.forEach(data => {
-          data.index = data.Agent + data.Doctype + data.CurrentDateValue;
-          for (let key of Object.keys(data)) {
-            if ((key.toLowerCase().includes("date") || key.includes("_dates")) 
-                && key != "CurrentDateValue" && key != "ParamFileDate") {
-              try {
-                data[key] = data[key].toDate().toJSON();
-              }
-              catch (error) {
-                console.error("Date coversion error:", error);
-                console.error("key:", key, "value:", data[key]);
-              }
-            }
-          }
-        });
-        break;
+      }
     }
+
+    dataArr.forEach(data => {
+      for (let key of Object.keys(data)) {
+        if (Array.isArray(data[key])) {
+          console.log("ARRAY KEY:", key);
+          data[key].forEach(_timestampToDate);
+        }
+  
+        else if (this.isDict(data[key])) {
+          console.log("DICTIONARY KEY:", key);
+          try {
+            data[key] = data[key].toDate().toJSON();
+            console.log("TRIED KEY", key);
+            continue;
+          } catch (e) {
+            console.log(e);
+          }
+  
+          for (let key2 of Object.keys(data[key])) {
+            try {
+              data[key][key2] = data[key][key2].toDate().toJSON();
+            } catch {
+              console.log("Not Timestamp Object");
+            }
+          }
+        }
+        else if (!this.isString(data[key]) && !this.isNumber(data[key])) {
+          try {
+            data[key] = data[key].toDate().toJSON();
+          } catch {
+            console.log("Not Timestamp Object");
+          }
+        }
+      }
+    });
+
     return dataArr;
   }
 
-  private dateToTimestamp(data: any, database: string) {
-    switch (database) {
-      case "marmosets":
-        function JSONToTimestamp(element: string, idx: number, arr: any[]) {
-          arr[idx] = firebase.firestore.Timestamp.fromDate(new Date(element));
-        }
+  private dateToTimestamp(data: any) {
+    function _dateToTimestamp(element: string, idx: number, arr: any[]) {
+      let dt = new Date(element);
+      if (!isNaN(Number(dt)) && dt instanceof Date && typeof element === "string") {
+        arr[idx] = firebase.firestore.Timestamp.fromDate(dt);
+      }
+    }
 
-        for (let key of Object.keys(data)) {
-          if (key.includes("date")) {
-            try {
-              if (Array.isArray(data[key])) {
-                data[key].forEach(JSONToTimestamp);
-              }
-              else {
-                data[key] = firebase.firestore.Timestamp.fromDate(new Date(data[key]));
-              }
-            }
-            catch (error) {
-              console.error("Date conversion error:", error);
-              console.error("key", key, "value", data[key]);
-            }
+    for (let key of Object.keys(data)) {
+      if (Array.isArray(data[key])) {
+        console.log("ARRAY " + "data[" + key + "]" + "=" + data[key]);
+        data[key].forEach(_dateToTimestamp);
+      }
+
+      else if (this.isDict(data[key])) {
+        for (let key2 of Object.keys(data[key])) {
+          let dt = new Date(data[key][key2]);
+          if (!isNaN(Number(dt)) && dt instanceof Date && this.isString(data[key][key2])) {
+            console.log("Dictionary " + "data[" + key + "]" + "=" + data[key]);
+            data[key][key2] = firebase.firestore.Timestamp.fromDate(dt);
           }
         }
-        break;
+      }
 
-      case "mkturkdata":
-        for (let key of Object.keys(data)) {
-          if ((key.toLowerCase().includes("date") || key.includes("_dates")) && key != "CurrentDateValue") {
-            try {
-              data[key] = firebase.firestore.Timestamp.fromDate(new Date(data[key]));
-            }
-            catch (error) {
-              console.error("Date conversion error:", error);
-              console.error("key:", key, "value:", data[key]);
-            }
-          }
+      else if (this.isString(data[key])) {
+        let dt = new Date(data[key]);
+        if (!isNaN(Number(dt)) && dt instanceof Date) {
+          data[key] = firebase.firestore.Timestamp.fromDate(dt);
         }
-        break;
+      }
     }
     return data;
+  }
+
+  private updateSelectAll() {
+    let selectAllBox = document.querySelector("#select-all") as HTMLInputElement;
+    if (selectAllBox.checked == true) {
+      this.finder.selectRow();
+    } else {
+      this.finder.deselectRow();
+    }
+  }
+
+  private isDict(val: any) {
+    return val && typeof val === "object" && val.constructor === Object;
+  }
+
+  private isString(val: any) {
+    return typeof val === "string" || val.constructor === String;
+  }
+
+  private isNumber(val: any) {
+    return typeof val === "number" && isFinite(val);
   }
 }

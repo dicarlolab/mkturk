@@ -1,33 +1,14 @@
-/* #mkquery-card {
-  width: 1024px;
-  height: 512px;
-  display: inline-block;
-}
-
-#mkquery-card > mdl-card__title {
-  color: black;
-  height: 96px;
-}
-
-.mdl-card__supporting-text {
-  height: 100%;
-} */
-
-
-
-
-
-
-
 #mkquery-form {
   display: grid;
-  grid-gap: 5px;
+  grid-gap: 6px;
+  padding: 40px;
 
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(3, 1fr);
   grid-template-areas: "qry-selector field-selector keyword-0 go"
                        " . . keyword-1 ."
                        " . . keyword-2 ."; 
+
 }
 
 #qry-loc-selector {
@@ -71,7 +52,8 @@
   grid-template-rows: 1fr 1fr;
   grid-template-areas: "back forward filter filter"
                        "upload upload download show-images";
-  grid-gap: 2px;
+  grid-gap: 4px;
+  padding: 6px;
 }
 
 #filter-value {
@@ -104,7 +86,43 @@
 }
 
 #finder {
+  margin: 6px;
   grid-area: finder;
-  padding: 2px;
   border: 0px;
+}
+
+#media-card {
+  display: grid;
+}
+
+#editor-div {
+  z-index: 3;
+  grid-column: 1;
+  grid-row: 1;
+  
+  display: grid;
+
+  grid-template-rows: 10fr 0.25fr;
+  grid-template-areas: "editor"
+                       "update-btn";
+}
+
+#editor {
+  grid-area: editor;
+}
+
+#update-btn {
+  grid-area: update-btn;
+}
+
+#image-canvas-div {
+  z-index: 2;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+#three-canvas {
+  z-index: 1;
+  grid-column: 1;
+  grid-row: 1;
 }

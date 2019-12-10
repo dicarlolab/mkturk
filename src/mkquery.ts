@@ -103,4 +103,30 @@ export class Mkquery {
       return queryStr;
     }
   }
+
+
+
+  public async decodeQuery(query: firebase.firestore.Query) {
+    async function loadData(doc: any, arr: any[]) {
+      await arr.push(doc.data());
+    }
+
+    let arr = new Array();
+
+    await query.get().then(async querySnapshot => {
+      if (!querySnapshot.empty) {
+        let promises = querySnapshot.docs.map(doc => loadData(doc, arr));
+        await Promise.all(promises);
+      }
+      
+      else {
+        console.log("Found No Documents");
+        alert("Found No Documents");
+      }
+    }).catch(e => {
+      console.error("Error getting documents:", e);
+    });
+
+    return arr;
+  }
 }

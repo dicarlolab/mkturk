@@ -18,6 +18,8 @@ export class Mkthree {
   private renderer: THREE.WebGLRenderer | null;
   public animationID: number;
   public active: boolean;
+
+  public canvas: HTMLCanvasElement;
   
   /* constructor */
   constructor() {
@@ -32,6 +34,12 @@ export class Mkthree {
     this.renderer = null;
     this.animationID = -1;
     this.active = false;
+    this.canvas = document.querySelector("#three-canvas") as HTMLCanvasElement;
+    let editorDiv = document.querySelector("#editor-div") as HTMLDivElement;
+    this.canvas.width = editorDiv.offsetWidth;
+    this.canvas.height = editorDiv.offsetHeight;
+    this.canvas.style.width = String(editorDiv.offsetWidth);
+    this.canvas.style.height = String(editorDiv.offsetHeight);
   }
 
   /**
@@ -42,7 +50,7 @@ export class Mkthree {
    * @param {HTMLCanvasElement} canvas
    * @public
    */
-  public async displayMesh(filePath: string, canvas: HTMLCanvasElement) {
+  public async displayMesh(filePath: string) {
     console.time("displayMesh()");
 
     if (this.active) {
@@ -50,7 +58,7 @@ export class Mkthree {
     }
 
     /* renderer setup */
-    this.renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+    this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     this.renderer.setClearColor( 0xFFFFFF );
     this.renderer.physicallyCorrectLights = true;
     this.renderer.toneMappingExposure = 10;
@@ -60,7 +68,7 @@ export class Mkthree {
     /* camera setup */
     this.cameraPos = new THREE.Vector3( 0, 0, 10 );
     this.camera = 
-      new THREE.PerspectiveCamera( 45, canvas.width / canvas.height, 0.1, 2000 );
+      new THREE.PerspectiveCamera( 45, this.canvas.width / this.canvas.height, 0.1, 2000 );
     this.camera.position.set( this.cameraPos.x, this.cameraPos.y, this.cameraPos.z );
 
     /* light setup */

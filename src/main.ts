@@ -2,9 +2,6 @@ import * as firebase from "firebase/app";
 import "firebase/firestore";
 import "firebase/storage";
 import "firebase/auth";
-import { Mkquery } from "./mkquery";
-import { Mkthree } from "./mkthree";
-
 
 const firebaseConfig = {
   apiKey: "AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",
@@ -14,9 +11,10 @@ const firebaseConfig = {
   storageBucket: "sandbox-ce2c5.appspot.com",
   messagingSenderId: "1003719887944"
 };
-
 firebase.initializeApp(firebaseConfig);
 
+import { Mkquery } from "./mkquery";
+import { Mkthree } from "./mkthree";
 import { Mkfinder } from "./mkfinder";
 
 let provider = new firebase.auth.GoogleAuthProvider();
@@ -38,7 +36,7 @@ const storageRef = storage.ref();
 
 let fileRef = storageRef.child("mkturkfiles/parameterfiles/subjects/AJ_params.txt");
 
-let mkquery = new Mkquery();
+let mkq = new Mkquery();
 
 
 // let m = new Mkquery();
@@ -50,8 +48,7 @@ let mkquery = new Mkquery();
 // console.log("query", query);
 
 let mkf = new Mkfinder();
-mkf.test([{name: "hello"}])
-// console.log("json", json);
+let mkt = new Mkthree();
 
 
 // /* Quick Links */
@@ -133,7 +130,7 @@ mkf.test([{name: "hello"}])
 
 
 let qryLocSelc = document.querySelector<HTMLSelectElement>("#qry-loc-selector");
-qryLocSelc?.addEventListener("change", ev => {
+qryLocSelc!.addEventListener("change", ev => {
 
   let fs = document.querySelector("#field-selector") as HTMLSelectElement;
   let ki0 = document.querySelector("#keyword-input-0") as HTMLInputElement;
@@ -277,28 +274,83 @@ queryForm?.addEventListener("submit", ev => {
   let k1 = document.querySelector<HTMLInputElement>("#keyword-input-1")?.value;
   let k2 = document.querySelector<HTMLInputElement>("#keyword-input-2")?.value;
 
+  let queryParam: { field: string, keyword: string}[];
+  let queryStr: string = "";
+  let query: firebase.firestore.Query;
+
+
   if (qryLoc === "marmosets" && field && k0) {
-    let queryParam = [ { field: field, keyword: k0 } ]
-    let queryStr = mkquery.mkquery(queryParam);
-    console.log(queryStr);
+    queryParam = [ { field: field, keyword: k0 } ];
+    queryStr = "db.collection('marmosets')" + mkq.mkquery(queryParam);
+
   }
 
   else if (qryLoc === "mkturkdata" && field) {
     if (k0 && k1 && k2) {
-      let queryParam = [ 
+      queryParam = [ 
         { field: "Agent", keyword: k0 },
         { field: "Doctype", keyword: k1 },
         { field: "CurrentDate", keyword: k2 }
       ];
-
-      let queryStr = mkquery.mkquery(queryParam);
-      console.log(queryStr);
+      queryStr = "db.collection('mkturkdata')" + mkq.mkquery(queryParam);
     }
 
-   
+    else if (k0 && k1 && !k2) {
+      queryParam = [
+        { field: "Agent", keyword: k0 },
+        { field: "Doctype", keyword: k1 }
+      ];
+      queryStr = "db.collection('mkturkdata')" + mkq.mkquery(queryParam);
+    }
+
+    else if (k0 && !k1 && k2) {
+      queryParam = [
+        { field: "Agent", keyword: k0 },
+        { field: "CurrentDate", keyword: k2 }
+      ];
+      queryStr = "db.collection('mkturkdata')" + mkq.mkquery(queryParam);
+    }
+
+    else if (!k0 && k1 && k2) {
+      queryParam = [
+        { field: "Doctype", keyword: k1 },
+        { field: "CurrentDate", keyword: k2 }
+      ];
+      queryStr = "db.collection('mkturkdata')" + mkq.mkquery(queryParam);
+    }
+
+    else if (k0 && !k1 && !k2) {
+      queryParam = [
+        { field: "Agent", keyword: k0 }
+      ];
+      queryStr = "db.collection('mkturkdata')" + mkq.mkquery(queryParam);
+    }
+
+    else if (!k0 && k1 && !k2) {
+      queryParam = [
+        { field: "Doctype", keyword: k1 }
+      ];
+      queryStr = "db.collection('mkturkdata')" + mkq.mkquery(queryParam);
+    }
+
+    else if (!k0 && !k1 && k2) {
+      queryParam = [
+        { field: "CurrentDate", keyword: k2 }
+      ];
+      queryStr = "db.collection('mkturkdata')" + mkq.mkquery(queryParam);
+    }   
   }
 
+  else {
+    console.error("Incorrent Query");
+    alert("Incorrent Query");
+  }
 
+  query = eval(queryStr);
+  let ret = mkq.decodeQuery(query);
+  ret.then(docs => {
+    mkf.displayFirestoreTable(docs, qryLoc!);
+  });
 });
 
 
