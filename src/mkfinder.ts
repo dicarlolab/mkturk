@@ -104,7 +104,6 @@ export class Mkfinder {
     }
   }
   
-
   private timestampToDate(dataArr: any[]) {
     function _timestampToDate(element: Timestamp, idx: number, arr: any[]) {
       try {
@@ -114,28 +113,29 @@ export class Mkfinder {
       }
     }
 
+    console.time("Timestamp Conversion");
     dataArr.forEach(data => {
       for (let key of Object.keys(data)) {
         if (Array.isArray(data[key])) {
-          console.log("ARRAY KEY:", key);
+          // console.log("ARRAY KEY:", key);
           data[key].forEach(_timestampToDate);
         }
   
         else if (this.isDict(data[key])) {
-          console.log("DICTIONARY KEY:", key);
+          // console.log("DICTIONARY KEY:", key);
           try {
             data[key] = data[key].toDate().toJSON();
-            console.log("TRIED KEY", key);
+            // console.log("TRIED KEY", key);
             continue;
           } catch (e) {
-            console.log(e);
+            // console.log(e);
           }
   
           for (let key2 of Object.keys(data[key])) {
             try {
               data[key][key2] = data[key][key2].toDate().toJSON();
             } catch {
-              console.log("Not Timestamp Object");
+              // console.log("Not Timestamp Object");
             }
           }
         }
@@ -143,11 +143,12 @@ export class Mkfinder {
           try {
             data[key] = data[key].toDate().toJSON();
           } catch {
-            console.log("Not Timestamp Object");
+            // console.log("Not Timestamp Object");
           }
         }
       }
     });
+    console.timeEnd("Timestamp Conversion");
 
     return dataArr;
   }
@@ -186,15 +187,6 @@ export class Mkfinder {
     return data;
   }
 
-  private updateSelectAll() {
-    let selectAllBox = document.querySelector("#select-all") as HTMLInputElement;
-    if (selectAllBox.checked == true) {
-      this.finder.selectRow();
-    } else {
-      this.finder.deselectRow();
-    }
-  }
-
   private isDict(val: any) {
     return val && typeof val === "object" && val.constructor === Object;
   }
@@ -206,4 +198,6 @@ export class Mkfinder {
   private isNumber(val: any) {
     return typeof val === "number" && isFinite(val);
   }
+
+  public async listFoldersAnd
 }

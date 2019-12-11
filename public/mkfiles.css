@@ -105,10 +105,15 @@
   grid-template-rows: 10fr 0.25fr;
   grid-template-areas: "editor"
                        "update-btn";
+
+  max-height: 100%;
+  overflow: hidden;
 }
 
 #editor {
   grid-area: editor;
+  max-height: 100%;
+  overflow: hidden;
 }
 
 #update-btn {
@@ -125,4 +130,8 @@
   z-index: 1;
   grid-column: 1;
   grid-row: 1;
+}
+
+.page-content > * {
+  max-height: 80vh;
 }
