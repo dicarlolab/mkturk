@@ -7,14 +7,23 @@ import { Mkeditor } from "./mkmedia";
 export class Mkfinder {
   finder: any;
   editor: Mkeditor;
+  previousPath: string;
+  storage: firebase.storage.Storage;
+  storageRef: firebase.storage.Reference;
 
   constructor() {
     this.finder = new Tabulator("#finder");
     this.editor = new Mkeditor();
-    
+    this.previousPath = "";
+    this.storage = firebase.storage();
+    this.storageRef = this.storage.ref();
   }
 
-  public displayFirestoreTable(dataArr: any[], database: string) {
+  public listFirestoreDocs(dataArr: any[], database: string) {
+    this.displayFirestoreTable(dataArr, database);
+  }
+
+  private displayFirestoreTable(dataArr: any[], database: string) {
     
     dataArr = this.timestampToDate(dataArr);
 
@@ -38,11 +47,11 @@ export class Mkfinder {
         selectableRangeMode: "click",
         rowClick: (event, row) => {
           event.stopPropagation();
-          this.editor.displayDoc(row.getData());
+          this.editor.displayFirebaseTextFile(row.getData(), database);
         },
         rowTap: (event, row) => {
           event.stopPropagation();
-          this.editor.displayDoc(row.getData());
+          this.editor.displayFirebaseTextFile(row.getData(), database);
         },
         tableBuilt: () => {
           /* selectAllBox function */
@@ -78,12 +87,12 @@ export class Mkfinder {
         selectableRangeMode: "click",
         rowClick: (event, row) => {
           event.stopPropagation();
-          this.editor.displayDoc(row.getData());
+          this.editor.displayFirebaseTextFile(row.getData(), database);
           
         },
         rowTap: (event, row) => {
           event.stopPropagation();
-          this.editor.displayDoc(row.getData());
+          this.editor.displayFirebaseTextFile(row.getData(), database);
         },
         tableBuilt: () => {          
           /* selectAllBox function */
@@ -153,40 +162,6 @@ export class Mkfinder {
     return dataArr;
   }
 
-  private dateToTimestamp(data: any) {
-    function _dateToTimestamp(element: string, idx: number, arr: any[]) {
-      let dt = new Date(element);
-      if (!isNaN(Number(dt)) && dt instanceof Date && typeof element === "string") {
-        arr[idx] = firebase.firestore.Timestamp.fromDate(dt);
-      }
-    }
-
-    for (let key of Object.keys(data)) {
-      if (Array.isArray(data[key])) {
-        console.log("ARRAY " + "data[" + key + "]" + "=" + data[key]);
-        data[key].forEach(_dateToTimestamp);
-      }
-
-      else if (this.isDict(data[key])) {
-        for (let key2 of Object.keys(data[key])) {
-          let dt = new Date(data[key][key2]);
-          if (!isNaN(Number(dt)) && dt instanceof Date && this.isString(data[key][key2])) {
-            console.log("Dictionary " + "data[" + key + "]" + "=" + data[key]);
-            data[key][key2] = firebase.firestore.Timestamp.fromDate(dt);
-          }
-        }
-      }
-
-      else if (this.isString(data[key])) {
-        let dt = new Date(data[key]);
-        if (!isNaN(Number(dt)) && dt instanceof Date) {
-          data[key] = firebase.firestore.Timestamp.fromDate(dt);
-        }
-      }
-    }
-    return data;
-  }
-
   private isDict(val: any) {
     return val && typeof val === "object" && val.constructor === Object;
   }
@@ -199,5 +174,96 @@ export class Mkfinder {
     return typeof val === "number" && isFinite(val);
   }
 
-  public async listFoldersAnd
+  public async listStorageFiles(fileRef: firebase.storage.Reference) {
+    
+    async function loadMetadata(fileArr: any) {
+      await fileArr.getMetadata().then((md: any) => {
+        mdArr.push({
+          name: md.name,
+          contentType: md.contentType,
+          fullPath: md.fullPath,
+          size: md.size,
+          timeCreated: md.timeCreated
+        });
+      });
+    }
+    
+    let pathArr: string[] = fileRef.fullPath.split("/");
+    let mdArr = new Array();
+    let fileList = await fileRef.listAll();
+    let filePromise: any;
+
+    /* Resolve previous path */
+    for (let i = 0; i < pathArr.length -1; i++) {
+      this.previousPath += pathArr[i] + "/";
+    }
+
+    /* Resolve metadata of all folders */
+    fileList.prefixes.forEach(folder => {
+      mdArr.push({
+        name: folder.name,
+        contentType: "folder",
+        fullPath: folder.fullPath,
+        size: "N/A"
+      });
+    });
+
+    /* Resolve metadata of all files */
+    filePromise = fileList.items.map(loadMetadata);
+    await Promise.all(filePromise);
+
+    this.displayStorageTable(mdArr);
+  }
+
+  private displayStorageTable(metadataArr: any[]) {
+    this.finder.destroy();
+    this.finder = new Tabulator("#finder", {
+      data: metadataArr,
+      index: "name",
+      responsiveLayout: true,
+      layout: "fitColumns",
+      resizableColumns: true,
+      initialSort: [
+        { column: "name", dir: "desc" }
+      ],
+      columns: [
+        { title: "<input id='select-all' type='checkbox'/>", width: 15, headerSort: false },
+        { title: "Name", field: "name" },
+        { title: "Type", field: "contentType" },
+        { title: "Path", field: "fullPath" },
+        { title: "Size", field: "size" },
+      ],
+      selectable: true,
+      selectableRangeMode: "click",
+      rowDblClick: (ev, row) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (row.getData().contentType === "folder") {
+          console.log(row.getData().fullPath);
+          this.listStorageFiles(this.storageRef.child(row.getData().fullPath));
+        }
+      },
+      rowDblTap: (ev, row) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (row.getData().contentType === "folder") {
+          console.log(row.getData().fullPath);
+          this.listStorageFiles(this.storageRef.child(row.getData().fullPath));
+        }
+      },
+      rowClick: async (ev, row) => {
+        ev.stopPropagation();
+        if (row.getData().contentType === "folder") {
+          console.log(row.getData().fullPath);
+        }
+
+        else if (row.getData().contentType.includes("text") ||
+                 row.getData().contentType.includes("json")) {
+          let fileRef = this.storageRef.child(row.getData().fullPath);
+          this.editor.displayStorageTextFile(fileRef);
+        }
+      }
+
+    });
+  }
 }

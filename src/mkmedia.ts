@@ -6,30 +6,59 @@ import Viewer from "viewerjs";
 
 
 type Timestamp = firebase.firestore.Timestamp;
-const db = firebase.firestore();
+type FileRef = firebase.storage.Reference;
 
 export class Mkeditor {
   private editorContainer: HTMLElement;
   private editor: JSONEditor;
-  //private updateBtn: HTMLElement;
-  private activeDoc: { loc: string, id: string };
+  private updateBtn: HTMLElement;
+  private activeFile: 
+    { loc: string, id: string | FileRef };
 
   constructor() {
     console.log("mkeditor");
     this.editorContainer = document.querySelector("#editor") as HTMLElement;
     this.editor = new JSONEditor(this.editorContainer);
-    //this.updateBtn = document.querySelector("#update-btn") as HTMLElement;
-    this.activeDoc = { loc: "", id: "" };
-    //this.updateBtnAction();
+    this.updateBtn = document.querySelector("#update-btn") as HTMLButtonElement;
+    this.activeFile = { loc: "", id: "" };
+    // this.updateBtnAction();
   }
 
-  public displayDoc(doc: Object) {
+  public displayFirebaseTextFile(file: Object, loc: string) {
     try {
       this.editor.destroy();
-      this.editor = new JSONEditor(this.editorContainer, {}, doc);
+      this.editor = new JSONEditor(this.editorContainer, {}, file);
+      this.trackFirebaseActiveFile(loc, file);
     } catch (error) {
       console.error("JSONEditor Error:", error);
     }
+  }
+
+  private trackFirebaseActiveFile(loc: string, file: any) {
+    if (loc === "marmosets") {
+      this.activeFile = { loc: loc, id: file.Agent };
+    }
+
+    else if (loc === "mkturkdata") {
+      if (file.Doctype === "task") {
+        this.activeFile = { loc: loc, id: file.Taskdoc };
+      } else if (file.Doctype === "images") {
+        this.activeFile = { loc: loc, id: file.Imagesdoc};
+      }
+    }
+  }
+
+  public async displayStorageTextFile(fileRef: FileRef) {
+    let fileUrl = await fileRef.getDownloadURL().catch(e => {
+      console.error("Error getting download URL", e);
+    });
+
+    let response = await fetch(fileUrl);
+    let file = await response.json();
+
+    this.editor.destroy();
+    this.editor = new JSONEditor(this.editorContainer, {}, file);
+    this.activeFile = { loc: "mkturkfiles", id: fileRef };
   }
 
   // public updateBtnAction() {
@@ -50,151 +79,15 @@ export class Mkeditor {
   //   });
   // }
 
-//   private dateToTimestamp(data: any, database: string) {
-//     function toTS(element: string, idx: number, arr: any[]) {
-//       arr[idx] = firebase.firestore.Timestamp.fromDate(new Date(element));
-//     }
+  public updateBtnAction(ev: Event) {
+    ev.preventDefault();
+    ev.stopPropagation();
 
-//     if (database == "marmosets") {
 
-//       for (let key of Object.keys(data)) {
-//         if (key.includes("date")) {
-//           try {
-//             if (Array.isArray(data[key])) {
-//               data[key].forEach(toTS);
-//             }
-//             else {
-//               data[key] = firebase.firestore.Timestamp.fromDate(new Date(data[key]));
-//             }
-//           } catch (error) {
-//             console.error("Date conversion error:", error);
-//             console.error("key", key, "value", data[key]);
-//           }
-//         }
-//       }
-//     }
-
-//     else if (database == "mkturkdata") {
-//       for (let key of Object.keys(data)) {
-//         if ((key.toLowerCase))
-//       }
-//     }
-//   }
-
-  private isDict(val: any) {
-    return val && typeof val === "object" && val.constructor === Object;
   }
 
-  private isString(val: any) {
-    return typeof val === "string" || val.constructor === String;
-  }
-
-  private isNumber(val: any) {
-    return typeof val === "number" && isFinite(val);
-  }
-
-  private isValidDate(val: any) {
-    return !isNaN(val) && val instanceof Date;
-  }
-
-  public timestampToDate(dataArr: any[], database: string) {
-
-    function tsToDate(element: Timestamp, idx: number, arr: any[]) {
-      try {
-        arr[idx] = element.toDate().toJSON();
-      } catch (e) {
-        console.log("Not Timestamp Obj:", e);
-      }
-    }
-
-    switch(database) {
-      case "marmosets":
-
-        dataArr.forEach(data => {
-          for (let key of Object.keys(data)) {
-            if (Array.isArray(data[key])) {
-              console.log("ARRAY " + "data[" + key + "]" + "=" + data[key]);
-              data[key].forEach(tsToDate);
-            }
-      
-            else if (this.isDict(data[key])) {
-              console.log("DICTIONARY " + "data[" + key + "]" + "=" + data[key]);
-              try {
-                data[key] = data[key].toDate().toJSON();
-                console.log("tried key", key);
-                continue;
-              } catch (e) {
-                console.log(e);
-              }
-      
-              for (let key2 of Object.keys(data[key])) {
-                try {
-                  data[key][key2] = data[key][key2].toDate().toJSON();
-                } catch {
-                  console.log("Not Timestamp Object");
-                }
-              }
-            }
-            else if (!this.isString(data[key]) && !this.isNumber(data[key])) {
-              try {
-                data[key] = data[key].toDate().toJSON();
-              } catch {
-                console.log("Not Timestamp Object");
-              }
-            }
-          }
-        });
-      break;
-    }
-    return dataArr;
-  }
-
-  public foo(data: any) {
-    function _foo(element: Timestamp, idx: number, arr: any[]) {
-      try {
-        arr[idx] = element.toDate().toJSON();
-      } catch (e) {
-        console.log("Not Timestamp Obj");
-      }
-    }
-
-    for (let key of Object.keys(data)) {
-      if (Array.isArray(data[key])) {
-        console.log("ARRAY " + "data[" + key + "]" + "=" + data[key]);
-        data[key].forEach(_foo);
-      }
-
-      else if (this.isDict(data[key])) {
-        console.log("DICTIONARY " + "data[" + key + "]" + "=" + data[key]);
-        try {
-          data[key] = data[key].toDate().toJSON();
-          console.log("tried key", key);
-          continue;
-        } catch (e) {
-          console.log(e);
-        }
-
-        for (let key2 of Object.keys(data[key])) {
-          try {
-            data[key][key2] = data[key][key2].toDate().toJSON();
-          } catch {
-            console.log("Not Timestamp Object");
-          }
-        }
-      }
-      else if (!this.isString(data[key]) && !this.isNumber(data[key])) {
-        try {
-          data[key] = data[key].toDate().toJSON();
-        } catch {
-          console.log("Not Timestamp Object");
-        }
-      }
-    }
-    return data;
-  }
-
-  public bar(data: any) {
-    function _bar(element: string, idx: number, arr: any[]) {
+  private dateToTimestamp(data: any) {
+    function _dateToTimestamp(element: string, idx: number, arr: any[]) {
       let dt = new Date(element);
       if (!isNaN(Number(dt)) && dt instanceof Date && typeof element === "string") {
         arr[idx] = firebase.firestore.Timestamp.fromDate(dt);
@@ -204,7 +97,7 @@ export class Mkeditor {
     for (let key of Object.keys(data)) {
       if (Array.isArray(data[key])) {
         console.log("ARRAY " + "data[" + key + "]" + "=" + data[key]);
-        data[key].forEach(_bar);
+        data[key].forEach(_dateToTimestamp);
       }
 
       else if (this.isDict(data[key])) {
@@ -226,4 +119,13 @@ export class Mkeditor {
     }
     return data;
   }
+
+  private isDict(val: any) {
+    return val && typeof val === "object" && val.constructor === Object;
+  }
+
+  private isString(val: any) {
+    return typeof val === "string" || val.constructor === String;
+  }
+  
 }

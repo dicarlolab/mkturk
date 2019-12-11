@@ -32,7 +32,9 @@ firebase.auth().getRedirectResult().then(result => {
 
 const db = firebase.firestore();
 const storage = firebase.storage();
-const storageRef = storage.ref();
+const storageRef = storage.ref(); 
+const rootRef = storageRef.child("mkturkfiles/");
+
 
 let fileRef = storageRef.child("mkturkfiles/parameterfiles/subjects/AJ_params.txt");
 
@@ -136,6 +138,7 @@ qryLocSelc!.addEventListener("change", ev => {
   let ki0 = document.querySelector("#keyword-input-0") as HTMLInputElement;
   let ki1 = document.querySelector("#keyword-input-1") as HTMLInputElement;
   let ki2 = document.querySelector("#keyword-input-2") as HTMLInputElement;
+  let goBtn = document.querySelector("#go-btn") as HTMLButtonElement;
   switch(qryLocSelc?.value) {
     case "marmosets":
       
@@ -143,6 +146,7 @@ qryLocSelc!.addEventListener("change", ev => {
       ki0.style.visibility = "visible";
       ki1.style.visibility = "hidden";
       ki2.style.visibility = "hidden";
+      goBtn.style.visibility = "visible";
 
       resetPlaceholder();
       removeElementsByClassName("field-options");
@@ -189,6 +193,7 @@ qryLocSelc!.addEventListener("change", ev => {
       ki0.style.visibility = "visible";
       ki1.style.visibility = "visible";
       ki2.style.visibility = "visible";
+      goBtn.style.visibility = "visible";
 
       resetPlaceholder();
       removeElementsByClassName("field-options");
@@ -211,9 +216,10 @@ qryLocSelc!.addEventListener("change", ev => {
       ki0.style.visibility = "hidden";
       ki1.style.visibility = "hidden";
       ki2.style.visibility = "hidden";
+      goBtn.style.visibility = "hidden";
 
       removeElementsByClassName("field-options");
-
+      mkf.listStorageFiles(rootRef);
       break;
 
   }
@@ -349,7 +355,7 @@ queryForm?.addEventListener("submit", ev => {
   query = eval(queryStr);
   let ret = mkq.decodeQuery(query);
   ret.then(docs => {
-    mkf.displayFirestoreTable(docs, qryLoc!);
+    mkf.listFirestoreDocs(docs, qryLoc!);
   });
 });
 

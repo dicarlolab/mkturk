@@ -107,13 +107,13 @@
                        "update-btn";
 
   max-height: 100%;
-  overflow: hidden;
+  overflow: auto;
 }
 
 #editor {
   grid-area: editor;
   max-height: 100%;
-  overflow: hidden;
+  overflow: auto;
 }
 
 #update-btn {

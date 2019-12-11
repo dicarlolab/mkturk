@@ -92,7 +92,6 @@ export class Mkthree {
 
     /* add loaded mesh to scene */
     this.scene.add(objectMesh.scene)
-    console.log("hi1");
     requestAnimationFrame(this.animate.bind(this));
     this.renderer.render(this.scene, this.camera);
     this.active = true;
