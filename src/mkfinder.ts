@@ -10,6 +10,7 @@ export class Mkfinder {
   previousPath: string;
   storage: firebase.storage.Storage;
   storageRef: firebase.storage.Reference;
+  backBtn: HTMLButtonElement
 
   constructor() {
     this.finder = new Tabulator("#finder");
@@ -17,6 +18,8 @@ export class Mkfinder {
     this.previousPath = "";
     this.storage = firebase.storage();
     this.storageRef = this.storage.ref();
+    this.backBtn = document.querySelector("#back-btn") as HTMLButtonElement;
+    this.backBtnAction();
   }
 
   public listFirestoreDocs(dataArr: any[], database: string) {
@@ -187,13 +190,16 @@ export class Mkfinder {
         });
       });
     }
-    
+
+    this.backBtn.disabled = (fileRef.fullPath == "mkturkfiles") ? true: false;
+
     let pathArr: string[] = fileRef.fullPath.split("/");
     let mdArr = new Array();
     let fileList = await fileRef.listAll();
     let filePromise: any;
 
     /* Resolve previous path */
+    this.previousPath = "";
     for (let i = 0; i < pathArr.length -1; i++) {
       this.previousPath += pathArr[i] + "/";
     }
@@ -239,7 +245,7 @@ export class Mkfinder {
         ev.preventDefault();
         ev.stopPropagation();
         if (row.getData().contentType === "folder") {
-          console.log(row.getData().fullPath);
+          console.log("rowDblClick", row.getData().fullPath);
           this.listStorageFiles(this.storageRef.child(row.getData().fullPath));
         }
       },
@@ -254,7 +260,7 @@ export class Mkfinder {
       rowClick: async (ev, row) => {
         ev.stopPropagation();
         if (row.getData().contentType === "folder") {
-          console.log(row.getData().fullPath);
+          console.log("rowClick", row.getData().fullPath);
         }
 
         else if (row.getData().contentType.includes("text") ||
@@ -264,6 +270,16 @@ export class Mkfinder {
         }
       }
 
+    });
+  }
+
+  /* Mkfinder controls */
+  private backBtnAction() {
+    this.backBtn.addEventListener("click" || "pointerup", (ev: Event) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      console.log("[backBtn Pressed]: previousPath:", this.previousPath);
+      this.listStorageFiles(this.storageRef.child(this.previousPath));
     });
   }
 }

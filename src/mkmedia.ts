@@ -7,11 +7,14 @@ import Viewer from "viewerjs";
 
 type Timestamp = firebase.firestore.Timestamp;
 type FileRef = firebase.storage.Reference;
+const db = firebase.firestore();
+const storage = firebase.storage();
+const storageRef = storage.ref();
 
 export class Mkeditor {
   private editorContainer: HTMLElement;
   private editor: JSONEditor;
-  private updateBtn: HTMLElement;
+  private updateBtn: HTMLButtonElement;
   private activeFile: 
     { loc: string, id: string | FileRef };
 
@@ -21,7 +24,7 @@ export class Mkeditor {
     this.editor = new JSONEditor(this.editorContainer);
     this.updateBtn = document.querySelector("#update-btn") as HTMLButtonElement;
     this.activeFile = { loc: "", id: "" };
-    // this.updateBtnAction();
+    this.updateBtnAction();
   }
 
   public displayFirebaseTextFile(file: Object, loc: string) {
@@ -36,7 +39,7 @@ export class Mkeditor {
 
   private trackFirebaseActiveFile(loc: string, file: any) {
     if (loc === "marmosets") {
-      this.activeFile = { loc: loc, id: file.Agent };
+      this.activeFile = { loc: loc, id: file.name };
     }
 
     else if (loc === "mkturkdata") {
@@ -46,6 +49,8 @@ export class Mkeditor {
         this.activeFile = { loc: loc, id: file.Imagesdoc};
       }
     }
+
+    console.log("activeFile", this.activeFile);
   }
 
   public async displayStorageTextFile(fileRef: FileRef) {
@@ -59,6 +64,50 @@ export class Mkeditor {
     this.editor.destroy();
     this.editor = new JSONEditor(this.editorContainer, {}, file);
     this.activeFile = { loc: "mkturkfiles", id: fileRef };
+    console.log("activeFile", this.activeFile);
+  }
+
+  private updateBtnAction() {
+    this.updateBtn.addEventListener("click" || "pointerup", (ev: Event) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      let loc = this.activeFile.loc;      
+
+      if (loc === "marmosets" || loc === "mkturkdata") {
+        // handle marmosets
+        let id = this.activeFile.id as string;
+        db.collection(loc).doc(id).set(
+          this.dateToTimestamp(this.editor.get())
+        ).then(() => {
+          console.log("[DOCUMENT UPDATED]:", id);
+          alert("Document Updated");
+        }).catch(e => {
+          console.error("[DOCUMENT UPDATE FAILED]", "FILE:", id, "ERROR:", e);
+          alert("Document Update Failed");
+        });
+      }
+
+      else if (this.activeFile.loc === "mkturkfiles") {
+        // handle mkturkfiles
+        let id = this.activeFile.id as FileRef;
+        let updatedFile = new Blob([ JSON.stringify(this.editor.get(), null, 1) ]);
+        let metadata = {
+          contentType: "application/json"
+        };
+        id.put(updatedFile, metadata).then(snapshot => {
+          console.log("[DOCUMENT UPDATED]:", snapshot.metadata.name);
+          alert("Document Updated")
+        }).catch(e => {
+          console.error("[DOCUMENT UPDATE FAILED]", "FILE:", id, "ERROR:", e);
+          alert("Document Update Failed");
+        });
+      }
+
+      else {
+        console.error("[DOCUMENT UPDATE FAILED] ERROR: Location Error");
+      }
+
+    });
   }
 
   // public updateBtnAction() {
@@ -78,13 +127,6 @@ export class Mkeditor {
   //     // });
   //   });
   // }
-
-  public updateBtnAction(ev: Event) {
-    ev.preventDefault();
-    ev.stopPropagation();
-
-
-  }
 
   private dateToTimestamp(data: any) {
     function _dateToTimestamp(element: string, idx: number, arr: any[]) {
