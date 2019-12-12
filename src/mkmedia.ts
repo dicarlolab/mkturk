@@ -4,24 +4,24 @@ import "firebase/storage";
 import JSONEditor from "jsoneditor";
 import Viewer from "viewerjs";
 
-
-type Timestamp = firebase.firestore.Timestamp;
 type FileRef = firebase.storage.Reference;
 const db = firebase.firestore();
 const storage = firebase.storage();
 const storageRef = storage.ref();
 
 export class Mkeditor {
-  private editorContainer: HTMLElement;
+  public editorDivElement: HTMLDivElement;
+  private editorElement: HTMLDivElement;
   private editor: JSONEditor;
   private updateBtn: HTMLButtonElement;
   private activeFile: 
     { loc: string, id: string | FileRef };
 
   constructor() {
-    console.log("mkeditor");
-    this.editorContainer = document.querySelector("#editor") as HTMLElement;
-    this.editor = new JSONEditor(this.editorContainer);
+    this.editorDivElement 
+      = document.querySelector("#editor-div") as HTMLDivElement;
+    this.editorElement = document.querySelector("#editor") as HTMLDivElement;
+    this.editor = new JSONEditor(this.editorElement);
     this.updateBtn = document.querySelector("#update-btn") as HTMLButtonElement;
     this.activeFile = { loc: "", id: "" };
     this.updateBtnAction();
@@ -30,7 +30,7 @@ export class Mkeditor {
   public displayFirebaseTextFile(file: Object, loc: string) {
     try {
       this.editor.destroy();
-      this.editor = new JSONEditor(this.editorContainer, {}, file);
+      this.editor = new JSONEditor(this.editorElement, {}, file);
       this.trackFirebaseActiveFile(loc, file);
     } catch (error) {
       console.error("JSONEditor Error:", error);
@@ -62,7 +62,7 @@ export class Mkeditor {
     let file = await response.json();
 
     this.editor.destroy();
-    this.editor = new JSONEditor(this.editorContainer, {}, file);
+    this.editor = new JSONEditor(this.editorElement, {}, file);
     this.activeFile = { loc: "mkturkfiles", id: fileRef };
     console.log("activeFile", this.activeFile);
   }
@@ -74,7 +74,7 @@ export class Mkeditor {
       let loc = this.activeFile.loc;      
 
       if (loc === "marmosets" || loc === "mkturkdata") {
-        // handle marmosets
+        // handle marmosets && mkturkdata
         let id = this.activeFile.id as string;
         db.collection(loc).doc(id).set(
           this.dateToTimestamp(this.editor.get())
@@ -106,27 +106,8 @@ export class Mkeditor {
       else {
         console.error("[DOCUMENT UPDATE FAILED] ERROR: Location Error");
       }
-
     });
   }
-
-  // public updateBtnAction() {
-  //   this.updateBtn.addEventListener("click", (ev: MouseEvent) => {
-  //     ev.preventDefault();
-  //     ev.stopPropagation();
-
-  //     console.log("hi");
-  //     console.log(this.editor.get());
-  //     console.log("after conversion", this.bar(this.editor.get()));
-
-  //     let converted = this.bar(this.editor.get());
-  //     // db.collection("marmosets").doc("West").set(converted).then(() => {
-  //     //   console.log("Doc successfully updated:", "West")
-  //     // }).catch(e => {
-  //     //   console.error("Error updating doc:", e);
-  //     // });
-  //   });
-  // }
 
   private dateToTimestamp(data: any) {
     function _dateToTimestamp(element: string, idx: number, arr: any[]) {

@@ -53,10 +53,20 @@ let mkf = new Mkfinder();
 let mkt = new Mkthree();
 
 
-// /* Quick Links */
-// let marmosetsLink = document.querySelector("#quick-link-marmosets");
-// let mkturkdataLink = document.querySelector("#quick-link-mkturkdata");
-// let mkturkfilesLink = document.querySelector("#quick-link-mkturkfiles");
+/* Quick Links */
+let marmosetsLink = 
+    document.querySelector("#quick-link-marmosets") as HTMLElement;
+let mkturkdataLink =
+    document.querySelector("#quick-link-mkturkdata") as HTMLElement;
+let mkturkfilesLink =
+    document.querySelector("#quick-link-mkturkfiles") as HTMLElement;
+
+marmosetsLink.addEventListener("click", (ev: Event) => {
+
+});
+
+
+
 
 // marmosetsLink?.addEventListener("click", async event => {
 //   event.preventDefault();

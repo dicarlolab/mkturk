@@ -1,6 +1,5 @@
 import * as firebase from "firebase/app";
 import "firebase/firestore";
-import JSONEditor from "jsoneditor";
 type Timestamp = firebase.firestore.Timestamp;
 import { Mkeditor } from "./mkmedia";
 
