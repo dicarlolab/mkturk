@@ -1,7 +1,7 @@
 import * as firebase from "firebase/app";
 import "firebase/firestore";
 type Timestamp = firebase.firestore.Timestamp;
-import { Mkeditor, Mkthree } from "./mkmedia";
+import { Mkeditor, Mkthree, Mkimage } from "./mkmedia";
 
 export class Mkfinder {
   finder: any;
@@ -9,7 +9,11 @@ export class Mkfinder {
   previousPath: string;
   storage: firebase.storage.Storage;
   storageRef: firebase.storage.Reference;
-  backBtn: HTMLButtonElement
+  backBtn: HTMLButtonElement;
+  mkt: Mkthree;
+  mki: Mkimage;
+
+
 
   constructor() {
     this.finder = new Tabulator("#finder");
@@ -19,6 +23,9 @@ export class Mkfinder {
     this.storageRef = this.storage.ref();
     this.backBtn = document.querySelector("#back-btn") as HTMLButtonElement;
     this.backBtnAction();
+
+    this.mkt = new Mkthree();
+    this.mki = new Mkimage();
   }
 
   public listFirestoreDocs(dataArr: any[], database: string) {
@@ -264,8 +271,42 @@ export class Mkfinder {
 
         else if (row.getData().contentType.includes("text") ||
                  row.getData().contentType.includes("json")) {
+
+          this.mkt.destroy();
+
+          this.editor.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
+
           let fileRef = this.storageRef.child(row.getData().fullPath);
           this.editor.displayStorageTextFile(fileRef);
+        }
+
+        else if (row.getData().contentType.includes("image")) {
+          this.mkt.destroy();
+
+          //console.log("hello");
+
+          this.mki.imgCanvasDiv.style.zIndex = "3";
+          this.editor.editorDivElement.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
+
+          let imgRef = this.storageRef.child(row.getData().fullPath);
+          let imgName = row.getData().name;
+          this.mki.displayImage(imgRef, imgName);
+        }
+
+        else if (row.getData().contentType === "application/octet-stream" && row.getData().name.includes(".glb")) {
+          this.mkt.destroy();
+
+          //console.log("hello");
+
+          this.mkt.canvas.style.zIndex = "3";
+          this.editor.editorDivElement.style.zIndex = "2";
+          this.mki.imgCanvasDiv.style.zIndex = "1";
+
+          let meshRef = this.storageRef.child(row.getData().fullPath);
+          this.mkt.displayMesh(meshRef);
         }
       }
 

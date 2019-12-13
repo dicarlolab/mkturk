@@ -202,7 +202,7 @@ export class Mkthree {
    * @param {HTMLCanvasElement} canvas
    * @public
    */
-  public async displayMesh(filePath: string) {
+  public async displayMesh(meshRef: firebase.storage.Reference) {
     console.time("displayMesh()");
 
     if (this.active) {
@@ -240,7 +240,7 @@ export class Mkthree {
     this.scene.add(this.light);
 
     /* load mesh */
-    let objectMesh: any = await this.loadMesh(filePath);
+    let objectMesh: any = await this.loadMesh(meshRef);
 
     /* add loaded mesh to scene */
     this.scene.add(objectMesh.scene)
@@ -258,12 +258,10 @@ export class Mkthree {
    * @returns {Promise}
    * @private
    */
-  private async loadMesh(filePath: string) {
+  private async loadMesh(meshRef: firebase.storage.Reference) {
     
-    let storageRef = firebase.storage().ref();
     
     try {
-      let meshRef = storageRef.child(filePath);
       let meshUrl = await meshRef.getDownloadURL().catch(e => {
         console.error("Error:", e);
       });
@@ -309,6 +307,7 @@ export class Mkthree {
       this.dirLightPos = null;
       this.light = null;
       this.loader = null;
+      this.renderer?.clear();
       this.renderer = null;
       this.animationID = -1;
       this.active = false;
@@ -316,5 +315,36 @@ export class Mkthree {
     } catch (error) {
       console.error("Error destroying THREE Objects:", error);
     }
+  }
+}
+
+export class Mkimage {
+  imgCanvasDiv: HTMLDivElement;
+  imgCanvas: HTMLElement;
+
+  constructor() {
+    this.imgCanvasDiv = 
+    document.querySelector("#image-canvas-div") as HTMLDivElement;
+
+    this.imgCanvas =
+    document.querySelector("#image-canvas-div") as HTMLElement;
+  }
+
+  public async displayImage(fileRef: FileRef, fileName: string) {
+    let li = document.createElement("li");
+    li.setAttribute("class", "imageList");
+    let imgDiv = document.createElement("div");
+    let img = document.createElement("img");
+    let imgLabel = document.createElement("P");
+    imgLabel.innerHTML = fileName;
+    await fileRef.getDownloadURL().then(url => {
+      img.src = url;
+    });
+
+    imgDiv.appendChild(img);
+    imgDiv.appendChild(imgLabel);
+    li.appendChild(imgDiv);
+    this.imgCanvas.appendChild(li);
+    let gallery = new Viewer(this.imgCanvas);
   }
 }
