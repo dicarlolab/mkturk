@@ -1,7 +1,7 @@
 import * as firebase from "firebase/app";
 import "firebase/firestore";
 type Timestamp = firebase.firestore.Timestamp;
-import { Mkeditor } from "./mkmedia";
+import { Mkeditor, Mkthree } from "./mkmedia";
 
 export class Mkfinder {
   finder: any;

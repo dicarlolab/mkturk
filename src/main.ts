@@ -14,7 +14,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 import { Mkquery } from "./mkquery";
-import { Mkthree } from "./mkthree";
 import { Mkfinder } from "./mkfinder";
 
 let provider = new firebase.auth.GoogleAuthProvider();
@@ -50,7 +49,6 @@ let mkq = new Mkquery();
 // console.log("query", query);
 
 let mkf = new Mkfinder();
-let mkt = new Mkthree();
 
 
 /* Quick Links */
