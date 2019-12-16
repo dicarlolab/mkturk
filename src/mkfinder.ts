@@ -12,6 +12,8 @@ export class Mkfinder {
   backBtn: HTMLButtonElement;
   mkt: Mkthree;
   mki: Mkimage;
+  numImgSlider: HTMLInputElement;
+  showImagesBtn: HTMLButtonElement;
 
 
 
@@ -23,6 +25,13 @@ export class Mkfinder {
     this.storageRef = this.storage.ref();
     this.backBtn = document.querySelector("#back-btn") as HTMLButtonElement;
     this.backBtnAction();
+
+    this.showImagesBtn = 
+    document.querySelector("#show-images-btn") as HTMLButtonElement;
+
+    this.numImgSlider = 
+    document.querySelector("#num-image-slider") as HTMLInputElement;
+    this.numImgSliderAction();
 
     this.mkt = new Mkthree();
     this.mki = new Mkimage();
@@ -273,9 +282,11 @@ export class Mkfinder {
                  row.getData().contentType.includes("json")) {
 
           this.mkt.destroy();
+          this.mki.removeImages();
 
           this.editor.editorDivElement.style.zIndex = "3";
           this.mki.imgCanvasDiv.style.zIndex = "2";
+          // this.mki.imgCanvasDiv.style.visibility = "hidden";
           this.mkt.canvas.style.zIndex = "1";
 
           let fileRef = this.storageRef.child(row.getData().fullPath);
@@ -284,8 +295,7 @@ export class Mkfinder {
 
         else if (row.getData().contentType.includes("image")) {
           this.mkt.destroy();
-
-          //console.log("hello");
+          this.mki.removeImages();
 
           this.mki.imgCanvasDiv.style.zIndex = "3";
           this.editor.editorDivElement.style.zIndex = "2";
@@ -298,16 +308,24 @@ export class Mkfinder {
 
         else if (row.getData().contentType === "application/octet-stream" && row.getData().name.includes(".glb")) {
           this.mkt.destroy();
+          this.mki.removeImages();
 
           //console.log("hello");
 
           this.mkt.canvas.style.zIndex = "3";
           this.editor.editorDivElement.style.zIndex = "2";
           this.mki.imgCanvasDiv.style.zIndex = "1";
+          // this.mki.imgCanvasDiv.style.visibility = "hidden";
 
           let meshRef = this.storageRef.child(row.getData().fullPath);
           this.mkt.displayMesh(meshRef);
         }
+      },
+      rowSelectionChanged: (data, rows) => {
+        console.log("hi");
+        let boo = !this.imageTypeTest(data);
+        console.log(boo);
+        this.showImagesBtn.disabled = !this.imageTypeTest(data) ? true: false;
       }
 
     });
@@ -322,4 +340,29 @@ export class Mkfinder {
       this.listStorageFiles(this.storageRef.child(this.previousPath));
     });
   }
+
+  private numImgSliderAction() {
+    this.numImgSlider.addEventListener("change", (ev: Event) => {
+      console.log(this.numImgSlider.value);
+      this.mki.imgCanvas.style.gridTemplateColumns =
+      "repeat(" + String(this.numImgSlider.value) + ", minmax(0,1fr))";
+    });
+  }
+
+  private imageTypeTest(data: any[]) {
+    console.log("data:", data);
+    if (data.length == 0 || data.length == 1) {
+      return false;
+    }
+    else {
+      for (let i = 0; i < data.length; i++) {
+        if (!data[i].contentType.includes("images")) {
+          return false;
+        }
+      }
+      return true;
+    }
+  }
+
+
 }

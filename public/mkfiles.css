@@ -48,10 +48,11 @@
 
 
   display: grid;
-  grid-template-columns: 1fr 1fr 2fr 2fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
   grid-template-areas: "back forward filter filter"
-                       "upload upload download show-images";
+                       "show-images n-img-slider n-img-slider n-img-slider"
+                       "upload upload download download";
   grid-gap: 4px;
   padding: 6px;
 }
@@ -85,6 +86,10 @@
   text-align: center;
 }
 
+#num-image-slider-p {
+  grid-area: n-img-slider;
+}
+
 #finder {
   margin: 6px;
   grid-area: finder;
@@ -106,14 +111,16 @@
   grid-template-areas: "editor"
                        "update-btn";
 
-  max-height: 100%;
-  overflow: auto;
+  max-height: inherit;
+  height: 100%;
+  opacity: 0.99;
 }
 
 #editor {
   grid-area: editor;
   max-height: 100%;
-  overflow: auto;
+  background-color: white;
+  overflow-y: hidden;
 }
 
 #update-btn {
@@ -124,13 +131,54 @@
   z-index: 2;
   grid-column: 1;
   grid-row: 1;
+  height: 100%;
+  max-height: 100%;
+  max-width: 100%;
+  overflow-y: auto;
+  background-color: white;
 
+}
+
+#image-canvas {
+  min-height: 100%;
+  max-height: 100%;
+  width: 100%;
+  max-width: 100%;
+  margin: 0px;
+  padding: 0px;
+  background-color: white;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-gap: 10px;
   list-style-type: none;
 }
 
+.imageList {
+  display: block;
+  height: auto;
+  width: 100%;
+  display: block;
+}
+
+.imageList div {
+  height: auto;
+  width: 100%;
+  max-width: 100%;
+  display: block;
+}
+
+.imageList div img {
+  height: auto;
+  width: 100%;
+}
+
+.imageList div p {
+  font-size: 12px;
+  color: black;
+  height: auto;
+  display: block;
+  word-wrap: break-word;
+}
 
 
 #three-canvas {

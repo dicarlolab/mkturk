@@ -13,6 +13,7 @@
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.5.1/dist/js/tabulator.min.js"></script>
     <script src="mkfiles_extendKeys.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/7.0.4/jsoneditor.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.3.7/viewer.css" rel="stylesheet">
   </head>
 
   <body>
@@ -85,16 +86,19 @@
                 <i class="material-icons">keyboard_arrow_right</i>
               </button>
               <input type="search" class="mdl-textfield__input keyword-input" id="filter-value" placeholder="search">
+              <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="show-images-btn" disabled>
+                <i class="material-icons">slideshow</i>
+              </button>
+              <p id="num-image-slider-p">
+                <input type="range" class="mdl-slider mdl-js-slider" min="1" max="10" value="1" step="1" id="num-image-slider">
+              </p>
+              
               <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="upload-file">
                 <i class="material-icons">cloud_upload</i>
               </button>
               <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="download-file">
                 <i class="material-icons">cloud_download</i>
               </button>
-              <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="show-images-btn" disabled>
-                  <i class="material-icons">slideshow</i>
-              </button>
-
 
             </div>
             <div id="finder"></div>

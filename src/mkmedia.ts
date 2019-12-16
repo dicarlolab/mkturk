@@ -321,13 +321,17 @@ export class Mkthree {
 export class Mkimage {
   imgCanvasDiv: HTMLDivElement;
   imgCanvas: HTMLElement;
+  imgGallery: Viewer;
 
   constructor() {
     this.imgCanvasDiv = 
     document.querySelector("#image-canvas-div") as HTMLDivElement;
 
     this.imgCanvas =
-    document.querySelector("#image-canvas-div") as HTMLElement;
+    document.querySelector("#image-canvas") as HTMLElement;
+
+    this.imgGallery = 
+    new Viewer(document.getElementById("image-canvas")!);
   }
 
   public async displayImage(fileRef: FileRef, fileName: string) {
@@ -335,7 +339,7 @@ export class Mkimage {
     li.setAttribute("class", "imageList");
     let imgDiv = document.createElement("div");
     let img = document.createElement("img");
-    let imgLabel = document.createElement("P");
+    let imgLabel = document.createElement("p");
     imgLabel.innerHTML = fileName;
     await fileRef.getDownloadURL().then(url => {
       img.src = url;
@@ -345,6 +349,15 @@ export class Mkimage {
     imgDiv.appendChild(imgLabel);
     li.appendChild(imgDiv);
     this.imgCanvas.appendChild(li);
-    let gallery = new Viewer(this.imgCanvas);
+    this.imgGallery.destroy();
+    this.imgGallery = new Viewer(document.getElementById("image-canvas")!);
+  }
+
+  public removeImages() {
+    let elements = document.getElementsByClassName("imageList");
+    while (elements.length > 0) {
+      elements[0].parentNode?.removeChild(elements[0]);
+    }
+    
   }
 }
