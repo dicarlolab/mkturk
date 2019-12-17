@@ -40,10 +40,11 @@ let fileRef = storageRef.child("mkturkfiles/parameterfiles/subjects/AJ_params.tx
 let mkq = new Mkquery();
 let mkf = new Mkfinder();
 
+
+let rfidToggle = document.querySelector("#rfid-switch") as HTMLInputElement;
 let qryLocSelc = document.querySelector<HTMLSelectElement>("#qry-loc-selector");
 let fieldSelector =
     document.querySelector<HTMLSelectElement>("#field-selector");
-
 
 
 /* Quick Links */
@@ -79,81 +80,6 @@ mkturkfilesLink.addEventListener("click" || "pointerup", (ev: Event) => {
   qryLocSelc!.value = "mkturkfiles";
   qryLocSelc!.dispatchEvent(new Event("change"));
 });
-
-
-
-
-// marmosetsLink?.addEventListener("click", async event => {
-//   event.preventDefault();
-
-//   async function loadData(doc: any, arr: any[]) {
-//     await arr.push(doc.data());
-//   }
-
-//   let arr = new Array();
-
-//   await query.get().then(async (snapshot: any) => {
-//     if (!query.empty) {
-//       let promises = snapshot.docs.map((doc: any) => loadData(doc, arr));
-//       await Promise.all(promises);
-//     }
-//   });
-
-//   console.log("arr:", arr);
-
-//   mkf.displayFirestoreTable(arr, "mkturkdata");
-
-//   console.log("marmosets quick link");
-// });
-
-// mkturkdataLink?.addEventListener("click", event => {
-//   event.preventDefault();
-//   event.stopPropagation();
-
-//   console.log("mkturkdata quick link");
-// });
-
-// mkturkfilesLink?.addEventListener("click", event => {
-//   event.preventDefault();
-//   event.stopPropagation();
-
-//   console.log("mkturkfiles quick link");
-// });
-
-/* Mkthree tester */
-// let mt = new Mkthree();
-// let canvas = document.querySelector("#webgl-canvas") as HTMLCanvasElement;
-// async function runner() {
-//   await mt.displayMesh("mkturkfiles/scenebags/objectome3d/face/marmoset.glb", canvas);
-// }
-// runner();
-
-/* Mkeditor Tester */
-
-// let mkeditor = new Mkeditor();
-// const marm = db.collection("mkturkdata").doc("2018-04-03T20:26:45_Barb_images").get().then(doc => {
-//   let ret = doc.data();
-
-//   mkeditor.displayDoc(mkeditor.foo(ret));
-
-//   // if (ret) {
-//   //   console.log("ret", ret);
-//   //   console.log(ret.birthdate.toString());
-//   //   console.log(ret.birthdate.toDate());
-
-//   //   try {
-//   //     console.log(ret.colony.toDate());
-//   //   } catch (e) {
-//   //     console.log("Not Timestamp Object", e);
-//   //   }
-//   // }
-// });
-
-// let dt_bloodDNA = new firebase.firestore.Timestamp(1574456636, 147000000);
-// console.log(dt_bloodDNA.toDate());
-
-// let dt_semiannual = new firebase.firestore.Timestamp(1574456656, 748000000)
-// console.log(dt_semiannual.toDate());
 
 
 qryLocSelc!.addEventListener("change", ev => {
@@ -379,10 +305,12 @@ queryForm?.addEventListener("submit", ev => {
   let ret = mkq.decodeQuery(query);
   ret.then(docs => {
     mkf.listFirestoreDocs(docs, qryLoc!);
+    if (rfidToggle.checked) {
+      mkf.finder.selectRow();
+      mkf.mke.displayFirebaseTextFile(mkf.finder.getData()[0], "marmosets");
+    }
   });
 });
-
-
 
 function resetPlaceholder() {
   let keywordInputs = 
@@ -400,3 +328,4 @@ function removeElementsByClassName(cName: string) {
     elements[0].parentNode?.removeChild(elements[0]);
   }
 }
+

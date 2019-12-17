@@ -19,6 +19,8 @@ export class Mkeditor {
   private updateBtn: HTMLButtonElement;
   private activeFile: 
     { loc: string, id: string | FileRef };
+  
+  fileNameP: HTMLParagraphElement;
 
   constructor() {
     this.editorDivElement 
@@ -28,6 +30,8 @@ export class Mkeditor {
     this.updateBtn = document.querySelector("#update-btn") as HTMLButtonElement;
     this.activeFile = { loc: "", id: "" };
     this.updateBtnAction();
+    this.fileNameP = 
+    document.querySelector("#file-name-span") as HTMLParagraphElement;
   }
 
   public displayFirebaseTextFile(file: Object, loc: string) {
@@ -43,13 +47,16 @@ export class Mkeditor {
   private trackFirebaseActiveFile(loc: string, file: any) {
     if (loc === "marmosets") {
       this.activeFile = { loc: loc, id: file.name };
+      this.fileNameP.innerText = String(this.activeFile.id);
     }
 
     else if (loc === "mkturkdata") {
       if (file.Doctype === "task") {
         this.activeFile = { loc: loc, id: file.Taskdoc };
+        this.fileNameP.innerText = String(this.activeFile.id);
       } else if (file.Doctype === "images") {
         this.activeFile = { loc: loc, id: file.Imagesdoc};
+        this.fileNameP.innerText = String(this.activeFile.id);
       }
     }
 
@@ -68,6 +75,7 @@ export class Mkeditor {
     this.editor = new JSONEditor(this.editorElement, {}, file);
     this.activeFile = { loc: "mkturkfiles", id: fileRef };
     console.log("activeFile", this.activeFile);
+    this.fileNameP.innerText = fileRef.name;
   }
 
   private updateBtnAction() {

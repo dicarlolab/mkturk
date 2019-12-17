@@ -52,9 +52,11 @@
   grid-template-rows: 1fr 1fr 1fr;
   grid-template-areas: "back forward filter filter"
                        "show-images n-img-slider n-img-slider n-img-slider"
-                       "upload upload download download";
+                       "upload upload download download"
+                       "path-name path-name path-name path-name";
   grid-gap: 4px;
   padding: 6px;
+  padding-bottom: 0px;
 }
 
 #filter-value {
@@ -90,8 +92,14 @@
   grid-area: n-img-slider;
 }
 
+#path-name-span {
+  grid-area: path-name;
+  margin-bottom: 0px;
+}
+
 #finder {
   margin: 6px;
+  margin-top: 3px;
   grid-area: finder;
   border: 0px;
 }
@@ -107,8 +115,9 @@
   
   display: grid;
 
-  grid-template-rows: 10fr 0.25fr;
-  grid-template-areas: "editor"
+  grid-template-rows: 0.125fr 10fr 0.25fr;
+  grid-template-areas: "file-name"
+                       "editor"
                        "update-btn";
 
   max-height: inherit;
@@ -120,6 +129,10 @@
   max-height: 100%;
   background-color: white;
   overflow-y: hidden;
+}
+
+#file-name-p {
+  grid-area: file-name;
 }
 
 #update-btn {

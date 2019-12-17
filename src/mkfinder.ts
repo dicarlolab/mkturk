@@ -19,6 +19,7 @@ export class Mkfinder {
   numImgSlider: HTMLInputElement;
   showImagesBtn: HTMLButtonElement;
   selectedImages: any[];
+  pathName: HTMLParagraphElement;
 
 
   constructor() {
@@ -35,6 +36,8 @@ export class Mkfinder {
     document.querySelector("#num-image-slider") as HTMLInputElement;
     this.downloadBtn =
     document.querySelector("#download-file") as HTMLButtonElement;
+    this.pathName = 
+    document.querySelector("#path-name-span") as HTMLParagraphElement;
     
     this.backBtnAction();
     this.showImagesBtnAction();
@@ -231,6 +234,8 @@ export class Mkfinder {
     }
 
     this.backBtn.disabled = (fileRef.fullPath == "mkturkfiles") ? true: false;
+
+    this.pathName.innerText = fileRef.fullPath;
 
     let pathArr: string[] = fileRef.fullPath.split("/");
     let mdArr = new Array();

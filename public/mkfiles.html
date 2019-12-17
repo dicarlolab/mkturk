@@ -34,7 +34,7 @@
             <a class="mdl-navigation__link" id="quick-link-mkturkfiles" href="">gcs/mkturkfiles</a>
             <label class="mdl-switch mdl-js-switch mdl-js-ripple-effect" for="rfid-switch">
               <input type="checkbox" id="rfid-switch" class="mdl-switch__input">
-              <span class="mdl-switch__label" style="color:red">RFID OFF</span>
+              <span class="mdl-switch__label" id="rfid-switch-span" style="color:red">RFID OFF</span>
             </label>
           </nav>
 
@@ -100,6 +100,8 @@
                 <i class="material-icons">cloud_download</i>
               </button>
 
+              <p id="path-name-span">Path:</p>
+
             </div>
             <div id="finder"></div>
 
@@ -107,6 +109,7 @@
 
           <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--6-col mdl-cell--4-col-tablet mdl-cell--2-col-phone" id="media-card">
             <div id="editor-div">
+              <p id="file-name-span">Filename:</p>
               <div id="editor"></div>
               <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="update-btn">UPDATE</button>
             </div>
@@ -126,5 +129,7 @@
     </div> <!-- mdl-layout mdl-js-layout mdl-layout--fixed-header -->
 
     <script src="mkfiles.js"></script>
+    <script src="mkfiles_rfid.js"></script>
+
   </body>
 </html>
