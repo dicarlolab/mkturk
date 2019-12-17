@@ -2,39 +2,50 @@ import * as firebase from "firebase/app";
 import "firebase/firestore";
 type Timestamp = firebase.firestore.Timestamp;
 import { Mkeditor, Mkthree, Mkimage } from "./mkmedia";
+import FileSaver from "file-saver";
+
+const db = firebase.firestore();
 
 export class Mkfinder {
-  finder: any;
-  editor: Mkeditor;
+  finder: Tabulator;
+  mke: Mkeditor;
   previousPath: string;
   storage: firebase.storage.Storage;
   storageRef: firebase.storage.Reference;
   backBtn: HTMLButtonElement;
+  downloadBtn: HTMLButtonElement;
   mkt: Mkthree;
   mki: Mkimage;
   numImgSlider: HTMLInputElement;
   showImagesBtn: HTMLButtonElement;
-
+  selectedImages: any[];
 
 
   constructor() {
     this.finder = new Tabulator("#finder");
-    this.editor = new Mkeditor();
     this.previousPath = "";
     this.storage = firebase.storage();
     this.storageRef = this.storage.ref();
-    this.backBtn = document.querySelector("#back-btn") as HTMLButtonElement;
-    this.backBtnAction();
+    this.selectedImages = [];
 
+    this.backBtn = document.querySelector("#back-btn") as HTMLButtonElement;
     this.showImagesBtn = 
     document.querySelector("#show-images-btn") as HTMLButtonElement;
-
     this.numImgSlider = 
     document.querySelector("#num-image-slider") as HTMLInputElement;
+    this.downloadBtn =
+    document.querySelector("#download-file") as HTMLButtonElement;
+    
+    this.backBtnAction();
+    this.showImagesBtnAction();
     this.numImgSliderAction();
+    this.downloadBtnAction();
 
     this.mkt = new Mkthree();
     this.mki = new Mkimage();
+    this.mke = new Mkeditor();
+
+
   }
 
   public listFirestoreDocs(dataArr: any[], database: string) {
@@ -65,11 +76,11 @@ export class Mkfinder {
         selectableRangeMode: "click",
         rowClick: (event, row) => {
           event.stopPropagation();
-          this.editor.displayFirebaseTextFile(row.getData(), database);
+          this.mke.displayFirebaseTextFile(row.getData(), database);
         },
         rowTap: (event, row) => {
           event.stopPropagation();
-          this.editor.displayFirebaseTextFile(row.getData(), database);
+          this.mke.displayFirebaseTextFile(row.getData(), database);
         },
         tableBuilt: () => {
           /* selectAllBox function */
@@ -105,12 +116,12 @@ export class Mkfinder {
         selectableRangeMode: "click",
         rowClick: (event, row) => {
           event.stopPropagation();
-          this.editor.displayFirebaseTextFile(row.getData(), database);
+          this.mke.displayFirebaseTextFile(row.getData(), database);
           
         },
         rowTap: (event, row) => {
           event.stopPropagation();
-          this.editor.displayFirebaseTextFile(row.getData(), database);
+          this.mke.displayFirebaseTextFile(row.getData(), database);
         },
         tableBuilt: () => {          
           /* selectAllBox function */
@@ -144,15 +155,12 @@ export class Mkfinder {
     dataArr.forEach(data => {
       for (let key of Object.keys(data)) {
         if (Array.isArray(data[key])) {
-          // console.log("ARRAY KEY:", key);
           data[key].forEach(_timestampToDate);
         }
   
         else if (this.isDict(data[key])) {
-          // console.log("DICTIONARY KEY:", key);
           try {
             data[key] = data[key].toDate().toJSON();
-            // console.log("TRIED KEY", key);
             continue;
           } catch (e) {
             // console.log(e);
@@ -193,6 +201,22 @@ export class Mkfinder {
   }
 
   public async listStorageFiles(fileRef: firebase.storage.Reference) {
+
+    function formatFileSize(size: number) {
+      let threshold = 1000;
+      if (Math.abs(size) < threshold) {
+        return size + " B";
+      }
+
+      let units = ["kB", "MB", "GB", "TB"];
+      let u = -1;
+
+      do {
+        size /= threshold;
+        ++u;
+      } while (Math.abs(size) >= threshold && u < units.length -1);
+      return size.toFixed(1) + " " + units[u]; 
+    }
     
     async function loadMetadata(fileArr: any) {
       await fileArr.getMetadata().then((md: any) => {
@@ -200,7 +224,7 @@ export class Mkfinder {
           name: md.name,
           contentType: md.contentType,
           fullPath: md.fullPath,
-          size: md.size,
+          size: formatFileSize(md.size),
           timeCreated: md.timeCreated
         });
       });
@@ -245,7 +269,7 @@ export class Mkfinder {
       layout: "fitColumns",
       resizableColumns: true,
       initialSort: [
-        { column: "name", dir: "desc" }
+        { column: "name", dir: "asc" }
       ],
       columns: [
         { title: "<input id='select-all' type='checkbox'/>", width: 15, headerSort: false },
@@ -284,13 +308,12 @@ export class Mkfinder {
           this.mkt.destroy();
           this.mki.removeImages();
 
-          this.editor.editorDivElement.style.zIndex = "3";
+          this.mke.editorDivElement.style.zIndex = "3";
           this.mki.imgCanvasDiv.style.zIndex = "2";
-          // this.mki.imgCanvasDiv.style.visibility = "hidden";
           this.mkt.canvas.style.zIndex = "1";
 
           let fileRef = this.storageRef.child(row.getData().fullPath);
-          this.editor.displayStorageTextFile(fileRef);
+          this.mke.displayStorageTextFile(fileRef);
         }
 
         else if (row.getData().contentType.includes("image")) {
@@ -298,7 +321,7 @@ export class Mkfinder {
           this.mki.removeImages();
 
           this.mki.imgCanvasDiv.style.zIndex = "3";
-          this.editor.editorDivElement.style.zIndex = "2";
+          this.mke.editorDivElement.style.zIndex = "2";
           this.mkt.canvas.style.zIndex = "1";
 
           let imgRef = this.storageRef.child(row.getData().fullPath);
@@ -310,22 +333,19 @@ export class Mkfinder {
           this.mkt.destroy();
           this.mki.removeImages();
 
-          //console.log("hello");
-
           this.mkt.canvas.style.zIndex = "3";
-          this.editor.editorDivElement.style.zIndex = "2";
+          this.mke.editorDivElement.style.zIndex = "2";
           this.mki.imgCanvasDiv.style.zIndex = "1";
-          // this.mki.imgCanvasDiv.style.visibility = "hidden";
 
           let meshRef = this.storageRef.child(row.getData().fullPath);
           this.mkt.displayMesh(meshRef);
         }
       },
       rowSelectionChanged: (data, rows) => {
-        console.log("hi");
-        let boo = !this.imageTypeTest(data);
-        console.log(boo);
-        this.showImagesBtn.disabled = !this.imageTypeTest(data) ? true: false;
+        this.showImagesBtn.disabled = !this.imageTypeTest(data);
+        if (this.imageTypeTest(data)) {
+          this.selectedImages = data;
+        }
       }
 
     });
@@ -349,19 +369,78 @@ export class Mkfinder {
     });
   }
 
+  private showImagesBtnAction() {
+    this.showImagesBtn.addEventListener("click" || "pointerup", async (ev: Event) => {
+      this.mkt.destroy();
+      this.mki.removeImages();
+
+      this.mki.imgCanvasDiv.style.zIndex = "3";
+      this.mke.editorDivElement.style.zIndex = "2";
+      this.mkt.canvas.style.zIndex = "1";
+
+      for (let i = 0; i < this.selectedImages.length; i++) {
+        let imgRef = this.storageRef.child(this.selectedImages[i].fullPath);
+        let imgName = this.selectedImages[i].name;
+        await this.mki.displayImage(imgRef, imgName);
+      }
+    });
+  }
+
   private imageTypeTest(data: any[]) {
-    console.log("data:", data);
     if (data.length == 0 || data.length == 1) {
       return false;
-    }
-    else {
-      for (let i = 0; i < data.length; i++) {
-        if (!data[i].contentType.includes("images")) {
+    } else {
+      for (var i = 0; i < data.length; i++) {
+        if (!data[i].contentType.includes("image")) {
           return false;
         }
       }
       return true;
     }
+  }
+
+  private downloadBtnAction() {
+    this.downloadBtn.addEventListener("click" || "pointerup", 
+    async (ev: Event) => {
+      let row = this.finder.getSelectedRows();
+      let qryLoc = 
+      document.querySelector("#qry-loc-selector") as HTMLSelectElement;
+
+      if (qryLoc.value == "mkturkfiles" && 
+          !row[0].getData().contentType.includes("folder")) {
+        for (let i = 0; i < row.length; i++) {
+          this.storageRef.child(row[i].getData().fullPath).getDownloadURL()
+          .then(async (url: string) => {
+            let file = await (await fetch(url)).blob();
+            FileSaver.saveAs(file, row[i].getData().name);
+          });
+        }
+      }
+
+      else if (qryLoc.value == "marmosets") {
+        for (let i = 0; i < row.length; i++) {
+          let docRef = db.collection("marmosets").doc(row[i].getData().name);
+          docRef.get().then(doc => {
+            let fileBlob = new Blob([ JSON.stringify(doc.data(), null, 1) ],
+                { type: "application/json; charset=utf-8" });
+            FileSaver.saveAs(fileBlob, row[i].getData().name);
+          });
+        }
+      }
+
+      else if (qryLoc.value == "mkturkdata") {
+        for (let i = 0; i < row.length; i++) {
+          let docName = row[i].getData().FirestoreDocRoot + "_" +
+              row[i].getData().Doctype;
+          let docRef = db.collection("mkturkdata").doc(docName);
+          docRef.get().then(doc => {
+            let fileBlob = new Blob([ JSON.stringify(doc.data(), null, 1) ],
+                { type: "application/json; charset=utf-8" });
+            FileSaver.saveAs(fileBlob, docName);
+          });
+        }
+      }
+    });
   }
 
 

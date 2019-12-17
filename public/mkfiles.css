@@ -113,7 +113,6 @@
 
   max-height: inherit;
   height: 100%;
-  opacity: 0.99;
 }
 
 #editor {
@@ -148,7 +147,7 @@
   padding: 0px;
   background-color: white;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(1, minmax(0, 1fr));
   grid-gap: 10px;
   list-style-type: none;
 }

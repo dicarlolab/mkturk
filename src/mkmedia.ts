@@ -260,7 +260,6 @@ export class Mkthree {
    */
   private async loadMesh(meshRef: firebase.storage.Reference) {
     
-    
     try {
       let meshUrl = await meshRef.getDownloadURL().catch(e => {
         console.error("Error:", e);

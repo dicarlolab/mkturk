@@ -38,17 +38,12 @@ const rootRef = storageRef.child("mkturkfiles/");
 let fileRef = storageRef.child("mkturkfiles/parameterfiles/subjects/AJ_params.txt");
 
 let mkq = new Mkquery();
-
-
-// let m = new Mkquery();
-// let retval = m.mkquery([{field: "CurrentDate", keyword: "4/3/2018; +-5"}]);
-// retval = "db.collection('mkturkdata')" + retval;
-// console.log("retval:", retval);
-
-// let query = eval(retval);
-// console.log("query", query);
-
 let mkf = new Mkfinder();
+
+let qryLocSelc = document.querySelector<HTMLSelectElement>("#qry-loc-selector");
+let fieldSelector =
+    document.querySelector<HTMLSelectElement>("#field-selector");
+
 
 
 /* Quick Links */
@@ -60,7 +55,29 @@ let mkturkfilesLink =
     document.querySelector("#quick-link-mkturkfiles") as HTMLElement;
 
 marmosetsLink.addEventListener("click", (ev: Event) => {
+  ev.preventDefault();
 
+  qryLocSelc!.value = "marmosets";
+  fieldSelector!.value = "name";
+  qryLocSelc!.dispatchEvent(new Event("change"));
+  fieldSelector!.dispatchEvent(new Event("change"));
+
+});
+
+mkturkdataLink.addEventListener("click" || "pointerup", (ev: Event) => {
+  ev.preventDefault();
+
+  qryLocSelc!.value = "mkturkdata";
+  fieldSelector!.value = "agentTypeCurDate";
+  qryLocSelc!.dispatchEvent(new Event("change"));
+  fieldSelector!.dispatchEvent(new Event("change"));
+});
+
+mkturkfilesLink.addEventListener("click" || "pointerup", (ev: Event) => {
+  ev.preventDefault();
+
+  qryLocSelc!.value = "mkturkfiles";
+  qryLocSelc!.dispatchEvent(new Event("change"));
 });
 
 
@@ -139,7 +156,6 @@ marmosetsLink.addEventListener("click", (ev: Event) => {
 // console.log(dt_semiannual.toDate());
 
 
-let qryLocSelc = document.querySelector<HTMLSelectElement>("#qry-loc-selector");
 qryLocSelc!.addEventListener("change", ev => {
 
   let fs = document.querySelector("#field-selector") as HTMLSelectElement;
@@ -233,8 +249,7 @@ qryLocSelc!.addEventListener("change", ev => {
   }
 });
 
-let fieldSelector
-  = document.querySelector<HTMLSelectElement>("#field-selector");
+
 fieldSelector?.addEventListener("change", ev => {
   let field = fieldSelector?.value;
   let ki0 = document.querySelector("#keyword-input-0") as HTMLInputElement;
