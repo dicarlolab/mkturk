@@ -61,6 +61,7 @@ export class Mkfinder {
 
     if (database == "marmosets") {
       this.finder.destroy();
+      this.pathName.innerText = "marmosets";
       this.finder = new Tabulator("#finder", {
         data: dataArr,
         index: "name",
@@ -79,10 +80,24 @@ export class Mkfinder {
         selectableRangeMode: "click",
         rowClick: (event, row) => {
           event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
           this.mke.displayFirebaseTextFile(row.getData(), database);
         },
         rowTap: (event, row) => {
           event.stopPropagation();
+
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
+
           this.mke.displayFirebaseTextFile(row.getData(), database);
         },
         tableBuilt: () => {
@@ -101,6 +116,7 @@ export class Mkfinder {
     }
     else if (database == "mkturkdata") {
       this.finder.destroy();
+      this.pathName.innerText = "mkturkdata";
       this.finder = new Tabulator("#finder", {
         data: dataArr,
         index: "index",
@@ -119,11 +135,23 @@ export class Mkfinder {
         selectableRangeMode: "click",
         rowClick: (event, row) => {
           event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
           this.mke.displayFirebaseTextFile(row.getData(), database);
           
         },
         rowTap: (event, row) => {
           event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
           this.mke.displayFirebaseTextFile(row.getData(), database);
         },
         tableBuilt: () => {          

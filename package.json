@@ -17,10 +17,12 @@
   },
   "homepage": "https://github.com/issalab/mkturk#readme",
   "dependencies": {
+    "@types/chart.js": "^2.9.7",
     "@types/file-saver": "^2.0.1",
     "@types/jsoneditor": "^5.28.1",
     "@types/tabulator-tables": "^4.5.0",
     "@types/w3c-web-usb": "^1.0.3",
+    "chart.js": "^2.9.3",
     "file-saver": "^2.0.2",
     "firebase": "^7.5.0",
     "jsoneditor": "^7.4.0",

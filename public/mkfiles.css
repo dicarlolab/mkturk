@@ -37,9 +37,23 @@
 
 #finder-card {
   display: grid;
-  grid-template-rows: 1fr 16fr;
+}
+
+#finder-div {
+  grid-column: 1;
+  grid-row: 1;
+  z-index: 2;
+
+  display: grid;
+  grid-template-rows: 1fr 16fr 0.25fr;
   grid-template-areas: "controls"
-                       "finder";
+                       "finder"
+                       "controls-2";
+
+  max-height: inherit;
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
 }
 
 #finder-controls {
@@ -49,14 +63,27 @@
 
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
-  grid-template-rows: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 0.5fr;
   grid-template-areas: "back forward filter filter"
                        "show-images n-img-slider n-img-slider n-img-slider"
-                       "upload upload download download"
                        "path-name path-name path-name path-name";
   grid-gap: 4px;
   padding: 6px;
   padding-bottom: 0px;
+}
+
+#finder-controls-2 {
+  grid-area: controls-2;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas: "upload download";
+}
+
+#chart-canvas {
+  grid-column: 1;
+  grid-row: 1;
+  z-index: 1;
 }
 
 #filter-value {
@@ -90,11 +117,13 @@
 
 #num-image-slider-p {
   grid-area: n-img-slider;
+  margin: 8px;
 }
 
 #path-name-span {
   grid-area: path-name;
   margin-bottom: 0px;
+  font-weight: bold;
 }
 
 #finder {
@@ -122,6 +151,8 @@
 
   max-height: inherit;
   height: 100%;
+  width: 100%;
+  max-width: 100%;
 }
 
 #editor {
@@ -131,8 +162,10 @@
   overflow-y: hidden;
 }
 
-#file-name-p {
+#file-name-span {
   grid-area: file-name;
+  margin-bottom: 0px;
+  font-weight: bold;
 }
 
 #update-btn {

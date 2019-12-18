@@ -1,8 +1,12 @@
+import { Mkchart } from "./mkmedia";
+
 export class Mkquery {
   public rfidMode: boolean;
+  public mkc: Mkchart;
   
   constructor() {
     this.rfidMode = false;
+    this.mkc = new Mkchart();
   };
   /**
    * Connects and returns query strings

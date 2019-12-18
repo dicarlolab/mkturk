@@ -200,6 +200,7 @@ export class Mkthree {
     this.canvas.height = editorDiv.offsetHeight;
     this.canvas.style.width = String(editorDiv.offsetWidth);
     this.canvas.style.height = String(editorDiv.offsetHeight);
+    this.resizeCanvasAction();
   }
 
   /**
@@ -232,10 +233,10 @@ export class Mkthree {
     this.camera.position.set( this.cameraPos.x, this.cameraPos.y, this.cameraPos.z );
 
     /* light setup */
-    this.dirLightPos = new THREE.Vector3( 0, 2, 0 )
+    this.dirLightPos = new THREE.Vector3( 0, 2, 0 );
     this.dirLight = new THREE.DirectionalLight( 0xFFFFFF, 0.5);
     this.dirLight.position.set( this.dirLightPos.x, this.dirLightPos.y, this.dirLightPos.z )
-    this.light = new THREE.AmbientLight( 0x404040, 0.1 );
+    this.light = new THREE.AmbientLight( 0x404040, 0.05 ); // (0x404040, 0.1)
 
     /* control setup */
     this.controls = new OrbitControls( this.camera, this.renderer.domElement );
@@ -280,7 +281,11 @@ export class Mkthree {
           this.loader?.load(meshUrl, function(gltf) {
             gltf.scene.traverse((child: any) => {
               if (child.material) {
-                let material = new THREE.MeshPhongMaterial({ color: 0xFF0000, map: child.material.map });
+                //let material = new THREE.MeshPhongMaterial({ color: 0xFF0000, map: child.material.map });
+                let material = new THREE.MeshPhongMaterial({ color: "#FFE0BD" })
+                if ("morphTargetInfluences" in child) {
+                  material.morphTargets = true;
+                }
                 child.material = material;
                 child.material.needsUpdate = true;
               }
@@ -299,7 +304,6 @@ export class Mkthree {
   private animate() {
     this.animationID = requestAnimationFrame(this.animate.bind(this));
     if (this.scene && this.camera) {
-      console.log("hi");
       this.renderer?.render(this.scene, this.camera);
     }
   }
@@ -322,6 +326,16 @@ export class Mkthree {
     } catch (error) {
       console.error("Error destroying THREE Objects:", error);
     }
+  }
+
+  private resizeCanvasAction() {
+    window.addEventListener("resize", (ev: Event) => {
+      let editorDiv = document.querySelector("#editor-div") as HTMLDivElement;
+      this.canvas.width = editorDiv.offsetWidth;
+      this.canvas.height = editorDiv.offsetHeight;
+      this.canvas.style.width = String(editorDiv.offsetWidth);
+      this.canvas.style.height = String(editorDiv.offsetHeight);
+    });
   }
 }
 
@@ -366,5 +380,18 @@ export class Mkimage {
       elements[0].parentNode?.removeChild(elements[0]);
     }
     
+  }
+}
+
+export class Mkchart {
+  canvas: HTMLCanvasElement;
+
+  constructor() {
+    this.canvas = document.querySelector("#chart-canvas") as HTMLCanvasElement;
+    let finderDiv = document.querySelector("#finder-div") as HTMLDivElement;
+    this.canvas.width = finderDiv.offsetWidth;
+    this.canvas.height = finderDiv.offsetHeight;
+    this.canvas.style.width = String(finderDiv.offsetWidth);
+    this.canvas.style.height = String(finderDiv.offsetHeight);
   }
 }
