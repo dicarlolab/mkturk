@@ -15,6 +15,7 @@ firebase.initializeApp(firebaseConfig);
 
 import { Mkquery } from "./mkquery";
 import { Mkfinder } from "./mkfinder";
+import { Mkchart } from "./mkmedia";
 
 let provider = new firebase.auth.GoogleAuthProvider();
 provider.addScope("https://www.googleapis.com/auth/contacts.readonly");
@@ -34,11 +35,9 @@ const storage = firebase.storage();
 const storageRef = storage.ref(); 
 const rootRef = storageRef.child("mkturkfiles/");
 
-
-let fileRef = storageRef.child("mkturkfiles/parameterfiles/subjects/AJ_params.txt");
-
 let mkq = new Mkquery();
 let mkf = new Mkfinder();
+let mkc = new Mkchart();
 
 
 let rfidToggle = document.querySelector("#rfid-switch") as HTMLInputElement;

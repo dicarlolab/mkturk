@@ -6,7 +6,7 @@
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(3, 1fr);
   grid-template-areas: "qry-selector field-selector keyword-0 go"
-                       " . . keyword-1 ."
+                       "x y keyword-1 plot"
                        " . . keyword-2 ."; 
 
 }
@@ -33,6 +33,18 @@
 
 #go-btn {
   grid-area: go;
+}
+
+#quick-plot-x {
+  grid-area: x;
+}
+
+#quick-plot-y {
+  grid-area: y;
+}
+
+#plot-btn {
+  grid-area: plot;
 }
 
 #finder-card {
@@ -84,6 +96,7 @@
   grid-column: 1;
   grid-row: 1;
   z-index: 1;
+  background-color: white;
 }
 
 #filter-value {

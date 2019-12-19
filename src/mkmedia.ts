@@ -8,6 +8,8 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
+import Chart from "chart.js";
+
 type FileRef = firebase.storage.Reference;
 const db = firebase.firestore();
 const storage = firebase.storage();
@@ -385,13 +387,71 @@ export class Mkimage {
 
 export class Mkchart {
   canvas: HTMLCanvasElement;
+  plotBtn: HTMLButtonElement;
+  finderDiv: HTMLDivElement;
 
   constructor() {
     this.canvas = document.querySelector("#chart-canvas") as HTMLCanvasElement;
-    let finderDiv = document.querySelector("#finder-div") as HTMLDivElement;
-    this.canvas.width = finderDiv.offsetWidth;
-    this.canvas.height = finderDiv.offsetHeight;
-    this.canvas.style.width = String(finderDiv.offsetWidth);
-    this.canvas.style.height = String(finderDiv.offsetHeight);
+    this.finderDiv = document.querySelector("#finder-div") as HTMLDivElement;
+    this.plotBtn = document.querySelector("#plot-btn") as HTMLButtonElement;
+    this.canvas.width = this.finderDiv.offsetWidth;
+    this.canvas.height = this.finderDiv.offsetHeight;
+    this.canvas.style.width = String(this.finderDiv.offsetWidth);
+    this.canvas.style.height = String(this.finderDiv.offsetHeight);
+    console.log(this.canvas);
+    this.plotBtnAction();
+    this.closeCanvas();
+  }
+
+  public plotBtnAction() {
+    this.plotBtn.addEventListener("click", (ev: Event) => {
+      this.canvas.style.zIndex = "2";
+      this.finderDiv.style.zIndex = "1";
+      let ctx = this.canvas.getContext('2d');
+      let myChart = new Chart(ctx!, {
+        type: 'line',
+        data: {
+          labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+          datasets: [{
+            label: '# of votes',
+            lineTension: 0,
+            data: [12, 19, 3, 5, 2, 3],
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.2)',
+              'rgba(54, 162, 235, 0.2)',
+              'rgba(255, 206, 86, 0.2)',
+              'rgba(75, 192, 192, 0.2)',
+              'rgba(153, 102, 255, 0.2)',
+              'rgba(255, 159, 64, 0.2)'
+            ],
+            borderColor: [
+              'rgba(255, 99, 132, 1)',
+              'rgba(54, 162, 235, 1)',
+              'rgba(255, 206, 86, 1)',
+              'rgba(75, 192, 192, 1)',
+              'rgba(153, 102, 255, 1)',
+              'rgba(255, 159, 64, 1)'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            yAxes: [{
+              ticks: {
+                beginAtZero: true
+              }
+            }]
+          }
+        }
+      });
+    });
+  }
+
+  public closeCanvas() {
+    this.canvas.addEventListener('click', (ev: MouseEvent) => {
+      let rect = this.canvas.getBoundingClientRect();
+      console.log("X:", ev.clientX - rect.left, "Y:", ev.clientY - rect.top);
+    })
   }
 }
