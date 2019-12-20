@@ -54,7 +54,7 @@ async clear_cache(){
 async cache_these_images(imagenames){
 	try{
 
-		if (typeof(imagenames) == "string"){
+		if (typeof(imagenames) == "string" && imagenames != ""){
 			var filename = imagenames; 
 			if (!(filename in this.cache_dict)){
 
@@ -73,7 +73,7 @@ async cache_these_images(imagenames){
 			var requested_imagenames = []
 			for (var i = 0; i < imagenames.length; i ++){
 				var filename = imagenames[i]
-				if(!(filename in this.cache_dict) && (requested_imagenames.indexOf(filename) == -1)){
+				if(!(filename in this.cache_dict) && (requested_imagenames.indexOf(filename) == -1) && filename != ""){
 					requested_imagenames.push(filename)
 				}
 				else if(requested_imagenames.indexOf(filename) != -1){

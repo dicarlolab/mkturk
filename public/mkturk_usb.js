@@ -160,7 +160,7 @@ serial.Port.prototype.onReceive = data => {
 	// console.log('Serial roundtrip write->read' + serial.dt[serial.dt.length-1])
 
 	port.statustext_received = "RECEIVED CHAR <-- USB: " + textDecoder.decode(data)
-// 	console.log(port.statustext_received)
+	// console.log(port.statustext_received)
 	updateHeadsUpDisplayDevices()
 
 	var tagstart = port.statustext_received.indexOf('{tag',0);
@@ -188,7 +188,7 @@ serial.Port.prototype.onReceive = data => {
 			queryRFIDTagonFirestore(TRIAL.RFIDTag[TRIAL.NRFID-1])
 		} //IF no subject chosen yet, auto-find in firestore based on their RFIDTag, which will then QuickLoad the page
 		updateHeadsUpDisplayDevices()
-	}
+	} //IF rfid tag
 } //port.onReceive
 
 serial.Port.prototype.onReceiveError = error => {

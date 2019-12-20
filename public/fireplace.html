@@ -84,7 +84,7 @@ function loadGoogleCharts() {
         google.visualization.events.addListener(liveline, 'select', selectHandlerPerformance1);
         google.visualization.events.addListener(livelinetrial, 'select', selectHandlerPerformance2);
 
-        queryFirestore() //ndays back
+        queryFirestore(null) //ndays back
     })
 }
 
@@ -291,7 +291,10 @@ async function queryFirestoreCallback(querySnapshot){
     document.querySelector('#progressbar').style.display = "none"
 } // FUNCTION queryFirestoreCallback(querySnapshot)
 
-async function queryFirestore(){
+async function queryFirestore(event){
+  if (event != null){
+    event.preventDefault();    
+  }
   if (typeof(query) != "undefined"){
     query() //unsubscribe from last query
   } //if query active

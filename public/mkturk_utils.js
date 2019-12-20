@@ -476,4 +476,32 @@ function objectomeImageNamesToLatentVars(imagefilepaths,imagelabels){
   } //for i images
 
   return [images,object]
-}
+} //FUNCTION objectomeImageNamesToLatentVars
+
+function getLongestArray(x){
+  var n = 0
+  if (typeof(x) != "object"){
+    if (Array.isArray(x)=='array'){ var n_new = x.length }
+    else { n_new = 0}
+    return n_new
+  } //if not an enumerable object
+  else{
+    for (keys in x){
+      if (Array.isArray(x[keys])){
+        var n_new = x[keys].length
+      } //IF array
+      else if (typeof(x[keys]) == 'object') {
+        var n_new = getLongestArray(x[keys])
+      } //ELSE !array
+      else {
+        var n_new = 0
+      }
+
+      if (n_new > n){
+        n = n_new
+      } //IF
+      
+    } //FOR keys
+  } //IF object
+  return n
+} //FUNCTION getLongestArray
