@@ -1,0 +1,493 @@
+<!doctype html>
+
+<head>
+<meta name="mobile-web-app-capable" content="yes"> <!-- full screen https://developer.chrome.com/multidevice/android/installtohomescreen -->
+<meta name="viewport" content="width=device-width, user-scalable=no"> <!-- do not allow window rescaling.  To avoid window rescaling in portrait mode, added with=device-width from http://stackoverflow.com/questions/22771523/ipad-w-retina-safari-reported-dimensions-in-landscape-make-no-sense. Also, removes 300-350ms tap delay (https://developers.google.com/web/updates/2013/12/300ms-tap-delay-gone-away) -->
+
+<link rel="manifest" href="mkturkmanifest.json">
+<link rel="icon" href="mkturklogo48.png">
+
+<script src="mkturk_installsettings.js"></script>
+<script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+
+
+<!-- Firebase App is always required and must be first -->
+<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-app.js"></script>
+
+<!-- Add additional services that you want to use -->
+<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/5.5.3/firebase-firestore.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/5.5.5/firebase.js"></script>
+<script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",
+    authDomain: "sandbox-ce2c5.firebaseapp.com",
+    databaseURL: "https://sandbox-ce2c5.firebaseio.com",
+    projectId: "sandbox-ce2c5",
+    storageBucket: "sandbox-ce2c5.appspot.com",
+    messagingSenderId: "1003719887944"
+  };
+  firebase.initializeApp(config);
+
+  //Initialize Cloud Firestore
+  var db = firebase.firestore();
+
+  // Disable deprecated features
+  db.settings({
+    timestampsInSnapshots: true
+  });
+</script>
+
+</head>
+
+
+<body bgcolor=#7F7F7F>
+
+<script src="mkturk_dropbox.js" type="text/javascript"></script>
+<script src="mkturk_globalvariables.js" type="text/javascript"></script>
+<script src="mkturk_utils.js" type="text/javascript"></script>
+<script src="mkturk_firebase.js" type="text/javascript"></script>
+<script src="mkturk_firestore.js" type="text/javascript"></script>
+<script src="mkturk_dropbox2firestore.js" type="text/javascript"></script>
+
+<script>
+
+//================== AUTHENTICATE DROPBOX ==================//
+var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "mkturk_dropbox2firestore.html"
+if (isAuthenticated()){
+  //Create an instance of Dropbox with the access token
+  var dbx = new Dropbox.Dropbox({accessToken: getAccessTokenFromUrl()})
+}
+else {
+  var dbx = new Dropbox.Dropbox({clientId: DBX_CLIENT_ID});
+  var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
+  window.location.href = dbx_authUrl //send to Dropbox sign-in screen
+}
+//=============== (end) AUTHENTICATE DROPBOX ===============//
+
+//================== AUTHENTICATE GOOGLE ==================//
+//self-executing anonymous function
+// (async function(){
+//   await firebaseToggleSignIn()  
+// })()
+//================== (end) AUTHENTICATE GOOGLE ==================//
+
+var FLAGS = {savedata: 1}
+var trialkeys = [
+"AllFixationXYT",
+"AutomatorStage",
+"BatteryLDT",
+"BLEBatteryLT",
+"CorrectItem",
+"FixationGridIndex",
+"FixationTouchEvent",
+"FixationXYT",
+"NReward",
+"Response",
+"ResponseTouchEvent",
+"ResponseXYT",
+"Sample",
+"StartTime",
+"TSequenceActual",
+"TSequenceDesired",
+"Test"
+];
+
+(async function(){
+
+//========= 01 - get dropbox file list
+//========= 02 - open each dropbox file and convert variables to firestore format
+//========= 03 - save to firestore
+var filenames = await getFileListDropboxRecursive(DATA_SAVEPATH)
+for (var i = 0; i <= filenames.length-1; i++){
+  var datastring = await loadTextFilefromDropbox(filenames[i]);
+  var data = JSON.parse(datastring);
+
+	// EXCEPTIONS
+	// Setta 01/17/16:14
+	if (filenames[i].includes('Setta/2019-01-17T16:14') == true){
+		console.log('skipping ' + filenames[i])
+		continue
+	}
+
+  for (var j=0; j<=data.length-1; j++){
+    keynames = Object.keys(data[j])
+    for (var k=0; k<=keynames.length-1; k++){
+      if (keynames[k] == "Response"){
+        var ntrials = data[j][keynames[k]].length
+      } //if Response
+      if (keynames[k] == "StartTime"){
+        var starttime = data[j][keynames[k]]
+      }
+    } //for k keys
+  } //for j
+
+var blocksize = 1000
+var nblocks = Math.ceil(ntrials / blocksize)
+
+for (b=0; b<=nblocks-1; b++){
+
+  EVENTS.reset();
+  EVENTS.currtrial = 0 + blocksize*b;
+  var starttrial = 0 + blocksize*b;
+  var endtrial = Math.min(starttrial + blocksize - 1, ntrials - 1)
+  var dt = starttime[starttrial]
+
+  if (b == nblocks-1){
+    var endtime = starttime[starttime.length-1] + 1000*60
+  }
+  else {
+    var endtime = starttime[endtrial + 1]
+  }
+
+  TASK = {};
+  var IMAGES = {
+	Sample: {}, Test: {}, 
+	object: {sample:{}, test: {}},
+	imagepaths: {Ordered_Samplebag_Filenames: {}, Ordered_Testbag_Filenames: {}}
+  }
+
+  for (var j=0; j<=data.length-1; j++){
+    keynames = Object.keys(data[j])
+    for (var k=0; k<=keynames.length-1; k++){
+      if (keynames[k] == "ImageBagsSample"){
+        data[j][keynames[k]] = data[j][keynames[k]].flat()      
+        var imagebagssample = data[j][keynames[k]]
+      }
+      else if (keynames[k] == 'ImageBagsTest'){
+        data[j][keynames[k]] = data[j][keynames[k]].flat()      
+        var imagebagstest = data[j][keynames[k]]
+      }
+    } //for k
+  } //for j
+
+if (imagebagssample[0].indexOf("objectome") < 0 || imagebagstest[0].indexOf("objectome") < 0){
+	continue
+}
+
+  for (var j=0; j<=data.length-1; j++){
+	keynames = Object.keys(data[j])
+	for (var k=0; k<=keynames.length-1; k++){
+		if (keynames[k] == "Ordered_Samplebag_Filenames"){
+          var samplebag_labels = []
+          for (var m=0; m<=data[j][keynames[k]].length-1; m++){
+            for (var n=0; n<=imagebagssample.length-1; n++){
+              var re = RegExp(imagebagssample[n]);
+              if (re.test(data[j][keynames[k]][m]) == true){
+                samplebag_labels[m] = n
+              }
+            } //for n bags
+          } //for m images
+
+          var funcreturn = objectomeImageNamesToLatentVars(data[j][keynames[k]],samplebag_labels)
+          IMAGES.Sample = funcreturn[0]
+          IMAGES.object.sample = funcreturn[1]
+
+          var imagekeys = Object.keys(IMAGES.Sample)
+          for (var m=0; m<=imagekeys.length-1; m++){
+              IMAGES.Sample["Sample" + imagekeys[m]] = IMAGES.Sample[imagekeys[m]]
+              delete IMAGES.Sample[imagekeys[m]]
+          } //for m imagekeys
+		}
+        else if ( keynames[k] == "Ordered_Testbag_Filenames"){
+          var testbag_labels = []
+          for (var m=0; m<=data[j][keynames[k]].length-1; m++){
+            for (var n=0; n<=imagebagstest.length-1; n++){
+              var re = RegExp(imagebagstest[n]);
+              if (re.test(data[j][keynames[k]][m]) == true){
+                testbag_labels[m] = n
+              }
+            } //for n bags
+          } //for m images
+
+          var funcreturn = objectomeImageNamesToLatentVars(data[j][keynames[k]],testbag_labels)
+          IMAGES.Test = funcreturn[0]
+          IMAGES.object.test = funcreturn[1]
+
+          var imagekeys = Object.keys(IMAGES.Test)
+          for (var m=0; m<=imagekeys.length-1; m++){
+              IMAGES.Test["Test" + imagekeys[m]] = IMAGES.Test[imagekeys[m]]
+              delete IMAGES.Test[imagekeys[m]]
+          } //for m imagekeys
+		}
+		else if (keynames[k] == "visible" || keynames[k] == "offscreen" ||			//empty canvas handles
+		      keynames[k] == "RFIDTag" || keynames[k] == "RFIDTime" || keynames[k] == "RFIDTrial" ||
+		      keynames[k] == "WeightTime" || keynames[k] == "WeightTrial"){
+		}
+		else if (keynames[k] == "Weight" && data[j][keynames[k]].length > 1){
+          //weight time series -> ignore		  
+		}
+        else if (keynames[k] == "SampleObjectTy" || keynames[k] == "SampleObjectTz" ||
+                keynames[k] == "SampleObjectRxy" || keynames[k] == "SampleObjectRxz" ||
+                keynames[k] == "SampleObjectRyz" || keynames[k] == "SampleObjectScale" || 
+                keynames[k] == "TestObjectTy" || keynames[k] == "TestObjectTz" ||
+                keynames[k] == "TestObjectRxy" || keynames[k] == "TestObjectRxz" ||
+                keynames[k] == "TestObjectRyz" || keynames[k] == "TestObjectScale" 
+        ){
+          //ignore
+        }
+		else
+		{
+			var trialkeypresent=0
+			trialkeys.forEach(key => { if (key == keynames[k]){trialkeypresent = 1} })
+
+			if (trialkeypresent == 1){
+			  if (keynames[k] == 'AllFixationXYT' || keynames[k] == 'AutomatorStage' || keynames[k] == 'ResearcherLastName'){
+			    //don't save
+			  }
+			  else if (keynames[k] == 'FixationTouchEvent' || keynames[k] == 'ResponseTouchEvent'){
+                var re = RegExp('touch');                
+				for (var m=starttrial; m<=endtrial; m++){
+                    EVENTS.trialnum = m - starttrial;
+                    logEVENTS(keynames[k], data[j][keynames[k]][m].replace(re,'t'),'trialseries')
+				} //for m trial
+			  } // if touchevent name
+			  else if (keynames[k] == 'Sample'){
+			    var CURRTRIAL = {}
+
+                CURRTRIAL.sampleobjectty = []
+                CURRTRIAL.sampleobjecttz = []
+                CURRTRIAL.sampleobjectrxy = []
+                CURRTRIAL.sampleobjectrxz = []
+                CURRTRIAL.sampleobjectryz = []
+                CURRTRIAL.sampleobjectscale = []
+
+			    var samplekeys = Object.keys(IMAGES.object.sample)
+			    for (var m=starttrial; m<=endtrial; m++){
+                  EVENTS.trialnum = m - starttrial;
+                  for (var n=0; n<=samplekeys.length-1; n++){
+                      CURRTRIAL["sampleobject" + samplekeys[n]] = IMAGES.object.sample[samplekeys[n]][data[j][keynames[k]][m]]
+                  } //for n imagekeys
+                  logEVENTS("SampleObjectTy",CURRTRIAL.sampleobjectty,"imageseries")
+                  logEVENTS("SampleObjectTz",CURRTRIAL.sampleobjecttz,"imageseries")
+                  logEVENTS("SampleObjectRxy",CURRTRIAL.sampleobjectrxy,"imageseries")
+                  logEVENTS("SampleObjectRxz",CURRTRIAL.sampleobjectrxz,"imageseries")
+                  logEVENTS("SampleObjectRyz",CURRTRIAL.sampleobjectryz,"imageseries")
+                  logEVENTS("SampleObjectScale",CURRTRIAL.sampleobjectscale,"imageseries")
+
+  			   	   logEVENTS(keynames[k], data[j][keynames[k]][m],'trialseries') //log sample index
+
+			    } //for m trials 
+			  } // else if Sample
+			  else if (keynames[k] == 'Test'){
+			    var CURRTRIAL = {}
+
+                CURRTRIAL.testobjectty = []
+                CURRTRIAL.testobjecttz = []
+                CURRTRIAL.testobjectrxy = []
+                CURRTRIAL.testobjectrxz = []
+                CURRTRIAL.testobjectryz = []
+                CURRTRIAL.testobjectscale = []
+
+			    var testkeys = Object.keys(IMAGES.object.test)
+			    for (var m=starttrial; m<=endtrial; m++){
+                  EVENTS.trialnum = m - starttrial;
+                  for (var n=0; n<=testkeys.length-1; n++){
+                    for (var o=0; o<=data[j][keynames[k]][m].length-1; o++){
+                        CURRTRIAL["testobject" + testkeys[n]][o] = IMAGES.object.test[testkeys[n]][data[j][keynames[k]][m][o]]
+                    } //for o test indices
+                  } //for n imagekeys
+                  logEVENTS("TestObjectTy",CURRTRIAL.testobjectty,"imageseries")
+                  logEVENTS("TestObjectTz",CURRTRIAL.testobjecttz,"imageseries")
+                  logEVENTS("TestObjectRxy",CURRTRIAL.testobjectrxy,"imageseries")
+                  logEVENTS("TestObjectRxz",CURRTRIAL.testobjectrxz,"imageseries")
+                  logEVENTS("TestObjectRyz",CURRTRIAL.testobjectryz,"imageseries")
+                  logEVENTS("TestObjectScale",CURRTRIAL.testobjectscale,"imageseries")
+
+  			   	   logEVENTS(keynames[k], data[j][keynames[k]][m],'trialseries') //log test indices
+
+			    } //for m trials 
+			  } // else if Test
+              else if (keynames[k] == 'StartTime'){
+				for (var m = starttrial; m <= endtrial; m++){
+                    EVENTS.trialnum = m - starttrial;
+                    if (data[j][keynames[k]][m] == null){
+    					logEVENTS(keynames[k], NaN,'trialseries')
+                    }
+                    else {
+  			   		  logEVENTS(keynames[k], data[j][keynames[k]][m] - dt,'trialseries')
+                    }
+				} //for m trials
+              }
+			  else if (keynames[k] == 'BatteryLDT'){
+			    //ADJUST TIMES
+			    TRIAL.BatteryLDT = []
+                EVENTS.trialnum = 0;
+			    for (var m = 0; m <= data[j][keynames[k]].length-1; m++){
+			      var batterystarttime = dt
+			      if (b ==0){
+			        batterystarttime = 0
+			      }
+			      if (data[j][keynames[k]][m][2] >= batterystarttime && 
+			         data[j][keynames[k]][m][2] < endtime){
+			        var temparray = data[j][keynames[k]][m].slice()
+			        temparray[2]-=dt
+			        if (temparray[1] == null){
+			          temparray[1] = NaN
+			        }
+
+			        TRIAL.BatteryLDT[EVENTS.trialnum] = temparray
+			        logEVENTS(keynames[k],temparray,'trialseries')
+			        EVENTS.trialnum = EVENTS.trialnum + 1
+			      } //if in this block
+			    } //for m battery status updates
+			  } //BatteryLDT
+        else if (keynames[k] == 'BLEBatteryLT' || keynames[k] == 'BLEBattery'){
+          //ADJUST TIMES
+          TRIAL.BLEBatteryLT = []
+                EVENTS.trialnum = 0;
+          for (var m = 0; m <= data[j][keynames[k]].length-1; m++){
+            var batterystarttime = dt
+            if (b==0){
+              batterystarttime = 0
+            }
+            if (data[j][keynames[k]][m][1] >= batterystarttime && 
+               data[j][keynames[k]][m][1] < endtime){
+              var temparray = data[j][keynames[k]][m].slice()
+              temparray[1]-=dt
+              if (temparray[0] == null){
+                temparray[0] = NaN
+              }
+              if (temparray[1] == null){
+                temparray[1] = NaN
+              }
+
+              TRIAL.BLEBatteryLT[EVENTS.trialnum] = temparray
+              logEVENTS(keynames[k],temparray,'trialseries')
+              EVENTS.trialnum = EVENTS.trialnum + 1
+            } //if in this block
+          } //for m battery status updates
+        } //if BLEBatteryLT
+			  else if (keynames[k] == "FixationXYT" || keynames[k]=="ResponseXYT"){
+			    //ADJUST TIMES & TRIALS
+                for (var m = starttrial; m <= endtrial; m++){
+                      EVENTS.trialnum = m - starttrial;
+                      if (data[j][keynames[k]][m].length < 3){
+                        continue
+                      }
+                      if (data[j][keynames[k]][m] == null){
+                          logEVENTS(keynames[k], NaN,'trialseries')
+                      }
+                      else {
+                        var temparray = data[j][keynames[k]][m].slice()
+                        temparray[2]-=dt
+                        logEVENTS(keynames[k], temparray,'trialseries')
+                      }
+                  } //for m trials  
+			  }
+			  else {
+			    //ADJUST TRIALS
+                for (var m = starttrial; m <= endtrial; m++){
+                    EVENTS.trialnum = m - starttrial;
+                    if (data[j][keynames[k]][m] == null){
+    					logEVENTS(keynames[k], NaN,'trialseries')
+                    }
+                    else {
+  			   		  logEVENTS(keynames[k], data[j][keynames[k]][m],'trialseries')
+                    }
+				} //for m trials   
+			  } //log trial events
+			} //if trialkeypresent
+			else
+			{
+				TASK[keynames[k]] = data[j][keynames[k]]
+			}
+		} //if
+	} //for k keys
+  }// for j objects
+
+if (typeof(TASK['ResearcherEmail']) != "undefined"){
+	if (TASK['ResearcherEmail'] == ''){
+		TASK['ResearcherDisplayName'] = 'Issa Lab'
+		TASK['ResearcherEmail'] = 'mkturkissa@gmail.com'
+		TASK['ResearcherID'] = '4YRo1vkArubH4h9oTpvwqVaGpQu2'
+		console.log('mkturk')
+	}
+	if (TASK['ResearcherEmail'] == 'mkturkissa@gmail.com'){
+		TASK['ResearcherID'] = '4YRo1vkArubH4h9oTpvwqVaGpQu2'
+		console.log('mkturk')
+	}
+	else if (TASK['ResearcherEmail'] == 'ei2228@columbia.edu'){
+		TASK['ResearcherID'] = '4HwdvIBa9saxMgITUlAFfikipq93'		
+		console.log('elias')
+	}
+	else if (TASK['ResearcherEmail'] == 'slb2242@columbia.edu'){
+		TASK['ResearcherID'] = 'x5JeaMC2w0NtL3KjP9YyulPbwMG2'
+		console.log('Sophie')
+	}
+	else {
+		console.log('UNRECOGNIZED GOOGLE ACCOUNT ' + TASK['ResearcherEmail'])
+	}
+}
+
+  console.log('block ' + b + ' ' + Math.round(dt/(1000*60)) + ' minutes later')
+  var newdatevalue = Date.parse(TASK.CurrentDate) + dt
+  var newdate = new Date()
+  newdate.setTime(newdatevalue)
+  TASK.CurrentDate = newdate //.toISOString()
+
+  var FirestoreDocRoot = TASK.CurrentDate.toISOString().slice(0,TASK.CurrentDate.toISOString().indexOf(".")) + "_" + TASK.Subject
+  var collectionName = "mkturkdata"
+
+  var batch = db.batch();
+
+  var taskRef = db.collection(collectionName).doc(FirestoreDocRoot + '_task')
+  var imagesRef = db.collection(collectionName).doc(FirestoreDocRoot + '_images')
+
+  batch.set(taskRef,{Doctype: "task",
+                      Agent: TASK.Subject,
+                      CurrentDateValue: Date.parse(TASK.CurrentDate),
+                      FirestoreDocRoot: FirestoreDocRoot,
+                      Taskdoc: FirestoreDocRoot + '_task',
+                      Imagesdoc: FirestoreDocRoot + '_images'}) //link docs
+  batch.update(taskRef,TASK) // write all TASK data once
+  batch.update(taskRef,EVENTS.trialseries)
+
+  //image meta & trial data for each image
+  batch.set(imagesRef,{Doctype: "images",
+                        Agent: TASK.Subject,
+                        CurrentDate: TASK.CurrentDate,
+                        CurrentDateValue: Date.parse(TASK.CurrentDate),
+                        FirestoreDocRoot: FirestoreDocRoot,
+                        Taskdoc: FirestoreDocRoot + '_task',
+                        Imagesdoc: FirestoreDocRoot + '_images'}) //link docs
+  batch.update(imagesRef,IMAGES.Sample) // write all IMAGES data once
+  batch.update(imagesRef,IMAGES.Test)
+  batch.update(imagesRef,EVENTS.imageseries)
+
+
+  // Commit the batch
+  await batch.commit().then(function () {
+      console.log("Firestore task & image docs batch written");
+  })
+  .catch(function(error) {
+      console.error("!Error creating firestore task or image doc: ", error);
+  });
+
+  for (var j = 0; j<=1; j++){
+    if (j==0){ var docRef = taskRef }
+    else if (j==1){ var docRef = imagesRef }
+    await docRef.get().then(function(doc){
+          if (doc.exists){
+              docSize = calcFirestoreDocSize(collectionName,doc.id,doc.data())
+              console.log("Document found : " + doc.id + ", " + docSize + " bytes")
+          }
+          else {
+            console.log('!!!! Doc Does Not Exist : ' + doc.id)
+          }
+    })
+  } //for j docs
+
+  console.log("** COMPLETED FILE " + i + ", BLOCK " + b + ":" + filenames[i] + ", n=" + [EVENTS.trialseries.Response.length])
+} //for b blocks
+} //for i files
+
+console.log('DONE')
+
+})()
+</script>
+
+</body>
