@@ -88,6 +88,9 @@ qryLocSelc!.addEventListener("change", ev => {
   let ki1 = document.querySelector("#keyword-input-1") as HTMLInputElement;
   let ki2 = document.querySelector("#keyword-input-2") as HTMLInputElement;
   let goBtn = document.querySelector("#go-btn") as HTMLButtonElement;
+  let plotX = document.querySelector("#quick-plot-x") as HTMLSelectElement;
+  let plotY = document.querySelector("#quick-plot-y") as HTMLSelectElement;
+  let plotBtn = document.querySelector("#plot-btn") as HTMLButtonElement;
   switch(qryLocSelc?.value) {
     case "marmosets":
       
@@ -166,6 +169,9 @@ qryLocSelc!.addEventListener("change", ev => {
       ki1.style.visibility = "hidden";
       ki2.style.visibility = "hidden";
       goBtn.style.visibility = "hidden";
+      plotX.style.visibility = "hidden";
+      plotY.style.visibility = "hidden";
+      plotBtn.style.visibility = "hidden";
 
       removeElementsByClassName("field-options");
       mkf.listStorageFiles(rootRef);
@@ -180,26 +186,42 @@ fieldSelector?.addEventListener("change", ev => {
   let ki0 = document.querySelector("#keyword-input-0") as HTMLInputElement;
   let ki1 = document.querySelector("#keyword-input-1") as HTMLInputElement;
   let ki2 = document.querySelector("#keyword-input-2") as HTMLInputElement;
+  let plotX = document.querySelector("#quick-plot-x") as HTMLSelectElement;
+  let plotY = document.querySelector("#quick-plot-y") as HTMLSelectElement;
+  let plotBtn = document.querySelector("#plot-btn") as HTMLButtonElement;
+
 
   switch (field) {
     case "name":
       resetPlaceholder();
       ki0.setAttribute("placeholder", "name");
+      plotX.style.visibility = "visible";
+      plotY.style.visibility = "visible";
+      plotBtn.style.visibility = "visible";
       break;
 
     case "sex":
       resetPlaceholder();
       ki0.setAttribute("placeholder", "sex");
+      plotX.style.visibility = "hidden";
+      plotY.style.visibility = "hidden";
+      plotBtn.style.visibility = "hidden";
       break;
 
     case "rfid":
       resetPlaceholder();
       ki0.setAttribute("placeholder", "RFID");
+      plotX.style.visibility = "visible";
+      plotY.style.visibility = "visible";
+      plotBtn.style.visibility = "visible";
       break;
 
     case "breeding":
       resetPlaceholder();
       ki0.setAttribute("placeholder", "breeding");
+      plotX.style.visibility = "hidden";
+      plotY.style.visibility = "hidden";
+      plotBtn.style.visibility = "hidden";
       break;
 
     case "birthdate":
@@ -207,6 +229,9 @@ fieldSelector?.addEventListener("change", ev => {
       ki0.setAttribute(
         "placeholder", "birthdate (e.g. 04/17/2019; +-7)"
       );
+      plotX.style.visibility = "hidden";
+      plotY.style.visibility = "hidden";
+      plotBtn.style.visibility = "hidden";
       break;
 
     case "agentTypeCurDate":
@@ -215,6 +240,9 @@ fieldSelector?.addEventListener("change", ev => {
       ki2.setAttribute(
         "placeholder", "CurrentDate (e.g. 04/17/2019; +-7)"
       );
+      plotX.style.visibility = "hidden";
+      plotY.style.visibility = "hidden";
+      plotBtn.style.visibility = "hidden";
       break;
   }
 });

@@ -37,14 +37,17 @@
 
 #quick-plot-x {
   grid-area: x;
+  visibility: hidden;
 }
 
 #quick-plot-y {
   grid-area: y;
+  visibility: hidden;
 }
 
 #plot-btn {
   grid-area: plot;
+  visibility: hidden;
 }
 
 #finder-card {
