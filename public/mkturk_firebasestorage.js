@@ -242,7 +242,6 @@ async function loadParametersfromFirebase(paramfile_path){
 			} //for i reward lists			
 		}
 
-
 		var filemeta = await getFileMetadataFirebase(paramfile_path)
 		ENV.ParamFileName = '/' + filemeta.fullPath; 
 		ENV.ParamFileRev = filemeta.generation

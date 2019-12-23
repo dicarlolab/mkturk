@@ -22,13 +22,13 @@ async function initThreeJS(CAMERAS,numScene,sceneType) {
 
     scene = []
 
-    for (i=0; i<numScene;i++){
-    	var indiv_scene = new THREE.Scene();
+    for (let i=0; i<numScene;i++){
+    	let indiv_scene = new THREE.Scene();
     // init camera
     // loop through CAMERAS object
     // but it's better to have only one camera in the scene
     // add cameras if visible == 1
-    for (cam in CAMERAS){
+    for (let cam in CAMERAS){
         if (CAMERAS[cam].visible ==1){
            camera = new THREE.PerspectiveCamera(CAMERAS[cam].fieldOfVIEW,VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height,CAMERAS[cam].near,CAMERAS[cam].far)
            camera.position.set(CAMERAS[cam].positionInches.x,CAMERAS[cam].positionInches.y,CAMERAS[cam].positionInches.z)
@@ -36,8 +36,9 @@ async function initThreeJS(CAMERAS,numScene,sceneType) {
            indiv_scene.add(camera)
         }
     }
-    controls = new THREE.OrbitControls(camera,renderer.domElement);
-    controls.target = new THREE.Vector3(0, 0, 0)
+//     controls = new THREE.OrbitControls(camera,renderer.domElement);
+//     controls.target = new THREE.Vector3(0, 0, 0)
+//     controls.enableZoom = false;
 
     raycaster = new THREE.Raycaster();
     mouse = new THREE.Vector2()
@@ -65,12 +66,12 @@ function onMouseMove( event ) {
       currObjProperties = []
 async function addToScene(indiv_scene){
 
-    for (var lt in SCENEdata.LIGHTS){
-        var index = Object.keys(SCENEdata.LIGHTS).indexOf(lt);
-        var ltname = Object.keys(SCENEdata.LIGHTS)[index]
+    for (let lt in SCENEdata.LIGHTS){
+        let index = Object.keys(SCENEdata.LIGHTS).indexOf(lt);
+        let ltname = Object.keys(SCENEdata.LIGHTS)[index]
         if (ltname.includes(indiv_scene.name)){
         currLightProperties[index] = {}
-        var light = new THREE.DirectionalLight(Number(SCENEdata.LIGHTS[lt].color),SCENEdata.LIGHTS[lt].intensity)
+        let light = new THREE.DirectionalLight(Number(SCENEdata.LIGHTS[lt].color),SCENEdata.LIGHTS[lt].intensity)
         lightArray[index] = light;
         indiv_scene.add(light)
         // store current frame light properties
@@ -84,12 +85,12 @@ async function addToScene(indiv_scene){
     // add objects
 
     const orig = new THREE.MeshPhysicalMaterial()
-    for (var obj in SCENEdata.OBJECTS){
-        var index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
-        var objname = Object.keys(SCENEdata.OBJECTS)[index];
+    for (let obj in SCENEdata.OBJECTS){
+        let index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
+        let objname = Object.keys(SCENEdata.OBJECTS)[index];
         if (objname.includes(indiv_scene.name)){
         currObjProperties[index] = {}
-        var object = objectmeshArray[index].scene
+        let object = objectmeshArray[index].scene
 
         object.traverse(function(child){
 
@@ -101,12 +102,12 @@ async function addToScene(indiv_scene){
 //                              map: textureloader.load('https://threejsfundamentals.org/threejs/resources/images/wall.jpg')
 //                          })
             const materialparam = {...orig,...object_materiallist[index]} //parameters update
-            var material = new THREE.MeshPhysicalMaterial(materialparam)
+            let material = new THREE.MeshPhysicalMaterial(materialparam)
 
-            if (child.name == "Eyeliris" || child.name == "Eyeriris"){
+            if (child.name === "Eyeliris" || child.name === "Eyeriris"){
                 material.color.set('#000000')
             }
-            else if (child.name == "Eyelsclera" || child.name == "Eyersclera"){
+            else if (child.name === "Eyelsclera" || child.name === "Eyersclera"){
                 material.color.set("#ffffff")
             }
             material.map = child.material.map
@@ -122,7 +123,7 @@ async function addToScene(indiv_scene){
             child.geometry.computeBoundingBox()
             // box = new THREE.BoxHelper(child,0xff0000)
             // scene.add(box)
-            var bb = child.geometry.boundingBox.clone()
+            let bb = child.geometry.boundingBox.clone()
             bbdim = new THREE.Vector3();
             currObjProperties[index].dimension = bb.getSize(bbdim) // width,height,depth
             const dimarray = [bbdim.x,bbdim.y,bbdim.z]
@@ -143,22 +144,22 @@ async function addToScene(indiv_scene){
 
 async function updateSingleFrame(indiv_scene){
 
-    for (var obj in SCENEdata.OBJECTS){
+    for (let obj in SCENEdata.OBJECTS){
 
-        var index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
-        var objname = Object.keys(SCENEdata.OBJECTS)[index];
+        let index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
+        let objname = Object.keys(SCENEdata.OBJECTS)[index];
         if (objname.includes(indiv_scene.name)){
-        var object = objectmeshArray[index].scene
+        let object = objectmeshArray[index].scene
 
-        var nextobjPosition = [SCENEdata.OBJECTS[obj].positionInches.x[frame],
+        let nextobjPosition = [SCENEdata.OBJECTS[obj].positionInches.x[frame],
         SCENEdata.OBJECTS[obj].positionInches.y[frame],
         SCENEdata.OBJECTS[obj].positionInches.z[frame]]
 
-        var nextobjRotation = [SCENEdata.OBJECTS[obj].rotationDegrees.x[frame],
+        let nextobjRotation = [SCENEdata.OBJECTS[obj].rotationDegrees.x[frame],
         SCENEdata.OBJECTS[obj].rotationDegrees.y[frame],
         SCENEdata.OBJECTS[obj].rotationDegrees.z[frame]]
 
-        var nextvisible = SCENEdata.OBJECTS[obj].visible[frame]
+        let nextvisible = SCENEdata.OBJECTS[obj].visible[frame]
 
         if (nextvisible == 1){
             object.visible = true
@@ -171,18 +172,18 @@ async function updateSingleFrame(indiv_scene){
     }
 }
 
-    for (var lt in SCENEdata.LIGHTS){
-    var index = Object.keys(SCENEdata.LIGHTS).indexOf(lt);
+    for (let lt in SCENEdata.LIGHTS){
+    let index = Object.keys(SCENEdata.LIGHTS).indexOf(lt);
 
-    var ltname = Object.keys(SCENEdata.LIGHTS)[index];
+    let ltname = Object.keys(SCENEdata.LIGHTS)[index];
         if (ltname.includes(indiv_scene.name)){
-    var light = lightArray[index]
+    let light = lightArray[index]
 
-    var nextlightPosition = [SCENEdata.LIGHTS[lt].positionInches.x[frame],
+    let nextlightPosition = [SCENEdata.LIGHTS[lt].positionInches.x[frame],
     SCENEdata.LIGHTS[lt].positionInches.y[frame],
     SCENEdata.LIGHTS[lt].positionInches.z[frame]]
 
-    var nextvisible = SCENEdata.LIGHTS[lt].visible[frame];
+    let nextvisible = SCENEdata.LIGHTS[lt].visible[frame];
 
     if (nextvisible == 1){
         light.visible = true
@@ -196,9 +197,9 @@ async function updateSingleFrame(indiv_scene){
 }
 
 function updateLightSingleFrame(index,light,currLightProperties,lightPosition){
-    if (currLightProperties[index].position.x == lightPosition[0] &&
-     currLightProperties[index].position.y == lightPosition[1] &&
-     currLightProperties[index].position.z == lightPosition[2]){
+    if (currLightProperties[index].position.x === lightPosition[0] &&
+     currLightProperties[index].position.y === lightPosition[1] &&
+     currLightProperties[index].position.z === lightPosition[2]){
          console.log('no light position change')
      }else{
          currLightProperties[index].position.x = lightPosition[0]
@@ -217,9 +218,9 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 	// update current properties
 
     //position
-	if (currObjProperties[index].positionInches.x == objPosition[0] &&
-	currObjProperties[index].positionInches.y == objPosition[1] &&
-	currObjProperties[index].positionInches.z == objPosition[2]){
+	if (currObjProperties[index].positionInches.x === objPosition[0] &&
+	currObjProperties[index].positionInches.y === objPosition[1] &&
+	currObjProperties[index].positionInches.z === objPosition[2]){
 		console.log('no object position change')
 	} else{
 		currObjProperties[index].positionInches.x = objPosition[0]
@@ -239,9 +240,9 @@ function updateObjectSingleFrame(index,object,currObjProperties,objPosition,objR
 
 	}
 	//rotation
-	if (currObjProperties[index].rotation.x == objRotation[0] &&
-	currObjProperties[index].rotation.y == objRotation[1] &&
-	currObjProperties[index].rotation.z == objRotation[2]){
+	if (currObjProperties[index].rotation.x === objRotation[0] &&
+	currObjProperties[index].rotation.y === objRotation[1] &&
+	currObjProperties[index].rotation.z === objRotation[2]){
 		console.log('no object rotation change')
 	} else{
 		currObjProperties[index].rotation.x = objRotation[0]

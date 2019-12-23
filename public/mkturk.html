@@ -40,9 +40,9 @@ if (typeof(navigator.bluetooth) == "object"){
 </script>
 
 <!-- ThreeJS -->
-<script src="http://threejs.org/build/three.js"></script>
+<script src="http://threejs.org/build/three.min.js"></script>
 <script src="http://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
-<script src="http://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="http://threejs.org/examples/js/controls/OrbitControls.js"></script> 
 
 <link rel="stylesheet" type="text/css" href="dialog-polyfill.css" />
 <script src="dialog-polyfill.js"></script>
@@ -550,7 +550,7 @@ while(true){
     canvaswebgl = document.querySelector("canvas[id=canvasvisiblewebgl]");
 
     // 0: load scenerenderparams.json from google cloud storage
-	param_path = "mkturkfiles/imagebags/objectome3d/face/scene_renderparams_face_yj_ei_json4.js"
+	param_path = "mkturkfiles/scenebags/objectome3d/face/scene_renderparams_face_yj_ei_json4.js"
    	SCENEdata = await loadTextfromFirebase(param_path)
 
      //conversion rate
@@ -567,9 +567,9 @@ while(true){
 
  //numframe
     var numframeArray = []
-    for (var obj in SCENEdata.OBJECTS){
-    var object = SCENEdata.OBJECTS[obj]
-    var index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
+    for (let obj in SCENEdata.OBJECTS){
+    let object = SCENEdata.OBJECTS[obj]
+    let index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
     numframeArray[index] = object.visible.length
 }
     numframe = Math.max.apply(null,numframeArray)
@@ -580,29 +580,29 @@ while(true){
     sceneType = [];
     for (var lt in SCENEdata.LIGHTS){
         numScene ++ ;
-        var light = SCENEdata.LIGHTS[lt]
-        var index = Object.keys(SCENEdata.LIGHTS).indexOf(lt);
+        let light = SCENEdata.LIGHTS[lt]
+        let index = Object.keys(SCENEdata.LIGHTS).indexOf(lt);
         sceneType[index] = Object.keys(SCENEdata.LIGHTS)[index].split("light")[0]
 
         if (light.visible.length<numframe){
             light.visible = Array.apply(null,Array(numframe)).map(function(){return light.visible[0]})
         }
 
-        for (var coord in light.positionInches){
+        for (let coord in light.positionInches){
             if (light.positionInches[coord].length < numframe){
                 light.positionInches[coord] = Array.apply(null,Array(numframe)).map(function(){return light.positionInches[coord][0]})
             }
         }
     }
 
-	for (var obj in SCENEdata.OBJECTS){
-		var object = SCENEdata.OBJECTS[obj]
-		var objdoc = object.objectdoc
+	for (let obj in SCENEdata.OBJECTS){
+		let object = SCENEdata.OBJECTS[obj]
+		let objdoc = object.objectdoc
 		console.log(objdoc)
-		var docRef = db.collection("objects").doc(objdoc)
-		var doc = await db.collection("objects").doc(objdoc).get()
-		var object_path = doc.data().meshfilepath
-		var index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
+		let docRef = db.collection("objects").doc(objdoc)
+		let doc = await db.collection("objects").doc(objdoc).get()
+		let object_path = doc.data().meshfilepath
+		let index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
 		objectfile_pathlist[index] = object_path
 		object_materiallist[index] = object.material
 
@@ -610,12 +610,12 @@ while(true){
 			object.visible = Array.apply(null,Array(numframe)).map(function(){return object.visible[0]})
 		}
 
-		for (var coord in object.positionInches){
+		for (let coord in object.positionInches){
 			if (object.positionInches[coord].length < numframe){
 				object.positionInches[coord] = Array.apply(null,Array(numframe)).map(function(){return object.positionInches[coord][0]})
 			}
 		}
-		for (var coord in object.rotationDegrees){
+		for (let coord in object.rotationDegrees){
 			if (object.rotationDegrees[coord].length < numframe){
 				object.rotationDegrees[coord]= Array.apply(null,Array(numframe)).map(function(){return object.rotationDegrees[coord][0]})
 			}
@@ -635,64 +635,67 @@ while(true){
 	console.timeEnd('init scene')
 
 //---------------------------------- ALTERNATIVE : add/remove THREE js object at every frame
-	// frame = 0
-	// animate()
+// 	frame = 0
+// 	animate()
 
-	// async function animate(){
+// 	async function animate(){
 
-	// console.time('frame render')
-	// for (var lt in SCENEdata.LIGHTS){
-	// 	var light = new THREE.DirectionalLight(Number(SCENEdata.LIGHTS[lt].color),SCENEdata.LIGHTS[lt].intensity)
-	// 	light.position.set(SCENEdata.LIGHTS[lt].positionInches.x[frame],
-	// 	SCENEdata.LIGHTS[lt].positionInches.y[frame],
-	// 	SCENEdata.LIGHTS[lt].positionInches.z[frame])
-	// 	scene.add(light)
-	// 		}
+// 	console.time('frame render')
+// for (i =0; i<numScene; i++){
+// 	for (var lt in SCENEdata.LIGHTS){
+// 		var light = new THREE.DirectionalLight(Number(SCENEdata.LIGHTS[lt].color),SCENEdata.LIGHTS[lt].intensity)
+// 		light.position.set(SCENEdata.LIGHTS[lt].positionInches.x[frame],
+// 		SCENEdata.LIGHTS[lt].positionInches.y[frame],
+// 		SCENEdata.LIGHTS[lt].positionInches.z[frame])
+// 		scene[i].add(light)
+// 			}
 
-	// // add objects
-	// 	for (var obj in SCENEdata.OBJECTS){
-	// 		var index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
-	// 		var object = objectmeshArray[index].scene
-	//  		object.traverse(function(child){
-	//  				if (child.material) {
-	// 					const orig = new THREE.MeshPhysicalMaterial()
-	// 					const materialparam = {...orig,...object_materiallist[index]} //parameters update
-	// 					var material = new THREE.MeshPhysicalMaterial(materialparam)
-	// 					child.material.needsUpdate = true;
-	// 				}
-	// 			})
-	// 			var nextvisible = SCENEdata.OBJECTS[obj].visible[frame]
+// 	// add objects
+// 		for (var obj in SCENEdata.OBJECTS){
+// 			var index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
+// 			var object = objectmeshArray[index].scene
+// 	 		object.traverse(function(child){
+// 	 				if (child.material) {
+// 						const orig = new THREE.MeshPhysicalMaterial()
+// 						const materialparam = {...orig,...object_materiallist[index]} //parameters update
+// 						var material = new THREE.MeshPhysicalMaterial(materialparam)
+// 						child.material.needsUpdate = true;
+// 					}
+// 				})
+// 				var nextvisible = SCENEdata.OBJECTS[obj].visible[frame]
 
-	// 		if (nextvisible == 1){
-	// 			object.position.set(SCENEdata.OBJECTS[obj].positionInches.x[frame],SCENEdata.OBJECTS[obj].positionInches.y[frame],SCENEdata.OBJECTS[obj].positionInches.z[frame])
-	// 				object.rotation.set(0,0,0)
+// 			if (nextvisible == 1){
+// 				object.position.set(SCENEdata.OBJECTS[obj].positionInches.x[frame],SCENEdata.OBJECTS[obj].positionInches.y[frame],SCENEdata.OBJECTS[obj].positionInches.z[frame])
+// 					object.rotation.set(0,0,0)
 
-	// 		//Object axis changes as object rotates
-	// 			var axis = new THREE.Vector3(1,0,0) //x-axis
-	// 			var angle = THREE.Math.degToRad(SCENEdata.OBJECTS[obj].rotationDegrees.x[frame])
-	// 			object.rotateOnWorldAxis(axis,angle)
-	// 			var axis = new THREE.Vector3(0,1,0) //y-axis
-	// 			var angle = THREE.Math.degToRad(SCENEdata.OBJECTS[obj].rotationDegrees.y[frame])
-	// 			object.rotateOnWorldAxis(axis,angle)
-	// 			var axis = new THREE.Vector3(0,0,1) //z-axis
-	// 			var angle = THREE.Math.degToRad(SCENEdata.OBJECTS[obj].rotationDegrees.z[frame])
-	// 			object.rotateOnWorldAxis(axis,angle)
-	// 				scene.add(object)
-	// 		} else{
-	// 			scene.remove(object)
-	// 		}
-	// 	}
-	// 			renderer.render(scene,camera)
-	// 			console.timeEnd('frame render')
-	// 			scene.remove(light)
-	//   frame ++;
-	// if (frame <=numframe-1){
-	// setTimeout(animate,500)
-	// } else {
-	// 	frame = 0;
-	// 	setTimeout(animate,500)
-	// }
-	// }
+// 			//Object axis changes as object rotates
+// 				var axis = new THREE.Vector3(1,0,0) //x-axis
+// 				var angle = THREE.Math.degToRad(SCENEdata.OBJECTS[obj].rotationDegrees.x[frame])
+// 				object.rotateOnWorldAxis(axis,angle)
+// 				var axis = new THREE.Vector3(0,1,0) //y-axis
+// 				var angle = THREE.Math.degToRad(SCENEdata.OBJECTS[obj].rotationDegrees.y[frame])
+// 				object.rotateOnWorldAxis(axis,angle)
+// 				var axis = new THREE.Vector3(0,0,1) //z-axis
+// 				var angle = THREE.Math.degToRad(SCENEdata.OBJECTS[obj].rotationDegrees.z[frame])
+// 				object.rotateOnWorldAxis(axis,angle)
+// 					scene[i].add(object)
+// 			} else{
+// 				scene[i].remove(object)
+// 			}
+// 		}
+// 				renderer.render(scene[i],camera)
+// 				console.timeEnd('frame render')
+// 				scene[i].remove(light)
+// 	  frame ++;
+// 	if (frame <=numframe-1){
+// 	setTimeout(animate,500)
+// 	} else {
+// 		frame = 0;
+// 		setTimeout(animate,500)
+// 	}
+// 	}
+// 	}
+// }
 //--------------------------------------------------------------------------------------------
 
 	// 4. add light and object to the scene
@@ -728,23 +731,9 @@ while(true){
     frame ++;
     }
 
-
-
-      // update the picking ray with the camera and mouse position
-//     raycaster.setFromCamera( mouse, camera );
-
-//     // calculate objects intersecting the picking ray
-//     var intersects = raycaster.intersectObjects( scene[i].children );
-
-//     for ( var i = 0; i < intersects.length; i++ ) {
-
-//         intersects[ i ].object.material.color.set( 0xff0000 );
-
-//     }
 function render(){
     // update current frame Light and Obj Properties
-
-
+	//controls.update()
     console.log(frame)
     for (i=0;i<numScene;i++){
     	console.time('frame update')
@@ -755,9 +744,17 @@ function render(){
 
      console.time('frame render')
     renderer.render(scene[i],camera)
-
     console.timeEnd('frame render')
 }
+//   // update the picking ray with the camera and mouse position
+//   raycaster.setFromCamera( mouse, camera );
+
+// // calculate objects intersecting the picking ray
+// var intersects = raycaster.intersectObjects( scene[i].children );
+
+// for ( var i = 0; i < intersects.length; i++ ) {
+// 	intersects[ i ].object.material.color.set( 0xff0000 );
+// }
 }
 
 
