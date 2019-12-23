@@ -5,6 +5,8 @@ Automator: Boolean on/off
 
 AutomatorFilePath: File path to params for the automator curriculum.
 
+BackgroundColor2D: specify the background color in hex (eg, #FFFFFF for white or #000000 for black). Not required in param file. If not provided, defaults to gray screen background (#7F7F7F)
+
 CheckRFID: Time in milliseconds over which at least one matching RFID read is required so that agent doesn't get kicked off of task. If there is a read within the last CheckRFID ms, task continues, otherwise agent is locked out at start of next trial. CheckRFID <= 0 turns off RFID checking.
 
 ChoiceGridIndex: For a same-different task, need to specify two locations, one for same choice (circle) and one for different choice (square).

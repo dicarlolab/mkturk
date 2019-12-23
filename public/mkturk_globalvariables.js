@@ -20,6 +20,7 @@ var CAMERAS = {}
 var LIGHTS = {}
 
 var ImageRewardList = {}
+var QuickLoad = { load: 0, agent: '', connectusb: 0}
 
 ENV.ResearcherDisplayName = ''
 ENV.ResearcherEmail = ''
@@ -77,6 +78,8 @@ ENV.ViewportPixels = [-1,-1]
 ENV.ViewportPPI = -1
 ENV.PhysicalPPI = -1
 
+ENV.Task = ""
+
 ENV.FixationScale = -1
 ENV.SampleScale = -1
 ENV.TestScale = -1
@@ -87,6 +90,8 @@ var FLAGS = {} // Global that keeps track of the task's requests to the Dropbox/
 // The scientist does not care about tracking this variable into the behavioral files. 
 FLAGS.consecutivehits = 0;
 FLAGS.need2loadImagesTrialQueue = 1; 
+FLAGS.need2loadScenes = 1;
+FLAGS.useScene = 0;
 FLAGS.need2loadParameters = 1; 
 FLAGS.savedata = 0; 
 FLAGS.stage = 0; 
@@ -139,7 +144,7 @@ CURRTRIAL.fixationgridindex = NaN;
 CURRTRIAL.fixationxyt = [];
 CURRTRIAL.allfixationxyt = [];
 CURRTRIAL.sampleindex = NaN;
-CURRTRIAL.sampleimage = undefined;
+CURRTRIAL.sampleimage = [];
 CURRTRIAL.testindices = NaN;
 CURRTRIAL.testimages = [];
 CURRTRIAL.responsexyt = []; 
@@ -167,6 +172,11 @@ CURRTRIAL.testobjectrxy = []
 CURRTRIAL.testobjectrxz = []
 CURRTRIAL.testobjectryz = []
 CURRTRIAL.testobjectscale = []
+
+CURRTRIAL.sample_scenebag_label = NaN
+CURRTRIAL.sample_scenebag_index = NaN
+CURRTRIAL.test_scenebag_labels = NaN
+CURRTRIAL.test_scenebag_indices = NaN
 
 var EVENTS = {}
 EVENTS.reset = function(){

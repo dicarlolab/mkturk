@@ -38,14 +38,9 @@ if (typeof(navigator.bluetooth) == "object"){
 }
 
 </script>
-
-<!-- ThreeJS -->
-<script src="http://threejs.org/build/three.min.js"></script>
-<script src="http://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
-<script src="http://threejs.org/examples/js/controls/OrbitControls.js"></script> 
-
 <link rel="stylesheet" type="text/css" href="dialog-polyfill.css" />
 <script src="dialog-polyfill.js"></script>
+
 
 <script src="mkturk_installsettings.js"></script>
 
@@ -70,6 +65,12 @@ if (typeof(navigator.bluetooth) == "object"){
   var storage = firebase.storage();
 </script>
 </head>
+
+<!-- Add ThreeJS -->
+<script src="http://threejs.org/build/three.js"></script>
+<script src="http://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
+<script src="http://threejs.org/examples/js/controls/OrbitControls.js"></script>
+
 <!-- ************* (END) HEAD *************** -->
 
 
@@ -83,20 +84,31 @@ if (typeof(navigator.bluetooth) == "object"){
       <i class="material-icons">refresh</i>
     </button>
 
-   <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="connectusb" style="visibility:hidden; z-index: 102; font-size: 25px; position: absolute; top: 5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
+   <button class="mdl-button mdl-js-button mdl-button--raised" id="quickload" style="visibility:hidden; background-color:green; z-index: 102; font-size: 25px; position: absolute; top: 5%; left: 50%; height: 85px; width: 200px; border-radius: 20px">
+     QUICK LOAD
+   </button>
+
+<div class="custom-select" id="subjectID_div" style="z-index: 102; font-size: 25px; position: absolute; top: 7.5%; left: 75%; height: 75px; width: 200px;">
+	<label for="subjectID_select" >Select subject:</label>
+	<select class="mdl-textfield__input" name="subjects" id="subjectID_select">
+		<option value="-1">--</option>
+	</select>
+</div>
+
+   <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="connectusb" style="visibility:hidden; z-index: 102; font-size: 25px; position: absolute; top: 12.5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
      CONNECT USB
    </button>
 
-   <button class="mdl-button mdl-js-button mdl-button--raised" id="nousb" style="visibility:hidden; background-color:white; z-index: 102; font-size: 25px; position: absolute; top: 15%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
+   <button class="mdl-button mdl-js-button mdl-button--raised" id="nousb" style="visibility:hidden; background-color:white; z-index: 102; font-size: 25px; position: absolute; top: 20%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
      NO USB
    </button>
 
   <button class="mdl-button mdl-js-button mdl-button--raised" id="pumpflush" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 12%; left: 80%; height: 45px; width: 150px; border-radius: 20px">
-     Flush 1 minute
+     Flush 1min
    </button>
 
   <button class="mdl-button mdl-js-button mdl-button--raised" id="pumptrigger" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 17%; left: 80%; height: 45px; width: 150px; border-radius: 11px">
-     100Pulses->1mL Milk
+     Calibrate 1mL milk
    </button>
 
   <button class="mdl-button mdl-js-button mdl-button--raised" id="connectblescale" style="visibility:hidden; background-color:white; z-index: 102; position: absolute; top: 22%; left: 80%; height: 45px; width: 150px; border-radius: 20px">
@@ -107,8 +119,7 @@ if (typeof(navigator.bluetooth) == "object"){
 
 	<p id="headsuptextdevices" style="z-index:101; position: absolute; left: 50%; top: 1px; height: 40%; width: 40%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;">No devices connected</p>
 
-<!-- 	<p id="headsuptextautomator" style="z-index:99; position: absolute; left: 50%; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
- -->
+	<p id="headsuptextautomator" style="z-index:99; position: absolute; left: 50%; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
 	<p id="imageloadingtext" style="z-index:100; position: absolute; left: 1px; top: 1px; height: 5%; width: 100%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
 
 
@@ -116,11 +127,11 @@ if (typeof(navigator.bluetooth) == "object"){
 	Done Editing Params
    </button>
 
-  <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="doneTestingTask" style="visibility:hidden; z-index: 102; font-size: 25px; position: absolute; top: 5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
-	Done Testing Task
+  <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="doneTestingTask" style="visibility:hidden; z-index: 102; font-size: 25px; position: absolute; top: 12.5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
+	Done Practice
    </button>
 
-  <button class="mdl-button mdl-js-button mdl-button--raised" id="stressTest" style="visibility:hidden; background-color:white; z-index: 102; font-size: 25px; position: absolute; top: 15%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
+  <button class="mdl-button mdl-js-button mdl-button--raised" id="stressTest" style="visibility:hidden; background-color:white; z-index: 102; font-size: 25px; position: absolute; top: 20%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
 	Stress Test
    </button>
 
@@ -131,27 +142,18 @@ if (typeof(navigator.bluetooth) == "object"){
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasvisible" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasvisiblewebgl" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvasvisiblewebgl" width="0" height="0" src="" style="z-index:3; position: absolute; left: 0px; top: 0px;"> </canvas>
 
 </div>
-
-<dialog id="subjectID_dialog" style="z-index: 102; position: absolute; top: 0%; left: 0%;">
-  <p>Select subject: </p>
-   <!--Pull down menu that will hold file list-->
-  <select id="subjectID_list">
-  	<option value="-1">--</option>
-  </select>
-</dialog>
 
 <script src="mkturk_globalvariables.js"></script>
 <script src="mkturk_eventlisteners.js" type="text/javascript"></script>
 <script src="mkturk_imagebuffer.js" type="text/javascript"></script>
 <script src="mkturk_trialqueue.js" type="text/javascript"></script>
+<script src="mkturk_trialqueue_scene.js" type="text/javascript"></script>
 <script src="mkturk_screenfunctions.js"></script>
 <script src="mkturk_automator.js" type="text/javascript"></script>
-<!-- <script src="mkturk_bluetooth.js" type="text/javascript"></script>
-<script src="mkturk_usb.js" type="text/javascript"></script> -->
 <script src="mkturk_utils.js" type="text/javascript"></script>
-<!-- <script src="mkturk_bluetoothscale.js" type="text/javascript"></script> -->
 <script src="mkturk_firebase.js" type="text/javascript"></script>
 <script src="mkturk_firestore.js" type="text/javascript"></script>
 <script src="mkturk_firebasestorage.js" type="text/javascript"></script>
@@ -190,9 +192,7 @@ firebase.auth().getRedirectResult().then(function(result) {
 
 
 // GET PARAMFILE NAME
-var subjectdialog = document.getElementById("subjectID_dialog");
-dialogPolyfill.registerDialog(subjectdialog);
-var subjectlistobj = document.getElementById("subjectID_list");
+var subjectlistobj = document.getElementById("subjectID_select");
 for (var i=subjectlist.length-1; i>=0; i--){
 	var opt = document.createElement('option');
 	opt.value = i;
@@ -203,18 +203,10 @@ subjectlistobj.addEventListener("change",subjectlist_listener,false);
 
 
 // Check Availability of APIs
-if (typeof(navigator.usb) == "object"){
-	ENV.WebUSBAvailable = 1
-}
-if (typeof(navigator.bluetooth) == "object"){
-	ENV.WebBluetoothAvailable = 1
-}
-if (typeof(navigator.getBattery) == "function"){
-	ENV.BatteryAPIAvailable = 1
-}
-if (typeof(OffscreenCanvas) == "function"){
-	ENV.OffscreenCanvasAvailable = 1
-}
+if (typeof(navigator.usb) == "object"){ ENV.WebUSBAvailable = 1 }
+if (typeof(navigator.bluetooth) == "object"){ ENV.WebBluetoothAvailable = 1 }
+if (typeof(navigator.getBattery) == "function"){ ENV.BatteryAPIAvailable = 1 }
+if (typeof(OffscreenCanvas) == "function"){ ENV.OffscreenCanvasAvailable = 1 }
 
 // Button callbacks for inline connection to arduino device
 document.querySelector("button[id=googlesignin]").style.display = "block"
@@ -224,20 +216,20 @@ document.querySelector("button[id=googlesignin]").addEventListener(
 document.querySelector("button[id=reloadpage]").addEventListener(
 	'pointerup',function(){ window.location.reload(true) },false)
 
-//---- for Safari
-document.querySelector("button[id=googlesignin]").addEventListener(
-	'click',firebaseRedirectSignIn,false)
-document.querySelector("button[id=reloadpage]").addEventListener(
-	'click',function(){ window.location.reload(true) },false)
-//---- (END) for Safari
+	//---- for Safari
+	document.querySelector("button[id=googlesignin]").addEventListener(
+		'click',firebaseRedirectSignIn,false)
+	document.querySelector("button[id=reloadpage]").addEventListener(
+		'click',function(){ window.location.reload(true) },false)
+	//---- (END) for Safari
 
 
 var textobj = document.getElementById("headsuptext")
 textobj.addEventListener('pointerup',headsuptext_listener,false)
 
-//---- for Safari
-textobj.addEventListener('click',headsuptext_listener,false)
-//---- (END) for Safari
+	//---- for Safari
+	textobj.addEventListener('click',headsuptext_listener,false)
+	//---- (END) for Safari
 
 
 //============= Initialize Audio & Battery Objects ==================//
@@ -249,9 +241,9 @@ textobj.addEventListener('click',headsuptext_listener,false)
 	var audiocontext = new (window.AudioContext || window.webkitAudioContext)();
 	var gainNode = audiocontext.createGain()
 	gainNode.connect(audiocontext.destination)
-	ENV.DevicePixelRatio = window.devicePixelRatio || 1;
 
 	// Check availability of OffScreenCanvas API
+	ENV.DevicePixelRatio = window.devicePixelRatio || 1;
 	if (ENV.OffscreenCanvasAvailable){
 		var visiblecontext = VISIBLECANVAS.getContext("bitmaprenderer");
 	}
@@ -311,11 +303,19 @@ function connectHardwareButtonPromise(){
 
 function skipHardwareDevice(event){
   event.preventDefault(); //prevents additional downstream call of click listener
+  localStorage.setItem("ConnectUSB",0)
   waitforClick.next(1)
 }
 
 
 (async function(){
+	document.querySelector ("button[id=quickload]").addEventListener(
+		'pointerup',quickLoad_listener,false)
+
+		//---- for Safari
+		document.querySelector ("button[id=quickload]").addEventListener(
+			'click',quickLoad_listener,false)
+
 	if ( ENV.WebUSBAvailable ){
 		await usb_scriptLoaded
 		document.querySelector ("button[id=connectusb]").addEventListener(
@@ -333,6 +333,15 @@ function skipHardwareDevice(event){
 		document.querySelector("button[id=preemptRFID]").addEventListener(
 			'click',preemptRFID_listener,false)
 		//---- (END) for Safari
+			//---- for Safari
+			document.querySelector ("button[id=connectusb]").addEventListener(
+				'click',findUSBDevice,false)
+			document.querySelector("button[id=nousb]").addEventListener(
+				'click',skipHardwareDevice,false)
+			document.querySelector("button[id=preemptRFID]").addEventListener(
+				'click',preemptRFID_listener,false)
+			//---- (END) for Safari
+
 	}
 
 	if ( ENV.WebBluetoothAvailable ){
@@ -342,10 +351,16 @@ function skipHardwareDevice(event){
 		document.querySelector("button[id=connectblescale]").addEventListener(
 			'pointerup',blescaleconnect,false)
 
+
 		//---- for Safari
 		document.querySelector("button[id=connectblescale]").addEventListener(
 			'click',blescaleconnect,false)
 		//---- (END) for Safari
+
+			//---- for Safari
+			document.querySelector("button[id=connectblescale]").addEventListener(
+				'click',blescaleconnect,false)
+			//---- (END) for Safari
 	}
 
 	document.querySelector("button[id=doneEditingParams]").addEventListener(
@@ -353,20 +368,16 @@ function skipHardwareDevice(event){
 	document.querySelector("button[id=doneTestingTask]").addEventListener(
 		'pointerup',doneTestingTask_listener,false)
 	document.querySelector("button[id=stressTest]").addEventListener(
-		'pointerup',stressTest_listener,false)
+		'touchstart',stressTest_listener,false)
 
-	//---- for Safari
-	document.querySelector("button[id=doneEditingParams]").addEventListener(
-		'click',doneEditingParams_listener,false)
-	document.querySelector("button[id=doneTestingTask]").addEventListener(
-		'click',doneTestingTask_listener,false)
-	document.querySelector("button[id=stressTest]").addEventListener(
-		'click',stressTest_listener,false)
-	//---- (END) for Safari
-
-
-
-
+		//---- for Safari
+		document.querySelector("button[id=doneEditingParams]").addEventListener(
+			'click',doneEditingParams_listener,false)
+		document.querySelector("button[id=doneTestingTask]").addEventListener(
+			'click',doneTestingTask_listener,false)
+		document.querySelector("button[id=stressTest]").addEventListener(
+			'click',stressTest_listener,false)
+		//---- (END) for Safari
 
 
 	//====================== Retrieve device's screen properties ===========================//
@@ -384,7 +395,7 @@ function skipHardwareDevice(event){
 		var screenSpecs = await queryDeviceonFirestore('pixel 4 xl') //default to pixel 4 xl
 		console.log('Mobile detected, defaulting to pixel 4 xl phone for screen ppi')
 	}
-	else if (screenSpecs.screenSizeInches < 0 && ENV.DeviceType == "Not available"){
+	else if (screenSpecs.screenSizeInches < 0 && (ENV.DeviceType == "Not available" || ENV.DeviceType == -1)){
 		var screenSpecs = await queryDeviceonFirestore('pixel c') //default to pixel c
 		console.log('Device type unidentified, defaulting to pixel c tablet for screen ppi')
 	}
@@ -410,15 +421,59 @@ function skipHardwareDevice(event){
 	updateHeadsUpDisplay()
 	//====================== (END) Retrieve device's screen properties ===========================//
 
-
-	//====================== Connect USB ===========================//
 	if ( ENV.WebUSBAvailable ){
 		var event = {}
 		event.type = "AutoConnect"
 		await findUSBDevice(event)
+	}
 
-		//=============== AWAIT CONNECT TO HARDWARE (via USB) ===============//
+	//====================== Quickload Button Set-up ===========================//
+	if ( localStorage.getItem("Agent") != null ){
+		QuickLoad.agent = localStorage.getItem("Agent")
+		QuickLoad.connectusb = localStorage.getItem("ConnectUSB")
+		if (QuickLoad.connectusb == null){ QuickLoad.connectusb = 0}
+
+		document.querySelector("button[id=quickload]").style.display = "block"
+		document.querySelector("button[id=quickload]").style.visibility = "visible"
+
+		if ( QuickLoad.connectusb == 0){
+			document.querySelector("button[id=quickload]").innerHTML = QuickLoad.agent
+		}
+		else if ( QuickLoad.connectusb == 1){
+			document.querySelector("button[id=quickload]").innerHTML = QuickLoad.agent + " <i>USB</i>"
+		}
+	} //IF agent stored locally, show quickload button
+	else {
+		document.querySelector("button[id=quickload]").style.display = "none"
+	} //ELSE don't show button
+	//====================== (END) Quickload Set-up ===========================//
+
+	//================== AWAIT LOAD SUBJECT PARAMS ==================//
+	document.querySelector("div[id=subjectID_div]").style.display = "block"
+	document.querySelector("div[id=subjectID_div]").style.visibility = "visible"
+	await subjectIDPromise()
+	document.querySelector("button[id=quickload]").style.display = "none"
+	document.querySelector("div[id=subjectID_div]").style.display = "none"
+
+	localStorage.setItem("Agent",ENV.Subject)
+
+	ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.txt";
+	await loadParametersfromFirebase(ENV.ParamFileName)
+	//================== (END) AWAIT LOAD SUBJECT PARAMS ==================//
+
+
+	//====================== Connect USB ===========================//
+	if ( ENV.WebUSBAvailable ){
+
 		if (typeof(port.connected) == 'undefined' || port.connected == false){
+			var event = {}
+			event.type = "AutoConnect"
+			await findUSBDevice(event)
+		}
+
+		if ( (typeof(port.connected) == 'undefined' || port.connected == false) &&
+		     (QuickLoad.load == 0 || (QuickLoad.load == 1 && QuickLoad.connectusb == 1))){
+			//=============== AWAIT CONNECT TO HARDWARE (via USB) ===============//
 			port.connected = false
 			document.querySelector("button[id=connectusb]").style.display = "block"
 			document.querySelector("button[id=connectusb]").style.visibility = "visible"
@@ -426,10 +481,13 @@ function skipHardwareDevice(event){
 			document.querySelector("button[id=nousb]").style.visibility = "visible"
 
 			await connectHardwareButtonPromise()
+		} //IF !QuickLoad.load
 
 			document.querySelector("button[id=connectusb]").style.display = "none"
 			document.querySelector("button[id=nousb]").style.display = "none"
 		}
+		document.querySelector("button[id=connectusb]").style.display = "none"
+		document.querySelector("button[id=nousb]").style.display = "none"
 	}
 	else {
 		//skip usb device connection
@@ -441,6 +499,7 @@ function skipHardwareDevice(event){
 		}
 	}
 	//====================== (END) Connect USB ===========================//
+
 	if (ENV.WebBluetoothAvailable == 0){
 		blescale = {
 			connected: 0,
@@ -473,11 +532,28 @@ function skipHardwareDevice(event){
 	textobj.removeEventListener('mouseup',headsuptext_listener)
 	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",false)
 
-	if (FLAGS.need2saveParameters == 1){
-		var user_param_text = document.getElementById("headsuptext").innerHTML //get new params
-		await saveParameterTexttoFirebase(user_param_text) //write new params
-		await loadParametersfromFirebase(ENV.ParamFileName) //then read them
-	}
+	//================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
+	if (QuickLoad.load == 0){
+		updateStatusText(JSON.stringify(TASK,null,' '));
+		document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
+		document.querySelector("button[id=doneEditingParams]").style.display = "block"
+		document.querySelector("button[id=doneEditingParams]").style.visibility = "visible"
+
+		await editParamsPromise()
+		document.querySelector("button[id=doneEditingParams]").style.display = "none"
+		var textobj = document.getElementById("headsuptext")
+		textobj.removeEventListener('touchend',headsuptext_listener)
+		textobj.removeEventListener('mouseup',headsuptext_listener)
+		document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",false)
+
+		if (FLAGS.need2saveParameters == 1){
+			var user_param_text = document.getElementById("headsuptext").innerHTML //get new params
+			await saveParameterTexttoFirebase(user_param_text) //write new params
+			await loadParametersfromFirebase(ENV.ParamFileName) //then read them
+		} //IF
+	} //IF !QuickLoad.load
+	//================== (END) AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
+
 
 	//============= AWAIT READ SUBJECT PERFORMANCE HISTORY =============//
 	// Read performance history
@@ -537,231 +613,28 @@ function skipHardwareDevice(event){
 	FLAGS.need2loadParameters = 1
 	CURRTRIAL.num = 0
 	EVENTS.trialnum = 0
+
 	FLAGS.need2loadImagesTrialQueue = 1
+	if (typeof(TASK.ImageBagsSample) == "undefined"){
+		FLAGS.need2loadImagesTrialQueue = 0
+	}
+	FLAGS.need2loadScenes = 1
+	if (typeof(TASK.SceneBagsSample) == "undefined"){
+		FLAGS.need2loadScenes = 0
+	}
 
 // =========================================================================================================== //
 // ============ MAIN LOOP ==================================================================================== //
 // =========================================================================================================== //
 while(true){
-     //============ LOAD OBJECT MESHES ============//
-	windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
-	windowHeight = document.body.clientHeight;
-	setupCanvas(VISIBLECANVASWEBGL)
-    canvaswebgl = document.querySelector("canvas[id=canvasvisiblewebgl]");
-
-    // 0: load scenerenderparams.json from google cloud storage
-	param_path = "mkturkfiles/scenebags/objectome3d/face/scene_renderparams_face_yj_ei_json4.js"
-   	SCENEdata = await loadTextfromFirebase(param_path)
-
-     //conversion rate
-    THREEJStoInches = 1.2918253 //a.u = 1 inches in (0,0,10) camera setting
-
-    // 1: load meshfilename for each object from firestore document in SCENE.OBJECTS.objectdoc
-    // get number of frames/trials
-	objectfile_pathlist = []
-	object_materiallist = []
-	numframe = 0
-	// also update parameters so that they all have the same length as numframe
-	// parameters with length smaller than numframe take the initial value of the parameters across all frames
-
-
- //numframe
-    var numframeArray = []
-    for (let obj in SCENEdata.OBJECTS){
-    let object = SCENEdata.OBJECTS[obj]
-    let index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
-    numframeArray[index] = object.visible.length
-}
-    numframe = Math.max.apply(null,numframeArray)
-
-    // divide into sample and test scenes and relevant objects
-
-    numScene = 0;
-    sceneType = [];
-    for (var lt in SCENEdata.LIGHTS){
-        numScene ++ ;
-        let light = SCENEdata.LIGHTS[lt]
-        let index = Object.keys(SCENEdata.LIGHTS).indexOf(lt);
-        sceneType[index] = Object.keys(SCENEdata.LIGHTS)[index].split("light")[0]
-
-        if (light.visible.length<numframe){
-            light.visible = Array.apply(null,Array(numframe)).map(function(){return light.visible[0]})
-        }
-
-        for (let coord in light.positionInches){
-            if (light.positionInches[coord].length < numframe){
-                light.positionInches[coord] = Array.apply(null,Array(numframe)).map(function(){return light.positionInches[coord][0]})
-            }
-        }
-    }
-
-	for (let obj in SCENEdata.OBJECTS){
-		let object = SCENEdata.OBJECTS[obj]
-		let objdoc = object.objectdoc
-		console.log(objdoc)
-		let docRef = db.collection("objects").doc(objdoc)
-		let doc = await db.collection("objects").doc(objdoc).get()
-		let object_path = doc.data().meshfilepath
-		let index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
-		objectfile_pathlist[index] = object_path
-		object_materiallist[index] = object.material
-
-		if (object.visible.length<numframe){
-			object.visible = Array.apply(null,Array(numframe)).map(function(){return object.visible[0]})
-		}
-
-		for (let coord in object.positionInches){
-			if (object.positionInches[coord].length < numframe){
-				object.positionInches[coord] = Array.apply(null,Array(numframe)).map(function(){return object.positionInches[coord][0]})
-			}
-		}
-		for (let coord in object.rotationDegrees){
-			if (object.rotationDegrees[coord].length < numframe){
-				object.rotationDegrees[coord]= Array.apply(null,Array(numframe)).map(function(){return object.rotationDegrees[coord][0]})
-			}
-		}
-	}
-
-
-
-    // 2: load meshfile from google cloud storage
-		console.time('loadmesh')
-		objectmeshArray = await loadMeshArrayfromFirebase(objectfile_pathlist);
-		console.timeEnd('loadmesh')
-
-	// 3. init scene and camera
-	console.time('init scene')
-	await initThreeJS(SCENEdata.CAMERAS,numScene,sceneType)
-	console.timeEnd('init scene')
-
-//---------------------------------- ALTERNATIVE : add/remove THREE js object at every frame
-// 	frame = 0
-// 	animate()
-
-// 	async function animate(){
-
-// 	console.time('frame render')
-// for (i =0; i<numScene; i++){
-// 	for (var lt in SCENEdata.LIGHTS){
-// 		var light = new THREE.DirectionalLight(Number(SCENEdata.LIGHTS[lt].color),SCENEdata.LIGHTS[lt].intensity)
-// 		light.position.set(SCENEdata.LIGHTS[lt].positionInches.x[frame],
-// 		SCENEdata.LIGHTS[lt].positionInches.y[frame],
-// 		SCENEdata.LIGHTS[lt].positionInches.z[frame])
-// 		scene[i].add(light)
-// 			}
-
-// 	// add objects
-// 		for (var obj in SCENEdata.OBJECTS){
-// 			var index = Object.keys(SCENEdata.OBJECTS).indexOf(obj);
-// 			var object = objectmeshArray[index].scene
-// 	 		object.traverse(function(child){
-// 	 				if (child.material) {
-// 						const orig = new THREE.MeshPhysicalMaterial()
-// 						const materialparam = {...orig,...object_materiallist[index]} //parameters update
-// 						var material = new THREE.MeshPhysicalMaterial(materialparam)
-// 						child.material.needsUpdate = true;
-// 					}
-// 				})
-// 				var nextvisible = SCENEdata.OBJECTS[obj].visible[frame]
-
-// 			if (nextvisible == 1){
-// 				object.position.set(SCENEdata.OBJECTS[obj].positionInches.x[frame],SCENEdata.OBJECTS[obj].positionInches.y[frame],SCENEdata.OBJECTS[obj].positionInches.z[frame])
-// 					object.rotation.set(0,0,0)
-
-// 			//Object axis changes as object rotates
-// 				var axis = new THREE.Vector3(1,0,0) //x-axis
-// 				var angle = THREE.Math.degToRad(SCENEdata.OBJECTS[obj].rotationDegrees.x[frame])
-// 				object.rotateOnWorldAxis(axis,angle)
-// 				var axis = new THREE.Vector3(0,1,0) //y-axis
-// 				var angle = THREE.Math.degToRad(SCENEdata.OBJECTS[obj].rotationDegrees.y[frame])
-// 				object.rotateOnWorldAxis(axis,angle)
-// 				var axis = new THREE.Vector3(0,0,1) //z-axis
-// 				var angle = THREE.Math.degToRad(SCENEdata.OBJECTS[obj].rotationDegrees.z[frame])
-// 				object.rotateOnWorldAxis(axis,angle)
-// 					scene[i].add(object)
-// 			} else{
-// 				scene[i].remove(object)
-// 			}
-// 		}
-// 				renderer.render(scene[i],camera)
-// 				console.timeEnd('frame render')
-// 				scene[i].remove(light)
-// 	  frame ++;
-// 	if (frame <=numframe-1){
-// 	setTimeout(animate,500)
-// 	} else {
-// 		frame = 0;
-// 		setTimeout(animate,500)
-// 	}
-// 	}
-// 	}
-// }
-//--------------------------------------------------------------------------------------------
-
-	// 4. add light and object to the scene
-	console.time('add object to scene')
-    for (i=0; i<numScene;i++){
-	await addToScene(scene[i],sceneType)
-}
-	console.timeEnd('add object to scene')
-
-	//5. preload(compile) shaders
-	console.time('compile')
-     for (i=0; i<numScene;i++){
-  renderer.compile(scene[i],camera)
-}
-	console.timeEnd('compile')
-
-	//6. Animate
-	frame = 0
-	animate()
-
-    function animate(){
-
-// imgData = renderer.domElement.toDataURL();
-//      getImageData = false;
-
-    if (frame <=numframe-1){
-    setTimeout(animate,500)
-    } else {
-        frame = 0;
-        setTimeout(animate,500)
-    }
-    render()
-    frame ++;
-    }
-
-function render(){
-    // update current frame Light and Obj Properties
-	//controls.update()
-    console.log(frame)
-    for (i=0;i<numScene;i++){
-    	console.time('frame update')
-        updateSingleFrame(scene[i])
-        console.timeEnd('frame update')
-    }
- for (i=0;i<numScene;i++){
-
-     console.time('frame render')
-    renderer.render(scene[i],camera)
-    console.timeEnd('frame render')
-}
-//   // update the picking ray with the camera and mouse position
-//   raycaster.setFromCamera( mouse, camera );
-
-// // calculate objects intersecting the picking ray
-// var intersects = raycaster.intersectObjects( scene[i].children );
-
-// for ( var i = 0; i < intersects.length; i++ ) {
-// 	intersects[ i ].object.material.color.set( 0xff0000 );
-// }
-}
-
 
 	//============= AWAIT LOAD PARAMS =============//
 	if (FLAGS.need2loadParameters == 1){
 		var old_ImageBagsSample = TASK.ImageBagsSample
 		var old_ImageBagsTest = TASK.ImageBagsTest
+
+		var old_SceneBagsSample = TASK.SceneBagsSample
+		var old_SceneBagsTest = TASK.SceneBagsTest
 
 		var old_ObjectGridIndex = TASK.ObjectGridIndex
 		var old_NTrialsPerBagBlock = [TASK.NTrialsPerBagBlock]
@@ -775,6 +648,9 @@ function render(){
 		windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
 		windowHeight = document.body.clientHeight;
 		setupCanvas(VISIBLECANVAS);
+
+		setupCanvas(VISIBLECANVASWEBGL)
+
 		if (ENV.DevicePixelRatio !== 1){
 			scaleCanvasforHiDPI(VISIBLECANVAS);
 		}
@@ -812,8 +688,57 @@ function render(){
 			!old_ObjectGridIndex.equals(TASK.ObjectGridIndex) ||
 			!old_NTrialsPerBagBlock.equals([TASK.NTrialsPerBagBlock]))
 		{
+        			FLAGS.need2loadImagesTrialQueue = 1;
+
+			TQ = undefined
+			TQS = undefined
 			FLAGS.need2loadImagesTrialQueue = 1;
 		}
+
+		// Check if object meshes were changed
+		if(typeof(TASK.SceneBagsTest) != "undefined" && (!old_SceneBagsTest.equals(TASK.SceneBagsTest) ||
+			!old_SceneBagsSample.equals(TASK.SceneBagsSample) ||
+			!old_ObjectGridIndex.equals(TASK.ObjectGridIndex) ||
+			!old_NTrialsPerBagBlock.equals([TASK.NTrialsPerBagBlock])))
+		{
+			TQ = undefined
+			TQS = undefined
+			FLAGS.need2loadImagesTrialQueue = 0;
+			FLAGS.need2loadScenes = 1;
+		}
+
+		//Determine task type
+		if (TASK.RewardStage == 0){
+				ENV.Task = "FIXATION"
+		}
+		else if (TASK.RewardStage == 1){
+			if (TASK.TestON > 0 && TASK.ChoiceGridIndex.length == 2){
+				//Same-Different (SD)
+				ENV.Task = "SD"
+			} //IF TASK.TestON
+			else if (TASK.ObjectGridIndex.length == TASK.ImageBagsSample.length && FLAGS.need2loadImagesTrialQueue){
+				//Stimulus-Response (SR) for 2D
+				ENV.Task = "SR"
+			} //IF TASK.ObjectGridIndex
+			else if (TASK.ObjectGridIndex.length == TASK.SceneBagsSample.length && FLAGS.need2loadScenes){
+				//Stimulus-Response (SR) for 3D
+				ENV.Task = "SR"
+			} //IF TASK.ObjectGridIndex
+			else {
+				//Match-to-Sample
+				ENV.Task = "MTS"
+			}
+		} //if TASK.RewardStage
+
+		// define image display grid
+		funcreturn = defineImageGrid(TASK.NGridPoints, TASK.GridSpacingInches*ENV.ViewportPPI);
+
+		xcanvascenter = funcreturn[0]
+		ycanvascenter = funcreturn[1]
+		ENV.XGridCenter = funcreturn[2]
+		ENV.YGridCenter = funcreturn[3]
+
+
 		FLAGS.purge = 1
 		FLAGS.createnewfirestore = 1
 		EVENTS.reset()
@@ -825,8 +750,96 @@ function render(){
 	} //if purge
 
 
+	//======================== 3D SCENE SET-UP =======================//
+	if (FLAGS.need2loadScenes){
+		SCENEdata = { Sample: [], Test: [] }
+		// STEPS FOR 3D SCENE SET-UP
+		// ---- 0: load scene params from JSON
+		// 0: expand trial params & get mesh paths
+		// ---- 1: load meshes
+		// ---- 2: init scene & camera
+		// ---- 3: add all lights & objects
+		// ---- 4: compile shaders
+		// 5: select frame to render
+		// 5: animate <--> render loop within trial
+
+		//============ 0: LOAD SCENES from JSON ============//
+		for (var f = 0; f <= TASK.SceneBagsSample.length-1; f++){
+			SCENEdata.Sample[f] = await loadTextfromFirebase(TASK.SceneBagsSample[f])
+		}
+		for (var f = 0; f <= TASK.SceneBagsTest.length-1; f++){
+			SCENEdata.Test[f] = await loadTextfromFirebase(TASK.SceneBagsTest[f])
+		}
+		//find longest scene param array in SCENEdata (ie # of trials)
+		for (var j = 0; j<=SCENEdata.Sample.length-1; j++){
+			SCENEdata.Sample[j].nscenes = getLongestArray(SCENEdata.Sample[j])
+			SCENEdata.Test[j].nscenes = getLongestArray(SCENEdata.Test[j])
+
+			//Determine if images will also be rendered
+			SCENEdata.Sample[j].nimages = SCENEdata.Sample[j].IMAGES.imageidx.length
+			SCENEdata.Test[j].nimages = SCENEdata.Test[j].IMAGES.imageidx.length
+		}
+		//============ (END) 0: LOAD SCENES from JSON ============//
+
+		//============ 1: LOAD MESHES FOR SCENES ============//
+		console.time('3JS: LOADING MESHES')
+		OBJECTS = {Sample: {}, Test: {}}
+		for (var taskscreen in OBJECTS){
+			var mesh_paths = []
+			var mesh_inds = []
+			for (var classlabel = 0; classlabel <= SCENEdata[taskscreen].length-1; classlabel++){
+				for (const obj in SCENEdata[taskscreen][classlabel].OBJECTS){
+					mesh_paths.push(SCENEdata[taskscreen][classlabel].OBJECTS[obj].meshpath)
+					mesh_inds.push([classlabel,obj])
+				} //FOR obj objects in scene classlabel
+			} //FOR classlabel scene
+			var meshes = await loadMeshArrayfromFirebase(mesh_paths);
+
+			for (var m=0; m<=meshes.length-1; m++){
+				var meshlabel = mesh_inds[m][0]
+				var meshname = mesh_inds[m][1]
+				OBJECTS[taskscreen][meshlabel] = {"meshes": [] }
+				OBJECTS[taskscreen][meshlabel].meshes[meshname] = meshes[m]
+			} //FOR m meshes
+		}//FOR taskscreen
+		console.timeEnd('3JS: LOADING MESHES')
+		//============ (END) 1: LOAD MESHES FOR SCENES ============//
+
+
+		//============ 2: INIT SCENE & CAMERA ============//
+		console.time('3JS: LOAD SCENE')
+		await initThreeJS(SCENEdata)
+		console.log('3js: init scene')
+		//============ (END) 2: INIT SCENE & CAMERA ============//
+
+		//============ 3: ADD ALL LIGHTS/OBJECTS TO SCENE ============//
+	    CAMERAS = {Sample: {}, Test: {}}
+	    LIGHTS = {Sample: {}, Test: {}}
+		for (scenetype in scene){
+			await addToScene(scenetype)
+		}
+		console.log('3js: added lights & objects')
+		//============ (END) 3: ADD ALL LIGHTS/OBJECTS TO SCENE ============//
+
+		//============ 4: PRELOAD SHADERS (COMPILE) ============//
+		for (scenetype in scene){
+			renderer.compile(scene[scenetype],scene[scenetype].getObjectByName("cam0"))
+		}
+		console.log('3js: compiled scene')
+		//============ (END) 4: PRELOAD SHADERS (COMPILE) ============//
+		FLAGS.need2loadScenes = 0
+
+		//Make a scene trial queue TQS (overrides TQ)
+		var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
+		TQS = new TrialQueueScene(samplingStrategy, TASK.SceneBagsSample, TASK.SceneBagsTest, SCENEdata.Sample, SCENEdata.Test)
+		await TQS.build(num_prebuffer_trials)
+		console.timeEnd('3JS: LOAD SCENE')
+	} //IF load scenes
+	//========================(END) 3D SCENE SET-UP =======================//
+
+
 	//============ CREATE IMAGE BAG & DISPLAY GRID ============//
-	if (FLAGS.need2loadImagesTrialQueue == 1){
+	if (typeof(TQS) == "undefined" && FLAGS.need2loadImagesTrialQueue == 1){
 		if(TASK.Automator != 1){
 			// Make TrialQueue
 			var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
@@ -883,7 +896,12 @@ function render(){
 		IMAGES.imagepaths.Ordered_SampleImageRewardList = IMAGES.Sample.SampleReward
 
 		FLAGS.need2loadImagesTrialQueue = 0;
-	} //if need2loadImagesTrialQueue
+	} //IF need2loadImagesTrialQueue
+
+	if (typeof(TASK.BackgroundColor2D) == "undefined"){
+		TASK.BackgroundColor2D = "#7F7F7F"
+	}
+	document.body.style.background = TASK.BackgroundColor2D;
 
 	ENV.InchScale = ENV.ViewportPPI/(ENV.ImageWidthPixels*ENV.CanvasRatio)
 
@@ -906,17 +924,36 @@ function render(){
 	ENV.YGridCenter = funcreturn[3]
 	//============ (end) CREATE IMAGE BAG & DISPLAY GRID ============//
 
+
 	//============ SELECT SAMPLE & TEST IMAGES ============//
 	// Draw one (1) sample image from samplebag
 	// console.time('trial images loadtime:')
-	var c
-	[CURRTRIAL.sampleimage, CURRTRIAL.sampleindex, CURRTRIAL.testimages, CURRTRIAL.testindices, CURRTRIAL.correctitem, samplereward] = await TQ.get_next_trial();
-	// console.timeEnd('trial images loadtime:')
+
+	if (typeof(TQS) == "undefined"){
+		[CURRTRIAL.sampleimage, CURRTRIAL.sampleindex, CURRTRIAL.testimages, CURRTRIAL.testindices, CURRTRIAL.correctitem, samplereward] = await TQ.get_next_trial();
+
+	}
+	else if (typeof(TQS) != "undefined"){
+		var x = await TQS.get_next_trial()
+		CURRTRIAL.sampleimage = x[0]
+		CURRTRIAL.sampleindex = x[1]
+		CURRTRIAL.testimages = x[2]
+		CURRTRIAL.testindices = x[3]
+		CURRTRIAL.correctitem = x[4]
+		CURRTRIAL.sample_scenebag_label = x[5]
+		CURRTRIAL.sample_scenebag_index = x[6]
+		CURRTRIAL.test_scenebag_labels = x[7]
+		CURRTRIAL.test_scenebag_indices = x[8]
+		samplereward = x[9]
+	}
+
+// CURRTRIAL.tsequenceactual = await displayTrial(["sample"],[0]);
 
 	logEVENTS("Sample",CURRTRIAL.sampleindex,"trialseries")
 	logEVENTS("Test",CURRTRIAL.testindices,"trialseries")
 	logEVENTS("CorrectItem",CURRTRIAL.correctitem,"trialseries")
 
+if ( typeof(TQS) == "undefined" ){ //Using images only not 3d scene
 	var keys = Object.keys(IMAGES.object.sample)
 	for (var i=0; i<=keys.length-1; i++){
 		CURRTRIAL["sampleobject" + keys[i]] = IMAGES.object.sample[keys[i]][CURRTRIAL.sampleindex]
@@ -949,6 +986,7 @@ function render(){
 	logEVENTS("TestObjectRxz",CURRTRIAL.testobjectrxz,"imageseries")
 	logEVENTS("TestObjectRyz",CURRTRIAL.testobjectryz,"imageseries")
 	logEVENTS("TestObjectScale",CURRTRIAL.testobjectscale,"imageseries")
+} //IF !FLAGS.useScene
 
 
 	//================= RFID check =================//
@@ -1070,8 +1108,14 @@ function render(){
 	if (TASK.RewardStage === 1){
 		frame.shown=[]
 		for (var q in CANVAS.sequence){frame.shown[q]=0}
+
+		for (var q in CANVAS.sequence){frame.shown[q]=0}
 		frame.current=0
-		renderScreen(CANVAS.sequence[0],OFFSCREENCANVAS)
+		if (typeof(TQS) != "undefined"){
+			scene["Sample"].framenum=0
+			scene["Test"].framenum=0
+		}
+ 		//renderScreen(CANVAS.sequence[0],OFFSCREENCANVAS)
 		CURRTRIAL.tsequenceactual = await displayTrial(CANVAS.sequence,CANVAS.tsequence);
 		CURRTRIAL.tsequencedesired = CANVAS.tsequence
 		audiocontext.suspend()
@@ -1080,6 +1124,9 @@ function render(){
 		logEVENTS("TSequenceDesired",CURRTRIAL.tsequencedesired,"trialseries")
 
 
+		if (typeof(TQS) != "undefined"){
+			boundingBoxesChoice = boundingBoxesChoice3D
+		}
 		//========= AWAIT TOUCH RESPONSE =========//
 		FLAGS.waitingforTouches = 1
 		if (TASK.HideTestDistractors >= 1){
@@ -1234,7 +1281,13 @@ function render(){
 		renderScreen(CANVAS.sequencepost[0],OFFSCREENCANVAS)
 		var p1 = displayTrial(CANVAS.sequencepost,CANVAS.tsequencepost);
 		var num_trials_to_buffer_in_punishperiod = 50
-		var p2 = TQ.generate_trials(num_trials_to_buffer_in_punishperiod)
+
+		if (typeof(TQS) == "undefined"){
+			var p2 = TQ.generate_trials(num_trials_to_buffer_in_punishperiod)
+		}
+		else if (typeof(TQS) != "undefined"){
+			var p2 = TQS.generate_trials(num_trials_to_buffer_in_punishperiod)
+		}
 		playSound(3);
 		// console.time('punish download/timeout')
 		await Promise.all([p1,p2])

@@ -198,7 +198,6 @@ function stressTest_listener(event){
 
 function subjectlist_listener(event){
 	ENV.Subject = subjectlist[this.value];
-	subjectdialog.close();
 	waitforClick.next(1);
 	return
 }
@@ -306,4 +305,24 @@ function preemptRFID_listener(event){
 	document.querySelector("button[id=preemptRFID]").style.display = "none"
 	waitforRFIDEvent.next({tag: ENV.AgentRFID, time: (Date.now() - ENV.CurrentDate.valueOf())})
 	return
+}
+
+
+function quickLoad_listener(event){
+	event.preventDefault()
+	QuickLoad.load = 1
+	ENV.Subject = QuickLoad.agent
+	waitforClick.next(1)
+
+	if (ENV.WebUSBAvailable){
+		if (QuickLoad.connectusb == 1 && port.connect == false){
+				findUSBDevice(event)
+		} //automatically call USB device finder
+		else if (QuickLoad.connectusb == 0){
+				skipHardwareDevice(event)
+		}		
+	}
+	else{
+		//do nothing
+	}
 }

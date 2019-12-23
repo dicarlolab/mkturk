@@ -6,7 +6,7 @@ var port={
 }
 var serial = {}
 
-navigator.usb.addEventListener('connect', async function(device){
+navigator.usb.onconnect = function(device){
 	if (typeof(port.connected) == 'undefined' || port.connected == false){
 		port.statustext_connect = "ATTEMPTING TO RECONNECT USB DEVICE..."
 		console.log(port.statustext_connect)
@@ -14,22 +14,38 @@ navigator.usb.addEventListener('connect', async function(device){
 
 		var event = {}
 		event.type = 'Reconnect'
-		await findUSBDevice(event)
+		findUSBDevice(event)
 	}
-});
+};
 
-navigator.usb.addEventListener('disconnect', device => {
+// function autoconnectLoop(device){
+// 	if (typeof(port.connected) == 'undefined' || port.connected == false){
+// 		navigator.usb.onconnect(device)
+// 		setTimeout(autoconnectLoop, 5000) //attempt to autoreconnect every 5 seconds
+// 	}
+// } //FUNCTION autoconnectLoop
+
+navigator.usb.ondisconnect = function(device){
   // USB device disconnected
 	port.connected = false
 	port.statustext_connect = "USB DEVICE DISCONNECTED"
 	console.log(port.statustext_connect)
 	updateHeadsUpDisplayDevices()
-});
+
+	// Expose button in case need to manually reconnect (navigator.usb.onconnect doesn't seem to work on all chrome for android)
+	document.querySelector("button[id=connectusb]").style.display = "block"
+	document.querySelector("button[id=connectusb]").style.visibility = "visible"
+	document.querySelector("button[id=connectusb]").style.top = "5%"
+
+// 	// Attempt to auto-reconnect
+// 	autoconnectLoop(device)
+};
+
 
 // STEP 0: Port Initialization - Open (instantiate) port before assigning callbacks to it
 async function findUSBDevice(event){
 	// STEP 1A: Auto-Select first port
-	if (event.type == "AutoConnect" || 
+	if (event.type == "AutoConnect" ||
 		event.type == "Reconnect"){
 // 		ports = await getPorts()
 		//STEP 1A: GetPorts - Automatic at initialization
@@ -56,6 +72,10 @@ async function findUSBDevice(event){
 			port.statustext_connect = statustext
 			console.log(port.statustext_connect)
 			updateHeadsUpDisplayDevices()
+			localStorage.setItem("ConnectUSB",1)
+
+			//Hide manual connect button upon successful connect
+			document.querySelector("button[id=connectusb]").style.display = "none"
 		}
 	}
 
@@ -83,6 +103,10 @@ async function findUSBDevice(event){
 		  	port.statustext_connect = "USB DEVICE CONNECTED BY USER ACTION!"
 		  	console.log(port.statustext_connect)
 			updateHeadsUpDisplayDevices()
+			localStorage.setItem("ConnectUSB",1)
+
+			//Hide manual connect button upon successful connect
+			document.querySelector("button[id=connectusb]").style.display = "none"
 		}
 		catch(error){
 		  console.log(error);
@@ -131,7 +155,7 @@ serial.Port.prototype.onReceive = data => {
 	// console.log('Serial roundtrip write->read' + serial.dt[serial.dt.length-1])
 
 	port.statustext_received = "RECEIVED CHAR <-- USB: " + textDecoder.decode(data)
-// 	console.log(port.statustext_received)
+	// console.log(port.statustext_received)
 	updateHeadsUpDisplayDevices()
 
 	var tagstart = port.statustext_received.indexOf('{tag',0);
@@ -145,12 +169,20 @@ serial.Port.prototype.onReceive = data => {
 		if (TRIAL.NRFID >= 2){
 			var dt = TRIAL.RFIDTime[TRIAL.NRFID-1] - TRIAL.RFIDTime[TRIAL.NRFID-2]
 		}
-		port.statustext_received = 'ParsedTAG ' + TRIAL.RFIDTag[TRIAL.NRFID-1] + 
-									' @' + new Date().toLocaleTimeString("en-US") + 
+		port.statustext_received = 'ParsedTAG ' + TRIAL.RFIDTag[TRIAL.NRFID-1] +
+									' @' + new Date().toLocaleTimeString("en-US") +
 									' dt=' + dt + 'ms'
-		console.log(port.statustext_received)
+		// console.log(port.statustext_received)
+
+		if (FLAGS.RFIDGeneratorCreated == 1){
+			var event = {tag: TRIAL.RFIDTag[TRIAL.NRFID-1], time: TRIAL.RFIDTime[TRIAL.NRFID-1]}
+			waitforRFIDEvent.next(event)
+		}
+		if (ENV.Subject == ""){
+			queryRFIDTagonFirestore(TRIAL.RFIDTag[TRIAL.NRFID-1])
+		} //IF no subject chosen yet, auto-find in firestore based on their RFIDTag, which will then QuickLoad the page
 		updateHeadsUpDisplayDevices()
-	}
+	} //IF rfid tag
 } //port.onReceive
 
 serial.Port.prototype.onReceiveError = error => {

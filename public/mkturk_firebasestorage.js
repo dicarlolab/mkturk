@@ -18,10 +18,10 @@ try{
 	return new Promise(
 		function(resolve, reject){
 			try {
-				var image = new Image(); 
+				var image = new Image();
 				image.onload = function(){
 					updateImageLoadingAndDisplayText('Loaded: ' + imagefile_path)
-					resolve(image)				
+					resolve(image)
 				}
 				image.src = url
 			} //try
@@ -37,23 +37,21 @@ catch (error){
 } //ReadFromFirebase
 
 
- //------------- LOAD MESH --------------//
-	async function loadMeshfromFirebase(meshfile_path){
+//------------- LOAD MESH --------------//
+async function loadMeshfromFirebase(meshfile_path){
 	//file ext = gltf or obj
 	try{
 		var meshfileRef = await storage.ref().child(meshfile_path)
 		var url = await meshfileRef.getDownloadURL().catch((error) => console.log(error));
-
 		var strs = meshfile_path.split(".")
 		var ext = strs[1]
-		
+
 		if (ext == 'gltf' || ext == 'glb'){
 			var loader = new THREE.GLTFLoader()
-	
+
 			return new Promise(
 				function(resolve, reject){
 					try {
-	
 					loader.load(url, function(gltfmesh){
 					resolve(gltfmesh)
 				})
@@ -66,22 +64,22 @@ catch (error){
 	} catch (error){
 		console.log(error)
 	}
-}//loadMeshFromFirebase
-	
-	async function loadMeshArrayfromFirebase(meshfile_pathlist){
-		try{
-			var object_requests = meshfile_pathlist.map(loadMeshfromFirebase);
-			console.log('FIREBASE: buffering ' + meshfile_pathlist.length + ' objects')
-			var tstart = performance.now()
-			var object_array = await Promise.all(object_requests)
-			.catch(function(error){ console.log(error)}).then()
-	
-			return object_array
-			}
-		catch(err){
-			console.log(err)
+}//FUNCTION loadMeshFromFirebase
+
+async function loadMeshArrayfromFirebase(meshfile_pathlist){
+	try{
+		var object_requests = meshfile_pathlist.map(loadMeshfromFirebase);
+		console.log('FIREBASE: buffering ' + meshfile_pathlist.length + ' objects')
+		var tstart = performance.now()
+		var object_array = await Promise.all(object_requests)
+		.catch(function(error){ console.log(error)}).then()
+
+		return object_array
 		}
+	catch(err){
+		console.log(err)
 	}
+} //FUNCTION loadMeshArrayfromFirebase
 
 //------------- GET METADATA --------------//
 async function getFileMetadataFirebase(file_path){
@@ -110,7 +108,7 @@ async function getFileListRecursiveFirebase(dir,ext){
 			}
 		}
 		else {
-			files.push(dir + fileList.items[i].name)		
+			files.push(dir + fileList.items[i].name)
 		} //if file extension required
 	}
 	return files
@@ -128,7 +126,7 @@ async function loadImageBagPathsParallelFirebase(imagebagroots){
 	var imagepath_promises = imagebagroots.map(file => getFileListRecursiveFirebase(file,'.png')); //create array of recursive path load Promises
 	var funcreturn = await Promise.all(imagepath_promises);
 	//Assemble images and add labels
-	var bagitems_paths = [] // Can also be paths to a single .png file. 
+	var bagitems_paths = [] // Can also be paths to a single .png file.
 	var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
 	for (var i=0; i<=funcreturn.length-1; i++){
 		bagitems_paths.push(... funcreturn[i])
@@ -136,7 +134,7 @@ async function loadImageBagPathsParallelFirebase(imagebagroots){
 			bagitems_labels.push(i)
 		}
 	} //for i labels
-	return [bagitems_paths, bagitems_labels] 
+	return [bagitems_paths, bagitems_labels]
 }
 
 async function loadImageArrayfromFirebase(imagepathlist){
@@ -147,7 +145,7 @@ async function loadImageArrayfromFirebase(imagepathlist){
 		if (imagepathlist.length > MAX_TOTAL_REQUESTS) {
 			throw "Under the Firebase Cloud Storage API, cannot load more than "+MAX_TOTAL_REQUESTS+" images at a short time period. You have requested "
 			+imagepathlist.length+". Consider using an image loading strategy that reduces the request rate on Google Cloud Storage."
-			return 
+			return
 		}
 
 		if (imagepathlist.length > MAX_SIMULTANEOUS_REQUESTS){
@@ -155,8 +153,8 @@ async function loadImageArrayfromFirebase(imagepathlist){
 			var image_array = []
 
 			for (var i = 0; i < Math.ceil(imagepathlist.length / MAX_SIMULTANEOUS_REQUESTS); i++){
-				var lb = i*MAX_SIMULTANEOUS_REQUESTS; 
-				var ub = i*MAX_SIMULTANEOUS_REQUESTS + MAX_SIMULTANEOUS_REQUESTS; 
+				var lb = i*MAX_SIMULTANEOUS_REQUESTS;
+				var ub = i*MAX_SIMULTANEOUS_REQUESTS + MAX_SIMULTANEOUS_REQUESTS;
 				var partial_pathlist = imagepathlist.slice(lb, ub);
 
 				var partial_image_requests = []
@@ -167,9 +165,9 @@ async function loadImageArrayfromFirebase(imagepathlist){
 				var partial_image_array = await Promise.all(partial_image_requests)
 				image_array.push(... partial_image_array);
 			}
-			
+
 		}
-		else { // If number of images is less than MAX_SIMULTANEOUS_REQUESTS, request them all simultaneously: 
+		else { // If number of images is less than MAX_SIMULTANEOUS_REQUESTS, request them all simultaneously:
 			for (var i = 0; i < 3; i++){
 				var image_requests = imagepathlist.map(loadImagefromFirebase);
 
@@ -226,24 +224,24 @@ catch(error){
 
 //------------- LOAD PARAMS --------------//
 async function loadParametersfromFirebase(paramfile_path){
-	try{ 
+	try{
 		data = await loadTextfromFirebase(paramfile_path)
 		TASK = {}
 		TASK = data
 		await loadAgentRFIDfromFirestore(ENV.Subject,TASK.Species)
 
-		
+
 		if (typeof(TASK.ImageRewardList) != "undefined"){
 			for (var i=0; i<=TASK.ImageRewardList.length-1; i++){
 				var data = await loadTextfromFirebase(TASK.ImageRewardList[i])
 				for (var j=0; j<=data.ImageRewardList.length/2 - 1; j++){
 					ImageRewardList[ data.ImageRewardList[2*j+1] ] = data.ImageRewardList[2*j]
-				}			
-			} //for i reward lists			
+				}
+			} //for i reward lists
 		}
 
 		var filemeta = await getFileMetadataFirebase(paramfile_path)
-		ENV.ParamFileName = '/' + filemeta.fullPath; 
+		ENV.ParamFileName = '/' + filemeta.fullPath;
 		ENV.ParamFileRev = filemeta.generation
 		ENV.ParamFileDate = new Date(filemeta.updated)
 
@@ -261,9 +259,9 @@ async function saveParameterTexttoFirebase(parameter_text){
 	    datastr = parameter_text
 
 	    var success = false
-	    var i = 1; 
-	    var timeout_seed =  1000; 
-	    var max_retries = 10; 
+	    var i = 1;
+	    var timeout_seed =  1000;
+	    var max_retries = 10;
 
 	    while(!success && i < max_retries){
 	    	try{
@@ -335,7 +333,7 @@ async function saveParameterstoFirebase() {
 
 //------------- SAVE DATA --------------//
 async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, TRIAL){
-	var dataobj = [] 
+	var dataobj = []
 
 	dataobj.push(ENV)
 	dataobj.push(IMAGES.imagepaths)
@@ -372,15 +370,15 @@ function loadSoundfromFirebase(src,idx){
 // // promises not used in safari webkit decodeAudioData
 // 				audiocontext.decodeAudioData(reader.result).then(function(buffer){
 // 					sounds.buffer[idx] = buffer;
-// 					resolve(idx)				
+// 					resolve(idx)
 // 				})
 
 				// Cross-browser compatible: doesn't use promises
-				audiocontext.decodeAudioData(reader.result, (buffer) => { 
+				audiocontext.decodeAudioData(reader.result, (buffer) => {
 					sounds.buffer[idx] = buffer;
-					resolve(idx)				
-				 }, (e) => { reject(e); });	
-				 			
+					resolve(idx)
+				 }, (e) => { reject(e); });
+
 			} //reader.onload
 			reader.readAsArrayBuffer(fileBlob)
 		} //try
@@ -410,7 +408,7 @@ async function getMostRecentBehavioralFilePathsFromFirebase(num_files_to_get, su
 		// [oldest,...,most recent]
 		file_list.sort();
 
-		// Return most recent files 
+		// Return most recent files
 		num_files = file_list.length
 		return file_list.slice(num_files - num_files_to_get, num_files)
 	}
