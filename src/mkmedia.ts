@@ -389,6 +389,7 @@ export class Mkchart {
   canvas: HTMLCanvasElement;
   plotBtn: HTMLButtonElement;
   finderDiv: HTMLDivElement;
+  chart: Chart | null;
 
   constructor() {
     this.canvas = document.querySelector("#chart-canvas") as HTMLCanvasElement;
@@ -398,6 +399,7 @@ export class Mkchart {
     this.canvas.height = this.finderDiv.offsetHeight;
     this.canvas.style.width = String(this.finderDiv.offsetWidth);
     this.canvas.style.height = String(this.finderDiv.offsetHeight);
+    this.chart = null;
     console.log(this.canvas);
     this.plotBtnAction();
     this.closeCanvas();
@@ -408,7 +410,7 @@ export class Mkchart {
       this.canvas.style.zIndex = "2";
       this.finderDiv.style.zIndex = "1";
       let ctx = this.canvas.getContext('2d');
-      let myChart = new Chart(ctx!, {
+      this.chart = new Chart(ctx!, {
         type: 'line',
         data: {
           labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
@@ -442,6 +444,26 @@ export class Mkchart {
                 beginAtZero: true
               }
             }]
+          },
+          animation: {
+            onComplete: function(animation) {
+              if (ctx) {
+                let x = ctx.canvas.width - 20;
+                let y = 0;
+                let side = 20;
+                let shift = 2;
+
+                ctx.fillStyle = 'red';
+                ctx.fillRect(x, y, side, side);
+                ctx.beginPath();
+                ctx.moveTo(x + shift, y + shift);
+                ctx.lineTo(x + side - shift, y + side - shift);
+                ctx.moveTo(x + side - shift, y + shift);
+                ctx.lineTo(x + shift, y + side - shift);
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.stroke();
+              }
+            }
           }
         }
       });
@@ -452,6 +474,24 @@ export class Mkchart {
     this.canvas.addEventListener('click', (ev: MouseEvent) => {
       let rect = this.canvas.getBoundingClientRect();
       console.log("X:", ev.clientX - rect.left, "Y:", ev.clientY - rect.top);
-    })
+      if (this.isCloseRect(ev.clientX - rect.left, ev.clientY - rect.top)) {
+        this.chart?.destroy();
+        let ctx = this.canvas.getContext('2d');
+        ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.finderDiv.style.zIndex = "2";
+        this.canvas.style.zIndex = "1";
+      }
+    });
+  }
+
+  private isCloseRect(clickedX: number, clickedY: number) {
+    let x = this.canvas.width - 20;
+    let y = 0;
+    let side = 20;
+    if ((clickedX >= x) && (clickedX <= x + 20) && 
+        (clickedY >= y) && (clickedY <= y + 20)) {
+      return true;
+    }
+    return false;
   }
 }
