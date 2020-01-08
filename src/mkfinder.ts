@@ -1,7 +1,7 @@
 import * as firebase from "firebase/app";
 import "firebase/firestore";
 type Timestamp = firebase.firestore.Timestamp;
-import { Mkeditor, Mkthree, Mkimage } from "./mkmedia";
+import { Mkeditor, Mkthree, Mkimage, Mkchart } from "./mkmedia";
 import FileSaver from "file-saver";
 
 const db = firebase.firestore();
@@ -16,6 +16,7 @@ export class Mkfinder {
   downloadBtn: HTMLButtonElement;
   mkt: Mkthree;
   mki: Mkimage;
+  mkc: Mkchart;
   numImgSlider: HTMLInputElement;
   showImagesBtn: HTMLButtonElement;
   selectedImages: any[];
@@ -47,6 +48,7 @@ export class Mkfinder {
     this.mkt = new Mkthree();
     this.mki = new Mkimage();
     this.mke = new Mkeditor();
+    this.mkc = new Mkchart();
 
 
   }
@@ -87,6 +89,9 @@ export class Mkfinder {
           this.mki.imgCanvasDiv.style.zIndex = "2";
           this.mkt.canvas.style.zIndex = "1";
           this.mke.displayFirebaseTextFile(row.getData(), database);
+          this.mkc.removeElementsByClassName("axis-options");
+          this.mkc.populateAxisFields(row.getData());
+
         },
         rowTap: (event, row) => {
           event.stopPropagation();
@@ -97,8 +102,10 @@ export class Mkfinder {
           this.mke.editorDivElement.style.zIndex = "3";
           this.mki.imgCanvasDiv.style.zIndex = "2";
           this.mkt.canvas.style.zIndex = "1";
-
           this.mke.displayFirebaseTextFile(row.getData(), database);
+          this.mkc.removeElementsByClassName("axis-options");
+          this.mkc.populateAxisFields(row.getData());
+
         },
         tableBuilt: () => {
           /* selectAllBox function */
@@ -168,6 +175,63 @@ export class Mkfinder {
         }
       });
     }
+
+    else if (database == "objects") {
+      this.finder.destroy();
+      this.pathName.innerText = "objects";
+      this.finder = new Tabulator("#finder", {
+        data: dataArr,
+        index: "meshfile",
+        layout: "fitColumns",
+        initialSort: [
+          {column: "identity", dir: "asc"}
+        ],
+        columns: [
+          {title: "<input id='select-all' type='checkbox'/>", width: 15, headerSort: false},
+          {title: "Identity", field: "identity"},
+          {title: "Mesh", field: "mesh"},
+          {title: "Noun", field: "noun"},
+          {title: "Meshfile", field: "meshfile"},
+          {title: "MeshfilePath", field: "meshfilepath"},
+        ],
+        selectable: true,
+        selectableRangeMode: "click",
+        rowClick: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+          
+        },
+        rowTap: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+        },
+        tableBuilt: () => {          
+          /* selectAllBox function */
+          let selectAllBox 
+            = document.querySelector("#select-all") as HTMLInputElement;
+          selectAllBox.addEventListener("change", ev => {
+            if (selectAllBox.checked == true) {
+              this.finder.selectRow();
+            } else {
+              this.finder.deselectRow();
+            }
+          });
+        }
+      });
+    }
+
     else {
       console.error("Wrong or Invalid database trying to be tabularized");
     }

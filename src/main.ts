@@ -34,6 +34,7 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 const storageRef = storage.ref(); 
 const rootRef = storageRef.child("mkturkfiles/");
+let isRoot = true;
 
 let mkq = new Mkquery();
 let mkf = new Mkfinder();
@@ -51,8 +52,16 @@ let marmosetsLink =
     document.querySelector("#quick-link-marmosets") as HTMLElement;
 let mkturkdataLink =
     document.querySelector("#quick-link-mkturkdata") as HTMLElement;
+let objectsLink = 
+    document.querySelector("#quick-link-objects") as HTMLElement;
 let mkturkfilesLink =
     document.querySelector("#quick-link-mkturkfiles") as HTMLElement;
+let paramsLink =
+    document.querySelector("#quick-link-params") as HTMLElement;
+let imagesLink =
+    document.querySelector("#quick-link-images") as HTMLElement;
+let scenesLink =
+    document.querySelector("#quick-link-scenes") as HTMLElement;
 
 marmosetsLink.addEventListener("click", (ev: Event) => {
   ev.preventDefault();
@@ -61,6 +70,11 @@ marmosetsLink.addEventListener("click", (ev: Event) => {
   fieldSelector!.value = "name";
   qryLocSelc!.dispatchEvent(new Event("change"));
   fieldSelector!.dispatchEvent(new Event("change"));
+
+  let ret = mkq.decodeQuery(db.collection("marmosets"));
+  ret.then(docs => {
+    mkf.listFirestoreDocs(docs, "marmosets");
+  });
 
 });
 
@@ -73,13 +87,58 @@ mkturkdataLink.addEventListener("click" || "pointerup", (ev: Event) => {
   fieldSelector!.dispatchEvent(new Event("change"));
 });
 
-mkturkfilesLink.addEventListener("click" || "pointerup", (ev: Event) => {
+objectsLink.addEventListener("click" || "pointerup", (ev: Event) => {
   ev.preventDefault();
 
+  qryLocSelc!.value = "objects";
+  fieldSelector!.value = "identity";
+  qryLocSelc!.dispatchEvent(new Event("change"));
+  fieldSelector!.dispatchEvent(new Event("change"));
+
+  let ret = mkq.decodeQuery(db.collection("objects"));
+  ret.then(docs => {
+    mkf.listFirestoreDocs(docs, "objects");
+  });
+
+});
+
+mkturkfilesLink.addEventListener("click" || "pointerup", (ev: Event) => {
+  ev.preventDefault();
+  
+  isRoot = true;
   qryLocSelc!.value = "mkturkfiles";
   qryLocSelc!.dispatchEvent(new Event("change"));
 });
 
+paramsLink.addEventListener("click" || "pointerup", (ev: Event) => {
+  ev.preventDefault();
+
+  isRoot = false;
+  qryLocSelc!.value = "mkturkfiles";
+  qryLocSelc!.dispatchEvent(new Event("change"));
+  mkf.listStorageFiles(storageRef.child("mkturkfiles/parameterfiles/subjects"));
+
+});
+
+imagesLink.addEventListener("click" || "pointerup", (ev: Event) => {
+  ev.preventDefault();
+
+  isRoot = false;
+  qryLocSelc!.value = "mkturkfiles";
+  qryLocSelc!.dispatchEvent(new Event("change"));
+  mkf.listStorageFiles(storageRef.child("mkturkfiles/imagebags/objectome"));
+
+});
+
+scenesLink.addEventListener("click" || "pointerup", (ev: Event) => {
+  ev.preventDefault();
+
+  isRoot = false;
+  qryLocSelc!.value = "mkturkfiles";
+  qryLocSelc!.dispatchEvent(new Event("change"));
+  mkf.listStorageFiles(storageRef.child("mkturkfiles/scenebags/objectome3d/face"));
+
+});
 
 qryLocSelc!.addEventListener("change", ev => {
 
@@ -146,6 +205,9 @@ qryLocSelc!.addEventListener("change", ev => {
       ki1.style.visibility = "visible";
       ki2.style.visibility = "visible";
       goBtn.style.visibility = "visible";
+      plotX.style.visibility = "hidden";
+      plotY.style.visibility = "hidden";
+      plotBtn.style.visibility = "hidden";
 
       resetPlaceholder();
       removeElementsByClassName("field-options");
@@ -163,6 +225,44 @@ qryLocSelc!.addEventListener("change", ev => {
 
       break;
 
+    case "objects":
+      fs.style.visibility = "visible";
+      ki0.style.visibility = "visible";
+      ki1.style.visibility = "hidden";
+      ki2.style.visibility = "hidden";
+      goBtn.style.visibility = "visible";
+      plotX.style.visibility = "hidden";
+      plotY.style.visibility = "hidden";
+      plotBtn.style.visibility = "hidden";
+
+      resetPlaceholder();
+      removeElementsByClassName("field-options");
+
+      let identityObjects = document.createElement("option");
+      identityObjects.setAttribute("class", "field-options");
+      identityObjects.setAttribute("value", "identity");
+      identityObjects.setAttribute("selected", "true");
+      identityObjects.textContent = "identity";
+
+      let meshObjects = document.createElement("option");
+      meshObjects.setAttribute("class", "field-options");
+      meshObjects.setAttribute("value", "mesh");
+      meshObjects.textContent = "mesh";
+
+      let nounObjects = document.createElement("option");
+      nounObjects.setAttribute("class", "field-options");
+      nounObjects.setAttribute("value", "noun");
+      nounObjects.textContent = "noun";
+
+      let fieldSelectorObjects
+        = document.querySelector("#field-selector") as HTMLSelectElement;
+      fieldSelectorObjects.appendChild(identityObjects);
+      fieldSelectorObjects.appendChild(meshObjects);
+      fieldSelectorObjects.appendChild(nounObjects);
+      fieldSelectorObjects.dispatchEvent(new Event("change"));
+
+      break;
+
     case "mkturkfiles":
       fs.style.visibility = "hidden";
       ki0.style.visibility = "hidden";
@@ -174,7 +274,9 @@ qryLocSelc!.addEventListener("change", ev => {
       plotBtn.style.visibility = "hidden";
 
       removeElementsByClassName("field-options");
-      mkf.listStorageFiles(rootRef);
+      if (isRoot) {
+        mkf.listStorageFiles(rootRef);
+      }
       break;
 
   }
@@ -264,7 +366,6 @@ queryForm?.addEventListener("submit", ev => {
   if (qryLoc === "marmosets" && field && k0) {
     queryParam = [ { field: field, keyword: k0 } ];
     queryStr = "db.collection('marmosets')" + mkq.mkquery(queryParam);
-
   }
 
   else if (qryLoc === "mkturkdata" && field) {
@@ -321,6 +422,11 @@ queryForm?.addEventListener("submit", ev => {
       ];
       queryStr = "db.collection('mkturkdata')" + mkq.mkquery(queryParam);
     }   
+  }
+
+  else if (qryLoc === "objects" && field && k0) {
+    queryParam = [ { field: field, keyword: k0 } ];
+    queryStr = "db.collection('objects')" + mkq.mkquery(queryParam);
   }
 
   else {
