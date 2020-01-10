@@ -50,20 +50,20 @@ var blescale = {
 
 //================ INITIALIZE BLE VARIABLE (end) ================//
 
-function updateConnectBLEButton(){
-	var elem = document.querySelector("#connect-ble-scale")
-	if (elem.textContent=="CONNECT BLE SCALE"){
-		elem.textContent = "DISCONNECT BLE SCALE";
-		elem.style.color = "red"
-		elem.removeEventListener('pointerup',blescaleconnect,false)
-		elem.addEventListener('pointerup',blescaledisconnect,false)
-	} 
-    else {
-	    elem.textContent = "CONNECT BLE SCALE";
-	    elem.style.color = "green"
-		elem.removeEventListener('pointerup',blescaledisconnect,false)
-		elem.addEventListener('pointerup',blescaleconnect,false)
-    } 
+function updateConnectBLEButton() {
+  let connectBtn = document.querySelector("#connect-ble-scale");
+  if (connectBtn.textContent == "CONNECT BLE SCALE") {
+    connectBtn.textContent = "DISCONNECT BLE SCALE";
+    connectBtn.style.color = "red";
+    connectBtn.removeEventListener("pointerup", blescaleconnect, false);
+    connectBtn.addEventListener("pointerup", blescaledisconnect, false);
+  }
+  else {
+    connectBtn.textContent = "CONNECT BLE SCALE";
+    connectBtn.style.color = "green";
+    connectBtn.removeEventListener("pointerup", blescaledisconnect, false);
+    connectBtn.addEventListener("pointerup", blescaleconnect, false);
+  }
 }
 
 function blescaleconnect(event){
@@ -141,88 +141,122 @@ async function requestBLEDevice(){
 }
 
 // Step 2: Connect server & Cache characteristics -- returns a promise
-async function connectBLEDeviceAndCacheCharacteristics(){
-  console.log('Connecting to GATT Server...')
+async function connectBLEDeviceAndCacheCharacteristics() {
+  console.log('Connecting to GATT Server...');
 
-  server = await blescale.device.gatt.connect()
-    var textstr = "found a GATT server"
-    console.log(textstr,server)
-    blescale.statustext = blescale.statustext + "<br>" + textstr
-    // updateHeadsUpDisplayDevices()
-    blescale.server=server
+  server = await blescale.device.gatt.connect();
+  var textstr = "found a GATT server";
+  console.log(textstr,server);
+  blescale.statustext = blescale.statustext + "<br>" + textstr;
+  // updateHeadsUpDisplayDevices()
+  blescale.server=server;
 
-    weightService = await server.getPrimaryService(blescale.weightServiceUUID)
+  weightService = await server.getPrimaryService(blescale.weightServiceUUID)
+  blescale.statustext_connect = "Found weight service" + weightService.uuid + "Getting characteristics..."
+  console.log(blescale.statustext_connect)
+  // updateHeadsUpDisplayDevices()
+  blescale.weightService=weightService
 
-    blescale.statustext_connect = "Found weight service" + weightService.uuid + "Getting characteristics..."
+  characteristics = await weightService.getCharacteristics()
+  characteristics.forEach(characteristic => {
+    blescale.statustext_connect = 
+      ">> Characteristic: " + characteristic.uuid + "" + getSupportedProperties(characteristic);
     console.log(blescale.statustext_connect)
     // updateHeadsUpDisplayDevices()
-    blescale.weightService=weightService
 
-    characteristics = await weightService.getCharacteristics()
-    characteristics.forEach(characteristic =>
-      {
-        blescale.statustext_connect = 
-        ">> Characteristic: " + characteristic.uuid + "" + getSupportedProperties(characteristic);
-        console.log(blescale.statustext_connect)
-        // updateHeadsUpDisplayDevices()
-
-        //Get read characteristic
-        if (characteristic.properties.read == true && 
-            characteristic.properties.write == false && 
-            characteristic.properties.notify == true){
+    //Get read characteristic
+    if (characteristic.properties.read == true && 
+        characteristic.properties.write == false && 
+        characteristic.properties.notify == true) {
           blescale.readWeightCharacteristic = characteristic
           blescale.statustext_received = "Found read characteristic " + characteristic.uuid
           // updateHeadsUpDisplayDevices()
-        }
-      })
+    }
+  });
 
-      await blescale.readWeightCharacteristic.startNotifications()
-      blescale.readWeightCharacteristic.addEventListener('characteristicvaluechanged', onWeightNotificationFromScale)
-      blescale.statustext_received = "Initiated scale read notifications"
-      console.log(blescale.statustext_received)
-      // updateHeadsUpDisplayDevices()
+  await blescale.readWeightCharacteristic.startNotifications()
+  blescale.readWeightCharacteristic.addEventListener('characteristicvaluechanged', onWeightNotificationFromScale)
+  blescale.statustext_received = "Initiated scale read notifications"
+  console.log(blescale.statustext_received)
+  // updateHeadsUpDisplayDevices()
 
 // Get Battery Service
-//     batteryService = await server.getPrimaryService(ble.batteryServiceUUID)
-    batteryService = await server.getPrimaryService("battery_service")
-    console.log("BATTERY SERVICEEEEEE", batteryService);
+  try {
+    batteryService = await server.getPrimaryService("battery_service");
+    console.log("Battery Service", batteryService);
 
-    blescale.statustext_connect = "Found battery service" + batteryService.uuid + "Getting characteristics..."
-    console.log(blescale.statustext_connect)
-    // updateHeadsUpDisplayDevices()
-    blescale.batteryService=batteryService
+    blescale.statustext_connect = "Found battery service" 
+      + batteryService.uuid + "Getting characteristics...";
+    console.log(blescale.statustext_connect);
+    blescale.batteryService = batteryService;
 
-    characteristics = await batteryService.getCharacteristics()
-    characteristics.forEach(characteristic =>
-      {
-        blescale.statustext_connect = 
-        ">> Characteristic: " + characteristic.uuid + "" + getSupportedProperties(characteristic);
-        console.log(blescale.statustext_connect)
-        // updateHeadsUpDisplayDevices()
+    characteristics = await batteryService.getCharacteristics();
+    characteristic.forEach(characteristic => {
+      blescale.statustext_connect = ">> Characteristic: " + characteristic.uuid
+        + " " + getSupportedProperties(characteristic);
+      console.log(blescale.statustext_connect);
 
-        //Get read characteristic
-        if (characteristic.properties.read == true && 
-            characteristic.properties.write == false && 
-            characteristic.properties.notify == true){
-          blescale.readBatteryCharacteristic = characteristic
-          blescale.statustext_received = "Found read characteristic " + characteristic.uuid
-          // updateHeadsUpDisplayDevices()
-        }
-      })
+      if (characteristic.properties.read == true &&
+          characteristic.properties.write == false && 
+          characteristic.properties.notify == true) {
+            blescale.readBatteryCharacteristic = characteristic;
+            blescale.statustext_received = "Found read characteristic "
+              + characteristic.uuid;
+      }
+    });
 
-      await blescale.readBatteryCharacteristic.startNotifications()
-      blescale.readBatteryCharacteristic.addEventListener('characteristicvaluechanged', onBatteryNotificationFromScale)
-      blescale.statustext_received = "Initiated battery read notifications"
-      console.log(blescale.statustext_received)
-      // updateHeadsUpDisplayDevices()
+    await blescale.readBatteryCharacteristic.startNotifications();
+    blescale.readBatteryCharacteristic.addEventListener("characteristicvaluechanged", onBatteryNotificationFromScale);
+    blescale.statustext_received = "Initiated battery read notifications";
+    console.log(blescale.statustext_received);
 
-	  // read initial battery level
-	  await blescale.readBatteryCharacteristic.readValue()
+    await blescale.readBatteryCharacteristic.readValue();
+    blescale.connected = true;
+    blescale.tareflag = 1;
+    updateConnectBLEButton();
+    console.log("battery working");
 
-      blescale.connected = true
-      blescale.tareflag = 1
-      updateConnectBLEButton()
-} //connectBLEDeviceAndCacheCharacteristics
+  } catch (error) {
+    console.error("Battery service error");
+  }
+    // batteryService = await server.getPrimaryService("battery_service")
+    // console.log("BATTERY SERVICEEEEEE", batteryService);
+
+    // blescale.statustext_connect = "Found battery service" + batteryService.uuid + "Getting characteristics..."
+    // console.log(blescale.statustext_connect)
+    // // updateHeadsUpDisplayDevices()
+    // blescale.batteryService=batteryService
+
+    // characteristics = await batteryService.getCharacteristics()
+    // characteristics.forEach(characteristic => {
+    //   blescale.statustext_connect = 
+    //     ">> Characteristic: " + characteristic.uuid + "" + getSupportedProperties(characteristic);
+    //   console.log(blescale.statustext_connect)
+    //   // updateHeadsUpDisplayDevices()
+
+    //   //Get read characteristic
+    //   if (characteristic.properties.read == true && 
+    //       characteristic.properties.write == false && 
+    //       characteristic.properties.notify == true) {
+    //     blescale.readBatteryCharacteristic = characteristic
+    //     blescale.statustext_received = "Found read characteristic " + characteristic.uuid
+    //     // updateHeadsUpDisplayDevices()
+    //   }
+    // });
+
+    //   await blescale.readBatteryCharacteristic.startNotifications()
+    //   blescale.readBatteryCharacteristic.addEventListener('characteristicvaluechanged', onBatteryNotificationFromScale)
+    //   blescale.statustext_received = "Initiated battery read notifications"
+    //   console.log(blescale.statustext_received)
+    //   // updateHeadsUpDisplayDevices()
+
+	  // // read initial battery level
+	  // await blescale.readBatteryCharacteristic.readValue()
+
+    //   blescale.connected = true
+    //   blescale.tareflag = 1
+    //   updateConnectBLEButton()
+}
 //==================== CONNECT BLE (end) ====================//
 
 /* Utils */
@@ -296,6 +330,7 @@ function onWeightNotificationFromScale(event){
   // var t_notify = Date.now() - ENV.CurrentDate.valueOf()
   // var dt = t_notify-blescale.tweights[blescale.tweights.length-1]
   let value = event.target.value
+  console.log("value:", value);
 
   value = value.buffer ? value : new DataView(value)
   let a = []
@@ -357,14 +392,16 @@ function onWeightNotificationFromScale(event){
 
 
     blescale.statustext_received = 
-      'Wt=' + blescale.weights[blescale.weights.length-1] + ' '
-      + blescale.weightunits
+      'Wt=' + blescale.weights[blescale.weights.length-1] + " g";
       
       // + '  ' 
       // + Math.round(dt) + 'ms' + '     '
       // + ' MAX =' + blescale.maxweight + '  ' + blescale.weightunits
 
-//     console.log(blescale.statustext_received)
+    console.log(blescale.statustext_received);
+    let weightDisplay = document.querySelector("#weight-display");
+    weightDisplay.textContent = blescale.weights[blescale.weights.length-1] 
+      + " g";
     // updateHeadsUpDisplayDevices()
 }
 
@@ -400,7 +437,16 @@ function onBatteryNotificationFromScale(event){
 
 //============== RUNNER CODE ===============//
 let connectBtn = document.querySelector("#connect-ble-scale");
-connectBtn.addEventListener("click", ev => {
+connectBtn.addEventListener("pointerup", ev => {
   ev.preventDefault();
   blescaleconnect(ev);
+});
+
+// connectBtn.addEventListener("pointerup", blescaleconnect, false);
+
+let tareBtn = document.querySelector("#tare-button");
+tareBtn.addEventListener("pointerup", ev => {
+  ev.preventDefault();
+  blescale.tareflag = 1;
+  console.log("hello");
 });
