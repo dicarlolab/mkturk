@@ -75,6 +75,19 @@ function writeTextonBlankCanvas(textstr,x,y){
 	visible_ctxt.fillText(textstr,x,y)
 }
 
+// function writeTextonBlankCanvas(textstr,x,y){
+// 	if (ENV.OffscreenCanvasAvailable){
+// 		var visible_ctxt = VISIBLECANVAS.getContext('bitmaprenderer')
+// 	}
+// 	else if (ENV.OffscreenCanvasAvailable == 0){
+// 		var visible_ctxt = VISIBLECANVAS.getContext('2d')
+// 	}
+// 	visible_ctxt.textBaseline = "hanging"
+// 	visible_ctxt.fillStyle = "white"
+// 	visible_ctxt.font = "18px Verdana"
+// 	visible_ctxt.fillText(textstr,x,y)
+// }
+
 function updateStatusText(text){
 	var textobj = document.getElementById("headsuptext");
 	textobj.innerHTML = text
@@ -124,14 +137,18 @@ function setupCanvas(canvasobj){
 	canvasobj.style.margin="0 auto";
 	canvasobj.style.display="block"; //visible
 
-	// assign listeners
+	setupCanvasListeners(canvasobj)
+} 
+
+function setupCanvasListeners(canvasobj){
+		// assign listeners
 	canvasobj.addEventListener('touchstart',touchstart_listener,{capture: false,passive: false}); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
 	canvasobj.addEventListener('touchmove',touchmove_listener,{passive: false}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
 	canvasobj.addEventListener('touchend',touchend_listener,{capture: false, passive:false});
 	canvasobj.addEventListener('mousedown',touchstart_listener,{capture: false,passive: false}); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
 	canvasobj.addEventListener('mousemove',touchmove_listener,{passive: false}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
 	canvasobj.addEventListener('mouseup',touchend_listener,{capture: false, passive:false});
-} 
+}
 
 // Sync: Adjust canvas for the device pixel ratio & browser backing store size
 // from http://www.html5rocks.com/en/tutorials/canvas/hidpi/#disqus_thread
@@ -367,10 +384,10 @@ async function bufferChoiceUsingDot(sample_image, sample_image_grid_index, test_
 		}
 		if (i==0){
 			funcreturn = await renderDotOnCanvas(choice_color, choice_grid_indices[i], choice_radius, canvasobj);
-		} //different = square
+		} //same = circle
 		else if (i==1){
 			funcreturn = await renderSquareOnCanvas(choice_color, choice_grid_indices[i], 2*choice_radius, canvasobj);
-		} //same = circle
+		} //different = square
 		boundingBoxesChoice.x.push(funcreturn[0]); 
 		boundingBoxesChoice.y.push(funcreturn[1]); 
 	} //FOR i choices
@@ -522,33 +539,47 @@ function displayTrial(sequence,tsequence){
 			//console.log('Frame =' + frame.current+'. Duration ='+(timestamp-start)+'. Timestamp = ' + timestamp)
 			
 			//3D render
-			if (typeof(TQS) != "undefined"){
+			if (FLAGS.scene3d == 1){
 				
-				if (sequence[frame.current] == "sample" || sequence[frame.current] == "test" || sequence[frame.current] == "choice"){
+				if (sequence[frame.current] == "sample" || sequence[frame.current] == "test" || sequence[frame.current] == "choice"
+					|| (sequence[frame.current] == "touchfix" && TASK.FixationUsesSample)){
+
 					var taskscreen = [sequence[frame.current].charAt(0).toUpperCase() + sequence[frame.current].slice(1)]
-					 renderer.autoClear = false
+					if (sequence[frame.current] == "touchfix" && TASK.FixationUsesSample){
+						taskscreen = "Sample"
+					}
+
+					renderer.autoClear = false
 				
 					if (TASK.KeepSampleON == 1 && (sequence[frame.current] == "test" || sequence[frame.current]=="choice")){
+						setViewport(TASK.SampleGridIndex)
 						var camera = scene["Sample"].getObjectByName("cam"+CURRTRIAL.sample_scenebag_label)
 				    	renderer.render(scene["Sample"],camera) //takes >1ms, do before the fast 2D swap (<1ms)	
 				   	}
-					if (TASK.KeepTestON ==1 && sequence[frame.current] == "choice"){
+					if (TASK.KeepTestON == 1 && sequence[frame.current] == "choice"){
+						setViewport(TASK.TestGridIndex[0])
 						var camera = scene["Test"].getObjectByName("cam"+CURRTRIAL.test_scenebag_labels)
 						renderer.render(scene["Test"],camera)
 					}
 
-					if (sequence[frame.current] == "sample" || sequence[frame.current] == "test"){
+					if (sequence[frame.current] == "sample" || sequence[frame.current] == "test"
+						|| (sequence[frame.current] == "touchfix" && TASK.FixationUsesSample)){
 						console.time("first scene")
-						if (sequence[frame.current]=="sample"){
+						if (sequence[frame.current] == "touchfix" && TASK.FixationUsesSample){
+							setViewport(CURRTRIAL.fixationgridindex)
 							var camera = scene["Sample"].getObjectByName("cam"+CURRTRIAL.sample_scenebag_label)							
-						}
-						else{
+						}//fixationusessample
+						else if (sequence[frame.current]=="sample"){
+							setViewport(TASK.SampleGridIndex)
+							var camera = scene["Sample"].getObjectByName("cam"+CURRTRIAL.sample_scenebag_label)							
+						}//sample
+						else if (sequence[frame.current]=="test"){
+							setViewport(TASK.TestGridIndex[0])
 							var camera = scene[taskscreen].getObjectByName("cam"+CURRTRIAL.test_scenebag_labels[0])					
-						}
+						} //test
 				    	renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
 						console.timeEnd("first scene")
 				    	if (sequence[frame.current] == "test" && CURRTRIAL.test_scenebag_labels.length > 1){
-
 				    		for (var j = 1; j<=CURRTRIAL.test_scenebag_labels.length - 1; j++){
 				    			console.time("test1Update")
 						    	updateSingleFrame3D(
@@ -558,6 +589,7 @@ function displayTrial(sequence,tsequence){
 										TASK.TestGridIndex[j]
 									)
 									console.timeEnd("test1Update")
+								setViewport(TASK.TestGridIndex[j])
 								var camera = scene[taskscreen].getObjectByName("cam"+CURRTRIAL.test_scenebag_labels[j])
 								// var camera = scene[sequence[frame.current].charAt(0).toUpperCase() + sequence[frame.current].slice(1)].getObjectByName(-1)
 								console.time("test1 render")
@@ -565,7 +597,7 @@ function displayTrial(sequence,tsequence){
 						    	console.timeEnd("test1 render")
 				    		} //FOR j test items
 				    	} //IF test
-					} //IF sample || test
+					} //IF sample || test || fixationusessample
 
 					if (sequence[frame.current] == "choice" && TASK.KeepTestON == 0 && TASK.KeepSampleON == 0){
 						 VISIBLECANVASWEBGL.style.visibility='hidden';
@@ -574,7 +606,7 @@ function displayTrial(sequence,tsequence){
 					}
 				
 				    console.log("t=" + (timestamp-start) + "showing " + sequence[frame.current])
-				} //IF sample || test
+				} //IF sample || test || choice || fixationusessample
 				else {
 				    VISIBLECANVASWEBGL.style.visibility='hidden';
 				    console.log("t=" + (timestamp-start) + "hiding webgl canvas")
@@ -631,21 +663,31 @@ function displayTrial(sequence,tsequence){
 		// continue if not all frames shown
 		if (frame.shown[frame.shown.length-1] != 1){
 
-			if (typeof(TQS) != "undefined"){
+			if (FLAGS.scene3d == 1){
 					
 				var taskscreen = [sequence[frame.current].charAt(0).toUpperCase() + sequence[frame.current].slice(1)]
-				if (sequence[frame.current] == "sample" && scene["Sample"].framenum != frame.current){
-					
-				console.time("sampleUpdate")
-					updateSingleFrame3D(
-								taskscreen,
-								CURRTRIAL.sample_scenebag_label,
-								CURRTRIAL.sample_scenebag_index,
-								TASK.SampleGridIndex
-							)
+				if (sequence[frame.current] == "sample" && scene["Sample"].framenum != frame.current || 
+					sequence[frame.current] == 'touchfix' && TASK.FixationUsesSample){
+					console.time("sampleUpdate")
+					if (sequence[frame.current] == 'touchfix' && TASK.FixationUsesSample){
+						updateSingleFrame3D(
+									"Sample",
+									CURRTRIAL.sample_scenebag_label,
+									CURRTRIAL.sample_scenebag_index,
+									CURRTRIAL.fixationgridindex
+						)					
+					}//IF FixationUsesSample
+					else{
+						updateSingleFrame3D(
+									taskscreen,
+									CURRTRIAL.sample_scenebag_label,
+									CURRTRIAL.sample_scenebag_index,
+									TASK.SampleGridIndex
+								)						
+					}//IF sample
 					scene["Sample"].framenum = frame.current
-				 console.log("UPDATED SINGLEFRAME3D SAMPLE" + Math.random())	
-				 console.timeEnd("sampleUpdte")	
+					console.log("UPDATED SINGLEFRAME3D SAMPLE" + Math.random())	
+					console.timeEnd("sampleUpdate")	
 				} //IF sample
 				else if (sequence[frame.current] == "test"  && scene["Test"].framenum != frame.current){
 					boundingBoxesChoice3D = {'x':[],'y':[]}
@@ -662,9 +704,12 @@ function displayTrial(sequence,tsequence){
 				 console.timeEnd("test0update")
 				} //ELSE IF test
 
-					if (ENV.OffscreenCanvasAvailable){// && sequence[frame.current] != "sample" && sequence[frame.current] != "test"){
-						renderScreen(sequence[frame.current],OFFSCREENCANVAS) //render 2D image offscreen prior to next frame draw
-					} //pre-render next frame
+				if (ENV.OffscreenCanvasAvailable){// && sequence[frame.current] != "sample" && sequence[frame.current] != "test"){
+					renderScreen(sequence[frame.current],OFFSCREENCANVAS) //render 2D image offscreen prior to next frame draw
+					if (sequence[frame.current] == "choice"){
+						boundingBoxesChoice3D = boundingBoxesChoice //default to 2D coords for same different buttons
+					}
+				} //pre-render next frame
 			} //3D Scene + 2D Image
 			else {
 				if (ENV.OffscreenCanvasAvailable){
@@ -921,7 +966,9 @@ function setupImageLoadingText(){
 	var textobj = document.getElementById("imageloadingtext")
 	textobj.style.top = CANVAS.offsettop + "px"
 	textobj.innerHTML = ''
+	setupCanvasListeners(textobj)
 }
+
 function updateImageLoadingAndDisplayText(str){
 	var textobj = document.getElementById("imageloadingtext")
 
@@ -964,4 +1011,20 @@ function displayGridCoordinate(idx,xycoord,canvasobj){
 	visible_ctxt.fillStyle = "white";
 	visible_ctxt.font = "20px Verdana";
 	visible_ctxt.fillText(idx,xycoord[0]/ENV.CanvasRatio, xycoord[1]/ENV.CanvasRatio)
+}
+
+function setViewport(gridindex){
+	//==== RENDERER 2D VIEWPORT
+	//width and height are determined by object size Inches. the viewport can't be smaller than the object's size. otherwise the object will look cropped
+	var scenecenterX = ENV.XGridCenter[gridindex]
+	var scenecenterY = ENV.YGridCenter[gridindex]
+	var scenewidth = renderer.getContext().canvas.width
+	var sceneheight = renderer.getContext().canvas.height
+	var left = scenecenterX - scenewidth/2
+	var bottom = scenecenterY + sceneheight/2 
+	bottom = renderer.getContext().canvas.height-bottom
+
+	renderer.setViewport(left, bottom, scenewidth, sceneheight);
+	renderer.setScissor(left,bottom,scenewidth,sceneheight)
+	renderer.setScissorTest(true)
 }

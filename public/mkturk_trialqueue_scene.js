@@ -1,12 +1,8 @@
 class TrialQueueScene { 
 
-constructor(samplingStrategy, SceneBagsSample,SceneBagsTest,SceneDataSample, SceneDataTest){
+constructor(samplingStrategy){
 	// Properties
 	this.samplingStrategy = samplingStrategy; 
-	this.SceneBagsSample = SceneBagsSample; 
-	this.SceneBagsTest = SceneBagsTest; 
-	this.SceneDataSample = SceneDataSample; 
-	this.SceneDataTest = SceneDataTest; 
 
 	// Queues
 	this.sampleq = {}
@@ -34,15 +30,15 @@ async build(trial_cushion_size){
 	this.samplebag_labels = [];
 	this.samplebag_indices = [];
 	this.samplebag_paths = [];
-	for (var i=0; i <= this.SceneDataSample.length-1; i++){
-		for (var j=0; j<= this.SceneDataSample[i].nscenes-1; j++){
+	for (var i=0; i <= IMAGES["Sample"].length-1; i++){
+		for (var j=0; j<= IMAGES["Sample"][i].nimages-1; j++){
 			this.samplebag_labels.push(i)
 			this.samplebag_indices.push(j)
 		} //for j scene renders, assign label
 
 		//get background images, if any
-		if (this.SceneDataSample[i].nimages > 0){
-			var funcreturn = await loadImageBagPathsParallelFirebase([this.SceneDataSample[i].IMAGES.imagebag]); 
+		if (IMAGES["Sample"][i].nbackgroundimages > 0){
+			var funcreturn = await loadImageBagPathsParallelFirebase([IMAGES["Sample"][i].IMAGES.imagebag]); 
 			this.samplebag_paths[i] = funcreturn[0]; 
 		}
 		else {
@@ -58,15 +54,15 @@ async build(trial_cushion_size){
 	this.testbag_labels = [];
 	this.testbag_paths = [];
 	this.testbag_indices = [];
-	for (var i=0; i <= this.SceneDataTest.length-1; i++){
-		for (var j=0; j<= this.SceneDataTest[i].nscenes-1; j++){
+	for (var i=0; i <= IMAGES["Test"].length-1; i++){
+		for (var j=0; j<= IMAGES["Test"][i].nimages-1; j++){
 			this.testbag_labels.push(i)
 			this.testbag_indices.push(j)
 		} //for j scene renders, assign label
 
 		//get background images, if any
-		if (this.SceneDataTest[i].nimages > 0){
-			var funcreturn = await loadImageBagPathsParallelFirebase([this.SceneDataTest[i].IMAGES.imagebag]); 
+		if (IMAGES["Test"][i].nbackgroundimages > 0){
+			var funcreturn = await loadImageBagPathsParallelFirebase([IMAGES["Test"][i].IMAGES.imagebag]); 
 			this.testbag_paths[i] = funcreturn[0]; 
 		}
 		else {
@@ -130,31 +126,31 @@ async generate_trials(n_trials){
 		} // if sample all bags vs blocks
 
 		// Draw one (1) sample image from samplebag
-		var sample_index = selectSampleImage(this.samplebag_block_indices, this.samplingStrategy)
+		var sample_index = this.selectSampleImage(this.samplebag_block_indices, this.samplingStrategy)
 		var sample_scenebag_label = this.samplebag_labels[sample_index]; 
 		var sample_scenebag_index = this.samplebag_indices[sample_index];
-		var sample_filename = this.samplebag_paths[sample_scenebag_label][this.SceneDataSample[sample_scenebag_label].IMAGES.imageidx[sample_scenebag_index]] || "";
+		var sample_filename = this.samplebag_paths[sample_scenebag_label][IMAGES["Sample"][sample_scenebag_label].IMAGES.imageidx[sample_scenebag_index]] || "";
 
 		this.ntrials_per_bag[sample_scenebag_label] = this.ntrials_per_bag[sample_scenebag_label] + 1
 		
 		image_requests.push(sample_filename)
 		
 		// Select appropriate test images (correct one and distractors) 
-		var funcreturn = selectTestImages(sample_scenebag_label, this.testbag_labels) 
+		var funcreturn = this.selectTestImages(sample_scenebag_label, this.testbag_labels) 
 		var test_filenames = []
 		if (TASK.TestON <= 0){
 			var test_indices = funcreturn[0]
 			for (var j = 0; j < test_indices.length; j++){
 				var test_scenebag_label = this.testbag_labels[test_indices[j]]; 
 				var test_scenebag_index = this.testbag_indices[test_indices[j]];
-				test_filenames.push(this.testbag_paths[test_scenebag_label][this.SceneDataTest[test_scenebag_label].IMAGES.imageidx[test_scenebag_index]] || "")
+				test_filenames.push(this.testbag_paths[test_scenebag_label][IMAGES["Test"][test_scenebag_label].IMAGES.imageidx[test_scenebag_index]] || "")
 			}			
 		} // m2s or sr2
 		else if (TASK.TestON > 0) {
 			var test_indices = funcreturn[0][0]
 			var test_scenebag_label = this.testbag_labels[test_indices]; 
 			var test_scenebag_index = this.testbag_indices[test_indices]; 
-			test_filenames.push(this.testbag_paths[test_scenebag_label][this.SceneDataTest[test_scenebag_label].IMAGES.imageidx[test_scenebag_index]] || "")
+			test_filenames.push(this.testbag_paths[test_scenebag_label][IMAGES["Test"][test_scenebag_label].IMAGES.imageidx[test_scenebag_index]] || "")
 		} //Same-Different Task = one side of the Match-to-Sample
 		var correctIndex = funcreturn[1]
 
@@ -269,11 +265,9 @@ async get_next_trial(){
 	return	[sample_image, sample_index, test_images, test_indices, test_correctIndex, sample_scenebag_label, sample_scenebag_index, test_scenebag_labels, test_scenebag_indices, sample_reward]
 // return [sample_image, sample_index]
 } //FUNCTION get_next_trial
-} //CLASS TrialQueueScene
 
 
-
-function selectSampleImage(samplebag_indices, SamplingStrategy){
+selectSampleImage(samplebag_indices, SamplingStrategy){
 
 	// Vanilla random uniform sampling with replacement: 
 	var sample_image_index = NaN
@@ -285,9 +279,9 @@ function selectSampleImage(samplebag_indices, SamplingStrategy){
 	}
 
 	return sample_image_index
-}
+}//FUNCTION selectSampleImage
 
-function selectTestImages(correct_label, testbag_labels){
+selectTestImages(correct_label, testbag_labels){
 	
 	// Input arguments: 
 	// 	correct_label: int. It is one element of testbag_labels corresponding to the rewarded group. 
@@ -318,7 +312,7 @@ function selectTestImages(correct_label, testbag_labels){
 			var object_grid_index = TASK.ObjectGridIndex[i] 
 
 			// Determine which location that grid index corresponds to in testIndices: 
-			order_idx = TASK.TestGridIndex.indexOf(object_grid_index)
+			var order_idx = TASK.TestGridIndex.indexOf(object_grid_index)
 
 			// Place the selected test image in the appropriate location in testIndices. 
 			testIndices[order_idx] = test_image_index
@@ -328,43 +322,49 @@ function selectTestImages(correct_label, testbag_labels){
 				correctSelection = order_idx; 
 			}
 		}
-		return [testIndices, correctSelection] 
-	}
+	} //IF
 
-	// Otherwise, for match-to-sample (where effectors are shuffled)
+	else {
+		// Otherwise, for match-to-sample (where effectors are shuffled)
 
-	// Get all unique labels 
-	var labelspace = []
-	for (var i = 0; i < testbag_labels.length; i++){
-		if(labelspace.indexOf(testbag_labels[i]) == -1 && 
-			testbag_labels[i] != correct_label){
-			labelspace.push(testbag_labels[i])
+		// Get all unique labels 
+		var labelspace = []
+		for (var i = 0; i < testbag_labels.length; i++){
+			if(labelspace.indexOf(testbag_labels[i]) == -1 && 
+				testbag_labels[i] != correct_label){
+				labelspace.push(testbag_labels[i])
+			}
 		}
-	}
 
-	// Randomly select n-1 labels to serve as distractors 
-	var distractors = []
-	labelspace = shuffle(labelspace)
-	for (var i=0; i <= TASK.TestGridIndex.length-2; i++){
-		distractors[i] = labelspace[i]
-	}
-
-	// Add distractors and correct label to testpool, and then shuffle. 
-	var testpool = []
-	testpool.push(... distractors)
-	testpool.push(correct_label)
-	testpool = shuffle(testpool)	
-
-	// For each label in the testpool, add a random testimage index of it to testIndices. 
-	for (var i = 0; i<testpool.length; i++){
-		label = testpool[i]
-		object_test_indices = getAllInstancesIndexes(testbag_labels, label); 
-		test_image_index = object_test_indices[Math.floor((object_test_indices.length)*Math.random())]; 
-		testIndices[i] = test_image_index
-		if(label == correct_label){
-			correctSelection = i
+		// Randomly select n-1 labels to serve as distractors 
+		var distractors = []
+		labelspace = shuffle(labelspace)
+		for (var i=0; i <= TASK.TestGridIndex.length-2; i++){
+			distractors[i] = labelspace[i]
 		}
-	}
+
+		// Add distractors and correct label to testpool, and then shuffle. 
+		var testpool = []
+		testpool.push(... distractors)
+		testpool.push(correct_label)
+		testpool = shuffle(testpool)	
+
+		// For each label in the testpool, add a random testimage index of it to testIndices. 
+		for (var i = 0; i<testpool.length; i++){
+			var label = testpool[i]
+			object_test_indices = getAllInstancesIndexes(testbag_labels, label); 
+			test_image_index = object_test_indices[Math.floor((object_test_indices.length)*Math.random())]; 
+			testIndices[i] = test_image_index
+			if(label == correct_label){
+				correctSelection = i
+			}
+		}
+	} //ELSE
 
 	return [testIndices, correctSelection]
-}
+}//FUNCTION selectTestImages
+
+} //CLASS TrialQueueScene
+
+
+

@@ -27,7 +27,7 @@ async function initThreeJS(scenedata) {
 
 async function addToScene(taskscreen){
 
-    for (var classlabel = 0; classlabel<=SCENEdata[taskscreen].length-1; classlabel++){
+    for (var classlabel = 0; classlabel<=IMAGES[taskscreen].length-1; classlabel++){
 
     //==== CAMERAS
         // init camera
@@ -37,20 +37,20 @@ async function addToScene(taskscreen){
 
         //DEFAULTING TO CAMERA FOR FIRST CLASS'S SCENE 
         CAMERAS[taskscreen][classlabel]= []
-        for (cam in SCENEdata[taskscreen][classlabel].CAMERAS){
+        for (cam in IMAGES[taskscreen][classlabel].CAMERAS){
             var originvec = new THREE.Vector3(0,0,0)
             var unitvec = new THREE.Vector3(1,1,1)
 
             cameraLookAtOriginByDefault = originvec.clone()
 
-                var camera = new THREE.PerspectiveCamera(SCENEdata[taskscreen][classlabel].CAMERAS[cam].fieldOfVIEW,VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height,
-                                SCENEdata[taskscreen][classlabel].CAMERAS[cam].near,SCENEdata[taskscreen][classlabel].CAMERAS[cam].far)
+                var camera = new THREE.PerspectiveCamera(IMAGES[taskscreen][classlabel].CAMERAS[cam].fieldOfVIEW,VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height,
+                                IMAGES[taskscreen][classlabel].CAMERAS[cam].near,IMAGES[taskscreen][classlabel].CAMERAS[cam].far)
 
                // var camera = new THREE.OrthographicCamera(VISIBLECANVASWEBGL.width/-2, VISIBLECANVASWEBGL.width/2, VISIBLECANVASWEBGL.height/2,VISIBLECANVASWEBGL.height/-2,
-                             //  SCENEdata[taskscreen][classlabel].CAMERAS[cam].near,SCENEdata[taskscreen][classlabel].CAMERAS[cam].far)
+                             //  IMAGES[taskscreen][classlabel].CAMERAS[cam].near,IMAGES[taskscreen][classlabel].CAMERAS[cam].far)
     
-     camera.position.set(SCENEdata[taskscreen][classlabel].CAMERAS[cam].position.x[0],SCENEdata[taskscreen][classlabel].CAMERAS[cam].position.y[0],SCENEdata[taskscreen][classlabel].CAMERAS[cam].position.z[0])
-              //camera.position.set(0,0,100)
+        // Do the math // when camera is positioned at (0,0,10) and looks at (0,0,0)
+                camera.position.set(0,0,10)
                 camera.lookAt(cameraLookAtOriginByDefault)
                 camera.name = "cam"+classlabel
                 scene[taskscreen].add(camera)
@@ -61,8 +61,22 @@ async function addToScene(taskscreen){
                 var originscreen = toScreenPosition(originvec,camera)
                 var unitscreen = toScreenPosition(unitvec,camera)
                 var deltavec = [unitscreen.x - originscreen.x, unitscreen.y - originscreen.y]
-                SCENEdata[taskscreen].THREEJStoPixels = Math.max.apply(null,deltavec)
-                SCENEdata[taskscreen].THREEJStoInches = (SCENEdata[taskscreen].THREEJStoPixels)/ENV.ViewportPPI 
+                IMAGEMETA[taskscreen + "OriginScreenPixels"] = originscreen
+                // IMAGES[taskscreen].originscreenPixels = originscreen
+                IMAGEMETA[taskscreen + "THREEJStoPixels"] = Math.max.apply(null,deltavec)
+                IMAGEMETA[taskscreen + "THREEJStoInches"] = (IMAGEMETA[taskscreen+ "THREEJStoPixels"])/ENV.ViewportPPI 
+
+                //FOR CAMERA position
+                IMAGES[taskscreen][classlabel].CAMERAS[cam].positionInches = {};
+                for (keys in IMAGES[taskscreen][classlabel].CAMERAS[cam].position){
+                    IMAGES[taskscreen][classlabel].CAMERAS[cam].positionInches[keys] = rescaleArrayInchestoTHREEJS(IMAGES[taskscreen][classlabel].CAMERAS[cam].position[keys],1/IMAGEMETA[taskscreen + "THREEJStoInches"])
+                }
+
+                //FOR LOOKAT target
+                IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS = {};
+                for (keys in IMAGES[taskscreen][classlabel].CAMERAS[cam].targetInches){
+                    IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS[keys] = rescaleArrayInchestoTHREEJS(IMAGES[taskscreen][classlabel].CAMERAS[cam].targetInches[keys],IMAGEMETA[taskscreen + "THREEJStoInches"])
+                }               
     //             controls = new THREE.OrbitControls(camera,renderer.domElement);
     //             controls.target = new THREE.Vector3(0, 0, 0)
                 CAMERAS[taskscreen][classlabel][cam] = camera;
@@ -70,9 +84,9 @@ async function addToScene(taskscreen){
 
 //==== LIGHTS
     LIGHTS[taskscreen][classlabel]=[]
-    for (var lt in SCENEdata[taskscreen][classlabel].LIGHTS){
-        var index = Object.keys(SCENEdata[taskscreen][classlabel].LIGHTS).indexOf(lt);
-        var light = new THREE.DirectionalLight(Number(SCENEdata[taskscreen][classlabel].LIGHTS[lt].color),SCENEdata[taskscreen][classlabel].LIGHTS[lt].intensity)
+    for (var lt in IMAGES[taskscreen][classlabel].LIGHTS){
+        var index = Object.keys(IMAGES[taskscreen][classlabel].LIGHTS).indexOf(lt);
+        var light = new THREE.DirectionalLight(Number(IMAGES[taskscreen][classlabel].LIGHTS[lt].color),IMAGES[taskscreen][classlabel].LIGHTS[lt].intensity)
         light.name = classlabel
         scene[taskscreen].add(light)
         LIGHTS[taskscreen][classlabel][lt] = light;
@@ -80,9 +94,9 @@ async function addToScene(taskscreen){
 
 //==== OBJECTS
     const orig = new THREE.MeshPhysicalMaterial()
-    for (var obj in SCENEdata[taskscreen][classlabel].OBJECTS){
+    for (var obj in IMAGES[taskscreen][classlabel].OBJECTS){
         var objects = OBJECTS[taskscreen][classlabel].meshes[obj].scene
-        var materialparam = SCENEdata[taskscreen][classlabel].OBJECTS[obj].material
+        var materialparam = IMAGES[taskscreen][classlabel].OBJECTS[obj].material
  
         objects.traverse(function(child){
             //set texture
@@ -94,12 +108,12 @@ async function addToScene(taskscreen){
     //                          })
                 var material = new THREE.MeshPhysicalMaterial(materialparam)
 
-                if (child.name == "Eyeliris" || child.name == "Eyeriris"){
-                    material.color.set('#000000')
-                }
-                else if (child.name == "Eyelsclera" || child.name == "Eyersclera"){
-                    material.color.set("#ffffff")
-                }
+//                 if (child.name == "Eyeliris" || child.name == "Eyeriris"){
+//                     material.color.set('#000000')
+//                 }
+//                 else if (child.name == "Eyelsclera" || child.name == "Eyersclera"){
+//                     material.color.set("#ffffff")
+//                 }
                 material.map = child.material.map
                 child.material = material;
                 child.material.needsUpdate = true;
@@ -113,23 +127,22 @@ async function addToScene(taskscreen){
         const dimarray = [bbdim.x,bbdim.y,bbdim.z]
         var maxlength = Math.max.apply(null,dimarray)
         
-        console.log(maxlength)
-        SCENEdata[taskscreen][classlabel].OBJECTS[obj].intrinsicMeshBoundingBox = dimarray     
-        SCENEdata[taskscreen][classlabel].OBJECTS[obj].intrinsicMeshMaxDim = maxlength
+        IMAGES[taskscreen][classlabel].OBJECTS[obj].intrinsicMeshBoundingBox = dimarray     
+        IMAGES[taskscreen][classlabel].OBJECTS[obj].intrinsicMeshMaxDim = maxlength
         
 
-        var objSize = SCENEdata[taskscreen][classlabel].OBJECTS[obj].sizeInches
+        var objSize = IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeInches
           //TRANSLATION
         var objPosition = [
-            SCENEdata[taskscreen][classlabel].OBJECTS[obj].positionInches.x,
-            SCENEdata[taskscreen][classlabel].OBJECTS[obj].positionInches.y,
-            SCENEdata[taskscreen][classlabel].OBJECTS[obj].positionInches.z
+            IMAGES[taskscreen][classlabel].OBJECTS[obj].positionInches.x,
+            IMAGES[taskscreen][classlabel].OBJECTS[obj].positionInches.y,
+            IMAGES[taskscreen][classlabel].OBJECTS[obj].positionInches.z
         ]
 
-        SCENEdata[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS = rescaleArrayInchestoTHREEJS(objSize,SCENEdata[taskscreen].THREEJStoInches)
-        SCENEdata[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS = {}
-        for (keys in SCENEdata[taskscreen][classlabel].OBJECTS[obj].positionInches){
-            SCENEdata[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS[keys] = rescaleArrayInchestoTHREEJS(SCENEdata[taskscreen][classlabel].OBJECTS[obj].positionInches[keys],SCENEdata[taskscreen].THREEJStoInches)
+        IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS = rescaleArrayInchestoTHREEJS(objSize,IMAGEMETA[taskscreen + "THREEJStoInches"])
+        IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS = {}
+        for (keys in IMAGES[taskscreen][classlabel].OBJECTS[obj].positionInches){
+            IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS[keys] = rescaleArrayInchestoTHREEJS(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionInches[keys],IMAGEMETA[taskscreen + "THREEJStoInches"])
         }
         
         objects.name = classlabel
@@ -138,15 +151,14 @@ async function addToScene(taskscreen){
 }//FOR classlabels
 
 //==== GridCenters in 3JS (==> POSSIBLE CAMERA OFFSETS FOR SAMPLE,TEST,CHOICE "ROOMS")
-    SCENEdata[taskscreen].XGridCenterTHREEJS = []
-    SCENEdata[taskscreen].YGridCenterTHREEJS = []
+    IMAGEMETA[taskscreen + "XGridCenterTHREEJS"] = []
+    IMAGEMETA[taskscreen + "YGridCenterTHREEJS"] = []
     for (var gridind=0; gridind <= ENV.XGridCenter.length-1; gridind++){
         var funcreturn = toTHREEJSOffset(ENV.XGridCenter[gridind],ENV.YGridCenter[gridind],taskscreen)
-        SCENEdata[taskscreen].XGridCenterTHREEJS[gridind] = funcreturn[0]
-        SCENEdata[taskscreen].YGridCenterTHREEJS[gridind] = funcreturn[1]
+        IMAGEMETA[taskscreen + "XGridCenterTHREEJS"][gridind] = funcreturn[0]
+        IMAGEMETA[taskscreen + "YGridCenterTHREEJS"][gridind] = funcreturn[1]
     } //FOR gridind
 } //FUNCTION addToScene(taskscreen)
-
 
 
 function updateSingleFrame3D(taskscreen,classlabels,frame,gridindex){
@@ -167,51 +179,50 @@ for ( var sceneElement in scene[taskscreen]["children"] ){
         }
     }
 
-//==== GET 2D SCENE OFFSET
-var funcreturn = toTHREEJSOffset(ENV.XGridCenter[gridindex],ENV.YGridCenter[gridindex],taskscreen)
-var dx = funcreturn[0]
-var dy = funcreturn[1]
-
 //==== TURN BACK ON THE CURRENT DISPLAY ITEMS
 for (var i=0; i<=classlabels.length-1; i++){
 var classlabel = classlabels[i]
 
 //==== CAMERAS
-    for (var cam in SCENEdata[taskscreen][classlabel].CAMERAS){
+    for (var cam in IMAGES[taskscreen][classlabel].CAMERAS){
         // var camera = CAMERAS[taskscreen][classlabel][cam]
 
         var camera = scene[taskscreen].getObjectByName("cam"+classlabel)
 
-        var nextvisible = chooseArrayElement(SCENEdata[taskscreen][classlabel].CAMERAS[cam].visible,frame,0);
+        var nextvisible = chooseArrayElement(IMAGES[taskscreen][classlabel].CAMERAS[cam].visible,frame,0);
 
         var nextcamPosition = [
-            chooseArrayElement(SCENEdata[taskscreen][classlabel].CAMERAS[cam].position.x,frame,0) + dx , 
-            chooseArrayElement(SCENEdata[taskscreen][classlabel].CAMERAS[cam].position.y,frame,0) + dy ,
-            chooseArrayElement(SCENEdata[taskscreen][classlabel].CAMERAS[cam].position.z,frame,0) ,
+            chooseArrayElement(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x,frame,0), 
+            chooseArrayElement(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y,frame,0),
+            chooseArrayElement(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z,frame,0) ,
+        ]
+
+        var nextcamTarget = [chooseArrayElement(IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.x,frame,0),
+            chooseArrayElement(IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.y,frame,0),
+            chooseArrayElement(IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.z,frame,0) ,
         ]
 
         if (nextvisible ==1){
             camera.visible = true
-            updateCameraSingleFrame(camera,nextcamPosition)
-            console.log("CAMERA" + taskscreen + cam+ "  " + classlabel + "  " + nextcamPosition)
+            updateCameraSingleFrame(camera,nextcamPosition,nextcamTarget)
+            console.log("CAMERA" + taskscreen + cam+ "  " + classlabel + "  " + nextcamPosition + " " + nextcamTarget)
             var vec = new THREE.Vector3()
-            console.log(camera.getWorldDirection(vec))
         }
         else{
             camera.visible = false
         }
     }
 //==== LIGHTS
-    for (var lt in SCENEdata[taskscreen][classlabel].LIGHTS){
+    for (var lt in IMAGES[taskscreen][classlabel].LIGHTS){
         var light = LIGHTS[taskscreen][classlabel][lt]
 
         var nextlightPosition = [
-            chooseArrayElement(SCENEdata[taskscreen][classlabel].LIGHTS[lt].position.x, frame, 0) ,
-            chooseArrayElement(SCENEdata[taskscreen][classlabel].LIGHTS[lt].position.y, frame, 0) ,
-            chooseArrayElement(SCENEdata[taskscreen][classlabel].LIGHTS[lt].position.z, frame, 0)
+            chooseArrayElement(IMAGES[taskscreen][classlabel].LIGHTS[lt].position.x, frame, 0),
+            chooseArrayElement(IMAGES[taskscreen][classlabel].LIGHTS[lt].position.y, frame, 0),
+            chooseArrayElement(IMAGES[taskscreen][classlabel].LIGHTS[lt].position.z, frame, 0)
         ]
 
-        var nextvisible = chooseArrayElement(SCENEdata[taskscreen][classlabel].LIGHTS[lt].visible,frame,0);
+        var nextvisible = chooseArrayElement(IMAGES[taskscreen][classlabel].LIGHTS[lt].visible,frame,0);
 
         if (nextvisible == 1){
             light.visible = true
@@ -223,30 +234,30 @@ var classlabel = classlabels[i]
     }//FOR lt lights
 
 //==== OBJECTS
-    for (var obj in SCENEdata[taskscreen][classlabel].OBJECTS){
+    for (var obj in IMAGES[taskscreen][classlabel].OBJECTS){
         var objects = OBJECTS[taskscreen][classlabel].meshes[obj].scene
-        var maxlength = SCENEdata[taskscreen][classlabel].OBJECTS[obj].intrinsicMeshMaxDim
+        var maxlength = IMAGES[taskscreen][classlabel].OBJECTS[obj].intrinsicMeshMaxDim
 
         //TRANSLATION
         var nextobjPosition = [
-            chooseArrayElement(SCENEdata[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.x,frame,0) +dx ,
-            chooseArrayElement(SCENEdata[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.y,frame,0) +dy,
-            chooseArrayElement(SCENEdata[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.z,frame,0)
+            chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.x,frame,0),
+            chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.y,frame,0),
+            chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.z,frame,0)
         ]
 console.log("OBJECT" + taskscreen + obj + "  " + classlabel + "  " + nextobjPosition)
 
         //ROTATION
         var nextobjRotation = [
-            chooseArrayElement(SCENEdata[taskscreen][classlabel].OBJECTS[obj].rotationDegrees.x,frame,0),
-            chooseArrayElement(SCENEdata[taskscreen][classlabel].OBJECTS[obj].rotationDegrees.y,frame,0),
-            chooseArrayElement(SCENEdata[taskscreen][classlabel].OBJECTS[obj].rotationDegrees.z,frame,0)
+            chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees.x,frame,0),
+            chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees.y,frame,0),
+            chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees.z,frame,0)
         ]
 
         //SIZE
-        var nextobjSize = chooseArrayElement(SCENEdata[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS,frame,0)
+        var nextobjSize = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS,frame,0)
 
         //VISIBILITY
-        var nextvisible = chooseArrayElement(SCENEdata[taskscreen][classlabel].OBJECTS[obj].visible,frame,0)
+        var nextvisible = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].visible,frame,0)
 
         // var camera = CAMERAS[taskscreen][classlabel][Object.keys(CAMERAS[taskscreen][classlabel])[0]]
 
@@ -254,7 +265,9 @@ console.log("OBJECT" + taskscreen + obj + "  " + classlabel + "  " + nextobjPosi
         
         if (nextvisible == 1){
             objects.visible = true
-            updateObjectSingleFrame(taskscreen,objects,nextobjPosition,nextobjRotation,nextobjSize,maxlength,camera)
+            var scenecenterX = ENV.XGridCenter[gridindex]
+            var scenecenterY = ENV.YGridCenter[gridindex]
+            updateObjectSingleFrame(taskscreen,objects,nextobjPosition,nextobjRotation,nextobjSize,maxlength,camera,scenecenterX,scenecenterY)
         }
         else {
             objects.visible = false
@@ -263,11 +276,9 @@ console.log("OBJECT" + taskscreen + obj + "  " + classlabel + "  " + nextobjPosi
 } //FOR classlabel in classlabels
 }//FUNCTION updateSingleFrame3D
 
-function updateCameraSingleFrame(camera,cameraPosition){
+function updateCameraSingleFrame(camera,cameraPosition,camTarget){
     camera.position.set(cameraPosition[0],cameraPosition[1],cameraPosition[2])
-//     var lookatVec = new THREE.Vector3(cameraPosition[0],cameraPosition[1],0)
-//     camera.lookAt(lookatVec)
-    camera.lookAt(0,0,0)
+    camera.lookAt(camTarget[0],camTarget[1],camTarget[2])
     camera.updateMatrixWorld( true );
     camera.updateProjectionMatrix(); // FIX
 }//FUNCTION updateCameraSingleFrame
@@ -278,8 +289,7 @@ function updateLightSingleFrame(light,lightPosition){
 //     console.log(lightPosition)
 }//FUNCTION updateLightSingleFrame
 
-
-function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objSize,maxlength,camera){
+function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objSize,maxlength,camera,scenecenterX,scenecenterY){
 // objects.matrixWorldNeedsUpdate = false
 // objects.matrixWorldNeedsUpdate = true
 
@@ -301,45 +311,45 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
     objects.rotateOnWorldAxis(axis,angle)
 
 //====TRANSLATION
+    objects.position.set(objPosition[0],objPosition[1],objPosition[2])
+
+//==== SCALE
     //set size from parameters file
     //make that the largest dimension of the 3d cube = 1 inch
     //measure the current inch
     //current scale = (1,1,1)
-    //set scale so that visible length is 1 inch.
-    objects.position.set(objPosition[0],objPosition[1],objPosition[2])
-
-//==== SCALE
     //before scaling set scale to 1,1,1
+    //set scale so that visible length is 1 inch.
     objects.scale.set(1,1,1)
     objects.scale.divideScalar(maxlength/objSize)
+    objects.updateMatrixWorld()
 
 //==== BOUNDING BOX
     var box = new THREE.BoxHelper(objects,0xff0000)
-            box.name = taskscreen
-             			scene[taskscreen].add(box)
+    box.material.visible = false //hide the bounding boxes
+    box.name = taskscreen
+	scene[taskscreen].add(box)
     var bbox = new THREE.Box3();
     bbox.setFromObject( box ); 
     var bbdim = new THREE.Vector3(); 
 
-    twodcoord_max = toScreenPosition(bbox.max,camera)
-    twodcoord_min = toScreenPosition(bbox.min,camera)
+    twodcoord_max = toScreenPosition(bbox.max,camera,objects)
+    twodcoord_min = toScreenPosition(bbox.min,camera,objects)
 
     if (taskscreen == "Test"){
-        
-        boundingBoxesChoice3D.x.push([twodcoord_min.x,twodcoord_max.x])
-        boundingBoxesChoice3D.y.push([twodcoord_max.y + CANVAS.offsettop,twodcoord_min.y + CANVAS.offsettop])
-        
+        boundingBoxesChoice3D.x.push([twodcoord_min.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x),
+                                        twodcoord_max.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x)].sort(function(a, b){return a-b}))
+        boundingBoxesChoice3D.y.push([twodcoord_max.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y),
+                                        twodcoord_min.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y)].sort(function(a, b){return a-b}))
     }
     return [objPosition,objSize]
 }//FUNCTION updateObjectSingleFrame
 
-function toScreenPosition(vector, camera){
+function toScreenPosition(vector, camera,objects){
     
     var widthHalf = 0.5*renderer.getContext().canvas.width;
     var heightHalf = 0.5*renderer.getContext().canvas.height;
 
-    //obj.updateMatrixWorld();
-//     vector.setFromMatrixPosition(obj.matrixWorld);
     vector.project(camera);
 
     vector.x = ( vector.x * widthHalf ) + widthHalf;
@@ -381,7 +391,7 @@ function toTHREEJSOffset(x,y,taskscreen){
     var ydisp = heightHalf-y 
 
     return [
-        xdisp/SCENEdata[taskscreen].THREEJStoPixels,
-        ydisp/SCENEdata[taskscreen].THREEJStoPixels
+        xdisp/IMAGEMETA[taskscreen + "THREEJStoPixels"],
+        ydisp/IMAGEMETA[taskscreen + "THREEJStoPixels"]
     ]
 } //FUNCTION toTHREEJSOffset
