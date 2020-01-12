@@ -101,22 +101,13 @@ async function addToScene(taskscreen){
         objects.traverse(function(child){
             //set texture
             if (child.material) {
-    //                          const textureloader = new THREE.TextureLoader();
-    //                          console.log(child.material)
-    //                          var material = new THREE.MeshBasicMaterial({
-    //                              map: textureloader.load('https://threejsfundamentals.org/threejs/resources/images/wall.jpg')
-    //                          })
                 var material = new THREE.MeshPhysicalMaterial(materialparam)
 
-//                 if (child.name == "Eyeliris" || child.name == "Eyeriris"){
-//                     material.color.set('#000000')
-//                 }
-//                 else if (child.name == "Eyelsclera" || child.name == "Eyersclera"){
-//                     material.color.set("#ffffff")
-//                 }
-                material.map = child.material.map
-                child.material = material;
-                child.material.needsUpdate = true;
+                if (child.name == 'Base'){
+                    material.map = child.material.map
+                    child.material = material;
+                    child.material.needsUpdate = true;
+                }//IF "Base" mesh
             } //IF child.material
         }) //object.traverse (material)
     
