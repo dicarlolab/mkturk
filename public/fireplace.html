@@ -191,7 +191,9 @@ async function queryFirestoreCallback(querySnapshot){
               console.log('Doc contains no response data, skipping')
           }
       }
-      else if (doc.data().Agent == "Eliaso" || doc.data().Agent == "Sophieo" || doc.data().Agent == "Youno"){
+      else if (doc.data().Agent == "Eliaso" || doc.data().Agent == "Sophieo" 
+                || doc.data().Agent == "Youno" || doc.data().Agent == "Hectoro"
+                || doc.data().Agent == "Ericao"){
         console.log('Doc is debug file of Eliaso/Sophieo/Youno, skipping')
       }
       else //contains trial data
@@ -400,21 +402,26 @@ function toGoogleDataTable() {
     dataLeaderboard.addColumn('string','Agent');
     dataLeaderboard.addColumn('number','% (today)');
     dataLeaderboard.addColumn('number','n (today)');
+    dataLeaderboard.addColumn('number','% (-2d)');
+    dataLeaderboard.addColumn('number','n (-2d)');
     dataLeaderboard.addColumn('number','tlast (min)');
     dataLeaderboard.addColumn('number','batt%');
-    dataLeaderboard.addColumn('number','%/hr');    
-    dataLeaderboard.addColumn('number','% (' + ndays + 'd)');
-    dataLeaderboard.addColumn('number','n (' + ndays + 'd)');
+    dataLeaderboard.addColumn('number','%/hr');
  
     for (var i = 0; i <= STAT.agents.length-1; i++){
       var ntotal = 0
       var ncorrect = 0
       var nsess = 0
 
-      for (var j = 0; j <= STAT.pct[i][j]; j++){
-        if (STAT.ntrials[i][j] > 0){
-          ntotal += STAT.ntrials[i][j]
-          ncorrect = STAT.ntrials[i][j] * STAT.pct[i][j]/100
+      // Get performance for previous two sessions
+      for (var j = 1; j <= STAT.pct[i].length-1; j++){
+        if (nsess >= 2){
+          break;
+        }
+        var ind = STAT.pct[i].length - j - 1
+        if (STAT.ntrials[i][ind] > 0){
+          ntotal += STAT.ntrials[i][ind]
+          ncorrect += STAT.ntrials[i][ind] * STAT.pct[i][ind]/100
           nsess+=1
         } //if
       } //for j days
@@ -422,10 +429,12 @@ function toGoogleDataTable() {
       var tsincelasttrial = Math.round( ( new Date().valueOf() - STAT.tlasttrial[i] ) / 1000 / 60 )      
 
       dataLeaderboard.addRows([
-        [ STAT.agents[i], Math.round(STAT.pct[i][ndays-1]), STAT.ntrials[i][ndays-1],
+        [ STAT.agents[i], 
+        Math.round(STAT.pct[i][ndays-1]), STAT.ntrials[i][ndays-1],
+        Math.round(100*ncorrect/ntotal), Math.round(ntotal/nsess),
         tsincelasttrial,
         STAT.lastbatterypct[i], STAT.batterypctperhour[i],
-        Math.round(100*ncorrect/ntotal), Math.round(ntotal/nsess) ]
+        ]
       ])
 
       // Color based on last trial time
@@ -433,7 +442,7 @@ function toGoogleDataTable() {
       tlastFormatter.addRange(0, 5, 'black', '#33ff33');
       tlastFormatter.addRange(5, 60, 'black', 'red');
       tlastFormatter.addRange(60, null, 'black', 'white');
-      tlastFormatter.format(dataLeaderboard, 3); // Apply formatter to fourth column
+      tlastFormatter.format(dataLeaderboard, 5); // Apply formatter to fourth column
       if (tsincelasttrial < 5){ //actively working
           dataLeaderboard.setCell(i, 0, STAT.agents[i],STAT.agents[i], {'style': 'color: #33ff33; background-color: white; font-weight: bold'});        
       }
@@ -446,7 +455,7 @@ function toGoogleDataTable() {
 
       // Color based on battery life
       if (STAT.lastbatterypct[i] < 25){ //battery low
-          dataLeaderboard.setCell(i, 4, STAT.lastbatterypct[i],STAT.lastbatterypct[i], {'style': 'color: red; background-color: white; font-weight: bold'});
+          dataLeaderboard.setCell(i, 6, STAT.lastbatterypct[i],STAT.lastbatterypct[i], {'style': 'color: red; background-color: white; font-weight: bold'});
       }
     } //for i agents
 }

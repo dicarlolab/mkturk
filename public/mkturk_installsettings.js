@@ -9,7 +9,7 @@ var DBX_REDIRECT_URI_ROOT = "http://localhost:8080/"
 
 // ------ Subject settings ------ 
 var subjectlist = [
-"Eliaso","Youno","Sophieo","West","Waffles","Sausage","Rafiki","Hutch","Eggo","East","Bloo","Blintz","Blaise","Athena","AJ","You-Nah","Tahereh","Sophie","Hector","Erica","Elias","Andrea","Alex"
+"Eliaso","Ericao","Hectoro","Youno","Sophieo","West","Waffles","Sausage","Rafiki","Hutch","Eggo","East","Bloo","Blintz","Blaise","Athena","AJ","You-Nah","Tahereh","Sophie","Hector","Erica","Elias","Andrea","Alex"
 ];
 
 // ------ Save location settings ------

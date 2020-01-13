@@ -1,277 +1,275 @@
 class TrialQueue {
 
-	constructor(samplingStrategy, ImageBagsSample, ImageBagsTest){
+constructor(samplingStrategy, ImageBagsSample, ImageBagsTest){
 
-		// Properties
-		this.samplingStrategy = samplingStrategy;
-		this.ImageBagsSample = ImageBagsSample;
-		this.ImageBagsTest = ImageBagsTest;
+	// Properties
+	this.samplingStrategy = samplingStrategy;
+	this.ImageBagsSample = ImageBagsSample;
+	this.ImageBagsTest = ImageBagsTest;
 
-		// Queues
-		this.sampleq = {}
-		this.sampleq.filename = [];
-		this.sampleq.index = [];
+	// Queues
+	this.sampleq = {}
+	this.sampleq.filename = [];
+	this.sampleq.index = [];
 
-		this.testq = {}
-		this.testq.filenames = [];
-		this.testq.indices = [];
-		this.testq.correctIndex = [];
+	this.testq = {}
+	this.testq.filenames = [];
+	this.testq.indices = [];
+	this.testq.correctIndex = [];
 
-		this.currentbag = -1;
+	this.currentbag = -1;
 
-		// ImageBuffer
-		this.IB = new ImageBuffer();
+	// ImageBuffer
+	this.IB = new ImageBuffer();
 
-		// Settings
-		this.max_queue_size = 5200; // Max number of trials (and their images) to have prepared from now; to improve browser performance
-		this.num_in_queue = 0; // Tracking variable
+	// Settings
+	this.max_queue_size = 5200; // Max number of trials (and their images) to have prepared from now; to improve browser performance
+	this.num_in_queue = 0; // Tracking variable
+}
+
+async build(trial_cushion_size){
+	// Call after construction
+	var funcreturn = await loadImageBagPathsParallelFirebase(this.ImageBagsSample);
+	this.samplebag_labels = funcreturn[1];
+	this.samplebag_paths = funcreturn[0];
+
+	this.samplebag_block_indices = new Array(this.samplebag_labels.length)
+	for (var i = 0; i<=this.samplebag_labels.length-1; i++){
+		this.samplebag_block_indices[i] = i;
 	}
 
-	async build(trial_cushion_size){
-		// Call after construction
-		var funcreturn = await loadImageBagPathsParallelFirebase(this.ImageBagsSample);
-		this.samplebag_labels = funcreturn[1];
-		this.samplebag_paths = funcreturn[0];
+	var funcreturn = await loadImageBagPathsParallelFirebase(this.ImageBagsTest);
+	this.testbag_labels = funcreturn[1];
+	this.testbag_paths = funcreturn[0];
 
-		this.samplebag_block_indices = new Array(this.samplebag_labels.length)
-		for (var i = 0; i<=this.samplebag_labels.length-1; i++){
-			this.samplebag_block_indices[i] = i;
-		}
+	// array of zeros
+	this.ntrials_per_bag = new Array(Math.max(...this.samplebag_labels)+1)
+	this.ntrials_per_bag.fill(0,0,this.ntrials_per_bag.length)
 
-		var funcreturn = await loadImageBagPathsParallelFirebase(this.ImageBagsTest);
-		this.testbag_labels = funcreturn[1];
-		this.testbag_paths = funcreturn[0];
+	console.log('this.build() will generate ' + trial_cushion_size + ' trials')
+	await this.generate_trials(trial_cushion_size);
+}
 
-		// array of zeros
-		this.ntrials_per_bag = new Array(Math.max(...this.samplebag_labels)+1)
-		this.ntrials_per_bag.fill(0,0,this.ntrials_per_bag.length)
+async generate_trials(n_trials){
+	// Performance critical: sometimes called by this.get_next_trial() (when TQ is empty), which is called during each mkturk trial
 
-		console.log('this.build() will generate ' + trial_cushion_size + ' trials')
-		await this.generate_trials(trial_cushion_size);
+	// Adds trials to queue and downloads their images
+
+	n_trials = Math.min(this.max_queue_size - this.num_in_queue, n_trials);
+	if (this.max_queue_size <= this.num_in_queue){
+		n_trials=0
+	}
+	if(n_trials == 0){
+		console.log('TQ.generate_trials(): Queue is full or no trials were requested')
+		return
 	}
 
-	async generate_trials(n_trials){
-		// Performance critical: sometimes called by this.get_next_trial() (when TQ is empty), which is called during each mkturk trial
+	var image_requests = [];
 
-		// Adds trials to queue and downloads their images
+	// console.log('TQ.generate_trials() will generate '+n_trials+' trials')
 
-		n_trials = Math.min(this.max_queue_size - this.num_in_queue, n_trials);
-		if (this.max_queue_size <= this.num_in_queue){
-			n_trials=0
-		}
-		if(n_trials == 0){
-			console.log('TQ.generate_trials(): Queue is full or no trials were requested')
-			return
-		}
+	for (var i = 0; i < n_trials; i++){
+		if (TASK.NTrialsPerBagBlock <= 0){
+			// do nothing
+		} //use all bags in block
+		else if (TASK.NTrialsPerBagBlock > 0){
+			if (this.currentbag < 0 || this.ntrials_per_bag[this.currentbag] == TASK.NTrialsPerBagBlock){
 
-		var image_requests = [];
+				// Increment bag
+				if (this.currentbag < 0){
+					this.currentbag = 0; //initialize with first bag
+				}
+				else{
+					this.ntrials_per_bag[this.currentbag] = 0; //reset trials
+					this.currentbag = this.currentbag + 1; //go to next bag
 
-		// console.log('TQ.generate_trials() will generate '+n_trials+' trials')
-
-		for (var i = 0; i < n_trials; i++){
-			if (TASK.NTrialsPerBagBlock <= 0){
-				// do nothing
-			} //use all bags in block
-			else if (TASK.NTrialsPerBagBlock > 0){
-				if (this.currentbag < 0 || this.ntrials_per_bag[this.currentbag] == TASK.NTrialsPerBagBlock){
-
-					// Increment bag
-					if (this.currentbag < 0){
-						this.currentbag = 0; //initialize with first bag
+					if (this.currentbag >= this.ntrials_per_bag.length){
+						this.currentbag = 0; //go back to first bag
 					}
-					else{
-						this.ntrials_per_bag[this.currentbag] = 0; //reset trials
-						this.currentbag = this.currentbag + 1; //go to next bag
+				}
 
-						if (this.currentbag >= this.ntrials_per_bag.length){
-							this.currentbag = 0; //go back to first bag
-						}
+				// make new bag
+				this.samplebag_block_indices = []
+				for (var j = 0; j <= this.samplebag_labels.length-1; j++){
+					if (this.samplebag_labels[j] == this.currentbag){
+						this.samplebag_block_indices.push(j)
 					}
+				} //for j images in bag
+			} // if ntrials_per_bag exceeded
+		} // if sample all bags vs blocks
 
-					// make new bag
-					this.samplebag_block_indices = []
-					for (var j = 0; j <= this.samplebag_labels.length-1; j++){
-						if (this.samplebag_labels[j] == this.currentbag){
-							this.samplebag_block_indices.push(j)
-						}
-					} //for j images in bag
-				} // if ntrials_per_bag exceeded
-			} // if sample all bags vs blocks
+		// Draw one (1) sample image from samplebag
+		var sample_index = this.selectSampleImage(this.samplebag_block_indices, this.samplingStrategy)
+		var sample_label = this.samplebag_labels[sample_index];
+		var sample_filename = this.samplebag_paths[sample_index];
 
-			// Draw one (1) sample image from samplebag
-			var sample_index = selectSampleImage(this.samplebag_block_indices, this.samplingStrategy)
-			var sample_label = this.samplebag_labels[sample_index];
-			var sample_filename = this.samplebag_paths[sample_index];
+		this.ntrials_per_bag[sample_label] = this.ntrials_per_bag[sample_label] + 1
 
-			this.ntrials_per_bag[sample_label] = this.ntrials_per_bag[sample_label] + 1
+		image_requests.push(sample_filename)
 
-			image_requests.push(sample_filename)
-
-			// Select appropriate test images (correct one and distractors)
-			var funcreturn = selectTestImages(sample_label, this.testbag_labels)
-			var test_filenames = []
-			if (TASK.TestON <= 0){
-				var test_indices = funcreturn[0]
-				for (var j = 0; j < test_indices.length; j++){
-					test_filenames.push(this.testbag_paths[test_indices[j]])
-				}
-			} // m2s or sr2
-			else if (TASK.TestON > 0) {
-				var test_indices = funcreturn[0][0]
-				test_filenames.push(this.testbag_paths[test_indices])
-			} //Same-Different Task = one side of the Match-to-Sample
-			var correctIndex = funcreturn[1]
-
-			image_requests.push(... test_filenames)
-
-			// Add to queue
-			this.sampleq.filename.push(sample_filename)
-			this.sampleq.index.push(sample_index)
-
-			this.testq.filenames.push(test_filenames)
-			this.testq.indices.push(test_indices)
-			this.testq.correctIndex.push(correctIndex)
-
-			this.num_in_queue++;
-		}
-		// Download images to support these trials to download queue
-		// console.log("TQ.generate_trials() will request", image_requests.length)
-		await this.IB.cache_these_images(image_requests);
-	}
-
-
-	async get_next_trial(){
-		// Shift out first element of Trial queue and return it
-		// along with its sample/test images
-
-		if (this.sampleq.filename.length == 0){
-			// console.log("Reached end of trial queue... generating one more in this.get_next_trial")
-			await this.generate_trials(1);
-		}
-
-		var sample_filename = this.sampleq.filename.shift();
-		var sample_index = this.sampleq.index.shift();
-
-		var test_filenames = this.testq.filenames.shift();
-		var test_indices = this.testq.indices.shift();
-		var test_correctIndex = this.testq.correctIndex.shift();
-
-
-		// If the past NStickyResponse trials has been on one side, then make this upcoming trial's correct answer be at another location.
-		if (FLAGS.stickyresponse >= TASK.NStickyResponse &&
-			TASK.NStickyResponse > 0 &&
-			test_correctIndex == TRIAL.Response[CURRTRIAL.num-1])
-		{
-			console.log('Moving correct response to nonstick location')
-			var sticky_grid_location = TRIAL.Response[CURRTRIAL.num-1];
-			if (sticky_grid_location == undefined){
-				console.log('Something strange has happened in the stickyresponse logic')
+		// Select appropriate test images (correct one and distractors)
+		var funcreturn = this.selectTestImages(sample_label, this.testbag_labels)
+		var test_filenames = []
+		if (TASK.TestON <= 0){
+			var test_indices = funcreturn[0]
+			for (var j = 0; j < test_indices.length; j++){
+				test_filenames.push(this.testbag_paths[test_indices[j]])
 			}
+		} // m2s or sr2
+		else if (TASK.TestON > 0) {
+			var test_indices = funcreturn[0][0]
+			test_filenames.push(this.testbag_paths[test_indices])
+		} //Same-Different Task = one side of the Match-to-Sample
+		var correctIndex = funcreturn[1]
 
-			var candidate_nonstick_locations = []
-			for (var i = 0; i < test_indices.length; i++){
-				if (i == sticky_grid_location)
-					{continue}
-				else if (i != sticky_grid_location){
-					candidate_nonstick_locations.push(i)
-				}
-				else{throw 'Error occurred in sticky response logic'}
+		image_requests.push(... test_filenames)
+
+		// Add to queue
+		this.sampleq.filename.push(sample_filename)
+		this.sampleq.index.push(sample_index)
+
+		this.testq.filenames.push(test_filenames)
+		this.testq.indices.push(test_indices)
+		this.testq.correctIndex.push(correctIndex)
+
+		this.num_in_queue++;
+	}
+	// Download images to support these trials to download queue
+	// console.log("TQ.generate_trials() will request", image_requests.length)
+	await this.IB.cache_these_images(image_requests);
+}
+
+
+async get_next_trial(){
+	// Shift out first element of Trial queue and return it
+	// along with its sample/test images
+
+	if (this.sampleq.filename.length == 0){
+		// console.log("Reached end of trial queue... generating one more in this.get_next_trial")
+		await this.generate_trials(1);
+	}
+
+	var sample_filename = this.sampleq.filename.shift();
+	var sample_index = this.sampleq.index.shift();
+
+	var test_filenames = this.testq.filenames.shift();
+	var test_indices = this.testq.indices.shift();
+	var test_correctIndex = this.testq.correctIndex.shift();
+
+
+	// If the past NStickyResponse trials has been on one side, then make this upcoming trial's correct answer be at another location.
+	if (FLAGS.stickyresponse >= TASK.NStickyResponse &&
+		TASK.NStickyResponse > 0 &&
+		test_correctIndex == TRIAL.Response[CURRTRIAL.num-1])
+	{
+		console.log('Moving correct response to nonstick location')
+		var sticky_grid_location = TRIAL.Response[CURRTRIAL.num-1];
+		if (sticky_grid_location == undefined){
+			console.log('Something strange has happened in the stickyresponse logic')
+		}
+
+		var candidate_nonstick_locations = []
+		for (var i = 0; i < test_indices.length; i++){
+			if (i == sticky_grid_location)
+				{continue}
+			else if (i != sticky_grid_location){
+				candidate_nonstick_locations.push(i)
 			}
-
-			// Switch correct_label into correct_label_nonstick_location
-			var correct_label_nonstick_location =candidate_nonstick_locations[Math.floor((candidate_nonstick_locations.length)*Math.random())];
-
-			var tempfilename = test_filenames[correct_label_nonstick_location]
-			test_filenames[correct_label_nonstick_location] = test_filenames[sticky_grid_location]
-			test_filenames[sticky_grid_location] = tempfilename
-
-			var tempindex = test_indices[correct_label_nonstick_location]
-			test_indices[correct_label_nonstick_location] = test_indices[sticky_grid_location]
-			test_indices[sticky_grid_location] = tempindex
-
-			test_correctIndex = correct_label_nonstick_location
+			else{throw 'Error occurred in sticky response logic'}
 		}
 
-		// Get image from imagebag
-		var sample_image = await this.IB.get_by_name(sample_filename);
-		var sample_reward = -1
-		if (typeof(ImageRewardList[sample_filename]) != "undefined"){
-			sample_reward = ImageRewardList[sample_filename]
-		}
+		// Switch correct_label into correct_label_nonstick_location
+		var correct_label_nonstick_location =candidate_nonstick_locations[Math.floor((candidate_nonstick_locations.length)*Math.random())];
 
-		var test_images = []
-		for (var i = 0; i < test_filenames.length; i++){
-			test_images.push(await this.IB.get_by_name(test_filenames[i]))
-		}
+		var tempfilename = test_filenames[correct_label_nonstick_location]
+		test_filenames[correct_label_nonstick_location] = test_filenames[sticky_grid_location]
+		test_filenames[sticky_grid_location] = tempfilename
 
-		// console.log('sample- get_next_trial()  image:', sample_index, '. name:', sample_filename);
-		// console.log('test- get_next_trial() images:', test_indices, '. name:', test_filenames);
-		// console.log('correct- get_next_trial()', test_correctIndex)
-		this.num_in_queue--;
+		var tempindex = test_indices[correct_label_nonstick_location]
+		test_indices[correct_label_nonstick_location] = test_indices[sticky_grid_location]
+		test_indices[sticky_grid_location] = tempindex
 
-		return [sample_image, sample_index, test_images, test_indices, test_correctIndex, sample_reward]
-	}
+		test_correctIndex = correct_label_nonstick_location
 	}
 
-
-	function selectSampleImage(samplebag_indices, SamplingStrategy){
-
-		// Vanilla random uniform sampling with replacement:
-		var sample_image_index = NaN
-		if(SamplingStrategy == 'uniform_with_replacement'){
-			sample_image_index = samplebag_indices[Math.floor((samplebag_indices.length)*Math.random())];
-		}
-		else {
-			throw SamplingStrategy + " not implemented in selectSampleImage."
-		}
-
-		return sample_image_index
+	// Get image from imagebag
+	var sample_image = await this.IB.get_by_name(sample_filename);
+	var sample_reward = -1
+	if (typeof(ImageRewardList[sample_filename]) != "undefined"){
+		sample_reward = ImageRewardList[sample_filename]
 	}
 
-	function selectTestImages(correct_label, testbag_labels){
+	var test_images = []
+	for (var i = 0; i < test_filenames.length; i++){
+		test_images.push(await this.IB.get_by_name(test_filenames[i]))
+	}
 
-		// Input arguments:
-		// 	correct_label: int. It is one element of testbag_labels corresponding to the rewarded group.
-		//	testbag_labels: array of ints, of length equal to the number of images ( == testbag.length).
+	// console.log('sample- get_next_trial()  image:', sample_index, '. name:', sample_filename);
+	// console.log('test- get_next_trial() images:', test_indices, '. name:', test_filenames);
+	// console.log('correct- get_next_trial()', test_correctIndex)
+	this.num_in_queue--;
 
-		// Globals: TASK.ObjectGridIndex; TASK.TestGridIndex; TASK.NStickyResponse;
+	return [sample_image, sample_index, test_images, test_indices, test_correctIndex, sample_reward]
+}//FUNCTION get_next_trial
 
-		// Outputs:
-		//	[0]: testIndices: array of ints, of length TASK.TestGridIndex.length. The elements are indexes of testbag_labels. The order corresponds to TestGridIndex.
-		//	[1]: correctSelection: int. It indexes testIndices / TestGridIndex to convey the correct element.
+selectSampleImage(samplebag_indices, SamplingStrategy){
+
+	// Vanilla random uniform sampling with replacement:
+	var sample_image_index = NaN
+	if(SamplingStrategy == 'uniform_with_replacement'){
+		sample_image_index = samplebag_indices[Math.floor((samplebag_indices.length)*Math.random())];
+	}
+	else {
+		throw SamplingStrategy + " not implemented in selectSampleImage."
+	}
+
+	return sample_image_index
+}//FUNCTION selectSampleImage
+
+selectTestImages(correct_label, testbag_labels){
+
+	// Input arguments:
+	// 	correct_label: int. It is one element of testbag_labels corresponding to the rewarded group.
+	//	testbag_labels: array of ints, of length equal to the number of images ( == testbag.length).
+
+	// Globals: TASK.ObjectGridIndex; TASK.TestGridIndex; TASK.NStickyResponse;
+
+	// Outputs:
+	//	[0]: testIndices: array of ints, of length TASK.TestGridIndex.length. The elements are indexes of testbag_labels. The order corresponds to TestGridIndex.
+	//	[1]: correctSelection: int. It indexes testIndices / TestGridIndex to convey the correct element.
 
 
-		var testIndices = [];
-		var correctSelection = NaN;
+	var testIndices = [];
+	var correctSelection = NaN;
 
-		// If SR is on,
-		if (TASK.ObjectGridIndex.length == TASK.ImageBagsTest.length){ // Is this a robust SR check?
-			// For each object,
-			for (var i = 0; i<TASK.ObjectGridIndex.length; i++){
+	// If SR is on,
+	if (TASK.ObjectGridIndex.length == TASK.ImageBagsTest.length){ // Is this a robust SR check?
+		// For each object,
+		for (var i = 0; i<TASK.ObjectGridIndex.length; i++){
 
-				// Get pool of the object's test images:
-				var object_test_indices = getAllInstancesIndexes(testbag_labels, i)
+			// Get pool of the object's test images:
+			var object_test_indices = getAllInstancesIndexes(testbag_labels, i)
 
-				// Get one (1) random sample of the object's test images:
-				var test_image_index = object_test_indices[Math.floor((object_test_indices.length)*Math.random())];
+			// Get one (1) random sample of the object's test images:
+			var test_image_index = object_test_indices[Math.floor((object_test_indices.length)*Math.random())];
 
-				// Get grid index where the object should be placed:
-				var object_grid_index = TASK.ObjectGridIndex[i]
+			// Get grid index where the object should be placed:
+			var object_grid_index = TASK.ObjectGridIndex[i]
 
-				// Determine which location that grid index corresponds to in testIndices:
-				order_idx = TASK.TestGridIndex.indexOf(object_grid_index)
+			// Determine which location that grid index corresponds to in testIndices:
+			var order_idx = TASK.TestGridIndex.indexOf(object_grid_index)
 
-				// Place the selected test image in the appropriate location in testIndices.
-				testIndices[order_idx] = test_image_index
+			// Place the selected test image in the appropriate location in testIndices.
+			testIndices[order_idx] = test_image_index
 
-				// If this is the correct object, set the current testIndices location as being the correctSelection.
-				if(i == correct_label){
-					correctSelection = order_idx;
-				}
+			// If this is the correct object, set the current testIndices location as being the correctSelection.
+			if(i == correct_label){
+				correctSelection = order_idx;
 			}
-			return [testIndices, correctSelection]
 		}
+	} //IF
 
+	else{
 		// Otherwise, for match-to-sample (where effectors are shuffled)
 
 		// Get all unique labels
@@ -298,7 +296,7 @@ class TrialQueue {
 
 		// For each label in the testpool, add a random testimage index of it to testIndices.
 		for (var i = 0; i<testpool.length; i++){
-			label = testpool[i]
+			var label = testpool[i]
 			object_test_indices = getAllInstancesIndexes(testbag_labels, label);
 			test_image_index = object_test_indices[Math.floor((object_test_indices.length)*Math.random())];
 			testIndices[i] = test_image_index
@@ -306,6 +304,9 @@ class TrialQueue {
 				correctSelection = i
 			}
 		}
+	} //ELSE
 
-		return [testIndices, correctSelection]
-	}
+	return [testIndices, correctSelection]
+}//FUNCTION selectTestImages
+
+} //class TrialQueue
