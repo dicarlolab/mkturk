@@ -551,7 +551,6 @@ entryForm.addEventListener("submit", ev => {
         }
 
         let file = doc.data();
-        let firestoreFile = file;
         file.t_weights.forEach(timestampToDate);
         file.CurrentDate = file.CurrentDate.toDate().toJSON();
 
@@ -571,6 +570,8 @@ entryForm.addEventListener("submit", ev => {
           throw "STORAGE SAVE FAILED EXCEPTION";
         });
 
+        // perform deep copy
+        let firestoreFile = JSON.parse(JSON.stringify(file));
         firestoreFile.t_weights.forEach(dateToTimestamp);
         firestoreFile.CurrentDate 
           = firebase.firestore.Timestamp.fromDate(new Date(firestoreFile.CurrentDate));
@@ -595,6 +596,4 @@ entryForm.addEventListener("submit", ev => {
   }).catch(e => {
     console.error("ERROR:", e);
   });
-  
-  
 });
