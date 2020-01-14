@@ -48,6 +48,13 @@ var blescale = {
   statustext_received: "",
 }
 
+const db = firebase.firestore();
+const storageRef = firebase.storage().ref();
+const mkscaledataRef = storageRef.child("mkturkfiles/mkscaledata");
+
+let editorContainer = document.querySelector("#editor-card");
+let editor = new JSONEditor(editorContainer);
+
 //================ INITIALIZE BLE VARIABLE (end) ================//
 
 function updateConnectBLEButton() {
@@ -449,4 +456,145 @@ tareBtn.addEventListener("pointerup", ev => {
   ev.preventDefault();
   blescale.tareflag = 1;
   console.log("hello");
+});
+
+let getWeightBtn = document.querySelector("#get-weight-btn");
+getWeightBtn.addEventListener("pointerup", ev => {
+  ev.preventDefault();
+  let weightEntry = document.querySelector("#entry-weight");
+  weightEntry.focus();
+  weightEntry.value = blescale.weights[blescale.weights.length-1];
+  let divvv = document.querySelector("#entry-weight-div");
+  divvv.classList.add("is-dirty");
+
+});
+
+let entryForm = document.querySelector("#entry-form");
+entryForm.addEventListener("submit", ev => {
+  ev.preventDefault();
+  
+  let name = document.querySelector("#entry-name").value;
+  let wt = document.querySelector("#entry-weight").value;
+  let notes = document.querySelector("#entry-notes").value;
+
+  let refDate = new Date(Date.now());
+  refDate = new Date(refDate.toLocaleDateString());
+  let upperDate = new Date(refDate.getTime() + 86400000);
+
+  let query = db.collection("mkscale").where("CurrentDate", ">=", refDate)
+    .where("CurrentDate", "<=", upperDate).where("name", "==", name);
+
+  query.get().then(sns => {
+    if (sns.empty) {
+      let today = new Date(Date.now());
+      let idFirestore = today.toISOString() + "_" + name + "_weight";
+      let idStorage = idFirestore + ".json";
+
+      db.collection("mkscale").doc(idFirestore).set({
+        name: name,
+        weights: [Number(wt)],
+        t_weights: [firebase.firestore.Timestamp.fromDate(today)],
+        notes: [notes],
+        CurrentDateValue: today.getTime(),
+        CurrentDate: firebase.firestore.Timestamp.fromDate(today)
+      }).then(() => {
+        console.log("Firestore Weight Save Success:", idFirestore);
+      }).catch(e => {
+        console.error("Firestore Weight Save Fail:", idFirestore);
+        alert("Firestore Weight Save Failed");
+        throw "FIRESTORE SAVE FAILED EXCEPTION";
+      });
+
+      let file = {
+        name: name,
+        weights: [Number(wt)],
+        t_weights: [today.toJSON()],
+        notes: [notes],
+        CurrentDateValue: today.getTime(),
+        CurrentDate: today.toJSON()
+      };
+
+      let fileRef = mkscaledataRef.child(idStorage);
+      let storageFile = new Blob([JSON.stringify(file, null, 1)]);
+      let metadata = { contentType: "application/json" };
+      fileRef.put(storageFile, metadata).then(sns => {
+        console.log("Storage Weight Save Success:", idStorage);
+      }).catch(e => {
+        console.error("Storage Weight Save Fail:", idStorage);
+        alert("Storage Weight Save Failed");
+        throw "STORAGE SAVE FAILED EXCEPTION";
+      });
+
+      alert("Firestore/Storage Weight Save Success. Displaying Result...");
+
+      editor.destroy();
+      editor = 
+        new JSONEditor(editorContainer, {}, file);
+    }
+    
+    else if (sns.size == 1) {
+      sns.forEach(doc => {
+        function timestampToDate(element, idx, arr) {
+          try {
+            arr[idx] = element.toDate().toJSON();
+          } catch (e) {
+            console.error("Error converting t_weights:", e);
+          }
+        }
+
+        function dateToTimestamp(element, idx, arr) {
+          try {
+            arr[idx] = firebase.firestore.Timestamp.fromDate(new Date(element));
+          } catch (e) {
+            console.error("Error converting t_weights:", e);
+          }
+        }
+
+        let file = doc.data();
+        let firestoreFile = file;
+        file.t_weights.forEach(timestampToDate);
+        file.CurrentDate = file.CurrentDate.toDate().toJSON();
+
+        let timeNow = new Date(Date.now());
+        file.weights.push(Number(wt));
+        file.t_weights.push(timeNow.toJSON());
+        file.notes.push(notes);
+
+        let fileRef = mkscaledataRef.child(doc.id + ".json");
+        let storageFile = new Blob([JSON.stringify(file, null, 1)]);
+        let metadata = { contentType: "application/json" };
+        fileRef.put(storageFile, metadata).then(sns => {
+          console.log("Storage Weight Save Success:" , doc.id + ".json");
+        }).catch(e => {
+          console.error("Storage Weight Save Fail:", doc.id + ".json");
+          alert("Storage Weight Save Failed");
+          throw "STORAGE SAVE FAILED EXCEPTION";
+        });
+
+        firestoreFile.t_weights.forEach(dateToTimestamp);
+        firestoreFile.CurrentDate 
+          = firebase.firestore.Timestamp.fromDate(new Date(firestoreFile.CurrentDate));
+
+        db.collection("mkscale").doc(doc.id).set(
+          firestoreFile
+        ).then(() => {
+          console.log("Firestore Weight Save Success:", doc.id);
+        }).catch(e => {
+          console.error("Firestore Weight Save Fail:", doc.id);
+          alert("Firestore Weight Save Failed");
+          throw "FIRESTORE SAVE FAILED EXCEPTION";
+        });
+
+        alert("Firestore/Storage Weight Save Success. Displaying Result...");
+
+        editor.destroy();
+        editor = new JSONEditor(editorContainer, {}, file);
+
+      });
+    }
+  }).catch(e => {
+    console.error("ERROR:", e);
+  });
+  
+  
 });
