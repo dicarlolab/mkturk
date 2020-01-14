@@ -346,6 +346,8 @@ async function bufferTestImages(sample_image, sample_image_grid_index, test_imag
 	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)	
 	boundingBoxesChoice['x'] = []
 	boundingBoxesChoice['y'] = []
+
+if (typeof(test_images) !="undefined"){
 	// Draw test object(s): 
 	for (i = 0; i<test_images.length; i++){
 		if (typeof(test_images[i])!="undefined"){
@@ -357,15 +359,15 @@ async function bufferTestImages(sample_image, sample_image_grid_index, test_imag
 				continue 
 			}
 		}		
-		
+
 		funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], ENV.TestScale, canvasobj); 
 		boundingBoxesChoice.x.push(funcreturn[0]); 
 		boundingBoxesChoice.y.push(funcreturn[1]); 
 		}
 	}
- console.timeEnd('startrenderTEST')
-
 }
+console.timeEnd('startrenderTEST')	
+}//ASYNC FUNCTION BUFFERTESTIMAGES
 
 //========== BUFFER CHOICE CANVAS ==========//
 async function bufferChoiceUsingDot(sample_image, sample_image_grid_index, test_images, test_image_grid_indices, correct_index, choice_color, choice_radius, choice_grid_indices, canvasobj){

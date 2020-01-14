@@ -826,8 +826,8 @@ while(true){
 			ENV.ImageWidthPixels = representative_image.width
 			ENV.ImageHeightPixels = representative_image.height
 		}
-		else if (TQS.testq.filename.length > 0){
-			var representative_image = await TQS.IB.get_by_name(TQS.testq.filename[0])
+		else if (TQS.testq.filenames.length > 0){
+			var representative_image = await TQS.IB.get_by_name(TQS.testq.filenames[0])
 			ENV.ImageWidthPixels = representative_image.width
 			ENV.ImageHeightPixels = representative_image.height
 		}

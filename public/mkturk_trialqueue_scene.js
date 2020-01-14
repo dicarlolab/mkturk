@@ -158,11 +158,16 @@ async generate_trials(n_trials){
 
 		// Add to queue 
 		this.sampleq.index.push(sample_index)
-		this.sampleq.filename.push(sample_filename)
+		if (sample_filename != ""){
+			this.sampleq.filename.push(sample_filename)
+		}
 
 		this.testq.indices.push(test_indices)
 		this.testq.correctIndex.push(correctIndex)
-		this.testq.filenames.push(test_filenames)
+
+		if (test_filenames[0] != ""){
+			this.testq.filenames.push(test_filenames)			
+		}
 
 		this.num_in_queue++;
 	}
@@ -225,21 +230,25 @@ async get_next_trial(){
 
 	// Get image from imagebag
 
-	var sample_image 
-	if (sample_filename != ""){
-		sample_image = await this.IB.get_by_name(sample_filename);
-	}
+	if (typeof(sample_filename) != "undefined"){
+		var sample_image 
+		if (sample_filename != ""){
+			sample_image = await this.IB.get_by_name(sample_filename);
+		}		
+	}//IF sample image
 	var sample_reward = -1
 	if (typeof(ImageRewardList[sample_filename]) != "undefined"){
 		sample_reward = ImageRewardList[sample_filename]		
 	}
 	
-	var test_images = []
-	for (var i = 0; i < test_filenames.length; i++){
-		if (test_filenames[i] != ""){
-			test_images.push(await this.IB.get_by_name(test_filenames[i]))			
+	if (typeof(test_filenames) != "undefined"){
+		var test_images = []
+		for (var i = 0; i < test_filenames.length; i++){
+			if (test_filenames[i] != ""){
+				test_images.push(await this.IB.get_by_name(test_filenames[i]))			
+			}
 		}
-	}
+	}//IF test image
 
 	this.num_in_queue--;
 
