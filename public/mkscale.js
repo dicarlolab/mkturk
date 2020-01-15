@@ -97,6 +97,29 @@ const mkscaledataRef = storageRef.child("mkturkfiles/mkscaledata");
 
 let editorContainer = document.querySelector("#editor-card");
 let editor = new JSONEditor(editorContainer);
+let entrySelector = document.querySelector('#entry-selector')
+
+
+window.addEventListener('load', (ev) => {
+  let marmosetEntry = document.querySelector('#marmosets-entry');
+  db.collection('marmosets').get().then(sns => {
+    sns.forEach(doc => {
+      let marmosetOption = document.createElement('option');
+      marmosetOption.setAttribute('label', doc.id);
+      marmosetOption.setAttribute('value', doc.id);
+      marmosetEntry.appendChild(marmosetOption);
+    });
+  });
+});
+
+entrySelector.addEventListener('change', (ev) => {
+  let nameEntryDiv = document.querySelector('#entry-name-div');
+  if (entrySelector.value != "mkscale") {
+    nameEntryDiv.style.display = 'none';
+  } else if (entrySelector.value == "mkscale") {
+    nameEntryDiv.style.display = 'inline-block';
+  }
+});
 
 google.charts.load('current', {packages: ['line']});
 google.charts.setOnLoadCallback(drawChart);
@@ -174,7 +197,6 @@ async function findBLEDevice(event){
       var textstr = 'Error getting blescale device/service/characteristic';
       console.log(textstr)
       blescale.statustext = blescale.statustext + "<br>" + textstr
-      // updateHeadsUpDisplayDevices()
     }
   }
 }
@@ -185,9 +207,7 @@ async function requestBLEDevice(){
   if (blescale.connected == false){
     blescale.statustext_connect = "Requesting bluetooth device list"
     console.log(blescale.statustext_connect)
-    // updateHeadsUpDisplayDevices()
-    // let options = {filters: [ {name: ble.name}, {services:[ ble.customserviceUUID ]} ]}
-//     let options = {filters: [ {namePrefix: ble.namePrefix}, {services: ble.weightServiceUUID} ]}
+
     let options = {
     				filters: [ {namePrefix: blescale.namePrefix}, {services: blescale.weightServiceUUID}],
      				optionalServices: ["battery_service"]
@@ -199,19 +219,14 @@ async function requestBLEDevice(){
       blescale.statustext_connect = "Found a device name: " + device.name + "   id: " + device.id
       console.log(blescale.statustext_connect)
       console.log(device.uuids)
-      // updateHeadsUpDisplayDevices()
 
       blescale.device=device
       blescale.device.addEventListener('gattserverdisconnected',onDisconnectedBLE)
-
-      // ENV.BLEDeviceType = 'scale'
-      // ENV.BLEDeviceName = device.name
     }
     catch(error){
       if (blescale.connected == false){
         blescale.statustext_connect = "Connection error encountered"
         console.log(blescale.statustext_connect)
-        // updateHeadsUpDisplayDevices()
 
         return error
       }
@@ -242,7 +257,6 @@ async function connectBLEDeviceAndCacheCharacteristics() {
     blescale.statustext_connect = 
       ">> Characteristic: " + characteristic.uuid + "" + getSupportedProperties(characteristic);
     console.log(blescale.statustext_connect)
-    // updateHeadsUpDisplayDevices()
 
     //Get read characteristic
     if (characteristic.properties.read == true && 
@@ -250,7 +264,6 @@ async function connectBLEDeviceAndCacheCharacteristics() {
         characteristic.properties.notify == true) {
           blescale.readWeightCharacteristic = characteristic
           blescale.statustext_received = "Found read characteristic " + characteristic.uuid
-          // updateHeadsUpDisplayDevices()
     }
   });
 
@@ -258,9 +271,8 @@ async function connectBLEDeviceAndCacheCharacteristics() {
   blescale.readWeightCharacteristic.addEventListener('characteristicvaluechanged', onWeightNotificationFromScale)
   blescale.statustext_received = "Initiated scale read notifications"
   console.log(blescale.statustext_received)
-  // updateHeadsUpDisplayDevices()
 
-// Get Battery Service
+  // Get Battery Service
   try {
     batteryService = await server.getPrimaryService("battery_service");
     console.log("Battery Service", batteryService);
@@ -299,43 +311,6 @@ async function connectBLEDeviceAndCacheCharacteristics() {
   } catch (error) {
     console.error("Battery service error");
   }
-    // batteryService = await server.getPrimaryService("battery_service")
-    // console.log("BATTERY SERVICEEEEEE", batteryService);
-
-    // blescale.statustext_connect = "Found battery service" + batteryService.uuid + "Getting characteristics..."
-    // console.log(blescale.statustext_connect)
-    // // updateHeadsUpDisplayDevices()
-    // blescale.batteryService=batteryService
-
-    // characteristics = await batteryService.getCharacteristics()
-    // characteristics.forEach(characteristic => {
-    //   blescale.statustext_connect = 
-    //     ">> Characteristic: " + characteristic.uuid + "" + getSupportedProperties(characteristic);
-    //   console.log(blescale.statustext_connect)
-    //   // updateHeadsUpDisplayDevices()
-
-    //   //Get read characteristic
-    //   if (characteristic.properties.read == true && 
-    //       characteristic.properties.write == false && 
-    //       characteristic.properties.notify == true) {
-    //     blescale.readBatteryCharacteristic = characteristic
-    //     blescale.statustext_received = "Found read characteristic " + characteristic.uuid
-    //     // updateHeadsUpDisplayDevices()
-    //   }
-    // });
-
-    //   await blescale.readBatteryCharacteristic.startNotifications()
-    //   blescale.readBatteryCharacteristic.addEventListener('characteristicvaluechanged', onBatteryNotificationFromScale)
-    //   blescale.statustext_received = "Initiated battery read notifications"
-    //   console.log(blescale.statustext_received)
-    //   // updateHeadsUpDisplayDevices()
-
-	  // // read initial battery level
-	  // await blescale.readBatteryCharacteristic.readValue()
-
-    //   blescale.connected = true
-    //   blescale.tareflag = 1
-    //   updateConnectBLEButton()
 }
 //==================== CONNECT BLE (end) ====================//
 
@@ -489,20 +464,12 @@ function onBatteryNotificationFromScale(event){
     }
     blescale.statustext_received = 'Received BATTERY notification:  ' + a.join(' ') + ' dt=' + Math.round(dt) + 'ms'
     console.log(blescale.statustext_received)
-    // updateHeadsUpDisplayDevices()
 
     //Decode values (specific to scale)
     var battery = parseInt(a[0],16)
-    // blescale.tbattery[blescale.tbattery.length] = Math.round(t_notify)
     blescale.battery[blescale.battery.length] = battery
-    // logEVENTS("BLEBatteryLT",[battery,Math.round(t_notify)],"trialseries");
-
-    // blescale.statustext_received = 
-    //   'BATTERY(%)=' + blescale.battery[blescale.battery.length-1] + ' dt='
-    //   + Math.round(dt) + 'ms'
 
     console.log(blescale.statustext_received)
-    // updateHeadsUpDisplayDevices()
 }
 
 //============== READ NOTIFICATIONS & WRITES (end) ==============//
@@ -513,8 +480,6 @@ connectBtn.addEventListener("pointerup", ev => {
   ev.preventDefault();
   blescaleconnect(ev);
 });
-
-// connectBtn.addEventListener("pointerup", blescaleconnect, false);
 
 let tareBtn = document.querySelector("#tare-button");
 tareBtn.addEventListener("pointerup", ev => {
@@ -537,7 +502,14 @@ let entryForm = document.querySelector("#entry-form");
 entryForm.addEventListener("submit", ev => {
   ev.preventDefault();
   
-  let name = document.querySelector("#entry-name").value;
+  let name = "";
+
+  if (entrySelector.value != "mkscale") {
+    name = entrySelector.value;
+  } else if (entrySelector.value == "mkscale") {
+    name = document.querySelector("#entry-name").value;
+  }
+
   let wt = document.querySelector("#entry-weight").value;
   let notes = document.querySelector("#entry-notes").value;
 
@@ -576,6 +548,25 @@ entryForm.addEventListener("submit", ev => {
         alert("Firestore Weight Save Failed");
         throw "FIRESTORE SAVE FAILED EXCEPTION";
       });
+
+
+      if (entrySelector.value != "mkscale") {
+        db.collection('marmosets').doc(name).get().then(doc => {
+          try {
+            console.log(doc.data().weight_values.length);
+          } catch (e) {
+            db.collection('marmosets').doc(name).update({
+              weight_values: [Number(wt)],
+              weight_dates: [firebase.firestore.Timestamp.fromDate(today)],
+              weight_notes: [notes] 
+            }).catch(e => {
+              console.error("Error saving to firestore/marmosets");
+              alert("firestore/marmosets weight save fail. Will continue operation");
+            });
+            console.log("firestore/marmosets Weight Save Success:", name);
+          }
+        });
+      }
 
       let file = {
         Name: name,
@@ -661,6 +652,18 @@ entryForm.addEventListener("submit", ev => {
           alert("Firestore Weight Save Failed");
           throw "FIRESTORE SAVE FAILED EXCEPTION";
         });
+
+        if (entrySelector.value != "mkscale") {
+          db.collection('marmosets').doc(name).update({
+            weight_values: firestoreFile.WeightValues,
+            weight_dates: firestoreFile.WeightTimes,
+            weight_notes: firestoreFile.WeightNotes
+          }).catch(e => {
+            console.error("Error saving to firestore/marmosets");
+            alert("firestore/marmosets Weight Save Fail. Will continue operation");
+          });
+          console.log("firestore/marmosets Weight Save Success:", name);
+        }
 
         alert("Firestore/Storage Weight Save Success. Displaying Result...");
 

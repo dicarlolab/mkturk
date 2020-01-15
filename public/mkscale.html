@@ -39,9 +39,17 @@
 
           </div> <!-- end scale-card -->
 
-          <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--6-col-desktop mdl-cell--4-col-tablet mdl-cell--4-col-phone" id="entry-card">
+          <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--6-col-desktop mdl-cell--4-col-tablet mdl-cell--4-col-phone " id="entry-card">
             <form id="entry-form">
-              <div class="mdl-textfield mdl-js-textfield">
+
+              <select class="selector" id="entry-selector">
+                  <option selected value="mkscale">Manual Entry</option>
+                  <optgroup label="firestore/marmosets" id="marmosets-entry">
+                    
+                  </optgroup>
+              </select>
+              
+              <div class="mdl-textfield mdl-js-textfield" id="entry-name-div">
                 <input class="mdl-textfield__input" type="text" id="entry-name">
                 <label class="mdl-textfield__label" for="entry-name" id="entry-name-label">Object Name...</label>
               </div>
