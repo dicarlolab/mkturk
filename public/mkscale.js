@@ -15,6 +15,43 @@
 //---detect multiple ble devices
 //---ble opt out
 
+const auth = firebase.auth();
+var provider = new firebase.auth.GoogleAuthProvider();
+// provider.addScope('profile');
+// provider.addScope('email');
+provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
+
+auth.getRedirectResult().then(function(result) {
+  if (result.user) {
+  // User just signed in. you can get the result.credential.
+    console.log('Sign-In Redirect Result, USER ' + result.user.email + ' is signed in')
+    console.log(result);
+    console.log(firebase.auth().currentUser);
+    blescale.displayName = result.user.displayName;
+    blescale.email = result.user.email;
+    blescale.uid = result.user.uid;
+  }
+  else if (auth.currentUser) {
+    firebase.auth().currentUser.reload();
+    console.log('Sign-In Redirect Result, USER ' 
+      + auth.currentUser.email + ' is signed in')
+    blescale.displayName = auth.currentUser.displayName;
+    blescale.email = auth.currentUser.email;
+    blescale.uid = auth.currentUser.uid;
+    // console.log(result);
+    // console.log(firebase.auth().currentUser);
+    // var credential = firebase.auth().EmailAuthProvider.credential(email, password);
+    // currentUser.reauthenticate(credential);
+    // firebase.auth().currentUser.updateEmail("yc3135@columbia.edu");
+    // console.log(firebase.auth().currentUser);
+    //firebase.auth().currentUser.sendEmailVerification();
+  }
+  else {
+  // No user signed in, update your UI, show the redirect sign-in screen.
+	  firebase.auth().signInWithRedirect(provider)
+  }
+});
+
 //================ INITIALIZE BLE VARIABLE ================//
 var blescale = {
   // name: "redbearlabsnano",
@@ -22,7 +59,6 @@ var blescale = {
   namePrefix: "Motif",
   weightServiceUUID: ["1bc50001-0200-0aa5-e311-24cb004a98c5"], // Service UUID, must be UUID alias (e.g. 0x1234) or lowercase hex
   batteryServiceUUID: ["0x2A19"],
-
 
   device: [],
   server: [],
@@ -37,6 +73,9 @@ var blescale = {
   weightunits: ["gram"],
   weightstart: 0,
   tareflag: 1,
+  firstflag: 1,
+  firsttweight: 0,
+  lastdraw: 0,
   maxweight: 0,
   maxweighttimeout: 0,
 
@@ -46,6 +85,10 @@ var blescale = {
   statustext_connect: "",
   statustext_sent: "",
   statustext_received: "",
+
+  displayName: "",
+  email: "",
+  uid: ""
 }
 
 const db = firebase.firestore();
@@ -55,6 +98,36 @@ const mkscaledataRef = storageRef.child("mkturkfiles/mkscaledata");
 let editorContainer = document.querySelector("#editor-card");
 let editor = new JSONEditor(editorContainer);
 
+google.charts.load('current', {packages: ['line']});
+google.charts.setOnLoadCallback(drawChart);
+
+function drawChart() {
+  console.log(blescale.tweights);
+  data = new google.visualization.DataTable();
+  data.addColumn('number', 'seconds');
+  data.addColumn('number', 'weight (g)');
+  data.addRows([
+    [0, 0]
+  ]);
+  console.log(data);
+  options = {
+    chart: {
+      title: 'Weight',
+      subtitle: 'in grams'
+    },
+    allowAsync: true,
+    animation: {
+      duration: 1000,
+      easing:'out'
+    },
+    legend: {
+      position: 'none'
+    }
+  };
+  chart = new google.charts.Line(document.getElementById("plot-card"));
+  chart.draw(data, google.charts.Line.convertOptions(options));
+  blescale.lastdraw = performance.now();
+}
 //================ INITIALIZE BLE VARIABLE (end) ================//
 
 function updateConnectBLEButton() {
@@ -359,17 +432,6 @@ function onWeightNotificationFromScale(event){
 		console.log('**** TARED SCALE ****')
 	}
 
-    
-	// 	console.log(weight)
-	// // weight wraps after reaching FF FF FF FF
-	// if (weight/1000 - ble.startweight/1000 < -7500){
-	// 	//wrapped
-	// 	weight = weight + (parseInt("FFFFFFFF",16) - ble.startweight)
-	// 	console.log('wrapped weight')
-	// }
-	// else { 
-	// 	weight = weight - ble.startweight
-	// }
   var displayweight = weight - blescale.startweight //Tare the weight displayed
   displayweight = displayweight/1000 //grams
   displayweight = Math.round(100*displayweight)/100 //0.01 gram precision
@@ -378,43 +440,46 @@ function onWeightNotificationFromScale(event){
 	weight = weight/1000 //grams
 	weight = Math.round(100*weight)/100 //0.01 gram precision
 
-  // logEVENTS("Weight",weight,"timeseries");
-  // TRIAL.WeightTime[TRIAL.NWeights] = Date.now() - ENV.CurrentDate.valueOf();
-  // TRIAL.WeightTrial[TRIAL.NWeights] = CURRTRIAL.num
-  // TRIAL.Weight[TRIAL.NWeights] = weight
-  // TRIAL.NWeights = TRIAL.NWeights+1;
-
-
-  //   blescale.tweights[blescale.tweights.length] = Math.round(t_notify)
   blescale.weights[blescale.weights.length] = displayweight
+  
+  if (blescale.firstflag == 1) {
+    blescale.firsttweight = performance.now();
+    blescale.tweights[blescale.weights.length - 1] = 0;
+    blescale.firstflag = 0;
+  }
 
-  // if (TRIAL.Weight[TRIAL.NWeights-1] > 500){
-  //   blescale.maxweight = 0 //reset weight since too high indicating jumped
-  //   blescale.maxweighttimeout = TRIAL.WeightTime[TRIAL.NWeights-1] + 1000 //wait 1 seconds
-  // }
-  // else if (TRIAL.Weight[TRIAL.NWeights-1] > blescale.maxweight &&
-  //   TRIAL.WeightTime[TRIAL.NWeights-1] > blescale.maxweighttimeout){
-  //   blescale.maxweight = TRIAL.Weight[TRIAL.NWeights-1]
-  // }
+  blescale.tweights[blescale.weights.length-1] 
+    = Number(performance.now() - blescale.firsttweight);
 
-
-    blescale.statustext_received = 
-      'Wt=' + blescale.weights[blescale.weights.length-1] + " g";
+  blescale.statustext_received = 
+    'Wt=' + blescale.weights[blescale.weights.length-1] + " g";
       
-      // + '  ' 
-      // + Math.round(dt) + 'ms' + '     '
-      // + ' MAX =' + blescale.maxweight + '  ' + blescale.weightunits
 
-    console.log(blescale.statustext_received);
-    let weightDisplay = document.querySelector("#weight-display");
-    weightDisplay.textContent = blescale.weights[blescale.weights.length-1] 
-      + " g";
-    // updateHeadsUpDisplayDevices()
+
+  console.log(blescale.statustext_received);
+  let weightDisplay = document.querySelector("#weight-display");
+  weightDisplay.textContent = blescale.weights[blescale.weights.length-1] + " g";
+  // console.log("blescale.weights", blescale.weights);
+  // console.log("blescale.tweights", blescale.tweights);
+  data.addRows([
+    [ parseFloat(blescale.tweights[blescale.weights.length-1]/1000.0), parseFloat(blescale.weights[blescale.weights.length-1]) ]
+  ]);
+
+  if (blescale.weights.length > 600) {
+    data.removeRow(0);
+    console.log("removed row")
+  }
+
+  if (performance.now() - blescale.lastdraw < 333) {
+    console.log("no draw");
+  } else if (performance.now() - blescale.lastdraw >= 333) {
+    console.log("draw called")
+    chart.draw(data, google.charts.Line.convertOptions(options));
+    blescale.lastdraw = performance.now();
+  }
 }
 
 function onBatteryNotificationFromScale(event){
-  // var t_notify = Date.now() - ENV.CurrentDate.valueOf()
-  // var dt = t_notify-blescale.tbattery[blescale.tbattery.length-1]
   let value = event.target.value
 
   value = value.buffer ? value : new DataView(value)
@@ -466,7 +531,6 @@ getWeightBtn.addEventListener("pointerup", ev => {
   weightEntry.value = blescale.weights[blescale.weights.length-1];
   let divvv = document.querySelector("#entry-weight-div");
   divvv.classList.add("is-dirty");
-
 });
 
 let entryForm = document.querySelector("#entry-form");
@@ -481,22 +545,30 @@ entryForm.addEventListener("submit", ev => {
   refDate = new Date(refDate.toLocaleDateString());
   let upperDate = new Date(refDate.getTime() + 86400000);
 
+  console.log("refDate", refDate.toJSON());
+  console.log("upperDate", upperDate.toJSON());
+
   let query = db.collection("mkscale").where("CurrentDate", ">=", refDate)
-    .where("CurrentDate", "<=", upperDate).where("name", "==", name);
+    .where("CurrentDate", "<=", upperDate).where("Name", "==", name);
 
   query.get().then(sns => {
+    console.log(sns);
     if (sns.empty) {
       let today = new Date(Date.now());
       let idFirestore = today.toISOString() + "_" + name + "_weight";
       let idStorage = idFirestore + ".json";
 
       db.collection("mkscale").doc(idFirestore).set({
-        name: name,
-        weights: [Number(wt)],
-        t_weights: [firebase.firestore.Timestamp.fromDate(today)],
-        notes: [notes],
+        Name: name,
+        WeightValues: [Number(wt)],
+        WeightTimes: [firebase.firestore.Timestamp.fromDate(today)],
+        WeightNotes: [notes],
         CurrentDateValue: today.getTime(),
-        CurrentDate: firebase.firestore.Timestamp.fromDate(today)
+        CurrentDate: firebase.firestore.Timestamp.fromDate(today),
+        Doctype: "weights",
+        ResearcherDisplayName: blescale.displayName,
+        ResearcherEmail: blescale.email,
+        ResearcherID: blescale.uid
       }).then(() => {
         console.log("Firestore Weight Save Success:", idFirestore);
       }).catch(e => {
@@ -506,12 +578,16 @@ entryForm.addEventListener("submit", ev => {
       });
 
       let file = {
-        name: name,
-        weights: [Number(wt)],
-        t_weights: [today.toJSON()],
-        notes: [notes],
+        Name: name,
+        WeightValues: [Number(wt)],
+        WeightTimes: [today.toJSON()],
+        WeightNotes: [notes],
         CurrentDateValue: today.getTime(),
-        CurrentDate: today.toJSON()
+        CurrentDate: today.toJSON(),
+        Doctype: "weights",
+        ResearcherDisplayName: blescale.displayName,
+        ResearcherEmail: blescale.email,
+        ResearcherID: blescale.uid
       };
 
       let fileRef = mkscaledataRef.child(idStorage);
@@ -551,13 +627,13 @@ entryForm.addEventListener("submit", ev => {
         }
 
         let file = doc.data();
-        file.t_weights.forEach(timestampToDate);
+        file.WeightTimes.forEach(timestampToDate);
         file.CurrentDate = file.CurrentDate.toDate().toJSON();
 
         let timeNow = new Date(Date.now());
-        file.weights.push(Number(wt));
-        file.t_weights.push(timeNow.toJSON());
-        file.notes.push(notes);
+        file.WeightValues.push(Number(wt));
+        file.WeightTimes.push(timeNow.toJSON());
+        file.WeightNotes.push(notes);
 
         let fileRef = mkscaledataRef.child(doc.id + ".json");
         let storageFile = new Blob([JSON.stringify(file, null, 1)]);
@@ -572,7 +648,7 @@ entryForm.addEventListener("submit", ev => {
 
         // perform deep copy
         let firestoreFile = JSON.parse(JSON.stringify(file));
-        firestoreFile.t_weights.forEach(dateToTimestamp);
+        firestoreFile.WeightTimes.forEach(dateToTimestamp);
         firestoreFile.CurrentDate 
           = firebase.firestore.Timestamp.fromDate(new Date(firestoreFile.CurrentDate));
 
@@ -595,5 +671,6 @@ entryForm.addEventListener("submit", ev => {
     }
   }).catch(e => {
     console.error("ERROR:", e);
+    alert("Unknown Error. Check console output");
   });
 });
