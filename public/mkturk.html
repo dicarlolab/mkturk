@@ -52,7 +52,24 @@ if (typeof(navigator.bluetooth) == "object"){
 <script src="/__/firebase/init.js"></script>
 
 
-<script src="https://theapicompany.com/deviceAPI.js"></script>
+<script> 
+deviceAPI = { 
+	"deviceType": -1,
+	"Brand": -1,
+	"deviceName": "default",
+	"screenWidth": -1,
+	"screenHeight": -1,
+	"GPU": "",
+	"browserName": "",
+	"browserVersion": -1,
+	"osName": "",
+	"osCodeName": "",
+	"osVersion": -1,
+	"touchScreen": -1
+}
+</script>
+
+<!-- <script src="https://theapicompany.com/deviceAPI.js"></script> -->
 
 <script>
   //Initialize Cloud Firestore
@@ -64,9 +81,9 @@ if (typeof(navigator.bluetooth) == "object"){
 </head>
 
 <!-- Add ThreeJS -->
-<script src="http://threejs.org/build/three.js"></script>
-<script src="http://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
-<script src="http://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="https://threejs.org/build/three.js"></script>
+<script src="https://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
 
 <!-- ************* (END) HEAD *************** -->
 
@@ -117,7 +134,7 @@ if (typeof(navigator.bluetooth) == "object"){
 	<p id="headsuptextdevices" style="z-index:101; position: absolute; left: 50%; top: 1px; height: 40%; width: 40%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;">No devices connected</p>
 
 	<p id="headsuptextautomator" style="z-index:99; position: absolute; left: 50%; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
-	<p id="imageloadingtext" style="z-index:100; position: absolute; left: 1px; top: 1px; height: 5%; width: 100%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
+	<p id="imageloadingtext" style="z-index:104; position: absolute; left: 1px; top: 1px; height: 5%; width: 100%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
 
 
   <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="doneEditingParams" style="visibility:hidden; z-index: 102; font-size: 25px; position: absolute; top: 5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
@@ -571,13 +588,15 @@ function skipHardwareDevice(event){
 	CURRTRIAL.num = 0
 	EVENTS.trialnum = 0
 
-	FLAGS.need2loadImagesTrialQueue = 1
-	if (typeof(TASK.ImageBagsSample) == "undefined"){
-		FLAGS.need2loadImagesTrialQueue = 0
+	FLAGS.need2loadImagesTrialQueue = 0
+	FLAGS.need2loadScenes = 0
+	if (TASK.ImageBagsSample[0].includes("imagebags")){
+		FLAGS.need2loadImagesTrialQueue = 1
+		FLAGS.scene3d = 0
 	}
-	FLAGS.need2loadScenes = 1
-	if (typeof(TASK.SceneBagsSample) == "undefined"){
-		FLAGS.need2loadScenes = 0
+	else if (TASK.ImageBagsSample[0].includes("scenebags")){
+		FLAGS.need2loadScenes = 1
+		FLAGS.scene3d = 1
 	}
 
 // =========================================================================================================== // 
@@ -590,12 +609,17 @@ while(true){
 		var old_ImageBagsSample = TASK.ImageBagsSample
 		var old_ImageBagsTest = TASK.ImageBagsTest
 
-		var old_SceneBagsSample = TASK.SceneBagsSample
-		var old_SceneBagsTest = TASK.SceneBagsTest
-
 		var old_ObjectGridIndex = TASK.ObjectGridIndex
 		var old_NTrialsPerBagBlock = [TASK.NTrialsPerBagBlock]
 		FLAGS.need2loadParameters = await loadParametersfromFirebase(ENV.ParamFileName);
+
+
+		if (TASK.ImageBagsSample[0].includes("imagebags")){
+			FLAGS.scene3d = 0
+		}
+		else if (TASK.ImageBagsSample[0].includes("scenebags")){
+			FLAGS.scene3d = 1
+		}
 
 		//============= SET UP CANVAS =============//
 		// Update canvas based on latest TASK state: 
@@ -639,7 +663,7 @@ while(true){
 			VISIBLECANVAS.height
 		]
 
-		// Check if images were changed
+		// Check if images (or object meshes) were changed
 		if(!old_ImageBagsTest.equals(TASK.ImageBagsTest) || 
 			!old_ImageBagsSample.equals(TASK.ImageBagsSample) ||
 			!old_ObjectGridIndex.equals(TASK.ObjectGridIndex) || 
@@ -647,19 +671,14 @@ while(true){
 		{
 			TQ = undefined
 			TQS = undefined
-			FLAGS.need2loadImagesTrialQueue = 1;
-		}
-
-		// Check if object meshes were changed
-		if(typeof(TASK.SceneBagsTest) != "undefined" && (!old_SceneBagsTest.equals(TASK.SceneBagsTest) || 
-			!old_SceneBagsSample.equals(TASK.SceneBagsSample) ||
-			!old_ObjectGridIndex.equals(TASK.ObjectGridIndex) || 
-			!old_NTrialsPerBagBlock.equals([TASK.NTrialsPerBagBlock])))
-		{
-			TQ = undefined
-			TQS = undefined
-			FLAGS.need2loadImagesTrialQueue = 0;
-			FLAGS.need2loadScenes = 1; 
+			if (FLAGS.scene3d){
+				FLAGS.need2loadImagesTrialQueue = 0;
+				FLAGS.need2loadScenes = 1; 
+			}
+			else if (FLAGS.scene3d == 0){
+				FLAGS.need2loadImagesTrialQueue = 1;			
+				FLAGS.need2loadScenes = 0;
+			}
 		}
 
 		//Determine task type
@@ -671,14 +690,10 @@ while(true){
 				//Same-Different (SD)
 				ENV.Task = "SD"
 			} //IF TASK.TestON
-			else if (TASK.ObjectGridIndex.length == TASK.ImageBagsSample.length && FLAGS.need2loadImagesTrialQueue){
-				//Stimulus-Response (SR) for 2D
+			else if (TASK.ObjectGridIndex.length == TASK.ImageBagsSample.length){
+				//Stimulus-Response (SR)
 				ENV.Task = "SR"
 			} //IF TASK.ObjectGridIndex
-			else if (TASK.ObjectGridIndex.length == TASK.SceneBagsSample.length && FLAGS.need2loadScenes){
-				//Stimulus-Response (SR) for 3D
-				ENV.Task = "SR"
-			} //IF TASK.ObjectGridIndex			
 			else {
 				//Match-to-Sample
 				ENV.Task = "MTS"
@@ -707,7 +722,8 @@ while(true){
 
 	//======================== 3D SCENE SET-UP =======================//
 	if (FLAGS.need2loadScenes){
-		SCENEdata = { Sample: [], Test: [] }
+		IMAGES = { Sample: [], Test: [] }
+		IMAGEMETA = {}
 		// STEPS FOR 3D SCENE SET-UP
 		// ---- 0: load scene params from JSON
 		// 0: expand trial params & get mesh paths
@@ -719,20 +735,20 @@ while(true){
 		// 5: animate <--> render loop within trial
 
 		//============ 0: LOAD SCENES from JSON ============//
-		for (var f = 0; f <= TASK.SceneBagsSample.length-1; f++){
-			SCENEdata.Sample[f] = await loadTextfromFirebase(TASK.SceneBagsSample[f])
+		for (var f = 0; f <= TASK.ImageBagsSample.length-1; f++){
+			IMAGES.Sample[f] = await loadTextfromFirebase(TASK.ImageBagsSample[f])
 		}
-		for (var f = 0; f <= TASK.SceneBagsTest.length-1; f++){
-			SCENEdata.Test[f] = await loadTextfromFirebase(TASK.SceneBagsTest[f])
+		for (var f = 0; f <= TASK.ImageBagsTest.length-1; f++){
+			IMAGES.Test[f] = await loadTextfromFirebase(TASK.ImageBagsTest[f])
 		}
-		//find longest scene param array in SCENEdata (ie # of trials)
-		for (var j = 0; j<=SCENEdata.Sample.length-1; j++){
-			SCENEdata.Sample[j].nscenes = getLongestArray(SCENEdata.Sample[j])
-			SCENEdata.Test[j].nscenes = getLongestArray(SCENEdata.Test[j])
+		//find longest scene param array in IMAGES (ie # of trials)
+		for (var j = 0; j<=IMAGES.Sample.length-1; j++){
+			IMAGES.Sample[j].nimages = getLongestArray(IMAGES.Sample[j])
+			IMAGES.Test[j].nimages = getLongestArray(IMAGES.Test[j])
 
 			//Determine if images will also be rendered
-			SCENEdata.Sample[j].nimages = SCENEdata.Sample[j].IMAGES.imageidx.length
-			SCENEdata.Test[j].nimages = SCENEdata.Test[j].IMAGES.imageidx.length		
+			IMAGES.Sample[j].nbackgroundimages = IMAGES.Sample[j].IMAGES.imageidx.length
+			IMAGES.Test[j].nbackgroundimages = IMAGES.Test[j].IMAGES.imageidx.length		
 		}
 		//============ (END) 0: LOAD SCENES from JSON ============//
 
@@ -742,9 +758,9 @@ while(true){
 		for (var taskscreen in OBJECTS){
 			var mesh_paths = []
 			var mesh_inds = []
-			for (var classlabel = 0; classlabel <= SCENEdata[taskscreen].length-1; classlabel++){
-				for (const obj in SCENEdata[taskscreen][classlabel].OBJECTS){
-					mesh_paths.push(SCENEdata[taskscreen][classlabel].OBJECTS[obj].meshpath)
+			for (var classlabel = 0; classlabel <= IMAGES[taskscreen].length-1; classlabel++){
+				for (const obj in IMAGES[taskscreen][classlabel].OBJECTS){
+					mesh_paths.push(IMAGES[taskscreen][classlabel].OBJECTS[obj].meshpath)
 					mesh_inds.push([classlabel,obj])
 				} //FOR obj objects in scene classlabel
 			} //FOR classlabel scene
@@ -763,7 +779,7 @@ while(true){
 
 		//============ 2: INIT SCENE & CAMERA ============//
 		console.time('3JS: LOAD SCENE')
-		await initThreeJS(SCENEdata)
+		await initThreeJS(IMAGES)
 		console.log('3js: init scene')
 		//============ (END) 2: INIT SCENE & CAMERA ============//
 
@@ -786,15 +802,60 @@ while(true){
 
 		//Make a scene trial queue TQS (overrides TQ)
 		var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
-		TQS = new TrialQueueScene(samplingStrategy, TASK.SceneBagsSample, TASK.SceneBagsTest, SCENEdata.Sample, SCENEdata.Test)
+		TQS = new TrialQueueScene(samplingStrategy)
 		await TQS.build(num_prebuffer_trials)
 		console.timeEnd('3JS: LOAD SCENE')
+
+		//Store some scene metadata
+		var funcreturn = objectomeSceneNamesToLatentVars(TASK.ImageBagsSample,TQS.testbag_labels,IMAGES.Sample)
+		var keys = Object.keys(funcreturn)
+		for (var i=0; i<=keys.length-1; i++){
+			IMAGEMETA["Sample" + keys[i]] = funcreturn[keys[i]]
+		} //for i keys
+
+		var funcreturn = objectomeSceneNamesToLatentVars(TASK.ImageBagsTest,TQS.testbag_labels,IMAGES.Test)
+		var keys = Object.keys(funcreturn)
+		for (var i=0; i<=keys.length-1; i++){
+			IMAGEMETA["Test" + keys[i]] = funcreturn[keys[i]]
+		} //for i keys
+
+		//Get ImageWidth, if any
+		await TQS.generate_trials(1)
+		if (TQS.sampleq.filename.length > 0){
+			var representative_image = await TQS.IB.get_by_name(TQS.sampleq.filename[0])
+			ENV.ImageWidthPixels = representative_image.width
+			ENV.ImageHeightPixels = representative_image.height
+		}
+		else if (TQS.testq.filenames.length > 0){
+			var representative_image = await TQS.IB.get_by_name(TQS.testq.filenames[0])
+			ENV.ImageWidthPixels = representative_image.width
+			ENV.ImageHeightPixels = representative_image.height
+		}
+		else{
+			ENV.ImageWidthPixels = NaN
+			ENV.ImageHeightPixels = NaN
+		}
+
+		//this meta only used for 2d images
+		delete(TRIAL.SampleObjectTy)
+		delete(TRIAL.SampleObjectTz)
+		delete(TRIAL.SampleObjectRxy)
+		delete(TRIAL.SampleObjectRxz)
+		delete(TRIAL.SampleObjectRyz)
+		delete(TRIAL.SampleObjectScale)
+
+		delete(TRIAL.TestObjectTy)
+		delete(TRIAL.TestObjectTz)
+		delete(TRIAL.TestObjectRxy)
+		delete(TRIAL.TestObjectRxz)
+		delete(TRIAL.TestObjectRyz)
+		delete(TRIAL.TestObjectScale)
 	} //IF load scenes
 	//========================(END) 3D SCENE SET-UP =======================//
 
 
 	//============ CREATE IMAGE BAG & DISPLAY GRID ============//
-	if (typeof(TQS) == "undefined" && FLAGS.need2loadImagesTrialQueue == 1){
+	if (FLAGS.scene3d == 0 && FLAGS.need2loadImagesTrialQueue == 1){
 		if(TASK.Automator != 1){
 			// Make TrialQueue
 			var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
@@ -842,7 +903,6 @@ while(true){
 		// Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image.
 		await TQ.generate_trials(1)
 		var representative_image = await TQ.IB.get_by_name(TQ.sampleq.filename[0])
-		// var representative_image = await imagebag.get_by_name(samplebag_paths[0])
 		ENV.ImageWidthPixels = representative_image.width
 		ENV.ImageHeightPixels = representative_image.height
 		
@@ -884,11 +944,10 @@ while(true){
 	// Draw one (1) sample image from samplebag
 	// console.time('trial images loadtime:')
 
-	if (typeof(TQS) == "undefined"){
+	if (FLAGS.scene3d == 0){
 		[CURRTRIAL.sampleimage, CURRTRIAL.sampleindex, CURRTRIAL.testimages, CURRTRIAL.testindices, CURRTRIAL.correctitem, samplereward] = await TQ.get_next_trial();
-
 	}
-	else if (typeof(TQS) != "undefined"){
+	else if (FLAGS.scene3d == 1){
 		var x = await TQS.get_next_trial()
 		CURRTRIAL.sampleimage = x[0]
 		CURRTRIAL.sampleindex = x[1]
@@ -908,7 +967,7 @@ while(true){
 	logEVENTS("Test",CURRTRIAL.testindices,"trialseries")
 	logEVENTS("CorrectItem",CURRTRIAL.correctitem,"trialseries")
 	
-if ( typeof(TQS) == "undefined" ){ //Using images only not 3d scene
+if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 	var keys = Object.keys(IMAGES.object.sample)
 	for (var i=0; i<=keys.length-1; i++){
 		CURRTRIAL["sampleobject" + keys[i]] = IMAGES.object.sample[keys[i]][CURRTRIAL.sampleindex]
@@ -940,7 +999,7 @@ if ( typeof(TQS) == "undefined" ){ //Using images only not 3d scene
 	logEVENTS("TestObjectRxy",CURRTRIAL.testobjectrxy,"imageseries")
 	logEVENTS("TestObjectRxz",CURRTRIAL.testobjectrxz,"imageseries")
 	logEVENTS("TestObjectRyz",CURRTRIAL.testobjectryz,"imageseries")
-	logEVENTS("TestObjectScale",CURRTRIAL.testobjectscale,"imageseries")
+	logEVENTS("TestObjectScale",CURRTRIAL.testobjectscale,"imageseries")		
 } //IF !FLAGS.useScene
 
 
@@ -1065,7 +1124,7 @@ if ( typeof(TQS) == "undefined" ){ //Using images only not 3d scene
 		
 		for (var q in CANVAS.sequence){frame.shown[q]=0} 
 		frame.current=0
-		if (typeof(TQS) != "undefined"){
+		if (FLAGS.scene3d){
 			scene["Sample"].framenum=0
 			scene["Test"].framenum=0			
 		}
@@ -1077,7 +1136,7 @@ if ( typeof(TQS) == "undefined" ){ //Using images only not 3d scene
 		logEVENTS("TSequenceActual",CURRTRIAL.tsequenceactual,"trialseries")
 		logEVENTS("TSequenceDesired",CURRTRIAL.tsequencedesired,"trialseries")
 	
-		if (typeof(TQS) != "undefined"){
+		if (FLAGS.scene3d){
 			boundingBoxesChoice = boundingBoxesChoice3D
 		}
 		//========= AWAIT TOUCH RESPONSE =========//
@@ -1235,10 +1294,10 @@ if ( typeof(TQS) == "undefined" ){ //Using images only not 3d scene
 		var p1 = displayTrial(CANVAS.sequencepost,CANVAS.tsequencepost);
 		var num_trials_to_buffer_in_punishperiod = 50
 
-		if (typeof(TQS) == "undefined"){
+		if (FLAGS.scene3d == 0){
 			var p2 = TQ.generate_trials(num_trials_to_buffer_in_punishperiod)			
 		}
-		else if (typeof(TQS) != "undefined"){
+		else if (FLAGS.scene3d == 1){
 			var p2 = TQS.generate_trials(num_trials_to_buffer_in_punishperiod)			
 		}
 		playSound(3);
