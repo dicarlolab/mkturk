@@ -99,7 +99,7 @@ async generate_trials(n_trials){
 		} // if sample all bags vs blocks
 
 		// Draw one (1) sample image from samplebag
-		var sample_index = selectSampleImage(this.samplebag_block_indices, this.samplingStrategy)
+		var sample_index = this.selectSampleImage(this.samplebag_block_indices, this.samplingStrategy)
 		var sample_label = this.samplebag_labels[sample_index]; 
 		var sample_filename = this.samplebag_paths[sample_index]; 
 
@@ -108,7 +108,7 @@ async generate_trials(n_trials){
 		image_requests.push(sample_filename)
 
 		// Select appropriate test images (correct one and distractors) 
-		var funcreturn = selectTestImages(sample_label, this.testbag_labels) 
+		var funcreturn = this.selectTestImages(sample_label, this.testbag_labels) 
 		var test_filenames = []
 		if (TASK.TestON <= 0){
 			var test_indices = funcreturn[0] 
@@ -210,11 +210,9 @@ async get_next_trial(){
 	this.num_in_queue--;
 
 	return [sample_image, sample_index, test_images, test_indices, test_correctIndex, sample_reward]
-}
-}
+}//FUNCTION get_next_trial
 
-
-function selectSampleImage(samplebag_indices, SamplingStrategy){
+selectSampleImage(samplebag_indices, SamplingStrategy){
 
 	// Vanilla random uniform sampling with replacement: 
 	var sample_image_index = NaN
@@ -226,9 +224,9 @@ function selectSampleImage(samplebag_indices, SamplingStrategy){
 	}
 
 	return sample_image_index
-}
+}//FUNCTION selectSampleImage
 
-function selectTestImages(correct_label, testbag_labels){
+selectTestImages(correct_label, testbag_labels){
 	
 	// Input arguments: 
 	// 	correct_label: int. It is one element of testbag_labels corresponding to the rewarded group. 
@@ -259,7 +257,7 @@ function selectTestImages(correct_label, testbag_labels){
 			var object_grid_index = TASK.ObjectGridIndex[i] 
 
 			// Determine which location that grid index corresponds to in testIndices: 
-			order_idx = TASK.TestGridIndex.indexOf(object_grid_index)
+			var order_idx = TASK.TestGridIndex.indexOf(object_grid_index)
 
 			// Place the selected test image in the appropriate location in testIndices. 
 			testIndices[order_idx] = test_image_index
@@ -269,43 +267,46 @@ function selectTestImages(correct_label, testbag_labels){
 				correctSelection = order_idx; 
 			}
 		}
-		return [testIndices, correctSelection] 
-	}
+	} //IF
 
-	// Otherwise, for match-to-sample (where effectors are shuffled)
+	else{ 
+		// Otherwise, for match-to-sample (where effectors are shuffled)
 
-	// Get all unique labels 
-	var labelspace = []
-	for (var i = 0; i < testbag_labels.length; i++){
-		if(labelspace.indexOf(testbag_labels[i]) == -1 && 
-			testbag_labels[i] != correct_label){
-			labelspace.push(testbag_labels[i])
+		// Get all unique labels 
+		var labelspace = []
+		for (var i = 0; i < testbag_labels.length; i++){
+			if(labelspace.indexOf(testbag_labels[i]) == -1 && 
+				testbag_labels[i] != correct_label){
+				labelspace.push(testbag_labels[i])
+			}
 		}
-	}
 
-	// Randomly select n-1 labels to serve as distractors 
-	var distractors = []
-	labelspace = shuffle(labelspace)
-	for (var i=0; i <= TASK.TestGridIndex.length-2; i++){
-		distractors[i] = labelspace[i]
-	}
-
-	// Add distractors and correct label to testpool, and then shuffle. 
-	var testpool = []
-	testpool.push(... distractors)
-	testpool.push(correct_label)
-	testpool = shuffle(testpool)	
-
-	// For each label in the testpool, add a random testimage index of it to testIndices. 
-	for (var i = 0; i<testpool.length; i++){
-		label = testpool[i]
-		object_test_indices = getAllInstancesIndexes(testbag_labels, label); 
-		test_image_index = object_test_indices[Math.floor((object_test_indices.length)*Math.random())]; 
-		testIndices[i] = test_image_index
-		if(label == correct_label){
-			correctSelection = i
+		// Randomly select n-1 labels to serve as distractors 
+		var distractors = []
+		labelspace = shuffle(labelspace)
+		for (var i=0; i <= TASK.TestGridIndex.length-2; i++){
+			distractors[i] = labelspace[i]
 		}
-	}
+
+		// Add distractors and correct label to testpool, and then shuffle. 
+		var testpool = []
+		testpool.push(... distractors)
+		testpool.push(correct_label)
+		testpool = shuffle(testpool)	
+
+		// For each label in the testpool, add a random testimage index of it to testIndices. 
+		for (var i = 0; i<testpool.length; i++){
+			var label = testpool[i]
+			object_test_indices = getAllInstancesIndexes(testbag_labels, label); 
+			test_image_index = object_test_indices[Math.floor((object_test_indices.length)*Math.random())]; 
+			testIndices[i] = test_image_index
+			if(label == correct_label){
+				correctSelection = i
+			}
+		}
+	} //ELSE
 
 	return [testIndices, correctSelection]
-}
+}//FUNCTION selectTestImages
+
+} //class TrialQueue

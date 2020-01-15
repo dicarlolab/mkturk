@@ -6,21 +6,8 @@ async function saveBehaviorDatatoFirestore(TASK,ENV,CANVAS){
 	var batch = db.batch();
 	
 	var taskRef = db.collection(FIRESTORECOLLECTION.DATA).doc(ENV.FirestoreDocRoot + '_task')
+
 	var imagesRef = db.collection(FIRESTORECOLLECTION.DATA).doc(ENV.FirestoreDocRoot + '_images')
-	
-
-	//task meta & trial data
-	batch.set(taskRef,{Doctype: "task",
-								Agent: ENV.Subject,
-								CurrentDateValue: ENV.CurrentDate.valueOf(),
-								Taskdoc: ENV.FirestoreDocRoot + '_task',
-								Imagesdoc: ENV.FirestoreDocRoot + '_images'}) //link docs
-
-	batch.update(taskRef,ENV) // write all ENV metadata once
-	batch.update(taskRef,TASK) // write all TASK metadata once
-	batch.update(taskRef,CANVAS) // write all CANVAS metadata once
-
-	//image meta & trial data for each image
 	batch.set(imagesRef,{Doctype: "images",
 								Agent: ENV.Subject,
 								ResearcherID: ENV.ResearcherID,
@@ -28,13 +15,33 @@ async function saveBehaviorDatatoFirestore(TASK,ENV,CANVAS){
 								CurrentDateValue: ENV.CurrentDate.valueOf(),
 								Taskdoc: ENV.FirestoreDocRoot + '_task',
 								Imagesdoc: ENV.FirestoreDocRoot + '_images'}) //link docs
-	batch.update(imagesRef,IMAGES.Sample) //per image meta for sample bags
-	batch.update(imagesRef,IMAGES.Test) //per image meta for test bags
+	batch.set(taskRef,{Imagesdoc: ENV.FirestoreDocRoot + '_images'})
+	if (FLAGS.scene3d == 0){
+		//image meta & trial data for each image
+		batch.update(imagesRef,IMAGES.Sample) //per image meta for sample bags
+		batch.update(imagesRef,IMAGES.Test) //per image meta for test bags
+	}
+	else if (FLAGS.scene3d == 1){
+		//scene meta
+		batch.update(imagesRef, { "SampleScenes": IMAGES.Sample, "TestScenes": IMAGES.Test })
+		batch.update(imagesRef,IMAGEMETA)
+	}
+	
+	//task meta & trial data
+	batch.update(taskRef,{Doctype: "task",
+								Agent: ENV.Subject,
+								CurrentDateValue: ENV.CurrentDate.valueOf(),
+								Taskdoc: ENV.FirestoreDocRoot + '_task'}) //link docs
+	batch.update(taskRef,ENV) // write all ENV metadata once
+	batch.update(taskRef,TASK) // write all TASK metadata once
+	batch.update(taskRef,CANVAS) // write all CANVAS metadata once
 
 	// Commit the batch
 	batch.commit().then(function () {
 	    console.log("FIRESTORE: task & image docs batch created");
 	    FLAGS.createnewfirestore = 0;
+
+// 	    getFirestoreDocSize(FIRESTORECOLLECTION.DATA,imagesRef,"scenes")
 	})
 	.catch(function(error) {
 		console.error("FIRESTORE: !Error creating database task or image doc: ", error);
@@ -64,8 +71,10 @@ async function updateEventDataonFirestore(EVENTS){
 	var taskRef = db.collection(FIRESTORECOLLECTION.DATA).doc(ENV.FirestoreDocRoot + '_task')
 	batch.update(taskRef,EVENTS.trialseries)
 	
-	var imagesRef = db.collection(FIRESTORECOLLECTION.DATA).doc(ENV.FirestoreDocRoot + '_images')
-	batch.update(imagesRef,EVENTS.imageseries)
+	if (FLAGS.scene3d == 0){
+		var imagesRef = db.collection(FIRESTORECOLLECTION.DATA).doc(ENV.FirestoreDocRoot + '_images')
+		batch.update(imagesRef,EVENTS.imageseries)		
+	}
 	
 	// Commit the batch
 	var currtrial = CURRTRIAL.num
@@ -155,7 +164,7 @@ function getFirestoreDocSize(collectionName,docRef,doctype){
         if (doc.exists){
             console.log("FIRESTORE: Document found " + doc.id)
             docSize = calcFirestoreDocSize(collectionName,doc.id,doc.data())
-            console.log("FIRESTORE: Document size : " + docSize)
+            console.log("FIRESTORE: Document size : " + docSize + " bytes")
             DOCSIZE[doctype][CURRTRIAL.num-1] = docSize
             if (docSize > 200000){
             	console.log("Firestore " + doc.id + " is LARGE!  " + docSize + " bytes")

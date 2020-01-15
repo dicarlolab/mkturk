@@ -340,7 +340,14 @@ async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, TRIAL){
 	var dataobj = [] 
 
 	dataobj.push(ENV)
-	dataobj.push(IMAGES.imagepaths)
+	if (FLAGS.scene3d == 1){
+		// dataobj.push(IMAGES)
+		dataobj.push( { "SampleScenes": IMAGES.Sample, "TestScenes": IMAGES.Test } )
+		dataobj.push(IMAGEMETA)
+	}
+	else if (FLAGS.scene3d == 0){
+		dataobj.push(IMAGES.imagepaths)
+	}
 	dataobj.push(CANVAS)
 	dataobj.push(TASK)
 	dataobj.push(TRIAL)

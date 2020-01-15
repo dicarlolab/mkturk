@@ -195,13 +195,19 @@ filelist.sort(function(a, b) {
   return 0;
 });
 
+// for (var i=0; i<=filelist.length-1; i++){
+//     if (filelist[i].name.includes('Youno')){
+//         filelist[i] = filelist[9]
+//     }
+// }
+
         file.filelist = filelist
         for (var i=0; i<=filelist.length-1; i++){
             //add to menu as option
             var opt = document.createElement('option')
             opt.value = i
             opt.innerHTML = filelist[i].name
-            menuobj.appendChild(opt)        
+            menuobj.appendChild(opt)              
         } //for i files
         file.name = file.filelist[0].fullpath
         file.filehasChanged = true
@@ -546,16 +552,38 @@ function toPerformanceData() {
     nColumn = dataXYPos.getNumberOfColumns()
 
     // Size of sample, test & choice targets. Draw them as a bounding box in the touch plot
-    fixationwidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.FixationScale
-    fixationheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.FixationScale
-    samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.SampleScale
-    sampleheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.SampleScale
-    testwidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.TestScale
-    testheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.TestScale
-    if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0){
-        choicewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.ChoiceScale
-        choiceheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.ChoiceScale 
+    if (typeof(file.data.ViewportPPI != "undefined")){
+        fixationwidth = file.data.FixationSizeInches * file.data.ViewportPPI
+        fixationheight = file.data.FixationSizeInches * file.data.ViewportPPI
+        if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0){
+            choicewidth = file.data.ChoiceSizeInches * file.data.ViewportPPI
+            choiceheight = file.data.ChoiceSizeInches * file.data.ViewportPPI
+        }                
     }
+    else {
+        fixationwidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.FixationScale
+        fixationheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.FixationScale
+        if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0){
+            choicewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.ChoiceScale
+            choiceheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.ChoiceScale 
+        }        
+    }//IF screen-specific physical PPI implemented
+
+
+    if (file.data.ImageBagsSample[0].includes("scenebags")){
+        samplewidth = Math.max(...file.data.SampleScenes[0].OBJECTS[Object.keys(file.data.SampleScenes[0].OBJECTS)[0]].sizeInches) * file.data.ViewportPPI
+        sampleheight = Math.max(...file.data.SampleScenes[0].OBJECTS[Object.keys(file.data.SampleScenes[0].OBJECTS)[0]].sizeInches) * file.data.ViewportPPI
+
+        testwidth = Math.max(...file.data.TestScenes[0].OBJECTS[Object.keys(file.data.TestScenes[0].OBJECTS)[0]].sizeInches) * file.data.ViewportPPI
+        testheight = Math.max(...file.data.TestScenes[0].OBJECTS[Object.keys(file.data.TestScenes[0].OBJECTS)[0]].sizeInches) * file.data.ViewportPPI
+    } //IF 3D
+    else {
+        samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.SampleScale
+        sampleheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.SampleScale
+        testwidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.TestScale
+        testheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.TestScale
+    } //ELSE 2D
+
     
     var ndisplayelements = 0
 
@@ -828,40 +856,45 @@ function toObjPerfData(){
     dataObjPerf.removeRows(0,dataObjPerf.getNumberOfRows());
     
     if (file.data.RewardStage == 1){
-            var sampleobj = []
+        var sampleobj = []
         if (file.data.NTrialsPerBagBlock >5000){ //detection task 
-            sampleobj[0] = file.data.ImageBagsSample[0].split("/")[4];
+            sampleobj[0] = file.data.ImageBagsSample[0].split("/")[5];
             dataObjPerf.addRow([sampleobj[0],0]);
             var sampleobj_length = 1;
-        }else{
-
-
-          var sampleobj = []
+        }
+        else{
+            var sampleobj = []
     
-         for (var i=0; i<=file.data.ImageBagsSample.length-1;i++){
-        sampleobj[i] = file.data.ImageBagsSample[i].split("/")[4];
-        dataObjPerf.addRow([sampleobj[i],0]);
-        var sampleobj_length = sampleobj.length
-        }
-    }
+            for (var i=0; i<=file.data.ImageBagsSample.length-1;i++){
+                sampleobj[i] = file.data.ImageBagsSample[i].split("/")[5];
+                dataObjPerf.addRow([sampleobj[i],0]);
+                var sampleobj_length = sampleobj.length
+            } //FOR i sample bags
+        } //IF ntrialsperbagblock
 
+        var NdiffObjPerf = Array.apply(null, Array(sampleobj_length)).map(Number.prototype.valueOf, 0);
+        var NdiffObj = Array.apply(null, Array(sampleobj_length)).map(Number.prototype.valueOf, 0);
+        for (var i = 0; i <= file.data.Sample.length - 1; i++) {
+            for (var j = 0; j <= sampleobj_length - 1; j++) {
+                if (file.data.Test[i][file.data.CorrectItem[i]] == j){
+                    NdiffObj[j]++
+                    if (file.data.Response[i] == file.data.CorrectItem[i]){
+                        NdiffObjPerf[j]++
+                    } //IF correct
+                }//IF sample was that object
 
-    var NdiffObjPerf = Array.apply(null, Array(sampleobj_length)).map(Number.prototype.valueOf, 0);
-    var NdiffObj = Array.apply(null, Array(sampleobj_length)).map(Number.prototype.valueOf, 0);
-    for (var i = 0; i <= file.data.Sample.length - 1; i++) {
-        for (var j = 0; j <= sampleobj_length - 1; j++) {
-            if (file.data.Ordered_Samplebag_Filenames[file.data.Sample[i]].split("/")[4]==sampleobj[j]){
-                NdiffObj[j]++
-            }
-            if (file.data.Response[i] == file.data.CorrectItem[i] && (file.data.Ordered_Samplebag_Filenames[file.data.Sample[i]].split("/")[4]==sampleobj[j])) {
-                NdiffObjPerf[j]++
-            }
-            dataObjPerf.setValue(j, 1, NdiffObjPerf[j] / NdiffObj[j])
-        }
+//                 if (file.data.Ordered_Samplebag_Filenames[file.data.Sample[i]].split("/")[5]==sampleobj[j]){
+//                     NdiffObj[j]++
+//                 }
+//                 if (file.data.Response[i] == file.data.CorrectItem[i] && (file.data.Ordered_Samplebag_Filenames[file.data.Sample[i]].split("/")[5]==sampleobj[j])) {
+//                     NdiffObjPerf[j]++
+//                 }
 
-    }
-    }
-}
+                dataObjPerf.setValue(j, 1, NdiffObjPerf[j] / NdiffObj[j])
+            }//FOR j sampleobj
+        }//FOR i trials
+    }//IF rewardstage==1
+}//FUNCTION toObjPerfData
 
 //Synchronous
 function toChoiceData() {
@@ -880,7 +913,7 @@ function toChoiceData() {
         }
 
         for (var i = 0; i <= objgridindex.length - 1; i++) {
-        dataChoice.addRow([file.data.ImageBagsSample[allind[i]].split("/")[4],0]);
+        dataChoice.addRow([file.data.ImageBagsSample[allind[i]].split("/")[5],0]);
         possibleResp[i] = i
 
         }

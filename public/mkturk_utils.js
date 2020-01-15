@@ -478,6 +478,49 @@ function objectomeImageNamesToLatentVars(imagefilepaths,imagelabels){
   return [images,object]
 } //FUNCTION objectomeImageNamesToLatentVars
 
+
+function objectomeSceneNamesToLatentVars(scenefilepaths,scenelabels,scenes){
+  var images = {
+    ImageSetDir: "",
+    Nouns: [],
+    Objects: [],
+    BagNames: [],    
+    BagIdx: [],
+    ImageIdx:[]
+  }
+  images.ImageSetDir = scenefilepaths[0].slice(0,scenefilepaths[0].indexOf("objectome3d")) + "objectome3d/"
+
+  for (var i=0; i<=scenefilepaths.length-1; i++){
+    var nimages = Math.max(scenes[i].nimages,scenes[i].nbackgroundimages)
+
+    images.BagIdx.push(...Array(nimages).fill(scenelabels[i])) //array of nimage labels
+    images.ImageIdx.push(...Array(nimages).keys()) //1 to nimages
+    var strs = scenefilepaths[i].split("/") //split path into words
+
+    // Noun, object model, image folder
+    var findnext = 0;
+    for (var j=0; j<=strs.length-1; j++){
+      if (findnext == 0 && strs[j] == "objectome3d"){
+        findnext++
+      }
+      else if (findnext == 1){
+        images.Nouns[scenelabels[i]] = strs[j]
+        findnext++
+      } //else if noun
+      else if (findnext == 2){
+        images.Objects[scenelabels[i]] = strs[j]
+        findnext++
+      } //else if object
+      else if (findnext == 3){
+        images.BagNames[scenelabels[i]] = strs[j]
+        findnext++
+      } //else if scene json
+    } //for j strs
+  } //for i scenebags
+
+  return images
+} //FUNCTION objectomeImageNamesToLatentVars
+
 function getLongestArray(x){
   var n = 0
   if (typeof(x) != "object"){
