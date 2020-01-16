@@ -15,7 +15,6 @@ firebase.initializeApp(firebaseConfig);
 
 import { Mkquery } from "./mkquery";
 import { Mkfinder } from "./mkfinder";
-import { Mkchart } from "./mkmedia";
 
 let provider = new firebase.auth.GoogleAuthProvider();
 provider.addScope("https://www.googleapis.com/auth/contacts.readonly");
@@ -38,7 +37,6 @@ let isRoot = true;
 
 let mkq = new Mkquery();
 let mkf = new Mkfinder();
-let mkc = new Mkchart();
 
 
 let rfidToggle = document.querySelector("#rfid-switch") as HTMLInputElement;
@@ -352,6 +350,7 @@ fieldSelector?.addEventListener("change", ev => {
 let queryForm = document.querySelector<HTMLFormElement>("#mkquery-form");
 queryForm?.addEventListener("submit", ev => {
   ev.preventDefault();
+  console.log("test weird");
   let qryLoc = qryLocSelc?.value;
   let field = fieldSelector?.value;
   let k0 = document.querySelector<HTMLInputElement>("#keyword-input-0")?.value;

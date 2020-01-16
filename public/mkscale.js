@@ -526,6 +526,22 @@ entryForm.addEventListener("submit", ev => {
   query.get().then(sns => {
     console.log(sns);
     if (sns.empty) {
+      function timestampToDate(element, idx, arr) {
+        try {
+          arr[idx] = element.toDate().toJSON();
+        } catch (e) {
+          console.error("Error converting t_weights:", e);
+        }
+      }
+
+      function dateToTimestamp(element, idx, arr) {
+        try {
+          arr[idx] = firebase.firestore.Timestamp.fromDate(new Date(element));
+        } catch (e) {
+          console.error("Error converting t_weights:", e);
+        }
+      }
+
       let today = new Date(Date.now());
       let idFirestore = today.toISOString() + "_" + name + "_weight";
       let idStorage = idFirestore + ".json";
@@ -552,18 +568,52 @@ entryForm.addEventListener("submit", ev => {
 
       if (entrySelector.value != "mkscale") {
         db.collection('marmosets').doc(name).get().then(doc => {
-          try {
-            console.log(doc.data().weight_values.length);
-          } catch (e) {
+          // try {
+          //   console.log(doc.data().weight_values.length);
+          // } catch (e) {
+          //   db.collection('marmosets').doc(name).update({
+          //     weight_values: [Number(wt)],
+          //     weight_dates: [firebase.firestore.Timestamp.fromDate(today)],
+          //     weight_notes: [notes] 
+          //   }).catch(e => {
+          //     console.error("Error saving to firestore/marmosets");
+          //     alert("firestore/marmosets weight save fail. Will continue operation");
+          //   });
+          //   console.log("firestore/marmosets Weight Save Success:", name);
+          // }
+          if ("weight_values" in doc.data()) {
+            let file = doc.data();
+            file.weight_values.push(Number(wt));
+            file.weight_notes.push(notes);
+            file.weight_dates.push(firebase.firestore.Timestamp.fromDate(today));
+            console.log(file.weight_dates);
+            // console.log(file.weight_dates);
+            // console.log(today);
+            // file.weight_dates = file.weight_dates.forEach(timestampToDate);
+            // file.weight_dates.push(today.toJSON());
+            // file.weight_dates = file.weight_dates.forEach(dateToTimestamp);
+
+            db.collection('marmosets').doc(name).update({
+              weight_values: file.weight_values,
+              weight_dates: file.weight_dates,
+              weight_notes: file.weight_notes,
+            }).then(msg => {
+              console.log("firestore/marmosets weight save success:", msg, name);
+            }).catch(e => {
+              console.error("Error saving to firestore/marmosets");
+              alert("firestore/marmosets weight save fail. will continue operation");
+            });
+          } else {
             db.collection('marmosets').doc(name).update({
               weight_values: [Number(wt)],
               weight_dates: [firebase.firestore.Timestamp.fromDate(today)],
-              weight_notes: [notes] 
+              weight_notes: [notes]
+            }).then(msg => {
+              console.log("firestore/marmosets weight save success", msg, name);
             }).catch(e => {
-              console.error("Error saving to firestore/marmosets");
-              alert("firestore/marmosets weight save fail. Will continue operation");
+              console.error("Error saving to firestore/marmosets", e);
+              alert("firestore/marmosets weight save fail. will continue operation");
             });
-            console.log("firestore/marmosets Weight Save Success:", name);
           }
         });
       }
@@ -654,15 +704,43 @@ entryForm.addEventListener("submit", ev => {
         });
 
         if (entrySelector.value != "mkscale") {
-          db.collection('marmosets').doc(name).update({
-            weight_values: firestoreFile.WeightValues,
-            weight_dates: firestoreFile.WeightTimes,
-            weight_notes: firestoreFile.WeightNotes
-          }).catch(e => {
-            console.error("Error saving to firestore/marmosets");
-            alert("firestore/marmosets Weight Save Fail. Will continue operation");
+          db.collection('marmosets').doc(name).get().then(doc => {
+            // try {
+            //   console.log(doc.data().weight_values.length);
+            // } catch (e) {
+            //   db.collection('marmosets').doc(name).update({
+            //     weight_values: [Number(wt)],
+            //     weight_dates: [firebase.firestore.Timestamp.fromDate(today)],
+            //     weight_notes: [notes] 
+            //   }).catch(e => {
+            //     console.error("Error saving to firestore/marmosets");
+            //     alert("firestore/marmosets weight save fail. Will continue operation");
+            //   });
+            //   console.log("firestore/marmosets Weight Save Success:", name);
+            // }
+            let fileMarmosts = doc.data();
+            fileMarmosts.weight_values.push(Number(wt));
+            fileMarmosts.weight_notes.push(notes);
+            fileMarmosts.weight_dates.push(firebase.firestore.Timestamp.fromDate(timeNow));
+            console.log(fileMarmosts.weight_dates);
+              // console.log(file.weight_dates);
+              // console.log(today);
+              // file.weight_dates = file.weight_dates.forEach(timestampToDate);
+              // file.weight_dates.push(today.toJSON());
+              // file.weight_dates = file.weight_dates.forEach(dateToTimestamp);
+  
+            db.collection('marmosets').doc(name).update({
+              weight_values: fileMarmosts.weight_values,
+              weight_dates: fileMarmosts.weight_dates,
+              weight_notes: fileMarmosts.weight_notes,
+            }).then(msg => {
+              console.log("firestore/marmosets weight save success:", msg, name);
+            }).catch(e => {
+              console.error("Error saving to firestore/marmosets");
+              alert("firestore/marmosets weight save fail. will continue operation");
+            });
+            
           });
-          console.log("firestore/marmosets Weight Save Success:", name);
         }
 
         alert("Firestore/Storage Weight Save Success. Displaying Result...");

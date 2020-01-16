@@ -95,11 +95,10 @@
   grid-template-areas: "upload download";
 }
 
-#chart-canvas {
+#chart-div {
   grid-column: 1;
   grid-row: 1;
   z-index: 1;
-  background-color: white;
 }
 
 #filter-value {
