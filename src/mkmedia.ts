@@ -8,7 +8,6 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
-import Chart from "chart.js";
 
 type FileRef = firebase.storage.Reference;
 const db = firebase.firestore();
@@ -386,72 +385,180 @@ export class Mkimage {
 }
 
 export class Mkchart {
-  canvas: HTMLCanvasElement;
+  chartDiv: HTMLDivElement;
+  plotX: HTMLSelectElement;
+  plotY: HTMLSelectElement;
   plotBtn: HTMLButtonElement;
   finderDiv: HTMLDivElement;
+  chart: any;
+  data: any;
+  isActive: boolean;
 
   constructor() {
-    this.canvas = document.querySelector("#chart-canvas") as HTMLCanvasElement;
+    google.charts.load('current', { packages: ['corechart'] });
+    this.chartDiv = document.querySelector("#chart-div") as HTMLDivElement;
     this.finderDiv = document.querySelector("#finder-div") as HTMLDivElement;
+    this.plotX = document.querySelector("#quick-plot-x") as HTMLSelectElement;
+    this.plotY = document.querySelector("#quick-plot-y") as HTMLSelectElement;
     this.plotBtn = document.querySelector("#plot-btn") as HTMLButtonElement;
-    this.canvas.width = this.finderDiv.offsetWidth;
-    this.canvas.height = this.finderDiv.offsetHeight;
-    this.canvas.style.width = String(this.finderDiv.offsetWidth);
-    this.canvas.style.height = String(this.finderDiv.offsetHeight);
-    console.log(this.canvas);
+    this.isActive = false;
+    
+    this.data = null;
+    console.log(this.chartDiv);
+    
     this.plotBtnAction();
-    this.closeCanvas();
+    //this.closeCanvas();
+
+    
   }
 
   public plotBtnAction() {
-    this.plotBtn.addEventListener("click", (ev: Event) => {
-      this.canvas.style.zIndex = "2";
-      this.finderDiv.style.zIndex = "1";
-      let ctx = this.canvas.getContext('2d');
-      let myChart = new Chart(ctx!, {
-        type: 'line',
-        data: {
-          labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-          datasets: [{
-            label: '# of votes',
-            lineTension: 0,
-            data: [12, 19, 3, 5, 2, 3],
-            backgroundColor: [
-              'rgba(255, 99, 132, 0.2)',
-              'rgba(54, 162, 235, 0.2)',
-              'rgba(255, 206, 86, 0.2)',
-              'rgba(75, 192, 192, 0.2)',
-              'rgba(153, 102, 255, 0.2)',
-              'rgba(255, 159, 64, 0.2)'
-            ],
-            borderColor: [
-              'rgba(255, 99, 132, 1)',
-              'rgba(54, 162, 235, 1)',
-              'rgba(255, 206, 86, 1)',
-              'rgba(75, 192, 192, 1)',
-              'rgba(153, 102, 255, 1)',
-              'rgba(255, 159, 64, 1)'
-            ],
-            borderWidth: 1
-          }]
-        },
-        options: {
-          scales: {
-            yAxes: [{
-              ticks: {
-                beginAtZero: true
-              }
-            }]
-          }
+    this.plotBtn.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      this.isActive = !this.isActive;
+      console.log(this.isActive);
+      if (this.isActive) {
+        this.plotBtn.textContent = "Close Quick Plot";
+        this.chartDiv.style.zIndex = "2";
+        this.finderDiv.style.zIndex = "1";
+        let vizData = new google.visualization.DataTable();
+        vizData.addColumn('datetime', this.plotX.value);
+        vizData.addColumn('number', this.plotY.value);
+        
+        for (let i = 0; i < this.data[this.plotX.value].length; i++) {
+          vizData.addRow([ new Date(this.data[this.plotX.value][i]), parseFloat(this.data[this.plotY.value][i]) ]);
         }
-      });
+
+        console.log(this.chartDiv.clientWidth);
+        let chart = new google.visualization.LineChart(this.chartDiv);
+        let options = { title: this.plotY.value, width: this.chartDiv.offsetWidth, height: this.chartDiv.offsetHeight, legend: 'none'};
+        chart.draw(vizData, options);
+        
+      } else {
+        this.plotBtn.textContent = "Quick Plot";
+        this.finderDiv.style.zIndex = "2";
+        this.chartDiv.style.zIndex = "1";
+
+      }
     });
+
+    
   }
 
-  public closeCanvas() {
-    this.canvas.addEventListener('click', (ev: MouseEvent) => {
-      let rect = this.canvas.getBoundingClientRect();
-      console.log("X:", ev.clientX - rect.left, "Y:", ev.clientY - rect.top);
-    })
+  // public plotBtnAction() {
+  //   this.plotBtn.addEventListener("click", (ev: Event) => {
+  //     if (this.data) {
+  //       this.canvas.style.zIndex = "2";
+  //       this.finderDiv.style.zIndex = "1";
+  //       let ctx = this.canvas.getContext("2d");
+  //       this.chart = new Chart(ctx!, {
+  //         type: 'line',
+  //         data: {
+  //           labels: this.data[this.plotX.value],
+  //           datasets: [{
+  //             label: this.plotY.value,
+  //             lineTension: 0,
+  //             data: this.data[this.plotY.value],
+  //             borderWidth: 1,
+  //             pointRadius: 10
+  //           }]
+  //         },
+  //         options: {
+  //           scales: {
+  //             yAxes: [{
+  //               ticks: {
+  //                 beginAtZero: true
+  //               }
+  //             }],
+  //             xAxes: [{
+  //               type: 'time',
+  //               time: {
+  //                 displayFormats: {
+  //                   day: 'll',
+  //                   month: 'll'
+  //                 }
+  //               },
+  //               distribution: 'linear',
+  //               ticks: {
+  //                 source: 'labels'
+  //               }
+  //             }]
+  //           },
+  //           animation: {
+  //             onComplete: function(animation) {
+  //               if (ctx) {
+  //                 let x = ctx.canvas.width - 20;
+  //                 let y = 0;
+  //                 let side = 20;
+  //                 let shift = 2;
+
+  //                 ctx.fillStyle = 'red';
+  //                 ctx.fillRect(x, y, side, side);
+  //                 ctx.beginPath();
+  //                 ctx.moveTo(x + shift, y + shift);
+  //                 ctx.lineTo(x + side - shift, y + side - shift);
+  //                 ctx.moveTo(x + side - shift, y + shift);
+  //                 ctx.lineTo(x + shift, y + side - shift);
+  //                 ctx.strokeStyle = '#FFFFFF';
+  //                 ctx.stroke();
+  //               }
+  //             }
+  //           }
+  //         }
+  //       });
+  //     }
+  //   });
+  // }
+
+  // public closeCanvas() {
+  //   this.canvas.addEventListener('pointerup', (ev: PointerEvent) => {
+  //     let rect = this.canvas.getBoundingClientRect();
+  //     console.log("X:", ev.clientX - rect.left, "Y:", ev.clientY - rect.top);
+  //     if (this.isCloseRect(ev.clientX - rect.left, ev.clientY - rect.top)) {
+  //       this.chart?.destroy();
+  //       let ctx = this.canvas.getContext('2d');
+  //       ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
+  //       this.finderDiv.style.zIndex = "2";
+  //       this.canvas.style.zIndex = "1";
+  //     }
+  //   });
+  // }
+
+  // private isCloseRect(clickedX: number, clickedY: number) {
+  //   let x = this.canvas.width - 20;
+  //   let y = 0;
+  //   let side = 20;
+  //   if ((clickedX >= x) && (clickedX <= x + 20) && 
+  //       (clickedY >= y) && (clickedY <= y + 20)) {
+  //     return true;
+  //   }
+  //   return false;
+  // }
+
+  public populateAxisFields(data: any) {
+    this.data = data;
+    for (let key of Object.keys(data)) {
+      if (Array.isArray(data[key]) && key.includes("_dates")) {
+        let option = document.createElement("option");
+        option.setAttribute("class", "axis-options");
+        option.setAttribute("value", key);
+        option.textContent = key;
+        this.plotX.appendChild(option);
+      }
+      else if (Array.isArray(data[key]) && key.includes("_values")) {
+        let option = document.createElement("option");
+        option.setAttribute("class", "axis-options");
+        option.setAttribute("value", key);
+        option.textContent = key;
+        this.plotY.appendChild(option);
+      }
+    }
+  }
+
+  public removeElementsByClassName(cName: string) {
+    let elements = document.getElementsByClassName(cName);
+    while (elements.length > 0) {
+      elements[0].parentNode?.removeChild(elements[0]);
+    }
   }
 }

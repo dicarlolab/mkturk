@@ -1,5 +1,3 @@
-import { Mkchart } from "./mkmedia";
-
 export class Mkquery {
   public rfidMode: boolean;
   
