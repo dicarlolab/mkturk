@@ -30,13 +30,12 @@
 
           <!-- NAVIGATION -->
           <nav class="mdl-navigation">
-            <a class="mdl-navigation__link" id="quick-link-marmosets" href="">firestore/marmosets</a>
-            <a class="mdl-navigation__link" id="quick-link-mkturkdata" href="">firestore/mkturkdata</a>
-            <a class="mdl-navigation__link" id="quick-link-objects" href="">firestore/objects</a>
-            <a class="mdl-navigation__link" id="quick-link-mkturkfiles" href="">gcs/mkturkfiles</a>
-            <a class="mdl-navigation__link" id="quick-link-params" href="">gcs/params</a>
-            <a class="mdl-navigation__link" id="quick-link-images" href="">gcs/images</a>
-            <a class="mdl-navigation__link" id="quick-link-scenes" href="">gcs/scenes</a>
+            <a class="mdl-navigation__link" id="quick-link-params" href=""><b>params</b></a>
+            <a class="mdl-navigation__link" id="quick-link-images" href=""><b>images</b></a>
+            <a class="mdl-navigation__link" id="quick-link-scenes" href=""><b>scenes</b></a>
+            <a class="mdl-navigation__link" id="quick-link-marmosets" href="">marmosets</a>
+            <a class="mdl-navigation__link" id="quick-link-mkturkdata" href="">mkturkdata</a>
+            <a class="mdl-navigation__link" id="quick-link-objects" href="">objects</a>
             <label class="mdl-switch mdl-js-switch mdl-js-ripple-effect" for="rfid-switch">
               <input type="checkbox" id="rfid-switch" class="mdl-switch__input">
               <span class="mdl-switch__label" id="rfid-switch-span" style="color:red; font-weight: bolder;">RFID OFF</span>
@@ -63,6 +62,9 @@
                     <option value="marmosets">firestore/marmosets</option>
                     <option value="mkturkdata">firestore/mkturkdata</option>
                     <option value="objects">firestore/objects</option>
+                    <option value="devices">firestore/devices</option>
+                    <option value="eyecalibration">firestore/eyecalibration</option>
+                    <option value="mkscale">firestore/mkscale</option>
                   </optgroup>
                   <optgroup label="Cloud Storage">
                     <option value="mkturkfiles">gcs/mkturkfiles</option>
@@ -132,7 +134,10 @@
             <div id="editor-div">
               <p id="file-name-span">Filename:</p>
               <div id="editor"></div>
-              <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="update-btn">UPDATE</button>
+              <div id="button-box">
+                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="update-btn">UPDATE</button>
+                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="active-btn">Make Active</button>
+              </div>
             </div>
 
             <div id="image-canvas-div">

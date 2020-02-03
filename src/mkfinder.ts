@@ -327,6 +327,14 @@ export class Mkfinder {
 
     this.backBtn.disabled = (fileRef.fullPath == "mkturkfiles") ? true: false;
 
+    if (fileRef.fullPath == "mkturkfiles/parameterfiles/params_storage") {
+      this.mke.makeActiveBtn.style.display = "inline-block";
+      this.mke.btnBoxDiv.style.gridTemplateAreas = '"update-btn active-btn"';
+    } else {
+      this.mke.makeActiveBtn.style.display = "none";
+      this.mke.btnBoxDiv.style.gridTemplateAreas = '"update-btn update-btn"';
+    }
+
     this.pathName.innerText = fileRef.fullPath;
 
     let pathArr: string[] = fileRef.fullPath.split("/");
@@ -535,6 +543,24 @@ export class Mkfinder {
                 { type: "application/json; charset=utf-8" });
             FileSaver.saveAs(fileBlob, docName);
           });
+        }
+      }
+
+      else if (qryLoc.value == "devices") {
+        for (let i = 0; i < row.length; i++) {
+          console.log(row[i]);
+        }
+      }
+
+      else if (qryLoc.value == "eyecalibration") {
+        for (let i = 0; i < row.length; i++) {
+          console.log(row[i]);
+        }
+      }
+
+      else if (qryLoc.value == "mkscale") {
+        for (let i = 0; i < row.length; i++) {
+          console.log(row[i]);
         }
       }
     });

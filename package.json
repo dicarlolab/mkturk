@@ -18,6 +18,7 @@
   "homepage": "https://github.com/issalab/mkturk#readme",
   "dependencies": {
     "@google-cloud/bigquery": "^4.6.1",
+    "@google-cloud/storage": "^4.3.0",
     "@types/chart.js": "^2.9.7",
     "@types/file-saver": "^2.0.1",
     "@types/google.visualization": "0.0.51",
