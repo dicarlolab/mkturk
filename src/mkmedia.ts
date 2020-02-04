@@ -66,6 +66,26 @@ export class Mkeditor {
       }
     }
 
+    else if (loc === "objects") {
+      this.activeFile = { loc: loc, id: file.docname };
+      this.fileNameP.innerText = String(this.activeFile.id);
+    }
+
+    else if (loc === "eyecalibrations") {
+      this.activeFile = { loc: loc, id: file.Docname };
+      this.fileNameP.innerText = String(this.activeFile.id);
+    }
+
+    else if (loc === "devices") {
+      this.activeFile = { loc: loc, id: file.docname };
+      this.fileNameP.innerText = String(this.activeFile.id);
+    }
+
+    else if (loc === "mkscale") {
+      this.activeFile = { loc: loc, id: file.Docname };
+      this.fileNameP.innerText = String(this.activeFile.id);
+    }
+
     console.log("activeFile", this.activeFile);
   }
 

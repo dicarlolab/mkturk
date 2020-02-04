@@ -181,7 +181,7 @@ export class Mkfinder {
       this.pathName.innerText = "objects";
       this.finder = new Tabulator("#finder", {
         data: dataArr,
-        index: "meshfile",
+        index: "docname",
         layout: "fitColumns",
         initialSort: [
           {column: "identity", dir: "asc"}
@@ -193,6 +193,114 @@ export class Mkfinder {
           {title: "Noun", field: "noun"},
           {title: "Meshfile", field: "meshfile"},
           {title: "MeshfilePath", field: "meshfilepath"},
+        ],
+        selectable: true,
+        selectableRangeMode: "click",
+        rowClick: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+          
+        },
+        rowTap: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+        },
+        tableBuilt: () => {          
+          /* selectAllBox function */
+          let selectAllBox 
+            = document.querySelector("#select-all") as HTMLInputElement;
+          selectAllBox.addEventListener("change", ev => {
+            if (selectAllBox.checked == true) {
+              this.finder.selectRow();
+            } else {
+              this.finder.deselectRow();
+            }
+          });
+        }
+      });
+    }
+
+    else if (database == "devices") {
+      this.finder.destroy();
+      this.pathName.innerText = "devices";
+      this.finder = new Tabulator("#finder", {
+        data: dataArr,
+        index: "docname",
+        layout: "fitColumns",
+        initialSort: [
+          {column: "model", dir: "asc"}
+        ],
+        columns: [
+          {title: "<input id='select-all' type='checkbox'/>", width: 15, headerSort: false},
+          {title: "Model", field: "model"},
+          {title: "Brand", field: "brand"},
+          {title: "Type", field: "type"},
+          {title: "PPI", field: "ppi"},
+        ],
+        selectable: true,
+        selectableRangeMode: "click",
+        rowClick: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+          
+        },
+        rowTap: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+        },
+        tableBuilt: () => {          
+          /* selectAllBox function */
+          let selectAllBox 
+            = document.querySelector("#select-all") as HTMLInputElement;
+          selectAllBox.addEventListener("change", ev => {
+            if (selectAllBox.checked == true) {
+              this.finder.selectRow();
+            } else {
+              this.finder.deselectRow();
+            }
+          });
+        }
+      });
+    }
+
+    else if (database == "eyecalibrations") {
+      this.finder.destroy();
+      this.pathName.innerText = "eyecalibrations";
+      this.finder = new Tabulator("#finder", {
+        data: dataArr,
+        index: "Docname",
+        layout: "fitColumns",
+        initialSort: [
+          {column: "Taskdoc", dir: "asc"}
+        ],
+        columns: [
+          {title: "<input id='select-all' type='checkbox'/>", width: 15, headerSort: false},
+          {title: "Agent", field: "Agent"},
+          {title: "CurrentDate", field: "CurrentDate"},
         ],
         selectable: true,
         selectableRangeMode: "click",

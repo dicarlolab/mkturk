@@ -267,6 +267,25 @@ qryLocSelc!.addEventListener("change", ev => {
       }
       break;
 
+    case "devices":
+      fs.style.visibility = "hidden";
+      ki0.style.visibility = "hidden";
+      ki1.style.visibility = "hidden";
+      ki2.style.visibility = "hidden";
+      goBtn.style.visibility = "hidden";
+      plotX.style.visibility = "hidden";
+      plotY.style.visibility = "hidden";
+      plotBtn.style.visibility = "hidden";
+
+      resetPlaceholder();
+      removeElementsByClassName("field-options");
+
+      let ret = mkq.decodeQuery(db.collection("devices"));
+      ret.then(docs => {
+        mkf.listFirestoreDocs(docs, "devices");
+      });
+
+      break;
   }
 });
 
