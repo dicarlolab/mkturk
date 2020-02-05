@@ -110,11 +110,8 @@ export class Mkeditor {
       ev.stopPropagation();
       let loc = this.activeFile.loc;
 
-      function isFirestore(loc: string) {
-        
-      }
-
-      if (loc === "marmosets" || loc === "mkturkdata" || loc === "devices") {
+      if (loc === "marmosets" || loc === "mkturkdata" || loc === "devices"
+        || loc === "mkscale" || loc === "eyecalibrations") {
         // handle marmosets && mkturkdata
         let id = this.activeFile.id as string;
         db.collection(loc).doc(id).set(
@@ -462,8 +459,6 @@ export class Mkchart {
     console.log(this.chartDiv);
     
     this.plotBtnAction();
-    //this.closeCanvas();
-
     
   }
 
@@ -486,7 +481,7 @@ export class Mkchart {
 
         console.log(this.chartDiv.clientWidth);
         let chart = new google.visualization.LineChart(this.chartDiv);
-        let options = { title: this.plotY.value, width: this.chartDiv.offsetWidth, height: this.chartDiv.offsetHeight, legend: '' as 'none'};
+        let options = { title: this.plotY.value, width: this.chartDiv.offsetWidth, height: this.chartDiv.offsetHeight, legend: 'none' as 'none'};
         chart.draw(vizData, options);
         
       } else {
@@ -503,14 +498,16 @@ export class Mkchart {
   public populateAxisFields(data: any) {
     this.data = data;
     for (let key of Object.keys(data)) {
-      if (Array.isArray(data[key]) && key.includes("_dates")) {
+      if (Array.isArray(data[key]) 
+        && (key.includes("_dates") || key.toLowerCase().includes('times'))) {
         let option = document.createElement("option");
         option.setAttribute("class", "axis-options");
         option.setAttribute("value", key);
         option.textContent = key;
         this.plotX.appendChild(option);
       }
-      else if (Array.isArray(data[key]) && key.includes("_values")) {
+      else if (Array.isArray(data[key]) 
+        && (key.includes("_values")) || key.toLowerCase().includes('values')) {
         let option = document.createElement("option");
         option.setAttribute("class", "axis-options");
         option.setAttribute("value", key);

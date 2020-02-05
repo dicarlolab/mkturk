@@ -340,6 +340,61 @@ export class Mkfinder {
       });
     }
 
+    else if (database == "mkscale") {
+      this.finder.destroy();
+      this.pathName.innerText = "mkscale";
+      this.finder = new Tabulator("#finder", {
+        data: dataArr,
+        index: "Docname",
+        layout: "fitColumns",
+        initialSort: [
+          {column: "CurrentDate", dir: "asc"}
+        ],
+        columns: [
+          {title: "<input id='select-all' type='checkbox'/>", width: 15, headerSort: false},
+          {title: "Name", field: "Name"},
+          {title: "CurrentDate", field: "CurrentDate"},
+        ],
+        selectable: true,
+        selectableRangeMode: "click",
+        rowClick: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+          this.mkc.populateAxisFields(row.getData());
+          
+        },
+        rowTap: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+          this.mkc.populateAxisFields(row.getData());
+        },
+        tableBuilt: () => {          
+          /* selectAllBox function */
+          let selectAllBox 
+            = document.querySelector("#select-all") as HTMLInputElement;
+          selectAllBox.addEventListener("change", ev => {
+            if (selectAllBox.checked == true) {
+              this.finder.selectRow();
+            } else {
+              this.finder.deselectRow();
+            }
+          });
+        }
+      });
+    }
+
     else {
       console.error("Wrong or Invalid database trying to be tabularized");
     }
@@ -632,12 +687,12 @@ export class Mkfinder {
 
       else if (qryLoc.value == "marmosets") {
         for (let i = 0; i < row.length; i++) {
-          let docRef = db.collection("marmosets").doc(row[i].getData().name);
-          docRef.get().then(doc => {
-            let fileBlob = new Blob([ JSON.stringify(doc.data(), null, 1) ],
-                { type: "application/json; charset=utf-8" });
-            FileSaver.saveAs(fileBlob, row[i].getData().name);
-          });
+          let file = row[i].getData();
+          let blob = new Blob(
+            [ JSON.stringify(file, null, 1) ],
+            { type: "application/json; charset=utf-8" }
+          );
+          FileSaver.saveAs(blob, file.name + ".json");
         }
       }
 
@@ -645,30 +700,56 @@ export class Mkfinder {
         for (let i = 0; i < row.length; i++) {
           let docName = row[i].getData().FirestoreDocRoot + "_" +
               row[i].getData().Doctype;
-          let docRef = db.collection("mkturkdata").doc(docName);
-          docRef.get().then(doc => {
-            let fileBlob = new Blob([ JSON.stringify(doc.data(), null, 1) ],
-                { type: "application/json; charset=utf-8" });
-            FileSaver.saveAs(fileBlob, docName);
-          });
+          let file = row[i].getData();
+          let blob = new Blob(
+            [ JSON.stringify(file, null, 1) ],
+            { type: "application/json; charset=utf-8" }
+          );
+          FileSaver.saveAs(blob, docName + ".json");
         }
       }
 
       else if (qryLoc.value == "devices") {
         for (let i = 0; i < row.length; i++) {
-          console.log(row[i]);
+          let file = row[i].getData();
+          let blob = new Blob(
+            [ JSON.stringify(file, null, 1) ],
+            { type: "application/json; charset=utf-8" }
+          );
+          FileSaver.saveAs(blob, file.docname + ".json");
         }
       }
 
       else if (qryLoc.value == "eyecalibration") {
         for (let i = 0; i < row.length; i++) {
-          console.log(row[i]);
+          let file = row[i].getData();
+          let blob = new Blob(
+            [ JSON.stringify(file, null, 1) ],
+            { type: "application/json; charset=utf-8" }
+          );
+          FileSaver.saveAs(blob, file.Docname + ".json");
         }
       }
 
       else if (qryLoc.value == "mkscale") {
         for (let i = 0; i < row.length; i++) {
-          console.log(row[i]);
+          let file = row[i].getData();
+          let blob = new Blob(
+            [ JSON.stringify(file, null, 1) ],
+            { type: "application/json; charset=utf-8" }
+          );
+          FileSaver.saveAs(blob, file.Docname + ".json");
+        }
+      }
+
+      else if (qryLoc.value == "objects") {
+        for (let i = 0; i < row.length; i++) {
+          let file = row[i].getData();
+          let blob = new Blob(
+            [ JSON.stringify(file, null, 1) ],
+            { type: "application/json; charset=utf-8" }
+          );
+          FileSaver.saveAs(blob, file.docname + ".json");
         }
       }
     });

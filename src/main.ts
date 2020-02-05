@@ -309,6 +309,30 @@ qryLocSelc!.addEventListener("change", ev => {
       });
 
       break;
+
+    case "mkscale":
+      fs.style.visibility = "visible";
+      ki0.style.visibility = "visible";
+      ki1.style.visibility = "visible";
+      ki2.style.visibility = "hidden";
+      goBtn.style.visibility = "visible";
+      plotX.style.visibility = "visible";
+      plotY.style.visibility = "visible";
+      plotBtn.style.visibility = "visible";
+
+      resetPlaceholder();
+      removeElementsByClassName("field-options");
+
+      let nameCurDate = document.createElement("option");
+      nameCurDate.setAttribute("class", "field-options");
+      nameCurDate.setAttribute("value", "nameCurDate");
+      nameCurDate.setAttribute("selected", "true");
+      nameCurDate.textContent = "Name & CurrentDate";
+
+      fs.appendChild(nameCurDate);
+      fs.dispatchEvent(new Event("change"));
+
+      break;
   }
 });
 
@@ -375,6 +399,13 @@ fieldSelector?.addEventListener("change", ev => {
       plotX.style.visibility = "hidden";
       plotY.style.visibility = "hidden";
       plotBtn.style.visibility = "hidden";
+      break;
+
+    case "nameCurDate":
+      ki0.setAttribute("placeholder", "Name");
+      ki1.setAttribute(
+        "placeholder", "CurrentDate (e.g. 04/17/2019; +-7)"
+      );
       break;
   }
 });
@@ -458,6 +489,29 @@ queryForm?.addEventListener("submit", ev => {
   else if (qryLoc === "objects" && field && k0) {
     queryParam = [ { field: field, keyword: k0 } ];
     queryStr = "db.collection('objects')" + mkq.mkquery(queryParam);
+  }
+
+  else if (qryLoc === "mkscale" && field) {
+    if (k0 && k1) {
+      queryParam = [
+        { field: "Name", keyword: k0 },
+        { field: "CurrentDate", keyword: k1 }
+      ];
+      queryStr = "db.collection('mkscale')" + mkq.mkquery(queryParam);
+    }
+    else if (k0 && !k1) {
+      queryParam = [
+        { field: "Name", keyword: k0 }
+      ];
+      queryStr = "db.collection('mkscale')" + mkq.mkquery(queryParam);
+    }
+
+    else if (!k0 && k1) {
+      queryParam = [
+        { field: "CurrentDate", keyword: k1 }
+      ];
+      queryStr = "db.collection('mkscale')" + mkq.mkquery(queryParam);
+    }
   }
 
   else {
