@@ -138,6 +138,8 @@ qryLocSelc!.addEventListener("change", ev => {
   let plotX = document.querySelector("#quick-plot-x") as HTMLSelectElement;
   let plotY = document.querySelector("#quick-plot-y") as HTMLSelectElement;
   let plotBtn = document.querySelector("#plot-btn") as HTMLButtonElement;
+  let queryResult: Promise<any[]>;
+  
   switch(qryLocSelc.value) {
     case "marmosets":
       
@@ -280,9 +282,30 @@ qryLocSelc!.addEventListener("change", ev => {
       resetPlaceholder();
       removeElementsByClassName("field-options");
 
-      let ret = mkq.decodeQuery(db.collection("devices"));
-      ret.then(docs => {
+      queryResult = mkq.decodeQuery(db.collection("devices"));
+      queryResult.then(docs => {
         mkf.listFirestoreDocs(docs, "devices");
+      });
+
+      break;
+
+    case "eyecalibrations":
+      console.log('eye');
+      fs.style.visibility = "hidden";
+      ki0.style.visibility = "hidden";
+      ki1.style.visibility = "hidden";
+      ki2.style.visibility = "hidden";
+      goBtn.style.visibility = "hidden";
+      plotX.style.visibility = "hidden";
+      plotY.style.visibility = "hidden";
+      plotBtn.style.visibility = "hidden";
+
+      resetPlaceholder();
+      removeElementsByClassName("field-options");
+
+      queryResult = mkq.decodeQuery(db.collection("eyecalibrations"));
+      queryResult.then(docs => {
+        mkf.listFirestoreDocs(docs, "eyecalibrations");
       });
 
       break;

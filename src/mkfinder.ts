@@ -292,10 +292,10 @@ export class Mkfinder {
       this.pathName.innerText = "eyecalibrations";
       this.finder = new Tabulator("#finder", {
         data: dataArr,
-        index: "Docname",
+        index: "Taskdoc",
         layout: "fitColumns",
         initialSort: [
-          {column: "Taskdoc", dir: "asc"}
+          {column: "Agent", dir: "asc"}
         ],
         columns: [
           {title: "<input id='select-all' type='checkbox'/>", width: 15, headerSort: false},

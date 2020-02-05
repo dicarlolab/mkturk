@@ -108,9 +108,13 @@ export class Mkeditor {
     this.updateBtn.addEventListener("click" || "pointerup", (ev: Event) => {
       ev.preventDefault();
       ev.stopPropagation();
-      let loc = this.activeFile.loc;      
+      let loc = this.activeFile.loc;
 
-      if (loc === "marmosets" || loc === "mkturkdata") {
+      function isFirestore(loc: string) {
+        
+      }
+
+      if (loc === "marmosets" || loc === "mkturkdata" || loc === "devices") {
         // handle marmosets && mkturkdata
         let id = this.activeFile.id as string;
         db.collection(loc).doc(id).set(
@@ -178,7 +182,8 @@ export class Mkeditor {
     }
 
     for (let key of Object.keys(data)) {
-      if (Array.isArray(data[key])) {
+      if (Array.isArray(data[key]) 
+        && (key.toLowerCase().includes('times') || key.toLowerCase().includes('dates'))) {
         console.log("ARRAY " + "data[" + key + "]" + "=" + data[key]);
         data[key].forEach(_dateToTimestamp);
       }
@@ -193,7 +198,9 @@ export class Mkeditor {
         }
       }
 
-      else if (this.isString(data[key])) {
+      else if (this.isString(data[key])
+        && (key.toLowerCase().includes('date') || key.toLowerCase().includes('time'))) {
+        
         let dt = new Date(data[key]);
         if (!isNaN(Number(dt)) && dt instanceof Date) {
           data[key] = firebase.firestore.Timestamp.fromDate(dt);
@@ -479,7 +486,7 @@ export class Mkchart {
 
         console.log(this.chartDiv.clientWidth);
         let chart = new google.visualization.LineChart(this.chartDiv);
-        let options = { title: this.plotY.value, width: this.chartDiv.offsetWidth, height: this.chartDiv.offsetHeight, legend: 'none'};
+        let options = { title: this.plotY.value, width: this.chartDiv.offsetWidth, height: this.chartDiv.offsetHeight, legend: '' as 'none'};
         chart.draw(vizData, options);
         
       } else {
