@@ -40,31 +40,29 @@ let mkf = new Mkfinder();
 
 
 let rfidToggle = document.querySelector("#rfid-switch") as HTMLInputElement;
-let qryLocSelc = document.querySelector<HTMLSelectElement>("#qry-loc-selector");
+let qryLocSelc = document.querySelector("#qry-loc-selector") as HTMLSelectElement;
 let fieldSelector =
     document.querySelector<HTMLSelectElement>("#field-selector");
 
 
 /* Quick Links */
-let marmosetsLink = 
-    document.querySelector("#quick-link-marmosets") as HTMLElement;
-let mkturkdataLink =
-    document.querySelector("#quick-link-mkturkdata") as HTMLElement;
-let objectsLink = 
-    document.querySelector("#quick-link-objects") as HTMLElement;
-let mkturkfilesLink =
-    document.querySelector("#quick-link-mkturkfiles") as HTMLElement;
 let paramsLink =
     document.querySelector("#quick-link-params") as HTMLElement;
 let imagesLink =
     document.querySelector("#quick-link-images") as HTMLElement;
 let scenesLink =
     document.querySelector("#quick-link-scenes") as HTMLElement;
+let marmosetsLink = 
+    document.querySelector("#quick-link-marmosets") as HTMLElement;
+let mkturkdataLink =
+    document.querySelector("#quick-link-mkturkdata") as HTMLElement;
+let objectsLink = 
+    document.querySelector("#quick-link-objects") as HTMLElement;
 
 marmosetsLink.addEventListener("click", (ev: Event) => {
   ev.preventDefault();
 
-  qryLocSelc!.value = "marmosets";
+  qryLocSelc.value = "marmosets";
   fieldSelector!.value = "name";
   qryLocSelc!.dispatchEvent(new Event("change"));
   fieldSelector!.dispatchEvent(new Event("change"));
@@ -79,7 +77,7 @@ marmosetsLink.addEventListener("click", (ev: Event) => {
 mkturkdataLink.addEventListener("click" || "pointerup", (ev: Event) => {
   ev.preventDefault();
 
-  qryLocSelc!.value = "mkturkdata";
+  qryLocSelc.value = "mkturkdata";
   fieldSelector!.value = "agentTypeCurDate";
   qryLocSelc!.dispatchEvent(new Event("change"));
   fieldSelector!.dispatchEvent(new Event("change"));
@@ -88,9 +86,9 @@ mkturkdataLink.addEventListener("click" || "pointerup", (ev: Event) => {
 objectsLink.addEventListener("click" || "pointerup", (ev: Event) => {
   ev.preventDefault();
 
-  qryLocSelc!.value = "objects";
+  qryLocSelc.value = "objects";
   fieldSelector!.value = "identity";
-  qryLocSelc!.dispatchEvent(new Event("change"));
+  qryLocSelc.dispatchEvent(new Event("change"));
   fieldSelector!.dispatchEvent(new Event("change"));
 
   let ret = mkq.decodeQuery(db.collection("objects"));
@@ -100,20 +98,12 @@ objectsLink.addEventListener("click" || "pointerup", (ev: Event) => {
 
 });
 
-mkturkfilesLink.addEventListener("click" || "pointerup", (ev: Event) => {
-  ev.preventDefault();
-  
-  isRoot = true;
-  qryLocSelc!.value = "mkturkfiles";
-  qryLocSelc!.dispatchEvent(new Event("change"));
-});
-
 paramsLink.addEventListener("click" || "pointerup", (ev: Event) => {
   ev.preventDefault();
 
   isRoot = false;
-  qryLocSelc!.value = "mkturkfiles";
-  qryLocSelc!.dispatchEvent(new Event("change"));
+  qryLocSelc.value = "mkturkfiles";
+  qryLocSelc.dispatchEvent(new Event("change"));
   mkf.listStorageFiles(storageRef.child("mkturkfiles/parameterfiles/subjects"));
 
 });
@@ -122,8 +112,8 @@ imagesLink.addEventListener("click" || "pointerup", (ev: Event) => {
   ev.preventDefault();
 
   isRoot = false;
-  qryLocSelc!.value = "mkturkfiles";
-  qryLocSelc!.dispatchEvent(new Event("change"));
+  qryLocSelc.value = "mkturkfiles";
+  qryLocSelc.dispatchEvent(new Event("change"));
   mkf.listStorageFiles(storageRef.child("mkturkfiles/imagebags/objectome"));
 
 });
@@ -132,8 +122,8 @@ scenesLink.addEventListener("click" || "pointerup", (ev: Event) => {
   ev.preventDefault();
 
   isRoot = false;
-  qryLocSelc!.value = "mkturkfiles";
-  qryLocSelc!.dispatchEvent(new Event("change"));
+  qryLocSelc.value = "mkturkfiles";
+  qryLocSelc.dispatchEvent(new Event("change"));
   mkf.listStorageFiles(storageRef.child("mkturkfiles/scenebags/objectome3d/face"));
 
 });
@@ -148,7 +138,9 @@ qryLocSelc!.addEventListener("change", ev => {
   let plotX = document.querySelector("#quick-plot-x") as HTMLSelectElement;
   let plotY = document.querySelector("#quick-plot-y") as HTMLSelectElement;
   let plotBtn = document.querySelector("#plot-btn") as HTMLButtonElement;
-  switch(qryLocSelc?.value) {
+  let queryResult: Promise<any[]>;
+  
+  switch(qryLocSelc.value) {
     case "marmosets":
       
       fs.style.visibility = "visible";
@@ -277,6 +269,70 @@ qryLocSelc!.addEventListener("change", ev => {
       }
       break;
 
+    case "devices":
+      fs.style.visibility = "hidden";
+      ki0.style.visibility = "hidden";
+      ki1.style.visibility = "hidden";
+      ki2.style.visibility = "hidden";
+      goBtn.style.visibility = "hidden";
+      plotX.style.visibility = "hidden";
+      plotY.style.visibility = "hidden";
+      plotBtn.style.visibility = "hidden";
+
+      resetPlaceholder();
+      removeElementsByClassName("field-options");
+
+      queryResult = mkq.decodeQuery(db.collection("devices"));
+      queryResult.then(docs => {
+        mkf.listFirestoreDocs(docs, "devices");
+      });
+
+      break;
+
+    case "eyecalibrations":
+      console.log('eye');
+      fs.style.visibility = "hidden";
+      ki0.style.visibility = "hidden";
+      ki1.style.visibility = "hidden";
+      ki2.style.visibility = "hidden";
+      goBtn.style.visibility = "hidden";
+      plotX.style.visibility = "hidden";
+      plotY.style.visibility = "hidden";
+      plotBtn.style.visibility = "hidden";
+
+      resetPlaceholder();
+      removeElementsByClassName("field-options");
+
+      queryResult = mkq.decodeQuery(db.collection("eyecalibrations"));
+      queryResult.then(docs => {
+        mkf.listFirestoreDocs(docs, "eyecalibrations");
+      });
+
+      break;
+
+    case "mkscale":
+      fs.style.visibility = "visible";
+      ki0.style.visibility = "visible";
+      ki1.style.visibility = "visible";
+      ki2.style.visibility = "hidden";
+      goBtn.style.visibility = "visible";
+      plotX.style.visibility = "visible";
+      plotY.style.visibility = "visible";
+      plotBtn.style.visibility = "visible";
+
+      resetPlaceholder();
+      removeElementsByClassName("field-options");
+
+      let nameCurDate = document.createElement("option");
+      nameCurDate.setAttribute("class", "field-options");
+      nameCurDate.setAttribute("value", "nameCurDate");
+      nameCurDate.setAttribute("selected", "true");
+      nameCurDate.textContent = "Name & CurrentDate";
+
+      fs.appendChild(nameCurDate);
+      fs.dispatchEvent(new Event("change"));
+
+      break;
   }
 });
 
@@ -343,6 +399,13 @@ fieldSelector?.addEventListener("change", ev => {
       plotX.style.visibility = "hidden";
       plotY.style.visibility = "hidden";
       plotBtn.style.visibility = "hidden";
+      break;
+
+    case "nameCurDate":
+      ki0.setAttribute("placeholder", "Name");
+      ki1.setAttribute(
+        "placeholder", "CurrentDate (e.g. 04/17/2019; +-7)"
+      );
       break;
   }
 });
@@ -426,6 +489,29 @@ queryForm?.addEventListener("submit", ev => {
   else if (qryLoc === "objects" && field && k0) {
     queryParam = [ { field: field, keyword: k0 } ];
     queryStr = "db.collection('objects')" + mkq.mkquery(queryParam);
+  }
+
+  else if (qryLoc === "mkscale" && field) {
+    if (k0 && k1) {
+      queryParam = [
+        { field: "Name", keyword: k0 },
+        { field: "CurrentDate", keyword: k1 }
+      ];
+      queryStr = "db.collection('mkscale')" + mkq.mkquery(queryParam);
+    }
+    else if (k0 && !k1) {
+      queryParam = [
+        { field: "Name", keyword: k0 }
+      ];
+      queryStr = "db.collection('mkscale')" + mkq.mkquery(queryParam);
+    }
+
+    else if (!k0 && k1) {
+      queryParam = [
+        { field: "CurrentDate", keyword: k1 }
+      ];
+      queryStr = "db.collection('mkscale')" + mkq.mkquery(queryParam);
+    }
   }
 
   else {

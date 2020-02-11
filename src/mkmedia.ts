@@ -18,6 +18,8 @@ export class Mkeditor {
   private editorElement: HTMLDivElement;
   private editor: JSONEditor;
   private updateBtn: HTMLButtonElement;
+  public btnBoxDiv: HTMLDivElement;
+  public makeActiveBtn: HTMLButtonElement;
   private activeFile: 
     { loc: string, id: string | FileRef };
   
@@ -29,8 +31,11 @@ export class Mkeditor {
     this.editorElement = document.querySelector("#editor") as HTMLDivElement;
     this.editor = new JSONEditor(this.editorElement);
     this.updateBtn = document.querySelector("#update-btn") as HTMLButtonElement;
+    this.btnBoxDiv = document.querySelector("#button-box") as HTMLDivElement;
+    this.makeActiveBtn = document.querySelector("#active-btn") as HTMLButtonElement;
     this.activeFile = { loc: "", id: "" };
     this.updateBtnAction();
+    this.makeActiveBtnAction();
     this.fileNameP = 
     document.querySelector("#file-name-span") as HTMLParagraphElement;
   }
@@ -61,6 +66,26 @@ export class Mkeditor {
       }
     }
 
+    else if (loc === "objects") {
+      this.activeFile = { loc: loc, id: file.docname };
+      this.fileNameP.innerText = String(this.activeFile.id);
+    }
+
+    else if (loc === "eyecalibrations") {
+      this.activeFile = { loc: loc, id: file.Docname };
+      this.fileNameP.innerText = String(this.activeFile.id);
+    }
+
+    else if (loc === "devices") {
+      this.activeFile = { loc: loc, id: file.docname };
+      this.fileNameP.innerText = String(this.activeFile.id);
+    }
+
+    else if (loc === "mkscale") {
+      this.activeFile = { loc: loc, id: file.Docname };
+      this.fileNameP.innerText = String(this.activeFile.id);
+    }
+
     console.log("activeFile", this.activeFile);
   }
 
@@ -83,9 +108,10 @@ export class Mkeditor {
     this.updateBtn.addEventListener("click" || "pointerup", (ev: Event) => {
       ev.preventDefault();
       ev.stopPropagation();
-      let loc = this.activeFile.loc;      
+      let loc = this.activeFile.loc;
 
-      if (loc === "marmosets" || loc === "mkturkdata") {
+      if (loc === "marmosets" || loc === "mkturkdata" || loc === "devices"
+        || loc === "mkscale" || loc === "eyecalibrations") {
         // handle marmosets && mkturkdata
         let id = this.activeFile.id as string;
         db.collection(loc).doc(id).set(
@@ -121,6 +147,29 @@ export class Mkeditor {
     });
   }
 
+  private makeActiveBtnAction() {
+    this.makeActiveBtn.addEventListener('click' || 'pointerup', (ev: Event) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      console.log(this.activeFile);
+      let storageRef = storage.ref();
+      let file = this.editor.get();
+      let fileName = "mkturkfiles/parameterfiles/subjects/" + file.Agent + "_params.txt";
+      let fileRef = storageRef.child(fileName);
+      file = new Blob([ JSON.stringify(file, null, 1) ]);
+      let metadata = {
+        contentType: "application/json"
+      };
+      fileRef.put(file, metadata).then(snapshot => {
+        console.log("[PARAM MADE ACTIVE]:", snapshot.metadata.name);
+        alert("Param Active");
+      }).catch(e => {
+        console.error("[PARAM ACTIVATION FAILED]", "FILE:", fileRef, "ERROR", e);
+        alert("Param Activation Failed");
+      });
+    });
+  }
+
   private dateToTimestamp(data: any) {
     function _dateToTimestamp(element: string, idx: number, arr: any[]) {
       let dt = new Date(element);
@@ -130,7 +179,8 @@ export class Mkeditor {
     }
 
     for (let key of Object.keys(data)) {
-      if (Array.isArray(data[key])) {
+      if (Array.isArray(data[key]) 
+        && (key.toLowerCase().includes('times') || key.toLowerCase().includes('dates'))) {
         console.log("ARRAY " + "data[" + key + "]" + "=" + data[key]);
         data[key].forEach(_dateToTimestamp);
       }
@@ -145,7 +195,9 @@ export class Mkeditor {
         }
       }
 
-      else if (this.isString(data[key])) {
+      else if (this.isString(data[key])
+        && (key.toLowerCase().includes('date') || key.toLowerCase().includes('time'))) {
+        
         let dt = new Date(data[key]);
         if (!isNaN(Number(dt)) && dt instanceof Date) {
           data[key] = firebase.firestore.Timestamp.fromDate(dt);
@@ -407,8 +459,6 @@ export class Mkchart {
     console.log(this.chartDiv);
     
     this.plotBtnAction();
-    //this.closeCanvas();
-
     
   }
 
@@ -431,7 +481,7 @@ export class Mkchart {
 
         console.log(this.chartDiv.clientWidth);
         let chart = new google.visualization.LineChart(this.chartDiv);
-        let options = { title: this.plotY.value, width: this.chartDiv.offsetWidth, height: this.chartDiv.offsetHeight, legend: 'none'};
+        let options = { title: this.plotY.value, width: this.chartDiv.offsetWidth, height: this.chartDiv.offsetHeight, legend: 'none' as 'none'};
         chart.draw(vizData, options);
         
       } else {
@@ -445,107 +495,19 @@ export class Mkchart {
     
   }
 
-  // public plotBtnAction() {
-  //   this.plotBtn.addEventListener("click", (ev: Event) => {
-  //     if (this.data) {
-  //       this.canvas.style.zIndex = "2";
-  //       this.finderDiv.style.zIndex = "1";
-  //       let ctx = this.canvas.getContext("2d");
-  //       this.chart = new Chart(ctx!, {
-  //         type: 'line',
-  //         data: {
-  //           labels: this.data[this.plotX.value],
-  //           datasets: [{
-  //             label: this.plotY.value,
-  //             lineTension: 0,
-  //             data: this.data[this.plotY.value],
-  //             borderWidth: 1,
-  //             pointRadius: 10
-  //           }]
-  //         },
-  //         options: {
-  //           scales: {
-  //             yAxes: [{
-  //               ticks: {
-  //                 beginAtZero: true
-  //               }
-  //             }],
-  //             xAxes: [{
-  //               type: 'time',
-  //               time: {
-  //                 displayFormats: {
-  //                   day: 'll',
-  //                   month: 'll'
-  //                 }
-  //               },
-  //               distribution: 'linear',
-  //               ticks: {
-  //                 source: 'labels'
-  //               }
-  //             }]
-  //           },
-  //           animation: {
-  //             onComplete: function(animation) {
-  //               if (ctx) {
-  //                 let x = ctx.canvas.width - 20;
-  //                 let y = 0;
-  //                 let side = 20;
-  //                 let shift = 2;
-
-  //                 ctx.fillStyle = 'red';
-  //                 ctx.fillRect(x, y, side, side);
-  //                 ctx.beginPath();
-  //                 ctx.moveTo(x + shift, y + shift);
-  //                 ctx.lineTo(x + side - shift, y + side - shift);
-  //                 ctx.moveTo(x + side - shift, y + shift);
-  //                 ctx.lineTo(x + shift, y + side - shift);
-  //                 ctx.strokeStyle = '#FFFFFF';
-  //                 ctx.stroke();
-  //               }
-  //             }
-  //           }
-  //         }
-  //       });
-  //     }
-  //   });
-  // }
-
-  // public closeCanvas() {
-  //   this.canvas.addEventListener('pointerup', (ev: PointerEvent) => {
-  //     let rect = this.canvas.getBoundingClientRect();
-  //     console.log("X:", ev.clientX - rect.left, "Y:", ev.clientY - rect.top);
-  //     if (this.isCloseRect(ev.clientX - rect.left, ev.clientY - rect.top)) {
-  //       this.chart?.destroy();
-  //       let ctx = this.canvas.getContext('2d');
-  //       ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
-  //       this.finderDiv.style.zIndex = "2";
-  //       this.canvas.style.zIndex = "1";
-  //     }
-  //   });
-  // }
-
-  // private isCloseRect(clickedX: number, clickedY: number) {
-  //   let x = this.canvas.width - 20;
-  //   let y = 0;
-  //   let side = 20;
-  //   if ((clickedX >= x) && (clickedX <= x + 20) && 
-  //       (clickedY >= y) && (clickedY <= y + 20)) {
-  //     return true;
-  //   }
-  //   return false;
-  // }
-
   public populateAxisFields(data: any) {
     this.data = data;
     for (let key of Object.keys(data)) {
-      if (Array.isArray(data[key]) && key.includes("_dates")) {
+      if (Array.isArray(data[key]) 
+        && (key.includes("_dates") || key.toLowerCase().includes('times'))) {
         let option = document.createElement("option");
         option.setAttribute("class", "axis-options");
         option.setAttribute("value", key);
         option.textContent = key;
         this.plotX.appendChild(option);
       }
-      else if (Array.isArray(data[key]) && key.includes("_values")) {
+      else if (Array.isArray(data[key]) 
+        && (key.includes("_values")) || key.toLowerCase().includes('values')) {
         let option = document.createElement("option");
         option.setAttribute("class", "axis-options");
         option.setAttribute("value", key);

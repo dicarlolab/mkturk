@@ -554,6 +554,7 @@ entryForm.addEventListener("submit", ev => {
         CurrentDateValue: today.getTime(),
         CurrentDate: firebase.firestore.Timestamp.fromDate(today),
         Doctype: "weights",
+        Docname: idFirestore,
         ResearcherDisplayName: blescale.displayName,
         ResearcherEmail: blescale.email,
         ResearcherID: blescale.uid
@@ -626,6 +627,7 @@ entryForm.addEventListener("submit", ev => {
         CurrentDateValue: today.getTime(),
         CurrentDate: today.toJSON(),
         Doctype: "weights",
+        Docname: idStorage,
         ResearcherDisplayName: blescale.displayName,
         ResearcherEmail: blescale.email,
         ResearcherID: blescale.uid

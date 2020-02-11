@@ -273,7 +273,7 @@ async function saveParameterTexttoFirebase(parameter_text){
 				var blob = new Blob([ datastr ], {type : 'application/json'});
 
 				// Create file metadata including the content type
-				var metadata = { contentType: 'text/json' };
+				var metadata = { contentType: 'application/json' };
 
 				// Upload the file and metadata
 				var response = await storage.ref().child(ENV.ParamFileName).put(blob, metadata);
@@ -315,7 +315,7 @@ async function saveParameterstoFirebase() {
 		var blob = new Blob([ datastr ], {type : 'application/json'});
 
 		// Create file metadata including the content type
-		var metadata = { contentType: 'text/json' };
+		var metadata = { contentType: 'application/json' };
 
 		// Upload the file and metadata
 		var response = await storage.ref().child(ENV.ParamFileName).put(blob, metadata);
@@ -357,7 +357,7 @@ async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, TRIAL){
 	var blob = new Blob([ datastr ], {type : 'application/json'});
 
 	// Create file metadata including the content type
-	var metadata = { contentType: 'text/json' };
+	var metadata = { contentType: 'application/json' };
 
 	// Upload the file and metadata
 	var response = await storage.ref().child(ENV.DataFileName).put(blob, metadata);
