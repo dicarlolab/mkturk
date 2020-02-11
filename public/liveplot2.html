@@ -463,7 +463,7 @@ function toVitals() {
         vitals.currentautomatorstagename = null
     }
 
-    if (typeof (file.data.BatteryLDT) != "undefined") {
+    if (typeof (file.data.BatteryLDT) != "undefined" && file.data.BatteryLDT.length != 0) {
         vitals.batteryleft = Math.round(file.data.BatteryLDT[file.data.BatteryLDT.length - 1][0] * 100);
         vitals.batteryused = Math.round(file.data.BatteryLDT[0][0] * 100 - vitals.batteryleft);
     } else {
