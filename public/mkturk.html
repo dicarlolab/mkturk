@@ -51,6 +51,8 @@ if (typeof(navigator.bluetooth) == "object"){
 <script src="/__/firebase/7.3.0/firebase-storage.js"></script>
 <script src="/__/firebase/init.js"></script>
 
+<!-- Math package -->
+<script src=https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.3.0/math.min.js type="text/javascript"></script> 
 
 <script> 
 deviceAPI = { 
@@ -156,6 +158,7 @@ deviceAPI = {
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasvisible" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasvisiblewebgl" width="0" height="0" src="" style="z-index:3; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvaseyetracker" width="0" height="0" src="" style="z-index:4; position: absolute; left: 0px; top: 0px;"> </canvas>
 </div>
 
 <script src="mkturk_globalvariables.js"></script>
@@ -170,6 +173,7 @@ deviceAPI = {
 <script src="mkturk_firestore.js" type="text/javascript"></script>
 <script src="mkturk_firebasestorage.js" type="text/javascript"></script>
 <script src="mkturk_threejs.js" type="text/javascript"></script>
+<script src="mkturk_eyetracker.js" type="text/javascript"></script>
 <script>
 
 //================== AUTHENTICATE GOOGLE ==================//
@@ -621,6 +625,50 @@ while(true){
 			FLAGS.scene3d = 1
 		}
 
+		if (typeof(TASK.TrackEye) != "undefined"){
+		}
+		else {
+			TASK.TrackEye = 0;
+		} //ELSE default to no eye tracking
+
+		//load previous calibration if available
+		if (TASK.TrackEye > 0 ){
+			//Calibration
+			ENV.Eye.calibration = 0;
+			ENV.Eye.CalibXTransform = []
+			ENV.Eye.CalibYTransform = []
+			ENV.Eye.CalibType = 'default'
+			ENV.Eye.NCalibPointsTrain = 0
+			ENV.Eye.NCalibPointsTest = 0
+			ENV.Eye.CalibTrainMSE = []
+			ENV.Eye.CalibTestMSE = []
+
+			await loadEyeCalibrationfromFirestore(ENV.Subject)
+			if (ENV.Eye.CalibXTransform.length == 0){
+
+				var xrange = 0.5
+				var yrange = 0.5
+				var xscale = ENV.ViewportPixels[0] / xrange;
+				var yscale = ENV.ViewportPixels[1] / yrange;
+
+				ENV.Eye.CalibXTransform = [ xscale, 0, -(0.5 - xrange/2)*xscale]
+				ENV.Eye.CalibYTransform = [ 0, -yscale, ENV.ViewportPixels[1] + (0.5 - yrange/2)*yscale]
+
+				// ENV.Eye.CalibXTransform = [ 1, 0, 0]
+				// ENV.Eye.CalibYTransform = [ 0, 1, 0]
+
+				saveEyeCalibrationtoFirestore(ENV.Eye.CalibXTransform,ENV.Eye.CalibYTransform,ENV.Eye.NCalibPoints,ENV.Eye.CalibType)
+			}//default calibration
+			if (TASK.CalibrateEye > 0){
+ 				//will calibrate using TASK.CalibrateEye number of trials for train & same number for test
+ 				ENV.Eye.calibration = 1
+				ENV.Eye.NCalibPointsTrain = 0
+				ENV.Eye.NCalibPointsTest = 0
+				ENV.Eye.CalibTrainMSE = []
+				ENV.Eye.CalibTestMSE = []
+			}//IF calibrateeye
+		}//IF trackeye
+
 		//============= SET UP CANVAS =============//
 		// Update canvas based on latest TASK state: 
 		refreshCanvasSettings(TASK); 
@@ -632,8 +680,12 @@ while(true){
 
 		setupCanvas(VISIBLECANVASWEBGL)
 
+ 		//Foreground canvas that displays eye position during practice screen
+ 		setupEyeTrackerCanvas()
+
 		if (ENV.DevicePixelRatio !== 1){
 			scaleCanvasforHiDPI(VISIBLECANVAS);
+			scaleCanvasforHiDPI(EYETRACKERCANVAS);
 		}
 		if (ENV.OffscreenCanvasAvailable){
 			OFFSCREENCANVAS = new OffscreenCanvas(VISIBLECANVAS.width, VISIBLECANVAS.height)
@@ -1080,7 +1132,10 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 			FLAGS.waitingforTouches--
 		}
 		else {
-			var touchhold_return = await touchhold_promise(TASK.FixationDuration,boundingBoxesFixation,FLAGS.punishOutsideTouch)			
+			var p1 = hold_promise(TASK.FixationDuration,boundingBoxesFixation,FLAGS.punishOutsideTouch)
+			var p2 = choiceTimeOut(TASK.FixationTimeOut)
+
+			var touchhold_return = await Promise.race([p1,p2])
 		}
 
 		CURRTRIAL.fixationtouchevent = touchhold_return.type
@@ -1182,7 +1237,7 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 			FLAGS.waitingforTouches--
 		}
 		else {
-			var p1 = touchhold_promise(0,boundingBoxesChoice,FLAGS.punishOutsideTouch)
+			var p1 = hold_promise(0,boundingBoxesChoice,FLAGS.punishOutsideTouch)
 			var p2 = choiceTimeOut(TASK.ChoiceTimeOut)
 
 			var race_return = await Promise.race([p1,p2])
@@ -1216,10 +1271,10 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 	// console.log('correct response', CURRTRIAL.correctitem)
 
 	//============ DETERMINE NUMBER OF REWARDS ============//
-	if (samplereward == 0){
+	if (TASK.RewardStage == 0 && samplereward == 0){
 		CURRTRIAL.nreward = -1 //skip reward/punish
 	}
-	else if (CURRTRIAL.correct && samplereward == -1){ //default behavior
+	else if ( CURRTRIAL.correct && ( samplereward == -1 || TASK.RewardStage == 0 ) ){ //default behavior
 		if (FLAGS.savedata && (CURRTRIAL.starttime - trialhistory.starttime[trialhistory.starttime.length-1] < TASK.ConsecutiveHitsITI || CURRTRIAL.num==0)){
 			// if correct within bonus interval
 			FLAGS.consecutivehits++
@@ -1308,7 +1363,54 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 	//============ (end) DELIVER REWARD/PUNISH ============//
 
 	//================= HOUSEKEEPING =================//
+
+	// CALIBRATE eye
+	if (TASK.TrackEye > 0){
+		// Can manually adjust params only when on practice screen
+		// Can automatically calibrate when on test screen
+		if (FLAGS.savedata == 1 && ENV.Eye.calibration == 1){
+				if (CURRTRIAL.fixationtouchevent == 'theld'){
+					ENV.Eye.NCalibPointsTrain += 1
+				}
+				if (ENV.Eye.NCalibPointsTrain == TASK.CalibrateEye){
+					// Run calibration fitting 
+					var calibreturn = runCallibration()
+					ENV.Eye.CalibXTransform = calibreturn.xtform
+					ENV.Eye.CalibYTransform = calibreturn.ytform
+					ENV.Eye.NCalibPoints = calibreturn.n
+					ENV.Eye.CalibType = calibreturn.type
+
+					// Compute GOF
+					ENV.Eye.CalibTrainMSE[0] = compute_mse(calibreturn.predictedx,calibreturn.actualx)
+					ENV.Eye.CalibTrainMSE[1] = compute_mse(calibreturn.predictedy,calibreturn.actualy)
+
+					// Store calibration
+					saveEyeCalibrationtoFirestore(ENV.Eye.CalibXTransform,ENV.Eye.CalibYTransform,ENV.Eye.CalibType,ENV.Eye.NCalibPointsTrain,ENV.Eye.CalibTrainMSE,ENV.Eye.NCalibPointsTest,ENV.Eye.CalibTestMSE)
+
+					ENV.Eye.calibration = 0;
+				}//IF enough points
+		}//IF train eye calibration
+		else if (FLAGS.savedata == 1 && ENV.Eye.calibration == 0){
+			if (CURRTRIAL.fixationtouchevent == 'theld'){
+				ENV.Eye.NCalibPointsTest += 1
+			}//IF held fixation
+			if (ENV.Eye.NCalibPointsTest == TASK.CalibrateEye){
+				//cross-validate on same number of trials used for training
+				ENV.Eye.CalibTestMSE = evaluateCalibration() //GOF test 
+
+				// Store calibration
+				saveEyeCalibrationtoFirestore(ENV.Eye.CalibXTransform,ENV.Eye.CalibYTransform,ENV.Eye.CalibType,ENV.Eye.NCalibPointsTrain,ENV.Eye.CalibTrainMSE,ENV.Eye.NCalibPointsTest,ENV.Eye.CalibTestMSE)
+			}//IF enough points
+		}//ELSE test eye calibration
+	}//IF track eye
+	
+	//clear tracker canvas at end of trial
+	if (FLAGS.savedata == 0){
+		EYETRACKERCANVAS.getContext('2d').clearRect(0,0,EYETRACKERCANVAS.width,EYETRACKERCANVAS.height)
+	}//IF practice screen
+
 	CURRTRIAL.lastTrialCompleted = new Date()
+
 	// Update TRIAL only if saving data
 	if (FLAGS.savedata == 1){
 		// Update trial tracking variables

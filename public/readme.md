@@ -30,6 +30,8 @@ FixationScale (computed internally and stored in ENV.FixationScale instead of pr
 
 FixationSizeInches: Size of fixation dot or image (ie FixationUsesSample=1) in physical inches on the screen
 
+FixationTimeOut: Time in milliseconds that subject has to acquire fixation before fixation dot or image extinguishes. If fixation times out, then it is just re-displayed (flashes) and no reward or punishment is administered (ie, trial is aborted)
+
 FixationUsesSample: FixationUsesSample=0, a fixation circle is shown for subject to touch; FixationUsesSample=1, sample image is shown as the fixation image. This allows implementation of a trianing strategy where the subject has to engage the sample image nfixations number of times before the choice screen.
 
 GridScale (deprecated, replaced by GridSpacingInches): Determines intergridpoint spacing. Can think of this as the resolution of grid. gridscale=1 means intergridpoint spacing is equal to the width of the sample image. Finer grid resolutions (gridscale<1) can be used for more precise sample positioning.
@@ -148,6 +150,22 @@ DeviceScreenHeight: physical display pixels (depends on deviceAPI)
 DeviceTouchscreen: 0 (not available) or 1 (available), indicates if touchscreen functionality available on device (depends on deviceAPI)
 
 DeviceType:desktop or mobile(depends on deviceAPI)
+
+Eye.BlinkGracePeriod: time in milliseconds that eye is allowed to be outside the fixation window without counting it as a fixation break. Any period longer than Eye.BlinkGracePeriod milliseconds outside the window is considered a fixation break.
+
+Eye.CalibXTransform: Stores the parameters from the linear regression fit of eye tracker's x,y --> screen x (eg x_screen = a*x + b*y + c)
+
+Eye.CalibYTransform: Stores the parameters from the linear regression fit of eye tracker's x,y --> screen y (eg y_screen = a*x + b*y + c)
+
+Eye.CalibType: type of calibration ('default': based on screen size, 'linear': linear regression fit)
+
+Eye.NCalibPointsTrain: Number of points for fitting the regression
+
+Eye.NCalibPointsTest: Number of points for testing the regression (usually set to the same number of points used for training)
+
+Eye.CalibTrainMSE: The train MSE for NCalibPointsTrain training points
+
+Eye.CalibTestMSE: The test MSE for NCalibPointsTest testing points
 
 FixationRadius: Radius of fixation image in pixels. This is not set by the user. Rather, user specifies FixationScale, and then FixationRadius stores the actual pixel-based size in the json data file.
 
