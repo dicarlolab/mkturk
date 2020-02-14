@@ -140,6 +140,19 @@ function setupCanvas(canvasobj){
 	setupCanvasListeners(canvasobj)
 } 
 
+function setupEyeTrackerCanvas(){
+	//SETUP similar to visiblecanvas
+	EYETRACKERCANVAS.style.top=VISIBLECANVAS.style.top//mimic VISIBLECANVAS
+	EYETRACKERCANVAS.style.left=VISIBLECANVAS.style.left;//mimic VISIBLECANVAS
+	EYETRACKERCANVAS.width=VISIBLECANVAS.width //mimic VISIBLECANVAS
+	EYETRACKERCANVAS.height=VISIBLECANVAS.height//mimic VISIBLECANVAS
+
+	EYETRACKERCANVAS.style.margin="0 auto";
+	EYETRACKERCANVAS.style.display="visible";
+
+	setupCanvasListeners(EYETRACKERCANVAS)
+}
+
 function setupCanvasListeners(canvasobj){
 		// assign listeners
 	canvasobj.addEventListener('touchstart',touchstart_listener,{capture: false,passive: false}); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
@@ -403,14 +416,20 @@ async function bufferChoiceUsingDot(sample_image, sample_image_grid_index, test_
 	}
 } //FUNCTION bufferChoiceUsingDot
 
-
+// Dot render using gridindex
 async function renderDotOnCanvas(color, gridindex, dot_pixelradius, canvasobj){
 	var context=canvasobj.getContext('2d');
 
 	// Draw fixation dot
+	if (Array.isArray(gridindex)){
+		var xcent = gridindex[0]/ENV.CanvasRatio
+		var ycent = gridindex[1]/ENV.CanvasRatio
+	}//IF x,y coord provided
+	else {
+		var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
+		var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;	
+	}//IF gridindex provided
 	var rad = dot_pixelradius/ENV.CanvasRatio;
-	var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
-	var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;
 	context.beginPath();
 	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
 	context.fillStyle=color; 

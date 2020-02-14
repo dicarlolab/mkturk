@@ -13,9 +13,9 @@ async function saveBehaviorDatatoFirestore(TASK,ENV,CANVAS){
 								ResearcherID: ENV.ResearcherID,
 								CurrentDate: ENV.CurrentDate,
 								CurrentDateValue: ENV.CurrentDate.valueOf(),
+								Docname: ENV.FirestoreDocRoot + '_images',
 								Taskdoc: ENV.FirestoreDocRoot + '_task',
 								Imagesdoc: ENV.FirestoreDocRoot + '_images'}) //link docs
-	batch.set(taskRef,{Imagesdoc: ENV.FirestoreDocRoot + '_images'})
 	if (FLAGS.scene3d == 0){
 		//image meta & trial data for each image
 		batch.update(imagesRef,IMAGES.Sample) //per image meta for sample bags
@@ -28,9 +28,11 @@ async function saveBehaviorDatatoFirestore(TASK,ENV,CANVAS){
 	}
 	
 	//task meta & trial data
-	batch.update(taskRef,{Doctype: "task",
+	batch.set(taskRef,{Doctype: "task",
 								Agent: ENV.Subject,
 								CurrentDateValue: ENV.CurrentDate.valueOf(),
+								Docname: ENV.FirestoreDocRoot + '_task',
+								Imagesdoc: ENV.FirestoreDocRoot + '_images',
 								Taskdoc: ENV.FirestoreDocRoot + '_task'}) //link docs
 	batch.update(taskRef,ENV) // write all ENV metadata once
 	batch.update(taskRef,TASK) // write all TASK metadata once
@@ -157,6 +159,71 @@ async function queryDeviceonFirestore(deviceName){
 		}
 	) //Promise
 } //FUNCTION queryDeviceonFirestore
+
+
+async function saveEyeCalibrationtoFirestore(xparams,yparams,calibtype,ntrain,trainmse,ntest,testmse){	
+	db.collection(FIRESTORECOLLECTION.CALIBRATION)
+	.doc(ENV.Subject)
+	.set({ Doctype: "calibration",
+			//General
+			Agent: ENV.Subject,
+			ResearcherID: ENV.ResearcherID,
+			ResearcherDisplayName: ENV.ResearcherDisplayName,
+			CurrentDate: ENV.CurrentDate,
+			CurrentDateValue: ENV.CurrentDate.valueOf(),
+			Taskdoc: ENV.FirestoreDocRoot + '_task',
+			//Calib specific
+			CalibXTransform: xparams,
+			CalibYTransform: yparams,
+			CalibType: calibtype,
+			NCalibPointsTrain: ntrain,
+			NCalibPointsTest: ntest,
+			CalibTrainMSE: trainmse,
+			CalibTestMSE: testmse
+		}) //link docs
+	.then(function () {
+	    console.log("FIRESTORE: eye calibration doc created");
+	})
+	.catch(function(error) {
+		console.error("FIRESTORE: !Error creating eye calibration doc: ", error);
+	});
+} //FUNCTION saveEyeCalibrationtoFirestore
+
+async function loadEyeCalibrationfromFirestore(subject){
+	var doc = await db.collection(FIRESTORECOLLECTION.CALIBRATION).doc(subject).get()
+	return new Promise(
+		function(resolve, reject){
+			try{
+				if (doc.exists == false){
+					console.log('MISSING CALIBRATION FOR AGENT: will use default')
+				}
+				else {
+					ENV.Eye.CalibXTransform = doc.data().CalibXTransform
+					ENV.Eye.CalibYTransform = doc.data().CalibYTransform
+					ENV.Eye.CalibType = doc.data().CalibType
+
+					//Start calib doc snapshot listener
+					db.collection(FIRESTORECOLLECTION.CALIBRATION).doc(ENV.Subject).onSnapshot(
+					function(doc){
+						if (FLAGS.savedata == 0){
+							//manual changes to calibration on the fly during practice
+							ENV.Eye.CalibXTransform = doc.data().CalibXTransform
+							ENV.Eye.CalibYTransform = doc.data().CalibYTransform
+							ENV.Eye.CalibType = doc.data().CalibType
+							console.log("Calib data changed on firestore");
+						}
+						else if (FLAGS.savedata == 1){
+							// do not allow changes to the calibration during data collection
+						}
+					});
+				}//ELSE doc exists
+				resolve(1)
+			}//TRY
+			catch(error){
+				console.log('Error getting eye calibration doc for this agent')
+			}//CATCH
+		}) //Promise
+}//FUNCTION loadEyeCalibrationfromFirestore
 
 
 function getFirestoreDocSize(collectionName,docRef,doctype){

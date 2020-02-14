@@ -3,7 +3,7 @@
 
 // ------ Subject settings ------ 
 var subjectlist = [
-"Eliaso","Ericao","Hectoro","Youno","Sophieo","West","Waffles","Sausage","Rafiki","Hutch","Eggo","East","Bloo","Blintz","Blaise","Athena","AJ","You-Nah","Tahereh","Sophie","Hector","Erica","Elias","Andrea","Alex"
+"Eliaso","Youno","Sophieo","Hectoro","Ericao","Alexo","West","Waffles","Sausage","Rafiki","Hutch","Eggo","East","Bloo","Blintz","Blaise","Athena","AJ","You-Nah","Tahereh","Sophie","Hector","Erica","Elias","Andrea","Alex"
 ];
 
 // ------ Save location settings ------
@@ -14,6 +14,7 @@ var SOUND_FILEPREFIX = "/mkturkfiles/sounds/au"
 var FIRESTORECOLLECTION =	{ 	DATA: 'mkturkdata',
 								DEVICES: 'devices',
 								AGENTS: 'marmosets',
+								CALIBRATION: 'eyecalibrations',
 							}
 
 // ------ Misc. -----------------------
