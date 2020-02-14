@@ -8,13 +8,108 @@ import {BigQuery} from '@google-cloud/bigquery';
 //  response.send("Hello from Firebase!");
 // });
 
+function insertHandler(err: any, apiResp: any) {
+  if (err) {
+    console.log(err);
+    if (err.name === 'PartialFailureError') {
+      console.log(err);
+    }
+  }
+}
+// interface fixationData {
+//   agent: string,
+//   timestamp: BigQueryTimestamp | Date,
+//   num_eyes: number,
+//   left_x: number | null,
+//   left_y: number | null,
+//   left_aux_0: number | null,
+//   left_aux_1: number | null,
+//   right_x: number | null,
+//   right_y: number | null,
+//   right_aux_0: number | null,
+//   right_aux_1: number | null
+// };
+
+
+const schema = {
+  "fields": [
+    {
+      "name": "timestamp",
+      "type": "TIMESTAMP",
+      "mode": "REQUIRED"
+    },
+    {
+      "name": "num_eyes",
+      "type": "INTEGER",
+      "mode": "REQUIRED"
+    },
+    {
+      "name": "left_x",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+    },
+    {
+      "name": "left_y",
+      "type": "FLOAT"
+    },
+    {
+      "name": "left_aux_0",
+      "type": "FLOAT"
+    },
+    {
+      "name": "left_aux_1",
+      "type": "FLOAT"
+    },
+    {
+      "name": "right_x",
+      "type": "FLOAT"
+    },
+    {
+      "name": "right_y",
+      "type": "FLOAT"
+    },
+    {
+      "name": "right_aux_0",
+      "type": "FLOAT"
+    },
+    {
+      "name": "right_aux_1",
+      "type": "FLOAT"
+    }
+  ]
+};
+
+const createTableOptions = {
+  "schema": schema,
+  "timePartitioning": {
+    "type": "DAY",
+    "field": "timestamp"
+  }
+};
+
 export const insertFixationData = functions.https.onCall((data: any) => {
   const bq = new BigQuery();
   const dataset = bq.dataset('fixationdata');
   const table = dataset.table(data.agent);
+  console.log("data received:", data);
 
-  data.timestamp = bq.timestamp(new Date(data.timestamp));
-
-  table.insert(data);
-
+  table.exists().then(async (existsData) => {
+    const exists = existsData[0];
+    if (exists) {
+      delete data.agent;
+      data.timestamp = new Date(data.timestamp);
+      console.log('data0', data);
+      table.insert(data, {}, insertHandler);
+    } else {
+      const [newTable] = await dataset.createTable(data.agent, createTableOptions);
+      console.log(`Table ${newTable.id} created with partitioning: `);
+      console.log(newTable.metadata.timePartitioning);
+      delete data.agent;
+      data.timestamp = new Date(data.timestamp);
+      console.log('data1', data);
+      newTable.insert(data, {}, insertHandler);
+    }
+  }).catch(error => {
+    console.error("exists error", error);
+  });
 });
