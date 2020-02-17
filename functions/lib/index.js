@@ -16,19 +16,7 @@ function insertHandler(err, apiResp) {
         }
     }
 }
-// interface fixationData {
-//   agent: string,
-//   timestamp: BigQueryTimestamp | Date,
-//   num_eyes: number,
-//   left_x: number | null,
-//   left_y: number | null,
-//   left_aux_0: number | null,
-//   left_aux_1: number | null,
-//   right_x: number | null,
-//   right_y: number | null,
-//   right_aux_0: number | null,
-//   right_aux_1: number | null
-// };
+;
 const schema = {
     "fields": [
         {
@@ -92,7 +80,8 @@ exports.insertFixationData = functions.https.onCall((data) => {
         const exists = existsData[0];
         if (exists) {
             delete data.agent;
-            data.timestamp = new Date(data.timestamp);
+            // data.timestamp = new Date(data.timestamp);
+            data.timestamp = bq.timestamp(data.timestamp);
             console.log('data0', data);
             table.insert(data, {}, insertHandler);
         }
@@ -101,7 +90,8 @@ exports.insertFixationData = functions.https.onCall((data) => {
             console.log(`Table ${newTable.id} created with partitioning: `);
             console.log(newTable.metadata.timePartitioning);
             delete data.agent;
-            data.timestamp = new Date(data.timestamp);
+            // data.timestamp = new Date(data.timestamp);
+            data.timestamp = bq.timestamp(data.timestamp);
             console.log('data1', data);
             newTable.insert(data, {}, insertHandler);
         }

@@ -16,19 +16,19 @@ function insertHandler(err: any, apiResp: any) {
     }
   }
 }
-// interface fixationData {
-//   agent: string,
-//   timestamp: BigQueryTimestamp | Date,
-//   num_eyes: number,
-//   left_x: number | null,
-//   left_y: number | null,
-//   left_aux_0: number | null,
-//   left_aux_1: number | null,
-//   right_x: number | null,
-//   right_y: number | null,
-//   right_aux_0: number | null,
-//   right_aux_1: number | null
-// };
+interface fixationData {
+  agent: string,
+  timestamp: any,
+  num_eyes: number,
+  left_x: number | null,
+  left_y: number | null,
+  left_aux_0: number | null,
+  left_aux_1: number | null,
+  right_x: number | null,
+  right_y: number | null,
+  right_aux_0: number | null,
+  right_aux_1: number | null
+};
 
 
 const schema = {
@@ -87,7 +87,7 @@ const createTableOptions = {
   }
 };
 
-export const insertFixationData = functions.https.onCall((data: any) => {
+export const insertFixationData = functions.https.onCall((data: fixationData) => {
   const bq = new BigQuery();
   const dataset = bq.dataset('fixationdata');
   const table = dataset.table(data.agent);
@@ -97,7 +97,8 @@ export const insertFixationData = functions.https.onCall((data: any) => {
     const exists = existsData[0];
     if (exists) {
       delete data.agent;
-      data.timestamp = new Date(data.timestamp);
+      // data.timestamp = new Date(data.timestamp);
+      data.timestamp = bq.timestamp(data.timestamp);
       console.log('data0', data);
       table.insert(data, {}, insertHandler);
     } else {
@@ -105,11 +106,42 @@ export const insertFixationData = functions.https.onCall((data: any) => {
       console.log(`Table ${newTable.id} created with partitioning: `);
       console.log(newTable.metadata.timePartitioning);
       delete data.agent;
-      data.timestamp = new Date(data.timestamp);
+      // data.timestamp = new Date(data.timestamp);
+      data.timestamp = bq.timestamp(data.timestamp);
       console.log('data1', data);
       newTable.insert(data, {}, insertHandler);
     }
   }).catch(error => {
     console.error("exists error", error);
+  });
+});
+
+/* caller must guarantee that all rows belong to the same agent */
+export const insertFixationRows = functions.https.onCall((rows: any) => {
+  const bq = new BigQuery();
+  const dataset = bq.dataset('fixationdata');
+  const table = dataset.table(rows[0].agent);
+  console.log("rows received");
+
+  table.exists().then(async (existsData) => {
+    const exists = existsData[0];
+    if (exists) {
+      rows.forEach((row: any) => {
+        delete row.agent;
+        row.timestamp = bq.timestamp(row.timestamp);
+      });
+      table.insert(rows, {}, insertHandler);
+    } else {
+      const [newTable] = await dataset.createTable(rows[0].agent, createTableOptions);
+      console.log(`Table ${newTable.id} created with partitioning: `);
+      console.log(newTable.metadata.timePartitioning);
+      rows.forEach((row: any) => {
+        delete row.agent;
+        row.timestamp = bq.timestamp(row.timestamp);
+      });
+      newTable.insert(rows, {}, insertHandler);
+    }
+  }).catch(error => {
+    console.error("Exists function error:", error);
   });
 });
