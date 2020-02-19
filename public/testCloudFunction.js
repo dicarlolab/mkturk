@@ -1,24 +1,39 @@
 var functions = firebase.functions();
-let insertFixationData = functions.httpsCallable('insertFixationData');
+let bqInsertEyeData = functions.httpsCallable('bqInsertEyeData');
+let bqQuery = functions.httpsCallable('bqQuery');
+// let fixData = [{
+//   agent: "Eliaso",
+//   timestamp: new Date('2020-02-14').toJSON(),  
+//   num_eyes: 0,
+//   left_x: 0.0,
+//   left_y: 0.0,
+//   left_aux_0: 0.0,
+//   left_aux_1: 0.0,
+//   right_x: 0.0,
+//   right_y: 0.0,
+//   right_aux_0: 0.0,
+//   right_aux_1: 0.0
+// },
+// {
+//   agent: "Eliaso",
+//   timestamp: new Date(Date.now()).toJSON(),  
+//   num_eyes: 1,
+//   left_x: 0.1,
+//   left_y: 0.0,
+//   left_aux_0: 0.0,
+//   left_aux_1: 0.0,
+//   right_x: 0.0,
+//   right_y: 0.0,
+//   right_aux_0: 0.0,
+//   right_aux_1: 0.0
+// }];
 
-let fixData = {
-  agent: "TEST2222",
-  timestamp: new Date('2020-02-14').toJSON(),  
-  num_eyes: 0,
-  left_x: 0.0,
-  left_y: 0.0,
-  left_aux_0: 0.0,
-  left_aux_1: 0.0,
-  right_x: 0.0,
-  right_y: 0.0,
-  right_aux_0: 0.0,
-  right_aux_1: 0.0
-};
+// bqInsertEyeData(fixData);
 
-async function getIn(fixData) {
-  let retval = await insertFixationData(fixData);
-}
+let dt = new Date('2020-02-14').toJSON().split('T')[0];
 
-getIn(fixData);
-
-
+let tb = 'Eliaso';
+let str = `SELECT *
+          FROM \`sandbox-ce2c5.fixationdata.${tb}\`
+          WHERE timestamp='${dt}'`;
+console.log(str);
