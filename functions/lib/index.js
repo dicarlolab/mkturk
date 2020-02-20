@@ -142,4 +142,18 @@ exports.bqQuery = functions.https.onCall(async (query) => {
     const [rows] = await bq.query(options);
     return rows;
 });
+exports.listTables = functions.https.onCall(async (userDataset) => {
+    const bq = new bigquery_1.BigQuery();
+    const dataset = bq.dataset(userDataset);
+    // const rawTables = await dataset.getTables();
+    // const tables = rawTables[0];
+    // console.log('tables bq', tables);
+    // dataset.getTables().then(data => {
+    //   console.log('tables', data[0]);
+    // }).catch(error => {
+    //   console.error('error', error);
+    // })
+    const tables = await dataset.getTables({});
+    return tables;
+});
 //# sourceMappingURL=index.js.map

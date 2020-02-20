@@ -1,6 +1,7 @@
 var functions = firebase.functions();
 let bqInsertEyeData = functions.httpsCallable('bqInsertEyeData');
 let bqQuery = functions.httpsCallable('bqQuery');
+let listTables = functions.httpsCallable('listTables');
 // let fixData = [{
 //   agent: "Eliaso",
 //   timestamp: new Date('2020-02-14').toJSON(),  
@@ -30,10 +31,28 @@ let bqQuery = functions.httpsCallable('bqQuery');
 
 // bqInsertEyeData(fixData);
 
-let dt = new Date('2020-02-14').toJSON().split('T')[0];
+let dt = new Date('2020-02-14');
+let dt2 = new Date(dt);
+dt2.setDate(dt2.getDate() + 4);
+dt = dt.toJSON().split('T')[0];
+dt2 = dt2.toJSON().split('T')[0];
 
 let tb = 'Eliaso';
 let str = `SELECT *
           FROM \`sandbox-ce2c5.fixationdata.${tb}\`
-          WHERE timestamp='${dt}'`;
+          WHERE timestamp BETWEEN '${dt}' AND '${dt2}'
+          ORDER BY timestamp ASC`;
+
 console.log(str);
+
+// bqQuery(str).then(ret => {
+//   console.log('return query', ret);
+// }).catch(error => {
+//   console.error('error', error);
+// })
+
+listTables('fixationdata').then(tables => {
+  console.log('tables', tables);
+}).catch(error => {
+  console.error('error', error);
+})
