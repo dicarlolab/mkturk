@@ -619,6 +619,37 @@ export class Mkfinder {
     });
   }
 
+  public listBigQueryTable(dataArr: any[], dataset: string, agent: string) {
+    this.displayBigqueryTable(dataArr);
+  }
+
+  private displayBigqueryTable(dataArr: any[]) {
+    this.finder.destroy();
+    this.finder = new Tabulator("#finder", {
+      data: dataArr,
+      index: "timestamp.value",
+      responsiveLayout: true,
+      layout: "fitColumns",
+      resizableColumns: true,
+      initialSort: [
+        { column: "timestamp.value", dir: "asc" }
+      ],
+      columns: [
+        { title: "<input id='select-all' type='checkbox'/>", width: 15, headerSort: false },
+        { title: "Timestamp", field: "timestamp.value" },
+      ],
+      selectable: true,
+      selectableRangeMode: "click",
+      rowClick: async (ev, row) => {
+        ev.stopPropagation();
+        this.mke.displayBigQueryTableRow(row.getData());
+      },
+      dataLoaded: (data) => {
+        console.log("table data", data);
+      }
+    });
+  }
+
   /* Mkfinder controls */
   private backBtnAction() {
     this.backBtn.addEventListener("click" || "pointerup", (ev: Event) => {

@@ -50,6 +50,16 @@ export class Mkeditor {
     }
   }
 
+  public displayBigQueryTableRow(data: any) {
+    try {
+      this.editor.destroy();
+      this.editor = new JSONEditor(this.editorElement, {}, data);
+      console.log("displayBigQueryTableRow", data);
+    } catch (error) {
+      console.error("JSONEditor Error:", error);
+    }
+  }
+
   private trackFirebaseActiveFile(loc: string, file: any) {
     if (loc === "marmosets") {
       this.activeFile = { loc: loc, id: file.name };

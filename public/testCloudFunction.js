@@ -60,7 +60,7 @@ console.log(str);
 
 async function listT() {
   let returned = await listTables('fixationdata');
-  console.log(returned);
+  console.log(returned.data);
 }
 
 listT();

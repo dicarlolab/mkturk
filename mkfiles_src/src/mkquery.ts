@@ -1,8 +1,16 @@
+import * as firebase from "firebase/app";
+import "firebase/functions";
+
+const functions = firebase.functions();
+const listTables = functions.httpsCallable('listTables');
+const bqQuery = functions.httpsCallable('bqQuery');
+
 export class Mkquery {
   public rfidMode: boolean;
   
   constructor() {
     this.rfidMode = false;
+
   };
   /**
    * Connects and returns query strings
@@ -129,4 +137,36 @@ export class Mkquery {
 
     return arr;
   }
+
+  // public async mkbquery(agent: string, date: string) {
+  //   let ret = await listTables('fixationdata');
+  //   let tableMetadataList = ret.data;
+  //   let tableList: any[] = [];
+  //   tableMetadataList.forEach((tableMetadata: any) => {
+  //     tableList.push(tableMetadata.tableReference.tableId);
+  //   });
+  //   console.log(tableList);
+  // }
+  
+  public mkbquery(dataset: string, agent: string, date: string) {
+    let queryDateLower: string | Date = new Date(date);
+    let queryDateUpper: string | Date = new Date(date);
+    queryDateUpper.setDate(queryDateUpper.getDate() + 1);
+    queryDateLower = queryDateLower.toJSON().split('T')[0];
+    queryDateUpper = queryDateUpper.toJSON().split('T')[0];
+
+    let str = `SELECT *
+              FROM \`sandbox-ce2c5.${dataset}.${agent}\`
+              WHERE timestamp BETWEEN '${queryDateLower}' AND '${queryDateUpper}'
+              ORDER BY timestamp ASC`;
+
+    return str;
+  }
+
+  public async decodeBigQuery(queryStr: string) {
+    let test = await bqQuery(queryStr);
+    //console.log(test);
+    return test;
+  }
+  
 }
