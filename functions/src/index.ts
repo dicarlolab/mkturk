@@ -165,14 +165,11 @@ export const bqQuery = functions.https.onCall(async (query: any) => {
 export const listTables = functions.https.onCall(async (userDataset: string) => {
   const bq = new BigQuery();
   const dataset = bq.dataset(userDataset);
-  // const rawTables = await dataset.getTables();
-  // const tables = rawTables[0];
-  // console.log('tables bq', tables);
-  // dataset.getTables().then(data => {
-  //   console.log('tables', data[0]);
-  // }).catch(error => {
-  //   console.error('error', error);
-  // })
-  const tables = await dataset.getTables({});
-  return tables;
-})
+  const tables = await dataset.getTables();
+  let arr: any = [];
+  tables[0].forEach(table => {
+    arr.push(table.metadata);
+  });
+
+  return arr;  
+});

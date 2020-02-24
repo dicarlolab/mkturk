@@ -51,8 +51,16 @@ console.log(str);
 //   console.error('error', error);
 // })
 
-listTables('fixationdata').then(tables => {
-  console.log('tables', tables);
-}).catch(error => {
-  console.error('error', error);
-})
+// listTables('fixationdata').then(tables => {
+//   console.log('tables', tables);
+// }).catch(error => {
+//   console.error('error', error);
+// })
+
+
+async function listT() {
+  let returned = await listTables('fixationdata');
+  console.log(returned);
+}
+
+listT();
