@@ -513,7 +513,7 @@ queryForm?.addEventListener("submit", async ev => {
 
     case "eyedata":
       if (k0 && k1) {
-        queryStr = mkq.mkbquery("fixationdata", k0, k1);
+        queryStr = mkq.mkbquery("eyedata", k0, k1);
       } else {
         console.error("Incorrect query: Need two query arguments!");
         alert("Incorrect query: Need two query arguments!");

@@ -621,6 +621,7 @@ export class Mkfinder {
 
   public listBigQueryTable(dataArr: any[], dataset: string, agent: string) {
     this.displayBigqueryTable(dataArr);
+    this.pathName.innerText = `${dataset}.${agent}`;
   }
 
   private displayBigqueryTable(dataArr: any[]) {
@@ -644,8 +645,14 @@ export class Mkfinder {
         ev.stopPropagation();
         this.mke.displayBigQueryTableRow(row.getData());
       },
+      rowTap: (ev, row) => {
+        ev.stopPropagation();
+        this.mke.displayBigQueryTableRow(row.getData());
+      },
       dataLoaded: (data) => {
         console.log("table data", data);
+        this.mkc.removeElementsByClassName('axis-options');
+        this.mkc.bqPopulateAxisFields(data, 'eyedata');
       }
     });
   }

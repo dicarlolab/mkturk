@@ -159,7 +159,7 @@ export class Mkquery {
               FROM \`sandbox-ce2c5.${dataset}.${agent}\`
               WHERE timestamp BETWEEN '${queryDateLower}' AND '${queryDateUpper}'
               ORDER BY timestamp ASC`;
-
+    console.log("querystr", str);
     return str;
   }
 
