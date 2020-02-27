@@ -218,8 +218,8 @@ if (port.statustext_received.length > 1){
 		}
 
 		if (n_character_close > 0){
-			ENV.Eye.Time[ENV.Eye.N] = Date.now();
-			ENV.Eye.N += 1;
+			// ENV.Eye.Time[ENV.Eye.N] = Date.now();
+			// ENV.Eye.N += 1;
 
 			var x = eyebuffer.buffer.slice(0,4);
 			var y = eyebuffer.buffer.slice(4,8);
@@ -260,12 +260,14 @@ if (port.statustext_received.length > 1){
 					//preview dots
 					renderDotOnCanvas('yellow', [ xyplot[0], xyplot[1] ], 3, EYETRACKERCANVAS)
 // 				}
-				var event_xytt = {x_val: xy[0], y_val: xy[1], time: ENV.Eye.Time[ENV.Eye.N-1], type: "undefined"}
+				// var event_xytt = {x_val: xy[0], y_val: xy[1], time: ENV.Eye.Time[ENV.Eye.N-1], type: "undefined"}
+				var event_xytt = {x_val: xy[0], y_val: xy[1], time: Date.now(), type: "undefined"}
 				waitforEvent.next(event_xytt) //send to hold_promise generator
 			}//if generated created
 
 			if (ENV.Eye.N >= 2){
-				var dt = ENV.Eye.Time[ENV.Eye.N-1] - ENV.Eye.Time[ENV.Eye.N-2]
+				// var dt = ENV.Eye.Time[ENV.Eye.N-1] - ENV.Eye.Time[ENV.Eye.N-2]
+				var dt = Math.random()
 			}
 
 			if ( ENV.Eye.N%9 == 0 ){

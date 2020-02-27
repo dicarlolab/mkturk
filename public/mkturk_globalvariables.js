@@ -34,6 +34,7 @@ ENV.ImageHeightPixels = NaN;
 ENV.ImageWidthPixels = NaN;
 ENV.CanvasRatio = 1
 ENV.DevicePixelRatio = 1
+ENV.ThreeJSRenderRatio = 4
 ENV.FixationRadius = 0
 ENV.FixationColor = ''
 ENV.ChoiceRadius = 0

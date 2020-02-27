@@ -49,6 +49,7 @@ if (typeof(navigator.bluetooth) == "object"){
 <script src="/__/firebase/7.3.0/firebase-auth.js"></script>
 <script src="/__/firebase/7.3.0/firebase-firestore.js"></script>
 <script src="/__/firebase/7.3.0/firebase-storage.js"></script>
+<!-- <script src="/__/firebase/7.3.0/firebase-functions.js"></script> -->
 <script src="/__/firebase/init.js"></script>
 
 <!-- Math package -->
@@ -79,6 +80,35 @@ deviceAPI = {
 
   //Initialize Cloud Storage
   var storage = firebase.storage();
+
+//  var functions = firebase.functions();
+//  let bqInsertEyeData = functions.httpsCallable("bqInsertEyeData")
+//  let detectDevice = functions.httpsCallable("detectDevice")
+
+
+//  async function deviceDetect() {
+//   let navigator = window.navigator;
+//   let canvas = document.createElement('canvas');
+//   let gl, debugInfo, vendor, renderer;
+//   try {
+//     gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+//   } catch (e) {
+//     console.error('WebGL Context Error:', e);
+//     return;
+//   }
+//   if (gl) {
+//     debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+//     vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+//     renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+//   }
+//   let deviceInfo = await detectDevice(navigator.userAgent);
+//   deviceInfo.data.gpu = {};
+//   deviceInfo.data.gpu.vendor = vendor;
+//   deviceInfo.data.gpu.renderer = renderer;
+//   console.log(deviceInfo);
+//   return deviceInfo;
+// }
+
 </script>
 </head>
 
@@ -456,7 +486,7 @@ function skipHardwareDevice(event){
 	document.querySelector("button[id=quickload]").style.display = "none"
 	document.querySelector("div[id=subjectID_div]").style.display = "none"
 
-	localStorage.setItem("Agent",ENV.Subject)		
+	localStorage.setItem("Agent",ENV.Subject)	
 
 	ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.txt";
 	await loadParametersfromFirebase(ENV.ParamFileName)
@@ -561,9 +591,7 @@ function skipHardwareDevice(event){
 			console.time('Stage '+a)
 
 			// Make TrialQueue
-			var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
-
-			AutomatorPreBuffer['TrialQueue'][a] = new TrialQueue(samplingStrategy, automator_data[a].ImageBagsSample, automator_data[a].ImageBagsTest); 
+			AutomatorPreBuffer['TrialQueue'][a] = new TrialQueue(TASK.SamplingStrategy, automator_data[a].ImageBagsSample, automator_data[a].ImageBagsTest); 
 
 			// Populate the stage's imagebuffer with some images
 			await AutomatorPreBuffer['TrialQueue'][a].build(num_prebuffer_trials)
@@ -586,6 +614,9 @@ function skipHardwareDevice(event){
 	document.querySelector("button[id=doneTestingTask]").style.visibility = "visible"
 	document.querySelector("button[id=stressTest]").style.display = "block"
 	document.querySelector("button[id=stressTest]").style.visibility = "visible"
+	if (TASK.Agent == "SaveImages"){
+		document.querySelector("button[id=stressTest]").innerHTML = "Save Images"
+	}
 	FLAGS.savedata = 0 // test trials can be performed, but data won't be saved
 
 	FLAGS.need2loadParameters = 1
@@ -602,6 +633,8 @@ function skipHardwareDevice(event){
 		FLAGS.need2loadScenes = 1
 		FLAGS.scene3d = 1
 	}
+
+
 
 // =========================================================================================================== // 
 // ============ MAIN LOOP ==================================================================================== // 
@@ -853,8 +886,7 @@ while(true){
 		FLAGS.need2loadScenes = 0
 
 		//Make a scene trial queue TQS (overrides TQ)
-		var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
-		TQS = new TrialQueueScene(samplingStrategy)
+		TQS = new TrialQueueScene(TASK.SamplingStrategy)
 		await TQS.build(num_prebuffer_trials)
 		console.timeEnd('3JS: LOAD SCENE')
 
@@ -1151,15 +1183,16 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 				logEVENTS("Response",CURRTRIAL.response,"trialseries")
 			}
 		} //touched fixation
-		else if (CURRTRIAL.fixationtouchevent == "tbroken" &&
-			TASK.RewardStage == 0){
+		else if ( CURRTRIAL.fixationtouchevent == "tbroken" && TASK.RewardStage == 0){
 			CURRTRIAL.response = -1
 			FLAGS.waitingforTouches = 0 //exit loop
 			logEVENTS("Response",CURRTRIAL.response,"trialseries")
 		} //fixation task, but touched outside fixation
-		else if (CURRTRIAL.fixationtouchevent == "tbroken" &&
-			TASK.RewardStage == 1){
-			//dms task, ok if touched outside, just wait for touch inside fixation area
+		else if (
+					(CURRTRIAL.fixationtouchevent == "tbroken" && TASK.RewardStage == 1) ||
+					(CURRTRIAL.fixationtouchevent == "TimeOut")
+			){
+			//ok if timed out OR dms task, ok if touched outside, just wait for touch inside fixation area
 		}
 
 
@@ -1208,11 +1241,14 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 			var nchoices = boundingBoxesChoice.x.length
 			// var currchoice = CURRTRIAL.correctitem
 			var hitrate = 0
-			if (ENV.Subject == "Youno"){
+			if (TASK.Agent == "Youno"){
 				hitrate = 0.9
 			}
-			else if (ENV.Subject == "Eliaso"){
+			else if (TASK.Agent == "Eliaso"){
 				hitrate = 0.7
+			}
+			else if (TASK.Agent == "SaveImages"){
+				hitrate = 1.0
 			}
 			if (Math.random() < hitrate){
 				var currchoice = CURRTRIAL.correctitem
@@ -1363,6 +1399,7 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 	//============ (end) DELIVER REWARD/PUNISH ============//
 
 	//================= HOUSEKEEPING =================//
+	var ITIstart = performance.now()
 
 	// CALIBRATE eye
 	if (TASK.TrackEye > 0){
@@ -1405,9 +1442,9 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 	}//IF track eye
 	
 	//clear tracker canvas at end of trial
-	if (FLAGS.savedata == 0){
+	// if (FLAGS.savedata == 0){
 		EYETRACKERCANVAS.getContext('2d').clearRect(0,0,EYETRACKERCANVAS.width,EYETRACKERCANVAS.height)
-	}//IF practice screen
+	// }//IF practice screen
 
 	CURRTRIAL.lastTrialCompleted = new Date()
 
@@ -1422,14 +1459,16 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 			await automateTask(automator_data, trialhistory);
 		}
 
-		// Save data asynchronously
-		saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, TRIAL);
+		if (TASK.Agent != "SaveImages"){
+			// Save data asynchronously
+			saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, TRIAL);
 
-		// Save data asynchronously to Firestore
-		if (FLAGS.createnewfirestore == 1){
-			saveBehaviorDatatoFirestore(TASK,ENV,CANVAS); //write once
-			pingFirestore() //every 10 seconds, will check for data updates to upload to firestore
-		} //kick off firestore database writes
+			// Save data asynchronously to Firestore
+			if (FLAGS.createnewfirestore == 1){
+				saveBehaviorDatatoFirestore(TASK,ENV,CANVAS); //write once
+				pingFirestore() //every 10 seconds, will check for data updates to upload to firestore
+			} //kick off firestore database writes
+		}//SAVE DATA if not saving images
 	} //if savedata
 
 	if (FLAGS.need2saveParameters == 1){
@@ -1445,12 +1484,40 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 		updateEventDataonFirestore(EVENTS);
 		FLAGS.need2loadParameters = 1
 	} //if new day, start new file or reached 1000 trials 
+
+
+	if (TASK.Agent == "SaveImages" && CURRTRIAL.num >= TQS.samplebag_indices.length-1){
+		return
+	}//IF saved all images
+
 	//================= (end) HOUSEKEEPING =================//
+
+	// var tempeye = [{	'agent': 'Eliaso',
+	// 				'timestamp': new Date(Date.now()).toJSON(),
+	// 				'num_eyes': 1,
+	// 				'left_x': Math.random(),
+	// 				'left_y': Math.random(),
+	// 				'left_aux_0': Math.random(),
+	// 				'left_aux_1': Math.random(),
+	// 				'right_x': Math.random(),
+	// 				'right_y': Math.random(),
+	// 				'right_aux_0': Math.random(),
+	// 				'right_aux_1': Math.random()
+	// 			  }]
+	// await bqInsertEyeData(tempeye)
+
 
 	updateHeadsUpDisplay();
 	console.log('End of trial ', CURRTRIAL.num)
 	CURRTRIAL.num++
 	EVENTS.trialnum = CURRTRIAL.num
+
+	if (typeof(TASK.InterTrialInterval) != "undefined"){
+		var remainingInterTrialInterval = TASK.InterTrialInterval - (performance.now() - ITIstart)
+		if (remainingInterTrialInterval > 0){
+			await sleep(remainingInterTrialInterval)
+		}
+	}//IF ITI
 }
 })();
 

@@ -50,6 +50,8 @@ ImageBagsTest: List of (list of) paths, where entries at the top level are direc
 
 ImageRewardsList: List of paths containing user-specified reward per image. Images in the image_reward_list file need to be referenced by their complete path. ImageReward values: 0=no feedback (no reward or punish for that sample image) >0=user set reward for that sample image, overrides bonus reward behavior. These can be partial lists. For images where reward is manually specified, then default bonus reward behavior is used. No corresponding list is used for test (choice) images. Instead, specify reward for a whole class by listing reward for each image in that class in ImageRewardsList.
 
+InterTrialInterval: How long to wait after reward/punish is delivered before starting next trial. Only a gray screen is shown for InterTrialInterval milliseconds, followed by the fixation dot.
+
 KeepSampleON: KeepSampleON=0, sample is presented only for sampleON milliseconds for a delayed match-to-sample, KeepSampleON=1 sample remains on during choice screen. This implements a spatial match to sample.
 
 KeepTestON: KeepTestON=0, test is presented only for testON milliseconds, KeepTestON=1 test remains on during choice screen. This only applies to same-different task when responses are indicated on additional choice screen following test screen.
@@ -79,6 +81,8 @@ RewardPer1000Trials: Amount of liquid reward in mL for 1000 correct trials. For 
 RewardStage: RewardStage=0 rewards for successful fixtion and skips the choice phase of task. RewardStage=1 rewards for selecting the correct choice.
 
 SampleGridIndex: Index on grid where sample image appears. SampleGridIndex=4 centers the image on a 3x3 grid, where ngridpoints=3
+
+SamplingStrategy: Determines how sample images are drawn: uniform_with_replacement, uniform_without_replacement, sequential
 
 SampleOFF: Duration in milliseconds that a gray screen is presented after the sample image before the response screen. This implements the delay in a DMS task. SampleOFF=0, leads to no delay
 
