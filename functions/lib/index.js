@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const functions = require("firebase-functions");
 const bigquery_1 = require("@google-cloud/bigquery");
+const DeviceDetector = require("device-detector-js");
 // // Start writing Firebase Functions
 // // https://firebase.google.com/docs/functions/typescript
 //
@@ -22,6 +23,11 @@ const schema = {
         {
             "name": "timestamp",
             "type": "TIMESTAMP",
+            "mode": "REQUIRED"
+        },
+        {
+            "name": "trial_num",
+            "type": "INTEGER",
             "mode": "REQUIRED"
         },
         {
@@ -146,11 +152,24 @@ exports.listTables = functions.https.onCall(async (userDataset) => {
     const bq = new bigquery_1.BigQuery();
     const dataset = bq.dataset(userDataset);
     const tables = await dataset.getTables();
-    let arr = [];
+    const arr = [];
     tables[0].forEach(table => {
         arr.push(table.metadata);
     });
-    console.log(arr);
     return arr;
+});
+exports.bqListDatasets = functions.https.onCall(async () => {
+    const bq = new bigquery_1.BigQuery();
+    const [datasets] = await bq.getDatasets();
+    const arr = [];
+    datasets.forEach(dataset => {
+        arr.push(dataset.id);
+    });
+    return arr;
+});
+exports.detectDevice = functions.https.onCall((userAgent) => {
+    const detector = new DeviceDetector();
+    let device = detector.parse(userAgent);
+    return device;
 });
 //# sourceMappingURL=index.js.map

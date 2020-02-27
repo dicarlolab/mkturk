@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions';
 import {BigQuery} from '@google-cloud/bigquery';
+import * as DeviceDetector from 'device-detector-js';
 
 // // Start writing Firebase Functions
 // // https://firebase.google.com/docs/functions/typescript
@@ -19,6 +20,7 @@ function insertHandler(err: any, apiResp: any) {
 interface fixationData {
   agent: string,
   timestamp: any,
+  trial_num: number,
   num_eyes: number,
   left_x: number | null,
   left_y: number | null,
@@ -36,6 +38,11 @@ const schema = {
     {
       "name": "timestamp",
       "type": "TIMESTAMP",
+      "mode": "REQUIRED"
+    },
+    {
+      "name": "trial_num",
+      "type": "INTEGER",
       "mode": "REQUIRED"
     },
     {
@@ -166,10 +173,27 @@ export const listTables = functions.https.onCall(async (userDataset: string) => 
   const bq = new BigQuery();
   const dataset = bq.dataset(userDataset);
   const tables = await dataset.getTables();
-  let arr: any = [];
+  const arr: any = [];
   tables[0].forEach(table => {
     arr.push(table.metadata);
   });
 
   return arr;  
+});
+
+export const bqListDatasets = functions.https.onCall(async () => {
+  const bq = new BigQuery();
+  const [datasets] = await bq.getDatasets();
+  const arr: any = [];
+  datasets.forEach(dataset => {
+    arr.push(dataset.id);
+  })
+  return arr;
+});
+
+export const detectDevice = functions.https.onCall((userAgent: any) => {
+  const detector = new DeviceDetector();
+  let device: any = detector.parse(userAgent);
+  
+  return device;
 });
