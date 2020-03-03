@@ -2,6 +2,7 @@ import * as firebase from "firebase/app";
 import "firebase/firestore";
 import "firebase/storage";
 import "firebase/auth";
+import "firebase/functions";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",
@@ -28,7 +29,7 @@ firebase.auth().getRedirectResult().then(result => {
   }
 });
 
-
+const functions = firebase.functions();
 const db = firebase.firestore();
 const storage = firebase.storage();
 const storageRef = storage.ref(); 
@@ -37,6 +38,20 @@ let isRoot = true;
 
 let mkq = new Mkquery();
 let mkf = new Mkfinder();
+
+let bqListDatasets = functions.httpsCallable('bqListDatasets');
+
+let bqDatasetList = bqListDatasets();
+bqDatasetList.then((datasetList: any) => {
+  let bqOptgroup = 
+    document.querySelector('#bigquery-optgroup') as HTMLOptGroupElement;
+  datasetList.data.forEach((dataset: any) => {
+    let option = document.createElement('option');
+    option.value = dataset;
+    option.textContent = 'bq/' + dataset;
+    bqOptgroup.appendChild(option);
+  });
+});
 
 
 let rfidToggle = document.querySelector("#rfid-switch") as HTMLInputElement;

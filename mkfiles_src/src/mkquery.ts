@@ -165,7 +165,6 @@ export class Mkquery {
 
   public async decodeBigQuery(queryStr: string) {
     let test = await bqQuery(queryStr);
-    //console.log(test);
     return test;
   }
   

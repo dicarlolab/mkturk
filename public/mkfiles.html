@@ -58,7 +58,7 @@
                 
               <select class="selector" id="qry-loc-selector">
                 <option disabled selected>Query Location</option>
-                  <optgroup label="Firestore/DB">
+                  <optgroup label="Firestore/DB" id='firestore-optgroup'>
                     <option value="marmosets">firestore/marmosets</option>
                     <option value="mkturkdata">firestore/mkturkdata</option>
                     <option value="objects">firestore/objects</option>
@@ -66,11 +66,11 @@
                     <option value="eyecalibrations">firestore/eyecalibrations</option>
                     <option value="mkscale">firestore/mkscale</option>
                   </optgroup>
-                  <optgroup label="Cloud Storage">
+                  <optgroup label="Cloud Storage" id='storage-optgroup'>
                     <option value="mkturkfiles">gcs/mkturkfiles</option>
                   </optgroup>
-                  <optgroup label="BigQuery">
-                    <option value="eyedata">bq/eyedata</option>
+                  <optgroup label="BigQuery" id='bigquery-optgroup'>
+                    
                   </optgroup>
               </select>
 
