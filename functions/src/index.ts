@@ -195,5 +195,11 @@ export const detectDevice = functions.https.onCall((userAgent: any) => {
   const detector = new DeviceDetector();
   let device: any = detector.parse(userAgent);
   
-  return device;
+  return new Promise((resolve, reject) => {
+    try {
+      resolve(device);
+    } catch (e) {
+      reject(e);
+    }
+  });
 });
