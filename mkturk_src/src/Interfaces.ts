@@ -61,9 +61,10 @@ export interface ENV {
   ChoiceScale: number,
 
   Eye: Eye,
+  init(): any;
 }
 
-interface Eye {
+export interface Eye {
   // RAW USB stream
   Time: any[],
   N: number,
@@ -74,7 +75,7 @@ interface Eye {
   BlinkGracePeriod: number,
 
   // Calibration
-  calibration: number,
+  Calibration: number,
   CalibXTransform: any[], // don't know exact type yet
   CalibYTransform: any[], // don't know exact type yet
   CalibType: string,
@@ -105,7 +106,8 @@ export interface FLAGS {
   firestorelastsavedtrial: number,
   firestoretimeron: number,
   stressTest: number,
-  RFIDGeneratorCreated: number
+  RFIDGeneratorCreated: number,
+  init(): any
 }
 
 export interface CANVAS {
@@ -121,7 +123,8 @@ export interface CANVAS {
   tsequencepost: number[],
   headsupfraction: number,
   offsetleft: number,
-  offsettop: number
+  offsettop: number,
+  init(): void
 }
 
 export interface frame {
@@ -170,7 +173,8 @@ export interface CURRTRIAL {
   sample_scenebag_label: any,
   sample_scenebag_index: any,
   test_scenebag_labels: any,
-  test_scenebag_indices: any 
+  test_scenebag_indices: any,
+  init(): any,
 }
 
 // TODO: export interface EVENTS
@@ -223,4 +227,12 @@ export interface TRIAL {
   TestObjectRxz: any[],
   TestObjectRyz: any[],
   TestObjectScale: any[]
+
+  reset(ENV: ENV, FLAGS: FLAGS): any;
+  update(CURRTRIAL: CURRTRIAL, FLAGS: FLAGS): any;
+}
+
+export interface sounds {
+  serial: number[],
+  buffer: any[]
 }
