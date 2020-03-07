@@ -19,6 +19,7 @@ try{
 		function(resolve, reject){
 			try {
 				var image = new Image(); 
+				image.crossOrigin = "Anonymous"; //to allow saving of a 'tainted canvas', see https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_enabled_image
 				image.onload = function(){
 					updateImageLoadingAndDisplayText('Loaded: ' + imagefile_path)
 					resolve(image)				

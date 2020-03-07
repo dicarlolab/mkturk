@@ -5,7 +5,7 @@ var port={
   connected: false,
 }
 var serial = {}
-var eyebuffer = { accumulateEye: 0, maxbufferlength_HARDCODED: 10, buffer: ""}
+var eyebuffer = { accumulateEye: 0, maxbufferlength_HARDCODED: 17, buffer: "", numeyes_HARDCODED: 2}
 
 navigator.usb.onconnect = function(device){
 	if (typeof(port.connected) == 'undefined' || port.connected == false){
@@ -164,12 +164,21 @@ serial.Port.prototype.onReceive = data => {
 	//rfid
 	var tagstart = port.statustext_received.indexOf('{tag',0);
 
-	//eye
-	if ( port.statustext_received.indexOf('/',0) == 0 && eyebuffer.accumulateEye == 0 ){
-		eyebuffer.accumulateEye = 1
+	//EYE - waits for "///" to be robust
+	if ( port.statustext_received.indexOf('/') != -1 && eyebuffer.accumulateEye < 3 ){
+		for (var q=0; q<= port.statustext_received.length-1; q++){
+			if (port.statustext_received[q] == '/'){
+				var lastslash = q
+				eyebuffer.accumulateEye++				
+			}
+		}
+		if (eyebuffer.accumulateEye == 3){
+			//strip start characters (eg, '/') up front
+			port.statustext_received = port.statustext_received.slice(lastslash+1, port.statustext_received.length-1)
+		}
 	}
 
-// console.log(port.statustext_received + 'len=' + port.statustext_received.length)
+// console.log(port.statustext_received)
 
 if (port.statustext_received.length > 1){
 	console.log('too long: ' + port.statustext_received)
@@ -201,7 +210,7 @@ if (port.statustext_received.length > 1){
 		} //IF no subject chosen yet, auto-find in firestore based on their RFIDTag, which will then QuickLoad the page
 		updateHeadsUpDisplayDevices()
 	} //IF RFID Tag
-	else if (eyebuffer.accumulateEye){
+	else if (eyebuffer.accumulateEye >= 3){
 		// arduino usually sends one character at a time,
 		// but have to handle the case of receiving 2 characters
 
@@ -210,28 +219,38 @@ if (port.statustext_received.length > 1){
 		var n_character_close = 0
 		if ( port.statustext_received.indexOf('}') >= 0 && eyebuffer.buffer.length >= eyebuffer.maxbufferlength_HARDCODED){
 			n_character_close = 1
-			eyebuffer.buffer = eyebuffer.buffer.slice(1,eyebuffer.buffer.length-1)
+			eyebuffer.buffer = eyebuffer.buffer.slice(0,eyebuffer.buffer.length-1)
 		} 
 		else if ( port.statustext_received == '}/' && eyebuffer.buffer.length == eyebuffer.maxbufferlength_HARDCODED-1){
 			n_character_close = 2
-			eyebuffer.buffer = eyebuffer.buffer.slice(1,eyebuffer.buffer.length-2)
+			eyebuffer.buffer = eyebuffer.buffer.slice(0,eyebuffer.buffer.length-2)
 		}
 
 		if (n_character_close > 0){
-			// ENV.Eye.Time[ENV.Eye.N] = Date.now();
-			// ENV.Eye.N += 1;
-
 			var x = eyebuffer.buffer.slice(0,4);
 			var y = eyebuffer.buffer.slice(4,8);
+			var w = eyebuffer.buffer.slice(9,12)
+			var a = eyebuffer.buffer.slice(13,16)
 
 			x = parseInt('0x'+x)/32767; //Raw
 			y = parseInt('0x'+y)/32767; //Raw
+			w = parseInt('0x'+w)/32767; //Raw
+			a = parseInt('0x'+a)/32767; //Raw
 			if (ENV.Eye.CalibXTransform.length > 0){
 				var xy = apply_linear_transform(x,y,ENV.Eye.CalibXTransform,ENV.Eye.CalibYTransform) //Calibrated
 			}
 			else {
 				xy = ["nan","nan"]
 			}
+
+			logEVENTS("EyeData",[
+						new Date(Date.now()).toJSON(),
+						CURRTRIAL.num,
+						eyebuffer.numeyes_HARDCODED,
+						xy[0],xy[1],w,a,
+						null,null,null,null
+					],"timeseries");
+
 
 			if (FLAGS.touchGeneratorCreated == 1 && TASK.TrackEye > 0){
 				//Send calibrated signal
@@ -265,16 +284,17 @@ if (port.statustext_received.length > 1){
 				waitforEvent.next(event_xytt) //send to hold_promise generator
 			}//if generated created
 
-			if (ENV.Eye.N >= 2){
-				// var dt = ENV.Eye.Time[ENV.Eye.N-1] - ENV.Eye.Time[ENV.Eye.N-2]
-				var dt = Math.random()
+		 	var eyedatalen = Object.keys(EVENTS['timeseries']['EyeData']).length
+			if (eyedatalen > 1){
+				var dt = EVENTS['timeseries']['EyeData'][eyedatalen-1][1] - EVENTS['timeseries']['EyeData'][eyedatalen-2][1] 
 			}
 
-			if ( ENV.Eye.N%9 == 0 ){
-				port.statustext_received = 'Parsed EYE: xy_raw(calib)= ' + Math.round(x*100)/100 + ',' + Math.round(y*100)/100 + 
+			if ( eyedatalen%30 == 0 ){
+				port.statustext_received = 'Parsed EYE: xy_raw(calib)= ' + Math.round(x*100)/100 + ', ' + Math.round(y*100)/100 + 
+										', ' + Math.round(w*100)/100 + ', ' + Math.round(a*100)/100 + 
 										' (' + Math.round(10*xy[0])/10 + ',' + Math.round(10*xy[1])/10 + ') ' +  
 										' @ ' + new Date().toLocaleTimeString("en-US") + 
-										' dt=' + dt + 'ms' + 'buff=' + eyebuffer.buffer + ' ' + port.statustext_received
+										' dt=' + dt + 'ms' + 'buff=' + eyebuffer.buffer + port.statustext_received
 					console.log(port.statustext_received)
 				updateHeadsUpDisplayDevices()		
 			} //SUBSAMPLE
@@ -284,7 +304,7 @@ if (port.statustext_received.length > 1){
 				eyebuffer.accumulateEye = 0;										
 			}
 			else if (n_character_close == 2){ //received "}/"
-				eyebuffer.buffer = "/"
+				eyebuffer.buffer = ""
 				eyebuffer.accumulateEye = 1;										
 			}
 		} //IF found end character

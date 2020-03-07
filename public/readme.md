@@ -131,29 +131,29 @@ DataFileName: complete file path and name of datafile
 
 DevicePixelRatio: In a typical retina display, there can be a devicePixelRatio of 2 so that each 1x1 logical pixel is rendered using 2x2 logical pixels. This upsampling requires interpolation and can lead to blurring over your image. However, this can be compensated by setting the CanvasRatio = BackingStoreRatio/DevicePixelRatio
 
-DeviceBrand: eg Not available (for google devices) or Apple (depends on deviceAPI)
+DeviceBrand: eg Not available (for google devices) or Apple
 
-DeviceBrowserName: eg Chrome or Safari(depends on deviceAPI)
+DeviceBrowserName: eg Chrome or Safari
 
-DeviceBrowserVerion: eg 78.0.3904.90 or 12.0 (depends on deviceAPI)
+DeviceBrowserVerion: eg 78.0.3904.90 or 12.0
 
-DeviceGPU: eg Adreno (TM) 640 or Apple A9 GPU (depends on deviceAPI)
+DeviceGPU: eg Adreno (TM) 640 or Apple A9 GPU
 
-DeviceName: the name of the device used by mkturk to search firestore records eg Pixel 4 XL or iPhone 6s Plus (depends on deviceAPI)
+DeviceName: the name of the device used by mkturk to search firestore records eg Pixel 4 XL or iPhone 6s Plus
 
-DeviceOSName: eg Android 10 or iOS 12.0.1 (depends on deviceAPI)
+DeviceOSName: eg Android 10 or iOS 12.0.1
 
-DeviceOSCodename: eg Android or iOS (depends on deviceAPI)
+DeviceOSCodename: eg Android or iOS
 
-DeviceOSVersion: eg 10 or 12.0.1 (depends on deviceAPI)
+DeviceOSVersion: eg 10 or 12.0.1
 
-DeviceScreenWidth: physical display pixels (depends on deviceAPI)
+DeviceScreenWidth: full window (viewport) pixels
 
-DeviceScreenHeight: physical display pixels (depends on deviceAPI)
+DeviceScreenHeight: full window (viewport) pixels
 
-DeviceTouchscreen: 0 (not available) or 1 (available), indicates if touchscreen functionality available on device (depends on deviceAPI)
+DeviceTouchscreen: 0 (not available) or 1 (available), indicates if touchscreen functionality available on device
 
-DeviceType:desktop or mobile(depends on deviceAPI)
+DeviceType:desktop or mobile
 
 Eye.BlinkGracePeriod: time in milliseconds that eye is allowed to be outside the fixation window without counting it as a fixation break. Any period longer than Eye.BlinkGracePeriod milliseconds outside the window is considered a fixation break.
 
