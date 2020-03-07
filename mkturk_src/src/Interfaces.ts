@@ -61,7 +61,20 @@ export interface ENV {
   ChoiceScale: number,
 
   Eye: Eye,
-  init(): any;
+
+  SubjectList: string[],
+  DataSavePath: string,
+  ParamDirPath: string,
+  SoundFilePrefix: string;
+  FirestoreCollection: {
+    data: string,
+    devices: string,
+    agents: string,
+    calibration: string
+  }
+
+  NDataFiles2Read: number,
+  init(): any
 }
 
 export interface Eye {
@@ -107,6 +120,7 @@ export interface FLAGS {
   firestoretimeron: number,
   stressTest: number,
   RFIDGeneratorCreated: number,
+  purge: boolean,
   init(): any
 }
 
@@ -226,10 +240,67 @@ export interface TRIAL {
   TestObjectRxy: any[],
   TestObjectRxz: any[],
   TestObjectRyz: any[],
-  TestObjectScale: any[]
+  TestObjectScale: any[],
 
-  reset(ENV: ENV, FLAGS: FLAGS): any;
-  update(CURRTRIAL: CURRTRIAL, FLAGS: FLAGS): any;
+  reset(ENV: ENV, FLAGS: FLAGS): any,
+  update(CURRTRIAL: CURRTRIAL, TASK: TASK, FLAGS: FLAGS): any
+}
+
+export interface TASK {
+  Automator: boolean,
+  AutomatorFilePath: string,
+  BackgroundColor2D: string,
+  CheckRFID: number,
+  ChoiceGridIndex: any[],
+  ChoiceScale: number,
+  ChoiceSizeInches: number,
+  ChoiceTimeOut: number,
+  ConsecutiveHitsITI: number,
+  CurrentAutomatorStage: number,
+  FixationDuration: number,
+  FixationMove: number,
+  FixationScale: number,
+  FixationSizeInches: number,
+  FixationTimeOut: number,
+  FixationUsesSample: number,
+  GridSpacingInches: number,
+  HideChoiceDistractors: boolean,
+  HideTestDistractors: boolean,
+  Homecage: number,
+  ImageBagsSample: any[],
+  ImageBagsTest: any[],
+  ImageRewardsList: any[],
+  InterTrialInterval: number,
+  KeepSampleON: boolean,
+  KeepTestON: boolean,
+  Liquid: number,
+  NConsecutiveHitsforBonus: number,
+  NFixations: number,
+  NGridPoints: number,
+  NRewardMax: number,
+  NStickyResponse: number,
+  ObjectGridIndex: any[],
+  Pump: number,
+  PunishTimeOut: number,
+  RewardPer1000Trials: number,
+  RewardStage: number,
+  SampleGridIndex: number,
+  SamplingStrategy: string,
+  SampleON: number,
+  SampleOFF: number,
+  SampleScale: number,
+  SampleSizeInches: number,
+  Separated: boolean,
+  Species: string,
+  StaticFixationGridIndex: number,
+  TestGridIndex: any[],
+  TestON: number,
+  TestOFF: number,
+  TestScale: number,
+  TestSizeImages: number,
+  Weight: number,
+
+
 }
 
 export interface sounds {

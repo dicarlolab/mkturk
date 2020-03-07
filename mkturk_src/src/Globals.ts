@@ -1,5 +1,4 @@
 import * as T from "./Interfaces"; 
-import { string } from "mathjs";
 
 export class ENV implements T.ENV{
   public ResearcherDisplayName: string;
@@ -65,8 +64,37 @@ export class ENV implements T.ENV{
 
   public Eye: T.Eye;
 
+  public SubjectList: string[];
+  public DataSavePath: string;
+  public ParamDirPath: string;
+  public SoundFilePrefix: string;
+  public FirestoreCollection: {
+    data: string,
+    devices: string,
+    agents: string,
+    calibration: string
+  };
+
+  public NDataFiles2Read: number;
+
 
   constructor() {
+    this.SubjectList = [
+      'Eliaso','Youno', 'Sophieo', 'Hectoro', 'Ericao', 'Alexo', 'West',
+      'Waffles', 'Sausage', 'Rafiki', 'Hutch', 'Eggo', 'East', 'Bloo',
+      'Blintz', 'Blaise', 'Athena', 'AJ', 'You-Nah', 'Tahereh', 'Sophie',
+      'Hector', 'Erica', 'Elias', 'Andrea', 'Alex'
+    ];
+    this.DataSavePath = '/mkturkfiles/datafiles/';
+    this.ParamDirPath = '/mkturkfiles/parameterfiles/subjects/';
+    this.SoundFilePrefix = '/mkturkfiles/sounds/au';
+    this.FirestoreCollection = {
+      data: 'mkturkdata',
+      devices: 'devices',
+      agents: 'marmosets',
+      calibration: 'eyecalibrations'
+    };
+    this.NDataFiles2Read = 5;
   }
 
   public init() {
@@ -179,7 +207,7 @@ export class FLAGS implements T.FLAGS {
   public firestoretimeron: number;
   public stressTest: number;
   public RFIDGeneratorCreated: number;
-
+  public purge: boolean;
   constructor() {
   }
 
@@ -205,6 +233,7 @@ export class FLAGS implements T.FLAGS {
     this.firestoretimeron = 0;
     this.stressTest = 0;
     this.RFIDGeneratorCreated = 0;
+    this.purge = false;
   }
 }
 
@@ -439,7 +468,7 @@ export class TRIAL implements T.TRIAL {
     return this;
   }
 
-  public update(CURRTRIAL: CURRTRIAL, FLAGS: FLAGS) {
+  public update(CURRTRIAL: CURRTRIAL, TASK: TASK, FLAGS: FLAGS) {
     this.StartTime[CURRTRIAL.num] = CURRTRIAL.starttime;
     this.FixationGridIndex[CURRTRIAL.num] = CURRTRIAL.fixationgridindex;
     this.FixationXYT[CURRTRIAL.num] = CURRTRIAL.fixationxyt;
@@ -452,46 +481,105 @@ export class TRIAL implements T.TRIAL {
     this.ResponseTouchEvent[CURRTRIAL.num] = CURRTRIAL.responsetouchevent;
     this.CorrectItem[CURRTRIAL.num] = CURRTRIAL.correctitem;
     this.NReward[CURRTRIAL.num] = CURRTRIAL.nreward;
-    //this.AutomatorStage[CURRTRIAL.num] = CURRTRIAL.
+    this.AutomatorStage[CURRTRIAL.num] = TASK.CurrentAutomatorStage;
+    this.TSequenceDesired[CURRTRIAL.num] = CURRTRIAL.tsequencedesired;
+    this.TSequenceActual[CURRTRIAL.num] = CURRTRIAL.tsequenceactual;
+
+    if (FLAGS.scene3d == 0) {
+      this.SampleObjectTy[CURRTRIAL.num] = CURRTRIAL.sampleobjectty;
+      this.SampleObjectTz[CURRTRIAL.num] = CURRTRIAL.sampleobjecttz;
+      this.SampleObjectRxy[CURRTRIAL.num] = CURRTRIAL.sampleobjectrxy;
+      this.SampleObjectRxz[CURRTRIAL.num] = CURRTRIAL.sampleobjectrxz;
+      this.SampleObjectRyz[CURRTRIAL.num] = CURRTRIAL.sampleobjectryz;
+      this.SampleObjectScale[CURRTRIAL.num] = CURRTRIAL.sampleobjectscale;
+
+      this.TestObjectTy[CURRTRIAL.num] = CURRTRIAL.testobjectty;
+      this.TestObjectTz[CURRTRIAL.num] = CURRTRIAL.testobjecttz;
+      this.TestObjectRxy[CURRTRIAL.num] = CURRTRIAL.testobjectrxy;
+      this.TestObjectRxz[CURRTRIAL.num] = CURRTRIAL.testobjectrxz;
+      this.TestObjectRyz[CURRTRIAL.num] = CURRTRIAL.testobjectryz;
+      this.TestObjectScale[CURRTRIAL.num] = CURRTRIAL.testobjectscale;
+    }
   }
 }
 
 export class TASK {
-  public TrackEye: number;
-  public NTrialsPerBagBlock: number;
-  public TestON: number;
+  public Automator: boolean;
+  public AutomatorFilePath: string;
+  public BackgroundColor2D: string;
+  public CheckRFID: number;
+  public ChoiceGridIndex: any[];
+  public ChoiceScale: number;
+  public ChoiceSizeInches: number;
+  public ChoiceTimeOut: number;
+  public ConsecutiveHitsITI: number;
+  public CurrentAutomatorStage: number;
+  public FixationDuration: number;
+  public FixationMove: number;
+  public FixationScale: number;
+  public FixationSizeInches: number;
+  public FixationTimeOut: number;
+  public FixationUsesSample: number;
+  public GridSpacingInches: number;
+  public HideChoiceDistractors: boolean;
+  public HideTestDistractors: boolean;
+  public Homecage: number;
+  public ImageBagsSample: any[];
+  public ImageBagsTest: any[];
+  public ImageRewardsList: any[];
+  public InterTrialInterval: number;
+  public KeepSampleON: boolean;
+  public KeepTestON: boolean;
+  public Liquid: number;
+  public NConsecutiveHitsforBonus: number;
+  public NFixations: number;
+  public NGridPoints: number;
+  public NRewardMax: number;
   public NStickyResponse: number;
   public ObjectGridIndex: any[];
-  public TestGridIndex: any[];
-  public ImageBagsTest: any[];
-  public ImageRewardList: any[];
-  public Automator: number;
-  public CurrentAutomatorStage: number;
-  public ImageBagsSample: any[];
-  public AutomatorFilePath: string;
+  public Pump: number;
+  public PunishTimeOut: number;
+  public RewardPer1000Trials: number;
   public RewardStage: number;
-  public ChoiceGridIndex: any[];
-  public NGridPoints: number;
-  public GridSpacingInches: number;
-  public BackgroundColor2D: string;
-  public FixationSizeInches: number;
-  public TestSizeInches: number;
+  public SampleGridIndex: number;
+  public SamplingStrategy: string;
+  public SampleON: number;
+  public SampleOFF: number;
+  public SampleScale: number;
   public SampleSizeInches: number;
-  public ChoiceSizeInches: number;
-  public FixationScale: number;
-  public ChoiceScale: number;
-  public CheckRFID: number;
-  public FixationMove: number;
-  public StaticFixationGridIndex: any[];
-  public FixationUsesSample: number;
+  public Separated: boolean;
   public Species: string;
-  public FixationDuration: number;
-  public FixationTimeout: any;
-  public NFixations: number;
-  public ConsecutiveHitsITI: any;
-  public NConsecutiveHitsforBonus: number;
-  public NRewardMax: number;
-  public PunishTimeOut: any;
-  public CalibrateEye: any;
-  
+  public StaticFixationGridIndex: number;
+  public TestGridIndex: any[];
+  public TestON: number;
+  public TestOFF: number;
+  public TestScale: number;
+  public TestSizeImages: number;
+  public Weight: number;
+
+  constructor() {
+
+  }
+}
+
+export class TrialHistory {
+  public trainingstage: any[];
+  public starttime: any[];
+  public response: any[];
+  public correct: any[];
+
+  constructor() {
+    this.trainingstage = [];
+    this.starttime = [];
+    this.response = [];
+    this.correct = [];
+  }
+
+  public update(CURRTRIAL: CURRTRIAL, TASK: TASK, stageHash: any) {
+    let current_stage = stageHash(TASK);
+    this.trainingstage.push(current_stage);
+    this.starttime.push(CURRTRIAL.starttime);
+    this.response.push(CURRTRIAL.response);
+    this.correct.push(CURRTRIAL.correct);
+  }
 }
