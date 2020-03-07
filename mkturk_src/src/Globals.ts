@@ -1,4 +1,5 @@
 import * as T from "./Interfaces"; 
+import { string } from "mathjs";
 
 export class ENV implements T.ENV{
   public ResearcherDisplayName: string;
@@ -467,5 +468,30 @@ export class TASK {
   public Automator: number;
   public CurrentAutomatorStage: number;
   public ImageBagsSample: any[];
+  public AutomatorFilePath: string;
+  public RewardStage: number;
+  public ChoiceGridIndex: any[];
+  public NGridPoints: number;
+  public GridSpacingInches: number;
+  public BackgroundColor2D: string;
+  public FixationSizeInches: number;
+  public TestSizeInches: number;
+  public SampleSizeInches: number;
+  public ChoiceSizeInches: number;
+  public FixationScale: number;
+  public ChoiceScale: number;
+  public CheckRFID: number;
+  public FixationMove: number;
+  public StaticFixationGridIndex: any[];
+  public FixationUsesSample: number;
+  public Species: string;
+  public FixationDuration: number;
+  public FixationTimeout: any;
+  public NFixations: number;
+  public ConsecutiveHitsITI: any;
+  public NConsecutiveHitsforBonus: number;
+  public NRewardMax: number;
+  public PunishTimeOut: any;
+  public CalibrateEye: any;
   
 }
