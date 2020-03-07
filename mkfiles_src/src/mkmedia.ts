@@ -41,10 +41,23 @@ export class Mkeditor {
   }
 
   public displayFirebaseTextFile(file: Object, loc: string) {
+    this.updateBtn.style.visibility = 'visible';
     try {
       this.editor.destroy();
       this.editor = new JSONEditor(this.editorElement, {}, file);
       this.trackFirebaseActiveFile(loc, file);
+    } catch (error) {
+      console.error("JSONEditor Error:", error);
+    }
+  }
+
+  public displayBigQueryTableRow(data: any) {
+    this.updateBtn.style.visibility = 'hidden';
+    try {
+      this.editor.destroy();
+      this.editor = new JSONEditor(this.editorElement, {}, data);
+      this.fileNameP.innerText = data.timestamp.value;
+      // console.log("displayBigQueryTableRow", data);
     } catch (error) {
       console.error("JSONEditor Error:", error);
     }
@@ -90,6 +103,7 @@ export class Mkeditor {
   }
 
   public async displayStorageTextFile(fileRef: FileRef) {
+    this.updateBtn.style.visibility = 'visible';
     let fileUrl = await fileRef.getDownloadURL().catch(e => {
       console.error("Error getting download URL", e);
     });
@@ -445,6 +459,7 @@ export class Mkchart {
   chart: any;
   data: any;
   isActive: boolean;
+  isBigQuery: boolean;
 
   constructor() {
     google.charts.load('current', { packages: ['corechart'] });
@@ -454,6 +469,7 @@ export class Mkchart {
     this.plotY = document.querySelector("#quick-plot-y") as HTMLSelectElement;
     this.plotBtn = document.querySelector("#plot-btn") as HTMLButtonElement;
     this.isActive = false;
+    this.isBigQuery = false;
     
     this.data = null;
     console.log(this.chartDiv);
@@ -466,29 +482,72 @@ export class Mkchart {
     this.plotBtn.addEventListener('click', (ev: Event) => {
       ev.preventDefault();
       this.isActive = !this.isActive;
-      console.log(this.isActive);
-      if (this.isActive) {
-        this.plotBtn.textContent = "Close Quick Plot";
-        this.chartDiv.style.zIndex = "2";
-        this.finderDiv.style.zIndex = "1";
-        let vizData = new google.visualization.DataTable();
-        vizData.addColumn('datetime', this.plotX.value);
-        vizData.addColumn('number', this.plotY.value);
-        
-        for (let i = 0; i < this.data[this.plotX.value].length; i++) {
-          vizData.addRow([ new Date(this.data[this.plotX.value][i]), parseFloat(this.data[this.plotY.value][i]) ]);
+      if (this.isBigQuery == false) {
+        if (this.isActive) {
+          this.plotBtn.textContent = "Close Quick Plot";
+          this.chartDiv.style.zIndex = "2";
+          this.finderDiv.style.zIndex = "1";
+          let vizData = new google.visualization.DataTable();
+          vizData.addColumn('datetime', this.plotX.value);
+          vizData.addColumn('number', this.plotY.value);
+          
+          for (let i = 0; i < this.data[this.plotX.value].length; i++) {
+            vizData.addRow([ new Date(this.data[this.plotX.value][i]), parseFloat(this.data[this.plotY.value][i]) ]);
+          }
+  
+          console.log(this.chartDiv.clientWidth);
+          let chart = new google.visualization.LineChart(this.chartDiv);
+          let options = {
+            title: this.plotY.value,
+            width: this.chartDiv.offsetWidth,
+            height: this.chartDiv.offsetHeight,
+            legend: 'none' as 'none',
+            pointSize: 10
+          };
+          chart.draw(vizData, options);
+          
+        } else {
+          this.plotBtn.textContent = "Quick Plot";
+          this.finderDiv.style.zIndex = "2";
+          this.chartDiv.style.zIndex = "1";
         }
+      }
+      else if (this.isBigQuery == true) {
+        if (this.isActive) {
+          this.plotBtn.textContent = "Close Quick Plot";
+          this.chartDiv.style.zIndex = "2";
+          this.finderDiv.style.zIndex = "1";
 
-        console.log(this.chartDiv.clientWidth);
-        let chart = new google.visualization.LineChart(this.chartDiv);
-        let options = { title: this.plotY.value, width: this.chartDiv.offsetWidth, height: this.chartDiv.offsetHeight, legend: 'none' as 'none'};
-        chart.draw(vizData, options);
-        
-      } else {
-        this.plotBtn.textContent = "Quick Plot";
-        this.finderDiv.style.zIndex = "2";
-        this.chartDiv.style.zIndex = "1";
+          let vizData = new google.visualization.DataTable();
+          if (this.plotX.value === 'timestamp') {
+            vizData.addColumn('datetime', this.plotX.value);
+          } else {
+            vizData.addColumn('number', this.plotX.value);
+          }
 
+          if (this.plotY.value === 'timestamp') {
+            vizData.addColumn('datetime', this.plotY.value);
+          } else {
+            vizData.addColumn('number', this.plotY.value);
+          }
+
+          for (let i = 0; i < this.data[this.plotX.value]. length; i++) {
+            vizData.addRow([this.data[this.plotX.value][i], this.data[this.plotY.value][i]]);
+          }
+          let chart = new google.visualization.LineChart(this.chartDiv);
+          let options = {
+            title: this.plotY.value,
+            width: this.chartDiv.offsetWidth,
+            height: this.chartDiv.offsetHeight,
+            legend: 'none' as 'none',
+            pointSize: 10
+          };
+          chart.draw(vizData, options);
+        } else {
+          this.plotBtn.textContent = "Quick Plot";
+          this.finderDiv.style.zIndex = "2";
+          this.chartDiv.style.zIndex = "1";
+        }
       }
     });
 
@@ -497,6 +556,7 @@ export class Mkchart {
 
   public populateAxisFields(data: any) {
     this.data = data;
+    this.isBigQuery = false;
     for (let key of Object.keys(data)) {
       if (Array.isArray(data[key]) 
         && (key.includes("_dates") || key.toLowerCase().includes('times'))) {
@@ -515,6 +575,52 @@ export class Mkchart {
         this.plotY.appendChild(option);
       }
     }
+  }
+
+  public bqPopulateAxisFields(dataArr: any, dataset: string) {
+    this.isBigQuery = true;
+    if (dataset === "eyedata") {
+      let eyedataObj: any = {};
+      //console.log('bqpopulate axis dataArr', dataArr);
+      dataArr.forEach((data: any) => {
+        // console.log('data in dataArr', data);
+        for (let key of Object.keys(data)) {
+          //console.log('key', key);
+          if (key === "timestamp") {
+            try {
+              eyedataObj[key].push(new Date(data[key].value));
+            } catch {
+              eyedataObj[key] = [];
+              eyedataObj[key].push(new Date(data[key].value));
+              this.addAxisOption(key);
+            }
+          } else {
+            try {
+              eyedataObj[key].push(parseFloat(data[key]));
+            } catch {
+              eyedataObj[key] = [];
+              eyedataObj[key].push(parseFloat(data[key]));
+              this.addAxisOption(key);
+            }
+          }
+        }
+      });
+      this.data = eyedataObj;
+    }
+
+  }
+
+  private addAxisOption(key: string) {
+    let optionX = document.createElement('option');
+    optionX.setAttribute('class', 'axis-options');
+    optionX.setAttribute('value', key);
+    optionX.textContent = key;
+    let optionY = document.createElement('option');
+    optionY.setAttribute('class', 'axis-options');
+    optionY.setAttribute('value', key);
+    optionY.textContent = key;
+    this.plotX.appendChild(optionX);
+    this.plotY.appendChild(optionY);
   }
 
   public removeElementsByClassName(cName: string) {

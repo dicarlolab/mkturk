@@ -2,6 +2,7 @@ import * as firebase from "firebase/app";
 import "firebase/firestore";
 import "firebase/storage";
 import "firebase/auth";
+import "firebase/functions";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",
@@ -28,7 +29,7 @@ firebase.auth().getRedirectResult().then(result => {
   }
 });
 
-
+const functions = firebase.functions();
 const db = firebase.firestore();
 const storage = firebase.storage();
 const storageRef = storage.ref(); 
@@ -38,11 +39,25 @@ let isRoot = true;
 let mkq = new Mkquery();
 let mkf = new Mkfinder();
 
+let bqListDatasets = functions.httpsCallable('bqListDatasets');
+
+let bqDatasetList = bqListDatasets();
+bqDatasetList.then((datasetList: any) => {
+  let bqOptgroup = 
+    document.querySelector('#bigquery-optgroup') as HTMLOptGroupElement;
+  datasetList.data.forEach((dataset: any) => {
+    let option = document.createElement('option');
+    option.value = dataset;
+    option.textContent = 'bq/' + dataset;
+    bqOptgroup.appendChild(option);
+  });
+});
+
 
 let rfidToggle = document.querySelector("#rfid-switch") as HTMLInputElement;
 let qryLocSelc = document.querySelector("#qry-loc-selector") as HTMLSelectElement;
 let fieldSelector =
-    document.querySelector<HTMLSelectElement>("#field-selector");
+    document.querySelector("#field-selector") as HTMLSelectElement;
 
 
 /* Quick Links */
@@ -333,6 +348,29 @@ qryLocSelc!.addEventListener("change", ev => {
       fs.dispatchEvent(new Event("change"));
 
       break;
+
+    case "eyedata":
+      fs.style.visibility = "visible";
+      ki0.style.visibility = "visible";
+      ki1.style.visibility = "visible";
+      ki2.style.visibility = "hidden";
+      goBtn.style.visibility = "visible";
+      plotX.style.visibility = "visible";
+      plotY.style.visibility = "visible";
+      plotBtn.style.visibility = "visible";
+
+      resetPlaceholder();
+      removeElementsByClassName("field-options");
+
+      let bqAgentDate = document.createElement("option");
+      bqAgentDate.setAttribute("class", "field-options");
+      bqAgentDate.setAttribute("value", "nameCurDate");
+      bqAgentDate.setAttribute("selected", "true");
+      bqAgentDate.textContent = "Name & CurrentDate";
+
+      fs.appendChild(bqAgentDate);
+      fs.dispatchEvent(new Event("change"));
+      break;
   }
 });
 
@@ -407,11 +445,18 @@ fieldSelector?.addEventListener("change", ev => {
         "placeholder", "CurrentDate (e.g. 04/17/2019; +-7)"
       );
       break;
+    
+    case "eyedata":
+      ki0.setAttribute("placeholder", "Agent");
+      ki1.setAttribute(
+        "Placeholder", "Date (e.g. 04/17/2019)"
+      );
+      break;
   }
 });
 
 let queryForm = document.querySelector<HTMLFormElement>("#mkquery-form");
-queryForm?.addEventListener("submit", ev => {
+queryForm?.addEventListener("submit", async ev => {
   ev.preventDefault();
   console.log("test weird");
   let qryLoc = qryLocSelc?.value;
@@ -420,114 +465,98 @@ queryForm?.addEventListener("submit", ev => {
   let k1 = document.querySelector<HTMLInputElement>("#keyword-input-1")?.value;
   let k2 = document.querySelector<HTMLInputElement>("#keyword-input-2")?.value;
 
-  let queryParam: { field: string, keyword: string}[];
+  let queryParam: { field: string, keyword: string}[] = [];
   let queryStr: string = "";
   let query: firebase.firestore.Query;
 
 
-  if (qryLoc === "marmosets" && field && k0) {
-    queryParam = [ { field: field, keyword: k0 } ];
-    queryStr = "db.collection('marmosets')" + mkq.mkquery(queryParam);
+  switch(qryLoc) {
+    case "marmosets":
+      if (k0) {
+        queryParam.push({ field: field, keyword: k0 });
+      } else {
+        console.error("No query arguments!");
+        alert("No query arguments!");
+      }
+      queryStr = "db.collection('marmosets')" + mkq.mkquery(queryParam);
+      break;
+
+    case "mkturkdata":
+      if (k0) {
+        queryParam.push({ field: "Agent", keyword: k0});
+      }
+      if (k1) {
+        queryParam.push({ field: "Doctype", keyword: k1 });
+      }
+      if (k2) {
+        queryParam.push({ field: "CurrentDate", keyword: k2 });
+      }
+
+      if (queryParam.length > 0) {
+        queryStr = "db.collection('mkturkdata')" + mkq.mkquery(queryParam);
+      } else {
+        console.error("No query arguments!");
+        alert("No query arguments!");
+      }
+      break;
+
+    case "objects":
+      if (k0) {
+        queryParam.push({ field: field, keyword: k0 });
+      } else {
+        console.error("No query arguments!");
+        alert("No query arguments!");
+      }
+      queryStr = "db.collection('objects')" + mkq.mkquery(queryParam);
+      break;
+
+    case "mkscale":
+      if (k0) {
+        queryParam.push({ field: "Name", keyword: k0 });
+      }
+      if (k1) {
+        queryParam.push({ field: "CurrentDate", keyword: k1 });
+      }
+      
+      if (queryParam.length > 0) {
+        queryStr = "db.collection('mkscale')" + mkq.mkquery(queryParam);
+      } else {
+        console.error("No query arguments!");
+        alert("No query arguments!");
+      }
+      break;
+
+    case "eyedata":
+      if (k0 && k1) {
+        queryStr = mkq.mkbquery("eyedata", k0, k1);
+      } else {
+        console.error("Incorrect query: Need two query arguments!");
+        alert("Incorrect query: Need two query arguments!");
+      }
+      break;
+  }
+  
+
+  if (queryStr.startsWith('db.collection')) {
+    query = eval(queryStr);
+    let ret = mkq.decodeQuery(query);
+    ret.then(docs => {
+      mkf.listFirestoreDocs(docs, qryLoc!);
+      if (rfidToggle.checked) {
+        mkf.finder.selectRow();
+        mkf.mke.displayFirebaseTextFile(mkf.finder.getData()[0], "marmosets");
+      }
+    });
   }
 
-  else if (qryLoc === "mkturkdata" && field) {
-    if (k0 && k1 && k2) {
-      queryParam = [ 
-        { field: "Agent", keyword: k0 },
-        { field: "Doctype", keyword: k1 },
-        { field: "CurrentDate", keyword: k2 }
-      ];
-      queryStr = "db.collection('mkturkdata')" + mkq.mkquery(queryParam);
-    }
-
-    else if (k0 && k1 && !k2) {
-      queryParam = [
-        { field: "Agent", keyword: k0 },
-        { field: "Doctype", keyword: k1 }
-      ];
-      queryStr = "db.collection('mkturkdata')" + mkq.mkquery(queryParam);
-    }
-
-    else if (k0 && !k1 && k2) {
-      queryParam = [
-        { field: "Agent", keyword: k0 },
-        { field: "CurrentDate", keyword: k2 }
-      ];
-      queryStr = "db.collection('mkturkdata')" + mkq.mkquery(queryParam);
-    }
-
-    else if (!k0 && k1 && k2) {
-      queryParam = [
-        { field: "Doctype", keyword: k1 },
-        { field: "CurrentDate", keyword: k2 }
-      ];
-      queryStr = "db.collection('mkturkdata')" + mkq.mkquery(queryParam);
-    }
-
-    else if (k0 && !k1 && !k2) {
-      queryParam = [
-        { field: "Agent", keyword: k0 }
-      ];
-      queryStr = "db.collection('mkturkdata')" + mkq.mkquery(queryParam);
-    }
-
-    else if (!k0 && k1 && !k2) {
-      queryParam = [
-        { field: "Doctype", keyword: k1 }
-      ];
-      queryStr = "db.collection('mkturkdata')" + mkq.mkquery(queryParam);
-    }
-
-    else if (!k0 && !k1 && k2) {
-      queryParam = [
-        { field: "CurrentDate", keyword: k2 }
-      ];
-      queryStr = "db.collection('mkturkdata')" + mkq.mkquery(queryParam);
-    }   
+  else if (queryStr.startsWith('SELECT *')) {
+    let test = mkq.decodeBigQuery(queryStr);
+    console.log(test);
+    test.then(data => {
+      mkf.listBigQueryTable(data.data, qryLoc, k0!);
+    })
   }
-
-  else if (qryLoc === "objects" && field && k0) {
-    queryParam = [ { field: field, keyword: k0 } ];
-    queryStr = "db.collection('objects')" + mkq.mkquery(queryParam);
-  }
-
-  else if (qryLoc === "mkscale" && field) {
-    if (k0 && k1) {
-      queryParam = [
-        { field: "Name", keyword: k0 },
-        { field: "CurrentDate", keyword: k1 }
-      ];
-      queryStr = "db.collection('mkscale')" + mkq.mkquery(queryParam);
-    }
-    else if (k0 && !k1) {
-      queryParam = [
-        { field: "Name", keyword: k0 }
-      ];
-      queryStr = "db.collection('mkscale')" + mkq.mkquery(queryParam);
-    }
-
-    else if (!k0 && k1) {
-      queryParam = [
-        { field: "CurrentDate", keyword: k1 }
-      ];
-      queryStr = "db.collection('mkscale')" + mkq.mkquery(queryParam);
-    }
-  }
-
-  else {
-    console.error("Incorrent Query");
-    alert("Incorrent Query");
-  }
-
-  query = eval(queryStr);
-  let ret = mkq.decodeQuery(query);
-  ret.then(docs => {
-    mkf.listFirestoreDocs(docs, qryLoc!);
-    if (rfidToggle.checked) {
-      mkf.finder.selectRow();
-      mkf.mke.displayFirebaseTextFile(mkf.finder.getData()[0], "marmosets");
-    }
-  });
+  
 });
 
 function resetPlaceholder() {

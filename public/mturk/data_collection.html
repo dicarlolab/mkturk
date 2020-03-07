@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport">
+    <meta content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Type">
+    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+  </head>
+
+  <body>
+
+    <div class="mdl-layout mdl-js-layout">
+      <main class="mdl-layout__content">
+        <div class="page-content mdl-grid" id="main-container">
+
+
+
+          <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--2-offset-desktop mdl-cell--8-col-desktop" id="scale-card">
+           <form>
+             FORM
+           </form>
+
+          </div> <!-- end scale-card -->
+
+          <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--2-offset-desktop mdl-cell--8-col-desktop" id="scale-card">
+            <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="connect-ble-scale">
+              CONNECT BLE SCALE
+            </button>
+
+            <span id="weight-display">0.0 g</span>
+
+            <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="tare-button">
+              TARE/ZERO
+            </button>
+
+          </div> <!-- end scale-card -->
+
+
+        </div> <!-- page-content -->
+      </main> <!-- mdl-layout__content-->
+
+    </div> <!-- mdl-layout mdl-js-layout -->
+
+    <script src="/__/firebase/7.6.2/firebase-app.js"></script>
+    <script src="/__/firebase/7.6.2/firebase-auth.js"></script>
+    <script src="/__/firebase/7.6.2/firebase-firestore.js"></script>
+    <script src="/__/firebase/7.6.2/firebase-storage.js"></script>
+    <script src="/__/firebase/init.js"></script>
+
+    <script src="mkscale.js"></script>
+
+  </body>
+</html>

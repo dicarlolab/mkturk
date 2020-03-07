@@ -1,0 +1,21 @@
+{
+  "name": "mkturk_src",
+  "version": "1.0.0",
+  "description": "typescript source code for mkturk",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Hector Cho @ IssaLab",
+  "license": "ISC",
+  "dependencies": {
+    "@types/mathjs": "^6.0.4",
+    "firebase": "^7.9.3",
+    "mathjs": "^6.6.1"
+  },
+  "devDependencies": {
+    "typescript": "^3.9.0-dev.20200304",
+    "webpack": "^4.42.0",
+    "webpack-cli": "^3.3.11"
+  }
+}
