@@ -367,6 +367,11 @@ export class CURRTRIAL implements T.CURRTRIAL {
   }
 }
 
+export class EVENTS {
+  public trialnum: number;
+}
+
+
 export class TRIAL implements T.TRIAL {
   public StartTime: any[];
   public FixationGridIndex: any[];

@@ -11,7 +11,9 @@ export class Utils {
     console.log(str);
   }
 
-  public purgeTrackingVariables(TRIAL: T.TRIAL, ENV: T.ENV, FLAGS: T.FLAGS) {
+  public purgeTrackingVariables(CURRTRIAL: T.CURRTRIAL, TRIAL: T.TRIAL, ENV: T.ENV, FLAGS: T.FLAGS) {
+
+
     TRIAL = TRIAL.reset(ENV, FLAGS);
 
     ENV.CurrentDate = new Date();
@@ -21,6 +23,12 @@ export class Utils {
     ENV.FirestoreDocRoot = dateStr.slice(0, dateStr.indexOf('.')) 
       + '_' + ENV.Subject;
 
-    if (FLAGS.waitingforTouches > 0 || FLAGS.purge == 1)   
+    if (FLAGS.waitingforTouches > 0 || FLAGS.purge == true) {
+      // purge requested by user at the beginning of the trial during
+      // fixation (most likely)
+      console.log('setting to 0');
+      CURRTRIAL.num = 0;
+      
+    }   
   }
 }

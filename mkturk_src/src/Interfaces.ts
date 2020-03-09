@@ -193,6 +193,41 @@ export interface CURRTRIAL {
 
 // TODO: export interface EVENTS
 
+export interface trialseries {
+  Sample: any;
+  Test: any;
+  CorrectItem: any;
+  FixationGridIndex: any;
+  StartTime: any;
+  FixationTouchEvent: any;
+  FixationXYT: any;
+  Response: any;
+  TSequenceDesired: any;
+  TSequenceActual: any;
+  ResponseTouchEvent: any;
+  ResponseXYT: any;
+  NReward: any;
+  BatteryLDT: any;
+  BLEBatteryLT: any;
+  RFIDTag: any;
+  Weight: any;
+}
+
+export interface imageseries {
+  SampleObjectTy: any;
+  SampleObjectTz: any;
+  SampleObjectRxy: any;
+  SampleObjectRxz: any;
+  SampleObjectRyz: any;
+  SampleObjectScale: any;
+  TestObjectTy: any;
+  TestObjectTz: any;
+  TestObjectRxy: any;
+  TestObjectRxz: any;
+  TestObjectRyz: any;
+  TestObjectScale: any;
+}
+
 // check types 
 export interface trialhistory {
   trainingstage: any[],
