@@ -37,6 +37,8 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 				//keep processing touchstart, touchmove, touchend events
 			}
 
+console.log('CURRTRIAL.cxyt.length = ' + CURRTRIAL.cxyt.length)
+
 			//================== GET XYT & CHOSEN BOX ==================//
 			var touchcxyt = [-1, -1, -1, -1]
 			if (FLAGS.waitingforTouches > 0 && touchevent.type != "touchend" && touchevent.type != "mouseup"){
@@ -72,7 +74,8 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 
 				//Accumulate cxyt in box for greater eyetracker accuracy
 				if (chosenbox != -1){
-					CURRTRIAL.cxyt.push(touchcxyt) //also accumulate for current trial				
+					console.log('stored cxyt: ' + touchcxyt)
+					CURRTRIAL.cxyt.push(touchcxyt) //also accumulate for current trial			
 				}
 			}//IF still waiting, get cxyt data
 
@@ -101,7 +104,7 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 					if (TASK.TrackEye > 0){
 						ENV.Eye.timeOfLastGlanceInBB = touchcxyt[3]
 						ENV.Eye.EventType = "eyemove" //in box, so future states are "eyemove" (from "undefined" in usb code)
-						console.log('!!!! EYE ENTERED BOX !!!!')
+						console.log('!!!! EYE ENTERED BOX !!!!  ' + touchcxyt)
 					}
 
 					//START TIMER touchduration milliseconds
@@ -161,12 +164,18 @@ console.log('!!!! BROKE FIXATION !!!!')
 			//Median x,y = final eye position estimate
 			var xs = []
 			var ys = []
-			for (var q = 0; q<=CURRTRIAL.cxyt.length-1; q++){
-				xs.push(CURRTRIAL.cxyt[q][1])
-				ys.push(CURRTRIAL.cxyt[q][2])
+			if (CURRTRIAL.cxyt.length > 0)
+			{
+				for (var q = 0; q<=CURRTRIAL.cxyt.length-1; q++){
+					xs.push(CURRTRIAL.cxyt[q][1])
+					ys.push(CURRTRIAL.cxyt[q][2])
+				}
+				touchcxyt[1] = math.median(xs)
+				touchcxyt[2] = math.median(ys)
+			}//IF
+			else {
+				console.log('NO EYE POINTS ' + CURRTRIAL.cxyt)
 			}
-			touchcxyt[1] = math.median(xs)
-			touchcxyt[2] = math.median(ys)
 		}
 		return_event.cxyt = touchcxyt
 		resolveFunc(return_event)

@@ -7,7 +7,8 @@ constructor(samplingStrategy){
 	// Queues
 	this.sampleq = {}
 	this.sampleq.index = []; 
-	this.sampleq.filename = []; 
+	this.sampleq.filename = [];
+	this.samplebucket = [];
 
 	this.testq = {}
 	this.testq.indices = []; 
@@ -69,6 +70,10 @@ async build(trial_cushion_size){
 			this.testbag_paths[i] = []
 		}
 	} //for i scene bags (labels)
+
+	for (var i=0; i<=this.samplebag_indices.length-1; i++){
+		this.samplebucket.push(i)
+	}
 
 	// array of zeros
 	this.ntrials_per_bag = new Array(Math.max(...this.samplebag_labels)+1)
@@ -278,10 +283,27 @@ async get_next_trial(){
 
 selectSampleImage(samplebag_indices, SamplingStrategy){
 
+//global bucket
+if (this.samplebucket.length == 0){
+	for (var i=0; i<=samplebag_indices.length-1; i++){
+		this.samplebucket.push(i)
+	}
+}//Need to make a new bucket
+
+
 	// Vanilla random uniform sampling with replacement: 
 	var sample_image_index = NaN
 	if(SamplingStrategy == 'uniform_with_replacement'){
-		sample_image_index = samplebag_indices[Math.floor((samplebag_indices.length)*Math.random())];
+		sample_image_index = this.samplebucket[Math.floor((this.samplebucket.length)*Math.random())];
+	}
+	else if (SamplingStrategy == 'uniform_without_replacement'){
+		var randind = Math.floor((this.samplebucket.length)*Math.random())
+		sample_image_index = this.samplebucket[randind]
+		this.samplebucket.splice(randind,1)
+	}
+	else if (SamplingStrategy == 'sequential'){
+		sample_image_index = this.samplebucket[0] //take next image
+		this.samplebucket.splice(0,1)
 	}
 	else {
 		throw SamplingStrategy + " not implemented in selectSampleImage."

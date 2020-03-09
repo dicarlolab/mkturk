@@ -13,9 +13,16 @@ async function initThreeJS(scenedata) {
     renderer.setClearColor(0x7F7F7F,0);
     renderer.physicallyCorrectLights = true;
     renderer.toneMappingExposure = 10;   // set exposure to light
-    renderer.gammaOutput = true;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+
+
     renderer.autoClear = false;
+    renderer.setPixelRatio(ENV.ThreeJSRenderRatio)
     document.body.append(renderer.domElement);
+
+    renderer.domElement.style.width =  VISIBLECANVAS.clientWidth+ 'px'; //keeps CSS size unchanged
+    renderer.domElement.style.height =  VISIBLECANVAS.clientHeight+ 'px'; //keeps CSS size unchanged
+
     // init scene
     scene = {}
 

@@ -618,6 +618,10 @@ function displayTrial(sequence,tsequence){
 						    	console.timeEnd("test1 render")
 				    		} //FOR j test items
 				    	} //IF test
+
+				    	if (sequence[frame.current] == "sample" && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
+				    		saveScreenshot(VISIBLECANVASWEBGL,CURRTRIAL.num,sequence[frame.current],frame.current)
+				    	}//save out images
 					} //IF sample || test || fixationusessample
 
 					if (sequence[frame.current] == "choice" && TASK.KeepTestON == 0 && TASK.KeepSampleON == 0){
@@ -671,11 +675,15 @@ function displayTrial(sequence,tsequence){
 						} //if touchfix || test
 					} //if failed again
 				} //if failed
-			}//if offsecreen api available
+			}//IF Offscreen api available
 			else {
 				//render directly, offscreencanvas is visiblecanvas
 				renderScreen(sequence[frame.current],OFFSCREENCANVAS)
-			}
+			}//IF Offscreen not available
+
+	    	if (sequence[frame.current] == "sample" && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
+	    		saveScreenshot(VISIBLECANVAS,CURRTRIAL.num,sequence[frame.current],frame.current)
+	    	}//save out images
 
 			tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
 			frame.shown[frame.current]=1;
@@ -909,6 +917,10 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 		}
 	} //IF testON (same-different choice screen)
 
+	if (FLAGS.scene3d == 1 && (VISIBLECANVASWEBGL.width > 4096 || VISIBLECANVASWEBGL.height > 4096) ){
+		outofbounds_str = outofbounds_str + "Canvas may be too large for webgl limit of 4096 pixels in either dimension -- 3d rendering may not be accurate! Consider using a smaller display size."
+	}
+
 	if (outofbounds_str == ''){
 		outofbounds_str = 'All display elements are fully visible'
 	}
@@ -1042,10 +1054,59 @@ function setViewport(gridindex){
 	var scenewidth = renderer.getContext().canvas.width
 	var sceneheight = renderer.getContext().canvas.height
 	var left = scenecenterX - scenewidth/2
-	var bottom = scenecenterY + sceneheight/2 
-	bottom = renderer.getContext().canvas.height-bottom
+	var bottom = -sceneheight/2 + (VISIBLECANVAS.clientHeight-scenecenterY)
+
 
 	renderer.setViewport(left, bottom, scenewidth, sceneheight);
 	renderer.setScissor(left,bottom,scenewidth,sceneheight)
 	renderer.setScissorTest(true)
 }
+
+async function saveScreenshot(canvasobj,currtrial,frametype,framenum){
+	//---- upload screenshot to firebase 
+	//sample image will be uploaded to the appropriate folder in the scene 
+
+	var currtrial_samplepath = TASK.ImageBagsSample[CURRTRIAL.sample_scenebag_label]
+	var currtrial_date = ENV.DataFileName
+	var currtrial_parampath = ENV.ParamFileName
+
+	//path to scene folder
+	var ind_start = currtrial_samplepath.lastIndexOf('/')
+	var ind_end = currtrial_samplepath.indexOf('.js')
+	var scenefolder = currtrial_samplepath.substring(0,ind_end)
+
+	//paramfolder name
+	var ind_start = currtrial_parampath.lastIndexOf('/')
+	var ind_end = currtrial_parampath.indexOf('.txt')
+	var paramfolder = currtrial_parampath.substring(ind_start+1,ind_end)
+
+	//date 
+	var ind_start = currtrial_date.lastIndexOf('/')
+	var ind_end = currtrial_date.indexOf('T')
+	var date = currtrial_date.substring(ind_start+1,ind_end) 
+
+	var storage_path = scenefolder + '_scene_'
+ 						+ date + '_' + paramfolder + '_'
+						+ ENV.DeviceName + '_device'
+
+	if (canvasobj.width > 4096 || canvasobj.height > 4096){
+		console.log("Canvas may be too large for webgl limit of 4096 pixels in either dimension -- Image Saving may not be accurate! Consider using a smaller display size.")
+	}
+
+	canvasobj.toBlob(function(blob){
+		var fullpath = storage_path + '/'
+						+ canvasobj.id 
+						+ '_' + 'trialnum' + currtrial 
+						+ '_' + frametype + framenum 
+						+ '_' + 'label' + CURRTRIAL.sample_scenebag_label
+						+ '.png'
+		try {
+			var response = storage.ref().child(fullpath).put(blob)
+			console.log("saved image: " + fullpath);
+			console.log("FIREBASE: Successful image file upload. Size:" + Math.round(response.totalBytes/1000) + 'kb')
+		}
+		catch (error){
+			console.log(error)
+		}
+	})
+}//FUNCTION saveScreenshot
