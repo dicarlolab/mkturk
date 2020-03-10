@@ -11,9 +11,10 @@ export class Utils {
     console.log(str);
   }
 
-  public purgeTrackingVariables(CURRTRIAL: T.CURRTRIAL, TRIAL: T.TRIAL, ENV: T.ENV, FLAGS: T.FLAGS) {
-
-
+  public purgeTrackingVariables(CURRTRIAL: T.CURRTRIAL, TRIAL: T.TRIAL,
+    EVENTS: T.EVENTS, ENV: T.ENV, FLAGS: T.FLAGS) {
+    
+    // purges heresies committed in the test period
     TRIAL = TRIAL.reset(ENV, FLAGS);
 
     ENV.CurrentDate = new Date();
@@ -28,7 +29,16 @@ export class Utils {
       // fixation (most likely)
       console.log('setting to 0');
       CURRTRIAL.num = 0;
-      
-    }   
+      EVENTS.trialnum = 0;
+    } else {
+      console.log('setting to -1');
+      // purge requested by automator at the end of a trial
+      CURRTRIAL.num = -1;
+    }
+
+    FLAGS.sampleblockcount = 0;
+    FLAGS.consecutivehits = 0;
+
+    return;
   }
 }

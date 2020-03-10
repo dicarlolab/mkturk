@@ -191,10 +191,12 @@ export class FLAGS implements T.FLAGS {
   public need2loadScenes: number;
   public scene3d: number;
   public need2loadParameters: number;
+  public need2writeParameters: number;
   public savedata: number;
   public stage: number;
   public imagesPresent: number;
   public stickyresponse: number;
+  public sampleblockcount: number;
 
   public waitingforTouches: number;
   public touchduration: number;
@@ -217,10 +219,12 @@ export class FLAGS implements T.FLAGS {
     this.need2loadScenes = 1;
     this.scene3d = 0;
     this.need2loadParameters = 1;
+    this.need2writeParameters = 0;
     this.savedata = 0;
     this.stage = 0;
     this.imagesPresent = 0;
     this.stickyresponse = 0;
+    this.sampleblockcount = 0;
 
     this.waitingforTouches = 0;
     this.touchduration = -1;
@@ -367,8 +371,99 @@ export class CURRTRIAL implements T.CURRTRIAL {
   }
 }
 
-export class EVENTS {
+export class EVENTS implements T.EVENTS {
   public trialnum: number;
+  public trialseries: T.trialseries;
+  public timeseries: T.timeseries;
+  public imageseries: T.imageseries;
+
+  constructor() {
+
+  }
+
+  public reset(currTrialNum: number) {
+    this.trialnum = currTrialNum;
+    this.trialseries = {
+      Sample: {},
+      Test: {},
+      CorrectItem: {},
+      FixationGridIndex: {},
+      StartTime: {},
+      FixationTouchEvent: {},
+      FixationXYT: {},
+      Response: {},
+      TSequenceDesired: {},
+      TSequenceActual: {},
+      ResponseTouchEvent: {},
+      ResponseXYT: {},
+      NReward: {},
+      BatteryLDT: {},
+      BLEBatteryLT: {},
+    };
+
+    this.timeseries = {
+      RFIDTag: {},
+      Weight: {},
+      EyeData: {}
+    };
+
+    this.imageseries = {
+      SampleObjectTy: {},
+      SampleObjectTz: {},
+      SampleObjectRxy: {},
+      SampleObjectRxz: {},
+      SampleObjectRyz: {},
+      SampleObjectScale: {},
+      TestObjectTy: {},
+      TestObjectTz: {},
+      TestObjectRxy: {},
+      TestObjectRxz: {},
+      TestObjectRyz: {},
+      TestObjectScale: {}
+    };
+  }
+
+  public log(evName: string, evVal: any[], evType: string, TRIAL: TRIAL, ENV: ENV, FLAGS: FLAGS) {
+    if (evType == 'trialseries' || evType == 'imageseries') {
+      let evIdx: number = NaN;
+      if (evName == 'BatteryLDT') {
+        evIdx = TRIAL.BatteryLDT.length - 1;
+      } else if (evName == 'BLEBatteryLT') {
+        // evIdx = blescale.tbattery.length - 1;
+      }
+
+      if (FLAGS.savedata == 0) {
+        evIdx = 0; // store most recent trial in first position until start saving data
+      }
+
+      if (typeof(evVal) == 'number' || typeof(evVal) == 'string'
+        || evVal.length == 1) {
+          if (!Array.isArray(this[evType][evName])) {
+            this[evType][evName] = [];
+          }
+          this[evType][evName][evIdx] = evVal;
+      }
+      else if (typeof(evVal) == 'object'){
+        for (let i = 0; i < evVal.length; i++) {
+          if (typeof(this[evType][evName][i]) == 'undefined') {
+            this[evType][evName][i] = [];
+          }
+          this[evType][evName][i][evIdx] = evVal[i];
+        }
+      }
+    }
+    else if (evType == 'timeseries') {
+      let evIdx: number;
+      if (FLAGS.savedata == 0) {
+        evIdx = 0;
+      }
+      evIdx = Object.keys(this[evType][evName]).length;
+
+      let trialtime = [this.trialnum, Date.now() - ENV.CurrentDate.valueOf()];
+      this[evType][evName][evIdx] = trialtime.concat(evVal);
+    }
+  }
+
 }
 
 

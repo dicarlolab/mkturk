@@ -104,10 +104,12 @@ export interface FLAGS {
   need2loadScenes: number,
   scene3d: number,
   need2loadParameters: number,
+  need2writeParameters: number,
   savedata: number,
   stage: number,
   imagesPresent: number,
   stickyresponse: number,
+  sampleblockcount: number,
 
   waitingforTouches: number,
   touchduration: number,
@@ -191,7 +193,12 @@ export interface CURRTRIAL {
   init(): any,
 }
 
-// TODO: export interface EVENTS
+export interface EVENTS {
+  trialnum: number;
+  trialseries: trialseries;
+  timeseries: timeseries;
+  imageseries: imageseries;
+}
 
 export interface trialseries {
   Sample: any;
@@ -209,8 +216,12 @@ export interface trialseries {
   NReward: any;
   BatteryLDT: any;
   BLEBatteryLT: any;
+}
+
+export interface timeseries {
   RFIDTag: any;
   Weight: any;
+  EyeData: any;
 }
 
 export interface imageseries {
