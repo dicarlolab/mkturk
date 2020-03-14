@@ -1,0 +1,14 @@
+/* #colony-tab {
+  min-height: 100%;
+} */
+
+#colony-tab {
+  min-height: 80vh;
+}
+
+/* #colony-table-card {
+} */
+
+#colony-table {
+  overflow-y: scroll;
+}
