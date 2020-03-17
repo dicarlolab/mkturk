@@ -12,3 +12,24 @@
 #colony-table {
   overflow-y: scroll;
 }
+
+#colony-weight-card {
+  display: grid;
+  grid-template-rows: 8fr 1fr;
+  grid-template-areas: "clWtPlot"
+                       "clWtDateFilter";
+}
+
+#colony-weight-card > * {
+  margin: 0px;
+}
+
+#colony-weight-plot {
+  grid-area: clWtPlot;
+}
+
+#colony-weight-date-filter {
+  grid-area: clWtDateFilter;
+}
+
+

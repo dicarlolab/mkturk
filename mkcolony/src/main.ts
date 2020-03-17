@@ -40,11 +40,11 @@ const clWtPlotDiv
 const clFlPlotDiv
   = document.querySelector('#colony-fluid-plot') as HTMLDivElement;
 
-let mkcolony = new Mkcolony(clTableDiv, clWtPlotDiv, clFlPlotDiv);
+let mkcolony = new Mkcolony();
 
 let ret = mkcolony.loadData(db.collection('marmosets'));
 ret.then(docs => {
   mkcolony.populateTable(docs);
-  console.log('docs', docs);
-  mkcolony.reorganizeData(docs);
+  // console.log('docs', docs);
+  mkcolony.plotColonyData(docs);
 });
