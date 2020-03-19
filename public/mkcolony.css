@@ -32,4 +32,17 @@
   grid-area: clWtDateFilter;
 }
 
+#agent-bio {
+  padding: 10px;
+  height: 100%;
+  display: grid;
+  grid-template-rows: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
+}
+
+#agent-bio > *{
+  padding-top: 5px;
+  font-size: 20px;
+  vertical-align: middle;
+}
 

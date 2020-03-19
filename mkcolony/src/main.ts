@@ -46,5 +46,5 @@ let ret = mkcolony.loadData(db.collection('marmosets'));
 ret.then(docs => {
   mkcolony.populateTable(docs);
   // console.log('docs', docs);
-  mkcolony.plotColonyData(docs);
+  mkcolony.plotColonyData();
 });
