@@ -1,9 +1,8 @@
-import firebase from 'firebase/app';
+import * as firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/storage';
 import 'firebase/auth';
 import 'firebase/functions';
-import { Mkcolony } from './mkcolony';
 
 const firebaseConfig = {
   apiKey: "AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",
@@ -13,8 +12,9 @@ const firebaseConfig = {
   storageBucket: "sandbox-ce2c5.appspot.com",
   messagingSenderId: "1003719887944"
 };
-
 firebase.initializeApp(firebaseConfig);
+
+import { Mkcolony } from './mkcolony';
 
 let provider = new firebase.auth.GoogleAuthProvider();
 provider.addScope('https://www.googleapis.com/auth/contacts.readonly');

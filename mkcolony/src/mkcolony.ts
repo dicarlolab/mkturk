@@ -1,9 +1,10 @@
 import * as firebase from 'firebase/app';
 import 'firebase/firestore';
 
-
 type div = HTMLDivElement;
 type Timestamp = firebase.firestore.Timestamp;
+const db = firebase.firestore();
+
 export class Mkcolony {
 
   public clTableDiv: div;
@@ -17,15 +18,11 @@ export class Mkcolony {
   public agBioDiv: div;
   public agWtCard: div;
   public agWtPlotDiv: div;
-
-  
-  
-  
-  
+  public agFlCard: div;
+  public agFlPlotDiv: div;
   
   public marmosetData: any[];
   public marmosetDataDic: any;
-
 
   private clTable: Tabulator;
 
@@ -45,7 +42,6 @@ export class Mkcolony {
     this.agBioDiv = document.querySelector('#agent-bio') as div;
     this.agWtCard = document.querySelector('#agent-weight-card') as div;
   }
-
 
   public populateTable(data: any[]) {
     this.marmosetData = this.processData(data);
@@ -120,6 +116,35 @@ export class Mkcolony {
     let agentData = this.marmosetDataDic[agentName];
     this.populateAgentBio(agentData);
     this.plotAgentWeight(agentData);
+    this.processFluidData(agentName);
+  }
+
+  private plotAgentFluid(data: any) {
+
+  }
+
+  public processFluidData(agentName: string) {
+    let endDate = new Date();
+    let startDate = new Date(endDate).setMonth(endDate.getMonth() - 1);
+    console.log('endDate', endDate);
+    console.log('startDate', startDate);
+    let query 
+      = db.collection('mkturkdata')
+      .where('Agent', '==', agentName)
+      .where('Doctype', '==', 'task')
+      .where('CurrentDate', '>=', new Date(startDate))
+      .where('CurrentDate', '<=', new Date(endDate));
+    
+    let data = new Array();
+    console.log('query', query);
+    query.get().then(querySnapshot => {
+      querySnapshot.forEach(doc => {
+        console.log('doc', doc.data());
+      });
+    }).catch(error => {
+      console.log(error);
+    });
+  
   }
 
   private populateAgentBio(data: any) {
@@ -237,8 +262,6 @@ export class Mkcolony {
     this.agBioDiv.appendChild(weightSpan);
     this.agBioDiv.appendChild(weightVal);
   }
-
-  
 
   private timestampToDate(data: any[]) {
     function tsArrToDate(elem: Timestamp, idx: number, arr: any[]) {
@@ -465,7 +488,6 @@ export class Mkcolony {
     clWtDashboard.draw(clWtDataTable);
   }
 
-
   public plotColonyData() {
     console.log(this.marmosetData);
     this.plotColonyWeight();
@@ -504,6 +526,5 @@ export class Mkcolony {
 
     return dt;
   }
-
 
 }
