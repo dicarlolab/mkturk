@@ -95,11 +95,10 @@
   grid-template-areas: "upload download";
 }
 
-#chart-canvas {
+#chart-div {
   grid-column: 1;
   grid-row: 1;
   z-index: 1;
-  background-color: white;
 }
 
 #filter-value {
@@ -163,7 +162,7 @@
   grid-template-rows: 0.125fr 10fr 0.25fr;
   grid-template-areas: "file-name"
                        "editor"
-                       "update-btn";
+                       "btn-box";
 
   max-height: inherit;
   height: 100%;
@@ -184,8 +183,20 @@
   font-weight: bold;
 }
 
+#button-box {
+  grid-area: btn-box;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas: "update-btn update-btn";
+}
+
 #update-btn {
   grid-area: update-btn;
+}
+
+#active-btn {
+  grid-area: active-btn;
+  display: none;
 }
 
 #image-canvas-div {

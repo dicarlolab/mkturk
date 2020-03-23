@@ -42,7 +42,7 @@
 
 
 <script type="text/javascript">
-// Flow:
+// Flow: 
 // authenticate --> loadGoogleCharts --> getfilesfromfirebase
 // checkFileStatus -- wait 1 second -- if new data -->
 // readDatafromFirebase --> initializeChartData --> updatePlots
@@ -69,7 +69,7 @@ function loadGoogleCharts() {
         dataChoice = new google.visualization.DataTable()
         dataObjPerf = new google.visualization.DataTable()
         dataWeight = new google.visualization.DataTable()
-
+     
         // Establish dependencies, declaring that the sliders drive 'liveline' & 'livearea',
         // so that data will only display for entries that are let through
         // given the chosen slider range.
@@ -91,7 +91,7 @@ function loadGoogleCharts() {
             'chartType': 'LineChart',
             'containerId': 'line_div'
         })
-
+    
        dashboard2 = new google.visualization.Dashboard(document.getElementById('dashboard2_div'));
 
         livesliderTime = new google.visualization.ControlWrapper({
@@ -119,10 +119,10 @@ function loadGoogleCharts() {
         livereward = new google.visualization.ColumnChart(document.getElementById('reward_div'));
         livechoice = new google.visualization.ColumnChart(document.getElementById('choice_div'));
         liveobjperf = new google.visualization.ColumnChart(document.getElementById('objectPerf_div'));
-
+        
         liveweight = new google.visualization.ColumnChart(document.getElementById('weight_div'));
-
-
+       
+        
         // data formatters
         formatterDate = new google.visualization.DateFormat({
             pattern: 'h aa'
@@ -147,27 +147,27 @@ function loadGoogleCharts() {
 
 //================== FIREBASE STORAGE STUFF ==================//
 async function getFileListRecursiveFirebase(dir,ext){
-    var fileList = await storage.ref().child(dir).listAll()
+	var fileList = await storage.ref().child(dir).listAll()
 
-    var files = []
-    for (const item of fileList.prefixes){
-        var subfileList = await getFileListRecursiveFirebase(dir + item.name + '/',ext)
-        files = [...files, ...subfileList]
-    }
-    for (i=0; i<=fileList.items.length-1; i++){
-        if (typeof(ext) == 'string'){
-            if (fileList.items[i].name.endsWith(ext)){
-                files.push({fullpath: fileList.items[i].fullPath, name: fileList.items[i].name})
-            } //if correct file extension
-            else {
-                // file does not have requested extension
-            }
-        }
-        else {
+	var files = []
+	for (const item of fileList.prefixes){
+		var subfileList = await getFileListRecursiveFirebase(dir + item.name + '/',ext)
+		files = [...files, ...subfileList]
+	}
+	for (i=0; i<=fileList.items.length-1; i++){
+		if (typeof(ext) == 'string'){
+			if (fileList.items[i].name.endsWith(ext)){
+				files.push({fullpath: fileList.items[i].fullPath, name: fileList.items[i].name})
+			} //if correct file extension
+			else {
+				// file does not have requested extension
+			}
+		}
+		else {
             files.push({fullpath: fileList.items[i].fullPath, name: fileList.items[i].name})
-        } //if file extension required
-    }
-    return files
+		} //if file extension required
+	}
+	return files
 } //recursviely accumulate files from subfolders (if any)
 
 
@@ -207,7 +207,7 @@ filelist.sort(function(a, b) {
             var opt = document.createElement('option')
             opt.value = i
             opt.innerHTML = filelist[i].name
-            menuobj.appendChild(opt)
+            menuobj.appendChild(opt)              
         } //for i files
         file.name = file.filelist[0].fullpath
         file.filehasChanged = true
@@ -250,9 +250,9 @@ async function checkFileStatusFirebase() {
 async function loadDatafromFirebase(textfile_path){
     try{
     var textfileRef = storage.ref().child(textfile_path)
-    url = await textfileRef.getDownloadURL()
-    response = await fetch(url)
-    var datajson = await response.json()
+	url = await textfileRef.getDownloadURL()
+	response = await fetch(url)
+	var datajson = await response.json()
 
 
     if (Array.isArray(datajson)) {
@@ -349,7 +349,7 @@ function initializeChartData() {
 // 8: y Target_punish (dots)
     dataXYPos.addColumn('number', 'xpos')
     dataXYPos.addColumn('number','Fixation')
-    dataXYPos.addColumn('number','Sample')
+    dataXYPos.addColumn('number','Sample')  
     for (var i = 0; i<=file.data.TestGridIndex.length-1;i++){
         if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0 && i > 0){
             break
@@ -436,7 +436,7 @@ function toVitals() {
         vitals.MaxWeight = file.data.Weight.reduce(function(a, b) {
             return Math.max(a, b);
         });
-
+        
         vitals.LastWeightTime = Math.round(Math.round(file.data.WeightTime[file.data.WeightTime.length - 1] - file.data.StartTime[0]) / 60000);
         //convert millisecond to minutes
     } else {
@@ -463,7 +463,7 @@ function toVitals() {
         vitals.currentautomatorstagename = null
     }
 
-    if (typeof (file.data.BatteryLDT) != "undefined") {
+    if (typeof (file.data.BatteryLDT) != "undefined" && file.data.BatteryLDT.length != 0) {
         vitals.batteryleft = Math.round(file.data.BatteryLDT[file.data.BatteryLDT.length - 1][0] * 100);
         vitals.batteryused = Math.round(file.data.BatteryLDT[0][0] * 100 - vitals.batteryleft);
     } else {
@@ -477,7 +477,7 @@ function toVitals() {
             ncorrect++;
         }
     }
-    vitals.ncorrect = ncorrect;
+    vitals.ncorrect = ncorrect; 
     vitals.pctcorrect = Math.round(100 * ncorrect / file.data.Response.length);
 
     if (typeof (file.data.NReward) != "undefined") {
@@ -533,7 +533,7 @@ function toPerformanceData() {
     }
 
     // Store fixation in odd indices and choice in even
-    // All touchevents. touchevent has a length that is twice the length of file.data.FixationXYT or file.data.ResponseXYT
+    // All touchevents. touchevent has a length that is twice the length of file.data.FixationXYT or file.data.ResponseXYT 
     if (typeof file.data.ResponseXYT != "undefined" && file.data.ResponseXYT.length >= 1) {
         for (var i = 0; i <= file.data.FixationXYT.length * 2 - 1; i += 2) {
             touchevent[i] = file.data.FixationXYT[i / 2]
@@ -558,15 +558,15 @@ function toPerformanceData() {
         if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0){
             choicewidth = file.data.ChoiceSizeInches * file.data.ViewportPPI
             choiceheight = file.data.ChoiceSizeInches * file.data.ViewportPPI
-        }
+        }                
     }
     else {
         fixationwidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.FixationScale
         fixationheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.FixationScale
         if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0){
             choicewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.ChoiceScale
-            choiceheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.ChoiceScale
-        }
+            choiceheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.ChoiceScale 
+        }        
     }//IF screen-specific physical PPI implemented
 
 
@@ -584,7 +584,7 @@ function toPerformanceData() {
         testheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.TestScale
     } //ELSE 2D
 
-
+    
     var ndisplayelements = 0
 
     //FIXATION
@@ -617,7 +617,7 @@ function toPerformanceData() {
     //SAMPLE
     ndisplayelements++
     sample_xcoord = file.data.XGridCenter[file.data.SampleGridIndex]
-    sample_ycoord = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.SampleGridIndex]
+    sample_ycoord = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.SampleGridIndex]    
 
     var  arr = new Array(nColumn)
     arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
@@ -707,18 +707,18 @@ function toPerformanceData() {
             arr[ndisplayelements] = choice_ycoord[i]-choiceheight*file.data.CanvasRatio
             dataXYPos.addRows([arr])
         } //for n-way
-    } //if rewardstage != 0
+    } //if rewardstage != 0    
 
     var xpos_Fix = []
     var ypos_Fix = []
     var xpos_T = []
     var ypos_T = []
     var nTarget = [0,0]
-
+    
     for (var i = 0; i <= touchevent.length - 1; i++) {
         xpos = touchevent[i][0]
         ypos = file.data.workspace[3]*file.data.CanvasRatio-touchevent[i][1]+file.data.offsettop
-
+        
         var ydata_index = []
         if (i % 2 == 0) {
             ydata_index = i / 2
@@ -728,31 +728,31 @@ function toPerformanceData() {
 
         if (xpos != -1) {
             var arr = new Array(nColumn)
-            arr[0] = xpos
+            arr[0] = xpos 
             if (i % 2 == 0){ //if even (fixation)
                 xpos_Fix.push(xpos)
                 ypos_Fix.push(ypos)
                 if (ydata[ydata_index]==1){
                 //Fixation and Hit
-                arr[ndisplayelements+1] = ypos
+                arr[ndisplayelements+1] = ypos 
                 dataXYPos.addRows([arr])
                 } else{
                //Fixation and Missed
-                arr[ndisplayelements+2] = ypos
+                arr[ndisplayelements+2] = ypos 
                 dataXYPos.addRows([arr])
                 }
             } else { //if odd (choice)
                 var xpos_T_arr = Array.apply(null, Array(file.data.TestGridIndex.length)).map(Number.prototype.valueOf, 0);
                 var ypos_T_arr = Array.apply(null, Array(file.data.TestGridIndex.length)).map(Number.prototype.valueOf, 0);
-                for (var j = 0; j<=file.data.TestGridIndex.length-1; j++){  //different targets
-
+                for (var j = 0; j<=file.data.TestGridIndex.length-1; j++){  //different targets 
+                    
                     if (file.data.Response[ydata_index] == j){
                         xpos_T_arr[j] = xpos
                         ypos_T_arr[j] = ypos
                         nTarget[j]++
                     }
-                    xpos_T.push(xpos_T_arr)
-                    ypos_T.push(ypos_T_arr)
+                    xpos_T.push(xpos_T_arr)  
+                    ypos_T.push(ypos_T_arr)  
                 }
 
                 if (ydata[ydata_index]==1){ //Target and hit
@@ -760,7 +760,7 @@ function toPerformanceData() {
                     dataXYPos.addRows([arr])
 
                 } else{ //target and Missed
-                    arr[ndisplayelements+4] = ypos
+                    arr[ndisplayelements+4] = ypos 
                     dataXYPos.addRows([arr])
                 } //if
             }// if even else odd
@@ -771,24 +771,24 @@ function toPerformanceData() {
          dist_xpos_Fix = xpos_Fix.map(function(a){return Math.pow(Math.abs(a-mean_xpos_Fix),2)})
          dist_ypos_Fix = ypos_Fix.map(function(a){return Math.pow(Math.abs(a-mean_ypos_Fix),2)})
          std_Fix = dist_xpos_Fix.map(function(a,i){return Math.sqrt(a+dist_ypos_Fix[i])}).reduce(function(a,b){return a+b},0)/dist_xpos_Fix.length
-         vitals.std_Fix = std_Fix
+         vitals.std_Fix = std_Fix            
 
         var std_T = []
-        for (var j=0; j<=file.data.TestGridIndex.length-1;j++){
+        for (var j=0; j<=file.data.TestGridIndex.length-1;j++){                 
              all_xpos_T = xpos_T.map(function(a){return a[j]}).filter(function(a){return a!=0})
-             mean_xpos_T = all_xpos_T.reduce(function(a,b){return a+b},0)/all_xpos_T.length
+             mean_xpos_T = all_xpos_T.reduce(function(a,b){return a+b},0)/all_xpos_T.length 
              dist_xpos_T = all_xpos_T.map(function(a){return Math.pow(Math.abs(a-mean_xpos_T),2)})
-             all_ypos_T = ypos_T.map(function(a){return a[j]}).filter(function(a){return a!=0})
+             all_ypos_T = ypos_T.map(function(a){return a[j]}).filter(function(a){return a!=0})  
              mean_ypos_T = all_ypos_T.reduce(function(a,b){return a+b},0)/all_ypos_T.length
              dist_ypos_T = all_ypos_T.map(function(a){return Math.pow(Math.abs(a-mean_ypos_T),2)})
              std_T[j]= dist_xpos_T.map(function(a,i){return Math.sqrt(a+dist_ypos_T[i])}).reduce(function(a,b){return a+b},0)/all_xpos_T.length
         } //for j test choices
         vitals.std_T = std_T
-    } //for i touch events
+    } //for i touch events   
 
     ydata_5 = smooth(ydata,5);
     ydata_100 = smooth(ydata,100);
-
+    
 //Referencing to time file was last written & time of last trial rather than to file start.
     //Done because file can be changed on the fly which changes file start relative to performance.now()
     if (typeof file.data.ResponseXYT === 'undefined' || file.data.ResponseXYT.length < 1 || typeof file.data.ResponseXYT[file.data.ResponseXYT.length - 1][2] === 'undefined') {
@@ -797,7 +797,7 @@ function toPerformanceData() {
         var tend = file.data.ResponseXYT[file.data.ResponseXYT.length - 1][2]
     }
 
-
+    
     for (var i = 0; i <= ydata.length - 1; i++){
         dataPerformance.addRows([[xdata[i], ydata_5[i],ydata_100[i]]])
         var tfix = file.data.FixationXYT[i][2]
@@ -832,12 +832,12 @@ function toPerformanceData() {
     }
 
     formatterDate.format(dataCumulative, 0)
-
+   
 }
 //Synchronous
 function toWeightData(){
     dataWeight.removeRows(0,dataWeight.getNumberOfRows());
-
+    
     if (typeof(file.data.WeightTime) != null && typeof(file.data.WeightTime) != "undefined"){
 
     for (var i=0; i<=file.data.WeightTime.length-1;i++){
@@ -845,7 +845,7 @@ function toWeightData(){
         tt.setTime(tt.getTime()-file.data.StartTime[0]+file.data.WeightTime[i])
         dataWeight.addRows([[new Date(tt),file.data.Weight[i]]])
     }
-
+    
 }
     formatterDate.format(dataWeight, 0)
 }
@@ -854,17 +854,17 @@ function toWeightData(){
 function toObjPerfData(){
 
     dataObjPerf.removeRows(0,dataObjPerf.getNumberOfRows());
-
+    
     if (file.data.RewardStage == 1){
         var sampleobj = []
-        if (file.data.NTrialsPerBagBlock >5000){ //detection task
+        if (file.data.NTrialsPerBagBlock >5000){ //detection task 
             sampleobj[0] = file.data.ImageBagsSample[0].split("/")[5];
             dataObjPerf.addRow([sampleobj[0],0]);
             var sampleobj_length = 1;
         }
         else{
             var sampleobj = []
-
+    
             for (var i=0; i<=file.data.ImageBagsSample.length-1;i++){
                 sampleobj[i] = file.data.ImageBagsSample[i].split("/")[5];
                 dataObjPerf.addRow([sampleobj[i],0]);
@@ -900,11 +900,11 @@ function toObjPerfData(){
 function toChoiceData() {
      dataChoice.removeRows(0,dataChoice.getNumberOfRows());
 
-    if (file.data.RewardStage !=0){ //Non-fixation task
+    if (file.data.RewardStage !=0){ //Non-fixation task 
     var possibleResp = Array.apply(null,Array(file.data.ObjectGridIndex.length)).map(Number.prototype.valueOf,0);
+   
 
-
-    if (file.data.ObjectGridIndex.length !=0 && (file.data.NTrialsPerBagBlock == undefined || file.data.NTrialsPerBagBlock <1000)){ //Stimulus Response Task
+    if (file.data.ObjectGridIndex.length !=0 && (file.data.NTrialsPerBagBlock == undefined || file.data.NTrialsPerBagBlock <1000)){ //Stimulus Response Task 
         let objgridindex = [...file.data.ObjectGridIndex]
         objgridindex.sort(function (a,b) {return a-b})
         var allind = []
@@ -941,7 +941,7 @@ function toChoiceData() {
 
     }
     }
-    else{ //Fixation Task
+    else{ //Fixation Task 
         dataChoice.addRow(['outside Fix',0]);
         dataChoice.addRow(['inside Fix',0]);
 
@@ -969,12 +969,12 @@ function toChoiceData() {
             }
             dataChoice.setValue(j,1,NdiffChoice[j]/NallChoice)
         }
-
+           
         }
     }
 
 }
-
+    
 
 // Synchronous
 function toRewardData() {
@@ -994,7 +994,7 @@ function toRewardData() {
 
     for (var i = 0; i <= file.data.NReward.length - 1; i++) {
         if (file.data.Response[i] == -1){
-                NdiffReward[0]++    //timeout trials
+                NdiffReward[0]++    //timeout trials 
                 dataReward.setValue(0,1,NdiffReward[0]/file.data.NReward.length)
             }
         else{
@@ -1005,7 +1005,7 @@ function toRewardData() {
                dataReward.setValue(j, 1, NdiffReward[j] / file.data.NReward.length)
 
             }
-
+            
         }
 
     }
@@ -1045,20 +1045,20 @@ function updatePlots() {
 
 // Synchronous
 function addVitalsText() {
-    lineOptions.title = vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.ncorrect + " out of " + vitals.trials + ", r=" + vitals.nrewards + "=" + vitals.rewardestimate + "mL, " +
-    vitals.time + "min)     " + "Automator: " + vitals.automator + ", Stage " + vitals.currentautomatorstage + "_" + vitals.currentautomatorstagename + "     " +
-    "Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  " + "Last Trial:" + file.dateSaved.toLocaleTimeString('en-US') +
+    lineOptions.title = vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.ncorrect + " out of " + vitals.trials + ", r=" + vitals.nrewards + "=" + vitals.rewardestimate + "mL, " + 
+    vitals.time + "min)     " + "Automator: " + vitals.automator + ", Stage " + vitals.currentautomatorstage + "_" + vitals.currentautomatorstagename + "     " + 
+    "Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  " + "Last Trial:" + file.dateSaved.toLocaleTimeString('en-US') + 
     "\n RFID_Tag:" + vitals.RFIDtag + ", RFID_Time:" + vitals.RFIDtime + " min," + "Max Weight: " + vitals.MaxWeight + " g, Last Weight time:" + vitals.LastWeightTime + " minutes after task start"
     titleobj.innerHTML = vitals.subject;
 }
 
 //Synchronous
 function addTouchSDText(){
-    scatterOptions.title = "Touch Locations " + " -- standard dev: "
+    scatterOptions.title = "Touch Locations " + " -- standard dev: " 
                             + "\n Fixation: " + Math.round(vitals.std_Fix*10)/10 + " pixels"
 
     for (var i = 0; i<=vitals.std_T.length-1; i++){
-        scatterOptions.title = scatterOptions.title +
+        scatterOptions.title = scatterOptions.title + 
         "\n Target" + i + ": " + Math.round(vitals.std_T[i]*10)/10
     }
 }
@@ -1068,7 +1068,7 @@ function addTaskText() {
     if (task.rewardstage == 0) {
         task["name"] = "Fixation";
         var nchoice = 1
-    }
+    } 
     else if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0){
         task["name"] = "Same-Different"
         var nchoice = 2
@@ -1192,7 +1192,7 @@ function drawWeight() {
 
 //Synchronous
 function drawObjPerfBar() {
-    liveobjperf.draw(dataObjPerf, objPerfBarOptions)
+    liveobjperf.draw(dataObjPerf, objPerfBarOptions)   
 }
 
 
@@ -1202,10 +1202,10 @@ function drawScatter() {
     for (var i=0; i<dataXYPos.getNumberOfColumns();i++){
         if (dataXYPos.getColumnLabel(i) == "Fixation"){
             scatterOptions.series[i-1] = {type:'line',color:'gray'} //,visibleInLegend: false}
-        } //if fixation
+        } //if fixation 
         else if (dataXYPos.getColumnLabel(i) == "Sample"){
             scatterOptions.series[i-1] = {type:'line',color:'black'} //,visibleInLegend: false}
-        } // else if sample
+        } // else if sample 
         else if (dataXYPos.getColumnLabel(i) == "Same"){
             scatterOptions.series[i-1] = {type:'line',color:'green'} //,visibleInLegend: false}
         } // else if same
@@ -1231,7 +1231,7 @@ function drawScatter() {
     viewWindow: {
         min: 0, max: file.data.workspace[2]*file.data.CanvasRatio}
     },
-    scatterOptions.vAxis = {title: 'Y position (pixels)',
+    scatterOptions.vAxis = {title: 'Y position (pixels)', 
     viewWindow: {
         min: 0, max: file.data.workspace[3]*file.data.CanvasRatio}
     }
@@ -1407,15 +1407,15 @@ nobj: 0,
 objectlist: [],
 }
 
-var dataPerformance = null;
+var dataPerformance = null; 
 var dataCumulative = null;
 var dataXYPos = null;
 var dataReward = null;
 var dataChoice = null;
 var dataObjPerf = null;
-var dataWeight = null;
+var dataWeight = null; 
 var liveline = null;
-var formatterDate = null;
+var formatterDate = null; 
 var formatterDigits = null;
 var formatterColor = null;
 
@@ -1428,15 +1428,15 @@ provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
 firebase.auth().getRedirectResult().then(function(result) {
   if (result.user) {
     // User just signed in. you can get the result.credential.
-    console.log('Sign-In Redirect Result, USER ' + result.user.email + ' is signed in')
+	console.log('Sign-In Redirect Result, USER ' + result.user.email + ' is signed in')
   }
   else if (firebase.auth().currentUser) {
     // User already signed in.
-    console.log('Sign-In Redirect Result, USER ' + firebase.auth().currentUser.email + ' is signed in')
+	console.log('Sign-In Redirect Result, USER ' + firebase.auth().currentUser.email + ' is signed in')
   }
   else {
     // No user signed in, update your UI, show the redirect sign-in screen.
-    firebase.auth().signInWithRedirect(provider)
+	firebase.auth().signInWithRedirect(provider)
   }
 });
 //================== (end) AUTHENTICATE GOOGLE ==================//

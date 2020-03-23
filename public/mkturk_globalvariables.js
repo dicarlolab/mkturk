@@ -34,6 +34,7 @@ ENV.ImageHeightPixels = NaN;
 ENV.ImageWidthPixels = NaN;
 ENV.CanvasRatio = 1
 ENV.DevicePixelRatio = 1
+ENV.ThreeJSRenderRatio = 4
 ENV.FixationRadius = 0
 ENV.FixationColor = ''
 ENV.ChoiceRadius = 0
@@ -57,18 +58,18 @@ ENV.OffscreenCanvasAvailable = 0
 
 
 ENV.UserAgent = window.navigator.userAgent
-ENV.DeviceType = deviceAPI.deviceType || -1
-ENV.DeviceBrand = deviceAPI.Brand || -1
-ENV.DeviceName = deviceAPI.deviceName  || -1
-ENV.DeviceScreenWidth = deviceAPI.screenWidth || -1
-ENV.DeviceScreenHeight = deviceAPI.screenHeight  || -1
-ENV.DeviceGPU = deviceAPI.GPU || -1
-ENV.DeviceBrowserName = deviceAPI.browserName || -1
-ENV.DeviceBrowserVersion = deviceAPI.browserVersion || -1
-ENV.DeviceOSName = deviceAPI.osName || -1
-ENV.DeviceOSCodename = deviceAPI.osCodeName || -1
-ENV.DeviceOSVersion = deviceAPI.osVersion || -1
-ENV.DeviceTouchscreen = deviceAPI.touchScreen || -1
+ENV.DeviceType = ''
+ENV.DeviceBrand = ''
+ENV.DeviceName = ''
+ENV.DeviceScreenWidth = ''
+ENV.DeviceScreenHeight = ''
+ENV.DeviceGPU = ''
+ENV.DeviceBrowserName = ''
+ENV.DeviceBrowserVersion = ''
+ENV.DeviceOSName = ''
+ENV.DeviceOSCodename = ''
+ENV.DeviceOSVersion = ''
+ENV.DeviceTouchscreen = ''
 
 ENV.ScreenRatio = -1
 ENV.ScreenSizePixels = [-1,-1]
@@ -84,6 +85,25 @@ ENV.FixationScale = -1
 ENV.SampleScale = -1
 ENV.TestScale = -1
 ENV.ChoiceScale = -1
+
+
+//================ EYE GLOBALS ================//
+ENV.Eye = {}
+
+//Eye states
+ENV.Eye.EventType = 'eyestart'
+ENV.Eye.timeOfLastGlanceInBB = -1
+ENV.Eye.BlinkGracePeriod = 200
+
+//Calibration
+ENV.Eye.calibration = 0;
+ENV.Eye.CalibXTransform = []
+ENV.Eye.CalibYTransform = []
+ENV.Eye.CalibType = 'default'
+ENV.Eye.NCalibPointsTrain = 0
+ENV.Eye.NCalibPointsTest = 0
+ENV.Eye.CalibTrainMSE = []
+ENV.Eye.CalibTestMSE = []
 
 //================ OTHER GLOBALS (NOT SAVED) ================//
 var FLAGS = {} // Global that keeps track of the task's requests to the Dropbox/server/disk/whatever; buffering requests; etc.
@@ -130,6 +150,8 @@ var CANVAS = {
 var OFFSCREENCANVAS = null
 var VISIBLECANVAS = document.getElementById("canvasvisible")
 var VISIBLECANVASWEBGL = document.getElementById("canvasvisiblewebgl")
+var EYETRACKERCANVAS = document.getElementById("canvaseyetracker")
+
 
 var frame = {
 	current: 0,
@@ -158,6 +180,7 @@ CURRTRIAL.lastTrialCompleted = new Date
 CURRTRIAL.lastFirebaseSave = new Date
 CURRTRIAL.tsequenceactual = []
 CURRTRIAL.tsequencedesired = []
+CURRTRIAL.xyt = [];
 
 CURRTRIAL.sampleobjectty = []
 CURRTRIAL.sampleobjecttz = []
@@ -202,6 +225,7 @@ EVENTS.reset = function(){
 	this.trialseries.BLEBatteryLT = {}
 	this.timeseries.RFIDTag = {}
 	this.timeseries.Weight = {}
+	this.timeseries.EyeData = {}
 
 	this.imageseries.SampleObjectTy = {}
 	this.imageseries.SampleObjectTz = {}

@@ -30,6 +30,8 @@ FixationScale (computed internally and stored in ENV.FixationScale instead of pr
 
 FixationSizeInches: Size of fixation dot or image (ie FixationUsesSample=1) in physical inches on the screen
 
+FixationTimeOut: Time in milliseconds that subject has to acquire fixation before fixation dot or image extinguishes. If fixation times out, then it is just re-displayed (flashes) and no reward or punishment is administered (ie, trial is aborted)
+
 FixationUsesSample: FixationUsesSample=0, a fixation circle is shown for subject to touch; FixationUsesSample=1, sample image is shown as the fixation image. This allows implementation of a trianing strategy where the subject has to engage the sample image nfixations number of times before the choice screen.
 
 GridScale (deprecated, replaced by GridSpacingInches): Determines intergridpoint spacing. Can think of this as the resolution of grid. gridscale=1 means intergridpoint spacing is equal to the width of the sample image. Finer grid resolutions (gridscale<1) can be used for more precise sample positioning.
@@ -47,6 +49,8 @@ ImageBagsSample: List of (list of) paths, where entries at the top level are dir
 ImageBagsTest: List of (list of) paths, where entries at the top level are directories / imagepaths for the test images of one group; e.g. [['/buttons/bear_icon.png, '/buttons/dog_icon.png'], ['/buttons/face_icon1.png, '/buttons/face_icon2.png']]
 
 ImageRewardsList: List of paths containing user-specified reward per image. Images in the image_reward_list file need to be referenced by their complete path. ImageReward values: 0=no feedback (no reward or punish for that sample image) >0=user set reward for that sample image, overrides bonus reward behavior. These can be partial lists. For images where reward is manually specified, then default bonus reward behavior is used. No corresponding list is used for test (choice) images. Instead, specify reward for a whole class by listing reward for each image in that class in ImageRewardsList.
+
+InterTrialInterval: How long to wait after reward/punish is delivered before starting next trial. Only a gray screen is shown for InterTrialInterval milliseconds, followed by the fixation dot.
 
 KeepSampleON: KeepSampleON=0, sample is presented only for sampleON milliseconds for a delayed match-to-sample, KeepSampleON=1 sample remains on during choice screen. This implements a spatial match to sample.
 
@@ -66,8 +70,6 @@ NStickyResponse: Number of times subject can choose the same location on the scr
 
 NTrialsPerBagBlock: if 0, randomly samples from all bags (default: interleaved match-t0-sample), if >0, samples N consecutive images from the same sample image bag. This is equivalent to blocking the session so that training is done in object blocks rather than interleaving all objects. After N trials are completed for bag i, proceeds to next bag i+1 according to bag sequence specified in ImageBagsSample. When all bags have been sampled NTrialsPerBagBlock times, starts back at bag 0.
 
-NTrialsPerBagBlock: if 0, randomly samples from all bags (default: interleaved match-t0-sample), if >0, samples N consecutive images from the same sample image bag. This is equivalent to blocking the session so that training is done in object blocks rather than interleaving all objects. After N trials are completed for bag i, proceeds to next bag i+1 according to bag sequence specified in ImageBagsSample. When all bags have been sampled NTrialsPerBagBlock times, starts back at bag 0.
-
 ObjectGridIndex: Used for SR task. If this variable is set, then each object is tied to a particular location on the grid. ObjectGrid.length must equal objectlist.length for appropriate assignment of each object label to a grid location
 
 Pump: 1=adafruit peristaltic 2=submersible centrifugal tcs 3=diaphragm pump tcs 4=piezoelectric 3mL takasago 5=newer diaphragm pumps tcs 6=piezoelectric 7mL takasago
@@ -79,6 +81,8 @@ RewardPer1000Trials: Amount of liquid reward in mL for 1000 correct trials. For 
 RewardStage: RewardStage=0 rewards for successful fixtion and skips the choice phase of task. RewardStage=1 rewards for selecting the correct choice.
 
 SampleGridIndex: Index on grid where sample image appears. SampleGridIndex=4 centers the image on a 3x3 grid, where ngridpoints=3
+
+SamplingStrategy: Determines how sample images are drawn: uniform_with_replacement, uniform_without_replacement, sequential
 
 SampleOFF: Duration in milliseconds that a gray screen is presented after the sample image before the response screen. This implements the delay in a DMS task. SampleOFF=0, leads to no delay
 
@@ -127,29 +131,45 @@ DataFileName: complete file path and name of datafile
 
 DevicePixelRatio: In a typical retina display, there can be a devicePixelRatio of 2 so that each 1x1 logical pixel is rendered using 2x2 logical pixels. This upsampling requires interpolation and can lead to blurring over your image. However, this can be compensated by setting the CanvasRatio = BackingStoreRatio/DevicePixelRatio
 
-DeviceBrand: eg Not available (for google devices) or Apple (depends on deviceAPI)
+DeviceBrand: eg Not available (for google devices) or Apple
 
-DeviceBrowserName: eg Chrome or Safari(depends on deviceAPI)
+DeviceBrowserName: eg Chrome or Safari
 
-DeviceBrowserVerion: eg 78.0.3904.90 or 12.0 (depends on deviceAPI)
+DeviceBrowserVerion: eg 78.0.3904.90 or 12.0
 
-DeviceGPU: eg Adreno (TM) 640 or Apple A9 GPU (depends on deviceAPI)
+DeviceGPU: eg Adreno (TM) 640 or Apple A9 GPU
 
-DeviceName: the name of the device used by mkturk to search firestore records eg Pixel 4 XL or iPhone 6s Plus (depends on deviceAPI)
+DeviceName: the name of the device used by mkturk to search firestore records eg Pixel 4 XL or iPhone 6s Plus
 
-DeviceOSName: eg Android 10 or iOS 12.0.1 (depends on deviceAPI)
+DeviceOSName: eg Android 10 or iOS 12.0.1
 
-DeviceOSCodename: eg Android or iOS (depends on deviceAPI)
+DeviceOSCodename: eg Android or iOS
 
-DeviceOSVersion: eg 10 or 12.0.1 (depends on deviceAPI)
+DeviceOSVersion: eg 10 or 12.0.1
 
-DeviceScreenWidth: physical display pixels (depends on deviceAPI)
+DeviceScreenWidth: full window (viewport) pixels
 
-DeviceScreenHeight: physical display pixels (depends on deviceAPI)
+DeviceScreenHeight: full window (viewport) pixels
 
-DeviceTouchscreen: 0 (not available) or 1 (available), indicates if touchscreen functionality available on device (depends on deviceAPI)
+DeviceTouchscreen: 0 (not available) or 1 (available), indicates if touchscreen functionality available on device
 
-DeviceType:desktop or mobile(depends on deviceAPI)
+DeviceType:desktop or mobile
+
+Eye.BlinkGracePeriod: time in milliseconds that eye is allowed to be outside the fixation window without counting it as a fixation break. Any period longer than Eye.BlinkGracePeriod milliseconds outside the window is considered a fixation break.
+
+Eye.CalibXTransform: Stores the parameters from the linear regression fit of eye tracker's x,y --> screen x (eg x_screen = a*x + b*y + c)
+
+Eye.CalibYTransform: Stores the parameters from the linear regression fit of eye tracker's x,y --> screen y (eg y_screen = a*x + b*y + c)
+
+Eye.CalibType: type of calibration ('default': based on screen size, 'linear': linear regression fit)
+
+Eye.NCalibPointsTrain: Number of points for fitting the regression
+
+Eye.NCalibPointsTest: Number of points for testing the regression (usually set to the same number of points used for training)
+
+Eye.CalibTrainMSE: The train MSE for NCalibPointsTrain training points
+
+Eye.CalibTestMSE: The test MSE for NCalibPointsTest testing points
 
 FixationRadius: Radius of fixation image in pixels. This is not set by the user. Rather, user specifies FixationScale, and then FixationRadius stores the actual pixel-based size in the json data file.
 

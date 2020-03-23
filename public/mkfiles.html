@@ -14,6 +14,7 @@
     <script src="mkfiles_extendKeys.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/7.0.4/jsoneditor.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.3.7/viewer.css" rel="stylesheet">
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
   </head>
 
   <body>
@@ -29,9 +30,12 @@
 
           <!-- NAVIGATION -->
           <nav class="mdl-navigation">
-            <a class="mdl-navigation__link" id="quick-link-marmosets" href="">firestore/marmosets</a>
-            <a class="mdl-navigation__link" id="quick-link-mkturkdata" href="">firestore/mkturkdata</a>
-            <a class="mdl-navigation__link" id="quick-link-mkturkfiles" href="">gcs/mkturkfiles</a>
+            <a class="mdl-navigation__link" id="quick-link-params" href=""><b>params</b></a>
+            <a class="mdl-navigation__link" id="quick-link-images" href=""><b>images</b></a>
+            <a class="mdl-navigation__link" id="quick-link-scenes" href=""><b>scenes</b></a>
+            <a class="mdl-navigation__link" id="quick-link-marmosets" href="">marmosets</a>
+            <a class="mdl-navigation__link" id="quick-link-mkturkdata" href="">mkturkdata</a>
+            <a class="mdl-navigation__link" id="quick-link-objects" href="">objects</a>
             <label class="mdl-switch mdl-js-switch mdl-js-ripple-effect" for="rfid-switch">
               <input type="checkbox" id="rfid-switch" class="mdl-switch__input">
               <span class="mdl-switch__label" id="rfid-switch-span" style="color:red; font-weight: bolder;">RFID OFF</span>
@@ -54,12 +58,19 @@
                 
               <select class="selector" id="qry-loc-selector">
                 <option disabled selected>Query Location</option>
-                  <optgroup label="Firestore/DB">
+                  <optgroup label="Firestore/DB" id='firestore-optgroup'>
                     <option value="marmosets">firestore/marmosets</option>
-                    <option value="mkturkdata">firestore/mkturkdate</option>
+                    <option value="mkturkdata">firestore/mkturkdata</option>
+                    <option value="objects">firestore/objects</option>
+                    <option value="devices">firestore/devices</option>
+                    <option value="eyecalibrations">firestore/eyecalibrations</option>
+                    <option value="mkscale">firestore/mkscale</option>
                   </optgroup>
-                  <optgroup label="Cloud Storage">
+                  <optgroup label="Cloud Storage" id='storage-optgroup'>
                     <option value="mkturkfiles">gcs/mkturkfiles</option>
+                  </optgroup>
+                  <optgroup label="BigQuery" id='bigquery-optgroup'>
+                    
                   </optgroup>
               </select>
 
@@ -117,8 +128,8 @@
                 </button>
               </div>
             </div>
-
-            <canvas id="chart-canvas"></canvas>
+            
+            <div id="chart-div"></div>
 
           </div> <!-- finder card -->
 
@@ -126,7 +137,10 @@
             <div id="editor-div">
               <p id="file-name-span">Filename:</p>
               <div id="editor"></div>
-              <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="update-btn">UPDATE</button>
+              <div id="button-box">
+                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="update-btn">UPDATE</button>
+                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="active-btn">Make Active</button>
+              </div>
             </div>
 
             <div id="image-canvas-div">

@@ -1,6 +1,6 @@
 //================== TOUCH PROMISE ==================//
 // Promise: Touch Hold
-function touchhold_promise(touchduration,boundingBoxes,punishOutsideTouch){
+function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 	var resolveFunc
 	var errFunc
 	p = new Promise(function(resolve,reject){
@@ -16,61 +16,105 @@ function touchhold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 		while (true){
 			touchevent = yield touchevent
 
-// console.log('TOUCHEVENT', touchevent.type)
+			if (TASK.TrackEye > 0){
+				//Ignore touches if tracking eye, this will be removed in next commit since we want to use touches as surrogates when available
+				if (touchevent.type.indexOf('touch') > 0 || touchevent.type.indexOf('mouse') > 0){
+					continue;
+				}
+				touchevent.type = ENV.Eye.EventType
+			}
 
+			// THE END of touch or fixation, either held or broke
 			if (touchevent.type == 'theld' || touchevent.type == 'tbroken'){
 				return_event.type = touchevent.type
-				break;
-			}
+
+				if (TASK.TrackEye > 0){
+					ENV.Eye.EventType = "eyestart" //Reset eye state
+				}
+				break; //EXIT LOOP
+			}//IF end of touch/fixation
 			else{
 				//keep processing touchstart, touchmove, touchend events
 			}
 
-			// Get CHOICE,XYT
+console.log('CURRTRIAL.cxyt.length = ' + CURRTRIAL.cxyt.length)
+
+			//================== GET XYT & CHOSEN BOX ==================//
 			var touchcxyt = [-1, -1, -1, -1]
 			if (FLAGS.waitingforTouches > 0 && touchevent.type != "touchend" && touchevent.type != "mouseup"){
 				var chosenbox = -1
-				if (touchevent.type == "touchstart" || touchevent.type == "touchmove"){
-					var x = touchevent.targetTouches[0].pageX;
-					var y = touchevent.targetTouches[0].pageY;					
+
+				//RECOVER X,Y coordinates from eye, touch, or click
+				if (touchevent.type == "touchstart" || touchevent.type == "touchmove" || touchevent.type == "eyestart" || touchevent.type == "eyemove"){
+					if (TASK.TrackEye > 0){
+						var x = touchevent.x_val 
+						var y = touchevent.y_val
+// console.log('eye ' + x + ',' + y)
+					} //IF eye
+					else {
+						var x = touchevent.targetTouches[0].pageX;
+						var y = touchevent.targetTouches[0].pageY;					
+					} //ELSE touch
 				}
 				else if (touchevent.type == "mousedown" || touchevent.type == "mousemove"){
 					var x = touchevent.clientX
 					var y = touchevent.clientY
-				}	
+				} //IF mouse
+
+				//RECOVER BOX, if any
 				for (var q=0; q<=boundingBoxes.x.length-1; q++){
 					if (x >= boundingBoxes.x[q][0] && x <= boundingBoxes.x[q][1] &&
 						y >= boundingBoxes.y[q][0] && y <= boundingBoxes.y[q][1]){
 						chosenbox=q
 					}//if in bounding box
 				}//for q boxes
-				var touchcxyt = [chosenbox,x,y,Date.now() - ENV.CurrentDate.valueOf()];		
-			} //if waiting for touch, get coords
 
-			//================== ACQUIRING TOUCH ==================//
+				//Add timestamp
+				var touchcxyt = [chosenbox,x,y,Date.now() - ENV.CurrentDate.valueOf()];
+
+				//Accumulate cxyt in box for greater eyetracker accuracy
+				if (chosenbox != -1){
+					console.log('stored cxyt: ' + touchcxyt)
+					CURRTRIAL.cxyt.push(touchcxyt) //also accumulate for current trial			
+				}
+			}//IF still waiting, get cxyt data
+
+			//================== ENTERING THE BOX TO INIATE HOLD ==================//
 			if (!FLAGS.acquiredTouch && 
 				touchevent.type != "touchend" && touchevent.type != "touchmove" && 
 				touchevent.type != "mouseup" && touchevent.type != "mousemove"){
+
+				//IF outside box
 				if (chosenbox == -1){
-					if (punishOutsideTouch){
+					if (punishOutsideTouch && touchevent.type != "eyestart"){
 						FLAGS.acquiredTouch = 0
 						clearTimeout(touchTimer);
 						return_event.type = "tbroken"
 						break;
-					} //touched outside fixation, advance to punish
+					} //IF touched outside fixation, advance to punish
 					else {
 						//do nothing for touching outside boxes
 						touchcxyt[0] = -1
-					}
+					}//ELSE ignore outside touch if choice screen
 				} //if touched outside box
 				else if (chosenbox >= 0){
 					FLAGS.acquiredTouch = 1
+
+					//EYE ENTERED BOX
+					if (TASK.TrackEye > 0){
+						ENV.Eye.timeOfLastGlanceInBB = touchcxyt[3]
+						ENV.Eye.EventType = "eyemove" //in box, so future states are "eyemove" (from "undefined" in usb code)
+						console.log('!!!! EYE ENTERED BOX !!!!  ' + touchcxyt)
+					}
+
+					//START TIMER touchduration milliseconds
 					if (touchduration > 0){
-						//Start timer
 						touchTimer = setTimeout(function(){
 							FLAGS.waitingforTouches--
 							FLAGS.acquiredTouch = 0
 							FLAGS.touchGeneratorCreated = 0 //block other callbacks
+console.log('!!!! HELD FIXATION !!!!')
+							if (TASK.TrackEye > 0){ ENV.Eye.EventType = "theld"}
 							waitforEvent.next({type: "theld"})
 						},touchduration)
 					} //if touch hold required
@@ -84,15 +128,25 @@ function touchhold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 			} //if !acquiredTouch
 
 			//================== HOLDING TOUCH ==================//
-			if (touchevent.type == "touchmove" && FLAGS.acquiredTouch){
+			if ( (touchevent.type == "touchmove" || touchevent.type == "eyemove") && FLAGS.acquiredTouch){
 				if (chosenbox >= 0){
-				} //if moving within a touch bounding box, just wait
-				else if (chosenbox == -1){
+					ENV.Eye.timeOfLastGlanceInBB = touchcxyt[3]
+console.log('!!!! STILL IN BOX !!!!')
+				}//IF moving within a touch bounding box, just wait
+				else if ( TASK.TrackEye > 0 && ((Date.now() - ENV.CurrentDate.valueOf()) - ENV.Eye.timeOfLastGlanceInBB) <= ENV.Eye.BlinkGracePeriod ){
+				}//IF during eye blink grace period, just wait
+				else if ( chosenbox == -1 &&
+						( TASK.TrackEye == 0 || 
+						( (Date.now() - ENV.CurrentDate.valueOf()) - ENV.Eye.timeOfLastGlanceInBB) > ENV.Eye.BlinkGracePeriod) ){
 					FLAGS.acquiredTouch = 0
 					clearTimeout(touchTimer)
+					if (TASK.TrackEye > 0){
+						ENV.Eye.EventType = "eyestart"
+					}
 					return_event.type = "tbroken"
+console.log('!!!! BROKE FIXATION !!!!')
 					break;
-				} //if moved out of touch bounding box
+				}//IF moved out of box
 			} //if touchmove
 
 			//================== TOUCH END ==================//
@@ -102,14 +156,33 @@ function touchhold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 				clearTimeout(touchTimer);
 				return_event.type = "tbroken"
 				break;
-			} //if ended touch too early			
+			}//IF ended touch early			
 		} //while events
+
 		// console.log('RETURN_EVENT', return_event.type)
+		if (TASK.TrackEye){
+			//Median x,y = final eye position estimate
+			var xs = []
+			var ys = []
+			if (CURRTRIAL.cxyt.length > 0)
+			{
+				for (var q = 0; q<=CURRTRIAL.cxyt.length-1; q++){
+					xs.push(CURRTRIAL.cxyt[q][1])
+					ys.push(CURRTRIAL.cxyt[q][2])
+				}
+				touchcxyt[1] = math.median(xs)
+				touchcxyt[2] = math.median(ys)
+			}//IF
+			else {
+				console.log('NO EYE POINTS ' + CURRTRIAL.cxyt)
+			}
+		}
 		return_event.cxyt = touchcxyt
 		resolveFunc(return_event)
 	} //generator
 	waitforEvent = waitforeventGenerator(); // start async function
 	FLAGS.touchGeneratorCreated = 1
+	CURRTRIAL.cxyt = []
 	// console.log('GENERATOR CREATED waiting for ntouches',FLAGS.waitingforTouches)
 	waitforEvent.next(); //move out of default state
 	return p;
@@ -171,6 +244,7 @@ function doneTestingTask_listener(event){
 	document.querySelector("p[id=imageloadingtext]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	document.querySelector("button[id=doneTestingTask]").style.display = "none"
 	document.querySelector("button[id=stressTest]").style.display = "none"
+	// EYETRACKERCANVAS.style.display="none";
 	return
 }
 
