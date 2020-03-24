@@ -42,9 +42,8 @@ const clFlPlotDiv
 
 let mkcolony = new Mkcolony();
 
-let ret = mkcolony.loadData(db.collection('marmosets'));
+let ret = mkcolony.loadWtData(db.collection('marmosets'));
 ret.then(docs => {
   mkcolony.populateTable(docs);
-  // console.log('docs', docs);
   mkcolony.plotColonyData();
 });

@@ -44,7 +44,7 @@ export class Mkcolony {
   }
 
   public populateTable(data: any[]) {
-    this.marmosetData = this.processData(data);
+    this.marmosetData = this.processWtData(data);
     this.marmosetDataDic = {};
 
     this.marmosetData.forEach(agent => {
@@ -116,36 +116,121 @@ export class Mkcolony {
     let agentData = this.marmosetDataDic[agentName];
     this.populateAgentBio(agentData);
     this.plotAgentWeight(agentData);
-    this.processFluidData(agentName);
+    let ret = this.loadAndProcessFlData(agentName);
+    ret.then(docs => {
+      this.plotAgentFluid(docs);
+    });
   }
 
-  private plotAgentFluid(data: any) {
+  private plotAgentFluid(data: {k: string, v: number}) {
+    const agFlDt = new google.visualization.DataTable();
+    let agFlDashboard = new google.visualization.Dashboard(this.agFlCard);
+    agFlDt.addColumn('date', 'Date');
+    agFlDt.addColumn('number', 'Fluid Intake');
 
+    for (let [key, value] of Object.entries(data)) {
+      let flLvl = Number(value) * 9.0 / 1000.0;
+      console.log(flLvl);
+      agFlDt.addRow([new Date(key), flLvl]);
+    }
+
+    let plot = document.querySelector('#agent-fluid-plot') as div;
+    let filter = document.querySelector('#agent-fluid-filter') as div;
+
+    plot.style.height = '80%';
+    filter.style.height = '20%';
+
+    const agFlPlotConfig = {
+      'chartType': 'LineChart',
+      'containerId': 'agent-fluid-plot',
+      'options': {
+        interpolateNulls: true,
+        title: 'Fluid Plot',
+        width: plot.clientWidth,
+        height: plot.clientHeight,
+        legend: 'none' as 'none',
+        pointSize: 5
+      }
+    };
+
+    const agFlFilterOptions = {
+      filterColumnLabel: 'Date',
+      ui: {
+        chartType: 'LineChart',
+        chartOptions: {
+          interpolateNulls: true
+        }
+      }
+    };
+
+    let endDate = agFlDt.getColumnRange(0).max;
+    let startDate = new Date(endDate);
+    startDate.setMonth(startDate.getMonth() - 1);
+
+    const agFlFilterConfig = {
+      'controlType': 'ChartRangeFilter',
+      'containerId': 'agent-fluid-filter',
+      'options': agFlFilterOptions,
+      'state': {
+        'range': {
+          'start': startDate,
+          'end': endDate
+        }
+      }
+    };
+
+    let agFlPlot = new google.visualization.ChartWrapper(agFlPlotConfig);
+    let agFlFilter = new google.visualization.ControlWrapper(agFlFilterConfig);
+
+    agFlDashboard.bind(agFlFilter, agFlPlot);
+    agFlDashboard.draw(agFlDt);
   }
 
-  public processFluidData(agentName: string) {
-    let endDate = new Date();
+  private async loadAndProcessFlData(agentName: string) {
+    function _loadFlData(doc: any, data: any) {
+      if (doc.data().hasOwnProperty('NReward')) {
+        let totalReward
+          = doc.data().NReward.reduce((a: number, b: number) => {
+            if (isNaN(b)) {
+              b = 0;
+            }
+
+            return a + b;
+          }, 0);
+        let curDate = doc.data().CurrentDate.toDate().toJSON().split('T')[0];
+        if (data.hasOwnProperty(curDate)) {
+          data[curDate] = data[curDate] + totalReward;
+        } else {
+          data[curDate] = totalReward;
+        }
+      }
+    }
+    
+    let data: any = {};
+    let endDate = new Date('03/20/2020'); // hard-coded because of issues with firestore as of 03/23/2020
     let startDate = new Date(endDate).setMonth(endDate.getMonth() - 1);
-    console.log('endDate', endDate);
-    console.log('startDate', startDate);
+    
     let query 
       = db.collection('mkturkdata')
       .where('Agent', '==', agentName)
       .where('Doctype', '==', 'task')
       .where('CurrentDate', '>=', new Date(startDate))
       .where('CurrentDate', '<=', new Date(endDate));
-    
-    let data = new Array();
-    console.log('query', query);
-    query.get().then(querySnapshot => {
-      querySnapshot.forEach(doc => {
-        console.log('doc', doc.data());
-      });
-    }).catch(error => {
-      console.log(error);
+
+    await query.get().then(async snapshot => {
+      if (!snapshot.empty) {
+        let promises = snapshot.docs.map(doc => _loadFlData(doc, data));
+        await Promise.all(promises);
+      } else {
+        console.error('Found no documents');
+      }
+    }).catch(e => {
+      console.error('Error loading documents:', e);
     });
-  
+
+    return data;
   }
+
 
   private populateAgentBio(data: any) {
 
@@ -320,15 +405,15 @@ export class Mkcolony {
     return data;
   }
 
-  public async loadData(query: firebase.firestore.Query) {
-    function _loadData(doc: any, arr: any[]) {
+  public async loadWtData(query: firebase.firestore.Query) {
+    function _loadWtData(doc: any, arr: any[]) {
       arr.push(doc.data());  
     }
 
     let data = new Array();
     await query.get().then(async querySnapshot => {
       if (!querySnapshot.empty) {
-        let promises = querySnapshot.docs.map(doc => _loadData(doc, data));
+        let promises = querySnapshot.docs.map(doc => _loadWtData(doc, data));
         await Promise.all(promises);
       } else {
         console.log('Found No Documents');
@@ -340,7 +425,7 @@ export class Mkcolony {
     return data;
   }
 
-  public processData(data: any[]) {
+  public processWtData(data: any[]) {
     data = this.timestampToDate(data);
     data.forEach(row => {
       for (let key of Object.keys(row)) {
