@@ -43,8 +43,11 @@ export class Mkeditor {
   public displayFirebaseTextFile(file: Object, loc: string) {
     this.updateBtn.style.visibility = 'visible';
     try {
+      let options = {
+        modes: ['tree' as 'tree', 'code' as 'code']
+      };
       this.editor.destroy();
-      this.editor = new JSONEditor(this.editorElement, {}, file);
+      this.editor = new JSONEditor(this.editorElement, options, file);
       this.trackFirebaseActiveFile(loc, file);
     } catch (error) {
       console.error("JSONEditor Error:", error);
@@ -55,7 +58,10 @@ export class Mkeditor {
     this.updateBtn.style.visibility = 'hidden';
     try {
       this.editor.destroy();
-      this.editor = new JSONEditor(this.editorElement, {}, data);
+      let options = {
+        modes: ['tree' as 'tree', 'code' as 'code']
+      };
+      this.editor = new JSONEditor(this.editorElement, options, data);
       this.fileNameP.innerText = data.timestamp.value;
       // console.log("displayBigQueryTableRow", data);
     } catch (error) {
@@ -112,7 +118,10 @@ export class Mkeditor {
     let file = await response.json();
 
     this.editor.destroy();
-    this.editor = new JSONEditor(this.editorElement, {}, file);
+    let options = {
+      modes: ['tree' as 'tree', 'code' as 'code']
+    };
+    this.editor = new JSONEditor(this.editorElement, options, file);
     this.activeFile = { loc: "mkturkfiles", id: fileRef };
     console.log("activeFile", this.activeFile);
     this.fileNameP.innerText = fileRef.name;

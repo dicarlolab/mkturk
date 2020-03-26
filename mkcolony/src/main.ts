@@ -28,17 +28,7 @@ firebase.auth().getRedirectResult().then(result => {
   }
 });
 
-const functions = firebase.functions();
 const db = firebase.firestore();
-const storage = firebase.storage();
-const storageRef = storage.ref();
-const rootRef = storageRef.child('mkturkfiles/');
-
-const clTableDiv = document.querySelector('#colony-table') as HTMLDivElement;
-const clWtPlotDiv 
-  = document.querySelector('#colony-weight-plot') as HTMLDivElement;
-const clFlPlotDiv
-  = document.querySelector('#colony-fluid-plot') as HTMLDivElement;
 
 let mkcolony = new Mkcolony();
 

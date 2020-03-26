@@ -1,5 +1,6 @@
 import * as firebase from 'firebase/app';
 import 'firebase/firestore';
+import JSONEditor from 'jsoneditor';
 
 type div = HTMLDivElement;
 type Timestamp = firebase.firestore.Timestamp;
@@ -20,11 +21,15 @@ export class Mkcolony {
   public agWtPlotDiv: div;
   public agFlCard: div;
   public agFlPlotDiv: div;
+  private agJsonCard: div;
+  private agJsonDiv: div;
+  private agJson: JSONEditor;
   
   public marmosetData: any[];
   public marmosetDataDic: any;
 
   private clTable: Tabulator;
+
 
   constructor() {
     google.charts.load('current', {packages: ['corechart', 'controls']});
@@ -41,6 +46,9 @@ export class Mkcolony {
     this.agBioCard = document.querySelector('#agent-bio-card') as div;
     this.agBioDiv = document.querySelector('#agent-bio') as div;
     this.agWtCard = document.querySelector('#agent-weight-card') as div;
+
+    this.agJsonCard = document.querySelector('#agent-json-card') as div;
+    this.agJsonDiv = document.querySelector('#agent-json') as div;
   }
 
   public populateTable(data: any[]) {
@@ -55,7 +63,6 @@ export class Mkcolony {
       }
     });
 
-    console.log('dic', this.marmosetDataDic);
 
     let clTableCard 
       = document.querySelector('#colony-table-card') as div;
@@ -75,7 +82,6 @@ export class Mkcolony {
     clTableCard.style.maxHeight = String(colonyTab.clientHeight / 3) + 'px';
     clTableCard.style.height = '500 px';
     clTableCard.style.minHeight = String(colonyTab.clientHeight / 3) + 'px';
-    console.log(clTableCard.clientHeight);
 
     this.clTable = new Tabulator(this.clTableDiv, {
       data: data,
@@ -130,7 +136,6 @@ export class Mkcolony {
 
     for (let [key, value] of Object.entries(data)) {
       let flLvl = Number(value) * 9.0 / 1000.0;
-      console.log(flLvl);
       agFlDt.addRow([new Date(key), flLvl]);
     }
 
@@ -207,7 +212,7 @@ export class Mkcolony {
     }
     
     let data: any = {};
-    let endDate = new Date('03/20/2020'); // hard-coded because of issues with firestore as of 03/23/2020
+    let endDate = new Date(); // hard-coded because of issues with firestore as of 03/23/2020
     let startDate = new Date(endDate).setMonth(endDate.getMonth() - 1);
     
     let query 
@@ -230,7 +235,6 @@ export class Mkcolony {
 
     return data;
   }
-
 
   private populateAgentBio(data: any) {
 
@@ -346,6 +350,14 @@ export class Mkcolony {
     this.agBioDiv.appendChild(breedingVal);
     this.agBioDiv.appendChild(weightSpan);
     this.agBioDiv.appendChild(weightVal);
+
+    try {
+      this.agJson.destroy();
+      this.agJson = new JSONEditor(this.agJsonDiv, {}, data);
+    } catch {
+      this.agJson = new JSONEditor(this.agJsonDiv, {}, data);
+    }
+
   }
 
   private timestampToDate(data: any[]) {
@@ -453,8 +465,6 @@ export class Mkcolony {
     for (let i = 0; i < data.weight_dates.length; i++) {
       agWtDt.addRow([new Date(data.weight_dates[i]), data.weight_values[i]]);
     }
-
-    console.log(agWtDt);
 
     let plot = document.querySelector('#agent-weight-plot') as div;
     let filter = document.querySelector('#agent-weight-filter') as div;
@@ -574,7 +584,6 @@ export class Mkcolony {
   }
 
   public plotColonyData() {
-    console.log(this.marmosetData);
     this.plotColonyWeight();
   }
 
