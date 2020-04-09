@@ -353,9 +353,15 @@ export class Mkcolony {
 
     try {
       this.agJson.destroy();
-      this.agJson = new JSONEditor(this.agJsonDiv, {}, data);
+      let options = {
+        modes: ['code' as 'code', 'tree' as 'tree']
+      }
+      this.agJson = new JSONEditor(this.agJsonDiv, options, data);
     } catch {
-      this.agJson = new JSONEditor(this.agJsonDiv, {}, data);
+      let options = {
+        modes: ['code' as 'code', 'tree' as 'tree']
+      }
+      this.agJson = new JSONEditor(this.agJsonDiv, options, data);
     }
 
   }

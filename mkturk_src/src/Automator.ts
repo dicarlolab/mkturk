@@ -34,7 +34,27 @@ export class Automator {
       = amData[currStageIdx].CurrentAutomatorStageName;
 
     // calculate current pctcorrect and ntrials
-    let funcreturn = computeRunningHistory(ENV.MinTrialsCriterion, currStage)
+    let funcreturn = computeRunningHistory(
+      ENV.MinTrialsCriterion, 
+      currStage,
+      th.trainingstage,
+      th.correct);
+    let pctcorrect = funcreturn[0];
+    let ntrials = funcreturn[1];
+
+    console.log('For ' + ntrials + ' trials, pctcorrect=' + pctcorrect);
+
+    // --------- Change TASK.STUFF to Automator Data [ NEXT_STAGE ] -----------
+    // If transition criteria are met,
+    if (pctcorrect > ENV.MinPercentCriterion
+      && ntrials >= ENV.MinTrialsCriterion) {
+        // if finished final stage of automator
+        if (amData.length <= TASK.CurrentAutomatorStage + 1) {
+          TASK.Automator = 0;
+          TASK.CurrentAutomatorStage = -1;
+        }
+      }
+    
   }
 
 
