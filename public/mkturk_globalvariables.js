@@ -202,10 +202,9 @@ CURRTRIAL.test_scenebag_labels = NaN
 CURRTRIAL.test_scenebag_indices = NaN
 
 var EVENTS = {}
-EVENTS.reset = function(){
+EVENTS.reset_trialseries = function(){
 	this.trialnum = CURRTRIAL.num;
 	this.trialseries = {};
-	this.timeseries = {};
 	this.imageseries = {};
 	this.trialseries.Sample = {}
 	this.trialseries.Test = {}
@@ -223,9 +222,6 @@ EVENTS.reset = function(){
 	this.trialseries.NReward = {}
 	this.trialseries.BatteryLDT = {}	
 	this.trialseries.BLEBatteryLT = {}
-	this.timeseries.RFIDTag = {}
-	this.timeseries.Weight = {}
-	this.timeseries.EyeData = {}
 
 	this.imageseries.SampleObjectTy = {}
 	this.imageseries.SampleObjectTz = {}
@@ -240,7 +236,14 @@ EVENTS.reset = function(){
 	this.imageseries.TestObjectRyz = {}
 	this.imageseries.TestObjectScale = {}
 }
-EVENTS.reset()
+EVENTS.reset_timeseries = function(){
+	this.timeseries = {};
+	this.timeseries.RFIDTag = {}
+	this.timeseries.Weight = {}
+	this.timeseries.EyeData = {}
+}
+EVENTS.reset_trialseries()
+EVENTS.reset_timeseries()
 
 
 var trialhistory = {}
@@ -265,6 +268,7 @@ var curridx = null;
 var datafiles=[];
 var displayoutofboundsstr=""
 var imageloadingtimestr="Loaded: "
+var eyedataratestr=""
 
 //================ UPDATE VARIABLE FUNCTIONS ================//
 function resetTRIAL(){
@@ -401,9 +405,9 @@ function logEVENTS(eventname,eventval,eventtype){
 	else if (eventtype == 'timeseries'){
 		//running index
 		var indevent = Object.keys(EVENTS[eventtype][eventname]).length
-		if (FLAGS.savedata == 0){
-			indevent = 0 //store most recent timepoint in first position until start saving data
-		}
+		// if (FLAGS.savedata == 0){
+		// 	indevent = 0 //store most recent timepoint in first position until start saving data
+		// }
 		var trialtime = [EVENTS.trialnum, Date.now() - ENV.CurrentDate.valueOf()]
 		EVENTS[eventtype][eventname][indevent.toString()] = trialtime.concat(eventval)
 	}
@@ -412,6 +416,7 @@ function logEVENTS(eventname,eventval,eventtype){
 function purgeTrackingVariables(){
 	// Purges heresies committed in the test period 
 	TRIAL = resetTRIAL()
+	EVENTS.reset_timeseries()
 
 	ENV.CurrentDate = new Date;
 	var datestr = ENV.CurrentDate.toISOString();

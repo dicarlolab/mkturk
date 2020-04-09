@@ -37,8 +37,6 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 				//keep processing touchstart, touchmove, touchend events
 			}
 
-console.log('CURRTRIAL.cxyt.length = ' + CURRTRIAL.cxyt.length)
-
 			//================== GET XYT & CHOSEN BOX ==================//
 			var touchcxyt = [-1, -1, -1, -1]
 			if (FLAGS.waitingforTouches > 0 && touchevent.type != "touchend" && touchevent.type != "mouseup"){
@@ -74,7 +72,7 @@ console.log('CURRTRIAL.cxyt.length = ' + CURRTRIAL.cxyt.length)
 
 				//Accumulate cxyt in box for greater eyetracker accuracy
 				if (chosenbox != -1){
-					console.log('stored cxyt: ' + touchcxyt)
+					// console.log('stored cxyt: ' + touchcxyt)
 					CURRTRIAL.cxyt.push(touchcxyt) //also accumulate for current trial			
 				}
 			}//IF still waiting, get cxyt data
@@ -131,7 +129,7 @@ console.log('!!!! HELD FIXATION !!!!')
 			if ( (touchevent.type == "touchmove" || touchevent.type == "eyemove") && FLAGS.acquiredTouch){
 				if (chosenbox >= 0){
 					ENV.Eye.timeOfLastGlanceInBB = touchcxyt[3]
-console.log('!!!! STILL IN BOX !!!!')
+// console.log('!!!! STILL IN BOX !!!!')
 				}//IF moving within a touch bounding box, just wait
 				else if ( TASK.TrackEye > 0 && ((Date.now() - ENV.CurrentDate.valueOf()) - ENV.Eye.timeOfLastGlanceInBB) <= ENV.Eye.BlinkGracePeriod ){
 				}//IF during eye blink grace period, just wait

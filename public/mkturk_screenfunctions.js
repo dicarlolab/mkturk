@@ -179,6 +179,10 @@ function scaleCanvasforHiDPI(canvasobj){
 }
 
 function updateHeadsUpDisplay(){
+	if (CANVAS.headsupfraction == 0){
+		return
+	}
+
 	var textobj = document.getElementById("headsuptext");
 
 	// Overall performance
@@ -235,19 +239,19 @@ function updateHeadsUpDisplay(){
 		textobj.innerHTML = '' //port.statustext_connect + blescale.statustext_connect
 	}
 	else if (isNaN(CANVAS.headsupfraction)){ //before task params load
-	if (ENV.ScreenRatio == -1) {
-		var firestoreRecordFound = "<font color = red> DEVICE RECORD NOT FOUND! </font>"
-		var screenRatioMatchesDPR = ''
-	}
-	else {
-		var firestoreRecordFound = "<font color = green> DEVICE RECORD FOUND </font>"
-		if (ENV.ScreenRatio != ENV.DevicePixelRatio){
-			var screenRatioMatchesDPR = 'Detected DevicePixelRatio <font color = red>DOES NOT match record </font>'
+		if (ENV.ScreenRatio == -1) {
+			var firestoreRecordFound = "<font color = red> DEVICE RECORD NOT FOUND! </font>"
+			var screenRatioMatchesDPR = ''
 		}
 		else {
-			var screenRatioMatchesDPR = 'Detected DevicePixelRatio <font color = green>MATCHES record </font>'
+			var firestoreRecordFound = "<font color = green> DEVICE RECORD FOUND </font>"
+			if (ENV.ScreenRatio != ENV.DevicePixelRatio){
+				var screenRatioMatchesDPR = 'Detected DevicePixelRatio <font color = red>DOES NOT match record </font>'
+			}
+			else {
+				var screenRatioMatchesDPR = 'Detected DevicePixelRatio <font color = green>MATCHES record </font>'
+			}
 		}
-	}
 		textobj.innerHTML = 
 		'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail
 		+ "<br>" + "No trials performed"
@@ -262,7 +266,7 @@ function updateHeadsUpDisplay(){
 		+ "<br>" + "GPU: " + ENV.DeviceGPU
 		+ "<br>" + "OS name,codename,ver: " + ENV.DeviceOSName + ", "  + "<u><font color = green>"+ ENV.DeviceOSCodeName + "</font></u>" + ", " + ENV.DeviceOSVersion
 		+ "<br>" + "Browser: "  + "<u><font color = green>" + ENV.DeviceBrowserName + "</font></u>" + " v" + ENV.DeviceBrowserVersion
-	}
+	}//ELSE IF isnan
 }
 
 function updateHeadsUpDisplayDevices(){
@@ -1005,7 +1009,7 @@ function setupImageLoadingText(){
 function updateImageLoadingAndDisplayText(str){
 	var textobj = document.getElementById("imageloadingtext")
 
-	// Software check for frame drops
+	//DISPLAY TIMING: Software check for frame drops
 	var dt = []
 	var u_dt = 0
 	for (var i=0; i<=CURRTRIAL.tsequenceactual.length-1; i++){
@@ -1014,6 +1018,8 @@ function updateImageLoadingAndDisplayText(str){
 	}
 	u_dt = u_dt/dt.length
 
+
+
 	textobj.innerHTML =
 	str
 	+ imageloadingtimestr
@@ -1021,6 +1027,7 @@ function updateImageLoadingAndDisplayText(str){
 	+ "<br>" + "Software reported frame display (t_actual - t_desired) :"
 	+ "<br>" + "<font color=red> mean dt = " + Math.round(u_dt) + " ms"
 	+ "  (min=" + Math.round(Math.min(... dt)) + ", max=" + Math.round(Math.max(... dt)) + ") </font>"
+	+ "<br>" + eyedataratestr
 }
 
 function displayPhysicalSize(tabletname,displayobject_coord,canvasobj){

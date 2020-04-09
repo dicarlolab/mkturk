@@ -818,7 +818,8 @@ while(true){
 
 		FLAGS.purge = 1
 		FLAGS.createnewfirestore = 1
-		EVENTS.reset()
+		EVENTS.reset_trialseries()
+    	EVENTS.reset_timeseries()
 	} //if need2loadParameters
 
 	if (FLAGS.purge == 1){
@@ -927,12 +928,12 @@ while(true){
 
 		//Get ImageWidth, if any
 		await TQS.generate_trials(1)
-		if (TQS.sampleq.filename.length > 0){
+		if (TQS.sampleq.filename.length > 0 && TQS.sampleq.filename[0] != ""){
 			var representative_image = await TQS.IB.get_by_name(TQS.sampleq.filename[0])
 			ENV.ImageWidthPixels = representative_image.width
 			ENV.ImageHeightPixels = representative_image.height
 		}
-		else if (TQS.testq.filenames.length > 0){
+		else if (TQS.testq.filenames.length > 0 && TQS.testq.filenames[0] != ""){
 			var representative_image = await TQS.IB.get_by_name(TQS.testq.filenames[0])
 			ENV.ImageWidthPixels = representative_image.width
 			ENV.ImageHeightPixels = representative_image.height
@@ -1482,10 +1483,10 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 		}
 
 		if (TASK.Agent != "SaveImages"){
-			// Save data asynchronously
+			// Cloud Storage: Save data asynchronously to json
 			saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, TRIAL);
 
-			// Save data asynchronously to Firestore
+			// Cloud Firestore: Save data asynchronously to databaes
 			if (FLAGS.createnewfirestore == 1){
 				saveBehaviorDatatoFirestore(TASK,ENV,CANVAS); //write once
 				pingFirestore() //every 10 seconds, will check for data updates to upload to firestore

@@ -5,7 +5,8 @@ var port={
   connected: false,
 }
 var serial = {}
-var eyebuffer = { accumulateEye: 0, maxbufferlength_HARDCODED: 17, buffer: "", numeyes_HARDCODED: 2}
+var eyebuffer = { accumulateEye: 0, maxbufferlength_HARDCODED: 17, buffer: "", numeyes_HARDCODED: 2, 
+				fail: 0, success: 0, dt: 0 , tstart: 0}
 
 navigator.usb.onconnect = function(device){
 	if (typeof(port.connected) == 'undefined' || port.connected == false){
@@ -178,14 +179,9 @@ serial.Port.prototype.onReceive = data => {
 		}
 	}
 
-// console.log(port.statustext_received)
-
-if (port.statustext_received.length > 1){
-	console.log('too long: ' + port.statustext_received)
-}
-
+//=============== RFID ===============//
 	if (tagstart >= 0){
-		//rfid: sends whole tag at once
+		//rfid: arduino sends whole tag at once
 		var tagend = port.statustext_received.indexOf('}',0);
 		logEVENTS("RFIDTag",port.statustext_received.slice(tagstart+4,tagend),"timeseries");
 		TRIAL.RFIDTime[TRIAL.NRFID] = Date.now() - ENV.CurrentDate.valueOf();
@@ -199,7 +195,6 @@ if (port.statustext_received.length > 1){
 		port.statustext_received = 'Parsed TAG ' + TRIAL.RFIDTag[TRIAL.NRFID-1] + 
 									' @ ' + new Date().toLocaleTimeString("en-US") + 
 									' dt=' + dt + 'ms'
-		// console.log(port.statustext_received)
 
 		if (FLAGS.RFIDGeneratorCreated == 1){
 			var event = {tag: TRIAL.RFIDTag[TRIAL.NRFID-1], time: TRIAL.RFIDTime[TRIAL.NRFID-1]}
@@ -210,9 +205,10 @@ if (port.statustext_received.length > 1){
 		} //IF no subject chosen yet, auto-find in firestore based on their RFIDTag, which will then QuickLoad the page
 		updateHeadsUpDisplayDevices()
 	} //IF RFID Tag
+
+//=============== EYE ===============//
 	else if (eyebuffer.accumulateEye >= 3){
-		// arduino usually sends one character at a time,
-		// but have to handle the case of receiving 2 characters
+		// eye: arduino sends one character at a time, but have to handle the case of receiving 2 characters
 
 		eyebuffer.buffer += port.statustext_received; //accumulate ascii vals
 
@@ -226,11 +222,12 @@ if (port.statustext_received.length > 1){
 			eyebuffer.buffer = eyebuffer.buffer.slice(0,eyebuffer.buffer.length-2)
 		}
 
+		//=============== PARSED EYE (X,Y,D,A) ===============//
 		if (n_character_close > 0){
-			var x = eyebuffer.buffer.slice(0,4);
-			var y = eyebuffer.buffer.slice(4,8);
-			var w = eyebuffer.buffer.slice(9,12)
-			var a = eyebuffer.buffer.slice(13,16)
+			var x = eyebuffer.buffer.slice(0,4); //pupil x_center
+			var y = eyebuffer.buffer.slice(4,8); //pupil y_center
+			var w = eyebuffer.buffer.slice(9,12); //pupil diameter
+			var a = eyebuffer.buffer.slice(13,16); //pupil aspect ratio
 
 			x = parseInt('0x'+x)/32767; //Raw
 			y = parseInt('0x'+y)/32767; //Raw
@@ -243,27 +240,49 @@ if (port.statustext_received.length > 1){
 				xy = ["nan","nan"]
 			}
 
-			logEVENTS("EyeData",[
-						new Date(Date.now()).toJSON(),
-						CURRTRIAL.num,
-						eyebuffer.numeyes_HARDCODED,
-						xy[0],xy[1],w,a,
-						null,null,null,null
-					],"timeseries");
+			// STORE calibrated eye signal
+			logEVENTS("EyeData",[new Date(Date.now()).toJSON(),CURRTRIAL.num,eyebuffer.numeyes_HARDCODED,
+						xy[0],xy[1],w,a,null,null,null,null],"timeseries");
 
 
 			if (FLAGS.touchGeneratorCreated == 1 && TASK.TrackEye > 0){
-				//Send calibrated signal
-				// convert from eye coordinates to tablet coordinates
+				//Send calibrated signal, convert from eye coordinates to tablet coordinates
 
-// xy[0] = 1.1*ENV.XGridCenter[CURRTRIAL.fixationgridindex] - 50
-// xy[1] = 0.9*ENV.YGridCenter[CURRTRIAL.fixationgridindex] + 50 + CANVAS.offsettop	
+				// DISPLAY median filtered calibrated eye signal
+				//EVENTS[idx] -- 3:X 4:Y 5:Diameter 6:Aspect
+			 	var eyedatalen = Object.keys(EVENTS['timeseries']['EyeData']).length
+				if (eyedatalen >= 4){
+					var X_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][5],
+									EVENTS['timeseries']['EyeData'][eyedatalen-3][5],
+									EVENTS['timeseries']['EyeData'][eyedatalen-2][5],
+									EVENTS['timeseries']['EyeData'][eyedatalen-1][5]
+								 ] )
 
-// if (ENV.Eye.calibration == 0){
-// 	var xy = apply_linear_transform(xy[0],xy[1],ENV.Eye.CalibXTransform,ENV.Eye.CalibYTransform) //Calibrated
-// }
+					var Y_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][6],
+									EVENTS['timeseries']['EyeData'][eyedatalen-3][6],
+									EVENTS['timeseries']['EyeData'][eyedatalen-2][6],
+									EVENTS['timeseries']['EyeData'][eyedatalen-1][6]
+								 ] )
 
-				//Plot the point on the screen if hold generator is on & in practice mode
+					var D_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][7],
+									EVENTS['timeseries']['EyeData'][eyedatalen-3][7],
+									EVENTS['timeseries']['EyeData'][eyedatalen-2][7],
+									EVENTS['timeseries']['EyeData'][eyedatalen-1][7]
+								 ] )
+
+					var A_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][8],
+									EVENTS['timeseries']['EyeData'][eyedatalen-3][8],
+									EVENTS['timeseries']['EyeData'][eyedatalen-2][8],
+									EVENTS['timeseries']['EyeData'][eyedatalen-1][8]
+								 ] )
+					xy[0] = X_mdn
+					xy[1] = Y_mdn
+				}//compute median
+
+				var event_xytt = {x_val: xy[0], y_val: xy[1], time: Date.now(), type: "undefined"}
+				waitforEvent.next(event_xytt) //send to hold_promise generator
+
+				// Plot the point on the screen if hold generator is on & in practice mode
 // 				if (FLAGS.savedata == 0){
 					//IF out-of-bounds, draw on border
 					if (typeof(xyplot) != "undefined"){
@@ -279,25 +298,24 @@ if (port.statustext_received.length > 1){
 					//preview dots
 					renderDotOnCanvas('yellow', [ xyplot[0], xyplot[1] ], 3, EYETRACKERCANVAS)
 // 				}
-				// var event_xytt = {x_val: xy[0], y_val: xy[1], time: ENV.Eye.Time[ENV.Eye.N-1], type: "undefined"}
-				var event_xytt = {x_val: xy[0], y_val: xy[1], time: Date.now(), type: "undefined"}
-				waitforEvent.next(event_xytt) //send to hold_promise generator
 			}//if generated created
 
-		 	var eyedatalen = Object.keys(EVENTS['timeseries']['EyeData']).length
-			if (eyedatalen > 1){
-				var dt = EVENTS['timeseries']['EyeData'][eyedatalen-1][1] - EVENTS['timeseries']['EyeData'][eyedatalen-2][1] 
-			}
+		 // 	var eyedatalen = Object.keys(EVENTS['timeseries']['EyeData']).length
+			// if (eyedatalen > 1){
+			// 	var dt = EVENTS['timeseries']['EyeData'][eyedatalen-1][1] - EVENTS['timeseries']['EyeData'][eyedatalen-2][1]
+			// 	eyebuffer.dt = eyebuffer.dt + dt
+			// }
 
-			if ( eyedatalen%30 == 0 ){
-				port.statustext_received = 'Parsed EYE: xy_raw(calib)= ' + Math.round(x*100)/100 + ', ' + Math.round(y*100)/100 + 
-										', ' + Math.round(w*100)/100 + ', ' + Math.round(a*100)/100 + 
-										' (' + Math.round(10*xy[0])/10 + ',' + Math.round(10*xy[1])/10 + ') ' +  
-										' @ ' + new Date().toLocaleTimeString("en-US") + 
-										' dt=' + dt + 'ms' + 'buff=' + eyebuffer.buffer + port.statustext_received
-					console.log(port.statustext_received)
-				updateHeadsUpDisplayDevices()		
-			} //SUBSAMPLE
+			eyebuffer.success = eyebuffer.success + 1 
+			// if ( eyedatalen%20 == 0 ){
+			// 	port.statustext_received = 'Parsed EYE: xy_raw(calib)= ' + Math.round(x*100)/100 + ', ' + Math.round(y*100)/100 + 
+			// 							', ' + Math.round(w*100)/100 + ', ' + Math.round(a*100)/100 + 
+			// 							' (' + Math.round(10*xy[0])/10 + ',' + Math.round(10*xy[1])/10 + ') ' +  
+			// 							' @ ' + new Date().toLocaleTimeString("en-US") + 
+			// 							' dt=' + dt + 'ms' + 'buff=' + eyebuffer.buffer + port.statustext_received
+			// 	console.log(port.statustext_received)
+			// 	updateHeadsUpDisplayDevices()		
+			// } //SUBSAMPLE
 
 			if (n_character_close == 1){
 				eyebuffer.buffer = ""
@@ -308,22 +326,45 @@ if (port.statustext_received.length > 1){
 				eyebuffer.accumulateEye = 1;										
 			}
 		} //IF found end character
+
+		//=============== FAILED TO PARSE EYE DATA ===============//
 		else if ( eyebuffer.buffer.length >= eyebuffer.maxbufferlength_HARDCODED){
-			port.statustext_received = 'Parse FAILED EYE : buffer size exceeded without end character:' +
-									eyebuffer.buffer + ' bits: ' + port.statustext_received + 
-									' @ ' + new Date().toLocaleTimeString("en-US")
-									console.log(port.statustext_received)
-			updateHeadsUpDisplayDevices()
+			eyebuffer.fail = eyebuffer.fail + 1
+			// port.statustext_received = 'EYE PARSE FAILED : buffer size exceeded without end character:' +
+			// 						eyebuffer.buffer + ' bits: ' + port.statustext_received + 
+			// 						' @ ' + new Date().toLocaleTimeString("en-US")
+			// updateHeadsUpDisplayDevices()
 
 			eyebuffer.buffer = ""
 			eyebuffer.accumulateEye = 0;
 		} //ELSE didn't receive end character
-	}//IF Eye
+
+		//DISPLAY STATS FOR EYE DATASTREAM
+		if ( (eyebuffer.fail+eyebuffer.success) >= 900){
+			eyedataratestr = "<font color=green>"
+							+ 'EYE: Success=' + Math.round(1000*eyebuffer.success/(eyebuffer.fail+eyebuffer.success))/10 + '%'
+							+ ' (dt_u = ' + Math.round(10*(performance.now()-eyebuffer.tstart)/(eyebuffer.success+eyebuffer.fail))/10 + ' ms)'
+							+ "</font>"
+			if (FLAGS.savedata == 0){
+				updateImageLoadingAndDisplayText('')
+			}
+			console.log(eyedataratestr)
+
+			port.statustext_received = eyedataratestr
+			updateHeadsUpDisplayDevices()
+			eyebuffer.fail = 0
+			eyebuffer.success = 0
+			eyebuffer.dt = 0
+			eyebuffer.tstart = performance.now()
+		}// IF display eye stats
+	}//IF EYE
+
+	//=============== NOT RFID/EYE ===============//
 	else {
 		port.statustext_received = "RECEIVED CHAR <-- USB: " + textDecoder.decode(data)
-			console.log("RECEIVED CHAR <-- USB (not eye or rfid): " + port.statustext_received)
-			updateHeadsUpDisplayDevices()
-	}//ELSE not tag or eye
+// 		console.log("RECEIVED CHAR <-- USB (not eye or rfid): " + port.statustext_received)
+		// updateHeadsUpDisplayDevices()
+	}//ELSE not RFID or EYE
 } //port.onReceive
 
 serial.Port.prototype.onReceiveError = error => {

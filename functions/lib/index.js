@@ -170,6 +170,13 @@ exports.bqListDatasets = functions.https.onCall(async () => {
 exports.detectDevice = functions.https.onCall((userAgent) => {
     const detector = new DeviceDetector();
     let device = detector.parse(userAgent);
-    return device;
+    return new Promise((resolve, reject) => {
+        try {
+            resolve(device);
+        }
+        catch (e) {
+            reject(e);
+        }
+    });
 });
 //# sourceMappingURL=index.js.map

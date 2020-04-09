@@ -67,6 +67,13 @@ function pingFirestore(){
 
 //================== UPDATE FIRESTORE WITH EVENT DATA ====================//
 async function updateEventDataonFirestore(EVENTS){
+	if (FLAGS.createnewfirestore == 1){
+		//wait for saveBehaviorDatatoFirestore() since new params loaded
+	    delete firestoreTimer //to start a new timer
+		pingFirestore()
+		return
+	}
+
 	// Get a new write batch
 	var batch = db.batch();
 
