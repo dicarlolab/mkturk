@@ -57,12 +57,34 @@ export class Mkcolony {
 
     this.marmosetData.forEach(agent => {
       try {
+        
+        let today = new Date();
+        let dob = new Date(agent.birthdate);
+        let age = (today.getTime() - dob.getTime()) / 1000;
+        age /= (60 * 60 * 24 * 7 * 4);
+        age = Math.abs(Math.round(age));
+
+        let ageStr;
+        
+        if (age > 24) {
+          age = Math.floor(age / 12);
+          ageStr = String(age) + ' y/o'
+
+        } else {
+          ageStr = String(age) + ' m/o';
+        }
+
+        agent.age = age;
+        agent.ageStr = ageStr;
+
         this.marmosetDataDic[agent.name] = agent;
+
       } catch (e) {
 
       }
     });
 
+    console.log('data', this.marmosetData);
 
     let clTableCard 
       = document.querySelector('#colony-table-card') as div;
@@ -84,7 +106,7 @@ export class Mkcolony {
     clTableCard.style.minHeight = String(colonyTab.clientHeight / 3) + 'px';
 
     this.clTable = new Tabulator(this.clTableDiv, {
-      data: data,
+      data: this.marmosetData,
       index: 'name',
       layout: 'fitColumns',
       initialSort: [
@@ -92,6 +114,7 @@ export class Mkcolony {
       ],
       columns: [
         {title: 'Name', field: 'name'},
+        {title: 'Age', field: 'ageStr'},
         {title: 'Sex', field: 'sex'},
         {title: 'DOB', field: 'birthdate'},
         {title: 'Breeding', field: 'breeding'},
