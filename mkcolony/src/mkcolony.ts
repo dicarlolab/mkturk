@@ -58,24 +58,39 @@ export class Mkcolony {
     this.marmosetData.forEach(agent => {
       try {
         
+        // let today = new Date();
+        // let dob = new Date(agent.birthdate);
+        // let age = (today.getTime() - dob.getTime()) / 1000;
+        // age /= (60 * 60 * 24 * 7 * 4);
+        // age = Math.abs(Math.floor(age));
+
+        // let ageStr;
+        
+        // if (age > 24) {
+        //   age = Math.floor(age / 12);
+        //   ageStr = String(age) + ' y/o'
+
+        // } else {
+        //   ageStr = String(age) + ' m/o';
+        // }
+
+        // agent.age = age;
+        // agent.ageStr = ageStr;
+
         let today = new Date();
         let dob = new Date(agent.birthdate);
-        let age = (today.getTime() - dob.getTime()) / 1000;
-        age /= (60 * 60 * 24 * 7 * 4);
-        age = Math.abs(Math.round(age));
+        let yearsDiff = today.getFullYear() - dob.getFullYear();
 
-        let ageStr;
-        
-        if (age > 24) {
-          age = Math.floor(age / 12);
-          ageStr = String(age) + ' y/o'
-
+        if (yearsDiff > 2) {
+          let ageStr = String(yearsDiff) + ' y/o';
+          agent.age = yearsDiff;
+          agent.ageStr = ageStr;
         } else {
-          ageStr = String(age) + ' m/o';
+          let monthsDiff = (yearsDiff * 12) + (today.getMonth() - dob.getMonth());
+          let ageStr = String(monthsDiff) + ' m/o';
+          agent.age = monthsDiff;
+          agent.ageStr = ageStr;
         }
-
-        agent.age = age;
-        agent.ageStr = ageStr;
 
         this.marmosetDataDic[agent.name] = agent;
 
