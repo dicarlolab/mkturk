@@ -82,12 +82,12 @@ export class Mkcolony {
         let yearsDiff = today.getFullYear() - dob.getFullYear();
 
         if (yearsDiff > 2) {
-          let ageStr = String(yearsDiff) + ' y/o';
+          let ageStr = String(yearsDiff) + ' yo';
           agent.age = yearsDiff;
           agent.ageStr = ageStr;
         } else {
           let monthsDiff = (yearsDiff * 12) + (today.getMonth() - dob.getMonth());
-          let ageStr = String(monthsDiff) + ' m/o';
+          let ageStr = String(monthsDiff) + ' mo';
           agent.age = monthsDiff;
           agent.ageStr = ageStr;
         }
@@ -286,8 +286,8 @@ export class Mkcolony {
     let dobSpan = document.createElement('span');
     let dobVal = document.createElement('span');
 
-    let colonySpan = document.createElement('span');
-    let colonyVal = document.createElement('span');
+    let ageSpan = document.createElement('span');
+    let ageVal = document.createElement('span');
 
     let sexSpan = document.createElement('span');
     let sexVal = document.createElement('span');
@@ -324,9 +324,9 @@ export class Mkcolony {
     dobSpan.style.textAlign = 'center';
     dobVal.textContent = data.birthdate;
 
-    colonySpan.textContent = 'Colony:';
-    colonySpan.style.textAlign = 'center';
-    colonyVal.textContent = data.colony;
+    ageSpan.textContent = 'Age:';
+    ageSpan.style.textAlign = 'center';
+    ageVal.textContent = data.ageStr;
 
     sexSpan.textContent = 'Sex:';
     sexSpan.style.textAlign = 'center';
@@ -376,8 +376,8 @@ export class Mkcolony {
     this.agBioDiv.appendChild(motherVal);
     this.agBioDiv.appendChild(albuminSpan);
     this.agBioDiv.appendChild(albuminVal);
-    this.agBioDiv.appendChild(colonySpan);
-    this.agBioDiv.appendChild(colonyVal);
+    this.agBioDiv.appendChild(ageSpan);
+    this.agBioDiv.appendChild(ageVal);
     this.agBioDiv.appendChild(rfidSpan);
     this.agBioDiv.appendChild(rfidVal);
     this.agBioDiv.appendChild(weightDateSpan);
@@ -517,6 +517,7 @@ export class Mkcolony {
     filter.style.height = '20%';
 
 
+    console.log('plotAgentWeight data', data);
 
     const agWtPlotConfig = {
       'chartType': 'LineChart',
@@ -527,7 +528,7 @@ export class Mkcolony {
         width: plot.clientWidth,
         height: plot.offsetHeight,
         legend: 'none' as 'none',
-        pointSize: 5
+        pointSize: 5,
       }
     };
 
