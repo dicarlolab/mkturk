@@ -493,8 +493,12 @@ export class Mkfinder {
     if (fileRef.fullPath == "mkturkfiles/parameterfiles/params_storage") {
       this.mke.makeActiveBtn.style.display = "inline-block";
       this.mke.btnBoxDiv.style.gridTemplateAreas = '"update-btn active-btn"';
+    } else if (fileRef.fullPath == 'mkturkfiles/parameterfiles/subjects') {
+      this.mke.storeParamBtn.style.display = 'inline-block';
+      this.mke.btnBoxDiv.style.gridTemplateAreas = '"update-btn store-param-btn"';
     } else {
       this.mke.makeActiveBtn.style.display = "none";
+      this.mke.storeParamBtn.style.display = 'none';
       this.mke.btnBoxDiv.style.gridTemplateAreas = '"update-btn update-btn"';
     }
 

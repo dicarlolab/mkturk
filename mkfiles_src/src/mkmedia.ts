@@ -20,6 +20,7 @@ export class Mkeditor {
   private updateBtn: HTMLButtonElement;
   public btnBoxDiv: HTMLDivElement;
   public makeActiveBtn: HTMLButtonElement;
+  public storeParamBtn: HTMLButtonElement;
   private activeFile: 
     { loc: string, id: string | FileRef };
   
@@ -33,9 +34,12 @@ export class Mkeditor {
     this.updateBtn = document.querySelector("#update-btn") as HTMLButtonElement;
     this.btnBoxDiv = document.querySelector("#button-box") as HTMLDivElement;
     this.makeActiveBtn = document.querySelector("#active-btn") as HTMLButtonElement;
+    this.storeParamBtn 
+      = document.querySelector('#store-param-btn') as HTMLButtonElement;
     this.activeFile = { loc: "", id: "" };
     this.updateBtnAction();
     this.makeActiveBtnAction();
+    this.storeParamBtnAction();
     this.fileNameP = 
     document.querySelector("#file-name-span") as HTMLParagraphElement;
   }
@@ -189,6 +193,34 @@ export class Mkeditor {
       }).catch(e => {
         console.error("[PARAM ACTIVATION FAILED]", "FILE:", fileRef, "ERROR", e);
         alert("Param Activation Failed");
+      });
+    });
+  }
+
+  private storeParamBtnAction() {
+    this.storeParamBtn.addEventListener('click' || 'pointerup', (ev: Event) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      console.log(this.activeFile);
+      let storageRef = storage.ref();
+      let file = this.editor.get();
+      let date = new Date();
+      let fileName = 'mkturkfiles/parameterfiles/params_storage/'
+        + file.Agent + "_params_" + date.toJSON().split('T')[0]
+        + '.json';
+      
+      let fileRef = storageRef.child(fileName);
+      file = new Blob([ JSON.stringify(file, null, 1) ]);
+      let metadata = {
+        contentType: 'application/json'
+      };
+
+      fileRef.put(file, metadata).then(snapshot => {
+        console.log('[PARAM STORED]:', snapshot.metadata.name);
+        alert('Param stored');
+      }).catch(e => {
+        console.error('[PARAM STORAGE FAILED]', 'FILE:', fileRef, 'ERROR', e);
+        alert('Param Storage Failed');
       });
     });
   }
