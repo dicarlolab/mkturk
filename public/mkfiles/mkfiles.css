@@ -199,6 +199,11 @@
   display: none;
 }
 
+#store-param-btn {
+  grid-area: store-param-btn;
+  display: none;
+}
+
 #image-canvas-div {
   z-index: 2;
   grid-column: 1;

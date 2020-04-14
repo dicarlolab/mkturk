@@ -1,0 +1,52 @@
+/* #colony-tab {
+  min-height: 100%;
+} */
+
+#colony-tab {
+  min-height: 80vh;
+}
+
+#agent-tab {
+  min-height: 80vh;
+}
+
+/* #colony-table-card {
+} */
+
+#colony-table {
+  overflow-y: scroll;
+}
+
+#colony-weight-card {
+  display: grid;
+  grid-template-rows: 8fr 1fr;
+  grid-template-areas: "clWtPlot"
+                       "clWtDateFilter";
+}
+
+#colony-weight-card > * {
+  margin: 0px;
+}
+
+#colony-weight-plot {
+  grid-area: clWtPlot;
+}
+
+#colony-weight-date-filter {
+  grid-area: clWtDateFilter;
+}
+
+#agent-bio {
+  padding: 10px;
+  height: 100%;
+  display: grid;
+  grid-template-rows: repeat(3, 1fr);
+  grid-template-columns: repeat(6, 1fr);
+}
+
+#agent-bio > *{
+  padding-top: 5px;
+  font-size: 20px;
+  vertical-align: middle;
+}
+

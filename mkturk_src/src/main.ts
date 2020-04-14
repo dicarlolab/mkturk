@@ -64,3 +64,4 @@ let CURRTRIAL = new G.CURRTRIAL();
 CURRTRIAL.init();
 let TRIAL = new G.TRIAL();
 TRIAL.reset(ENV, FLAGS);
+console.log('TRIAL.SampleObjectTy', TRIAL['SampleObjectTy'])

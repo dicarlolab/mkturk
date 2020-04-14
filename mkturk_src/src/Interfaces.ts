@@ -61,7 +61,20 @@ export interface ENV {
   ChoiceScale: number,
 
   Eye: Eye,
-  init(): any;
+
+  SubjectList: string[],
+  DataSavePath: string,
+  ParamDirPath: string,
+  SoundFilePrefix: string;
+  FirestoreCollection: {
+    data: string,
+    devices: string,
+    agents: string,
+    calibration: string
+  }
+
+  NDataFiles2Read: number,
+  init(): any
 }
 
 export interface Eye {
@@ -91,10 +104,12 @@ export interface FLAGS {
   need2loadScenes: number,
   scene3d: number,
   need2loadParameters: number,
+  need2writeParameters: number,
   savedata: number,
   stage: number,
   imagesPresent: number,
   stickyresponse: number,
+  sampleblockcount: number,
 
   waitingforTouches: number,
   touchduration: number,
@@ -107,6 +122,7 @@ export interface FLAGS {
   firestoretimeron: number,
   stressTest: number,
   RFIDGeneratorCreated: number,
+  purge: boolean,
   init(): any
 }
 
@@ -177,7 +193,51 @@ export interface CURRTRIAL {
   init(): any,
 }
 
-// TODO: export interface EVENTS
+export interface EVENTS {
+  trialnum: number;
+  trialseries: trialseries;
+  timeseries: timeseries;
+  imageseries: imageseries;
+}
+
+export interface trialseries {
+  Sample: any;
+  Test: any;
+  CorrectItem: any;
+  FixationGridIndex: any;
+  StartTime: any;
+  FixationTouchEvent: any;
+  FixationXYT: any;
+  Response: any;
+  TSequenceDesired: any;
+  TSequenceActual: any;
+  ResponseTouchEvent: any;
+  ResponseXYT: any;
+  NReward: any;
+  BatteryLDT: any;
+  BLEBatteryLT: any;
+}
+
+export interface timeseries {
+  RFIDTag: any;
+  Weight: any;
+  EyeData: any;
+}
+
+export interface imageseries {
+  SampleObjectTy: any;
+  SampleObjectTz: any;
+  SampleObjectRxy: any;
+  SampleObjectRxz: any;
+  SampleObjectRyz: any;
+  SampleObjectScale: any;
+  TestObjectTy: any;
+  TestObjectTz: any;
+  TestObjectRxy: any;
+  TestObjectRxz: any;
+  TestObjectRyz: any;
+  TestObjectScale: any;
+}
 
 // check types 
 export interface trialhistory {
@@ -226,10 +286,67 @@ export interface TRIAL {
   TestObjectRxy: any[],
   TestObjectRxz: any[],
   TestObjectRyz: any[],
-  TestObjectScale: any[]
+  TestObjectScale: any[],
 
-  reset(ENV: ENV, FLAGS: FLAGS): any;
-  update(CURRTRIAL: CURRTRIAL, FLAGS: FLAGS): any;
+  reset(ENV: ENV, FLAGS: FLAGS): any,
+  update(CURRTRIAL: CURRTRIAL, TASK: TASK, FLAGS: FLAGS): any
+}
+
+export interface TASK {
+  Automator: boolean,
+  AutomatorFilePath: string,
+  BackgroundColor2D: string,
+  CheckRFID: number,
+  ChoiceGridIndex: any[],
+  ChoiceScale: number,
+  ChoiceSizeInches: number,
+  ChoiceTimeOut: number,
+  ConsecutiveHitsITI: number,
+  CurrentAutomatorStage: number,
+  FixationDuration: number,
+  FixationMove: number,
+  FixationScale: number,
+  FixationSizeInches: number,
+  FixationTimeOut: number,
+  FixationUsesSample: number,
+  GridSpacingInches: number,
+  HideChoiceDistractors: boolean,
+  HideTestDistractors: boolean,
+  Homecage: number,
+  ImageBagsSample: any[],
+  ImageBagsTest: any[],
+  ImageRewardsList: any[],
+  InterTrialInterval: number,
+  KeepSampleON: boolean,
+  KeepTestON: boolean,
+  Liquid: number,
+  NConsecutiveHitsforBonus: number,
+  NFixations: number,
+  NGridPoints: number,
+  NRewardMax: number,
+  NStickyResponse: number,
+  ObjectGridIndex: any[],
+  Pump: number,
+  PunishTimeOut: number,
+  RewardPer1000Trials: number,
+  RewardStage: number,
+  SampleGridIndex: number,
+  SamplingStrategy: string,
+  SampleON: number,
+  SampleOFF: number,
+  SampleScale: number,
+  SampleSizeInches: number,
+  Separated: boolean,
+  Species: string,
+  StaticFixationGridIndex: number,
+  TestGridIndex: any[],
+  TestON: number,
+  TestOFF: number,
+  TestScale: number,
+  TestSizeImages: number,
+  Weight: number,
+
+
 }
 
 export interface sounds {
