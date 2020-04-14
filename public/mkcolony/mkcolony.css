@@ -6,6 +6,10 @@
   min-height: 80vh;
 }
 
+#agent-tab {
+  min-height: 80vh;
+}
+
 /* #colony-table-card {
 } */
 
@@ -36,7 +40,7 @@
   padding: 10px;
   height: 100%;
   display: grid;
-  grid-template-rows: repeat(4, 1fr);
+  grid-template-rows: repeat(3, 1fr);
   grid-template-columns: repeat(6, 1fr);
 }
 

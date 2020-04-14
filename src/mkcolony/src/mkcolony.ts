@@ -52,52 +52,8 @@ export class Mkcolony {
   }
 
   public populateTable(data: any[]) {
-    this.marmosetData = this.processWtData(data);
     this.marmosetDataDic = {};
-
-    this.marmosetData.forEach(agent => {
-      try {
-        
-        // let today = new Date();
-        // let dob = new Date(agent.birthdate);
-        // let age = (today.getTime() - dob.getTime()) / 1000;
-        // age /= (60 * 60 * 24 * 7 * 4);
-        // age = Math.abs(Math.floor(age));
-
-        // let ageStr;
-        
-        // if (age > 24) {
-        //   age = Math.floor(age / 12);
-        //   ageStr = String(age) + ' y/o'
-
-        // } else {
-        //   ageStr = String(age) + ' m/o';
-        // }
-
-        // agent.age = age;
-        // agent.ageStr = ageStr;
-
-        let today = new Date();
-        let dob = new Date(agent.birthdate);
-        let yearsDiff = today.getFullYear() - dob.getFullYear();
-
-        if (yearsDiff > 2) {
-          let ageStr = String(yearsDiff) + ' yo';
-          agent.age = yearsDiff;
-          agent.ageStr = ageStr;
-        } else {
-          let monthsDiff = (yearsDiff * 12) + (today.getMonth() - dob.getMonth());
-          let ageStr = String(monthsDiff) + ' mo';
-          agent.age = monthsDiff;
-          agent.ageStr = ageStr;
-        }
-
-        this.marmosetDataDic[agent.name] = agent;
-
-      } catch (e) {
-
-      }
-    });
+    this.marmosetData = this.processData(data);
 
     console.log('data', this.marmosetData);
 
@@ -114,11 +70,10 @@ export class Mkcolony {
 
     let grid
       = document.querySelector('#colony-weight-grid') as div;
-    grid.style.minHeight = String(colonyTab.clientHeight / 3) + 'px';
+    grid.style.minHeight = String(colonyTab.clientHeight / 2) + 'px';
 
-    clTableCard.style.maxHeight = String(colonyTab.clientHeight / 3) + 'px';
-    clTableCard.style.height = '500 px';
-    clTableCard.style.minHeight = String(colonyTab.clientHeight / 3) + 'px';
+    clTableCard.style.maxHeight = String(colonyTab.clientHeight / 2) + 'px';
+    clTableCard.style.minHeight = String(colonyTab.clientHeight / 2) + 'px';
 
     this.clTable = new Tabulator(this.clTableDiv, {
       data: this.marmosetData,
@@ -132,9 +87,30 @@ export class Mkcolony {
         {title: 'Age', field: 'ageStr'},
         {title: 'Sex', field: 'sex'},
         {title: 'DOB', field: 'birthdate'},
+        {title: 'CWA', field: 'cwa'},
         {title: 'Breeding', field: 'breeding'},
         {title: 'Cage Mate', field: 'grouphoused_values'},
-        {title: 'Last Weighed Date', field: 'last_weight_date'},
+        {title: 'Last Weighed Date', field: 'last_weight_date', formatter:function(cell: any){
+          let weighedDate = new Date(cell.getValue()).getTime();
+          let today = new Date().getTime();
+          let diff = Math.round((today-weighedDate) / (1000 * 60 * 60 * 24));
+
+          if (cell.getData().cwa == 1) {
+            if (diff >= 21) {
+              cell.getElement().style.backgroundColor = 'Red';
+            } else if (diff >= 7) {
+              cell.getElement().style.backgroundColor = 'Yellow';
+            }
+          } else if (cell.getData().cwa == 0) {
+            if (diff >= 21) {
+              cell.getElement().style.backgroundColor = 'Red';
+            } else if (diff >= 14) {
+              cell.getElement().style.backgroundColor = 'Yellow';
+            }
+          }
+          
+          return cell.getValue();
+        }},
         {title: 'Last Weight', field: 'last_weight_value'},
       ],
       rowDblClick: (ev: Event, row) => {
@@ -157,7 +133,9 @@ export class Mkcolony {
   }
 
   private populateAgentTab(agentName: string) {
+    console.log('marmoDataDic', this.marmosetDataDic);
     let agentData = this.marmosetDataDic[agentName];
+    console.log(agentData);
     this.populateAgentBio(agentData);
     this.plotAgentWeight(agentData);
     let ret = this.loadAndProcessFlData(agentName);
@@ -304,17 +282,14 @@ export class Mkcolony {
     let rfidSpan = document.createElement('span');
     let rfidVal = document.createElement('span');
 
-    let albuminDateSpan = document.createElement('span');
-    let albuminDateVal = document.createElement('span');
-
     let albuminSpan = document.createElement('span');
     let albuminVal = document.createElement('span');
-    
-    let weightDateSpan = document.createElement('span');
-    let weightDateVal = document.createElement('span');
 
     let weightSpan = document.createElement('span');
     let weightVal = document.createElement('span');
+
+    let cwaSpan = document.createElement('span');
+    let cwaVal = document.createElement('span');
 
     nameSpan.textContent = 'Name:';
     nameSpan.style.textAlign = 'center';
@@ -348,46 +323,42 @@ export class Mkcolony {
     rfidSpan.style.textAlign = 'center';
     rfidVal.textContent = data.rfid;
     
-    albuminDateSpan.textContent = 'Recent Albumin Date:';
-    albuminDateSpan.style.textAlign = 'center';
-    albuminDateVal.textContent = data.recent_albumin_date;
-
-    albuminSpan.textContent = 'Recent Albumin Value:';
+    albuminSpan.textContent = 'Recent Albumin';
     albuminSpan.style.textAlign = 'center';
-    albuminVal.textContent = data.recent_albumin_value;
+    albuminVal.textContent
+      = data.recent_albumin_value + ', ' + data.recent_albumin_date;
 
-    weightDateSpan.textContent = 'Recent Weight Date:';
-    weightDateSpan.style.textAlign = 'center';
-    weightDateVal.textContent = data.last_weight_date;
-
-    weightSpan.textContent = 'Recent Weight Value:';
+    weightSpan.textContent = 'Recent Weight:';
     weightSpan.style.textAlign = 'center';
-    weightVal.textContent = data.last_weight_value + ' g';
+    weightVal.textContent 
+      = data.last_weight_value + ' g, ' + data.last_weight_date;
+
+    cwaSpan.textContent = 'CWA:';
+    cwaSpan.style.textAlign = 'center';
+    cwaVal.textContent = data.cwa;
 
     this.agBioDiv.appendChild(nameSpan);
     this.agBioDiv.appendChild(nameVal);
-    this.agBioDiv.appendChild(fatherSpan);
-    this.agBioDiv.appendChild(fatherVal);
-    this.agBioDiv.appendChild(albuminDateSpan);
-    this.agBioDiv.appendChild(albuminDateVal);
+    this.agBioDiv.appendChild(breedingSpan);
+    this.agBioDiv.appendChild(breedingVal);
+    this.agBioDiv.appendChild(cwaSpan);
+    this.agBioDiv.appendChild(cwaVal);
     this.agBioDiv.appendChild(dobSpan);
     this.agBioDiv.appendChild(dobVal);
-    this.agBioDiv.appendChild(motherSpan);
-    this.agBioDiv.appendChild(motherVal);
+    this.agBioDiv.appendChild(fatherSpan);
+    this.agBioDiv.appendChild(fatherVal);
     this.agBioDiv.appendChild(albuminSpan);
     this.agBioDiv.appendChild(albuminVal);
     this.agBioDiv.appendChild(ageSpan);
     this.agBioDiv.appendChild(ageVal);
-    this.agBioDiv.appendChild(rfidSpan);
-    this.agBioDiv.appendChild(rfidVal);
-    this.agBioDiv.appendChild(weightDateSpan);
-    this.agBioDiv.appendChild(weightDateVal);
-    this.agBioDiv.appendChild(sexSpan);
-    this.agBioDiv.appendChild(sexVal);
-    this.agBioDiv.appendChild(breedingSpan);
-    this.agBioDiv.appendChild(breedingVal);
+    this.agBioDiv.appendChild(motherSpan);
+    this.agBioDiv.appendChild(motherVal);
     this.agBioDiv.appendChild(weightSpan);
     this.agBioDiv.appendChild(weightVal);
+    this.agBioDiv.appendChild(sexSpan);
+    this.agBioDiv.appendChild(sexVal);
+    this.agBioDiv.appendChild(rfidSpan);
+    this.agBioDiv.appendChild(rfidVal);
 
     try {
       this.agJson.destroy();
@@ -481,9 +452,10 @@ export class Mkcolony {
     return data;
   }
 
-  public processWtData(data: any[]) {
+  public processData(data: any[]) {
     data = this.timestampToDate(data);
-    data.forEach(row => {
+
+    const _processData = (row: any, idx: number, arr: Array<any>) => {
       for (let key of Object.keys(row)) {
         if (key == 'albumin_dates') {
           row['recent_albumin_date'] = row['albumin_dates'].slice(-1)[0]; 
@@ -495,8 +467,37 @@ export class Mkcolony {
           row['last_weight_value'] = row['weight_values'].slice(-1)[0];
         }
       }
-    });
 
+      if ('dateofdeath' in row) {
+        arr.splice(idx, 1);
+        return;
+      }
+
+      try {
+        
+        let today = new Date();
+        let dob = new Date(row.birthdate);
+        let yearsDiff = today.getFullYear() - dob.getFullYear();
+
+        if (yearsDiff > 2) {
+          let ageStr = String(yearsDiff) + ' yo';
+          row.age = yearsDiff;
+          row.ageStr = ageStr;
+        } else {
+          let monthsDiff = (yearsDiff * 12) + (today.getMonth() - dob.getMonth());
+          let ageStr = String(monthsDiff) + ' mo';
+          row.age = monthsDiff;
+          row.ageStr = ageStr;
+        }
+
+        this.marmosetDataDic[row.name] = row;
+
+      } catch (e) {
+
+      }
+    }
+
+    data.forEach(_processData);
     return data;
   }
 
