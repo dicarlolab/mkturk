@@ -933,7 +933,7 @@ while(true){
 			ENV.ImageWidthPixels = representative_image.width
 			ENV.ImageHeightPixels = representative_image.height
 		}
-		else if (TQS.testq.filenames.length > 0 && TQS.testq.filenames[0] != ""){
+		else if (TQS.testq.filenames.length > 0 && TQS.testq.filenames[0][0] != ""){
 			var representative_image = await TQS.IB.get_by_name(TQS.testq.filenames[0])
 			ENV.ImageWidthPixels = representative_image.width
 			ENV.ImageHeightPixels = representative_image.height
@@ -1486,7 +1486,7 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 			// Cloud Storage: Save data asynchronously to json
 			saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, TRIAL);
 
-			// Cloud Firestore: Save data asynchronously to databaes
+			// Cloud Firestore: Save data asynchronously to database
 			if (FLAGS.createnewfirestore == 1){
 				saveBehaviorDatatoFirestore(TASK,ENV,CANVAS); //write once
 				pingFirestore() //every 10 seconds, will check for data updates to upload to firestore
