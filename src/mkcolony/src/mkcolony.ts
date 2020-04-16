@@ -170,7 +170,11 @@ export class Mkcolony {
         width: plot.clientWidth,
         height: plot.clientHeight,
         legend: 'none' as 'none',
-        pointSize: 5
+        pointSize: 5,
+        vAxis: {
+          minValue: 0,
+          maxValue: 50
+        }
       }
     };
 
