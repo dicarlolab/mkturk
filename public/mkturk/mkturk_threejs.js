@@ -324,11 +324,11 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
 
 //==== BOUNDING BOX
     var box = new THREE.BoxHelper(objects,0xff0000)
-    if (FLAGS.savedata == 1){
-        box.material.visible = false //show bounding boxes during practice
+    if (FLAGS.savedata == 0){
+        box.material.visible = true //show bounding boxes during practice
     }
     else{
-        box.material.visible = true //hide the bounding boxes during testing
+        box.material.visible = false //hide the bounding boxes during testing
     }
     box.name = taskscreen
 	scene[taskscreen].add(box)
