@@ -60,3 +60,15 @@
   text-decoration: none;
   text-align: center;
 }
+
+#mkcolony-link {
+  display: block;
+  font-family: Roboto;
+  color: white;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 60px;
+  line-height: 60px;
+  text-decoration: none;
+  text-align: center;
+}
