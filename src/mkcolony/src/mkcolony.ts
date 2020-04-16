@@ -170,7 +170,11 @@ export class Mkcolony {
         width: plot.clientWidth,
         height: plot.clientHeight,
         legend: 'none' as 'none',
-        pointSize: 5
+        pointSize: 5,
+        vAxis: {
+          minValue: 0,
+          maxValue: 50
+        }
       }
     };
 
@@ -518,19 +522,41 @@ export class Mkcolony {
     filter.style.height = '20%';
 
 
-    console.log('plotAgentWeight data', data);
+    let plotOptions: any = {
+      interpolateNulls: true,
+      title: 'Weight Plot',
+      width: plot.clientWidth,
+      height: plot.offsetHeight,
+      legend: 'none' as 'none',
+      pointSize: 5,
+    };
+
+    if (data.ageStr.split(' ')[1] == 'mo' && data.ageStr.split(' ')[0] <= 15) {
+      plotOptions.vAxis = {
+        minValue: 0,
+        maxValue: 350
+      };
+
+      plotOptions.vAxis.ticks = [
+        0, 150, 250, 350
+      ];
+
+    } else {
+      plotOptions.vAxis = {
+        minValue: 250,
+        maxValue: 500
+      };
+
+      plotOptions.vAxis.ticks = [
+        250, 300, 400, 500 
+      ];
+    }
+
 
     const agWtPlotConfig = {
       'chartType': 'LineChart',
       'containerId': 'agent-weight-plot',
-      'options': {
-        interpolateNulls: true,
-        title: 'Weight Plot',
-        width: plot.clientWidth,
-        height: plot.offsetHeight,
-        legend: 'none' as 'none',
-        pointSize: 5,
-      }
+      'options': plotOptions
     };
 
     const agWtFilterOptions = {
