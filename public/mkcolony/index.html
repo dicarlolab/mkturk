@@ -22,7 +22,27 @@
         <div class="mdl-layout__header-row">
           <!-- Title -->
           <span class="mdl-layout-title">MKCOLONY</span>
+          <div class="mdl-layout-spacer"></div>
+          <nav class="mdl-navigation">
+            <a class="mdl-navigation__link" id="sign-in-nav-link" href="#" onclick="getElementById('sign-in-modal').showModal();">Sign In</a>
+          </nav>
         </div>
+
+        <dialog class="mdl-dialog" id="sign-in-modal">
+          <h3 class="mdl-dialog__title">SIGN IN</h3>
+          <div class="mdl-dialog__content">
+            <form id="sign-in-form">
+              <label for="email">Email:</label>
+              <input type="email" id="email" name="email" required><br>
+              <label for="pw">Password:</label>
+              <input type="password" id="pw" name="pw" required>
+            </form>
+          </div>
+          <div class="mdl-dialog__actions">
+            <button type="submit" class="mdl-button" id="modal-sign-in-btn">Sign In</button>
+            <button type="button" class="mdl-button" id="modal-close-btn">Close</button>
+          </div>
+        </dialog>
 
         <!-- Tabs -->
         <div class="mdl-layout__tab-bar mdl-js-ripple-effect">
@@ -30,14 +50,9 @@
           <a href="#agent-tab" class="mdl-layout__tab" id="agent-tab-bar">Agent</a>
         </div>
       </header>
-
-      
-      
-  
-      
       
       <main class="mdl-layout__content">
-        <section class="mdl-layout__tab-panel is-active" id="colony-tab">
+        <section class="mdl-layout__tab-panel is-active log-in" id="colony-tab">
           <div class="page-content mdl-grid" id="colony-table-grid">
             <div id="colony-table-card" class="mdl-cell mdl-cell--1-offset mdl-cell--10-col mdl-card mdl-shadow--2dp">
               <div id="colony-table"></div>
@@ -53,7 +68,7 @@
 
         </section>
 
-        <section class="mdl-layout__tab-panel" id="agent-tab">
+        <section class="mdl-layout__tab-panel log-in" id="agent-tab">
 
           <div class="page-content mdl-grid" id="agent-bio-grid">
             <div id="agent-bio-card" class="mdl-cell mdl-cell--1-offset mdl-cell--10-col mdl-card mdl-shadow--2dp">
