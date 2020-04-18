@@ -733,8 +733,6 @@ while(true){
 		windowHeight = document.body.clientHeight;
 		setupCanvas(VISIBLECANVAS);
 
-		setupCanvas(VISIBLECANVASWEBGL)
-
  		//Foreground canvas that displays eye position during practice screen
  		setupEyeTrackerCanvas()
 
@@ -887,6 +885,7 @@ while(true){
 
 		//============ 2: INIT SCENE & CAMERA ============//
 		console.time('3JS: LOAD SCENE')
+    setupCanvas(VISIBLECANVASWEBGL)
 		await initThreeJS(IMAGES)
 		console.log('3js: init scene')
 		//============ (END) 2: INIT SCENE & CAMERA ============//
