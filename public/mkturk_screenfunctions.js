@@ -557,7 +557,7 @@ function displayTrial(sequence,tsequence){
 
 		// If time to show new frame, 
 		if (timestamp - start > tsequence[frame.current]){
-			//console.log('Frame =' + frame.current+'. Duration ='+(timestamp-start)+'. Timestamp = ' + timestamp)
+			console.log('Frame =' + frame.current+'. Duration ='+(timestamp-start)+'. Timestamp = ' + timestamp)
 			
 			//3D render
 			if (FLAGS.scene3d == 1){
@@ -575,7 +575,7 @@ function displayTrial(sequence,tsequence){
 					if (TASK.KeepSampleON == 1 && (sequence[frame.current] == "test" || sequence[frame.current]=="choice")){
 						setViewport(TASK.SampleGridIndex)
 						var camera = scene["Sample"].getObjectByName("cam"+CURRTRIAL.sample_scenebag_label)
-				    	renderer.render(scene["Sample"],camera) //takes >1ms, do before the fast 2D swap (<1ms)	
+						renderer.render(scene["Sample"],camera)
 				   	}
 					if (TASK.KeepTestON == 1 && sequence[frame.current] == "choice"){
 						setViewport(TASK.TestGridIndex[0])
@@ -588,17 +588,20 @@ function displayTrial(sequence,tsequence){
 						console.time("first scene")
 						if (sequence[frame.current] == "touchfix" && TASK.FixationUsesSample){
 							setViewport(CURRTRIAL.fixationgridindex)
-							var camera = scene["Sample"].getObjectByName("cam"+CURRTRIAL.sample_scenebag_label)							
+							var camera = scene["Sample"].getObjectByName("cam"+CURRTRIAL.sample_scenebag_label)	
+							renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)						
 						}//fixationusessample
 						else if (sequence[frame.current]=="sample"){
 							setViewport(TASK.SampleGridIndex)
-							var camera = scene["Sample"].getObjectByName("cam"+CURRTRIAL.sample_scenebag_label)							
+							var camera = scene["Sample"].getObjectByName("cam"+CURRTRIAL.sample_scenebag_label)
+							renderer.render(scene["Sample"],camera) //takes >1ms, do before the fast 2D swap (<1ms)			
 						}//sample
 						else if (sequence[frame.current]=="test"){
 							setViewport(TASK.TestGridIndex[0])
-							var camera = scene[taskscreen].getObjectByName("cam"+CURRTRIAL.test_scenebag_labels[0])					
+							var camera = scene[taskscreen].getObjectByName("cam"+CURRTRIAL.test_scenebag_labels[0])	
+							renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)				
 						} //test
-				    	renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
+						
 						console.timeEnd("first scene")
 				    	if (sequence[frame.current] == "test" && CURRTRIAL.test_scenebag_labels.length > 1){
 				    		for (var j = 1; j<=CURRTRIAL.test_scenebag_labels.length - 1; j++){
@@ -607,6 +610,7 @@ function displayTrial(sequence,tsequence){
 										taskscreen,
 										CURRTRIAL.test_scenebag_labels[j],
 										CURRTRIAL.test_scenebag_indices[j],
+										[],
 										TASK.TestGridIndex[j]
 									)
 									console.timeEnd("test1Update")
@@ -691,30 +695,52 @@ function displayTrial(sequence,tsequence){
 		};
 		// continue if not all frames shown
 		if (frame.shown[frame.shown.length-1] != 1){
-
 			if (FLAGS.scene3d == 1){
-					
 				var taskscreen = [sequence[frame.current].charAt(0).toUpperCase() + sequence[frame.current].slice(1)]
 				if (sequence[frame.current] == "sample" && scene["Sample"].framenum != frame.current || 
 					sequence[frame.current] == 'touchfix' && TASK.FixationUsesSample){
 					console.time("sampleUpdate")
 					if (sequence[frame.current] == 'touchfix' && TASK.FixationUsesSample){
-						updateSingleFrame3D(
-									"Sample",
-									CURRTRIAL.sample_scenebag_label,
-									CURRTRIAL.sample_scenebag_index,
-									CURRTRIAL.fixationgridindex
-						)					
+						
+						if (FLAGS.moviepersample[CURRTRIAL.sample_scenebag_label][CURRTRIAL.sample_scenebag_index] == 1){
+							updateSingleFrame3D(
+								"Sample",
+								CURRTRIAL.sample_scenebag_label,
+								CURRTRIAL.sample_scenebag_index,
+								CURRTRIAL.movieindex,
+								CURRTRIAL.fixationgridindex
+						)				
+						} else { // if not a movie
+							updateSingleFrame3D(
+								"Sample",
+								CURRTRIAL.sample_scenebag_label,
+								CURRTRIAL.sample_scenebag_index,
+								[],
+								CURRTRIAL.fixationgridindex
+						)				
+						}	
 					}//IF FixationUsesSample
 					else{
-						updateSingleFrame3D(
-									taskscreen,
-									CURRTRIAL.sample_scenebag_label,
-									CURRTRIAL.sample_scenebag_index,
-									TASK.SampleGridIndex
-								)						
+						if (FLAGS.moviepersample[CURRTRIAL.sample_scenebag_label][CURRTRIAL.sample_scenebag_index] == 1){
+							updateSingleFrame3D(
+								"Sample",
+								CURRTRIAL.sample_scenebag_label,
+								CURRTRIAL.sample_scenebag_index,
+								CURRTRIAL.movieindex,
+								TASK.SampleGridIndex
+						)				
+						} else { // if not a movie
+							updateSingleFrame3D(
+								taskscreen,
+								CURRTRIAL.sample_scenebag_label,
+								CURRTRIAL.sample_scenebag_index,
+								[],
+								TASK.SampleGridIndex
+						)				
+						}				
 					}//IF sample
 					scene["Sample"].framenum = frame.current
+					CURRTRIAL.movieindex ++ 
 					console.log("UPDATED SINGLEFRAME3D SAMPLE" + Math.random())	
 					console.timeEnd("sampleUpdate")	
 				} //IF sample
@@ -726,6 +752,7 @@ function displayTrial(sequence,tsequence){
 								taskscreen,
 								CURRTRIAL.test_scenebag_labels[0],
 								CURRTRIAL.test_scenebag_indices[0],
+								[],
 								TASK.TestGridIndex[0]
 							) //Update 3D scene prior to next frame draw
 				scene["Test"].framenum = frame.current

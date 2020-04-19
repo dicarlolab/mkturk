@@ -129,6 +129,8 @@ FLAGS.firestorelastsavedtrial = 0
 FLAGS.firestoretimeron = 0
 FLAGS.stressTest = 0
 FLAGS.RFIDGeneratorCreated = 0
+FLAGS.movie = []
+FLAGS.moviepersample = []
 
 var CANVAS = {}; 
 var CANVAS = {

@@ -855,8 +855,12 @@ while(true){
 
 			//Determine if images will also be rendered
 			IMAGES.Sample[j].nbackgroundimages = IMAGES.Sample[j].IMAGES.imageidx.length
-			IMAGES.Test[j].nbackgroundimages = IMAGES.Test[j].IMAGES.imageidx.length		
+			IMAGES.Test[j].nbackgroundimages = IMAGES.Test[j].IMAGES.imageidx.length
+
+			//Create FLAGS.movie for each sample 
+			FLAGS.moviepersample[j] = [] 
 		}
+		
 		//============ (END) 0: LOAD SCENES from JSON ============//
 
 		//============ 1: LOAD MESHES FOR SCENES ============//
@@ -888,6 +892,7 @@ while(true){
 		console.time('3JS: LOAD SCENE')
 		await initThreeJS(IMAGES)
 		console.log('3js: init scene')
+
 		//============ (END) 2: INIT SCENE & CAMERA ============//
 
 		//============ 3: ADD ALL LIGHTS/OBJECTS TO SCENE ============//
@@ -896,7 +901,10 @@ while(true){
 		for (scenetype in scene){
 			await addToScene(scenetype)
 		}
-		console.log('3js: added lights & objects')	
+		console.log('3js: added lights & objects')
+		
+		// FLAGS.movie 
+		FLAGS.movie = Math.max(...FLAGS.movie)
 		//============ (END) 3: ADD ALL LIGHTS/OBJECTS TO SCENE ============//
 
 		//============ 4: PRELOAD SHADERS (COMPILE) ============//
@@ -927,7 +935,7 @@ while(true){
 
 		//Get ImageWidth, if any
 		await TQS.generate_trials(1)
-		if (TQS.sampleq.filename.length > 0){
+		if (TQS.sampleq.filename.length > 0 && TQS.sampleq.filename[0] != ""){
 			var representative_image = await TQS.IB.get_by_name(TQS.sampleq.filename[0])
 			ENV.ImageWidthPixels = representative_image.width
 			ENV.ImageHeightPixels = representative_image.height
@@ -956,6 +964,7 @@ while(true){
 		delete(TRIAL.TestObjectRxz)
 		delete(TRIAL.TestObjectRyz)
 		delete(TRIAL.TestObjectScale)
+
 	} //IF load scenes
 	//========================(END) 3D SCENE SET-UP =======================//
 
@@ -1231,16 +1240,25 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 	//============== AWAIT SHOW SAMPLE THEN TEST ==============//
 	if (TASK.RewardStage === 1){
 		frame.shown=[]
-		
-		for (var q in CANVAS.sequence){frame.shown[q]=0} 
-		frame.current=0
-		if (FLAGS.scene3d){
-			scene["Sample"].framenum=0
-			scene["Test"].framenum=0			
+        frame.current=0
+		    if (FLAGS.scene3d){
+			    scene["Sample"].framenum=0
+			    scene["Test"].framenum=0			
+		    }
+		CURRTRIAL.movieindex = 0 
+		var framerate = 60
+		if (FLAGS.moviepersample[CURRTRIAL.sample_scenebag_label][CURRTRIAL.sample_scenebag_index] == 1){ //if current trial is a movie 
+			[movie_sequence,movie_tsequence] = createMovieSeq(IMAGES["Sample"][CURRTRIAL.sample_scenebag_label].durationMS,framerate)
+			for (var q in movie_sequence){frame.shown[q]=0}
+         
+			CURRTRIAL.tsequenceactual = await displayTrial(movie_sequence,movie_tsequence)
+			CURRTRIAL.tsequencedesired = movie_tsequence
+		} else { // not a movie
+		    for (var q in CANVAS.sequence){frame.shown[q]=0} 
+		 //renderScreen(CANVAS.sequence[0],OFFSCREENCANVAS)
+			CURRTRIAL.tsequenceactual = await displayTrial(CANVAS.sequence,CANVAS.tsequence);
+			CURRTRIAL.tsequencedesired = CANVAS.tsequence
 		}
- 		//renderScreen(CANVAS.sequence[0],OFFSCREENCANVAS)
-		CURRTRIAL.tsequenceactual = await displayTrial(CANVAS.sequence,CANVAS.tsequence);
-		CURRTRIAL.tsequencedesired = CANVAS.tsequence
 		audiocontext.suspend()
 
 		logEVENTS("TSequenceActual",CURRTRIAL.tsequenceactual,"trialseries")

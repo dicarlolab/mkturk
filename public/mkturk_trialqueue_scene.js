@@ -163,9 +163,9 @@ async generate_trials(n_trials){
 
 		// Add to queue 
 		this.sampleq.index.push(sample_index)
-		if (sample_filename != ""){
+		//if (sample_filename != ""){
 			this.sampleq.filename.push(sample_filename)
-		}
+		//}
 
 		this.testq.indices.push(test_indices)
 		this.testq.correctIndex.push(correctIndex)

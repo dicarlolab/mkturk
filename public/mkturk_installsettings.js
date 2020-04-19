@@ -3,7 +3,7 @@
 
 // ------ Subject settings ------ 
 var subjectlist = [
-"Eliaso","Youno","Sophieo","Hectoro","Ericao","Alexo","West","Waffles","Sausage","Rafiki","Hutch","Eggo","East","Bloo","Blintz","Blaise","Athena","AJ","You-Nah","Tahereh","Sophie","Hector","Erica","Elias","Andrea","Alex"
+"Eliaso","Youno","Youno2","Sophieo","Hectoro","Ericao","Alexo","West","Waffles","Sausage","Rafiki","Hutch","Eggo","East","Bloo","Blintz","Blaise","Athena","AJ","You-Nah","Tahereh","Sophie","Hector","Erica","Elias","Andrea","Alex"
 ];
 
 // ------ Save location settings ------
