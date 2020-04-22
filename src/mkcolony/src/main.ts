@@ -28,36 +28,62 @@ let signInNavLink = document.querySelector('#sign-in-nav-link') as HTMLElement;
 let signOutNavLink = document.querySelector('#sign-out-nav-link') as HTMLElement;
 
 
+// auth.getRedirectResult().then(result => {
+//   console.log('result', result);
+//   if (result.credential) {
+//     let token = result.credential;
+//     console.log('token:', token);
+//     console.log('result', result);
+//   } else {
+//     console.log('token: null');
+//   }
+// }).catch(e => {
+//   let errorCode = e.code;
+//   let errorMsg = e.message;
+//   let errorEmail = e.email;
+//   let errorCred = e.credential;
+
+//   if (errorCode === 'auth/account-exists-with-different-credentials') {
+//     alert('You have already signed up with a different auth provider for that email');
+//   } else {
+//     console.error(e);
+//   }
+// });
+
+// auth.onAuthStateChanged(user => {
+//   if (user) {
+//     console.log('user logged in: ', user);
+//     console.log('email', user.email);
+//   } else {
+//     console.log('user is signed out', user);
+//   }
+// });
+
 auth.getRedirectResult().then(result => {
-  console.log('result', result);
+  console.log('result 1', result);
   if (result.credential) {
     let token = result.credential;
-    console.log('token:', token);
-    console.log('result', result);
+    console.log('token', token);
+    console.log('result 2', result);
   } else {
     console.log('token: null');
+    let provider = new firebase.auth.GoogleAuthProvider();
+    provider.addScope('https://www.googleapis.com/auth/plus.me');
+    provider.addScope('https://www.googleapis.com/auth/user.emails.read');
+    provider.addScope('https://www.googleapis.com/auth/userinfo.email');
+    auth.signInWithRedirect(provider);
   }
 }).catch(e => {
-  let errorCode = e.code;
-  let errorMsg = e.message;
-  let errorEmail = e.email;
-  let errorCred = e.credential;
-
-  if (errorCode === 'auth/account-exists-with-different-credentials') {
-    alert('You have already signed up with a different auth provider for that email');
-  } else {
-    console.error(e);
-  }
+  console.error('error', e);
 });
 
 auth.onAuthStateChanged(user => {
-  if (user) {
-    console.log('user logged in: ', user);
-    console.log('email', user.email);
-  } else {
-    console.log('user is signed out', user);
-  }
+  console.log('auth state changed user', user);
+  let usr = auth.currentUser;
+  console.log('currentUser', usr);
 });
+
+
 
 
 signInNavLink.addEventListener('click', (ev: Event) => {
