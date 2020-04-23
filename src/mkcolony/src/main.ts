@@ -64,6 +64,11 @@ auth.getRedirectResult().then(result => {
   if (result.credential) {
     let token = result.credential;
     console.log('token', token);
+    auth.currentUser?.getIdToken(true).then((idToken) => {
+      console.log('idToken:', idToken);
+    }).catch(e => {
+      console.error('error idToken', e);
+    });
     console.log('result 2', result);
   } else {
     console.log('token: null');

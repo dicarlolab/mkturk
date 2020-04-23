@@ -1,6 +1,7 @@
 import * as functions from 'firebase-functions';
 import {BigQuery} from '@google-cloud/bigquery';
 import * as DeviceDetector from 'device-detector-js';
+import * as admin from 'firebase-admin';
 
 // // Start writing Firebase Functions
 // // https://firebase.google.com/docs/functions/typescript
