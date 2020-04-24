@@ -95,7 +95,7 @@ async function addToScene(taskscreen){
          FLAGS.moviepersample[classlabel] = Array(IMAGES[taskscreen][classlabel].nimages).fill(0);
     }
 
-    var framerate = 60; 
+    var framerate = CANVAS.framerate
 
 //==== LIGHTS
     LIGHTS[taskscreen][classlabel]=[]

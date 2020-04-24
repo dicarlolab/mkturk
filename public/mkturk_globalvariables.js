@@ -147,6 +147,7 @@ var CANVAS = {
 	headsupfraction: NaN,
 	offsetleft: 0,
 	offsettop: 0,
+	framerate : 60
 }
 
 var OFFSCREENCANVAS = null

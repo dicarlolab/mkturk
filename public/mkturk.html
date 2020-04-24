@@ -1246,9 +1246,8 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 			    scene["Test"].framenum=0			
 		    }
 		CURRTRIAL.movieindex = 0 
-		var framerate = 60
 		if (FLAGS.moviepersample[CURRTRIAL.sample_scenebag_label][CURRTRIAL.sample_scenebag_index] == 1){ //if current trial is a movie 
-			[movie_sequence,movie_tsequence] = createMovieSeq(IMAGES["Sample"][CURRTRIAL.sample_scenebag_label].durationMS,framerate)
+			[movie_sequence,movie_tsequence] = createMovieSeq(IMAGES["Sample"][CURRTRIAL.sample_scenebag_label].durationMS,CANVAS.framerate)
 			for (var q in movie_sequence){frame.shown[q]=0}
          
 			CURRTRIAL.tsequenceactual = await displayTrial(movie_sequence,movie_tsequence)
