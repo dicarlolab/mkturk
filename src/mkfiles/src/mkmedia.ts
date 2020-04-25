@@ -24,7 +24,9 @@ export class Mkeditor {
   private activeFile: 
     { loc: string, id: string | FileRef };
   
-  fileNameP: HTMLParagraphElement;
+  public fileNameInput: HTMLInputElement;
+  private fileRenameBtn: HTMLButtonElement;
+
 
   constructor() {
     this.editorDivElement 
@@ -40,8 +42,17 @@ export class Mkeditor {
     this.updateBtnAction();
     this.makeActiveBtnAction();
     this.storeParamBtnAction();
-    this.fileNameP = 
-    document.querySelector("#file-name-span") as HTMLParagraphElement;
+    this.fileNameInput
+      = document.querySelector("#file-name-input") as HTMLInputElement;
+    this.fileRenameBtn
+      = document.querySelector('#file-rename-btn') as HTMLButtonElement;
+    this.renameBtnAction();
+    this.getActiveFile();
+
+  }
+
+  public getActiveFile() {
+    return this.activeFile;
   }
 
   public displayFirebaseTextFile(file: Object, loc: string) {
@@ -59,14 +70,18 @@ export class Mkeditor {
   }
 
   public displayBigQueryTableRow(data: any) {
+    this.fileNameInput.disabled = false;
+    this.fileRenameBtn.style.visibility = 'hidden';
     this.updateBtn.style.visibility = 'hidden';
+    this.storeParamBtn.style.visibility = 'hidden';
+    this.makeActiveBtn.style.visibility = 'hidden';
     try {
       this.editor.destroy();
       let options = {
         modes: ['tree' as 'tree', 'code' as 'code']
       };
       this.editor = new JSONEditor(this.editorElement, options, data);
-      this.fileNameP.innerText = data.timestamp.value;
+      this.fileNameInput.placeholder = data.timestamp.value;
       // console.log("displayBigQueryTableRow", data);
     } catch (error) {
       console.error("JSONEditor Error:", error);
@@ -74,45 +89,53 @@ export class Mkeditor {
   }
 
   private trackFirebaseActiveFile(loc: string, file: any) {
+    this.fileNameInput.disabled = false;
+    this.fileRenameBtn.style.visibility = 'hidden';
+    this.storeParamBtn.style.visibility = 'hidden';
+    this.makeActiveBtn.style.visibility = 'hidden';
+
     if (loc === "marmosets") {
       this.activeFile = { loc: loc, id: file.name };
-      this.fileNameP.innerText = String(this.activeFile.id);
+      this.fileNameInput.placeholder = String(this.activeFile.id);
     }
 
     else if (loc === "mkturkdata") {
       if (file.Doctype === "task") {
         this.activeFile = { loc: loc, id: file.Taskdoc };
-        this.fileNameP.innerText = String(this.activeFile.id);
+        this.fileNameInput.placeholder = String(this.activeFile.id);
       } else if (file.Doctype === "images") {
         this.activeFile = { loc: loc, id: file.Imagesdoc};
-        this.fileNameP.innerText = String(this.activeFile.id);
+        this.fileNameInput.placeholder = String(this.activeFile.id);
       }
     }
 
     else if (loc === "objects") {
       this.activeFile = { loc: loc, id: file.docname };
-      this.fileNameP.innerText = String(this.activeFile.id);
+      this.fileNameInput.placeholder = String(this.activeFile.id);
     }
 
     else if (loc === "eyecalibrations") {
       this.activeFile = { loc: loc, id: file.Docname };
-      this.fileNameP.innerText = String(this.activeFile.id);
+      this.fileNameInput.placeholder = String(this.activeFile.id);
     }
 
     else if (loc === "devices") {
       this.activeFile = { loc: loc, id: file.docname };
-      this.fileNameP.innerText = String(this.activeFile.id);
+      this.fileNameInput.placeholder = String(this.activeFile.id);
     }
 
     else if (loc === "mkscale") {
       this.activeFile = { loc: loc, id: file.Docname };
-      this.fileNameP.innerText = String(this.activeFile.id);
+      this.fileNameInput.placeholder = String(this.activeFile.id);
     }
 
     console.log("activeFile", this.activeFile);
   }
 
   public async displayStorageTextFile(fileRef: FileRef) {
+    console.log('diplayStorageTextFile FILEREF', fileRef);
+    this.fileNameInput.disabled = false;
+    this.fileRenameBtn.style.visibility = 'visible';
     this.updateBtn.style.visibility = 'visible';
     let fileUrl = await fileRef.getDownloadURL().catch(e => {
       console.error("Error getting download URL", e);
@@ -128,7 +151,38 @@ export class Mkeditor {
     this.editor = new JSONEditor(this.editorElement, options, file);
     this.activeFile = { loc: "mkturkfiles", id: fileRef };
     console.log("activeFile", this.activeFile);
-    this.fileNameP.innerText = fileRef.name;
+    this.fileNameInput.placeholder = fileRef.name;
+  }
+
+  private renameBtnAction() {
+    this.fileRenameBtn.addEventListener('click', (ev: Event) => {
+      if (this.fileNameInput.value) {
+        let oldFileRef = this.activeFile.id as FileRef;
+        let newFileRef = oldFileRef.parent?.child(this.fileNameInput.value);
+        let newFile = new Blob([JSON.stringify(this.editor.get(), null, 1)]);
+        let md = {
+          contentType: 'application/json'
+        };
+
+        newFileRef?.put(newFile, md).then(async (snapshot) => {
+          await oldFileRef.delete();
+          console.log('[DOCUMENT RENAMED]', snapshot);
+          alert('Document Renamed');
+          let renameEvent = new Event('storageFileChanged');
+          this.fileNameInput.value = '';
+          this.displayStorageTextFile(newFileRef!);
+          document.dispatchEvent(renameEvent);
+        }).catch(e => {
+          console.error('[DOCUMENT RENAME FAILED]:', e);
+          console.error('oldFile', oldFileRef, 'newFile', newFileRef);
+          alert('Document Rename Failed');
+        });
+        
+
+      } else {
+        console.log('file name input field is null');
+      }
+    });
   }
 
   private updateBtnAction() {
@@ -161,7 +215,8 @@ export class Mkeditor {
         };
         id.put(updatedFile, metadata).then(snapshot => {
           console.log("[DOCUMENT UPDATED]:", snapshot.metadata.name);
-          alert("Document Updated")
+          alert("Document Updated");
+          document.dispatchEvent(new Event('storageFileChanged'));
         }).catch(e => {
           console.error("[DOCUMENT UPDATE FAILED]", "FILE:", id, "ERROR:", e);
           alert("Document Update Failed");

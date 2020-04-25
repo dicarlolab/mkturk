@@ -575,4 +575,3 @@ function removeElementsByClassName(cName: string) {
     elements[0].parentNode?.removeChild(elements[0]);
   }
 }
-

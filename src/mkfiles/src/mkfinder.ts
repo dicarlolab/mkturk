@@ -44,6 +44,7 @@ export class Mkfinder {
     this.showImagesBtnAction();
     this.numImgSliderAction();
     this.downloadBtnAction();
+    this.refreshStorageTable();
 
     this.mkt = new Mkthree();
     this.mki = new Mkimage();
@@ -530,6 +531,13 @@ export class Mkfinder {
     await Promise.all(filePromise);
 
     this.displayStorageTable(mdArr);
+  }
+
+  private refreshStorageTable() {
+    document.addEventListener('storageFileChanged', (ev: Event) => {
+      let folderRef = this.mke.getActiveFile().id as firebase.storage.Reference;
+      this.listStorageFiles(folderRef.parent!);
+    });
   }
 
   private displayStorageTable(metadataArr: any[]) {

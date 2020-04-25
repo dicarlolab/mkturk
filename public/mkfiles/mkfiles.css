@@ -269,3 +269,14 @@
 .page-content > * {
   max-height: 80vh;
 }
+
+#file-name-div {
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 10px;
+  margin-left: 10px;
+}
+
+#file-rename-btn {
+  visibility: hidden;
+}

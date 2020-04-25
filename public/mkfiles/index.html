@@ -135,7 +135,12 @@
 
           <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--6-col mdl-cell--4-col-tablet mdl-cell--2-col-phone" id="media-card">
             <div id="editor-div">
-              <p id="file-name-span">Filename:</p>
+              <form action="#" id="file-name-form">
+                <div class="mdl-textfield mdl-js-textfield" id="file-name-div">
+                  <input class="mdl-textfield__input" type="text" id="file-name-input">
+                </div>
+                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="file-rename-btn">Rename</button>
+              </form>
               <div id="editor"></div>
               <div id="button-box">
                 <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="update-btn">UPDATE</button>
