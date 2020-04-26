@@ -627,6 +627,11 @@ function skipHardwareDevice(event){
 	await Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
 	updateStatusText("")
 
+  //============= AWAIT ESTIMATE SCREEN REFRESH RATE =========//
+  var fps = await estimatefps()
+  ENV.FrameRateDisplay = fps
+  ENV.FrameRateMovie = fps/2
+
 	//========= Start in TEST mode =======//
 	document.querySelector("button[id=googlesignin]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	document.querySelector("button[id=reloadpage]").style.display = "block"
@@ -854,7 +859,9 @@ while(true){
 
 			//Determine if images will also be rendered
 			IMAGES.Sample[j].nbackgroundimages = IMAGES.Sample[j].IMAGES.imageidx.length
-			IMAGES.Test[j].nbackgroundimages = IMAGES.Test[j].IMAGES.imageidx.length		
+			IMAGES.Test[j].nbackgroundimages = IMAGES.Test[j].IMAGES.imageidx.length
+
+      FLAGS.moviepersample[j] =[]	
 		}
 		//============ (END) 0: LOAD SCENES from JSON ============//
 
@@ -898,6 +905,8 @@ while(true){
 		}
 		console.log('3js: added lights & objects')	
 		//============ (END) 3: ADD ALL LIGHTS/OBJECTS TO SCENE ============//
+
+    FLAGS.movie = Math.max(...FLAGS.movie)
 
 		//============ 4: PRELOAD SHADERS (COMPILE) ============//
 		for (scenetype in scene){
@@ -1232,15 +1241,42 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 	if (TASK.RewardStage === 1){
 		frame.shown=[]
 		
-		for (var q in CANVAS.sequence){frame.shown[q]=0} 
-		frame.current=0
-		if (FLAGS.scene3d){
-			scene["Sample"].framenum=0
-			scene["Test"].framenum=0			
-		}
- 		//renderScreen(CANVAS.sequence[0],OFFSCREENCANVAS)
-		CURRTRIAL.tsequenceactual = await displayTrial(CANVAS.sequence,CANVAS.tsequence);
-		CURRTRIAL.tsequencedesired = CANVAS.tsequence
+		// for (var q in CANVAS.sequence){frame.shown[q]=0} 
+		// frame.current=0
+		// if (FLAGS.scene3d){
+		// 	scene["Sample"].framenum=0
+		// 	scene["Test"].framenum=0			
+		// }
+
+    frame.current=0
+    if (FLAGS.scene3d){
+      scene["Sample"].framenum=0
+      scene["Test"].framenum=0      
+    }
+    CURRTRIAL.movieindex = 0 
+    if (FLAGS.moviepersample[CURRTRIAL.sample_scenebag_label][CURRTRIAL.sample_scenebag_index] == 1){
+    //if current trial is a movie 
+      [movie_sequence,movie_tsequence,idx_dscreen] = createMovieSeq(IMAGES["Sample"][CURRTRIAL.sample_scenebag_label].durationMS,ENV.FrameRateMovie)
+      for (var q in movie_sequence){frame.shown[q]=0}
+       
+      var tsequenceactual_movie = await displayTrial(movie_sequence,movie_tsequence)
+      var tsequencedesired_movie = movie_tsequence
+
+      CURRTRIAL.tsequenceactual = []
+      CURRTRIAL.tsequencedesired = []
+      idx_dscreen.forEach(
+          function(idx){
+              CURRTRIAL.tsequenceactual.push(tsequenceactual_movie[idx])
+              CURRTRIAL.tsequencedesired.push(tsequencedesired_movie[idx])
+          })
+    }//IF movie
+    else { // not a movie
+      for (var q in CANVAS.sequence){frame.shown[q]=0} 
+   		//renderScreen(CANVAS.sequence[0],OFFSCREENCANVAS)
+  		CURRTRIAL.tsequenceactual = await displayTrial(CANVAS.sequence,CANVAS.tsequence);
+  		CURRTRIAL.tsequencedesired = CANVAS.tsequence
+    }//ELSE not movie
+
 		audiocontext.suspend()
 
 		logEVENTS("TSequenceActual",CURRTRIAL.tsequenceactual,"trialseries")

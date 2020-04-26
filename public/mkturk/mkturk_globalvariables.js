@@ -78,6 +78,9 @@ ENV.ViewportPixels = [-1,-1]
 
 ENV.ViewportPPI = -1
 ENV.PhysicalPPI = -1
+ENV.FrameRateDisplay = 60
+ENV.FrameRateMovie = 30
+
 
 ENV.Task = ""
 
@@ -112,6 +115,8 @@ FLAGS.consecutivehits = 0;
 FLAGS.need2loadImagesTrialQueue = 1; 
 FLAGS.need2loadScenes = 1;
 FLAGS.scene3d = 0;
+FLAGS.movie = [];
+FLAGS.moviepersample = [];
 FLAGS.need2loadParameters = 1; 
 FLAGS.savedata = 0; 
 FLAGS.stage = 0; 

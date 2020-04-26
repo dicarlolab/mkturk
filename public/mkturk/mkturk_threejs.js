@@ -89,6 +89,11 @@ async function addToScene(taskscreen){
                 CAMERAS[taskscreen][classlabel][cam] = camera;
         } //FOR cam in cameras
 
+    if (taskscreen == "Sample"){
+         FLAGS.moviepersample[classlabel] = Array(IMAGES[taskscreen][classlabel].nimages).fill(0);
+    }
+    var framerate = ENV.FrameRateMovie
+
 //==== LIGHTS
     LIGHTS[taskscreen][classlabel]=[]
     for (var lt in IMAGES[taskscreen][classlabel].LIGHTS){
@@ -97,6 +102,24 @@ async function addToScene(taskscreen){
         light.name = classlabel
         scene[taskscreen].add(light)
         LIGHTS[taskscreen][classlabel][lt] = light;
+
+        //Expand movie frames if lighting varies over time
+        if (taskscreen == "Sample"){
+            for (var i=0; i<IMAGES[taskscreen][classlabel].nimages; i++) {
+                if (Array.isArray(IMAGES[taskscreen][classlabel].LIGHTS[lt].position.x[i])){
+                    IMAGES[taskscreen][classlabel].LIGHTS[lt].position.x[i] = interpParam(IMAGES[taskscreen][classlabel].LIGHTS[lt].position.x[i],IMAGES[taskscreen][classlabel].durationMS,framerate)
+                    FLAGS.moviepersample[classlabel][i] = 1
+                }
+                if (Array.isArray(IMAGES[taskscreen][classlabel].LIGHTS[lt].position.y[i])){
+                    IMAGES[taskscreen][classlabel].LIGHTS[lt].position.y[i] = interpParam(IMAGES[taskscreen][classlabel].LIGHTS[lt].position.y[i],IMAGES[taskscreen][classlabel].durationMS,framerate)
+                    FLAGS.moviepersample[classlabel][i] = 1
+                }
+                if (Array.isArray(IMAGES[taskscreen][classlabel].LIGHTS[lt].position.z[i])){
+                    IMAGES[taskscreen][classlabel].LIGHTS[lt].position.z[i] = interpParam(IMAGES[taskscreen][classlabel].LIGHTS[lt].position.z[i],IMAGES[taskscreen][classlabel].durationMS,framerate)
+                    FLAGS.moviepersample[classlabel][i] = 1
+                }//IF isArray LIGHTS.position.x/y/z
+            }//FOR nimages
+        }//IF Sample
     }//FOR lt lights
 
 //==== OBJECTS
@@ -128,14 +151,7 @@ async function addToScene(taskscreen){
         IMAGES[taskscreen][classlabel].OBJECTS[obj].intrinsicMeshBoundingBox = dimarray     
         IMAGES[taskscreen][classlabel].OBJECTS[obj].intrinsicMeshMaxDim = maxlength
         
-
         var objSize = IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeInches
-          //TRANSLATION
-        var objPosition = [
-            IMAGES[taskscreen][classlabel].OBJECTS[obj].positionInches.x,
-            IMAGES[taskscreen][classlabel].OBJECTS[obj].positionInches.y,
-            IMAGES[taskscreen][classlabel].OBJECTS[obj].positionInches.z
-        ]
 
         IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS = rescaleArrayInchestoTHREEJS(objSize,IMAGEMETA[taskscreen + "THREEJStoInches"])
         IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS = {}
@@ -145,7 +161,48 @@ async function addToScene(taskscreen){
         
         objects.name = classlabel
         scene[taskscreen].add(objects)
+
+        //Expand movie frames if object latent variables vary over time
+        if (taskscreen == "Sample"){
+            for (var i = 0; i<IMAGES[taskscreen][classlabel].nimages;i++){
+                if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.x[i])){
+                    IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.x[i] = interpParam(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.x[i],IMAGES[taskscreen][classlabel].durationMS,framerate)
+                    FLAGS.moviepersample[classlabel][i] = 1
+                }
+                if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.y[i])){
+                    IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.y[i] = interpParam(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.y[i],IMAGES[taskscreen][classlabel].durationMS,framerate)
+                    FLAGS.moviepersample[classlabel][i] = 1
+                }
+                if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.z[i])){
+                    IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.z[i] = interpParam(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.z[i],IMAGES[taskscreen][classlabel].durationMS,framerate)
+                    FLAGS.moviepersample[classlabel][i] = 1
+                }
+                if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees.x[i])){
+                    IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees.x[i] = interpParam(IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees.x[i],IMAGES[taskscreen][classlabel].durationMS,framerate)
+                    FLAGS.moviepersample[classlabel][i] = 1
+                }
+                if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees.y[i])){
+                    IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees.y[i] = interpParam(IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees.y[i],IMAGES[taskscreen][classlabel].durationMS,framerate)
+                    FLAGS.moviepersample[classlabel][i] = 1
+                }
+                if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees.z[i])){
+                    IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees.z[i] = interpParam(IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees.z[i],IMAGES[taskscreen][classlabel].durationMS,framerate)
+                    FLAGS.moviepersample[classlabel][i] = 1
+                }
+                if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS[i])){
+                    IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS[i] = interpParam(IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS[i],IMAGES[taskscreen][classlabel].durationMS,framerate)
+                    FLAGS.moviepersample[classlabel][i] = 1
+                }//IF isArray Object.position/rotation/size
+            }//FOR i images
+        }//IF Sample        
     }//FOR obj objects
+
+    // flag for movie per taskscreen per classlabel
+    if (IMAGES[taskscreen][classlabel].durationMS > 0 ){
+        FLAGS.movie.push(1)
+    } else {
+        FLAGS.movie.push(0)
+    }//IF new duration
 }//FOR classlabels
 
 //==== GridCenters in 3JS (==> POSSIBLE CAMERA OFFSETS FOR SAMPLE,TEST,CHOICE "ROOMS")
@@ -159,7 +216,7 @@ async function addToScene(taskscreen){
 } //FUNCTION addToScene(taskscreen)
 
 
-function updateSingleFrame3D(taskscreen,classlabels,frame,gridindex){
+function updateSingleFrame3D(taskscreen,classlabels,frame,movieframe,gridindex){
 
 if (typeof(classlabels) == "number"){
     classlabels = [classlabels]
@@ -203,7 +260,7 @@ var classlabel = classlabels[i]
         if (nextvisible ==1){
             camera.visible = true
             updateCameraSingleFrame(camera,nextcamPosition,nextcamTarget)
-            console.log("CAMERA" + taskscreen + cam+ "  " + classlabel + "  " + nextcamPosition + " " + nextcamTarget)
+            // console.log("CAMERA" + taskscreen + cam+ "  " + classlabel + "  " + nextcamPosition + " " + nextcamTarget)
             var vec = new THREE.Vector3()
         }
         else{
@@ -219,6 +276,14 @@ var classlabel = classlabels[i]
             chooseArrayElement(IMAGES[taskscreen][classlabel].LIGHTS[lt].position.y, frame, 0),
             chooseArrayElement(IMAGES[taskscreen][classlabel].LIGHTS[lt].position.z, frame, 0)
         ]
+
+        if (Number.isInteger(movieframe)){
+            nextlightPosition = [
+                chooseArrayElement(nextlightPosition[0],movieframe,nextlightPosition[0].length-1),
+                chooseArrayElement(nextlightPosition[1],movieframe,nextlightPosition[1].length-1),
+                chooseArrayElement(nextlightPosition[2],movieframe,nextlightPosition[2].length-1)
+            ]
+        }
 
         var nextvisible = chooseArrayElement(IMAGES[taskscreen][classlabel].LIGHTS[lt].visible,frame,0);
 
@@ -242,7 +307,15 @@ var classlabel = classlabels[i]
             chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.y,frame,0),
             chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.z,frame,0)
         ]
-console.log("OBJECT" + taskscreen + obj + "  " + classlabel + "  " + nextobjPosition)
+
+        if (Number.isInteger(movieframe)){
+            nextobjPosition = [
+                chooseArrayElement(nextobjPosition[0],movieframe,nextobjPosition[0].length-1),
+                chooseArrayElement(nextobjPosition[1],movieframe,nextobjPosition[1].length-1),
+                chooseArrayElement(nextobjPosition[2],movieframe,nextobjPosition[2].length-1)
+            ]
+        } 
+        // console.log("OBJECT" + taskscreen + obj + "  " + classlabel + "  " + nextobjPosition)
 
         //ROTATION
         var nextobjRotation = [
@@ -251,13 +324,23 @@ console.log("OBJECT" + taskscreen + obj + "  " + classlabel + "  " + nextobjPosi
             chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees.z,frame,0)
         ]
 
+        if (Number.isInteger(movieframe)){
+            nextobjRotation = [
+                chooseArrayElement(nextobjRotation[0],movieframe,nextobjRotation[0].length-1),
+                chooseArrayElement(nextobjRotation[1],movieframe,nextobjRotation[1].length-1),
+                chooseArrayElement(nextobjRotation[2],movieframe,nextobjRotation[2].length-1),
+            ]
+        }
+
         //SIZE
         var nextobjSize = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS,frame,0)
 
+        if (Number.isInteger(movieframe)){
+            nextobjSize = chooseArrayElement(nextobjSize,movieframe,nextobjSize.length-1)
+        }
+
         //VISIBILITY
         var nextvisible = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].visible,frame,0)
-
-        // var camera = CAMERAS[taskscreen][classlabel][Object.keys(CAMERAS[taskscreen][classlabel])[0]]
 
         var camera = scene[taskscreen].getObjectByName("cam"+classlabel)
         
@@ -348,7 +431,7 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
     return [objPosition,objSize]
 }//FUNCTION updateObjectSingleFrame
 
-function toScreenPosition(vector, camera,objects){
+function toScreenPosition(vector, camera){
     
     var widthHalf = 0.5*renderer.getContext().canvas.width;
     var heightHalf = 0.5*renderer.getContext().canvas.height;
@@ -362,7 +445,7 @@ function toScreenPosition(vector, camera,objects){
         x: vector.x,
         y: vector.y
     };
-}; //FUNCTION toScreenPosition(vector,camera)
+};//FUNCTION toScreenPosition(vector,camera)
 
 function chooseArrayElement(x,idx,idx_default){
     if (typeof(x[idx]) == "undefined" && x.length >0){
@@ -374,16 +457,20 @@ function chooseArrayElement(x,idx,idx_default){
     else {
         return x[idx]
     }
-} //FUNCTION chooseArrayElement
+}//FUNCTION chooseArrayElement
 
 function rescaleArrayInchestoTHREEJS(sizeInchesArr,THREEJStoInches){
-    sizeTHREEJS = []
+    var sizeTHREEJS = []
     for (var i = 0; i<=sizeInchesArr.length-1; i++){
-        sizeTHREEJS.push(sizeInchesArr[i]/THREEJStoInches)
-    }
-
+        if (!Array.isArray(sizeInchesArr[i])){
+            sizeTHREEJS.push(sizeInchesArr[i]/THREEJStoInches)
+        }
+        else {
+            sizeTHREEJS.push(rescaleArrayInchestoTHREEJS(sizeInchesArr[i],THREEJStoInches))
+        }//IF
+    }//FOR i
     return sizeTHREEJS
-}
+}//FUNCTION rescaleArrayInchestoTHREEJS
 
 
 function toTHREEJSOffset(x,y,taskscreen){
@@ -397,4 +484,100 @@ function toTHREEJSOffset(x,y,taskscreen){
         xdisp/IMAGEMETA[taskscreen + "THREEJStoPixels"],
         ydisp/IMAGEMETA[taskscreen + "THREEJStoPixels"]
     ]
-} //FUNCTION toTHREEJSOffset
+}//FUNCTION toTHREEJSOffset
+
+function createMovieSeq(durationMS,framerate){
+    var movie_tseq = range(0+1000/framerate,durationMS,1000/framerate);
+
+    //---------------- SEQUENCE OF SAMPLE IMAGES ----------------//
+    if (TASK.TestON <= 0){
+        if (TASK.SampleOFF > 0){
+            movie_sequence = ["blank", Array(movie_tseq.length).fill("sample"),"blank","test"].flat()
+            movie_tsequence = [0,100,movie_tseq.map(function (a){return a + 100}),100+durationMS+TASK.SampleOFF].flat(); 
+        }
+        else if (TASK.SampleOFF <= 0 ){
+            movie_sequence = ["blank",Array(movie_tseq.length).fill("sample"),"test"].flat()
+            movie_tsequence = [0,100,movie_tseq.map(function (a){return a + 100})]; 
+        }
+    } //if Match-to-Sample
+    else if (TASK.TestON > 0){
+        if (TASK.SampleOFF > 0 && TASK.TestOFF > 0){
+            movie_sequence = ["blank",Array(movie_tseq.length).fill("sample"),"blank","test","blank","choice"].flat()
+            movie_tsequence = [0,100,movie_tseq.map(function (a){return a + 100}),100+durationMS+TASK.SampleOFF,
+                                100+durationMS+TASK.SampleOFF+TASK.TestON,
+                                100+durationMS+TASK.SampleOFF+TASK.TestON+TASK.TestOFF]; 
+        }
+        else if (TASK.SampleOFF <= 0 && TASK.TestOFF > 0){
+            movie_sequence = ["blank",Array(movie_tseq.length).fill("sample"),"test","blank","choice"].flat()
+            movie_tsequence = [0,100,movie_tseq.map(function (a){return a + 100}),
+            100+durationMS+TASK.TestON,
+            100+durationMS+TASK.TestON+TASK.TestOFF];
+        }
+        else if (TASK.SampleOFF > 0 && TASK.TestOFF <= 0){
+            movie_sequence = ["blank",Array(movie_tseq.length).fill("sample"),"blank","test","choice"]
+            movie_tsequence = [0,100,movie_tseq.map(function (a){return a + 100}),100+durationMS+TASK.SampleOFF,
+                                100+durationMS+TASK.SampleOFF+TASK.TestON]; 
+        }
+        if (TASK.SampleOFF <= 0 && TASK.TestOFF <= 0){
+            movie_sequence = ["blank",Array(movie_tseq.length).fill("sample"),"test","choice"]
+            movie_tsequence = [0,100,movie_tseq.map(function (a){return a + 100}),
+                                100+durationMS+TASK.TestON];
+        }
+    } //else if Same-Different
+
+    //Indices of changes in taskscreen
+    var idxdscreen = []
+    for (var i=0; i<=movie_sequence.length-1; i++){
+        if (i==0 || movie_sequence[i] != movie_sequence[i-1]){
+            idxdscreen.push(i)
+        }
+    }//FOR i frames
+
+    return [movie_sequence, movie_tsequence, idxdscreen]
+}//FUNCTION createMovieSeq
+
+function interpParam(vec,durationMS,framerate){
+    if (vec.length >= 2) {
+        // any given two values are assigned equal time (number of frames)
+        var nframe_part = ((durationMS/1000 * framerate) / (vec.length-1)) -1 
+
+        if (nframe_part!= 0){
+        var vec_flattened = []
+        for (i = 0; i<vec.length-1; i++){
+            vec_flattened.push(range(vec[i],vec[i+1],(vec[i+1]-vec[i])/nframe_part))
+        }
+
+        vec_flattened = vec_flattened.flat()
+
+//         //remove duplicates
+//         var unique_vec_flattened = new Set(vec_flattened)
+//         var unique_vec_flattened = [...unique_vec_flattened]
+        }
+    } 
+
+    return vec_flattened
+//     return unique_vec_flattened
+}//FUNCTION interpParam
+
+function range(start,end,step=1){
+    // Test that the first 3 arguments are finite numbers.
+  const allNumbers = [start, end, step].every(Number.isFinite);
+
+  // Throw an error if any of the first 3 arguments is not a finite number.
+  if (!allNumbers) {
+    throw new TypeError('range() expects only finite numbers as arguments.');
+  }
+  // The length is incremented by 1 after Math.floor().
+  // This ensures that the end number is listed if it falls within the range.
+
+  if (start == end){
+    return [start]
+  } else { //start != end
+    if (step != 0){
+      const length = Math.floor(Math.abs((end - start) / step)) + 1;
+      return Array.from(Array(length), (x, index) => start + index * step);
+    } else {
+      return [start,end]
+    }
+  }
+}//FUNCTION range 

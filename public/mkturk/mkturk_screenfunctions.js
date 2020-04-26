@@ -343,18 +343,15 @@ function defineImageGrid(ngridpoints, gridspacing){
 
 //========== BUFFER SAMPLE CANVAS ==========//
 async function bufferSampleImage(sample_image, sample_image_grid_index,canvasobj){
- console.time('startrenderSAMPLE')
 	var context=canvasobj.getContext('2d'); 
 	if (typeof(sample_image) !="undefined"){
 	await renderImageOnCanvas(sample_image, sample_image_grid_index, ENV.SampleScale, canvasobj)
 	}
- console.timeEnd('startrenderSAMPLE')
 }
 
 
 //========== BUFFER TEST CANVAS ==========//
 async function bufferTestImages(sample_image, sample_image_grid_index, test_images, test_image_grid_indices, correct_index,canvasobj){
- console.time('startrenderTEST')
 	// Option: draw sample (TODO: remove the blink between sample screen and test screen)
 	if (TASK.KeepSampleON==1 && typeof(sample_image) !="undefined"){
 		await renderImageOnCanvas(sample_image, sample_image_grid_index, ENV.SampleScale, canvasobj)
@@ -383,7 +380,6 @@ if (typeof(test_images) !="undefined"){
 		}
 	}
 }
-console.timeEnd('startrenderTEST')	
 }//ASYNC FUNCTION BUFFERTESTIMAGES
 
 //========== BUFFER CHOICE CANVAS ==========//
@@ -589,37 +585,34 @@ function displayTrial(sequence,tsequence){
 
 					if (sequence[frame.current] == "sample" || sequence[frame.current] == "test"
 						|| (sequence[frame.current] == "touchfix" && TASK.FixationUsesSample)){
-						console.time("first scene")
 						if (sequence[frame.current] == "touchfix" && TASK.FixationUsesSample){
 							setViewport(CURRTRIAL.fixationgridindex)
 							var camera = scene["Sample"].getObjectByName("cam"+CURRTRIAL.sample_scenebag_label)							
+							renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)						
 						}//fixationusessample
 						else if (sequence[frame.current]=="sample"){
 							setViewport(TASK.SampleGridIndex)
 							var camera = scene["Sample"].getObjectByName("cam"+CURRTRIAL.sample_scenebag_label)							
+							renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)			
 						}//sample
 						else if (sequence[frame.current]=="test"){
 							setViewport(TASK.TestGridIndex[0])
 							var camera = scene[taskscreen].getObjectByName("cam"+CURRTRIAL.test_scenebag_labels[0])					
+							renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)			
 						} //test
-				    	renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
-						console.timeEnd("first scene")
 				    	if (sequence[frame.current] == "test" && CURRTRIAL.test_scenebag_labels.length > 1){
 				    		for (var j = 1; j<=CURRTRIAL.test_scenebag_labels.length - 1; j++){
-				    			console.time("test1Update")
 						    	updateSingleFrame3D(
 										taskscreen,
 										CURRTRIAL.test_scenebag_labels[j],
 										CURRTRIAL.test_scenebag_indices[j],
+										[],
 										TASK.TestGridIndex[j]
 									)
-									console.timeEnd("test1Update")
 								setViewport(TASK.TestGridIndex[j])
 								var camera = scene[taskscreen].getObjectByName("cam"+CURRTRIAL.test_scenebag_labels[j])
 								// var camera = scene[sequence[frame.current].charAt(0).toUpperCase() + sequence[frame.current].slice(1)].getObjectByName(-1)
-								console.time("test1 render")
 						    	renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
-						    	console.timeEnd("test1 render")
 				    		} //FOR j test items
 				    	} //IF test
 
@@ -633,57 +626,56 @@ function displayTrial(sequence,tsequence){
 					} else{
 						VISIBLECANVASWEBGL.style.visibility='visible';
 					}
-				
-				    console.log("t=" + (timestamp-start) + "showing " + sequence[frame.current])
 				} //IF sample || test || choice || fixationusessample
 				else {
 				    VISIBLECANVASWEBGL.style.visibility='hidden';
-				    console.log("t=" + (timestamp-start) + "hiding webgl canvas")
 				} //ELSE hide 3D
 			} //IF 3D Scene
 
-			if (ENV.OffscreenCanvasAvailable){
-				//pre-rendered offscreen, now transfer
-				var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
-
-				if (renderstr.status == "failed"){
-					console.log("**** FAILED on 1ST rendering attempt of " + sequence[frame.current])
-
-					// attempt again
-					tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
-
+			//2D rendering
+			if(frame.current==0 || sequence[frame.current] != sequence[frame.current-1]){
+				if (ENV.OffscreenCanvasAvailable){
 					//pre-rendered offscreen, now transfer
-					var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))				
-					console.log("**** " + renderstr.status + " on 2ND rendering attempt of " + sequence[frame.current])
+					var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
 
 					if (renderstr.status == "failed"){
-						if (sequence[frame.current] == "touchfix" || sequence[frame.current] == "test" || sequence[frame.current] == "choice"){
-							for (var j=0; j < 100; j++){
-								// attempt again
-								await setTimeout(j*100)
-								tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+						console.log("**** FAILED on 1ST rendering attempt of " + sequence[frame.current])
 
+						// attempt again
+						tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
 
-								//pre-rendered offscreen, now transfer
-								var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))				
+						//pre-rendered offscreen, now transfer
+						var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))				
+						console.log("**** " + renderstr.status + " on 2ND rendering attempt of " + sequence[frame.current])
 
-								if (renderstr.status == "succeeded"){
-									break
+						if (renderstr.status == "failed"){
+							if (sequence[frame.current] == "touchfix" || sequence[frame.current] == "test" || sequence[frame.current] == "choice"){
+								for (var j=0; j < 100; j++){
+									// attempt again
+									await setTimeout(j*100)
+									tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+
+									//pre-rendered offscreen, now transfer
+									var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))				
+
+									if (renderstr.status == "succeeded"){
+										break
+									}
 								}
+								console.log("Render "  + sequence[frame.current] + " " + renderstr.status + " after " + j + " attempts")
 							}
-							console.log("Render "  + sequence[frame.current] + " " + renderstr.status + " after " + j + " attempts")
-						}
-						else {
-							tActual[frame.current] = -99
-							console.log("Skipping render since not touchfix or test screen")
-						} //if touchfix || test
-					} //if failed again
-				} //if failed
-			}//IF Offscreen api available
-			else {
-				//render directly, offscreencanvas is visiblecanvas
-				renderScreen(sequence[frame.current],OFFSCREENCANVAS)
-			}//IF Offscreen not available
+							else {
+								tActual[frame.current] = -99
+								console.log("Skipping render since not touchfix or test screen")
+							} //if touchfix || test
+						} //if failed again
+					} //if failed
+				}//IF Offscreen api available
+				else {
+					//render directly, offscreencanvas is visiblecanvas
+					renderScreen(sequence[frame.current],OFFSCREENCANVAS)
+				}//IF Offscreen not available
+			}//IF new task screen
 
 	    	if (sequence[frame.current] == "sample" && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
 	    		saveScreenshot(VISIBLECANVAS,CURRTRIAL.num,sequence[frame.current],frame.current)
@@ -692,68 +684,89 @@ function displayTrial(sequence,tsequence){
 			tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
 			frame.shown[frame.current]=1;
 			frame.current++;
-		};
+		}//IF time to show new frame
+		
 		// continue if not all frames shown
 		if (frame.shown[frame.shown.length-1] != 1){
-
-			if (FLAGS.scene3d == 1){
-					
+			if (FLAGS.scene3d == 1){					
 				var taskscreen = [sequence[frame.current].charAt(0).toUpperCase() + sequence[frame.current].slice(1)]
 				if (sequence[frame.current] == "sample" && scene["Sample"].framenum != frame.current || 
 					sequence[frame.current] == 'touchfix' && TASK.FixationUsesSample){
-					console.time("sampleUpdate")
+
 					if (sequence[frame.current] == 'touchfix' && TASK.FixationUsesSample){
-						updateSingleFrame3D(
-									"Sample",
-									CURRTRIAL.sample_scenebag_label,
-									CURRTRIAL.sample_scenebag_index,
-									CURRTRIAL.fixationgridindex
-						)					
+						if (FLAGS.moviepersample[CURRTRIAL.sample_scenebag_label][CURRTRIAL.sample_scenebag_index] == 1){
+							updateSingleFrame3D(
+								"Sample",
+								CURRTRIAL.sample_scenebag_label,
+								CURRTRIAL.sample_scenebag_index,
+								CURRTRIAL.movieindex,
+								CURRTRIAL.fixationgridindex
+							)				
+						}//IF movie
+						else {
+							updateSingleFrame3D(
+								"Sample",
+								CURRTRIAL.sample_scenebag_label,
+								CURRTRIAL.sample_scenebag_index,
+								[],
+								CURRTRIAL.fixationgridindex
+							)				
+						}//ELSE not a movie	
 					}//IF FixationUsesSample
-					else{
-						updateSingleFrame3D(
-									taskscreen,
-									CURRTRIAL.sample_scenebag_label,
-									CURRTRIAL.sample_scenebag_index,
-									TASK.SampleGridIndex
-								)						
-					}//IF sample
+					else {
+						if (FLAGS.moviepersample[CURRTRIAL.sample_scenebag_label][CURRTRIAL.sample_scenebag_index] == 1){
+							updateSingleFrame3D(
+								"Sample",
+								CURRTRIAL.sample_scenebag_label,
+								CURRTRIAL.sample_scenebag_index,
+								CURRTRIAL.movieindex,
+								TASK.SampleGridIndex
+							)				
+						} //IF movie
+						else { // if not a movie
+							updateSingleFrame3D(
+								taskscreen,
+								CURRTRIAL.sample_scenebag_label,
+								CURRTRIAL.sample_scenebag_index,
+								[],
+								TASK.SampleGridIndex
+							)
+						}//ELSE not a movie			
+					}//ELSE sample
 					scene["Sample"].framenum = frame.current
-					console.log("UPDATED SINGLEFRAME3D SAMPLE" + Math.random())	
-					console.timeEnd("sampleUpdate")	
-				} //IF sample
+					CURRTRIAL.movieindex ++ 
+				}//IF sample
 				else if (sequence[frame.current] == "test"  && scene["Test"].framenum != frame.current){
 					boundingBoxesChoice3D = {'x':[],'y':[]}
-					
-					console.time("test0update")
 					updateSingleFrame3D(
 								taskscreen,
 								CURRTRIAL.test_scenebag_labels[0],
 								CURRTRIAL.test_scenebag_indices[0],
+								[],
 								TASK.TestGridIndex[0]
 							) //Update 3D scene prior to next frame draw
-				scene["Test"].framenum = frame.current
-				 console.log("UPDATED SINGLEFRAME3D TEST")		
-				 console.timeEnd("test0update")
-				} //ELSE IF test
+					scene["Test"].framenum = frame.current
+				}//ELSE IF test
 
 				if (ENV.OffscreenCanvasAvailable){// && sequence[frame.current] != "sample" && sequence[frame.current] != "test"){
-					renderScreen(sequence[frame.current],OFFSCREENCANVAS) //render 2D image offscreen prior to next frame draw
-					if (sequence[frame.current] == "choice"){
-						boundingBoxesChoice3D = boundingBoxesChoice //default to 2D coords for same different buttons
-					}
-				} //pre-render next frame
-			} //3D Scene + 2D Image
+					if (frame.current==0 || sequence[frame.current] != sequence[frame.current-1]){
+						renderScreen(sequence[frame.current],OFFSCREENCANVAS) //render 2D image offscreen prior to next frame draw
+						if (sequence[frame.current] == "choice"){
+							boundingBoxesChoice3D = boundingBoxesChoice //default to 2D coords for same different buttons
+						}
+					}//IF new task screen
+				}//IF offscreenAvailable, pre-render next frame
+			}//IF 3D Scene + 2D Image
 			else {
 				if (ENV.OffscreenCanvasAvailable){
 					renderScreen(sequence[frame.current],OFFSCREENCANVAS)
 				} //pre-render next frame				
-			} //2D Image
+			}//ELSE 2D Image
 			window.requestAnimationFrame(updateCanvas);
-		}
+		}//IF more frames
 		else{
 			resolveFunc(tActual);
-		}
+		}//ELSE all frames shown
 	}
 	//requestAnimationFrame advantages: goes on next screen refresh and syncs to browsers refresh rate on separate clock (not js clock)
 	window.requestAnimationFrame(updateCanvas); // kick off async work
@@ -962,30 +975,21 @@ async function bufferFixationUsingImage(image, gridindex, scale, canvasobj){
 }
 
 async function bufferFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
-	 console.time('startrenderFIXATION')
-
 	boundingBoxesFixation['x']=[]
 	boundingBoxesFixation['y']=[]
 
 	funcreturn = await renderDotOnCanvas(color, gridindex, dot_pixelradius, canvasobj)
 	boundingBoxesFixation.x.push(funcreturn[0]);
 	boundingBoxesFixation.y.push(funcreturn[1]);
-
-	 console.timeEnd('startrenderFIXATION')
-
 }
 
 async function bufferFixationUsingTriangle(color, gridindex, dot_pixelradius, canvasobj){
-	 console.time('startrenderFIXATION')
-
 	boundingBoxesFixation['x']=[]
 	boundingBoxesFixation['y']=[]
 
 	funcreturn = await renderTriangleOnCanvas(color, gridindex, 2*dot_pixelradius, canvasobj);
 	boundingBoxesFixation.x.push(funcreturn[0]);
 	boundingBoxesFixation.y.push(funcreturn[1]);
-
-	 console.timeEnd('startrenderFIXATION')
 }
 
 
@@ -1018,14 +1022,12 @@ function updateImageLoadingAndDisplayText(str){
 	}
 	u_dt = u_dt/dt.length
 
-
-
 	textobj.innerHTML =
 	str
 	+ imageloadingtimestr
 	+ "<br>" + displayoutofboundsstr 
-	+ "<br>" + "Software reported frame display (t_actual - t_desired) :"
-	+ "<br>" + "<font color=red> mean dt = " + Math.round(u_dt) + " ms"
+	+ "<br>" + 0.1*Math.round(10*ENV.FrameRateDisplay) + "Hz (" + 0.1*Math.round(10000/ENV.FrameRateDisplay) + 'ms) display' 
+	+ "<br>" + "<font color=red> mean(t_actual - t_desired) = " + Math.round(u_dt) + " ms"
 	+ "  (min=" + Math.round(Math.min(... dt)) + ", max=" + Math.round(Math.max(... dt)) + ") </font>"
 	+ "<br>" + eyedataratestr
 }
@@ -1117,3 +1119,38 @@ async function saveScreenshot(canvasobj,currtrial,frametype,framenum){
 		}
 	})
 }//FUNCTION saveScreenshot
+
+// Estimate max software fps
+function estimatefps(){
+	var resolveFunc
+	var errFunc
+	p = new Promise(function(resolve,reject){
+		resolveFunc = resolve;
+		errFunc = reject;
+	}).then();
+
+
+	var lasttime = null
+	var elapsedSinceLastFrame = [];
+	var nframes = 0
+	var dtScreen = 0;
+	async function dummyLoop(timestamp){
+		if (!lasttime) lasttime = timestamp
+		elapsedSinceLastFrame[nframes]=(timestamp-lasttime)
+		lasttime=timestamp
+		nframes=nframes+1
+	  	if (nframes < 20){
+	  		window.requestAnimationFrame(dummyLoop)
+	  	}
+	  	else {
+	  		for (var i=10; i<=nframes-1; i++){
+				dtScreen = dtScreen + elapsedSinceLastFrame[i]
+	  		}
+	  		dtScreen = dtScreen / (nframes - 10)
+	  		resolveFunc(1000/dtScreen)
+	  	}
+	}//dummyLoop
+	
+	window.requestAnimationFrame(dummyLoop);
+	return p
+}//estimatefps
