@@ -26,7 +26,7 @@ var DBX_CLIENT_ID = "2m9hmv7q45kwren"
 var DBX_REDIRECT_URI_ROOT = "http://127.0.0.1:8080/"
 
 //dropbox host (no longer possible)
-// var DBX_REDIRECT_URI_ROOT = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/nightly/public2/"
+// var DBX_REDIRECT_URI_ROOT = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/nightly/public2/" 
 
 //gitlab host
 // var DBX_REDIRECT_URI_ROOT = "https://elizabethyoo.gitlab.io/mkturk/mkturk/public/"
@@ -41,6 +41,7 @@ var SOUND_FILEPREFIX = "/MonkeyTurk/sounds/au"
 
 //data files to read for performance history of subject
 var ndatafiles2read=5;
+
 // how long can you bother to wait at each imageload? 400 images ~ 30 seconds. Recommended to keep = 0 with good internet connection and automator on
 var num_preload_images=0;
 
@@ -48,7 +49,6 @@ var subjectlist = ["Eliaso","Michaelo","Elizabetho"];
 ```
 
 ## Storing assets
-
 mkturk is a client-side app that relies on cloud storage for handling all stimuli (images, sounds), parameter files (json), and data (json). Currently, mkturk has Dropbox, but Google Drive and Amazon S3 may also be added in the future.
 
 To get started, one needs to add a few files to the cloud directory.
@@ -60,18 +60,18 @@ To get started, one needs to add a few files to the cloud directory.
 The _"exampleinstall"_ folder contains example parameter, audio, image, and data files for seeding your mkturk installation.
 
 ### Instructions for setting up Dropbox
-First, you want to go to [Dropbox Developers](https://www.dropbox.com/developers) and register your web app with dropbox. When you choose "Create your app," here are the options to select:
+First, you want to go to [Dropbox Developers](https://www.dropbox.com/developers) and register your web app with dropbox. When you choose "Create your app," here are the options to select:  
 
 1. Choose an API = "Dropbox API"
 2. Choose the type of access you need = "Full Dropbox"
 
-Once you have named your app and tied it to your dropbox, you can go into the app settings under "My apps" and get the "App Key" to put into mkturk_installsettings.js (the app key tells dropbox that this web app is a known page that is safe for giving access to files on dropbox). Also, you'll want to register the url for your webapp under "Redirect URIs." You can add as many URIs as you like. Again, this is part of the handshake that tells dropbox that this registered webpage is trustable. Example URIs include:
+Once you have named your app and tied it to your dropbox, you can go into the app settings under "My apps" and get the "App Key" to put into mkturk_installsettings.js (the app key tells dropbox that this web app is a known page that is safe for giving access to files on dropbox). Also, you'll want to register the url for your webapp under "Redirect URIs." You can add as many URIs as you like. Again, this is part of the handshake that tells dropbox that this registered webpage is trustable. Example URIs include:  
 
 mkturk -- https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/mkturk.html
 
-liveplot -- https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/liveplot.html
+liveplot -- https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/liveplot.html 
 
-mkturk (localhost) -- http://localhost:8080/mkturk.html
+mkturk (localhost) -- http://localhost:8080/mkturk.html 
 
 The root of this URI (e.g. https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/) will go into the DBX_REDIRECT_URI_ROOT variable in mkturk_installsettings.js
 
