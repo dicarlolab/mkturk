@@ -208,7 +208,8 @@ export const detectDevice = functions.https.onCall((userAgent: any) => {
 
 export const isLabMember = functions.https.onCall((idToken: string) => {
 
-  admin.auth().verifyIdToken(idToken).then((decodedToken) => {
+  return admin.auth().verifyIdToken(idToken).then((decodedToken) => {
+    console.log('isLabMember?', decodedToken.labMember);
     return decodedToken.labMember;
   }).catch(e => {
     console.error('Error decoding idToken', e);

@@ -182,7 +182,8 @@ exports.detectDevice = functions.https.onCall((userAgent) => {
     });
 });
 exports.isLabMember = functions.https.onCall((idToken) => {
-    admin.auth().verifyIdToken(idToken).then((decodedToken) => {
+    return admin.auth().verifyIdToken(idToken).then((decodedToken) => {
+        console.log('isLabMember?', decodedToken.labMember);
         return decodedToken.labMember;
     }).catch(e => {
         console.error('Error decoding idToken', e);

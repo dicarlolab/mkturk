@@ -1,6 +1,7 @@
 import * as firebase from 'firebase/app';
 import 'firebase/auth';
 import 'firebase/firestore';
+import 'firebase/functions';
 
 const firebaseConfig = {
   apiKey: "AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",
@@ -16,62 +17,17 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-
 import { Mkcolony } from './mkcolony';
-let signInModal = document.querySelector('#sign-in-modal') as HTMLDialogElement;
-let modalCloseBtn
-  = document.querySelector('#modal-close-btn') as HTMLButtonElement;
-let modalSignInBtn
-  = document.querySelector('#modal-sign-in-btn') as HTMLButtonElement;
-let signInForm = document.querySelector('#sign-in-form') as HTMLFormElement;
+
 let signInNavLink = document.querySelector('#sign-in-nav-link') as HTMLElement;
 let signOutNavLink = document.querySelector('#sign-out-nav-link') as HTMLElement;
 
-
-// auth.getRedirectResult().then(result => {
-//   console.log('result', result);
-//   if (result.credential) {
-//     let token = result.credential;
-//     console.log('token:', token);
-//     console.log('result', result);
-//   } else {
-//     console.log('token: null');
-//   }
-// }).catch(e => {
-//   let errorCode = e.code;
-//   let errorMsg = e.message;
-//   let errorEmail = e.email;
-//   let errorCred = e.credential;
-
-//   if (errorCode === 'auth/account-exists-with-different-credentials') {
-//     alert('You have already signed up with a different auth provider for that email');
-//   } else {
-//     console.error(e);
-//   }
-// });
-
-// auth.onAuthStateChanged(user => {
-//   if (user) {
-//     console.log('user logged in: ', user);
-//     console.log('email', user.email);
-//   } else {
-//     console.log('user is signed out', user);
-//   }
-// });
-
 auth.getRedirectResult().then(result => {
-  console.log('result 1', result);
+  // authenticated
   if (result.credential) {
-    let token = result.credential;
-    console.log('token', token);
-    auth.currentUser?.getIdToken(true).then((idToken) => {
-      console.log('idToken:', idToken);
-    }).catch(e => {
-      console.error('error idToken', e);
-    });
-    console.log('result 2', result);
+    console.log('user authenticated', result.credential);
   } else {
-    console.log('token: null');
+    // not yet authenticated
     let provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/plus.me');
     provider.addScope('https://www.googleapis.com/auth/user.emails.read');
@@ -79,17 +35,33 @@ auth.getRedirectResult().then(result => {
     auth.signInWithRedirect(provider);
   }
 }).catch(e => {
-  console.error('error', e);
+  console.error('Error with authentication:', e);
 });
 
+let mkcolony: Mkcolony | null;
 auth.onAuthStateChanged(user => {
-  console.log('auth state changed user', user);
-  let usr = auth.currentUser;
-  console.log('currentUser', usr);
+  if (user) {
+    user.getIdTokenResult().then(idTokenResult => {
+      if (idTokenResult.claims.labMember) {
+        console.log('Authorized user');
+        mkcolony = new Mkcolony();
+        let ret = mkcolony.loadWtData(db.collection('marmosets'));
+        ret.then(docs => {
+          mkcolony?.populateTable(docs);
+          mkcolony?.plotColonyData();
+        });
+      } else {
+        console.log('Unauthorized user');
+        let alertStr = 'You do not have permission to view this app.'
+          + 'To request access, please email hector.cho@columbia.edu';
+        alert(alertStr);
+      }
+    });
+  } else {
+    mkcolony?.deleteAll();
+    mkcolony = null;
+  }
 });
-
-
-
 
 signInNavLink.addEventListener('click', (ev: Event) => {
   if (!auth.currentUser) {
@@ -99,54 +71,11 @@ signInNavLink.addEventListener('click', (ev: Event) => {
     provider.addScope('https://www.googleapis.com/auth/userinfo.email');
     auth.signInWithRedirect(provider);
   } else {
-    console.log('what');
+    console.log('User already signed-in');
   }
 });
 
 signOutNavLink.addEventListener('click', (ev: Event) => {
-  console.log('sign out');
+  console.log('User signed out');
   auth.signOut();
-});
-
-
-modalCloseBtn.addEventListener('click', (ev: Event) => {
-  signInModal.close();
-});
-
-// trigger submit event for signInForm
-modalSignInBtn.addEventListener('click', (ev: Event) => {
-  // let submitEvent = new Event('submit');
-  // signInForm.dispatchEvent(submitEvent);
-});
-
-// handle submitted email & password
-// signInForm.addEventListener('submit', (ev: Event) => {
-//   ev.preventDefault();
-  
-//   const signInEmail = signInForm['email'].value;
-//   const signInPW = signInForm['pw'].value;
-
-//   console.log(signInEmail, signInPW);
-// });
-
-
-
-// let provider = new firebase.auth.GoogleAuthProvider();
-// provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
-// firebase.auth().getRedirectResult().then(result => {
-//   if (result.user) {
-//     console.log("Sign-In Redirect Result, USER:", result.user.email);
-//   } else if (firebase.auth().currentUser) {
-//     console.log('Sign-In Redirect Result, USER:', firebase.auth().currentUser);
-//   } else {
-//     firebase.auth().signInWithRedirect(provider);
-//   }
-// });
-
-let mkcolony = new Mkcolony();
-
-let ret = mkcolony.loadWtData(db.collection('marmosets'));
-ret.then(docs => {
-  mkcolony.populateTable(docs);
-  mkcolony.plotColonyData();
 });
