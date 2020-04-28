@@ -17,7 +17,7 @@ export class Mkeditor {
   public editorDivElement: HTMLDivElement;
   private editorElement: HTMLDivElement;
   private editor: JSONEditor;
-  private updateBtn: HTMLButtonElement;
+  public updateBtn: HTMLButtonElement;
   public btnBoxDiv: HTMLDivElement;
   public makeActiveBtn: HTMLButtonElement;
   public storeParamBtn: HTMLButtonElement;
@@ -56,7 +56,10 @@ export class Mkeditor {
   }
 
   public displayFirebaseTextFile(file: Object, loc: string) {
-    this.updateBtn.style.visibility = 'visible';
+    this.fileRenameBtn.style.display = 'none';
+    this.storeParamBtn.style.display = 'none';
+    this.updateBtn.style.display = 'inline-block';
+    this.btnBoxDiv.style.gridTemplateAreas = '"update-btn update-btn"'
     try {
       let options = {
         modes: ['tree' as 'tree', 'code' as 'code']
@@ -70,11 +73,7 @@ export class Mkeditor {
   }
 
   public displayBigQueryTableRow(data: any) {
-    this.fileNameInput.disabled = false;
-    this.fileRenameBtn.style.visibility = 'hidden';
-    this.updateBtn.style.visibility = 'hidden';
-    this.storeParamBtn.style.visibility = 'hidden';
-    this.makeActiveBtn.style.visibility = 'hidden';
+    this.btnBoxDiv.style.display = 'none';
     try {
       this.editor.destroy();
       let options = {
@@ -89,10 +88,13 @@ export class Mkeditor {
   }
 
   private trackFirebaseActiveFile(loc: string, file: any) {
-    this.fileNameInput.disabled = false;
-    this.fileRenameBtn.style.visibility = 'hidden';
-    this.storeParamBtn.style.visibility = 'hidden';
-    this.makeActiveBtn.style.visibility = 'hidden';
+    // this.fileNameInput.disabled = false;
+    // this.fileRenameBtn.style.visibility = 'hidden';
+    // this.storeParamBtn.style.visibility = 'hidden';
+    // this.makeActiveBtn.style.visibility = 'hidden';
+    // this.fileRenameBtn.style.display = 'none';
+    // this.storeParamBtn.style.display = 'none';
+    // this.makeActiveBtn.style.display = 'none';
 
     if (loc === "marmosets") {
       this.activeFile = { loc: loc, id: file.name };
@@ -135,8 +137,7 @@ export class Mkeditor {
   public async displayStorageTextFile(fileRef: FileRef) {
     console.log('diplayStorageTextFile FILEREF', fileRef);
     this.fileNameInput.disabled = false;
-    this.fileRenameBtn.style.visibility = 'visible';
-    this.updateBtn.style.visibility = 'visible';
+    this.fileRenameBtn.style.display = 'inline-block';
     let fileUrl = await fileRef.getDownloadURL().catch(e => {
       console.error("Error getting download URL", e);
     });

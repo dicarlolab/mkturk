@@ -202,6 +202,7 @@
 #store-param-btn {
   grid-area: store-param-btn;
   display: none;
+  /* visibility: hidden; */
 }
 
 #image-canvas-div {
@@ -275,8 +276,10 @@
   padding-bottom: 0;
   padding-left: 10px;
   margin-left: 10px;
+  width: 30%;
 }
 
 #file-rename-btn {
-  visibility: hidden;
+  display: none;
+  float: right;
 }
