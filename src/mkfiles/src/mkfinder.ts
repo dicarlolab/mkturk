@@ -501,7 +501,6 @@ export class Mkfinder {
     } else if (fileRef.fullPath == 'mkturkfiles/parameterfiles/subjects') {
       this.mke.updateBtn.style.display = 'inline-block';
       this.mke.storeParamBtn.style.display = 'inline-block';
-      // this.mke.storeParamBtn.style.visibility = 'visible';
       this.mke.btnBoxDiv.style.gridTemplateAreas = '"update-btn store-param-btn"';
     } else {
       this.mke.makeActiveBtn.style.display = 'none';

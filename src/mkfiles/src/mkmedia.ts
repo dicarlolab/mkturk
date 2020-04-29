@@ -26,6 +26,8 @@ export class Mkeditor {
   
   public fileNameInput: HTMLInputElement;
   private fileRenameBtn: HTMLButtonElement;
+  private fileDupBtn: HTMLButtonElement;
+  private fileDupModal: HTMLDialogElement;
 
 
   constructor() {
@@ -46,8 +48,14 @@ export class Mkeditor {
       = document.querySelector("#file-name-input") as HTMLInputElement;
     this.fileRenameBtn
       = document.querySelector('#file-rename-btn') as HTMLButtonElement;
+    this.fileDupBtn
+      = document.querySelector('#file-dup-btn') as HTMLButtonElement;
+    this.fileDupModal
+      = document.querySelector('#file-dup-modal') as HTMLDialogElement;
     this.renameBtnAction();
+    this.renameTextFieldAction();
     this.getActiveFile();
+    this.fileDupBtnAction();
 
   }
 
@@ -57,6 +65,7 @@ export class Mkeditor {
 
   public displayFirebaseTextFile(file: Object, loc: string) {
     this.fileRenameBtn.style.display = 'none';
+    this.fileDupBtn.style.display = 'none';
     this.storeParamBtn.style.display = 'none';
     this.updateBtn.style.display = 'inline-block';
     this.btnBoxDiv.style.gridTemplateAreas = '"update-btn update-btn"'
@@ -88,13 +97,6 @@ export class Mkeditor {
   }
 
   private trackFirebaseActiveFile(loc: string, file: any) {
-    // this.fileNameInput.disabled = false;
-    // this.fileRenameBtn.style.visibility = 'hidden';
-    // this.storeParamBtn.style.visibility = 'hidden';
-    // this.makeActiveBtn.style.visibility = 'hidden';
-    // this.fileRenameBtn.style.display = 'none';
-    // this.storeParamBtn.style.display = 'none';
-    // this.makeActiveBtn.style.display = 'none';
 
     if (loc === "marmosets") {
       this.activeFile = { loc: loc, id: file.name };
@@ -138,6 +140,15 @@ export class Mkeditor {
     console.log('diplayStorageTextFile FILEREF', fileRef);
     this.fileNameInput.disabled = false;
     this.fileRenameBtn.style.display = 'inline-block';
+
+    const sceneParamFilePath = 'mkturkfiles/scenebags/objectome3d/face';
+    if (fileRef.parent?.parent?.fullPath == sceneParamFilePath) {
+      this.fileDupBtn.style.display = 'inline-block';
+    } else {
+      this.fileDupBtn.style.display = 'none';
+    }
+    
+
     let fileUrl = await fileRef.getDownloadURL().catch(e => {
       console.error("Error getting download URL", e);
     });
@@ -153,6 +164,58 @@ export class Mkeditor {
     this.activeFile = { loc: "mkturkfiles", id: fileRef };
     console.log("activeFile", this.activeFile);
     this.fileNameInput.placeholder = fileRef.name;
+  }
+
+  private fileDupBtnAction() {
+    let fileName
+      = this.fileDupModal.querySelector('#dup-file-name') as HTMLInputElement;
+    
+    this.fileDupBtn.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      this.fileDupModal.showModal();
+      let activeFileName = this.activeFile.id as FileRef;
+      fileName.value = 'Copy of ' + activeFileName.name;
+      fileName.focus();
+      fileName.select();
+    });
+
+    this.fileDupModal.querySelector('.close')?.addEventListener('click', () => {
+      this.fileDupModal.close();
+    });
+
+    this.fileDupModal.querySelector('.save')?.addEventListener('click', () => {
+      let srcFileRef = this.activeFile.id as FileRef;
+      let dupFileRef = srcFileRef.parent?.child(fileName.value);
+      let dupFile = new Blob([JSON.stringify(this.editor.get(), null, 1)]);
+      let md = {
+        contentType: 'application/json'
+      };
+
+      dupFileRef?.put(dupFile, md).then(async (snapshot) => {
+        console.log('[DOCUMENT DUPLICATED]', snapshot);
+        alert('Document Duplicated');
+        let fileDupEvent = new Event('storageFileChanged');
+        this.fileNameInput.value = '';
+        this.displayStorageTextFile(dupFileRef!);
+        document.dispatchEvent(fileDupEvent);
+      }).catch(e => {
+        console.error('[DOCUMENT DUPLICATE FAILED]:', e);
+        console.error('srcFile', srcFileRef, 'dupFile', dupFileRef);
+        alert('Document Dup Failed');
+      });
+
+      this.fileDupModal.close();
+    });
+  }
+
+  private renameTextFieldAction() {
+    this.fileNameInput.addEventListener('click', (ev: Event) => {
+      let tmpName = this.activeFile.id as FileRef;
+      let curFileName = tmpName.name;
+      this.fileNameInput.value = curFileName;
+      this.fileNameInput.focus();
+      this.fileNameInput.select();
+    });
   }
 
   private renameBtnAction() {
