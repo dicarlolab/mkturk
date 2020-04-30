@@ -69,6 +69,8 @@ export class Mkeditor {
     this.storeParamBtn.style.display = 'none';
     this.updateBtn.style.display = 'inline-block';
     this.btnBoxDiv.style.gridTemplateAreas = '"update-btn update-btn"'
+    this.fileNameInput.value = '';
+    this.fileNameInput.disabled = true;
     try {
       let options = {
         modes: ['tree' as 'tree', 'code' as 'code']
@@ -140,9 +142,13 @@ export class Mkeditor {
     console.log('diplayStorageTextFile FILEREF', fileRef);
     this.fileNameInput.disabled = false;
     this.fileRenameBtn.style.display = 'inline-block';
+    this.fileNameInput.value = '';
 
     const sceneParamFilePath = 'mkturkfiles/scenebags/objectome3d/face';
+    const paramstorageFilePath = 'mkturkfiles/parameterfiles/params_storage';
     if (fileRef.parent?.parent?.fullPath == sceneParamFilePath) {
+      this.fileDupBtn.style.display = 'inline-block';
+    } else if (fileRef.parent?.fullPath == paramstorageFilePath) {
       this.fileDupBtn.style.display = 'inline-block';
     } else {
       this.fileDupBtn.style.display = 'none';
