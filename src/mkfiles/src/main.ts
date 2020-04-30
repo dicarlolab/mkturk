@@ -61,8 +61,8 @@ let fieldSelector =
 
 
 /* Quick Links */
-let rootLink
-  = document.querySelector('#quick-link-root') as HTMLElement;
+let homeLink
+  = document.querySelector('#quick-link-home') as HTMLElement;
 let paramsLink =
     document.querySelector("#quick-link-params") as HTMLElement;
 let paramstorageLink
@@ -108,7 +108,7 @@ paramstorageLink.addEventListener('click' || 'pointerup', (ev: Event) => {
   mkf.listStorageFiles(storageRef.child('mkturkfiles/parameterfiles/params_storage'));
 });
 
-rootLink.addEventListener("click" || "pointerup", (ev: Event) => {
+homeLink.addEventListener("click" || "pointerup", (ev: Event) => {
   ev.preventDefault();
 
   isRoot = false;
