@@ -137,16 +137,6 @@ export class Mkquery {
 
     return arr;
   }
-
-  // public async mkbquery(agent: string, date: string) {
-  //   let ret = await listTables('fixationdata');
-  //   let tableMetadataList = ret.data;
-  //   let tableList: any[] = [];
-  //   tableMetadataList.forEach((tableMetadata: any) => {
-  //     tableList.push(tableMetadata.tableReference.tableId);
-  //   });
-  //   console.log(tableList);
-  // }
   
   public mkbquery(dataset: string, agent: string, date: string) {
     let queryDateLower: string | Date = new Date(date);

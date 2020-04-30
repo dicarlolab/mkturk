@@ -30,12 +30,11 @@
 
           <!-- NAVIGATION -->
           <nav class="mdl-navigation">
+            <a class="mdl-navigation__link" id="quick-link-home" href=""><b>home</b></a>
             <a class="mdl-navigation__link" id="quick-link-params" href=""><b>params</b></a>
-            <a class="mdl-navigation__link" id="quick-link-images" href=""><b>images</b></a>
+            <a class="mdl-navigation__link" id="quick-link-paramstorage" href=""><b>paramstorage</b></a>
             <a class="mdl-navigation__link" id="quick-link-scenes" href=""><b>scenes</b></a>
             <a class="mdl-navigation__link" id="quick-link-marmosets" href="">marmosets</a>
-            <a class="mdl-navigation__link" id="quick-link-mkturkdata" href="">mkturkdata</a>
-            <a class="mdl-navigation__link" id="quick-link-objects" href="">objects</a>
             <label class="mdl-switch mdl-js-switch mdl-js-ripple-effect" for="rfid-switch">
               <input type="checkbox" id="rfid-switch" class="mdl-switch__input">
               <span class="mdl-switch__label" id="rfid-switch-span" style="color:red; font-weight: bolder;">RFID OFF</span>
@@ -135,7 +134,25 @@
 
           <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--6-col mdl-cell--4-col-tablet mdl-cell--2-col-phone" id="media-card">
             <div id="editor-div">
-              <p id="file-name-span">Filename:</p>
+              <form action="#" id="file-name-form">
+                <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable" id="file-name-div">
+                  <input class="mdl-textfield__input" type="text" id="file-name-input">
+                </div>
+                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="file-rename-btn">Rename</button>
+                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="file-dup-btn">Duplicate</button>
+                <dialog class="mdl-dialog" id="file-dup-modal">
+                  <h5 class="mdl-dialog__title">Duplicate File</h5>
+                  <div class="mdl-dialog__content">
+                    <div class="mdl-textfield mdl-js-textfield">
+                      <input class="mdl-textfield__input" type="text" id="dup-file-name">
+                    </div>
+                  </div>
+                  <div class="mdl-dialog__actions">
+                    <button type="button" class="mdl-button save" id="save-dup-file-btn">Save</button>
+                    <button type="button" class="mdl-button close" id="cancel-dup-file-btn">Cancel</button>
+                  </div>
+                </dialog>
+              </form>
               <div id="editor"></div>
               <div id="button-box">
                 <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="update-btn">UPDATE</button>

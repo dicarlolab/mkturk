@@ -61,18 +61,18 @@ let fieldSelector =
 
 
 /* Quick Links */
+let homeLink
+  = document.querySelector('#quick-link-home') as HTMLElement;
 let paramsLink =
     document.querySelector("#quick-link-params") as HTMLElement;
-let imagesLink =
-    document.querySelector("#quick-link-images") as HTMLElement;
+let paramstorageLink
+  = document.querySelector('#quick-link-paramstorage') as HTMLElement;
 let scenesLink =
     document.querySelector("#quick-link-scenes") as HTMLElement;
 let marmosetsLink = 
     document.querySelector("#quick-link-marmosets") as HTMLElement;
-let mkturkdataLink =
-    document.querySelector("#quick-link-mkturkdata") as HTMLElement;
-let objectsLink = 
-    document.querySelector("#quick-link-objects") as HTMLElement;
+
+
 
 marmosetsLink.addEventListener("click", (ev: Event) => {
   ev.preventDefault();
@@ -89,30 +89,6 @@ marmosetsLink.addEventListener("click", (ev: Event) => {
 
 });
 
-mkturkdataLink.addEventListener("click" || "pointerup", (ev: Event) => {
-  ev.preventDefault();
-
-  qryLocSelc.value = "mkturkdata";
-  fieldSelector!.value = "agentTypeCurDate";
-  qryLocSelc!.dispatchEvent(new Event("change"));
-  fieldSelector!.dispatchEvent(new Event("change"));
-});
-
-objectsLink.addEventListener("click" || "pointerup", (ev: Event) => {
-  ev.preventDefault();
-
-  qryLocSelc.value = "objects";
-  fieldSelector!.value = "identity";
-  qryLocSelc.dispatchEvent(new Event("change"));
-  fieldSelector!.dispatchEvent(new Event("change"));
-
-  let ret = mkq.decodeQuery(db.collection("objects"));
-  ret.then(docs => {
-    mkf.listFirestoreDocs(docs, "objects");
-  });
-
-});
-
 paramsLink.addEventListener("click" || "pointerup", (ev: Event) => {
   ev.preventDefault();
 
@@ -123,13 +99,22 @@ paramsLink.addEventListener("click" || "pointerup", (ev: Event) => {
 
 });
 
-imagesLink.addEventListener("click" || "pointerup", (ev: Event) => {
+paramstorageLink.addEventListener('click' || 'pointerup', (ev: Event) => {
+  ev.preventDefault();
+
+  isRoot = false;
+  qryLocSelc.value = 'mkturkfiles';
+  qryLocSelc.dispatchEvent(new Event('change'));
+  mkf.listStorageFiles(storageRef.child('mkturkfiles/parameterfiles/params_storage'));
+});
+
+homeLink.addEventListener("click" || "pointerup", (ev: Event) => {
   ev.preventDefault();
 
   isRoot = false;
   qryLocSelc.value = "mkturkfiles";
   qryLocSelc.dispatchEvent(new Event("change"));
-  mkf.listStorageFiles(storageRef.child("mkturkfiles/imagebags/objectome"));
+  mkf.listStorageFiles(storageRef.child("mkturkfiles"));
 
 });
 
@@ -575,4 +560,3 @@ function removeElementsByClassName(cName: string) {
     elements[0].parentNode?.removeChild(elements[0]);
   }
 }
-

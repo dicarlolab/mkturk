@@ -17,14 +17,18 @@ export class Mkeditor {
   public editorDivElement: HTMLDivElement;
   private editorElement: HTMLDivElement;
   private editor: JSONEditor;
-  private updateBtn: HTMLButtonElement;
+  public updateBtn: HTMLButtonElement;
   public btnBoxDiv: HTMLDivElement;
   public makeActiveBtn: HTMLButtonElement;
   public storeParamBtn: HTMLButtonElement;
   private activeFile: 
     { loc: string, id: string | FileRef };
   
-  fileNameP: HTMLParagraphElement;
+  public fileNameInput: HTMLInputElement;
+  private fileRenameBtn: HTMLButtonElement;
+  private fileDupBtn: HTMLButtonElement;
+  private fileDupModal: HTMLDialogElement;
+
 
   constructor() {
     this.editorDivElement 
@@ -40,12 +44,33 @@ export class Mkeditor {
     this.updateBtnAction();
     this.makeActiveBtnAction();
     this.storeParamBtnAction();
-    this.fileNameP = 
-    document.querySelector("#file-name-span") as HTMLParagraphElement;
+    this.fileNameInput
+      = document.querySelector("#file-name-input") as HTMLInputElement;
+    this.fileRenameBtn
+      = document.querySelector('#file-rename-btn') as HTMLButtonElement;
+    this.fileDupBtn
+      = document.querySelector('#file-dup-btn') as HTMLButtonElement;
+    this.fileDupModal
+      = document.querySelector('#file-dup-modal') as HTMLDialogElement;
+    this.renameBtnAction();
+    this.renameTextFieldAction();
+    this.getActiveFile();
+    this.fileDupBtnAction();
+
+  }
+
+  public getActiveFile() {
+    return this.activeFile;
   }
 
   public displayFirebaseTextFile(file: Object, loc: string) {
-    this.updateBtn.style.visibility = 'visible';
+    this.fileRenameBtn.style.display = 'none';
+    this.fileDupBtn.style.display = 'none';
+    this.storeParamBtn.style.display = 'none';
+    this.updateBtn.style.display = 'inline-block';
+    this.btnBoxDiv.style.gridTemplateAreas = '"update-btn update-btn"'
+    this.fileNameInput.value = '';
+    this.fileNameInput.disabled = true;
     try {
       let options = {
         modes: ['tree' as 'tree', 'code' as 'code']
@@ -59,14 +84,14 @@ export class Mkeditor {
   }
 
   public displayBigQueryTableRow(data: any) {
-    this.updateBtn.style.visibility = 'hidden';
+    this.btnBoxDiv.style.display = 'none';
     try {
       this.editor.destroy();
       let options = {
         modes: ['tree' as 'tree', 'code' as 'code']
       };
       this.editor = new JSONEditor(this.editorElement, options, data);
-      this.fileNameP.innerText = data.timestamp.value;
+      this.fileNameInput.placeholder = data.timestamp.value;
       // console.log("displayBigQueryTableRow", data);
     } catch (error) {
       console.error("JSONEditor Error:", error);
@@ -74,46 +99,62 @@ export class Mkeditor {
   }
 
   private trackFirebaseActiveFile(loc: string, file: any) {
+
     if (loc === "marmosets") {
       this.activeFile = { loc: loc, id: file.name };
-      this.fileNameP.innerText = String(this.activeFile.id);
+      this.fileNameInput.placeholder = String(this.activeFile.id);
     }
 
     else if (loc === "mkturkdata") {
       if (file.Doctype === "task") {
         this.activeFile = { loc: loc, id: file.Taskdoc };
-        this.fileNameP.innerText = String(this.activeFile.id);
+        this.fileNameInput.placeholder = String(this.activeFile.id);
       } else if (file.Doctype === "images") {
         this.activeFile = { loc: loc, id: file.Imagesdoc};
-        this.fileNameP.innerText = String(this.activeFile.id);
+        this.fileNameInput.placeholder = String(this.activeFile.id);
       }
     }
 
     else if (loc === "objects") {
       this.activeFile = { loc: loc, id: file.docname };
-      this.fileNameP.innerText = String(this.activeFile.id);
+      this.fileNameInput.placeholder = String(this.activeFile.id);
     }
 
     else if (loc === "eyecalibrations") {
       this.activeFile = { loc: loc, id: file.Docname };
-      this.fileNameP.innerText = String(this.activeFile.id);
+      this.fileNameInput.placeholder = String(this.activeFile.id);
     }
 
     else if (loc === "devices") {
       this.activeFile = { loc: loc, id: file.docname };
-      this.fileNameP.innerText = String(this.activeFile.id);
+      this.fileNameInput.placeholder = String(this.activeFile.id);
     }
 
     else if (loc === "mkscale") {
       this.activeFile = { loc: loc, id: file.Docname };
-      this.fileNameP.innerText = String(this.activeFile.id);
+      this.fileNameInput.placeholder = String(this.activeFile.id);
     }
 
     console.log("activeFile", this.activeFile);
   }
 
   public async displayStorageTextFile(fileRef: FileRef) {
-    this.updateBtn.style.visibility = 'visible';
+    console.log('diplayStorageTextFile FILEREF', fileRef);
+    this.fileNameInput.disabled = false;
+    this.fileRenameBtn.style.display = 'inline-block';
+    this.fileNameInput.value = '';
+
+    const sceneParamFilePath = 'mkturkfiles/scenebags/objectome3d/face';
+    const paramstorageFilePath = 'mkturkfiles/parameterfiles/params_storage';
+    if (fileRef.parent?.parent?.fullPath == sceneParamFilePath) {
+      this.fileDupBtn.style.display = 'inline-block';
+    } else if (fileRef.parent?.fullPath == paramstorageFilePath) {
+      this.fileDupBtn.style.display = 'inline-block';
+    } else {
+      this.fileDupBtn.style.display = 'none';
+    }
+    
+
     let fileUrl = await fileRef.getDownloadURL().catch(e => {
       console.error("Error getting download URL", e);
     });
@@ -128,7 +169,90 @@ export class Mkeditor {
     this.editor = new JSONEditor(this.editorElement, options, file);
     this.activeFile = { loc: "mkturkfiles", id: fileRef };
     console.log("activeFile", this.activeFile);
-    this.fileNameP.innerText = fileRef.name;
+    this.fileNameInput.placeholder = fileRef.name;
+  }
+
+  private fileDupBtnAction() {
+    let fileName
+      = this.fileDupModal.querySelector('#dup-file-name') as HTMLInputElement;
+    
+    this.fileDupBtn.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      this.fileDupModal.showModal();
+      let activeFileName = this.activeFile.id as FileRef;
+      fileName.value = 'Copy of ' + activeFileName.name;
+      fileName.focus();
+      fileName.select();
+    });
+
+    this.fileDupModal.querySelector('.close')?.addEventListener('click', () => {
+      this.fileDupModal.close();
+    });
+
+    this.fileDupModal.querySelector('.save')?.addEventListener('click', () => {
+      let srcFileRef = this.activeFile.id as FileRef;
+      let dupFileRef = srcFileRef.parent?.child(fileName.value);
+      let dupFile = new Blob([JSON.stringify(this.editor.get(), null, 1)]);
+      let md = {
+        contentType: 'application/json'
+      };
+
+      dupFileRef?.put(dupFile, md).then(async (snapshot) => {
+        console.log('[DOCUMENT DUPLICATED]', snapshot);
+        alert('Document Duplicated');
+        let fileDupEvent = new Event('storageFileChanged');
+        this.fileNameInput.value = '';
+        this.displayStorageTextFile(dupFileRef!);
+        document.dispatchEvent(fileDupEvent);
+      }).catch(e => {
+        console.error('[DOCUMENT DUPLICATE FAILED]:', e);
+        console.error('srcFile', srcFileRef, 'dupFile', dupFileRef);
+        alert('Document Dup Failed');
+      });
+
+      this.fileDupModal.close();
+    });
+  }
+
+  private renameTextFieldAction() {
+    this.fileNameInput.addEventListener('click', (ev: Event) => {
+      let tmpName = this.activeFile.id as FileRef;
+      let curFileName = tmpName.name;
+      this.fileNameInput.value = curFileName;
+      this.fileNameInput.focus();
+      this.fileNameInput.select();
+    });
+  }
+
+  private renameBtnAction() {
+    this.fileRenameBtn.addEventListener('click', (ev: Event) => {
+      if (this.fileNameInput.value) {
+        let oldFileRef = this.activeFile.id as FileRef;
+        let newFileRef = oldFileRef.parent?.child(this.fileNameInput.value);
+        let newFile = new Blob([JSON.stringify(this.editor.get(), null, 1)]);
+        let md = {
+          contentType: 'application/json'
+        };
+
+        newFileRef?.put(newFile, md).then(async (snapshot) => {
+          await oldFileRef.delete();
+          console.log('[DOCUMENT RENAMED]', snapshot);
+          alert('Document Renamed');
+          let renameEvent = new Event('storageFileChanged');
+          this.fileNameInput.value = '';
+          this.displayStorageTextFile(newFileRef!);
+          document.dispatchEvent(renameEvent);
+        }).catch(e => {
+          console.error('[DOCUMENT RENAME FAILED]:', e);
+          console.error('oldFile', oldFileRef, 'newFile', newFileRef);
+          alert('Document Rename Failed');
+        });
+        
+
+      } else {
+        console.log('file name input field is null');
+      }
+    });
   }
 
   private updateBtnAction() {
@@ -161,7 +285,8 @@ export class Mkeditor {
         };
         id.put(updatedFile, metadata).then(snapshot => {
           console.log("[DOCUMENT UPDATED]:", snapshot.metadata.name);
-          alert("Document Updated")
+          alert("Document Updated");
+          document.dispatchEvent(new Event('storageFileChanged'));
         }).catch(e => {
           console.error("[DOCUMENT UPDATE FAILED]", "FILE:", id, "ERROR:", e);
           alert("Document Update Failed");

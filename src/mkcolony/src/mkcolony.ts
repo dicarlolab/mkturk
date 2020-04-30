@@ -51,6 +51,10 @@ export class Mkcolony {
     this.agJsonDiv = document.querySelector('#agent-json') as div;
   }
 
+  public deleteAll() {
+    this.clTable.clearData();
+  }
+
   public populateTable(data: any[]) {
     this.marmosetDataDic = {};
     this.marmosetData = this.processData(data);
@@ -155,6 +159,8 @@ export class Mkcolony {
       agFlDt.addRow([new Date(key), flLvl]);
     }
 
+    let dateFormatter = new google.visualization.DateFormat({timeZone: 0});
+    dateFormatter.format(agFlDt, 0);
     let plot = document.querySelector('#agent-fluid-plot') as div;
     let filter = document.querySelector('#agent-fluid-filter') as div;
 

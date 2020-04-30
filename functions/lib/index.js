@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const functions = require("firebase-functions");
 const bigquery_1 = require("@google-cloud/bigquery");
 const DeviceDetector = require("device-detector-js");
+const admin = require("firebase-admin");
+admin.initializeApp();
 // // Start writing Firebase Functions
 // // https://firebase.google.com/docs/functions/typescript
 //
@@ -177,6 +179,14 @@ exports.detectDevice = functions.https.onCall((userAgent) => {
         catch (e) {
             reject(e);
         }
+    });
+});
+exports.isLabMember = functions.https.onCall((idToken) => {
+    return admin.auth().verifyIdToken(idToken).then((decodedToken) => {
+        console.log('isLabMember?', decodedToken.labMember);
+        return decodedToken.labMember;
+    }).catch(e => {
+        console.error('Error decoding idToken', e);
     });
 });
 //# sourceMappingURL=index.js.map

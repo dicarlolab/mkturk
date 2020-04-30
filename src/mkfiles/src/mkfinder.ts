@@ -44,6 +44,7 @@ export class Mkfinder {
     this.showImagesBtnAction();
     this.numImgSliderAction();
     this.downloadBtnAction();
+    this.refreshStorageTable();
 
     this.mkt = new Mkthree();
     this.mki = new Mkimage();
@@ -60,6 +61,9 @@ export class Mkfinder {
   private displayFirestoreTable(dataArr: any[], database: string) {
     
     dataArr = this.timestampToDate(dataArr);
+    this.mke.makeActiveBtn.style.display = "none";
+    this.mke.storeParamBtn.style.display = 'none';
+    
 
     if (database == "marmosets") {
       this.finder.destroy();
@@ -491,14 +495,17 @@ export class Mkfinder {
     this.backBtn.disabled = (fileRef.fullPath == "mkturkfiles") ? true: false;
 
     if (fileRef.fullPath == "mkturkfiles/parameterfiles/params_storage") {
-      this.mke.makeActiveBtn.style.display = "inline-block";
+      this.mke.makeActiveBtn.style.display = 'inline-block';
+      this.mke.updateBtn.style.display = 'inline-block';
       this.mke.btnBoxDiv.style.gridTemplateAreas = '"update-btn active-btn"';
     } else if (fileRef.fullPath == 'mkturkfiles/parameterfiles/subjects') {
+      this.mke.updateBtn.style.display = 'inline-block';
       this.mke.storeParamBtn.style.display = 'inline-block';
       this.mke.btnBoxDiv.style.gridTemplateAreas = '"update-btn store-param-btn"';
     } else {
-      this.mke.makeActiveBtn.style.display = "none";
+      this.mke.makeActiveBtn.style.display = 'none';
       this.mke.storeParamBtn.style.display = 'none';
+      this.mke.updateBtn.style.display = 'inline-block';
       this.mke.btnBoxDiv.style.gridTemplateAreas = '"update-btn update-btn"';
     }
 
@@ -530,6 +537,13 @@ export class Mkfinder {
     await Promise.all(filePromise);
 
     this.displayStorageTable(mdArr);
+  }
+
+  private refreshStorageTable() {
+    document.addEventListener('storageFileChanged', (ev: Event) => {
+      let folderRef = this.mke.getActiveFile().id as firebase.storage.Reference;
+      this.listStorageFiles(folderRef.parent!);
+    });
   }
 
   private displayStorageTable(metadataArr: any[]) {
