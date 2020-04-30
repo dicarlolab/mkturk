@@ -495,10 +495,12 @@ export class Mkfinder {
     this.backBtn.disabled = (fileRef.fullPath == "mkturkfiles") ? true: false;
 
     if (fileRef.fullPath == "mkturkfiles/parameterfiles/params_storage") {
+      this.mke.storeParamBtn.style.display = 'none';
       this.mke.makeActiveBtn.style.display = 'inline-block';
       this.mke.updateBtn.style.display = 'inline-block';
       this.mke.btnBoxDiv.style.gridTemplateAreas = '"update-btn active-btn"';
     } else if (fileRef.fullPath == 'mkturkfiles/parameterfiles/subjects') {
+      this.mke.makeActiveBtn.style.display = 'none';
       this.mke.updateBtn.style.display = 'inline-block';
       this.mke.storeParamBtn.style.display = 'inline-block';
       this.mke.btnBoxDiv.style.gridTemplateAreas = '"update-btn store-param-btn"';
