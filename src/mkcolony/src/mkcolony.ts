@@ -59,7 +59,7 @@ export class Mkcolony {
     this.marmosetDataDic = {};
     this.marmosetData = this.processData(data);
 
-    console.log('data', this.marmosetData);
+    // console.log('data', this.marmosetData);
 
     let clTableCard 
       = document.querySelector('#colony-table-card') as div;

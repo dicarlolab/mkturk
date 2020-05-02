@@ -196,5 +196,3 @@ if (ENV.BatteryAPIAvailable) {
   // monitor battery - from http://www.w3.org/TR/battery-status/
   
 }
-
-
