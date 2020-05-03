@@ -490,50 +490,19 @@ function createMovieSeq(durationMS,framerate){
     var movie_tseq = range(0+1000/framerate,durationMS,1000/framerate);
 
     //---------------- SEQUENCE OF SAMPLE IMAGES ----------------//
-    if (TASK.TestON <= 0){
-        if (TASK.SampleOFF > 0){
-            movie_sequence = ["blank", Array(movie_tseq.length).fill("sample"),"blank","test"].flat()
-            movie_tsequence = [0,100,movie_tseq.map(function (a){return a + 100}),100+durationMS+TASK.SampleOFF].flat(); 
-        }
-        else if (TASK.SampleOFF <= 0 ){
-            movie_sequence = ["blank",Array(movie_tseq.length).fill("sample"),"test"].flat()
-            movie_tsequence = [0,100,movie_tseq.map(function (a){return a + 100})]; 
-        }
-    } //if Match-to-Sample
-    else if (TASK.TestON > 0){
-        if (TASK.SampleOFF > 0 && TASK.TestOFF > 0){
-            movie_sequence = ["blank",Array(movie_tseq.length).fill("sample"),"blank","test","blank","choice"].flat()
-            movie_tsequence = [0,100,movie_tseq.map(function (a){return a + 100}),100+durationMS+TASK.SampleOFF,
-                                100+durationMS+TASK.SampleOFF+TASK.TestON,
-                                100+durationMS+TASK.SampleOFF+TASK.TestON+TASK.TestOFF]; 
-        }
-        else if (TASK.SampleOFF <= 0 && TASK.TestOFF > 0){
-            movie_sequence = ["blank",Array(movie_tseq.length).fill("sample"),"test","blank","choice"].flat()
-            movie_tsequence = [0,100,movie_tseq.map(function (a){return a + 100}),
-            100+durationMS+TASK.TestON,
-            100+durationMS+TASK.TestON+TASK.TestOFF];
-        }
-        else if (TASK.SampleOFF > 0 && TASK.TestOFF <= 0){
-            movie_sequence = ["blank",Array(movie_tseq.length).fill("sample"),"blank","test","choice"]
-            movie_tsequence = [0,100,movie_tseq.map(function (a){return a + 100}),100+durationMS+TASK.SampleOFF,
-                                100+durationMS+TASK.SampleOFF+TASK.TestON]; 
-        }
-        if (TASK.SampleOFF <= 0 && TASK.TestOFF <= 0){
-            movie_sequence = ["blank",Array(movie_tseq.length).fill("sample"),"test","choice"]
-            movie_tsequence = [0,100,movie_tseq.map(function (a){return a + 100}),
-                                100+durationMS+TASK.TestON];
-        }
-    } //else if Same-Different
-
-    //Indices of changes in taskscreen
-    var idxdscreen = []
-    for (var i=0; i<=movie_sequence.length-1; i++){
-        if (i==0 || movie_sequence[i] != movie_sequence[i-1]){
-            idxdscreen.push(i)
-        }
-    }//FOR i frames
-
-    return [movie_sequence, movie_tsequence, idxdscreen]
+    if (TASK.SampleOFF > 0){
+        movie_tseq = movie_tseq.map(function (a){return a + TASK.SampleOFF})
+        movie_sequence = [ Array(movie_tseq.length).fill("sample"), "blank" ].flat()
+        movie_tsequence = [ TASK.SampleOFF,movie_tseq].flat(); 
+        movie_framenum = range(0,movie_sequence.length-2,1)
+        movie_framenum[movie_framenum.length] = -1
+    }
+    else if (TASK.SampleOFF <= 0 ){
+        movie_sequence = [Array(movie_tseq.length).fill("sample")].flat()
+        movie_tsequence = movie_tseq.flat();
+        movie_framenum = range(0,movie_sequence.length-1,1)
+    }
+    return [movie_sequence, movie_tsequence, movie_framenum]
 }//FUNCTION createMovieSeq
 
 function interpParam(vec,durationMS,framerate){

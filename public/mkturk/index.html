@@ -1056,67 +1056,70 @@ while(true){
 
 
 	//============ SELECT SAMPLE & TEST IMAGES ============//
-	// Draw one (1) sample image from samplebag
-	// console.time('trial images loadtime:')
-
 	if (FLAGS.scene3d == 0){
 		[CURRTRIAL.sampleimage, CURRTRIAL.sampleindex, CURRTRIAL.testimages, CURRTRIAL.testindices, CURRTRIAL.correctitem, samplereward] = await TQ.get_next_trial();
-	}
-	else if (FLAGS.scene3d == 1){
-		var x = await TQS.get_next_trial()
-		CURRTRIAL.sampleimage = x[0]
-		CURRTRIAL.sampleindex = x[1]
-		CURRTRIAL.testimages = x[2]
-		CURRTRIAL.testindices = x[3]
-		CURRTRIAL.correctitem = x[4]
-		CURRTRIAL.sample_scenebag_label = x[5]
-		CURRTRIAL.sample_scenebag_index = x[6]
-		CURRTRIAL.test_scenebag_labels = x[7]
-		CURRTRIAL.test_scenebag_indices = x[8]
-		samplereward = x[9]		
-	}
 
-// CURRTRIAL.tsequenceactual = await displayTrial(["sample"],[0]);
+    var keys = Object.keys(IMAGES.object.sample)
+    for (var i=0; i<=keys.length-1; i++){
+      CURRTRIAL["sampleobject" + keys[i]] = IMAGES.object.sample[keys[i]][CURRTRIAL.sampleindex]
+    }//FOR
+
+    var keys = Object.keys(IMAGES.object.test)
+    if (TASK.TestON <= 0){
+      for (var i=0; i<=keys.length-1; i++){
+        for (var j=0; j<=CURRTRIAL.testindices.length-1; j++){
+          CURRTRIAL["testobject" + keys[i]][j] = IMAGES.object.test[keys[i]][CURRTRIAL.testindices[j]]
+        }//FOR j
+      }//FOR i
+    }//IF SR2 or M2S
+    else if (TASK.TestON > 0){
+      for (var i=0; i<=keys.length-1; i++){
+        CURRTRIAL["testobject" + keys[i]] = IMAGES.object.test[keys[i]][0]
+      }//FOR i   
+    } //IF same-different
+
+    logEVENTS("SampleObjectTy",CURRTRIAL.sampleobjectty,"imageseries")
+    logEVENTS("SampleObjectTz",CURRTRIAL.sampleobjecttz,"imageseries")
+    logEVENTS("SampleObjectRxy",CURRTRIAL.sampleobjectrxy,"imageseries")
+    logEVENTS("SampleObjectRxz",CURRTRIAL.sampleobjectrxz,"imageseries")
+    logEVENTS("SampleObjectRyz",CURRTRIAL.sampleobjectryz,"imageseries")
+    logEVENTS("SampleObjectScale",CURRTRIAL.sampleobjectscale,"imageseries")
+
+    logEVENTS("TestObjectTy",CURRTRIAL.testobjectty,"imageseries")
+    logEVENTS("TestObjectTz",CURRTRIAL.testobjecttz,"imageseries")
+    logEVENTS("TestObjectRxy",CURRTRIAL.testobjectrxy,"imageseries")
+    logEVENTS("TestObjectRxz",CURRTRIAL.testobjectrxz,"imageseries")
+    logEVENTS("TestObjectRyz",CURRTRIAL.testobjectryz,"imageseries")
+    logEVENTS("TestObjectScale",CURRTRIAL.testobjectscale,"imageseries")    
+	}//IF !scene
+	else if (FLAGS.scene3d == 1){
+    if (typeof(TASK.NRSVP) == "undefined" || TASK.NRSVP <= 0){
+      var imagesequencelength = 1;  
+    }//IF !rsvp
+    else{
+      var imagesequencelength = TASK.NRSVP
+    }//ELSE rsvp
+
+    for (var i=0; i<=imagesequencelength-1; i++){
+      var x = await TQS.get_next_trial()
+      CURRTRIAL.sampleimage[i] = x[0]
+      CURRTRIAL.sampleindex[i] = x[1]
+      CURRTRIAL.sample_scenebag_label[i] = x[5]
+      CURRTRIAL.sample_scenebag_index[i] = x[6]
+      if (i==0){
+        CURRTRIAL.testimages = x[2]
+        CURRTRIAL.testindices = x[3]
+        CURRTRIAL.correctitem = x[4]
+        CURRTRIAL.test_scenebag_labels = x[7]
+        CURRTRIAL.test_scenebag_indices = x[8]
+        samplereward = x[9]
+      }//IF first image
+    }//FOR i rsvp images
+	}//IF scene
 
 	logEVENTS("Sample",CURRTRIAL.sampleindex,"trialseries")
 	logEVENTS("Test",CURRTRIAL.testindices,"trialseries")
 	logEVENTS("CorrectItem",CURRTRIAL.correctitem,"trialseries")
-	
-if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
-	var keys = Object.keys(IMAGES.object.sample)
-	for (var i=0; i<=keys.length-1; i++){
-		CURRTRIAL["sampleobject" + keys[i]] = IMAGES.object.sample[keys[i]][CURRTRIAL.sampleindex]
-	}
-	
-	var keys = Object.keys(IMAGES.object.test)
-	if (TASK.TestON <= 0){
-		for (var i=0; i<=keys.length-1; i++){
-			for (var j=0; j<=CURRTRIAL.testindices.length-1; j++){
-				CURRTRIAL["testobject" + keys[i]][j] = IMAGES.object.test[keys[i]][CURRTRIAL.testindices[j]]
-			}		
-		}
-	} //IF SR2 or M2S
-	else if (TASK.TestON > 0){
-		for (var i=0; i<=keys.length-1; i++){
-			CURRTRIAL["testobject" + keys[i]] = IMAGES.object.test[keys[i]][0]
-		}		
-	} //IF same-different
-
-	logEVENTS("SampleObjectTy",CURRTRIAL.sampleobjectty,"imageseries")
-	logEVENTS("SampleObjectTz",CURRTRIAL.sampleobjecttz,"imageseries")
-	logEVENTS("SampleObjectRxy",CURRTRIAL.sampleobjectrxy,"imageseries")
-	logEVENTS("SampleObjectRxz",CURRTRIAL.sampleobjectrxz,"imageseries")
-	logEVENTS("SampleObjectRyz",CURRTRIAL.sampleobjectryz,"imageseries")
-	logEVENTS("SampleObjectScale",CURRTRIAL.sampleobjectscale,"imageseries")
-
-	logEVENTS("TestObjectTy",CURRTRIAL.testobjectty,"imageseries")
-	logEVENTS("TestObjectTz",CURRTRIAL.testobjecttz,"imageseries")
-	logEVENTS("TestObjectRxy",CURRTRIAL.testobjectrxy,"imageseries")
-	logEVENTS("TestObjectRxz",CURRTRIAL.testobjectrxz,"imageseries")
-	logEVENTS("TestObjectRyz",CURRTRIAL.testobjectryz,"imageseries")
-	logEVENTS("TestObjectScale",CURRTRIAL.testobjectscale,"imageseries")		
-} //IF !FLAGS.useScene
-
 
 	//================= RFID check =================//
 	// If no matching read in the last TASK.CheckRFID seconds, wait for matching read
@@ -1124,7 +1127,7 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 	if (TASK.CheckRFID > 0 && ENV.AgentRFID != "XX" && FLAGS.savedata == 1){
 		if (port.connected == false){
 			console.log('NO USB DEVICE CONNECTED: cannot check RFID!!')
-		}
+		}//IF !connected
 		else if (port.connected == true){
 			var nreads = TRIAL.RFIDTag.length
 	    	if (TRIAL.RFIDTag[nreads-1] == ENV.AgentRFID && (Date.now() - ENV.CurrentDate.valueOf()) - TRIAL.RFIDTime[nreads-1] < TASK.CheckRFID){
@@ -1133,11 +1136,15 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 	    	else{ //wait for a recent rfid read before proceeding with next trial
 				await rfid_promise(ENV.AgentRFID,TASK.CheckRFID)
 	    	}
-		}
-	}
+		}//ELSE connected
+	}//IF CheckRFID
 	//================= (end) RFID check =================//
 
-	//============ WHILE RUN FIXATION SCREEN ============//
+
+// FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   //
+// FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   //
+// FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   //
+//============ WHILE RUN FIXATION SCREEN ============//
 	FLAGS.waitingforTouches = TASK.NFixations
 	if (TASK.RewardStage == 0){
 		FLAGS.punishOutsideTouch = 1		
@@ -1226,7 +1233,6 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 			//ok if timed out OR dms task, ok if touched outside, just wait for touch inside fixation area
 		}
 
-
 		//========= AWAIT CLEAR FIXATION =========//
 		for (var q in CANVAS.sequenceblank){frame.shown[q]=0}
 		frame.current=0;
@@ -1237,51 +1243,76 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 	} //while waiting for NFixations
 	//============ (end) WHILE RUN FIXATION SCREEN ============//
 
+
+//SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    //
+//SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    //
+//SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    //
 	//============== AWAIT SHOW SAMPLE THEN TEST ==============//
 	if (TASK.RewardStage === 1){
-		frame.shown=[]
-		
-		// for (var q in CANVAS.sequence){frame.shown[q]=0} 
-		// frame.current=0
-		// if (FLAGS.scene3d){
-		// 	scene["Sample"].framenum=0
-		// 	scene["Test"].framenum=0			
-		// }
+        CANVAS.tsequence = [ 0 ]
+        CANVAS.sequencetaskscreen = [ 'blank' ]
+        CANVAS.sequencesamplelabel = [ 0 ]
+        CANVAS.sequencesampleindex = [ 0 ]
+        CANVAS.sequencesampleclip = [ -1 ]
+        CANVAS.sequencesampleframe = [ -1 ]
 
-    frame.current=0
-    if (FLAGS.scene3d){
-      scene["Sample"].framenum=0
-      scene["Test"].framenum=0      
-    }
-    CURRTRIAL.movieindex = 0 
-    if (FLAGS.moviepersample[CURRTRIAL.sample_scenebag_label][CURRTRIAL.sample_scenebag_index] == 1){
-    //if current trial is a movie 
-      [movie_sequence,movie_tsequence,idx_dscreen] = createMovieSeq(IMAGES["Sample"][CURRTRIAL.sample_scenebag_label].durationMS,ENV.FrameRateMovie)
-      for (var q in movie_sequence){frame.shown[q]=0}
-       
-      var tsequenceactual_movie = await displayTrial(movie_sequence,movie_tsequence)
-      var tsequencedesired_movie = movie_tsequence
+        //EXPAND SAMPLE (for rsvp & movies)
+        for (var i=0; i<=CURRTRIAL.sample_scenebag_index.length-1; i++){
+            if (FLAGS.moviepersample[CURRTRIAL.sample_scenebag_label[i]][CURRTRIAL.sample_scenebag_index[i]] == 1){
+                [movie_sequence, movie_tsequence, movie_framenum] = createMovieSeq(IMAGES["Sample"][CURRTRIAL.sample_scenebag_label[i]].durationMS,ENV.FrameRateMovie)
+            }//IF movie
+            else {
+                [movie_sequence, movie_tsequence, movie_framenum] = createMovieSeq(TASK.SampleON, 1/(TASK.SampleON/1000))
+            }//ELSE !movie
+            if (i != 0){
+                var t0=CANVAS.tsequence[CANVAS.tsequence.length-1]
+                movie_tsequence = movie_tsequence.map(function (a){return a + t0})
+            }//IF shift
 
-      CURRTRIAL.tsequenceactual = []
-      CURRTRIAL.tsequencedesired = []
-      idx_dscreen.forEach(
-          function(idx){
-              CURRTRIAL.tsequenceactual.push(tsequenceactual_movie[idx])
-              CURRTRIAL.tsequencedesired.push(tsequencedesired_movie[idx])
-          })
-    }//IF movie
-    else { // not a movie
-      for (var q in CANVAS.sequence){frame.shown[q]=0} 
-   		//renderScreen(CANVAS.sequence[0],OFFSCREENCANVAS)
-  		CURRTRIAL.tsequenceactual = await displayTrial(CANVAS.sequence,CANVAS.tsequence);
-  		CURRTRIAL.tsequencedesired = CANVAS.tsequence
-    }//ELSE not movie
+            CANVAS.tsequence.push(...movie_tsequence)
+            CANVAS.sequencetaskscreen.push(...movie_sequence)
+            CANVAS.sequencesampleclip.push(...Array(movie_tsequence.length).fill(i))
+            CANVAS.sequencesampleframe.push(...movie_framenum)
+            CANVAS.sequencesamplelabel.push(...Array(movie_tsequence.length).fill(CURRTRIAL.sample_scenebag_label[i]))
+            CANVAS.sequencesampleindex.push(...Array(movie_tsequence.length).fill(CURRTRIAL.sample_scenebag_index[i]))
+        }//FOR i RSVP
 
-		audiocontext.suspend()
+        //APPEND TEST OR CHOICE
+        [sequencetest,tsequencetest] = appendTest()
+        CANVAS.sequencetaskscreen.push(...sequencetest)
+        CANVAS.tsequence.push(...tsequencetest)
 
-		logEVENTS("TSequenceActual",CURRTRIAL.tsequenceactual,"trialseries")
-		logEVENTS("TSequenceDesired",CURRTRIAL.tsequencedesired,"trialseries")
-	
+        frame.shown=[]
+        frame.current=0
+        for (var q in CANVAS.sequencetaskscreen){
+            frame.shown[q]=0
+        }//FOR q frames
+        if (FLAGS.scene3d){
+            scene["Sample"].framenum=0
+            scene["Test"].framenum=0      
+        }
+
+        //Display Sample & Test
+        var tsequenceactual = await displayTrial(CANVAS.sequencetaskscreen,CANVAS.tsequence)
+        var tsequencedesired = CANVAS.tsequence
+
+        //Store timing of screen switches
+     //    CURRTRIAL.tsequenceactual = []
+     //    CURRTRIAL.tsequencedesired = []
+     //    idx_dscreen.forEach(
+     //        function(idx){
+     //            CURRTRIAL.tsequenceactual.push(tsequenceactual_movie[idx])
+     //            CURRTRIAL.tsequencedesired.push(tsequencedesired_movie[idx])
+     //        }
+     //    )//forEach      
+    	// logEVENTS("TSequenceActual",CURRTRIAL.tsequenceactual,"trialseries")
+    	// logEVENTS("TSequenceDesired",CURRTRIAL.tsequencedesired,"trialseries")
+
+        audiocontext.suspend()
+
+//RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    //
+//RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    //
+//RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    //
 		if (FLAGS.scene3d){
 			boundingBoxesChoice = boundingBoxesChoice3D
 		}
@@ -1329,13 +1360,13 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 			race_return.cxyt = [currchoice,x,y,Date.now() - ENV.CurrentDate.valueOf()]
 
 			FLAGS.waitingforTouches--
-		}
+		}//IF StressTest
 		else {
 			var p1 = hold_promise(0,boundingBoxesChoice,FLAGS.punishOutsideTouch)
 			var p2 = choiceTimeOut(TASK.ChoiceTimeOut)
 
 			var race_return = await Promise.race([p1,p2])
-		}
+		}//ELSE
 
 		CURRTRIAL.responsetouchevent = race_return.type
 		CURRTRIAL.response = race_return.cxyt[0]
@@ -1353,16 +1384,16 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 			else {
 				FLAGS.stickyresponse=0;
 			}
-		} //if
+		} //IF
 	} //if TASK.RewardStage
 
-	// Determine if Choice was correct
-	if (CURRTRIAL.response == CURRTRIAL.correctitem){ CURRTRIAL.correct = 1; }
-	else { CURRTRIAL.correct=0; }
 
-
-	// console.log('response:', CURRTRIAL.response)
-	// console.log('correct response', CURRTRIAL.correctitem)
+//REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    //
+//REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    //
+//REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    //
+  // Determine if Choice was correct
+  if (CURRTRIAL.response == CURRTRIAL.correctitem){ CURRTRIAL.correct = 1; }
+  else { CURRTRIAL.correct=0; }
 
 	//============ DETERMINE NUMBER OF REWARDS ============//
 	if (TASK.RewardStage == 0 && samplereward == 0){
@@ -1447,7 +1478,7 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 			var p2 = TQ.generate_trials(num_trials_to_buffer_in_punishperiod)			
 		}
 		else if (FLAGS.scene3d == 1){
-			var p2 = TQS.generate_trials(num_trials_to_buffer_in_punishperiod)			
+			var p2 = TQS.generate_trials(num_trials_to_buffer_in_punishperiod*TASK.RSVP)			
 		}
 		playSound(3);
 		// console.time('punish download/timeout')
@@ -1456,6 +1487,10 @@ if ( FLAGS.scene3d == 0 ){ //Using images only not 3d scene
 	}
 	//============ (end) DELIVER REWARD/PUNISH ============//
 
+
+//HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    //
+//HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    //
+//HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    //
 	//================= HOUSEKEEPING =================//
 	var ITIstart = performance.now()
 

@@ -170,7 +170,7 @@ CURRTRIAL.starttime = NaN;
 CURRTRIAL.fixationgridindex = NaN; 
 CURRTRIAL.fixationxyt = [];
 CURRTRIAL.allfixationxyt = [];
-CURRTRIAL.sampleindex = NaN;
+CURRTRIAL.sampleindex = [];
 CURRTRIAL.sampleimage = [];
 CURRTRIAL.testindices = NaN;
 CURRTRIAL.testimages = [];
@@ -201,8 +201,8 @@ CURRTRIAL.testobjectrxz = []
 CURRTRIAL.testobjectryz = []
 CURRTRIAL.testobjectscale = []
 
-CURRTRIAL.sample_scenebag_label = NaN
-CURRTRIAL.sample_scenebag_index = NaN
+CURRTRIAL.sample_scenebag_label = []
+CURRTRIAL.sample_scenebag_index = []
 CURRTRIAL.test_scenebag_labels = NaN
 CURRTRIAL.test_scenebag_indices = NaN
 
