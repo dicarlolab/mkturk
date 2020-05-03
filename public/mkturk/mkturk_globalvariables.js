@@ -114,7 +114,6 @@ var FLAGS = {} // Global that keeps track of the task's requests to the Dropbox/
 FLAGS.consecutivehits = 0;
 FLAGS.need2loadImagesTrialQueue = 1; 
 FLAGS.need2loadScenes = 1;
-FLAGS.scene3d = 0;
 FLAGS.movie = [];
 FLAGS.moviepersample = [];
 FLAGS.need2loadParameters = 1; 
@@ -186,20 +185,6 @@ CURRTRIAL.lastFirebaseSave = new Date
 CURRTRIAL.tsequenceactual = []
 CURRTRIAL.tsequencedesired = []
 CURRTRIAL.xyt = [];
-
-CURRTRIAL.sampleobjectty = []
-CURRTRIAL.sampleobjecttz = []
-CURRTRIAL.sampleobjectrxy = []
-CURRTRIAL.sampleobjectrxz = []
-CURRTRIAL.sampleobjectryz = []
-CURRTRIAL.sampleobjectscale = []
-
-CURRTRIAL.testobjectty = []
-CURRTRIAL.testobjecttz = []
-CURRTRIAL.testobjectrxy = []
-CURRTRIAL.testobjectrxz = []
-CURRTRIAL.testobjectryz = []
-CURRTRIAL.testobjectscale = []
 
 CURRTRIAL.sample_scenebag_label = []
 CURRTRIAL.sample_scenebag_index = []
@@ -308,25 +293,8 @@ function resetTRIAL(){
 			logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"trialseries")
 		}) // starting battery level
 	}
-
-	if (typeof(FLAGS) != "undefined" && FLAGS.scene3d == 0){
-		TRIAL.SampleObjectTy = []
-		TRIAL.SampleObjectTz = []
-		TRIAL.SampleObjectRxy = []
-		TRIAL.SampleObjectRxz = []
-		TRIAL.SampleObjectRyz = []
-		TRIAL.SampleObjectScale = []
-
-		TRIAL.TestObjectTy = []
-		TRIAL.TestObjectTz = []
-		TRIAL.TestObjectRxy = []
-		TRIAL.TestObjectRxz = []
-		TRIAL.TestObjectRyz = []
-		TRIAL.TestObjectScale = []		
-	}
-
 	return TRIAL
-}
+}//FUNCTION resetTRIAL
 
 function updateTRIAL(){
 	TRIAL.StartTime[CURRTRIAL.num] = CURRTRIAL.starttime
@@ -344,23 +312,7 @@ function updateTRIAL(){
 	TRIAL.AutomatorStage[CURRTRIAL.num] = TASK.CurrentAutomatorStage; 
 	TRIAL.TSequenceDesired[CURRTRIAL.num] = CURRTRIAL.tsequencedesired
 	TRIAL.TSequenceActual[CURRTRIAL.num] = CURRTRIAL.tsequenceactual
-
-	if (FLAGS.scene3d == 0){
-		TRIAL.SampleObjectTy[CURRTRIAL.num] = CURRTRIAL.sampleobjectty
-		TRIAL.SampleObjectTz[CURRTRIAL.num] = CURRTRIAL.sampleobjecttz
-		TRIAL.SampleObjectRxy[CURRTRIAL.num] = CURRTRIAL.sampleobjectrxy
-		TRIAL.SampleObjectRxz[CURRTRIAL.num] = CURRTRIAL.sampleobjectrxz
-		TRIAL.SampleObjectRyz[CURRTRIAL.num] = CURRTRIAL.sampleobjectryz
-		TRIAL.SampleObjectScale[CURRTRIAL.num] = CURRTRIAL.sampleobjectscale
-
-		TRIAL.TestObjectTy[CURRTRIAL.num] = CURRTRIAL.testobjectty
-		TRIAL.TestObjectTz[CURRTRIAL.num] = CURRTRIAL.testobjecttz
-		TRIAL.TestObjectRxy[CURRTRIAL.num] = CURRTRIAL.testobjectrxy
-		TRIAL.TestObjectRxz[CURRTRIAL.num] = CURRTRIAL.testobjectrxz
-		TRIAL.TestObjectRyz[CURRTRIAL.num] = CURRTRIAL.testobjectryz
-		TRIAL.TestObjectScale[CURRTRIAL.num] = CURRTRIAL.testobjectscale
-	}
-}
+}//FUNCTION updateTRIAL
 
 function updateTrialHistory(){
 	var current_stage = stageHash(TASK); 

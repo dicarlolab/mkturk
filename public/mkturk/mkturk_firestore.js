@@ -16,16 +16,9 @@ async function saveBehaviorDatatoFirestore(TASK,ENV,CANVAS){
 								Docname: ENV.FirestoreDocRoot + '_images',
 								Taskdoc: ENV.FirestoreDocRoot + '_task',
 								Imagesdoc: ENV.FirestoreDocRoot + '_images'}) //link docs
-	if (FLAGS.scene3d == 0){
-		//image meta & trial data for each image
-		batch.update(imagesRef,IMAGES.Sample) //per image meta for sample bags
-		batch.update(imagesRef,IMAGES.Test) //per image meta for test bags
-	}
-	else if (FLAGS.scene3d == 1){
-		//scene meta
-		batch.update(imagesRef, { "SampleScenes": IMAGES.Sample, "TestScenes": IMAGES.Test })
-		batch.update(imagesRef,IMAGEMETA)
-	}
+	//scene meta
+	batch.update(imagesRef, { "SampleScenes": IMAGES.Sample, "TestScenes": IMAGES.Test })
+	batch.update(imagesRef,IMAGEMETA)
 	
 	//task meta & trial data
 	batch.set(taskRef,{Doctype: "task",
@@ -79,12 +72,7 @@ async function updateEventDataonFirestore(EVENTS){
 
 	var taskRef = db.collection(FIRESTORECOLLECTION.DATA).doc(ENV.FirestoreDocRoot + '_task')
 	batch.update(taskRef,EVENTS.trialseries)
-	
-	if (FLAGS.scene3d == 0){
-		var imagesRef = db.collection(FIRESTORECOLLECTION.DATA).doc(ENV.FirestoreDocRoot + '_images')
-		batch.update(imagesRef,EVENTS.imageseries)		
-	}
-	
+		
 	// Commit the batch
 	var currtrial = CURRTRIAL.num
 	await batch.commit().then(function () {
