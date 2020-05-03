@@ -246,7 +246,7 @@ function updateHeadsUpDisplayAutomator(currentautomatorstagename,pctcorrect,ntri
 }
 
 //================== IMAGE RENDERING ==================//
-function defineImageGrid(ngridpoints, gridspacing){
+function defineImageGrid(ngridpoints, gridspacing,xoffset,yoffset){
 	var xgrid =[]
 	var ygrid =[]
 	var xgridcent =[] 
@@ -262,9 +262,13 @@ function defineImageGrid(ngridpoints, gridspacing){
 
 	//center x & y grid within canvas
 	var xcanvascent = (document.body.clientWidth - CANVAS.offsetleft)*ENV.CanvasRatio*ENV.DevicePixelRatio/2
+	xcanvascent = xcanvascent + xoffset
 	var dx = xcanvascent - gridspacing*ngridpoints/2; //left side of grid
+
 	var ycanvascent = (document.body.clientHeight - CANVAS.offsettop)*ENV.CanvasRatio*ENV.DevicePixelRatio/2
+	ycanvascent = ycanvascent + yoffset
 	var dy = ycanvascent - gridspacing*ngridpoints/2; //top of grid
+
 	for (var i=0; i<=xgrid.length-1; i++){
 		xgridcent[i]=Math.round(xgrid[i]*gridspacing + dx);
 		ygridcent[i]=Math.round(ygrid[i]*gridspacing + dy);
@@ -282,7 +286,7 @@ function displayTrial(sequence,tsequence){
 	}).then();
 
 	var start = null;
-	var tActual = []
+	CANVAS.tsequenceactual = []
 	async function updateCanvas(timestamp){
 
 		// If start has not been set to a float timestamp, set it now.
@@ -375,7 +379,7 @@ function displayTrial(sequence,tsequence){
 						console.log("**** FAILED on 1ST rendering attempt of " + sequence[frame.current])
 
 						// attempt again
-						tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+						CANVAS.tsequenceactual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
 
 						//pre-rendered offscreen, now transfer
 						var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))				
@@ -386,7 +390,7 @@ function displayTrial(sequence,tsequence){
 								for (var j=0; j < 100; j++){
 									// attempt again
 									await setTimeout(j*100)
-									tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+									CANVAS.tsequenceactual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
 
 									//pre-rendered offscreen, now transfer
 									var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))				
@@ -398,7 +402,7 @@ function displayTrial(sequence,tsequence){
 								console.log("Render "  + sequence[frame.current] + " " + renderstr.status + " after " + j + " attempts")
 							}
 							else {
-								tActual[frame.current] = -99
+								CANVAS.tsequenceactual[frame.current] = -99
 								console.log("Skipping render since not touchfix or test screen")
 							} //if touchfix || test
 						} //if failed again
@@ -415,7 +419,7 @@ function displayTrial(sequence,tsequence){
 	    		saveScreenshot(VISIBLECANVAS,CURRTRIAL.num,sequence[frame.current],frame.current)
 	    	}//save out images
 
-			tActual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+			CANVAS.tsequenceactual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
 			frame.shown[frame.current]=1;
 			frame.current++;
 		}//IF time to show new frame
@@ -499,7 +503,7 @@ function displayTrial(sequence,tsequence){
 			window.requestAnimationFrame(updateCanvas);
 		}//IF more frames
 		else{
-			resolveFunc(tActual);
+			resolveFunc(CANVAS.tsequenceactual);
 		}//ELSE all frames shown
 	}
 	//requestAnimationFrame advantages: goes on next screen refresh and syncs to browsers refresh rate on separate clock (not js clock)
@@ -511,7 +515,7 @@ function renderScreen(screenType,canvasobj){
 	if (FLAGS.savedata == 0){
 		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter, 
 			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, TASK.ChoiceGridIndex,
-			ENV.FixationScale, ENV.SampleScale, ENV.TestScale, ENV.ChoiceScale,
+			ENV.FixationScale, ENV.SampleScale, ENV.SampleFixationScale, ENV.TestScale, ENV.ChoiceScale,
 			ENV.ImageWidthPixels, ENV.CanvasRatio,canvasobj);
 	}
 	else if (FLAGS.savedata == 1){
@@ -524,7 +528,7 @@ function renderScreen(screenType,canvasobj){
 	case 'blankWithGridMarkers':
 		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter, 
 			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, TASK.ChoiceGridIndex,
-			ENV.FixationScale, ENV.SampleScale, ENV.TestScale, ENV.ChoiceScale,
+			ENV.FixationScale, ENV.SampleScale, ENV.SampleFixationScale, ENV.TestScale, ENV.ChoiceScale,
 			ENV.ImageWidthPixels, ENV.CanvasRatio,canvasobj);
 		break
 	case 'touchfix':
@@ -673,6 +677,22 @@ async function renderDotOnCanvas(color, gridindex, dot_pixelradius, canvasobj){
 	return [xbound, ybound]
 }//FUNCTION renderDotOnCanvas
 
+function getSampleFixationBoundingBox(gridindex,rad){
+	var xcent = ENV.XGridCenter[gridindex]
+	var ycent = ENV.YGridCenter[gridindex]
+
+	// Bounding boxes of dot on canvas
+	xbound = [ (xcent-rad), (xcent+rad)];
+	ybound = [ (ycent-rad), (ycent+rad)];
+
+	xbound[0]=xbound[0]+CANVAS.offsetleft;
+	xbound[1]=xbound[1]+CANVAS.offsetleft;
+	ybound[0]=ybound[0]+CANVAS.offsettop;
+	ybound[1]=ybound[1]+CANVAS.offsettop;
+
+	return [xbound,ybound]
+}//FUNCTION getSampleFixationBoundingBox
+
 async function renderSquareOnCanvas(color, gridindex, square_pixelwidth, canvasobj){
 	// Draw Square
 	var context=canvasobj.getContext('2d');
@@ -771,7 +791,7 @@ function renderBlank(canvasobj,bkgdcolor){
 	// context.clearRect(0,0,canvasobj.width,canvasobj.height);
 }//FUNCTION renderBlank
 
-function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,choicegridindex,fixationscale,samplescale,testscale,choicescale,imwidth,canvasratio,canvasobj)
+function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,choicegridindex,fixationscale,samplescale,samplefixationscale,testscale,choicescale,imwidth,canvasratio,canvasobj)
 {
 	var outofbounds_str = ''
 	var context=canvasobj.getContext('2d');
@@ -822,6 +842,21 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 	var outofbounds=checkDisplayBounds(displaycoord)
 	if (outofbounds == 1){
 		outofbounds_str = outofbounds_str + "<br>" + "Sample Image is out of bounds"
+	}
+	displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
+
+	//Sample Fixation Bounding Box
+	var wd = imwidth*samplefixationscale
+	var xcent = gridx[samplegridindex]/ENV.CanvasRatio
+	var ycent = gridy[samplegridindex]/ENV.CanvasRatio
+	context.strokeStyle="yellow"
+	context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
+
+	var displaycoord = [(xcent-wd/2)*ENV.CanvasRatio,(ycent-wd/2)*ENV.CanvasRatio,
+						(xcent+wd/2)*ENV.CanvasRatio,(ycent+wd/2)*ENV.CanvasRatio]
+	var outofbounds=checkDisplayBounds(displaycoord)
+	if (outofbounds == 1){
+		outofbounds_str = outofbounds_str + "<br>" + "Sample Fixation Window is out of bounds"
 	}
 	displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
 

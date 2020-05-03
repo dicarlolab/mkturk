@@ -110,7 +110,6 @@ if (typeof(navigator.bluetooth) == "object"){
   deviceInfo.data.gpu.vendor = vendor;
   deviceInfo.data.gpu.renderer = renderer;
   deviceInfo.data.touchscreen = touchscreen
-  console.log(deviceInfo);
   return deviceInfo;
 }
 
@@ -783,14 +782,16 @@ while(true){
 			}
 		} //if TASK.RewardStage
 
-		// define image display grid
-		funcreturn = defineImageGrid(TASK.NGridPoints, TASK.GridSpacingInches*ENV.ViewportPPI);
+        ENV.FixationRadius = TASK.FixationSizeInches/2 * ENV.ViewportPPI
+        ENV.SampleFixationRadius = TASK.SampleFixationSizeInches/2 * ENV.ViewportPPI
+        ENV.ChoiceRadius = TASK.ChoiceSizeInches/2 * ENV.ViewportPPI
 
-		xcanvascenter = funcreturn[0]
-		ycanvascenter = funcreturn[1]
-		ENV.XGridCenter = funcreturn[2]
-		ENV.YGridCenter = funcreturn[3]
-
+        // define image display grid
+        funcreturn = defineImageGrid(TASK.NGridPoints, TASK.GridSpacingInches*ENV.ViewportPPI,TASK.GridOffsetXInches*ENV.ViewportPPI,TASK.GridYOffsetInches*ENV.ViewportPPI);
+        xcanvascenter = funcreturn[0]
+        ycanvascenter = funcreturn[1]
+        ENV.XGridCenter = funcreturn[2]
+        ENV.YGridCenter = funcreturn[3]
 
 		FLAGS.purge = 1
 		FLAGS.createnewfirestore = 1
@@ -932,26 +933,15 @@ while(true){
 	//========================(END) 3D SCENE SET-UP =======================//
 
 
-	//============ CREATE DISPLAY GRID ============//
+	//======= COMPUTE DISPLAY ITEM SCALES FOR BACKWARDS COMPATIBILITY =======//
 	ENV.InchScale = ENV.ViewportPPI/(ENV.ImageWidthPixels*ENV.CanvasRatio)
 
 	ENV.FixationScale = ENV.InchScale*TASK.FixationSizeInches
 	ENV.SampleScale = ENV.InchScale*TASK.SampleSizeInches
+    ENV.SampleFixationScale = ENV.InchScale*TASK.SampleFixationSizeInches
 	ENV.TestScale = ENV.InchScale*TASK.TestSizeInches
 	ENV.ChoiceScale = ENV.InchScale*TASK.ChoiceSizeInches
-
-	ENV.FixationRadius = TASK.FixationSizeInches/2 * ENV.ViewportPPI
-	ENV.ChoiceRadius = TASK.ChoiceSizeInches/2 * ENV.ViewportPPI
-
-	// define image display grid
-	funcreturn = defineImageGrid(TASK.NGridPoints, TASK.GridSpacingInches*ENV.ViewportPPI);
-
-	xcanvascenter = funcreturn[0]
-	ycanvascenter = funcreturn[1]
-	ENV.XGridCenter = funcreturn[2]
-	ENV.YGridCenter = funcreturn[3]
-	//============ (end) CREATE IMAGE BAG & DISPLAY GRID ============//
-
+    //======= (end) COMPUTE DISPLAY ITEM SCALES FOR BACKWARDS COMPATIBILITY =======//
 
 	//============ SELECT SAMPLE & TEST IMAGES ============//
     if (typeof(TASK.NRSVP) == "undefined" || TASK.NRSVP <= 0){
@@ -1137,9 +1127,11 @@ while(true){
         }//FOR i RSVP
 
         //APPEND TEST OR CHOICE
-        [sequencetest,tsequencetest] = appendTest()
-        CANVAS.sequencetaskscreen.push(...sequencetest)
-        CANVAS.tsequence.push(...tsequencetest)
+        if (TASK.NRSVP <= 0){
+            [sequencetest,tsequencetest] = appendTest()
+            CANVAS.sequencetaskscreen.push(...sequencetest)
+            CANVAS.tsequence.push(...tsequencetest)            
+        }
 
         frame.shown=[]
         frame.current=0
@@ -1152,7 +1144,33 @@ while(true){
         }
 
         //Display Sample & Test
-        var tsequenceactual = await displayTrial(CANVAS.sequencetaskscreen,CANVAS.tsequence)
+        if (TASK.NRSVP > 0 && TASK.SampleFixationSizeInches > 0){
+            funcreturn = getSampleFixationBoundingBox(TASK.SampleGridIndex,ENV.SampleFixationRadius)
+            boundingBoxesSampleFixation.x[0] = funcreturn[0]
+            boundingBoxesSampleFixation.y[0] = funcreturn[1]
+            FLAGS.punishOutsideTouch = 1
+            FLAGS.waitingforTouches = 1
+            FLAGS.acquiredTouch = 1;
+            var p1 = hold_promise(0,boundingBoxesSampleFixation,FLAGS.punishOutsideTouch)
+            var p2 = displayTrial(CANVAS.sequencetaskscreen,CANVAS.tsequence)
+            var race_return = await Promise.race([p1,p2])
+
+            if (typeof(race_return.type) == "undefined"){
+                CURRTRIAL.samplefixationtouchevent = 'theld'
+                CURRTRIAL.samplefixationxyt = [0,0,CANVAS.tsequenceactual[CANVAS.tsequenceactual.length-1]]
+            }//IF held samplefixation
+            else{
+                CURRTRIAL.samplefixationtouchevent = race_return.type
+                CURRTRIAL.samplefixationxyt = [race_return.cxyt[1], race_return.cxyt[2], race_return.cxyt[3]]
+            }//ELSE broke samplefixation
+        }
+        else{
+            CURRTRIAL.samplefixationtouchevent = ''
+            CURRTRIAL.samplefixationxyt = []
+            await displayTrial(CANVAS.sequencetaskscreen,CANVAS.tsequence)
+        }//ELSE !RSVP, no hold
+        logEVENTS("SampleFixationTouchEvent",CURRTRIAL.samplefixationtouchevent,"trialseries")
+        logEVENTS("SampleFixationXYT",CURRTRIAL.samplefixationxyt,"trialseries")
 
         //Store timing of clip presentations
         CURRTRIAL.tsequenceactual = []
@@ -1163,11 +1181,11 @@ while(true){
                 CANVAS.sequencesampleclip[f] != CANVAS.sequencesampleclip[f-1])
                 {
                 CURRTRIAL.tsequencedesired.push(CANVAS.tsequence[f])
-                if (f > tsequenceactual.length-1){
+                if (f > CANVAS.tsequenceactual.length-1){
                     CURRTRIAL.tsequenceactual.push(-1)
                 }//IF clip not shown
                 else{
-                    CURRTRIAL.tsequenceactual.push(tsequenceactual[f])
+                    CURRTRIAL.tsequenceactual.push(CANVAS.tsequenceactual[f])
                 }//ELSE clip shown
             }//IF new clip || new taskscreen within that clip
         }//FOR f frames
@@ -1180,7 +1198,6 @@ while(true){
 //RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    //
 //RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    //
         //========= AWAIT TOUCH RESPONSE =========//
-		boundingBoxesChoice = boundingBoxesChoice3D
 		FLAGS.waitingforTouches = 1
 		if (TASK.HideTestDistractors >= 1){
 			FLAGS.punishOutsideTouch = 1
@@ -1188,10 +1205,11 @@ while(true){
 		else {
 			FLAGS.punishOutsideTouch = 0			
 		}
+
 		if (FLAGS.stressTest == 1){
 			var race_return = {type: "theld"}
 
-			var nchoices = boundingBoxesChoice.x.length
+			var nchoices = boundingBoxesChoice3D.x.length
 			// var currchoice = CURRTRIAL.correctitem
 			var hitrate = 0
 			if (TASK.Agent == "Youno"){
@@ -1217,19 +1235,41 @@ while(true){
 				var currchoice = distractor_array[0]
 			}
 
-			var x = boundingBoxesChoice.x[currchoice][0] + Math.round(Math.random()*(boundingBoxesChoice.x[currchoice][1] - boundingBoxesChoice.x[currchoice][0]))
+			var x = boundingBoxesChoice3D.x[currchoice][0] + Math.round(Math.random()*(boundingBoxesChoice3D.x[currchoice][1] - boundingBoxesChoice3D.x[currchoice][0]))
 
-			var y = boundingBoxesChoice.y[currchoice][0] + Math.round(Math.random()*(boundingBoxesChoice.y[currchoice][1] - boundingBoxesChoice.y[currchoice][0]))
+			var y = boundingBoxesChoice3D.y[currchoice][0] + Math.round(Math.random()*(boundingBoxesChoice3D.y[currchoice][1] - boundingBoxesChoice3D.y[currchoice][0]))
 
 			race_return.cxyt = [currchoice,x,y,Date.now() - ENV.CurrentDate.valueOf()]
 
 			FLAGS.waitingforTouches--
 		}//IF StressTest
 		else {
-			var p1 = hold_promise(0,boundingBoxesChoice,FLAGS.punishOutsideTouch)
-			var p2 = choiceTimeOut(TASK.ChoiceTimeOut)
+            if (TASK.NRSVP > 0){
+            	CURRTRIAL.correctitem = 1
+                if (TASK.SampleFixationSizeInches <= 0){
+                    var race_return = {type: "theld"}
+                    var currchoice = 1
+                }//IF no fixation required
+                else {
+                    var race_return = {type: CURRTRIAL.samplefixationtouchevent}
 
-			var race_return = await Promise.race([p1,p2])
+                    if (CURRTRIAL.samplefixationtouchevent == "theld"){
+                        var currchoice = 1
+                    }//IF held samplefixation
+                    else {
+                        var currchoice = 0
+                    }//ELSE broke samplefixation
+                }//ELSE fixation required
+
+                race_return.cxyt = [currchoice,-1,-1,CURRTRIAL.samplefixationxyt[2]]
+                FLAGS.waitingforTouches--            
+            }//IF RSVP, skip choice
+            else{
+                var p1 = hold_promise(0,boundingBoxesChoice3D,FLAGS.punishOutsideTouch)
+                var p2 = choiceTimeOut(TASK.ChoiceTimeOut)
+
+                var race_return = await Promise.race([p1,p2])
+            }//ELSE require choice
 		}//ELSE
 
 		CURRTRIAL.responsetouchevent = race_return.type
@@ -1241,7 +1281,7 @@ while(true){
 		logEVENTS("Response",CURRTRIAL.response,"trialseries")
 
 		// Keep track of repeated responses to one side
-		if (CURRTRIAL.num > 0 && FLAGS.savedata && CURRTRIAL.responsetouchevent == "theld"){
+		if (TASK.NRSVP <= 0 && CURRTRIAL.num > 0 && FLAGS.savedata && CURRTRIAL.responsetouchevent == "theld"){
 			if (CURRTRIAL.response==trialhistory.response[trialhistory.correct.length-1]){
 				FLAGS.stickyresponse++;
 			}

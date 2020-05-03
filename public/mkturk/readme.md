@@ -38,6 +38,10 @@ GridScale (deprecated, replaced by GridSpacingInches): Determines intergridpoint
 
 GridSpacingInches: Determines intergridpoint spacing in physical inches on screen.
 
+GridXOffsetInches: Determines how much to horizontally shift grid from center in physical inches on screen. >0 => shifts rightward
+
+GridYOffsetInches: Determines how much to vertically shift grid from center in physical inches on screen. >0 => shifts downward
+
 HideChoiceDistractors: HideChoiceDistractors=1, hides the same or different button so that subject sees only the correct one to touch. Still gets punished if touches blank area where the incorrect button would have been. This only applies to same-different choice screen. See HideTestDistractors for test response screen used in SR2 and M2S.
 
 HideTestDistractors: HideTestDistractors=1, hides the distractor choices so that subject only sees matching choice. Still gets punished if touches blank area where the incorrect button would have been.
@@ -66,6 +70,8 @@ NGridPoints: Number of display grid points in either direction. Produces square 
 
 NRewardMax: Max number of rewards that can be given for a successful trial. This caps how much extra (bonus) reward subject can get for successful completion of consecutive trials. If nrewardmax=3, then subject can get up to 3x reward for completing 3*NConsecutiveHitsforBonus consecutive trials successfully, and then would get 3x reward after that until gets a trial wrong.
 
+NRSVP: Number of sample scene images to show in a single trial. Displayed at TASK.SampleON duration TASK.SampleOFF between each sample drawn according to TASK.SamplingStrategy. If TASK.NRSVP<=0, only a single sample scene render will be shown for that trial. If TASK.NRSVP>0, then no choice response is awaited & reward is automatically given at the end of the sequence.
+
 NStickyResponse: Number of times subject can choose the same location on the screen before force them out of it by placing the correct answer somewhere else (i.e. if they have response bias, then on the next trial, the correct choice is drawn somewhere away from that bias). Currently not implemented for same-different task or SR2
 
 NTrialsPerBagBlock: if 0, randomly samples from all bags (default: interleaved match-t0-sample), if >0, samples N consecutive images from the same sample image bag. This is equivalent to blocking the session so that training is done in object blocks rather than interleaving all objects. After N trials are completed for bag i, proceeds to next bag i+1 according to bag sequence specified in ImageBagsSample. When all bags have been sampled NTrialsPerBagBlock times, starts back at bag 0.
@@ -87,6 +93,10 @@ SamplingStrategy: Determines how sample images are drawn: uniform_with_replaceme
 SampleOFF: Duration in milliseconds that a gray screen is presented after the sample image before the response screen. This implements the delay in a DMS task. SampleOFF=0, leads to no delay
 
 SampleON: Duration in milliseconds that sample image is presented
+
+SampleFixationScale (computed internally and stored in ENV.SampleFixationScale instead of provided by user in TASK params): Size of sample fixation window in units of sample image width. sampleFixationScale=1 makes an npx x npx bounding box on npx x npx screen pixels on the screen (i.e. no up or down sampling/resizing/filtering of the image)
+
+SampleFixationSizeInches: Width of box within which subject has to hold fixation during sample screen. If 0, then subject does not have to hold fixation on the sample image.
 
 SampleScale (computed internally and stored in ENV.SampleScale instead of provided by user in TASK params): Size of sample image in units of sample image width. sampleScale=1 displays a npx x npx image on npx x npx screen pixels on the screen (i.e. no up or down sampling/resizing/filtering of the image)
 

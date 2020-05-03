@@ -37,6 +37,7 @@ ENV.DevicePixelRatio = 1
 ENV.ThreeJSRenderRatio = 4
 ENV.FixationRadius = 0
 ENV.FixationColor = ''
+ENV.SampleFixationRadius = 0
 ENV.ChoiceRadius = 0
 ENV.ChoiceColor = 'white'
 ENV.XGridCenter = []
@@ -173,12 +174,14 @@ CURRTRIAL.sampleindex = [];
 CURRTRIAL.sampleimage = [];
 CURRTRIAL.testindices = NaN;
 CURRTRIAL.testimages = [];
+CURRTRIAL.samplefixationxyt = [];
 CURRTRIAL.responsexyt = []; 
 CURRTRIAL.response = []; 
 CURRTRIAL.correctitem = NaN;
 CURRTRIAL.correct = [];
 CURRTRIAL.nreward = NaN;
 CURRTRIAL.fixationtouchevent = ""
+CURRTRIAL.samplefixationtouchevent = ""
 CURRTRIAL.responsetouchevent = ""
 CURRTRIAL.lastTrialCompleted = new Date
 CURRTRIAL.lastFirebaseSave = new Date
@@ -206,25 +209,14 @@ EVENTS.reset_trialseries = function(){
 	this.trialseries.Response = {}
 	this.trialseries.TSequenceDesired = {}
 	this.trialseries.TSequenceActual = {}
+	this.trialseries.SampleFixationTouchEvent = {}	
+	this.trialseries.SampleFixationXYT = {}
 	this.trialseries.ResponseTouchEvent = {}
 	this.trialseries.ResponseXYT = {}
 	this.trialseries.Response = {}
 	this.trialseries.NReward = {}
 	this.trialseries.BatteryLDT = {}	
 	this.trialseries.BLEBatteryLT = {}
-
-	this.imageseries.SampleObjectTy = {}
-	this.imageseries.SampleObjectTz = {}
-	this.imageseries.SampleObjectRxy = {}
-	this.imageseries.SampleObjectRxz = {}
-	this.imageseries.SampleObjectRyz = {}
-	this.imageseries.SampleObjectScale = {}
-	this.imageseries.TestObjectTy = {}
-	this.imageseries.TestObjectTz = {}
-	this.imageseries.TestObjectRxy = {}
-	this.imageseries.TestObjectRxz = {}
-	this.imageseries.TestObjectRyz = {}
-	this.imageseries.TestObjectScale = {}
 }
 EVENTS.reset_timeseries = function(){
 	this.timeseries = {};
@@ -248,6 +240,7 @@ var sounds = {
 	buffer: [],
 }
 var boundingBoxesFixation={}; //where the fixation touch targets are on the canvas
+var boundingBoxesSampleFixation={x: [], y: []}
 var boundingBoxesChoice={}; //where the choice touch targets are on the canvas
 var waitforClick; //variable to hold generator
 var waitforEvent; //variable to hold generator
@@ -269,10 +262,12 @@ function resetTRIAL(){
 	TRIAL.AllFixationXYT=[]
 	TRIAL.Sample = []
 	TRIAL.Test = []
+	TRIAL.SampleFixationXYT = []
 	TRIAL.ResponseXYT = []
 	TRIAL.Response = []
 	TRIAL.CorrectItem = []
 	TRIAL.FixationTouchEvent = []
+	TRIAL.SampleFixationTouchEvent = []
 	TRIAL.ResponseTouchEvent = []
 	TRIAL.NReward = []
 	TRIAL.AutomatorStage = []
@@ -302,10 +297,12 @@ function updateTRIAL(){
 	TRIAL.FixationXYT[CURRTRIAL.num] = CURRTRIAL.fixationxyt
 	TRIAL.AllFixationXYT[CURRTRIAL.num] = CURRTRIAL.allfixationxyt	
 	TRIAL.Sample[CURRTRIAL.num] = CURRTRIAL.sampleindex 
-	TRIAL.Test[CURRTRIAL.num] = CURRTRIAL.testindices 
+	TRIAL.Test[CURRTRIAL.num] = CURRTRIAL.testindices
+	TRIAL.SampleFixationXYT[CURRTRIAL.num] = CURRTRIAL.samplefixationxyt
 	TRIAL.ResponseXYT[CURRTRIAL.num] = CURRTRIAL.responsexyt
 	TRIAL.Response[CURRTRIAL.num] = CURRTRIAL.response
 	TRIAL.FixationTouchEvent[CURRTRIAL.num] = CURRTRIAL.fixationtouchevent
+	TRIAL.SampleFixationTouchEvent[CURRTRIAL.num] = CURRTRIAL.samplefixationtouchevent
 	TRIAL.ResponseTouchEvent[CURRTRIAL.num] = CURRTRIAL.responsetouchevent
 	TRIAL.CorrectItem[CURRTRIAL.num] = CURRTRIAL.correctitem
 	TRIAL.NReward[CURRTRIAL.num] = CURRTRIAL.nreward
