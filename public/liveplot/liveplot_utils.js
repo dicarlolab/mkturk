@@ -120,5 +120,18 @@ if (!Array.prototype.fill) {
     return O;
   };
 }
+
+function removeNesting(x){
+  var y = {}
+  for (var i=0; i<=x.length-1; i++){
+    for (var j=0; j<=x[i].length-1; j++){
+      if (i==0){
+        y[j]=[]
+      }//if need to initialize array
+      y[j].push(x[i][j])
+    }//FOR j datapoints
+  }//for i trials
+  return y
+}//FUNCTION removeNesting
 //================== UTILS (end) ==================//
 

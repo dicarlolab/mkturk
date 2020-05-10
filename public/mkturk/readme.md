@@ -229,7 +229,7 @@ XGridCenter: The location of all grid points in pixels. Follows from user-specif
 
 YGridCenter: The location of all grid points in pixels. Follows from user-specified NGridPoints and GridScale (e.g. to create a 3x3 grid with adjacent non-overlapping images, set NGridPoints=3, GridScale=1 and YGridCenters will be spaced by ImageHeightPixels)
 
-## TRIAL
+## EVENTS
 AllFixationXYT: records all fixation touches as opposed to most recent fixation touch in FixationXYT. If NFixations > 1, then AllFixationXYT will have multiple touch entries on a given trial. X,Y=horizontal,vertical position of fixation touch in pixels T=time of touch measured during Date.now()
 
 AutomatorStage: Stage number if Automator=1

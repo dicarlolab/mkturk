@@ -337,18 +337,18 @@ async function saveParameterstoFirebase() {
 
 
 //------------- SAVE DATA --------------//
-async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, TRIAL){
-	var dataobj = [] 
-
-	dataobj.push(ENV)
-	dataobj.push( { "SampleScenes": IMAGES.Sample, "TestScenes": IMAGES.Test } )
-	dataobj.push(IMAGEMETA)
-	dataobj.push(CANVAS)
-	dataobj.push(TASK)
-	dataobj.push(TRIAL)
+async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS){
+	var dataobj = { 'TASK': TASK,
+					'ENV': ENV,
+					'CANVAS': CANVAS,
+					'SCENEMETA': IMAGEMETA,
+					'SCENES': { 'SampleScenes': IMAGES.Sample, 'TestScenes': IMAGES.Test },
+					'TRIALEVENTS': EVENTS['trialseries'],
+					'TIMEEVENTS': { 'Battery': EVENTS['timeseries']['Battery'],
+									'RFIDTag': EVENTS['timeseries']['RFIDTag'], 
+									'Weight': EVENTS['timeseries']['Weight'] }
+	}//dataobj
 	datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
-
-
 	var blob = new Blob([ datastr ], {type : 'application/json'});
 
 	// Create file metadata including the content type

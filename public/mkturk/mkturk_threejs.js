@@ -196,13 +196,6 @@ async function addToScene(taskscreen){
             }//FOR i images
         }//IF Sample        
     }//FOR obj objects
-
-    // flag for movie per taskscreen per classlabel
-    if (IMAGES[taskscreen][classlabel].durationMS > 0 ){
-        FLAGS.movie.push(1)
-    } else {
-        FLAGS.movie.push(0)
-    }//IF new duration
 }//FOR classlabels
 
 //==== GridCenters in 3JS (==> POSSIBLE CAMERA OFFSETS FOR SAMPLE,TEST,CHOICE "ROOMS")

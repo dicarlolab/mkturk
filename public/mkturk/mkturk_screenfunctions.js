@@ -129,14 +129,14 @@ function updateHeadsUpDisplay(){
 	// Overall performance
 	var ncorrect = 0;
 	var nreward = 0;
-	for (var i=0; i<=TRIAL.Response.length-1; i++){
-		if (TRIAL.Response[i] == TRIAL.CorrectItem[i]){
+	for (var i=0; i<=EVENTS['trialseries']['Response'].length-1; i++){
+		if (EVENTS['trialseries']['Response'][i] == EVENTS['trialseries']['CorrectItem'][i]){
 			ncorrect = ncorrect + 1
-			nreward = nreward + TRIAL.NReward[i]
+			nreward = nreward + EVENTS['trialseries']['NReward'][i]
 		}
-	}
+	}//FOR i trials
 
-	var pctcorrect = Math.round(100 * ncorrect / TRIAL.Response.length);
+	var pctcorrect = Math.round(100 * ncorrect / EVENTS['trialseries']['Response'].length);
 
 	// Task type
 	var task1 = "";
@@ -152,7 +152,7 @@ function updateHeadsUpDisplay(){
 		textobj.innerHTML = 
  		'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail + "<br>"
 		+ 'Agent: ' + ENV.Subject + ", <font color=green><b>" + pctcorrect 
-		+ "%</b></font> " + "(" + ncorrect + " of " + TRIAL.Response.length + " trials)" 
+		+ "%</b></font> " + "(" + ncorrect + " of " + EVENTS['trialseries']['Response'].length + " trials)" 
 		+ "<br>" + "NRewards=" + nreward + ", <font color=green><b>" 
 		+ Math.round(TASK.RewardPer1000Trials*nreward/1000) 
 		+ "mL</b></font> (" + Math.round(TASK.RewardPer1000Trials) 
@@ -277,7 +277,8 @@ function defineImageGrid(ngridpoints, gridspacing,xoffset,yoffset){
 	return [xcanvascent, ycanvascent, xgridcent, ygridcent]
 }//FUNCTION defineImageGrid
 
-function displayTrial(sequence,tsequence){
+
+function displayTrial(sequencetaskscreen,sequencesceneindex,tsequence){
 	var resolveFunc
 	var errFunc
 	p = new Promise(function(resolve,reject){
@@ -286,7 +287,7 @@ function displayTrial(sequence,tsequence){
 	}).then();
 
 	var start = null;
-	CANVAS.tsequenceactual = []
+	CURRTRIAL.tsequenceactual = []
 	async function updateCanvas(timestamp){
 
 		// If start has not been set to a float timestamp, set it now.
@@ -296,45 +297,45 @@ function displayTrial(sequence,tsequence){
 		if (timestamp - start > tsequence[frame.current]){
 
 	//=================== 3D rendering =====================//
-			if (sequence[frame.current] == "sample" || sequence[frame.current] == "test" || sequence[frame.current] == "choice"
-				|| (sequence[frame.current] == "touchfix" && TASK.FixationUsesSample)){
+			if (sequencetaskscreen[frame.current] == "sample" || sequencetaskscreen[frame.current] == "test" || sequencetaskscreen[frame.current] == "choice"
+				|| (sequencetaskscreen[frame.current] == "touchfix" && TASK.FixationUsesSample)){
 
-				var taskscreen = [sequence[frame.current].charAt(0).toUpperCase() + sequence[frame.current].slice(1)]
-				if (sequence[frame.current] == "touchfix" && TASK.FixationUsesSample){
+				var taskscreen = [sequencetaskscreen[frame.current].charAt(0).toUpperCase() + sequencetaskscreen[frame.current].slice(1)]
+				if (sequencetaskscreen[frame.current] == "touchfix" && TASK.FixationUsesSample){
 					taskscreen = "Sample"
 				}
 
 				renderer.autoClear = false
 			
-				if (TASK.KeepSampleON == 1 && (sequence[frame.current] == "test" || sequence[frame.current]=="choice")){
+				if (TASK.KeepSampleON == 1 && (sequencetaskscreen[frame.current] == "test" || sequencetaskscreen[frame.current]=="choice")){
 					setViewport(TASK.SampleGridIndex)
-					var camera = scene["Sample"].getObjectByName("cam"+CANVAS.sequencesamplelabel[frame.current])
+					var camera = scene["Sample"].getObjectByName("cam"+CURRTRIAL.sequencesamplelabel[CURRTRIAL.sequencesamplelabel.length-1])
 			    	renderer.render(scene["Sample"],camera) //takes >1ms, do before the fast 2D swap (<1ms)	
 			   	}
-				if (TASK.KeepTestON == 1 && sequence[frame.current] == "choice"){
+				if (TASK.KeepTestON == 1 && sequencetaskscreen[frame.current] == "choice"){
 					setViewport(TASK.TestGridIndex[0])
 					var camera = scene["Test"].getObjectByName("cam"+CURRTRIAL.test_scenebag_labels)
 					renderer.render(scene["Test"],camera)
 				}
 
-				if (sequence[frame.current] == "sample" || sequence[frame.current] == "test"
-					|| (sequence[frame.current] == "touchfix" && TASK.FixationUsesSample)){
-					if (sequence[frame.current] == "touchfix" && TASK.FixationUsesSample){
+				if (sequencetaskscreen[frame.current] == "sample" || sequencetaskscreen[frame.current] == "test"
+					|| (sequencetaskscreen[frame.current] == "touchfix" && TASK.FixationUsesSample)){
+					if (sequencetaskscreen[frame.current] == "touchfix" && TASK.FixationUsesSample){
 						setViewport(CURRTRIAL.fixationgridindex)
-						var camera = scene["Sample"].getObjectByName("cam"+CANVAS.sequencesamplelabel[frame.current])							
+						var camera = scene["Sample"].getObjectByName("cam"+CURRTRIAL.sequencesamplelabel[frame.current])							
 						renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)						
 					}//fixationusessample
-					else if (sequence[frame.current]=="sample"){
+					else if (sequencetaskscreen[frame.current]=="sample"){
 						setViewport(TASK.SampleGridIndex)
-						var camera = scene["Sample"].getObjectByName("cam"+CANVAS.sequencesamplelabel[frame.current])							
+						var camera = scene["Sample"].getObjectByName("cam"+CURRTRIAL.sequencesamplelabel[frame.current])							
 						renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)			
 					}//sample
-					else if (sequence[frame.current]=="test"){
+					else if (sequencetaskscreen[frame.current]=="test"){
 						setViewport(TASK.TestGridIndex[0])
 						var camera = scene[taskscreen].getObjectByName("cam"+CURRTRIAL.test_scenebag_labels[0])					
 						renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)			
 					} //test
-			    	if (sequence[frame.current] == "test" && CURRTRIAL.test_scenebag_labels.length > 1){
+			    	if (sequencetaskscreen[frame.current] == "test" && CURRTRIAL.test_scenebag_labels.length > 1){
 			    		for (var j = 1; j<=CURRTRIAL.test_scenebag_labels.length - 1; j++){
 					    	updateSingleFrame3D(
 									taskscreen,
@@ -345,17 +346,17 @@ function displayTrial(sequence,tsequence){
 								)
 							setViewport(TASK.TestGridIndex[j])
 							var camera = scene[taskscreen].getObjectByName("cam"+CURRTRIAL.test_scenebag_labels[j])
-							// var camera = scene[sequence[frame.current].charAt(0).toUpperCase() + sequence[frame.current].slice(1)].getObjectByName(-1)
+							// var camera = scene[sequencetaskscreen[frame.current].charAt(0).toUpperCase() + sequencetaskscreen[frame.current].slice(1)].getObjectByName(-1)
 					    	renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
 			    		} //FOR j test items
 			    	} //IF test
 
-			    	if (sequence[frame.current] == "sample" && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
-			    		saveScreenshot(VISIBLECANVASWEBGL,CURRTRIAL.num,sequence[frame.current],frame.current)
+			    	if (sequencetaskscreen[frame.current] == "sample" && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
+			    		saveScreenshot(VISIBLECANVASWEBGL,CURRTRIAL.num,sequencetaskscreen[frame.current],frame.current)
 			    	}//save out images
 				} //IF sample || test || fixationusessample
 
-				if (sequence[frame.current] == "choice" && TASK.KeepTestON == 0 && TASK.KeepSampleON == 0){
+				if (sequencetaskscreen[frame.current] == "choice" && TASK.KeepTestON == 0 && TASK.KeepSampleON == 0){
 					 VISIBLECANVASWEBGL.style.visibility='hidden';
 				} else{
 					VISIBLECANVASWEBGL.style.visibility='visible';
@@ -369,28 +370,28 @@ function displayTrial(sequence,tsequence){
 
 	//=================== 2D rendering =====================//
 			if(frame.current==0 || 
-				CANVAS.sequencetaskscreen[frame.current] != CANVAS.sequencetaskscreen[frame.current-1] ||
-				CANVAS.sequencesampleindex[frame.current] != CANVAS.sequencesampleindex[frame.current-1]){
+				sequencetaskscreen[frame.current] != sequencetaskscreen[frame.current-1] ||
+				sequencesceneindex[frame.current] != sequencesceneindex[frame.current-1]){
 				if (ENV.OffscreenCanvasAvailable){
 					//pre-rendered offscreen, now transfer
 					var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
 
 					if (renderstr.status == "failed"){
-						console.log("**** FAILED on 1ST rendering attempt of " + sequence[frame.current])
+						console.log("**** FAILED on 1ST rendering attempt of " + sequencetaskscreen[frame.current])
 
 						// attempt again
-						CANVAS.tsequenceactual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+						CURRTRIAL.tsequenceactual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
 
 						//pre-rendered offscreen, now transfer
 						var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))				
-						console.log("**** " + renderstr.status + " on 2ND rendering attempt of " + sequence[frame.current])
+						console.log("**** " + renderstr.status + " on 2ND rendering attempt of " + sequencetaskscreen[frame.current])
 
 						if (renderstr.status == "failed"){
-							if (sequence[frame.current] == "touchfix" || sequence[frame.current] == "test" || sequence[frame.current] == "choice"){
+							if (sequencetaskscreen[frame.current] == "touchfix" || sequencetaskscreen[frame.current] == "test" || sequencetaskscreen[frame.current] == "choice"){
 								for (var j=0; j < 100; j++){
 									// attempt again
 									await setTimeout(j*100)
-									CANVAS.tsequenceactual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+									CURRTRIAL.tsequenceactual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
 
 									//pre-rendered offscreen, now transfer
 									var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))				
@@ -399,10 +400,10 @@ function displayTrial(sequence,tsequence){
 										break
 									}
 								}
-								console.log("Render "  + sequence[frame.current] + " " + renderstr.status + " after " + j + " attempts")
+								console.log("Render "  + sequencetaskscreen[frame.current] + " " + renderstr.status + " after " + j + " attempts")
 							}
 							else {
-								CANVAS.tsequenceactual[frame.current] = -99
+								CURRTRIAL.tsequenceactual[frame.current] = -99
 								console.log("Skipping render since not touchfix or test screen")
 							} //if touchfix || test
 						} //if failed again
@@ -410,63 +411,63 @@ function displayTrial(sequence,tsequence){
 				}//IF Offscreen api available
 				else {
 					//render directly, offscreencanvas is visiblecanvas
-					renderScreen(sequence[frame.current],OFFSCREENCANVAS)
+					renderScreen(sequencetaskscreen[frame.current],OFFSCREENCANVAS)
 				}//IF Offscreen not available
 			}//IF render 2D image
 	//=================== 2D rendering (END) =====================//
 
-	    	if (sequence[frame.current] == "sample" && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
-	    		saveScreenshot(VISIBLECANVAS,CURRTRIAL.num,sequence[frame.current],frame.current)
+	    	if (sequencetaskscreen[frame.current] == "sample" && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
+	    		saveScreenshot(VISIBLECANVAS,CURRTRIAL.num,sequencetaskscreen[frame.current],frame.current)
 	    	}//save out images
 
-			CANVAS.tsequenceactual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+			CURRTRIAL.tsequenceactual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
 			frame.shown[frame.current]=1;
 			frame.current++;
 		}//IF time to show new frame
 		
 		// continue if not all frames shown
 		if (frame.shown[frame.shown.length-1] != 1){
-			var taskscreen = [sequence[frame.current].charAt(0).toUpperCase() + sequence[frame.current].slice(1)]
+			var taskscreen = [sequencetaskscreen[frame.current].charAt(0).toUpperCase() + sequencetaskscreen[frame.current].slice(1)]
 
 		//================= 3D update frame =================//
-			if (sequence[frame.current] == "sample" && scene["Sample"].framenum != frame.current || 
-				sequence[frame.current] == 'touchfix' && TASK.FixationUsesSample){
+			if (sequencetaskscreen[frame.current] == "sample" && scene["Sample"].framenum != frame.current || 
+				sequencetaskscreen[frame.current] == 'touchfix' && TASK.FixationUsesSample){
 
-				if (sequence[frame.current] == 'touchfix' && TASK.FixationUsesSample){
-					if (FLAGS.moviepersample[CANVAS.sequencesamplelabel[frame.current]][CANVAS.sequencesampleindex[frame.current]] == 1){
+				if (sequencetaskscreen[frame.current] == 'touchfix' && TASK.FixationUsesSample){
+					if (FLAGS.moviepersample[CURRTRIAL.sequencesamplelabel[frame.current]][sequencesceneindex[frame.current]] == 1){
 						updateSingleFrame3D(
 							"Sample",
-							CANVAS.sequencesamplelabel[frame.current],
-							CANVAS.sequencesampleindex[frame.current],
-							CANVAS.sequencesampleframe[frame.current],
+							CURRTRIAL.sequencesamplelabel[frame.current],
+							sequencesceneindex[frame.current],
+							CURRTRIAL.sequencesampleframe[frame.current],
 							CURRTRIAL.fixationgridindex
 						)				
 					}//IF movie
 					else {
 						updateSingleFrame3D(
 							"Sample",
-							CANVAS.sequencesamplelabel[frame.current],
-							CANVAS.sequencesampleindex[frame.current],
+							CURRTRIAL.sequencesamplelabel[frame.current],
+							sequencesceneindex[frame.current],
 							[],
 							CURRTRIAL.fixationgridindex
 						)				
 					}//ELSE not a movie	
 				}//IF FixationUsesSample
 				else {
-					if (FLAGS.moviepersample[CANVAS.sequencesamplelabel[frame.current]][CANVAS.sequencesampleindex[frame.current]] == 1){
+					if (FLAGS.moviepersample[CURRTRIAL.sequencesamplelabel[frame.current]][sequencesceneindex[frame.current]] == 1){
 						updateSingleFrame3D(
 							"Sample",
-							CANVAS.sequencesamplelabel[frame.current],
-							CANVAS.sequencesampleindex[frame.current],
-							CANVAS.sequencesampleframe[frame.current],
+							CURRTRIAL.sequencesamplelabel[frame.current],
+							sequencesceneindex[frame.current],
+							CURRTRIAL.sequencesampleframe[frame.current],
 							TASK.SampleGridIndex
 						)				
 					} //IF movie
 					else { // if not a movie
 						updateSingleFrame3D(
 							taskscreen,
-							CANVAS.sequencesamplelabel[frame.current],
-							CANVAS.sequencesampleindex[frame.current],
+							CURRTRIAL.sequencesamplelabel[frame.current],
+							sequencesceneindex[frame.current],
 							[],
 							TASK.SampleGridIndex
 						)
@@ -474,7 +475,7 @@ function displayTrial(sequence,tsequence){
 				}//ELSE sample
 				scene["Sample"].framenum = frame.current
 			}//IF sample
-			else if (sequence[frame.current] == "test"  && scene["Test"].framenum != frame.current){
+			else if (sequencetaskscreen[frame.current] == "test"  && scene["Test"].framenum != frame.current){
 				boundingBoxesChoice3D = {'x':[],'y':[]}
 				updateSingleFrame3D(
 							taskscreen,
@@ -488,12 +489,12 @@ function displayTrial(sequence,tsequence){
 		//================= 3D update frame (END) =================//
 
 		//================= 2D buffer image =================//
-			if (ENV.OffscreenCanvasAvailable){// && sequence[frame.current] != "sample" && sequence[frame.current] != "test"){
+			if (ENV.OffscreenCanvasAvailable){// && sequencetaskscreen[frame.current] != "sample" && sequencetaskscreen[frame.current] != "test"){
 				if (frame.current==0 ||
-					CANVAS.sequencetaskscreen[frame.current] != CANVAS.sequencetaskscreen[frame.current-1] ||
-					CANVAS.sequencesampleindex[frame.current] != CANVAS.sequencesampleindex[frame.current-1] ){
-					renderScreen(sequence[frame.current],OFFSCREENCANVAS) //render 2D image offscreen prior to next frame draw
-					if (sequence[frame.current] == "choice"){
+					sequencetaskscreen[frame.current] != sequencetaskscreen[frame.current-1] ||
+					sequencesceneindex[frame.current] != sequencesceneindex[frame.current-1] ){
+					renderScreen(sequencetaskscreen[frame.current],OFFSCREENCANVAS) //render 2D image offscreen prior to next frame draw
+					if (sequencetaskscreen[frame.current] == "choice"){
 						boundingBoxesChoice3D = boundingBoxesChoice //default to 2D coords for same different buttons
 					}
 				}//IF new task screen
@@ -503,7 +504,7 @@ function displayTrial(sequence,tsequence){
 			window.requestAnimationFrame(updateCanvas);
 		}//IF more frames
 		else{
-			resolveFunc(CANVAS.tsequenceactual);
+			resolveFunc(CURRTRIAL.tsequenceactual);
 		}//ELSE all frames shown
 	}
 	//requestAnimationFrame advantages: goes on next screen refresh and syncs to browsers refresh rate on separate clock (not js clock)
@@ -548,15 +549,17 @@ function renderScreen(screenType,canvasobj){
 		}
 		break
 	case 'sample':
-		bufferSampleImage(CURRTRIAL.sampleimage[CANVAS.sequencesampleclip[frame.current]], TASK.SampleGridIndex,canvasobj);
+		bufferSampleImage(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[frame.current]], TASK.SampleGridIndex,canvasobj);
 		break
 	case 'test':
-		bufferTestImages(CURRTRIAL.sampleimage, TASK.SampleGridIndex, 
+		bufferTestImages(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[CURRTRIAL.sequencesampleclip.length-1]],
+						TASK.SampleGridIndex, 
 						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem, 
 						canvasobj);
 		break
 	case 'choice':
-		bufferChoiceUsingDot(CURRTRIAL.sampleimage, TASK.SampleGridIndex, 
+		bufferChoiceUsingDot(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[CURRTRIAL.sequencesampleclip.length-1]],
+						TASK.SampleGridIndex, 
 						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem, 
 						ENV.ChoiceColor,ENV.ChoiceRadius,TASK.ChoiceGridIndex,
 						canvasobj);
@@ -1119,7 +1122,7 @@ function estimatefps(){
 }//estimatefps
 
 function appendTest(){
-	var t0 = CANVAS.tsequence[CANVAS.tsequence.length-1]
+	var t0 = CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
 	if (TASK.SampleOFF>0){
 		t0 = t0+TASK.SampleOFF
 	}//blank duration after image

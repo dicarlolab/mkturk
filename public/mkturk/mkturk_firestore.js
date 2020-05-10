@@ -6,26 +6,12 @@ async function saveBehaviorDatatoFirestore(TASK,ENV,CANVAS){
 	var batch = db.batch();
 	
 	var taskRef = db.collection(FIRESTORECOLLECTION.DATA).doc(ENV.FirestoreDocRoot + '_task')
-
-	var imagesRef = db.collection(FIRESTORECOLLECTION.DATA).doc(ENV.FirestoreDocRoot + '_images')
-	batch.set(imagesRef,{Doctype: "images",
-								Agent: ENV.Subject,
-								ResearcherID: ENV.ResearcherID,
-								CurrentDate: ENV.CurrentDate,
-								CurrentDateValue: ENV.CurrentDate.valueOf(),
-								Docname: ENV.FirestoreDocRoot + '_images',
-								Taskdoc: ENV.FirestoreDocRoot + '_task',
-								Imagesdoc: ENV.FirestoreDocRoot + '_images'}) //link docs
-	//scene meta
-	batch.update(imagesRef, { "SampleScenes": IMAGES.Sample, "TestScenes": IMAGES.Test })
-	batch.update(imagesRef,IMAGEMETA)
 	
 	//task meta & trial data
 	batch.set(taskRef,{Doctype: "task",
 								Agent: ENV.Subject,
 								CurrentDateValue: ENV.CurrentDate.valueOf(),
 								Docname: ENV.FirestoreDocRoot + '_task',
-								Imagesdoc: ENV.FirestoreDocRoot + '_images',
 								Taskdoc: ENV.FirestoreDocRoot + '_task'}) //link docs
 	batch.update(taskRef,ENV) // write all ENV metadata once
 	batch.update(taskRef,TASK) // write all TASK metadata once
@@ -33,15 +19,13 @@ async function saveBehaviorDatatoFirestore(TASK,ENV,CANVAS){
 
 	// Commit the batch
 	batch.commit().then(function () {
-	    console.log("FIRESTORE: task & image docs batch created");
+	    console.log("FIRESTORE: task doc batch created");
 	    FLAGS.createnewfirestore = 0;
-
-// 	    getFirestoreDocSize(FIRESTORECOLLECTION.DATA,imagesRef,"scenes")
 	})
 	.catch(function(error) {
-		console.error("FIRESTORE: !Error creating database task or image doc: ", error);
+		console.error("FIRESTORE: !Error creating database task doc: ", error);
 	});
-}
+}//FUNCTION saveBehaviorDatatoFirestore
 //================== CREATE FIRESTORE DOCS (end) ====================//
 
 
@@ -56,7 +40,7 @@ function pingFirestore(){
 			pingFirestore()
 		},10000)
 	} //else check again in 10 seconds
-}
+}//FUNCTION pingFirestore
 
 //================== UPDATE FIRESTORE WITH EVENT DATA ====================//
 async function updateEventDataonFirestore(EVENTS){
@@ -77,18 +61,18 @@ async function updateEventDataonFirestore(EVENTS){
 	var currtrial = CURRTRIAL.num
 	await batch.commit().then(function () {
 		FLAGS.firestorelastsavedtrial = currtrial
-	    console.log("FIRESTORE: Trial " + FLAGS.firestorelastsavedtrial + "--Batch updated database task & image docs");
+	    console.log("FIRESTORE: Trial " + FLAGS.firestorelastsavedtrial + "--Batch updated database task doc");
 
 	    delete firestoreTimer //to start a new timer
 		pingFirestore()
 	})
 	.catch(function(error) {
-		console.error("FIRESTORE: !Trial" + FLAGS.firestorelastsavedtrial + "--Error updating database task or image doc: ", error);
+		console.error("FIRESTORE: !Trial" + FLAGS.firestorelastsavedtrial + "--Error updating database task doc: ", error);
 
 		delete firestoreTimer //to start a new timer
 		pingFirestore()
 	});
-}
+}//FUNCTION updateEventDataonFirestore
 //================== UPDATE FIRESTORE WITH EVENT DATA (end) ====================//
 
 
@@ -114,7 +98,7 @@ async function loadAgentRFIDfromFirestore(subject,species){
 			console.log('no subject document in firestore database for this agent')
 		}
 	}
-}
+}//FUNCTION loadAgentRFIDfromFirestore
 
 async function queryRFIDTagonFirestore(tag){
 	var query = await db.collection(FIRESTORECOLLECTION.AGENTS).where("rfid","==",tag)
@@ -127,7 +111,7 @@ async function queryRFIDTagonFirestore(tag){
 			waitforClick.next(1)
         }); //forEach
 	}) //.then
-} //FUNCTION queryRFIDTagonFirestore
+}//FUNCTION queryRFIDTagonFirestore
 
 async function queryDeviceonFirestore(deviceName){
 	var query = await db.collection(FIRESTORECOLLECTION.DEVICES).where("model","==",deviceName.toLowerCase())
@@ -153,7 +137,7 @@ async function queryDeviceonFirestore(deviceName){
 			} //catch
 		}
 	) //Promise
-} //FUNCTION queryDeviceonFirestore
+}//FUNCTION queryDeviceonFirestore
 
 
 async function saveEyeCalibrationtoFirestore(xparams,yparams,calibtype,ntrain,trainmse,ntest,testmse){	
@@ -182,7 +166,7 @@ async function saveEyeCalibrationtoFirestore(xparams,yparams,calibtype,ntrain,tr
 	.catch(function(error) {
 		console.error("FIRESTORE: !Error creating eye calibration doc: ", error);
 	});
-} //FUNCTION saveEyeCalibrationtoFirestore
+}//FUNCTION saveEyeCalibrationtoFirestore
 
 async function loadEyeCalibrationfromFirestore(subject){
 	var doc = await db.collection(FIRESTORECOLLECTION.CALIBRATION).doc(subject).get()
@@ -233,7 +217,7 @@ function getFirestoreDocSize(collectionName,docRef,doctype){
             }
         }
     })
-} //get the firestore doc
+}//FUNCTION getFirestoreDocSize
 
 
 //from: https://stackoverflow.com/questions/49473148/calculating-size-of-google-firestore-documents
@@ -292,13 +276,4 @@ function calcObjSize(obj) {
         }
         return size += 32
     }
-}
-
-function savetofirestore(docref,data){
-	docref.set(data).then(function () {
-	    console.log("FIRESTORE: wrote to firestore");
-	})
-	.catch(function(error) {
-		console.error("FIRESTORE: !Error creating database meta/trialseries docs: ", error);
-	});
 }
