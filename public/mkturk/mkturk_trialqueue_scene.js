@@ -134,11 +134,21 @@ async generate_trials(n_trials){
 		var sample_index = this.selectSampleImage(this.samplebag_block_indices, this.samplingStrategy)
 		var sample_scenebag_label = this.samplebag_labels[sample_index]; 
 		var sample_scenebag_index = this.samplebag_indices[sample_index];
-		var sample_filename = this.samplebag_paths[sample_scenebag_label][IMAGES["Sample"][sample_scenebag_label].IMAGES.imageidx[sample_scenebag_index]] || "";
+
+        var sample_filename = []
+		if (Array.isArray(IMAGES["Sample"][sample_scenebag_label].IMAGES.imageidx[sample_scenebag_index])){
+			for (var j = 0; j<IMAGES["Sample"][sample_scenebag_label].IMAGES.imageidx[sample_scenebag_index].length; j++){
+				sample_filename.push(this.samplebag_paths[sample_scenebag_label][IMAGES["Sample"][sample_scenebag_label].IMAGES.imageidx[sample_scenebag_index][j]] || "")
+			} 
+			image_requests.push(... sample_filename)   
+		} else {
+		 sample_filename = this.samplebag_paths[sample_scenebag_label][IMAGES["Sample"][sample_scenebag_label].IMAGES.imageidx[sample_scenebag_index]] || "";	
+		 image_requests.push(sample_filename)
+		}
 
 		this.ntrials_per_bag[sample_scenebag_label] = this.ntrials_per_bag[sample_scenebag_label] + 1
 		
-		image_requests.push(sample_filename)
+		
 		
 		// Select appropriate test images (correct one and distractors) 
 		var funcreturn = this.selectTestImages(sample_scenebag_label, this.testbag_labels) 
@@ -197,10 +207,10 @@ async get_next_trial(){
 	// If the past NStickyResponse trials has been on one side, then make this upcoming trial's correct answer be at another location. 
 	if (FLAGS.stickyresponse >= TASK.NStickyResponse &&
 		TASK.NStickyResponse > 0 && 
-		test_correctIndex == TRIAL.Response[CURRTRIAL.num-1])
+		test_correctIndex == EVENTS['trialseries']['Response'][CURRTRIAL.num-1])
 	{
 		console.log('Moving correct response to nonstick location')
-		var sticky_grid_location = TRIAL.Response[CURRTRIAL.num-1]; 
+		var sticky_grid_location = EVENTS['trialseries']['Response'][CURRTRIAL.num-1]; 
 		if (sticky_grid_location == undefined){
 			console.log('Something strange has happened in the stickyresponse logic')
 		}
@@ -232,10 +242,20 @@ async get_next_trial(){
 	// Get image from imagebag
 
 	if (typeof(sample_filename) != "undefined"){
-		var sample_image 
-		if (sample_filename != ""){
+		var sample_image = []
+
+		if (Array.isArray(sample_filename)){
+			for (var i = 0; i <sample_filename.length;i++){
+				if (sample_filename[i] !=""){
+					sample_image.push(await this.IB.get_by_name(sample_filename[i])); 
+				}
+			}
+		} else {
+			if (sample_filename != ""){
 			sample_image = await this.IB.get_by_name(sample_filename);
-		}		
+		    }		
+		}
+		
 	}//IF sample image
 	var sample_reward = -1
 	if (typeof(ImageRewardList[sample_filename]) != "undefined"){
@@ -271,7 +291,6 @@ async get_next_trial(){
 		test_scenebag_indices.push(this.testbag_indices[test_indices])
 	}
 
-	console.log(sample_image)
 	return	[sample_image, sample_index, test_images, test_indices, test_correctIndex, sample_scenebag_label, sample_scenebag_index, test_scenebag_labels, test_scenebag_indices, sample_reward]
 // return [sample_image, sample_index]
 } //FUNCTION get_next_trial
@@ -325,7 +344,8 @@ selectTestImages(correct_label, testbag_labels){
 	var correctSelection = NaN;
 
 	// If SR is on, 
-	if (TASK.ObjectGridIndex.length == TASK.ImageBagsTest.length){ // Is this a robust SR check?
+	if ((typeof(TASK.TestON) == "undefined" || TASK.TestON <= 0) &&
+		TASK.ObjectGridIndex.length == TASK.ImageBagsTest.length){
 		// For each object, 
 		for (var i = 0; i<TASK.ObjectGridIndex.length; i++){
 			
@@ -349,7 +369,7 @@ selectTestImages(correct_label, testbag_labels){
 				correctSelection = order_idx; 
 			}
 		}
-	} //IF
+	} //IF SR2
 
 	else {
 		// Otherwise, for match-to-sample (where effectors are shuffled)
@@ -386,7 +406,7 @@ selectTestImages(correct_label, testbag_labels){
 				correctSelection = i
 			}
 		}
-	} //ELSE
+	} //ELSE MtS or SD task
 
 	return [testIndices, correctSelection]
 }//FUNCTION selectTestImages
