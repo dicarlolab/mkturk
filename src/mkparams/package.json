@@ -1,7 +1,7 @@
 {
-  "name": "mkcolony",
+  "name": "mkparams",
   "version": "1.0.0",
-  "description": "Colony management, logging and displaying solution. Part of the Mkturk software suite.",
+  "description": "MKTURK param file generator & previewer",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

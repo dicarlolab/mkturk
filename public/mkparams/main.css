@@ -1,0 +1,12 @@
+#generator-form span {
+  margin-top: 10px;
+  padding-left: 40px;
+  display: inline-block;
+  width: 30%;
+}
+
+#generator-form select {
+  min-height: 25px;
+  display: inline-block;
+  width: 50%;
+}

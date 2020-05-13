@@ -3,8 +3,8 @@ const path = require('path');
 module.exports = {
   entry: path.resolve(__dirname, "src") + "/main.ts",
   output: {
-    filename: "mkcolony.js",
-    path: path.resolve(__dirname, "../../public/mkcolony")
+    filename: "mkparams.js",
+    path: path.resolve(__dirname, "../../public/mkparams")
   },
   module: {
     rules: [
@@ -18,6 +18,5 @@ module.exports = {
   },
   resolve: {
     extensions: [".tsx", ".ts", ".js"]
-  },
-  devtool: false
+  }
 };
