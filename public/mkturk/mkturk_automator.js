@@ -71,8 +71,8 @@ automator_eventstring.push(
 	' with ' + pctcorrect+'\% performance on n='+ntrials)
 		console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject advanced to stage '+(i_current_stage+1)+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
 
-		// Save behavior with current TASK, ENV, and TRIAL before moving on. 
-		saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, TRIAL);
+		// Save behavior with current TASK, ENV, and EVENTS before moving on. 
+		saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS);
 
 		// Reset tracking variables 
 		purgeTrackingVariables()
@@ -153,7 +153,7 @@ async function readTrialHistoryFromFirebase(filepaths){
 		var numTRIALs = trial_data.Response.length; 
 		// Iterate over TRIALs
 		for (var i_trial = 0; i_trial<numTRIALs; i_trial++){
-			// Correct/incorrect TRIAL
+			// Correct/incorrect trial
 			var correct = Number(trial_data.Response[i_trial] == trial_data.CorrectItem[i_trial])
 			trialhistory.correct.push(correct)
 

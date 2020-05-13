@@ -2,13 +2,14 @@
 // In the interest of code readability and spaghetti-minimization, the use of globals should be kept to a minimum, and instead explicit passage of variables into and out of functions is encouraged.
 // For certain things, globals make sense and may even be required, like event listeners and async processes.
 
-//================ TASK,TRIAL,ENV (SAVED) ================//
+//================ TASK,ENV,EVENTS (SAVED) ================//
 // TASK <-- Read from Subject Parameter file
 // ENV <-- TASK drives creation of ENV
-// TASK,TRIAL,ENV --> Saved to Behavioral Data file
+// TASK,ENV,EVENTS --> Saved to Behavioral Data file
+//
 var TASK = {}; // Global that encapsulates state of the current task, read from Subject's Params file
-var TRIAL = resetTRIAL() // Global that contains data variables that are incremented every trial, and are dumped to disk for scientific purposes.
 var ENV = {}; // Task specific variables that are slaves to TASK settings, but still desired to be recorded. Hence, they should not appear in the TASK-based params file, but should be logged on their own. 
+var EVENTS = {} // Global that contains data variables that are incremented every trial or are timestamped data streams, and are dumped to disk (cloud storage or bigquery) for scientific purposes.
 var IMAGES = {
 	Sample: {}, Test: {}, 
 	object: {sample:{}, test: {}},
@@ -37,6 +38,7 @@ ENV.DevicePixelRatio = 1
 ENV.ThreeJSRenderRatio = 4
 ENV.FixationRadius = 0
 ENV.FixationColor = ''
+ENV.SampleFixationRadius = 0
 ENV.ChoiceRadius = 0
 ENV.ChoiceColor = 'white'
 ENV.XGridCenter = []
@@ -78,6 +80,9 @@ ENV.ViewportPixels = [-1,-1]
 
 ENV.ViewportPPI = -1
 ENV.PhysicalPPI = -1
+ENV.FrameRateDisplay = 60
+ENV.FrameRateMovie = 30
+
 
 ENV.Task = ""
 
@@ -111,7 +116,7 @@ var FLAGS = {} // Global that keeps track of the task's requests to the Dropbox/
 FLAGS.consecutivehits = 0;
 FLAGS.need2loadImagesTrialQueue = 1; 
 FLAGS.need2loadScenes = 1;
-FLAGS.scene3d = 0;
+FLAGS.moviepersample = [];
 FLAGS.need2loadParameters = 1; 
 FLAGS.savedata = 0; 
 FLAGS.stage = 0; 
@@ -138,8 +143,6 @@ var CANVAS = {
 	tsequenceblank: [0,50], 
 	sequencepre: ["touchfix"],
 	tsequencepre: [0],
-	sequence: ["blank","sample","blank","test"], // blank, sample, blank, test
-	tsequence: NaN, 
 	sequencepost: ["blank","reward","blank"], // blank, reward
 	tsequencepost: [0,50,100],
 	headsupfraction: NaN,
@@ -165,16 +168,18 @@ CURRTRIAL.starttime = NaN;
 CURRTRIAL.fixationgridindex = NaN; 
 CURRTRIAL.fixationxyt = [];
 CURRTRIAL.allfixationxyt = [];
-CURRTRIAL.sampleindex = NaN;
+CURRTRIAL.sampleindex = [];
 CURRTRIAL.sampleimage = [];
 CURRTRIAL.testindices = NaN;
 CURRTRIAL.testimages = [];
+CURRTRIAL.samplefixationxyt = [];
 CURRTRIAL.responsexyt = []; 
 CURRTRIAL.response = []; 
 CURRTRIAL.correctitem = NaN;
 CURRTRIAL.correct = [];
 CURRTRIAL.nreward = NaN;
 CURRTRIAL.fixationtouchevent = ""
+CURRTRIAL.samplefixationtouchevent = ""
 CURRTRIAL.responsetouchevent = ""
 CURRTRIAL.lastTrialCompleted = new Date
 CURRTRIAL.lastFirebaseSave = new Date
@@ -182,26 +187,11 @@ CURRTRIAL.tsequenceactual = []
 CURRTRIAL.tsequencedesired = []
 CURRTRIAL.xyt = [];
 
-CURRTRIAL.sampleobjectty = []
-CURRTRIAL.sampleobjecttz = []
-CURRTRIAL.sampleobjectrxy = []
-CURRTRIAL.sampleobjectrxz = []
-CURRTRIAL.sampleobjectryz = []
-CURRTRIAL.sampleobjectscale = []
-
-CURRTRIAL.testobjectty = []
-CURRTRIAL.testobjecttz = []
-CURRTRIAL.testobjectrxy = []
-CURRTRIAL.testobjectrxz = []
-CURRTRIAL.testobjectryz = []
-CURRTRIAL.testobjectscale = []
-
-CURRTRIAL.sample_scenebag_label = NaN
-CURRTRIAL.sample_scenebag_index = NaN
+CURRTRIAL.sample_scenebag_label = []
+CURRTRIAL.sample_scenebag_index = []
 CURRTRIAL.test_scenebag_labels = NaN
 CURRTRIAL.test_scenebag_indices = NaN
 
-var EVENTS = {}
 EVENTS.reset_trialseries = function(){
 	this.trialnum = CURRTRIAL.num;
 	this.trialseries = {};
@@ -216,28 +206,17 @@ EVENTS.reset_trialseries = function(){
 	this.trialseries.Response = {}
 	this.trialseries.TSequenceDesired = {}
 	this.trialseries.TSequenceActual = {}
+	this.trialseries.SampleFixationTouchEvent = {}	
+	this.trialseries.SampleFixationXYT = {}
 	this.trialseries.ResponseTouchEvent = {}
 	this.trialseries.ResponseXYT = {}
 	this.trialseries.Response = {}
 	this.trialseries.NReward = {}
-	this.trialseries.BatteryLDT = {}	
-	this.trialseries.BLEBatteryLT = {}
-
-	this.imageseries.SampleObjectTy = {}
-	this.imageseries.SampleObjectTz = {}
-	this.imageseries.SampleObjectRxy = {}
-	this.imageseries.SampleObjectRxz = {}
-	this.imageseries.SampleObjectRyz = {}
-	this.imageseries.SampleObjectScale = {}
-	this.imageseries.TestObjectTy = {}
-	this.imageseries.TestObjectTz = {}
-	this.imageseries.TestObjectRxy = {}
-	this.imageseries.TestObjectRxz = {}
-	this.imageseries.TestObjectRyz = {}
-	this.imageseries.TestObjectScale = {}
 }
 EVENTS.reset_timeseries = function(){
 	this.timeseries = {};
+	this.timeseries.Battery = {}
+	this.timeseries.BLEBattery = {}
 	this.timeseries.RFIDTag = {}
 	this.timeseries.Weight = {}
 	this.timeseries.EyeData = {}
@@ -258,6 +237,7 @@ var sounds = {
 	buffer: [],
 }
 var boundingBoxesFixation={}; //where the fixation touch targets are on the canvas
+var boundingBoxesSampleFixation={x: [], y: []}
 var boundingBoxesChoice={}; //where the choice touch targets are on the canvas
 var waitforClick; //variable to hold generator
 var waitforEvent; //variable to hold generator
@@ -271,92 +251,6 @@ var imageloadingtimestr="Loaded: "
 var eyedataratestr=""
 
 //================ UPDATE VARIABLE FUNCTIONS ================//
-function resetTRIAL(){
-	var TRIAL = {}
-	TRIAL.StartTime = []
-	TRIAL.FixationGridIndex = []
-	TRIAL.FixationXYT=[]
-	TRIAL.AllFixationXYT=[]
-	TRIAL.Sample = []
-	TRIAL.Test = []
-	TRIAL.ResponseXYT = []
-	TRIAL.Response = []
-	TRIAL.CorrectItem = []
-	TRIAL.FixationTouchEvent = []
-	TRIAL.ResponseTouchEvent = []
-	TRIAL.NReward = []
-	TRIAL.AutomatorStage = []
-	TRIAL.TSequenceDesired = []
-	TRIAL.TSequenceActual = []
-	TRIAL.RFIDTag = []
-	TRIAL.RFIDTime = []
-	TRIAL.RFIDTrial = []
-	TRIAL.NRFID = 0
-	TRIAL.Weight = []
-	TRIAL.WeightTime = []
-	TRIAL.WeightTrial = []
-	TRIAL.NWeights = 0
-	TRIAL.BatteryLDT = []	
-	if (typeof(navigator.getBattery) == "function"){
-			navigator.getBattery().then(function(batteryobj){
-			TRIAL.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Date.now() - ENV.CurrentDate.valueOf()]);
-			logEVENTS("BatteryLDT",TRIAL.BatteryLDT[TRIAL.BatteryLDT.length-1],"trialseries")
-		}) // starting battery level
-	}
-
-	if (typeof(FLAGS) != "undefined" && FLAGS.scene3d == 0){
-		TRIAL.SampleObjectTy = []
-		TRIAL.SampleObjectTz = []
-		TRIAL.SampleObjectRxy = []
-		TRIAL.SampleObjectRxz = []
-		TRIAL.SampleObjectRyz = []
-		TRIAL.SampleObjectScale = []
-
-		TRIAL.TestObjectTy = []
-		TRIAL.TestObjectTz = []
-		TRIAL.TestObjectRxy = []
-		TRIAL.TestObjectRxz = []
-		TRIAL.TestObjectRyz = []
-		TRIAL.TestObjectScale = []		
-	}
-
-	return TRIAL
-}
-
-function updateTRIAL(){
-	TRIAL.StartTime[CURRTRIAL.num] = CURRTRIAL.starttime
-	TRIAL.FixationGridIndex[CURRTRIAL.num] = CURRTRIAL.fixationgridindex
-	TRIAL.FixationXYT[CURRTRIAL.num] = CURRTRIAL.fixationxyt
-	TRIAL.AllFixationXYT[CURRTRIAL.num] = CURRTRIAL.allfixationxyt	
-	TRIAL.Sample[CURRTRIAL.num] = CURRTRIAL.sampleindex 
-	TRIAL.Test[CURRTRIAL.num] = CURRTRIAL.testindices 
-	TRIAL.ResponseXYT[CURRTRIAL.num] = CURRTRIAL.responsexyt
-	TRIAL.Response[CURRTRIAL.num] = CURRTRIAL.response
-	TRIAL.FixationTouchEvent[CURRTRIAL.num] = CURRTRIAL.fixationtouchevent
-	TRIAL.ResponseTouchEvent[CURRTRIAL.num] = CURRTRIAL.responsetouchevent
-	TRIAL.CorrectItem[CURRTRIAL.num] = CURRTRIAL.correctitem
-	TRIAL.NReward[CURRTRIAL.num] = CURRTRIAL.nreward
-	TRIAL.AutomatorStage[CURRTRIAL.num] = TASK.CurrentAutomatorStage; 
-	TRIAL.TSequenceDesired[CURRTRIAL.num] = CURRTRIAL.tsequencedesired
-	TRIAL.TSequenceActual[CURRTRIAL.num] = CURRTRIAL.tsequenceactual
-
-	if (FLAGS.scene3d == 0){
-		TRIAL.SampleObjectTy[CURRTRIAL.num] = CURRTRIAL.sampleobjectty
-		TRIAL.SampleObjectTz[CURRTRIAL.num] = CURRTRIAL.sampleobjecttz
-		TRIAL.SampleObjectRxy[CURRTRIAL.num] = CURRTRIAL.sampleobjectrxy
-		TRIAL.SampleObjectRxz[CURRTRIAL.num] = CURRTRIAL.sampleobjectrxz
-		TRIAL.SampleObjectRyz[CURRTRIAL.num] = CURRTRIAL.sampleobjectryz
-		TRIAL.SampleObjectScale[CURRTRIAL.num] = CURRTRIAL.sampleobjectscale
-
-		TRIAL.TestObjectTy[CURRTRIAL.num] = CURRTRIAL.testobjectty
-		TRIAL.TestObjectTz[CURRTRIAL.num] = CURRTRIAL.testobjecttz
-		TRIAL.TestObjectRxy[CURRTRIAL.num] = CURRTRIAL.testobjectrxy
-		TRIAL.TestObjectRxz[CURRTRIAL.num] = CURRTRIAL.testobjectrxz
-		TRIAL.TestObjectRyz[CURRTRIAL.num] = CURRTRIAL.testobjectryz
-		TRIAL.TestObjectScale[CURRTRIAL.num] = CURRTRIAL.testobjectscale
-	}
-}
-
 function updateTrialHistory(){
 	var current_stage = stageHash(TASK); 
 	trialhistory.trainingstage.push(current_stage);
@@ -371,17 +265,9 @@ function logEVENTS(eventname,eventval,eventtype){
 		
 		//index by trial
 		var indevent = EVENTS.trialnum
-		if (eventname == 'BatteryLDT'){
-			var indevent = TRIAL.BatteryLDT.length-1
-		}
-		if (eventname == 'BLEBatteryLT'){
-			var indevent = blescale.tbattery.length-1
-		}
-
 		if (FLAGS.savedata == 0){
 			indevent = 0 //store most recent trial in first position until start saving data
 		}
-// 		EVENTS[eventtype][eventname][indevent.toString()] = eventval
 
 		if (typeof(eventval) == "number" ||
 			typeof(eventval) == "string" || 
@@ -405,9 +291,6 @@ function logEVENTS(eventname,eventval,eventtype){
 	else if (eventtype == 'timeseries'){
 		//running index
 		var indevent = Object.keys(EVENTS[eventtype][eventname]).length
-		// if (FLAGS.savedata == 0){
-		// 	indevent = 0 //store most recent timepoint in first position until start saving data
-		// }
 		var trialtime = [EVENTS.trialnum, Date.now() - ENV.CurrentDate.valueOf()]
 		EVENTS[eventtype][eventname][indevent.toString()] = trialtime.concat(eventval)
 	}
@@ -415,7 +298,6 @@ function logEVENTS(eventname,eventval,eventtype){
 
 function purgeTrackingVariables(){
 	// Purges heresies committed in the test period 
-	TRIAL = resetTRIAL()
 	EVENTS.reset_timeseries()
 
 	ENV.CurrentDate = new Date;

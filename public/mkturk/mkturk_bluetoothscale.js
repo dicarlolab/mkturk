@@ -341,34 +341,27 @@ function onWeightNotificationFromScale(event){
 	weight = Math.round(100*weight)/100 //0.01 gram precision
 
   logEVENTS("Weight",weight,"timeseries");
-  TRIAL.WeightTime[TRIAL.NWeights] = Date.now() - ENV.CurrentDate.valueOf();
-  TRIAL.WeightTrial[TRIAL.NWeights] = CURRTRIAL.num
-  TRIAL.Weight[TRIAL.NWeights] = weight
-  TRIAL.NWeights = TRIAL.NWeights+1;
 
+  blescale.tweights[blescale.tweights.length] = Math.round(t_notify)
+  blescale.weights[blescale.weights.length] = displayweight
 
-    blescale.tweights[blescale.tweights.length] = Math.round(t_notify)
-    blescale.weights[blescale.weights.length] = displayweight
+  var nweights = EVENTS['timeseries']['Weight'].length
+  if (EVENTS['timeseries']['Weight'][nweights-1][2] > 550){
+    blescale.maxweight = 0 //reset weight since too high indicating jumped
+    blescale.maxweighttimeout = EVENTS['timeseries']['Weight'][nweights-1][1] + 1000 //wait 1 seconds
+  }
+  else if (EVENTS['timeseries']['Weight'][nweights-1][2] > blescale.maxweight &&
+          EVENTS['timeseries']['Weight'][nweights-1][1] > blescale.maxweighttimeout){
+    blescale.maxweight = EVENTS['timeseries']['Weight'][nweights-1][2]
+  } 
 
-    if (TRIAL.Weight[TRIAL.NWeights-1] > 500){
-      blescale.maxweight = 0 //reset weight since too high indicating jumped
-      blescale.maxweighttimeout = TRIAL.WeightTime[TRIAL.NWeights-1] + 1000 //wait 1 seconds
-    }
-    else if (TRIAL.Weight[TRIAL.NWeights-1] > blescale.maxweight &&
-    TRIAL.WeightTime[TRIAL.NWeights-1] > blescale.maxweighttimeout){
-      blescale.maxweight = TRIAL.Weight[TRIAL.NWeights-1]
-    } 
-
-
-    blescale.statustext_received = 
-      'Wt=' + blescale.weights[blescale.weights.length-1] + ' '
-      + blescale.weightunits + '  ' 
-      + Math.round(dt) + 'ms' + '     '
-      + ' MAX =' + blescale.maxweight + '  ' + blescale.weightunits
-
-//     console.log(blescale.statustext_received)
-    updateHeadsUpDisplayDevices()
-}
+  blescale.statustext_received = 
+    'Wt=' + blescale.weights[blescale.weights.length-1] + ' '
+    + blescale.weightunits + '  ' 
+    + Math.round(dt) + 'ms' + '     '
+    + ' MAX =' + blescale.maxweight + '  ' + blescale.weightunits
+  updateHeadsUpDisplayDevices()
+}//FUNCTION onWeightNotificationFromScale
 
 function onBatteryNotificationFromScale(event){
   var t_notify = Date.now() - ENV.CurrentDate.valueOf()
@@ -388,7 +381,7 @@ function onBatteryNotificationFromScale(event){
     var battery = parseInt(a[0],16)
     blescale.tbattery[blescale.tbattery.length] = Math.round(t_notify)
     blescale.battery[blescale.battery.length] = battery
-    logEVENTS("BLEBatteryLT",[battery,Math.round(t_notify)],"trialseries");
+    logEVENTS("BLEBattery",battery,"timeseries");
 
     blescale.statustext_received = 
       'BATTERY(%)=' + blescale.battery[blescale.battery.length-1] + ' dt='

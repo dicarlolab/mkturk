@@ -184,24 +184,22 @@ serial.Port.prototype.onReceive = data => {
 		//rfid: arduino sends whole tag at once
 		var tagend = port.statustext_received.indexOf('}',0);
 		logEVENTS("RFIDTag",port.statustext_received.slice(tagstart+4,tagend),"timeseries");
-		TRIAL.RFIDTime[TRIAL.NRFID] = Date.now() - ENV.CurrentDate.valueOf();
-		TRIAL.RFIDTrial[TRIAL.NRFID] = CURRTRIAL.num
-		TRIAL.RFIDTag[TRIAL.NRFID] = port.statustext_received.slice(tagstart+4,tagend);
-		TRIAL.NRFID = TRIAL.NRFID+1;
 
-		if (TRIAL.NRFID >= 2){
-			var dt = TRIAL.RFIDTime[TRIAL.NRFID-1] - TRIAL.RFIDTime[TRIAL.NRFID-2]
+		var nrfid = EVENTS['timeseries']['RFIDTag'].length
+		if (nrfid >= 2){
+			var dt = EVENTS['timeseries']['RFIDTag'][nrfid-1][1] - 
+					EVENTS['timeseries']['RFIDTag'][nrfid-2][1]
 		}
-		port.statustext_received = 'Parsed TAG ' + TRIAL.RFIDTag[TRIAL.NRFID-1] + 
+		port.statustext_received = 'Parsed TAG ' + EVENTS['timeseries']['RFIDTag'][nrfid-1][2] + 
 									' @ ' + new Date().toLocaleTimeString("en-US") + 
 									' dt=' + dt + 'ms'
 
 		if (FLAGS.RFIDGeneratorCreated == 1){
-			var event = {tag: TRIAL.RFIDTag[TRIAL.NRFID-1], time: TRIAL.RFIDTime[TRIAL.NRFID-1]}
+			var event = {tag: EVENTS['timeseries']['RFIDTag'][nrfid-1][2], time: EVENTS['timeseries']['RFIDTag'][nrfid-1][1]}
 			waitforRFIDEvent.next(event)
 		}
 		if (ENV.Subject == ""){
-			queryRFIDTagonFirestore(TRIAL.RFIDTag[TRIAL.NRFID-1])
+			queryRFIDTagonFirestore(EVENTS['timeseries']['RFIDTag'][nrfid-1][2])
 		} //IF no subject chosen yet, auto-find in firestore based on their RFIDTag, which will then QuickLoad the page
 		updateHeadsUpDisplayDevices()
 	} //IF RFID Tag
