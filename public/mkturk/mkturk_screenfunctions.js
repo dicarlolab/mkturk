@@ -278,7 +278,7 @@ function defineImageGrid(ngridpoints, gridspacing,xoffset,yoffset){
 }//FUNCTION defineImageGrid
 
 
-function displayTrial(sequencetaskscreen,sequencesceneindex,tsequence){
+function displayTrial(sequencetaskscreen,sequencesceneindex,sequencesceneframe,tsequence){
 	var resolveFunc
 	var errFunc
 	p = new Promise(function(resolve,reject){
@@ -371,7 +371,8 @@ function displayTrial(sequencetaskscreen,sequencesceneindex,tsequence){
 	//=================== 2D rendering =====================//
 			if(frame.current==0 || 
 				sequencetaskscreen[frame.current] != sequencetaskscreen[frame.current-1] ||
-				sequencesceneindex[frame.current] != sequencesceneindex[frame.current-1]){
+				sequencesceneindex[frame.current] != sequencesceneindex[frame.current-1] ||
+				sequencesceneframe[frame.current] != sequencesceneframe[frame.current-1]){
 				if (ENV.OffscreenCanvasAvailable){
 					//pre-rendered offscreen, now transfer
 					var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
@@ -434,12 +435,12 @@ function displayTrial(sequencetaskscreen,sequencesceneindex,tsequence){
 				sequencetaskscreen[frame.current] == 'touchfix' && TASK.FixationUsesSample){
 
 				if (sequencetaskscreen[frame.current] == 'touchfix' && TASK.FixationUsesSample){
-					if (FLAGS.moviepersample[CURRTRIAL.sequencesamplelabel[frame.current]][sequencesceneindex[frame.current]] == 1){
+					if (FLAGS.moviepersample[CURRTRIAL.sequencesamplelabel[frame.current]][sequencesceneindex[frame.current]] > 0){
 						updateSingleFrame3D(
 							"Sample",
 							CURRTRIAL.sequencesamplelabel[frame.current],
 							sequencesceneindex[frame.current],
-							CURRTRIAL.sequencesampleframe[frame.current],
+							sequencesceneframe[frame.current],
 							CURRTRIAL.fixationgridindex
 						)				
 					}//IF movie
@@ -454,12 +455,12 @@ function displayTrial(sequencetaskscreen,sequencesceneindex,tsequence){
 					}//ELSE not a movie	
 				}//IF FixationUsesSample
 				else {
-					if (FLAGS.moviepersample[CURRTRIAL.sequencesamplelabel[frame.current]][sequencesceneindex[frame.current]] == 1){
+					if (FLAGS.moviepersample[CURRTRIAL.sequencesamplelabel[frame.current]][sequencesceneindex[frame.current]] > 0){
 						updateSingleFrame3D(
 							"Sample",
 							CURRTRIAL.sequencesamplelabel[frame.current],
 							sequencesceneindex[frame.current],
-							CURRTRIAL.sequencesampleframe[frame.current],
+							sequencesceneframe[frame.current],
 							TASK.SampleGridIndex
 						)				
 					} //IF movie
@@ -475,7 +476,7 @@ function displayTrial(sequencetaskscreen,sequencesceneindex,tsequence){
 				}//ELSE sample
 				scene["Sample"].framenum = frame.current
 			}//IF sample
-			else if (sequencetaskscreen[frame.current] == "test"  && scene["Test"].framenum != frame.current){
+			else if (sequencetaskscreen[frame.current] == "test"){
 				boundingBoxesChoice3D = {'x':[],'y':[]}
 				updateSingleFrame3D(
 							taskscreen,
@@ -492,7 +493,8 @@ function displayTrial(sequencetaskscreen,sequencesceneindex,tsequence){
 			if (ENV.OffscreenCanvasAvailable){// && sequencetaskscreen[frame.current] != "sample" && sequencetaskscreen[frame.current] != "test"){
 				if (frame.current==0 ||
 					sequencetaskscreen[frame.current] != sequencetaskscreen[frame.current-1] ||
-					sequencesceneindex[frame.current] != sequencesceneindex[frame.current-1] ){
+					sequencesceneindex[frame.current] != sequencesceneindex[frame.current-1] ||
+					sequencesceneframe[frame.current] != sequencesceneframe[frame.current-1]){
 					renderScreen(sequencetaskscreen[frame.current],OFFSCREENCANVAS) //render 2D image offscreen prior to next frame draw
 					if (sequencetaskscreen[frame.current] == "choice"){
 						boundingBoxesChoice3D = boundingBoxesChoice //default to 2D coords for same different buttons
@@ -549,13 +551,26 @@ function renderScreen(screenType,canvasobj){
 		}
 		break
 	case 'sample':
-		bufferSampleImage(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[frame.current]], TASK.SampleGridIndex,canvasobj);
+		if (Array.isArray(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[frame.current]])){
+			bufferSampleImage(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[frame.current]][CURRTRIAL.sequencesampleframe[frame.current]], TASK.SampleGridIndex,canvasobj);
+		}
+		else {
+			bufferSampleImage(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[frame.current]], TASK.SampleGridIndex,canvasobj);
+		}
 		break
 	case 'test':
-		bufferTestImages(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[CURRTRIAL.sequencesampleclip.length-1]],
+	    if (Array.isArray(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[frame.current-1]])){
+	    	bufferTestImages(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[CURRTRIAL.sequencesampleclip.length-1]][CURRTRIAL.sequencesampleframe[frame.current-2]],
 						TASK.SampleGridIndex, 
 						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem, 
 						canvasobj);
+	    }
+	    else {
+			bufferTestImages(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[CURRTRIAL.sequencesampleclip.length-1]],
+						TASK.SampleGridIndex, 
+						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem, 
+						canvasobj);
+	    }
 		break
 	case 'choice':
 		bufferChoiceUsingDot(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[CURRTRIAL.sequencesampleclip.length-1]],
@@ -982,8 +997,8 @@ function updateImageLoadingAndDisplayText(str){
 	//DISPLAY TIMING: Software check for frame drops
 	var dt = []
 	var u_dt = 0
-	for (var i=0; i<=CURRTRIAL.tsequenceactual.length-1; i++){
-		dt[i] = CURRTRIAL.tsequenceactual[i] - CURRTRIAL.tsequencedesired[i]
+	for (var i=0; i<=CURRTRIAL.tsequenceactualclip.length-1; i++){
+		dt[i] = CURRTRIAL.tsequenceactualclip[i] - CURRTRIAL.tsequencedesiredclip[i]
 		u_dt = u_dt + Math.abs(dt[i])
 	}
 	u_dt = u_dt/dt.length
@@ -992,7 +1007,9 @@ function updateImageLoadingAndDisplayText(str){
 	str
 	+ imageloadingtimestr
 	+ "<br>" + displayoutofboundsstr 
-	+ "<br>" + 0.1*Math.round(10*ENV.FrameRateDisplay) + "Hz (" + 0.1*Math.round(10000/ENV.FrameRateDisplay) + 'ms) display' 
+	+ "<br>" + 0.01*Math.round(100*ENV.FrameRateDisplay) + "Hz "
+	+ " (" + 0.1*Math.round(10000/ENV.FrameRateDisplay) + 'ms res) display' 
+	+ " --- " + 0.01*Math.round(100*ENV.FrameRateMovie) + "Hz scene update" 
 	+ "<br>" + "<font color=red> mean(t_actual - t_desired) = " + Math.round(u_dt) + " ms"
 	+ "  (min=" + Math.round(Math.min(... dt)) + ", max=" + Math.round(Math.max(... dt)) + ") </font>"
 	+ "<br>" + eyedataratestr

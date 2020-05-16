@@ -134,12 +134,21 @@ async generate_trials(n_trials){
 		var sample_index = this.selectSampleImage(this.samplebag_block_indices, this.samplingStrategy)
 		var sample_scenebag_label = this.samplebag_labels[sample_index]; 
 		var sample_scenebag_index = this.samplebag_indices[sample_index];
-		var sample_filename = this.samplebag_paths[sample_scenebag_label][IMAGES["Sample"][sample_scenebag_label].IMAGES.imageidx[sample_scenebag_index]] || "";
+
+		var sample_filename = []
+		if (Array.isArray(IMAGES["Sample"][sample_scenebag_label].IMAGES.imageidx[sample_scenebag_index])){
+			for (var j = 0; j<IMAGES["Sample"][sample_scenebag_label].IMAGES.imageidx[sample_scenebag_index].length; j++){
+				sample_filename.push(this.samplebag_paths[sample_scenebag_label][IMAGES["Sample"][sample_scenebag_label].IMAGES.imageidx[sample_scenebag_index][j]] || "")
+			} 
+			image_requests.push(... sample_filename)   
+		}//isArray Sample
+		else {
+		 sample_filename = this.samplebag_paths[sample_scenebag_label][IMAGES["Sample"][sample_scenebag_label].IMAGES.imageidx[sample_scenebag_index]] || "";	
+		 image_requests.push(sample_filename)
+		}//ELSE single image
 
 		this.ntrials_per_bag[sample_scenebag_label] = this.ntrials_per_bag[sample_scenebag_label] + 1
-		
-		image_requests.push(sample_filename)
-		
+				
 		// Select appropriate test images (correct one and distractors) 
 		var funcreturn = this.selectTestImages(sample_scenebag_label, this.testbag_labels) 
 		var test_filenames = []
@@ -232,10 +241,19 @@ async get_next_trial(){
 	// Get image from imagebag
 
 	if (typeof(sample_filename) != "undefined"){
-		var sample_image 
-		if (sample_filename != ""){
-			sample_image = await this.IB.get_by_name(sample_filename);
-		}		
+		var sample_image = []
+		if (Array.isArray(sample_filename)){
+			for (var i = 0; i <sample_filename.length;i++){
+				if (sample_filename[i] !=""){
+					sample_image.push(await this.IB.get_by_name(sample_filename[i])); 
+				}
+			}
+		}//IF isArray sample filenames
+		else {
+			if (sample_filename != ""){
+				sample_image = await this.IB.get_by_name(sample_filename);
+		    }		
+		}//ELSE single filename
 	}//IF sample image
 	var sample_reward = -1
 	if (typeof(ImageRewardList[sample_filename]) != "undefined"){
@@ -339,6 +357,9 @@ selectTestImages(correct_label, testbag_labels){
 
 			// Determine which location that grid index corresponds to in testIndices: 
 			var order_idx = TASK.TestGridIndex.indexOf(object_grid_index)
+			if (order_idx < 0){
+				console.log("ERROR: Could not find object's grid index in testgridinices, make sure ObjectGridIndex has same indices as TestGridIndex in parameter file.")
+			}
 
 			// Place the selected test image in the appropriate location in testIndices. 
 			testIndices[order_idx] = test_image_index

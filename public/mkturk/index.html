@@ -899,6 +899,12 @@ while(true){
 		await TQS.generate_trials(1)
 		if (TQS.sampleq.filename.length > 0 && TQS.sampleq.filename[0] != ""){
 			var representative_image = await TQS.IB.get_by_name(TQS.sampleq.filename[0])
+      if (Array.isArray(TQS.sampleq.filename[0])){
+        var representative_image = await TQS.IB.get_by_name(TQS.sampleq.filename[0][0])
+      }
+      else {
+        var representative_image = await TQS.IB.get_by_name(TQS.sampleq.filename[0])
+      }
 			ENV.ImageWidthPixels = representative_image.width
 			ENV.ImageHeightPixels = representative_image.height
 		}
@@ -925,7 +931,7 @@ while(true){
 
 	ENV.FixationScale = ENV.InchScale*TASK.FixationSizeInches
 	ENV.SampleScale = ENV.InchScale*TASK.SampleSizeInches
-    ENV.SampleFixationScale = ENV.InchScale*TASK.SampleFixationSizeInches
+  ENV.SampleFixationScale = ENV.InchScale*TASK.SampleFixationSizeInches
 	ENV.TestScale = ENV.InchScale*TASK.TestSizeInches
 	ENV.ChoiceScale = ENV.InchScale*TASK.ChoiceSizeInches
     //======= (end) COMPUTE DISPLAY ITEM SCALES FOR BACKWARDS COMPATIBILITY =======//
@@ -1025,7 +1031,7 @@ while(true){
 			playSound(0)
 		}
 		renderScreen(CANVAS.sequencepre[0],OFFSCREENCANVAS)
-		await displayTrial(CANVAS.sequencepre,Array(CANVAS.sequencepre.length).fill(0),CANVAS.tsequencepre);
+		await displayTrial(CANVAS.sequencepre,Array(CANVAS.sequencepre.length).fill(0),[],CANVAS.tsequencepre);
 		audiocontext.suspend()
 
 		//========= AWAIT HOLD FIXATION TOUCH =========//
@@ -1076,7 +1082,7 @@ while(true){
 		frame.current=0;
 		if (FLAGS.waitingforTouches > 0){
 			renderScreen(CANVAS.sequenceblank[0],OFFSCREENCANVAS)
-			await displayTrial(CANVAS.sequenceblank,Array(CANVAS.sequenceblank.length).fill(0),CANVAS.tsequenceblank);
+			await displayTrial(CANVAS.sequenceblank,Array(CANVAS.sequenceblank.length).fill(0),[],CANVAS.tsequenceblank);
 		} //blank out screen
 	} //while waiting for NFixations
 	//============ (end) WHILE RUN FIXATION SCREEN ============//
@@ -1087,25 +1093,46 @@ while(true){
 //SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    //
 	//============== AWAIT SHOW SAMPLE THEN TEST ==============//
 	if (TASK.RewardStage === 1){
+        //all arrays are same length (frame-by-frame)
         CURRTRIAL.tsequence = [ 0 ]
         CURRTRIAL.sequencetaskscreen = [ 'blank' ]
         CURRTRIAL.sequencesamplelabel = [ 0 ]
         CURRTRIAL.sequencesampleindex = [ 0 ]
-        CURRTRIAL.sequencesampleclip = [ -1 ]
-        CURRTRIAL.sequencesampleframe = [ -1 ]
+        CURRTRIAL.sequencesampleclip = [ -1 ] //which movie in RSVP
+        CURRTRIAL.sequencesampleframe = [ -1 ] //which frame
 
         //EXPAND SAMPLE (for rsvp & movies)
+        //Start with blank for max(100,SampleOFF), then append SampleON+blank (eg, blank,Sample,blank,Sample,blank)
         for (var i=0; i<=CURRTRIAL.sample_scenebag_index.length-1; i++){
-            if (FLAGS.moviepersample[CURRTRIAL.sample_scenebag_label[i]][CURRTRIAL.sample_scenebag_index[i]] == 1){
-                [movie_sequence, movie_tsequence, movie_framenum] = createMovieSeq(IMAGES["Sample"][CURRTRIAL.sample_scenebag_label[i]].durationMS,ENV.FrameRateMovie)
+        	if (i==0){
+        		var blankdurationpre = Math.max(100,TASK.SampleOFF)
+        	}//if first blank, prepend at least 100ms
+        	else{
+        		var blankdurationpre = TASK.SampleOFF
+        	}
+            if (FLAGS.moviepersample[CURRTRIAL.sample_scenebag_label[i]][CURRTRIAL.sample_scenebag_index[i]] > 0){
+                [movie_sequence, movie_tsequence, movie_framenum] = 
+                  createMovieSeq(
+                  	blankdurationpre,
+                  	IMAGES["Sample"][CURRTRIAL.sample_scenebag_label[i]].durationMS,
+                  	TASK.SampleOFF,
+                  	ENV.FrameRateMovie
+                  )
             }//IF movie
             else {
-                [movie_sequence, movie_tsequence, movie_framenum] = createMovieSeq(TASK.SampleON, 1/(TASK.SampleON/1000))
+                [movie_sequence, movie_tsequence, movie_framenum] = 
+                  createMovieSeq(
+                  	blankdurationpre,
+                  	TASK.SampleON, 
+                  	TASK.SampleOFF, 
+                  	1/(TASK.SampleON/1000)
+                  )
             }//ELSE !movie
+
             if (i != 0){
                 var t0=CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
                 movie_tsequence = movie_tsequence.map(function (a){return a + t0})
-            }//IF shift
+            }//IF shift frames to absolute position in sequence
 
             CURRTRIAL.tsequence.push(...movie_tsequence)
             CURRTRIAL.sequencetaskscreen.push(...movie_sequence)
@@ -1120,7 +1147,7 @@ while(true){
             [sequencetest,tsequencetest] = appendTest()
             CURRTRIAL.sequencetaskscreen.push(...sequencetest)
             CURRTRIAL.tsequence.push(...tsequencetest)            
-        }
+        }//IF !RSVP, then show test/choice screen
 
         frame.shown=[]
         frame.current=0
@@ -1141,7 +1168,7 @@ while(true){
             FLAGS.waitingforTouches = 1
             FLAGS.acquiredTouch = 1;
             var p1 = hold_promise(0,boundingBoxesSampleFixation,FLAGS.punishOutsideTouch)
-            var p2 = displayTrial(CURRTRIAL.sequencetaskscreen,CURRTRIAL.sequencesampleindex,CURRTRIAL.tsequence)
+            var p2 = displayTrial(CURRTRIAL.sequencetaskscreen,CURRTRIAL.sequencesampleindex,CURRTRIAL.sequencesampleframe,CURRTRIAL.tsequence)
             var race_return = await Promise.race([p1,p2])
 
             if (typeof(race_return.type) == "undefined"){
@@ -1156,32 +1183,30 @@ while(true){
         else{
             CURRTRIAL.samplefixationtouchevent = ''
             CURRTRIAL.samplefixationxyt = []
-            await displayTrial(CURRTRIAL.sequencetaskscreen,CURRTRIAL.sequencesampleindex,CURRTRIAL.tsequence)
+            await displayTrial(CURRTRIAL.sequencetaskscreen,CURRTRIAL.sequencesampleindex,CURRTRIAL.sequencesampleframe,CURRTRIAL.tsequence)
         }//ELSE !RSVP, no hold
         logEVENTS("SampleFixationTouchEvent",CURRTRIAL.samplefixationtouchevent,"trialseries")
         logEVENTS("SampleFixationXYT",CURRTRIAL.samplefixationxyt,"trialseries")
 
         //Store timing of clip presentations
-        CURRTRIAL.tsequenceactual = []
-        CURRTRIAL.tsequencedesired = []
+        CURRTRIAL.tsequencedesiredclip = []
+        CURRTRIAL.tsequenceactualclip = []
         for (var f=0; f<=CURRTRIAL.sequencetaskscreen.length-1; f++){
-            if (f==0 || 
-                CURRTRIAL.sequencetaskscreen[f] != CURRTRIAL.sequencetaskscreen[f-1] ||
-                CURRTRIAL.sequencesampleclip[f] != CURRTRIAL.sequencesampleclip[f-1])
-                {
-                CURRTRIAL.tsequencedesired.push(CURRTRIAL.tsequence[f])
+            if (f==0 || CURRTRIAL.sequencetaskscreen[f] != CURRTRIAL.sequencetaskscreen[f-1] || CURRTRIAL.sequencesampleclip[f] != CURRTRIAL.sequencesampleclip[f-1])
+            {               	
+               	CURRTRIAL.tsequencedesiredclip.push(CURRTRIAL.tsequence[f])
                 if (f > CURRTRIAL.tsequenceactual.length-1){
-                    CURRTRIAL.tsequenceactual.push(-1)
+                    CURRTRIAL.tsequenceactualclip.push(-1)
                 }//IF clip not shown
                 else{
-                    CURRTRIAL.tsequenceactual.push(CURRTRIAL.tsequenceactual[f])
+                    CURRTRIAL.tsequenceactualclip.push(CURRTRIAL.tsequenceactual[f])
                 }//ELSE clip shown
             }//IF new clip || new taskscreen within that clip
         }//FOR f frames
-    	logEVENTS("TSequenceActual",CURRTRIAL.tsequenceactual,"trialseries")
-    	logEVENTS("TSequenceDesired",CURRTRIAL.tsequencedesired,"trialseries")
+    	logEVENTS("TSequenceDesiredClip",CURRTRIAL.tsequencedesiredclip,"trialseries")
+    	logEVENTS("TSequenceActualClip",CURRTRIAL.tsequenceactualclip,"trialseries")
 
-        audiocontext.suspend()
+      audiocontext.suspend()
 
 //RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    //
 //RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    //
@@ -1328,7 +1353,7 @@ while(true){
 		for (var q in CANVAS.sequencepost){frame.shown[q]=0}; frame.current=0;
 
 		renderScreen(CANVAS.sequencepost[0],OFFSCREENCANVAS)
-		await displayTrial(CANVAS.sequencepost,Array(CANVAS.sequencepost.length).fill(0),CANVAS.tsequencepost);
+		await displayTrial(CANVAS.sequencepost,Array(CANVAS.sequencepost.length).fill(0),[],CANVAS.tsequencepost);
 	}//IF no feedback
 	// REWARD
 	else if (CURRTRIAL.correct){
@@ -1341,7 +1366,7 @@ while(true){
 
 			playSound(2);
 			renderScreen(CANVAS.sequencepost[0],OFFSCREENCANVAS)
-			var p1 = displayTrial(CANVAS.sequencepost,Array(CANVAS.sequencepost.length).fill(0),CANVAS.tsequencepost)
+			var p1 = displayTrial(CANVAS.sequencepost,Array(CANVAS.sequencepost.length).fill(0),[],CANVAS.tsequencepost)
 			if (ble.connected == false && port.connected == false){
 				await Promise.all([p1])
 			}
@@ -1363,7 +1388,7 @@ while(true){
 		for (var q in CANVAS.sequencepost){frame.shown[q]=0}; frame.current=0;
 
 		renderScreen(CANVAS.sequencepost[0],OFFSCREENCANVAS)
-		var p1 = displayTrial(CANVAS.sequencepost,Array(CANVAS.sequencepost.length).fill(0),CANVAS.tsequencepost);
+		var p1 = displayTrial(CANVAS.sequencepost,Array(CANVAS.sequencepost.length).fill(0),[],CANVAS.tsequencepost);
 		var num_trials_to_buffer_in_punishperiod = 50
         var p2 = TQS.generate_trials(num_trials_to_buffer_in_punishperiod*TASK.RSVP)
 		playSound(3);
