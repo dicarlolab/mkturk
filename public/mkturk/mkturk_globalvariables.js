@@ -31,8 +31,6 @@ ENV.USBDeviceName = ''
 ENV.Subject = ''
 ENV.AgentRFID = "XX"
 ENV.CurrentDate = new Date;
-ENV.ImageHeightPixels = NaN; 
-ENV.ImageWidthPixels = NaN;
 ENV.CanvasRatio = 1
 ENV.DevicePixelRatio = 1
 ENV.ThreeJSRenderRatio = 4
@@ -83,14 +81,7 @@ ENV.PhysicalPPI = -1
 ENV.FrameRateDisplay = 60
 ENV.FrameRateMovie = 30
 
-
 ENV.Task = ""
-
-ENV.FixationScale = -1
-ENV.SampleScale = -1
-ENV.TestScale = -1
-ENV.ChoiceScale = -1
-
 
 //================ EYE GLOBALS ================//
 ENV.Eye = {}
@@ -116,7 +107,7 @@ var FLAGS = {} // Global that keeps track of the task's requests to the Dropbox/
 FLAGS.consecutivehits = 0;
 FLAGS.need2loadImagesTrialQueue = 1; 
 FLAGS.need2loadScenes = 1;
-FLAGS.moviepersample = [];
+FLAGS.movieper = {"Sample": [], "Test": []};
 FLAGS.need2loadParameters = 1; 
 FLAGS.savedata = 0; 
 FLAGS.stage = 0; 
@@ -137,13 +128,11 @@ FLAGS.RFIDGeneratorCreated = 0
 
 var CANVAS = {}; 
 var CANVAS = {
-	names: ["blank","sample","test","touchfix","eyefix","reward","photoreward","punish","choice"],
-	front: "blank",
-	sequenceblank: ["blank","blank"], 
+	sequenceblank: ["Blank","Blank"], 
 	tsequenceblank: [0,50], 
-	sequencepre: ["touchfix"],
+	sequencepre: ["Touchfix"],
 	tsequencepre: [0],
-	sequencepost: ["blank","reward","blank"], // blank, reward
+	sequencepost: ["Blank","Reward","Blank"], // blank, reward
 	tsequencepost: [0,50,100],
 	headsupfraction: NaN,
 	offsetleft: 0,
@@ -169,8 +158,9 @@ CURRTRIAL.fixationgridindex = NaN;
 CURRTRIAL.fixationxyt = [];
 CURRTRIAL.allfixationxyt = [];
 CURRTRIAL.sampleindex = [];
+CURRTRIAL.sampleindex_nonarray = [];
 CURRTRIAL.sampleimage = [];
-CURRTRIAL.testindices = NaN;
+CURRTRIAL.testindices = [];
 CURRTRIAL.testimages = [];
 CURRTRIAL.samplefixationxyt = [];
 CURRTRIAL.responsexyt = []; 
@@ -191,8 +181,8 @@ CURRTRIAL.xyt = [];
 
 CURRTRIAL.sample_scenebag_label = []
 CURRTRIAL.sample_scenebag_index = []
-CURRTRIAL.test_scenebag_labels = NaN
-CURRTRIAL.test_scenebag_indices = NaN
+CURRTRIAL.test_scenebag_labels = []
+CURRTRIAL.test_scenebag_indices = []
 
 EVENTS.reset_trialseries = function(){
 	this.trialnum = CURRTRIAL.num;
@@ -240,7 +230,7 @@ var sounds = {
 }
 var boundingBoxesFixation={}; //where the fixation touch targets are on the canvas
 var boundingBoxesSampleFixation={x: [], y: []}
-var boundingBoxesChoice={}; //where the choice touch targets are on the canvas
+var boundingBoxesChoice={x: [], y: []}; //where the choice touch targets are on the canvas
 var waitforClick; //variable to hold generator
 var waitforEvent; //variable to hold generator
 var touchTimer; //variable to hold timer
@@ -272,8 +262,7 @@ function logEVENTS(eventname,eventval,eventtype){
 		}
 
 		if (typeof(eventval) == "number" ||
-			typeof(eventval) == "string" || 
-			eventval.length == 1){
+			typeof(eventval) == "string"){
 			if (!Array.isArray(EVENTS[eventtype][eventname])){
 				EVENTS[eventtype][eventname] = []; //initialize to array
 			} //if initialized as object, convert to array

@@ -11,8 +11,6 @@ CheckRFID: Time in milliseconds over which at least one matching RFID read is re
 
 ChoiceGridIndex: For a same-different task, need to specify two locations, one for same choice (circle) and one for different choice (square).
 
-ChoiceScale (computed internally and stored in ENV.ChoiceScale instead of provided by user in TASK): Size of choice circle and square in units of sample image width
-
 ChoiceSizeInches: Size of choice circle and square in physical inches on the screen
 
 ChoiceTimeOut: Time in milliseconds that subject has to make a choice in AFC task before trial aborts and new sample is displayed. This timeout applies to test response screen in SR2 or M2S and to choice response screen in same-different
@@ -24,9 +22,6 @@ CurrentAutomatorStage: index of current training stage of automator.
 FixationDuration: How long subject has to hold fixation touch in milliseconds for a successful fixation to register.
 
 FixationMove: FixationMove=0, fixation image is presented at fixationGridindex. FixationMove=N, N>0, fixation image is presented at a randomly selected grid point and the fixation position is redrawn every N milliseconds. FixationMove > 0 can be used to train subjects to touch different screen locations or to calibrate an eyetracker.
-FixationScale: Size of fixation image in units of sample image width.
-
-FixationScale (computed internally and stored in ENV.FixationScale instead of provided by user in TASK params): Size of the fixation dot or image (ie FixationUsesSample=1) in units of sample image width
 
 FixationSizeInches: Size of fixation dot or image (ie FixationUsesSample=1) in physical inches on the screen
 
@@ -86,19 +81,15 @@ RewardPer1000Trials: Amount of liquid reward in mL for 1000 correct trials. For 
 
 RewardStage: RewardStage=0 rewards for successful fixtion and skips the choice phase of task. RewardStage=1 rewards for selecting the correct choice.
 
+SameDifferent: SameDifferent > 0 indicates a Same-Different task so that last screen is a new choice screen with same (circle) and different (square) buttons. Test image extinguishes after scenedurationMS milliseconds, followed by TestOFF pause, followed by choice screen. If KeepTestON=1, then test image is on for scenedurationMS milliseconds and then remains on for choice screen
+
 SampleGridIndex: Index on grid where sample image appears. SampleGridIndex=4 centers the image on a 3x3 grid, where ngridpoints=3
 
 SamplingStrategy: Determines how sample images are drawn: uniform_with_replacement, uniform_without_replacement, sequential
 
 SampleOFF: Duration in milliseconds that a gray screen is presented after the sample image before the response screen. This implements the delay in a DMS task. SampleOFF=0, leads to no delay
 
-SampleON: Duration in milliseconds that sample image is presented
-
-SampleFixationScale (computed internally and stored in ENV.SampleFixationScale instead of provided by user in TASK params): Size of sample fixation window in units of sample image width. sampleFixationScale=1 makes an npx x npx bounding box on npx x npx screen pixels on the screen (i.e. no up or down sampling/resizing/filtering of the image)
-
 SampleFixationSizeInches: Width of box within which subject has to hold fixation during sample screen. If 0, then subject does not have to hold fixation on the sample image.
-
-SampleScale (computed internally and stored in ENV.SampleScale instead of provided by user in TASK params): Size of sample image in units of sample image width. sampleScale=1 displays a npx x npx image on npx x npx screen pixels on the screen (i.e. no up or down sampling/resizing/filtering of the image)
 
 SampleSizeInches: Size of sample image in physical inches on the screen. sampleSizeInches = 0.834444 displays a 256 x 256 image on 256 x 256 screen pixels on the google pixel c screen (i.e. no up or down sampling/resizing/filtering of the image)
 
@@ -112,15 +103,10 @@ Tablet (deprecated, replaced by auto-detected ENV.DeviceName): nexus9, samsung10
 
 TestGridIndex: Index on grid where test images (choices) appear.
 
-TestON: TestON > 0 indicates a Same-Different task so that last screen is a new choice screen with same (circle) and different (square) buttons. Test image extinguishes after TestON milliseconds, followed by TestOFF pause, followed by choice screen. If KeepTestON=1, then test image is on for TestON milliseconds and then remains on for choice screen
-
 TestOFF: Choice screen appears TestOFF milliseconds after test image is extinguished. If TestOFF=0, then test screen does not extinguish (go to blank gray) until same-different choice screen appears. If KeepTestON=1, then test image reappears during the same-different choice screen.
-
-TestScale (computed internally and stored in ENV.TestScale instead of provided by user in TASK params): Size of the test image in units of sample image width
 
 TestSizeImages: Size of the test image in physical inches on the screen
 
-Weight: Weight in kilograms
 
 ## ENV
 AgentRFID: If CheckRFID>0, then fetches AgentRFID from database to check against incoming RFID reads to determine if correct agent is performing task. If tag doesn't match AgentRFID, task locks out and waits for a valid tag read
@@ -129,11 +115,9 @@ BatteryLDT: Stores any status update from the battery API, L=battery level in % 
 
 CanvasRatio: Ratio of the logical canvas pixels to the physical screen pixels = BackingStoreRatio/DevicePixelRatio
 
-ChoiceRadius: Radius (width) of same circle (different square) in pixels. This is not set by the user. Rather, user specifies ChoiceScale, and then ChoiceRadius stores the actual pixel-based size in the json data file.
+ChoiceRadius: Radius (width) of same circle (different square) in pixels. This is not set by the user. Rather, user specifies ChoiceSizeInches, and then ChoiceRadius stores the actual pixel-based size in the json data file.
 
 ChoiceColor: Defaults to white circle (same) and square (different) buttons for same-different choice screen
-
-ChoiceScale: Size of choice circle and square in units of sample image width
 
 CurrentDate: date & time when task session was initiated
 
@@ -181,15 +165,13 @@ Eye.CalibTrainMSE: The train MSE for NCalibPointsTrain training points
 
 Eye.CalibTestMSE: The test MSE for NCalibPointsTest testing points
 
-FixationRadius: Radius of fixation image in pixels. This is not set by the user. Rather, user specifies FixationScale, and then FixationRadius stores the actual pixel-based size in the json data file.
+FixationRadius: Radius of fixation image in pixels. This is not set by the user. Rather, user specifies FixationSizeInches, and then FixationRadius stores the actual pixel-based size in the json data file.
 
 FixationColor: color of fixation dot if image is not used
 
-FixationScale: Size of the fixation dot or image (ie FixationUsesSample=1) in units of sample image width
+ImageHeightPixels: The height of the sample image in pixels. The image height is used as the unit for the vertical dimension.
 
-ImageHeightPixels: The height of the sample image in pixels. The image height is used as the unit for the vertical dimension. SampleScale, FixationScale, TestScale, or GridScale = 1 means correspond to 1 unit in terms of the sample image
-
-ImageWidthPixels: The width of the sample image in pixels. The image width is used as the unit for the horizontal dimension. SampleScale, FixationScale, TestScale, or GridScale = 1 means correspond to 1 unit in terms of the sample image
+ImageWidthPixels: The width of the sample image in pixels. The image width is used as the unit for the horizontal dimension.
 
 Ordered_Samplebag_Filenames: Names of the sample image bags. Each bag is treated as a separate label class
 
@@ -207,8 +189,6 @@ PhysicalPPI: physical quantity, should equal ENV.DevicePixelRatio*ENV.ViewportPP
 
 RewardDuration: How long the reward is dispensed in milliseconds of time the pump is on. RewardDuration is derived by the user-specified RewardPer1000Trials in mL and the calibration curve for that pump type. 
 
-SampleScale: Size of sample image in units of sample image width. sampleScale=1 displays a npx x npx image on npx x npx screen pixels on the screen (i.e. no up or down sampling/resizing/filtering of the image)
-
 ScreenRatio: the standard device pixel ratio for that screen assuming no scaling (retrieved from firestore device record if available)
 
 ScreenSizeInches: physical quantity, recorded physical size of screen (retrieved from firestore device record if available)
@@ -216,8 +196,6 @@ ScreenSizeInches: physical quantity, recorded physical size of screen (retrieved
 ScreenSizePixels: physical quantity, recorded # of pixels of screen (retrieved from firestore device record if available)
 
 Subject: Name of subject, chosen from pulldown menu at beginning of task.
-
-TestScale: Size of the test image in units of sample image width
 
 UserAgent: info from window.navigator.UserAgent
 
