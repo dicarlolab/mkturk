@@ -52,7 +52,7 @@ if (typeof(navigator.bluetooth) == "object"){
 <script src="/__/firebase/init.js"></script>
 
 <!-- Math package -->
-<script src=https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.3.0/math.min.js type="text/javascript"></script> 
+<script src=https://cdnjs.cloudflare.com/ajax/libs/mathjs/7.0.0/math.min.js type="text/javascript"></script> 
 
 <script>
   //Initialize Cloud Firestore
@@ -843,15 +843,16 @@ while(true){
 					mesh_paths.push(IMAGES[taskscreen][classlabel].OBJECTS[obj].meshpath)
 					mesh_inds.push([classlabel,obj])
 				} //FOR obj objects in scene classlabel
-			} //FOR classlabel scene
-			var meshes = await loadMeshArrayfromFirebase(mesh_paths);
-
+				var meshes = await loadMeshArrayfromFirebase(mesh_paths);
+				OBJECTS[taskscreen][classlabel] = {"meshes": [],"originalmeshes": []}
 			for (var m=0; m<=meshes.length-1; m++){
 				var meshlabel = mesh_inds[m][0]
 				var meshname = mesh_inds[m][1]
-				OBJECTS[taskscreen][meshlabel] = {"meshes": [] }
-				OBJECTS[taskscreen][meshlabel].meshes[meshname] = meshes[m]
+				OBJECTS[taskscreen][classlabel].meshes[meshname] = meshes[m]
+				OBJECTS[taskscreen][classlabel].originalmeshes[meshname] = meshes[m]
 			} //FOR m meshes
+			} //FOR classlabel scene
+			
 		}//FOR taskscreen
 		//============ (END) 1: LOAD MESHES FOR SCENES ============//
 
@@ -1101,7 +1102,7 @@ while(true){
         //EXPAND SAMPLE (for rsvp & movies)
         for (var i=0; i<=CURRTRIAL.sample_scenebag_index.length-1; i++){
             if (FLAGS.moviepersample[CURRTRIAL.sample_scenebag_label[i]][CURRTRIAL.sample_scenebag_index[i]] == 1){
-                [movie_sequence, movie_tsequence, movie_framenum] = createMovieSeq(IMAGES["Sample"][CURRTRIAL.sample_scenebag_label[i]].durationMS,ENV.FrameRateMovie)
+				[movie_sequence, movie_tsequence, movie_framenum] = createMovieSeq(IMAGES["Sample"][CURRTRIAL.sample_scenebag_label[i]].durationMS[0],ENV.FrameRateMovie)
             }//IF movie
             else {
                 [movie_sequence, movie_tsequence, movie_framenum] = createMovieSeq(TASK.SampleON, 1/(TASK.SampleON/1000))
