@@ -146,7 +146,7 @@ function updateHeadsUpDisplay(){
 	}
 	else if (TASK.RewardStage == 1){
 		task1 = TASK.TestGridIndex.length + "-way AFC:"
-		task2 = TASK.SampleON + "ms, " + TASK.ImageBagsTest.length + "-categories in pool"
+		task2 = TASK.ImageBagsTest.length + "-categories in pool"
 	}
 	if (CANVAS.headsupfraction > 0){
 		textobj.innerHTML = 
@@ -278,7 +278,7 @@ function defineImageGrid(ngridpoints, gridspacing,xoffset,yoffset){
 }//FUNCTION defineImageGrid
 
 
-function displayTrial(sequencetaskscreen,sequencesceneindex,sequencesceneframe,tsequence){
+function displayTrial(ti,gr,fr,sc,ob,id){
 	var resolveFunc
 	var errFunc
 	p = new Promise(function(resolve,reject){
@@ -289,350 +289,282 @@ function displayTrial(sequencetaskscreen,sequencesceneindex,sequencesceneframe,t
 	var start = null;
 	CURRTRIAL.tsequenceactual = []
 	async function updateCanvas(timestamp){
+		if (!start) start = timestamp; //IF start has not been set to a float timestamp, set it now.
+		if (timestamp - start > ti[frame.current]){ //IF time to show new frame
+//----- RENDER ALL ELEMENTS
+			for (var s = 0; s<=frame.frames[frame.current].length-1; s++){
+				f = frame.frames[frame.current][s]
+				var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
 
-		// If start has not been set to a float timestamp, set it now.
-		if (!start) start = timestamp;
-
-		// If time to show new frame, 
-		if (timestamp - start > tsequence[frame.current]){
-
-	//=================== 3D rendering =====================//
-			if (sequencetaskscreen[frame.current] == "sample" || sequencetaskscreen[frame.current] == "test" || sequencetaskscreen[frame.current] == "choice"
-				|| (sequencetaskscreen[frame.current] == "touchfix" && TASK.FixationUsesSample)){
-
-				var taskscreen = [sequencetaskscreen[frame.current].charAt(0).toUpperCase() + sequencetaskscreen[frame.current].slice(1)]
-				if (sequencetaskscreen[frame.current] == "touchfix" && TASK.FixationUsesSample){
-					taskscreen = "Sample"
-				}
-
-				renderer.autoClear = false
-			
-				if (TASK.KeepSampleON == 1 && (sequencetaskscreen[frame.current] == "test" || sequencetaskscreen[frame.current]=="choice")){
-					setViewport(TASK.SampleGridIndex)
-					var camera = scene["Sample"].getObjectByName("cam"+CURRTRIAL.sequencesamplelabel[CURRTRIAL.sequencesamplelabel.length-1])
-			    	renderer.render(scene["Sample"],camera) //takes >1ms, do before the fast 2D swap (<1ms)	
-			   	}
-				if (TASK.KeepTestON == 1 && sequencetaskscreen[frame.current] == "choice"){
-					setViewport(TASK.TestGridIndex[0])
-					var camera = scene["Test"].getObjectByName("cam"+CURRTRIAL.test_scenebag_labels)
-					renderer.render(scene["Test"],camera)
-				}
-
-				if (sequencetaskscreen[frame.current] == "sample" || sequencetaskscreen[frame.current] == "test"
-					|| (sequencetaskscreen[frame.current] == "touchfix" && TASK.FixationUsesSample)){
-					if (sequencetaskscreen[frame.current] == "touchfix" && TASK.FixationUsesSample){
-						setViewport(CURRTRIAL.fixationgridindex)
-						var camera = scene["Sample"].getObjectByName("cam"+CURRTRIAL.sequencesamplelabel[frame.current])							
-						renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)						
-					}//fixationusessample
-					else if (sequencetaskscreen[frame.current]=="sample"){
-						setViewport(TASK.SampleGridIndex)
-						var camera = scene["Sample"].getObjectByName("cam"+CURRTRIAL.sequencesamplelabel[frame.current])							
-						renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)			
-					}//sample
-					else if (sequencetaskscreen[frame.current]=="test"){
-						setViewport(TASK.TestGridIndex[0])
-						var camera = scene[taskscreen].getObjectByName("cam"+CURRTRIAL.test_scenebag_labels[0])					
-						renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)			
-					} //test
-			    	if (sequencetaskscreen[frame.current] == "test" && CURRTRIAL.test_scenebag_labels.length > 1){
-			    		for (var j = 1; j<=CURRTRIAL.test_scenebag_labels.length - 1; j++){
-					    	updateSingleFrame3D(
-									taskscreen,
-									CURRTRIAL.test_scenebag_labels[j],
-									CURRTRIAL.test_scenebag_indices[j],
-									[],
-									TASK.TestGridIndex[j]
-								)
-							setViewport(TASK.TestGridIndex[j])
-							var camera = scene[taskscreen].getObjectByName("cam"+CURRTRIAL.test_scenebag_labels[j])
-							// var camera = scene[sequencetaskscreen[frame.current].charAt(0).toUpperCase() + sequencetaskscreen[frame.current].slice(1)].getObjectByName(-1)
-					    	renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
-			    		} //FOR j test items
-			    	} //IF test
-
-			    	if (sequencetaskscreen[frame.current] == "sample" && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
-			    		saveScreenshot(VISIBLECANVASWEBGL,CURRTRIAL.num,sequencetaskscreen[frame.current],frame.current)
-			    	}//save out images
-				} //IF sample || test || fixationusessample
-
-				if (sequencetaskscreen[frame.current] == "choice" && TASK.KeepTestON == 0 && TASK.KeepSampleON == 0){
-					 VISIBLECANVASWEBGL.style.visibility='hidden';
-				} else{
+				if (taskscreen=="Sample" || taskscreen=="Test"){
+					renderer.autoClear = false
+					if (taskscreen=="Sample" || taskscreen=="Test"){
+						//1st item
+						if (s==0){
+							setViewport(gr[f][0])
+							var camera = scene[taskscreen].getObjectByName("cam"+ob[f][0])
+							renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)							
+						}//IF first screen
+						
+						//Subsequent items
+						if (ob[f].length > 1 || s>0){
+							if (s==0){
+								var jstart=1;
+							}//IF first screen, render second onward
+							else if (s>0){
+								var jstart=0;
+							}//ELSEIF second screen, render all
+							for (var j = jstart; j<=ob[f].length - 1; j++){
+								var boundingBox3D = updateSingleFrame3D(taskscreen,
+																		ob[f][j],
+																		id[f][j],
+																		fr[f],
+																		gr[f][j])
+								if (s==0){
+									boundingBoxesChoice3D.x[j] = boundingBox3D.x
+									boundingBoxesChoice3D.y[j] = boundingBox3D.y									
+								}//IF first screen
+								setViewport(gr[f][j])
+								var camera = scene[taskscreen].getObjectByName("cam"+ob[f][j])
+						    	renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
+				    		}//FOR j display items						
+						}//IF multiple items || multiple screens
+					} //IF sample || test
 					VISIBLECANVASWEBGL.style.visibility='visible';
-				}
-			} //IF sample || test || choice || fixationusessample
-			else {
-			    VISIBLECANVASWEBGL.style.visibility='hidden';
-			} //ELSE hide 3D
-	//=================== 3D rendering (END) =====================//
+				} //IF sample || test
+				else {
+				    VISIBLECANVASWEBGL.style.visibility='hidden';
+				}//ELSE hide 3D when plotting 2D elements like buttons and not keeping (overlaying) sample/test
 
-
-	//=================== 2D rendering =====================//
-			if(frame.current==0 || 
-				sequencetaskscreen[frame.current] != sequencetaskscreen[frame.current-1] ||
-				sequencesceneindex[frame.current] != sequencesceneindex[frame.current-1] ||
-				sequencesceneframe[frame.current] != sequencesceneframe[frame.current-1]){
-				if (ENV.OffscreenCanvasAvailable){
-					//pre-rendered offscreen, now transfer
-					var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
-
-					if (renderstr.status == "failed"){
-						console.log("**** FAILED on 1ST rendering attempt of " + sequencetaskscreen[frame.current])
-
-						// attempt again
-						CURRTRIAL.tsequenceactual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
-
-						//pre-rendered offscreen, now transfer
-						var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))				
-						console.log("**** " + renderstr.status + " on 2ND rendering attempt of " + sequencetaskscreen[frame.current])
+				//=================== 2D rendering =====================//
+				if(f==0 || s>0 || taskscreen != sc[f-1] || id[f] != id[f-1] || fr[f] != fr[f-1]){
+					if (ENV.OffscreenCanvasAvailable && s == frame.frames[frame.current].length-1){
+						//everything has been pre-rendered offscreen, now transfer
+						var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
 
 						if (renderstr.status == "failed"){
-							if (sequencetaskscreen[frame.current] == "touchfix" || sequencetaskscreen[frame.current] == "test" || sequencetaskscreen[frame.current] == "choice"){
-								for (var j=0; j < 100; j++){
-									// attempt again
-									await setTimeout(j*100)
-									CURRTRIAL.tsequenceactual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+							console.log("**** FAILED on 1ST rendering attempt of " + taskscreen)
+							// attempt again
+							CURRTRIAL.tsequenceactual[f] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+							var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))				
+							console.log("**** " + renderstr.status + " on 2ND rendering attempt of " + taskscreen)
 
-									//pre-rendered offscreen, now transfer
-									var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))				
+							if (renderstr.status == "failed"){
+								if (taskscreen == "Touchfix" || taskscreen == "Test" || taskscreen == "Choice"){
+									for (var j=0; j < 100; j++){
+										// attempt again
+										await setTimeout(j*100)
+										CURRTRIAL.tsequenceactual[f] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+										var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
+										if (renderstr.status == "succeeded"){
+											break
+										}//IF success
+									}//FOR j attempts
+									console.log("Render "  + taskscreen + " " + renderstr.status + " after " + j + " attempts")
+								}//IF fix/test/choice
+								else {
+									CURRTRIAL.tsequenceactual[f] = -99
+									console.log("Skipping render since not touchfix or test screen")
+								}//ELSE sample
+							}//IF failed again
+						}//IF failed
+					}//IF Offscreen api available
+					else if (!ENV.OffscreenCanvasAvailable || (ENV.OffscreenCanvasAvailable && s>0) ) {
+						//render directly, offscreencanvas is visiblecanvas
+						if (taskscreen=="Sample" || taskscreen=="Test"){
+							if (taskscreen == "Sample"){
+								var ims = [ CURRTRIAL.sampleimage[CURRTRIAL.sequenceclip[f]][fr[f]]]
+							}//IF Sample
+							else if (taskscreen == "Test"){
+								var ims = CURRTRIAL.testimages[0][fr[f]]
+							}//IF Test
+							if (typeof(ims) != "undefined" && typeof(ims[0])=="object"){
+								var boundingBoxes2D = {"x": [], "y": []}
+								for (var j = 0; j<=ob[f].length - 1; j++){
+									var boundingBox = renderImage2D(ims[j],taskscreen,
+																	ob[f][j],
+																	id[f][j],
+																	fr[f],
+																	gr[f][j],
+																	OFFSCREENCANVAS) //render 2D image onscreen during this frame draw
+									boundingBoxes2D.x[j] = boundingBox.x
+									boundingBoxes2D.y[j] = boundingBox.y
+								}//FOR j display items
+								if (s==0 && boundingBoxesChoice3D.x == []){
+									boundingBoxesChoice3D.x = boundingBoxes2D.x
+									boundingBoxesChoice3D.y = boundingBoxes2D.y
+								}//IF use image bounding box
+							}//IF image available
+						}//IF sample/test image
+						else{
+							await renderShape2D(taskscreen,gr[f],OFFSCREENCANVAS)
+						}//ELSE shape
 
-									if (renderstr.status == "succeeded"){
-										break
-									}
-								}
-								console.log("Render "  + sequencetaskscreen[frame.current] + " " + renderstr.status + " after " + j + " attempts")
-							}
-							else {
-								CURRTRIAL.tsequenceactual[frame.current] = -99
-								console.log("Skipping render since not touchfix or test screen")
-							} //if touchfix || test
-						} //if failed again
-					} //if failed
-				}//IF Offscreen api available
-				else {
-					//render directly, offscreencanvas is visiblecanvas
-					renderScreen(sequencetaskscreen[frame.current],OFFSCREENCANVAS)
-				}//IF Offscreen not available
-			}//IF render 2D image
-	//=================== 2D rendering (END) =====================//
+						if (s==0 && taskscreen=="Choice"){
+							boundingBoxesChoice3D = boundingBoxesChoice //default to 2D coords for same different buttons
+						}//IF Choice
+					}//IF Offscreen not available
+				}//IF new taskscreen, render 2D image
+				//=================== 2D rendering (END) =====================//
+	    	}//FOR s screens within frame
 
-	    	if (sequencetaskscreen[frame.current] == "sample" && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
-	    		saveScreenshot(VISIBLECANVAS,CURRTRIAL.num,sequencetaskscreen[frame.current],frame.current)
-	    	}//save out images
+			//----- Save Out Images
+	    	if ( s==0 && (taskscreen=="Sample" || taskscreen=="Test") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
+	    		saveScreenshot(VISIBLECANVASWEBGL,CURRTRIAL.num,taskscreen,frame.current)
+	    		saveScreenshot(VISIBLECANVAS,CURRTRIAL.num,taskscreen,frame.current)
+	    	}//IF primary sample screen & save out images
 
 			CURRTRIAL.tsequenceactual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
 			frame.shown[frame.current]=1;
 			frame.current++;
 		}//IF time to show new frame
 		
-		// continue if not all frames shown
-		if (frame.shown[frame.shown.length-1] != 1){
-			var taskscreen = [sequencetaskscreen[frame.current].charAt(0).toUpperCase() + sequencetaskscreen[frame.current].slice(1)]
+//----- BUFFER 1ST ELEMENT
+		if (frame.shown[frame.shown.length-1] != 1){//Continue if not all frames shown
+			var taskscreen = sc[frame.current].charAt(0).toUpperCase() + sc[frame.current].slice(1)
+			boundingBoxesChoice3D = {'x':[],'y':[]}
 
-		//================= 3D update frame =================//
-			if (sequencetaskscreen[frame.current] == "sample" && scene["Sample"].framenum != frame.current || 
-				sequencetaskscreen[frame.current] == 'touchfix' && TASK.FixationUsesSample){
+			//================= 3D update frame =================//
+			if ((taskscreen=="Sample" || taskscreen=="Test") && frame.shown[frame.current]==0){
+				var boundingBox3D = updateSingleFrame3D(taskscreen,
+														ob[frame.current][0],
+														id[frame.current][0],
+														fr[frame.current],
+														gr[frame.current][0])//Update 3D scene prior to next frame draw
+				boundingBoxesChoice3D.x[0] = boundingBox3D.x
+				boundingBoxesChoice3D.y[0] = boundingBox3D.y
+			}//IF Sample/Test
 
-				if (sequencetaskscreen[frame.current] == 'touchfix' && TASK.FixationUsesSample){
-					if (FLAGS.moviepersample[CURRTRIAL.sequencesamplelabel[frame.current]][sequencesceneindex[frame.current]] == 1){
-						updateSingleFrame3D(
-							"Sample",
-							CURRTRIAL.sequencesamplelabel[frame.current],
-							sequencesceneindex[frame.current],
-							CURRTRIAL.sequencesampleframe[frame.current],
-							CURRTRIAL.fixationgridindex
-						)				
-					}//IF movie
-					else {
-						updateSingleFrame3D(
-							"Sample",
-							CURRTRIAL.sequencesamplelabel[frame.current],
-							sequencesceneindex[frame.current],
-							[],
-							CURRTRIAL.fixationgridindex
-						)				
-					}//ELSE not a movie	
-				}//IF FixationUsesSample
-				else {
-					if (FLAGS.moviepersample[CURRTRIAL.sequencesamplelabel[frame.current]][sequencesceneindex[frame.current]] == 1){
-						updateSingleFrame3D(
-							"Sample",
-							CURRTRIAL.sequencesamplelabel[frame.current],
-							sequencesceneindex[frame.current],
-							CURRTRIAL.sequencesampleframe[frame.current],
-							TASK.SampleGridIndex
-						)				
-					} //IF movie
-					else { // if not a movie
-						updateSingleFrame3D(
-							taskscreen,
-							CURRTRIAL.sequencesamplelabel[frame.current],
-							sequencesceneindex[frame.current],
-							[],
-							TASK.SampleGridIndex
-						)
-					}//ELSE not a movie			
-				}//ELSE sample
-				scene["Sample"].framenum = frame.current
-			}//IF sample
-			else if (sequencetaskscreen[frame.current] == "test"){  //&& scene["Test"].framenum != frame.current){
-				boundingBoxesChoice3D = {'x':[],'y':[]}
-				updateSingleFrame3D(
-							taskscreen,
-							CURRTRIAL.test_scenebag_labels[0],
-							CURRTRIAL.test_scenebag_indices[0],
-							[],
-							TASK.TestGridIndex[0]
-						) //Update 3D scene prior to next frame draw
-				scene["Test"].framenum = frame.current
-			}//ELSE IF test
-		//================= 3D update frame (END) =================//
-
-		//================= 2D buffer image =================//
+			//================= 2D buffer image =================//
 			if (ENV.OffscreenCanvasAvailable){// && sequencetaskscreen[frame.current] != "sample" && sequencetaskscreen[frame.current] != "test"){
-				if (frame.current==0 ||
-					sequencetaskscreen[frame.current] != sequencetaskscreen[frame.current-1] ||
-					sequencesceneindex[frame.current] != sequencesceneindex[frame.current-1] ||
-					sequencesceneframe[frame.current] != sequencesceneframe[frame.current-1]){
-					renderScreen(sequencetaskscreen[frame.current],OFFSCREENCANVAS) //render 2D image offscreen prior to next frame draw
-					if (sequencetaskscreen[frame.current] == "choice"){
-						boundingBoxesChoice3D = boundingBoxesChoice //default to 2D coords for same different buttons
-					}
-				}//IF new task screen
-			}//IF offscreenAvailable, pre-render next frame
-		//================= 2D buffer image (END) =================//
+				for (var s = 0; s<=frame.frames[frame.current].length-1; s++){
+					f = frame.frames[frame.current][s]
+					var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
+						
+					if (f==0  || taskscreen != sc[f-1] || id[f] != id[f-1] || fr[f] != fr[f-1]){
+						if (taskscreen=="Sample" || taskscreen=="Test"){
+							if (taskscreen == "Sample"){
+								var ims = [ CURRTRIAL.sampleimage[CURRTRIAL.sequenceclip[f]][fr[f]]]
+							}
+							else if (taskscreen == "Test"){
+								var ims = CURRTRIAL.testimages[0][fr[f]]
+							}
 
+							if (typeof(ims) != "undefined" && typeof(ims[0])=="object"){
+								var boundingBoxes2D = {"x": [], "y": []}
+								for (var j = 0; j<=ob[f].length - 1; j++){
+									var boundingBox = renderImage2D(ims[j],taskscreen,
+																	ob[f][j],
+																	id[f][j],
+																	fr[f],
+																	gr[f][j],
+																	OFFSCREENCANVAS) //render 2D image offscreen prior to next frame draw
+									boundingBoxes2D.x[j] = boundingBox.x
+									boundingBoxes2D.y[j] = boundingBox.y
+								}//FOR j display items
+								if (s==0 && boundingBoxesChoice3D.x == []){
+									boundingBoxesChoice3D.x = boundingBoxes2D.x
+									boundingBoxesChoice3D.y = boundingBoxes2D.y
+								}//IF use image bounding box
+							}//IF image available
+						}//IF sample/test image
+						else{
+							await renderShape2D(taskscreen,gr[f],OFFSCREENCANVAS)
+						}//ELSE shape
+
+						if (s==0 && taskscreen=="Choice"){
+							boundingBoxesChoice3D = boundingBoxesChoice //default to 2D coords for same different buttons
+						}//IF Choice
+					}//IF new taskscreen
+				}//FOR s screen overlays
+			}//IF offscreenAvailable, pre-render next frame
 			window.requestAnimationFrame(updateCanvas);
-		}//IF more frames
+		}//IF frames left to show
 		else{
 			resolveFunc(CURRTRIAL.tsequenceactual);
 		}//ELSE all frames shown
-	}
-	//requestAnimationFrame advantages: goes on next screen refresh and syncs to browsers refresh rate on separate clock (not js clock)
-	window.requestAnimationFrame(updateCanvas); // kick off async work
+	}//FUNCTION updateCanvas
+
+	window.requestAnimationFrame(updateCanvas); // kick off async work, requestAnimationFrame: goes on next screen refresh and syncs to browser's refresh rate on separate clock (not js clock)
 	return p
 }//FUNCTION displayTrial
 
-function renderScreen(screenType,canvasobj){
+
+async function renderImage2D(im,sc,ob,id,fr,gr,canvasobj){
+	var sz = chooseArrayElement(IMAGES[sc][ob].IMAGES.sizeInches,id,0)
+	var wdpixels = 	sz*ENV.ViewportPPI/ENV.CanvasRatio
+	var htpixels = 	wdpixels*im.height/im.width
+	var context=canvasobj.getContext('2d');
+	var xleft=NaN;
+	var ytop=NaN;
+	var xbound=[];
+	var ybound=[];
+	xleft = Math.round(ENV.XGridCenter[gr]/ENV.CanvasRatio - 0.5*wdpixels);
+	ytop = Math.round(ENV.YGridCenter[gr]/ENV.CanvasRatio - 0.5*htpixels);
+	
+	context.drawImage(im,xleft,ytop,wdpixels,htpixels);
+
+	// Bounding boxes of images on canvas
+	xbound=[xleft*ENV.CanvasRatio, (xleft+wdpixels)*ENV.CanvasRatio];
+	ybound=[ytop*ENV.CanvasRatio, (ytop+htpixels)*ENV.CanvasRatio];
+
+	xbound[0]=xbound[0]+CANVAS.offsetleft;
+	xbound[1]=xbound[1]+CANVAS.offsetleft;
+	ybound[0]=ybound[0]+CANVAS.offsettop;
+	ybound[1]=ybound[1]+CANVAS.offsettop;
+
+	return [xbound, ybound]
+}//FUNCTION renderImage2D
+//XX hidetestdistractors needs to go somewhere
+
+async function renderShape2D(sc,gr,canvasobj){
+	//0: Blank out screen
 	if (FLAGS.savedata == 0){
-		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter, 
+		renderBlankWithGridMarkers(
+			ENV.XGridCenter,ENV.YGridCenter, 
 			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, TASK.ChoiceGridIndex,
-			ENV.FixationScale, ENV.SampleScale, ENV.SampleFixationScale, ENV.TestScale, ENV.ChoiceScale,
-			ENV.ImageWidthPixels, ENV.CanvasRatio,canvasobj);
-	}
+			ENV.FixationRadius,
+			// IMAGES["Sample"][0].IMAGES.sizeInches[0]*ENV.ViewportPPI/(ENV.CanvasRatio), 
+			ENV.SampleFixationRadius, 
+			// IMAGES["Test"][0].IMAGES.sizeInches[0]*ENV.ViewportPPI/(ENV.CanvasRatio), 
+			ENV.ChoiceRadius,
+			ENV.CanvasRatio,canvasobj);
+	}//IF !savedata
 	else if (FLAGS.savedata == 1){
 		renderBlank(canvasobj,TASK.BackgroundColor2D)
-	}
-	switch (screenType) {
-	case 'blank':
+	}//ELSEIF savingdata
+
+	//1: Plot shape
+	switch (sc) {
+	case 'Blank':
 		renderBlank(canvasobj,TASK.BackgroundColor2D)
 		break
-	case 'blankWithGridMarkers':
-		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter, 
-			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, TASK.ChoiceGridIndex,
-			ENV.FixationScale, ENV.SampleScale, ENV.SampleFixationScale, ENV.TestScale, ENV.ChoiceScale,
-			ENV.ImageWidthPixels, ENV.CanvasRatio,canvasobj);
+	case 'Touchfix':
+		if (TASK.SameDifferent <= 0){
+			bufferFixationUsingDot(ENV.FixationColor,gr,ENV.FixationRadius,canvasobj);
+		}//IF !same-different
+		else if (TASK.SameDifferent > 0){
+			bufferFixationUsingTriangle(ENV.ChoiceColor,gr,ENV.FixationRadius,canvasobj);
+		}//IF same-different
 		break
-	case 'touchfix':
-		if(TASK.FixationUsesSample != 1){
-			if (TASK.TestON <= 0){
-				bufferFixationUsingDot(ENV.FixationColor, CURRTRIAL.fixationgridindex,
-									ENV.FixationRadius, canvasobj);
-			}
-			else if (TASK.TestON > 0){
-				bufferFixationUsingTriangle(ENV.ChoiceColor, CURRTRIAL.fixationgridindex,
-									ENV.FixationRadius, canvasobj);
-			}
-		}
-		else {
-			bufferFixationUsingImage(CURRTRIAL.sampleimage, CURRTRIAL.fixationgridindex,
-									ENV.SampleScale, canvasobj)	
-		}
+	case 'Choice':
+		bufferChoiceUsingCircleSquare(ENV.ChoiceColor,ENV.ChoiceRadius,gr,canvasobj);
 		break
-	case 'sample':
-		if (Array.isArray(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[frame.current]])){
-			bufferSampleImage(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[frame.current]][CURRTRIAL.sequencesampleframe[frame.current]], TASK.SampleGridIndex,canvasobj);
-		} else {
-			bufferSampleImage(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[frame.current]], TASK.SampleGridIndex,canvasobj);
-		}
-		break
-	case 'test':
-	    if (Array.isArray(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[frame.current-1]])){
-	    	bufferTestImages(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[CURRTRIAL.sequencesampleclip.length-1]][CURRTRIAL.sequencesampleframe[frame.current-2]],
-						TASK.SampleGridIndex, 
-						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem, 
-						canvasobj);
-	    } else{
-		bufferTestImages(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[CURRTRIAL.sequencesampleclip.length-1]],
-						TASK.SampleGridIndex, 
-						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem, 
-						canvasobj);
-	    }
-		break
-	case 'choice':
-		bufferChoiceUsingDot(CURRTRIAL.sampleimage[CURRTRIAL.sequencesampleclip[CURRTRIAL.sequencesampleclip.length-1]],
-						TASK.SampleGridIndex, 
-						CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem, 
-						ENV.ChoiceColor,ENV.ChoiceRadius,TASK.ChoiceGridIndex,
-						canvasobj);
-		break
-	case 'reward':
+	case 'Reward':
 		renderReward(canvasobj)
 		break
-	case 'punish':
+	case 'Punish':
 		renderPunish(canvasobj)
 		break
 	default:
-	}
-}//FUNCTION renderScreen
+	}//SWITCH taskscreen
+}//FUNCTION renderShape2D
 
-
-//========== BUFFER SAMPLE CANVAS ==========//
-async function bufferSampleImage(sample_image, sample_image_grid_index,canvasobj){
-	var context=canvasobj.getContext('2d'); 
-	if (typeof(sample_image) !="undefined"){
-	await renderImageOnCanvas(sample_image, sample_image_grid_index, ENV.SampleScale, canvasobj)
-	}
-}
-
-//========== BUFFER TEST CANVAS ==========//
-async function bufferTestImages(sample_image, sample_image_grid_index, test_images, test_image_grid_indices, correct_index,canvasobj){
-	// Option: draw sample (TODO: remove the blink between sample screen and test screen)
-	if (TASK.KeepSampleON==1 && typeof(sample_image) !="undefined"){
-		await renderImageOnCanvas(sample_image, sample_image_grid_index, ENV.SampleScale, canvasobj)
-	}
-
-	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)	
-	boundingBoxesChoice['x'] = []
-	boundingBoxesChoice['y'] = []
-
-	if (typeof(test_images) !="undefined"){
-		// Draw test object(s): 
-		for (i = 0; i<test_images.length; i++){
-			if (typeof(test_images[i])!="undefined"){
-			// If HideTestDistractors, simply do not draw the image
-			if(TASK.HideTestDistractors == 1){
-				if (correct_index != i){
-					boundingBoxesChoice.x.push([NaN, NaN]); 
-					boundingBoxesChoice.y.push([NaN, NaN]); 
-					continue 
-				}
-			}		
-
-			funcreturn = await renderImageOnCanvas(test_images[i], test_image_grid_indices[i], ENV.TestScale, canvasobj); 
-			boundingBoxesChoice.x.push(funcreturn[0]); 
-			boundingBoxesChoice.y.push(funcreturn[1]); 
-			}
-		}//FOR i test images
-	}//IF
-}//ASYNC FUNCTION BUFFERTESTIMAGES
 
 //========== BUFFER CHOICE CANVAS ==========//
-async function bufferChoiceUsingDot(sample_image, sample_image_grid_index, test_images, test_image_grid_indices, correct_index, choice_color, choice_radius, choice_grid_indices, canvasobj){
+async function bufferChoiceUsingCircleSquare(choice_color,choice_radius,choice_grid_indices,canvasobj){
 	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)	
-	boundingBoxesChoice['x'] = []
-	boundingBoxesChoice['y'] = []
+	boundingBoxesChoice={x: [], y: []}
 	// Draw test object(s): 
 	for (i = 0; i<choice_grid_indices.length; i++){
 		// If HideTestDistractors, simply do not draw the image
@@ -651,16 +583,10 @@ async function bufferChoiceUsingDot(sample_image, sample_image_grid_index, test_
 		} //different = square
 		boundingBoxesChoice.x.push(funcreturn[0]); 
 		boundingBoxesChoice.y.push(funcreturn[1]); 
+		console.log(i + boundingBoxesChoice.x)
 	} //FOR i choices
-
-	// Option: draw sample (TODO: remove the blink between sample screen and test screen)
-	if (TASK.KeepSampleON==1 && typeof(sample_image) !="undefined"){
-		await renderImageOnCanvas(sample_image, sample_image_grid_index, ENV.SampleScale, canvasobj)
-	}
-	if (TASK.KeepTestON==1&& typeof(test_images[0]) !="undefined"){ //should only be one test image
-		await renderImageOnCanvas(test_images[0], test_image_grid_indices[0], ENV.TestScale, canvasobj);
-	}
-} //FUNCTION bufferChoiceUsingDot
+	console.log(boundingBoxesChoice)
+} //FUNCTION bufferChoiceUsingCircleSquare
 
 // Dot render using gridindex
 async function renderDotOnCanvas(color, gridindex, dot_pixelradius, canvasobj){
@@ -765,41 +691,6 @@ async function renderTriangleOnCanvas(color, gridindex, square_pixelwidth, canva
 }//FUNCTION renderTriangleOnCanvas
 
 
-async function renderImageOnCanvas(image, grid_index, scale, canvasobj){
-	var context=canvasobj.getContext('2d');
-
-	var xleft=NaN;
-	var ytop=NaN;
-	var xbound=[];
-	var ybound=[];
-
-	wd = image.width
-	ht = image.height
-	xleft = Math.round(ENV.XGridCenter[grid_index]/ENV.CanvasRatio - 0.5*wd*scale);
-	ytop = Math.round(ENV.YGridCenter[grid_index]/ENV.CanvasRatio - 0.5*ht*scale);
-	
-	context.drawImage(
-		image, // Image element
-		xleft, // dx: Canvas x-coordinate of image's top-left corner. 
-		ytop, // dy: Canvas y-coordinate of  image's top-left corner. 
-		image.width*scale, // dwidth. width of drawn image. 
-		image.height*scale); // dheight. height of drawn image.
-
-	// For drawing cropped regions of an image in the canvas, see alternate input argument structures,
-	// See: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
-	
-	// Bounding boxes of images on canvas
-	xbound=[xleft*ENV.CanvasRatio, (xleft+wd*scale)*ENV.CanvasRatio];
-	ybound=[ytop*ENV.CanvasRatio, (ytop+ht*scale)*ENV.CanvasRatio];
-
-	xbound[0]=xbound[0]+CANVAS.offsetleft;
-	xbound[1]=xbound[1]+CANVAS.offsetleft;
-	ybound[0]=ybound[0]+CANVAS.offsettop;
-	ybound[1]=ybound[1]+CANVAS.offsettop;
-
-	return [xbound, ybound]
-}//FUNCTION renderImageOnCanvas
-
 function renderBlank(canvasobj,bkgdcolor){
 	var context=canvasobj.getContext('2d');
 	context.fillStyle=bkgdcolor;
@@ -807,14 +698,14 @@ function renderBlank(canvasobj,bkgdcolor){
 	// context.clearRect(0,0,canvasobj.width,canvasobj.height);
 }//FUNCTION renderBlank
 
-function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,choicegridindex,fixationscale,samplescale,samplefixationscale,testscale,choicescale,imwidth,canvasratio,canvasobj)
+function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,choicegridindex,
+				fixationradius,samplefixationradius,choiceradius,canvasratio,canvasobj)
 {
 	var outofbounds_str = ''
 	var context=canvasobj.getContext('2d');
 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 
-	//Show image positions & display grid
-	//Display grid
+	//Display grid (red)
 	for (var i = 0; i <= gridx.length-1; i++){
 		rad = 10
 		context.beginPath()
@@ -830,12 +721,12 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 		displayGridCoordinate(i,[gridx[i],gridy[i]],canvasobj)
 	}
 
-	//Fixation Image Bounding Box
-	var wd = imwidth*fixationscale
+	//Fixation Image Bounding Box (white)
+	var wd = 2*fixationradius/ENV.CanvasRatio
 	var xcent = gridx[fixationgridindex]/ENV.CanvasRatio
 	var ycent = gridy[fixationgridindex]/ENV.CanvasRatio
 	context.strokeStyle="white"
-	context.strokeRect(xcent-wd/2,ycent-wd/2,wd+1,wd+1)
+	context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
 
 	var displaycoord = [(xcent-wd/2)*ENV.CanvasRatio,(ycent-wd/2)*ENV.CanvasRatio,
 						(xcent+wd/2)*ENV.CanvasRatio,(ycent+wd/2)*ENV.CanvasRatio]
@@ -843,26 +734,10 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 	if (outofbounds == 1){
 		outofbounds_str = outofbounds_str + "<br>" + "Fixation dot is out of bounds"
 	}
-	displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
+	displayPhysicalSize(displaycoord,canvasobj)
 
-	
-	//Sample Image Bounding Box
-	var wd = imwidth*samplescale
-	var xcent = gridx[samplegridindex]/ENV.CanvasRatio
-	var ycent = gridy[samplegridindex]/ENV.CanvasRatio
-	context.strokeStyle="green"
-	context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
-
-	var displaycoord = [(xcent-wd/2)*ENV.CanvasRatio,(ycent-wd/2)*ENV.CanvasRatio,
-						(xcent+wd/2)*ENV.CanvasRatio,(ycent+wd/2)*ENV.CanvasRatio]
-	var outofbounds=checkDisplayBounds(displaycoord)
-	if (outofbounds == 1){
-		outofbounds_str = outofbounds_str + "<br>" + "Sample Image is out of bounds"
-	}
-	displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
-
-	//Sample Fixation Bounding Box
-	var wd = imwidth*samplefixationscale
+	//Sample Fixation Bounding Box (yellow)
+	var wd = 2*samplefixationradius/ENV.CanvasRatio
 	var xcent = gridx[samplegridindex]/ENV.CanvasRatio
 	var ycent = gridy[samplegridindex]/ENV.CanvasRatio
 	context.strokeStyle="yellow"
@@ -874,30 +749,12 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 	if (outofbounds == 1){
 		outofbounds_str = outofbounds_str + "<br>" + "Sample Fixation Window is out of bounds"
 	}
-	displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
+	displayPhysicalSize(displaycoord,canvasobj)
 
-
-	//Test Image Bounding Box(es)
-	for (var i = 0; i <= testgridindex.length-1; i++){
-		var wd = imwidth*testscale
-		var xcent = gridx[testgridindex[i]]/ENV.CanvasRatio
-		var ycent = gridy[testgridindex[i]]/ENV.CanvasRatio
-		context.strokeStyle="black"
-		context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
-
-		var displaycoord = [(xcent-wd/2)*ENV.CanvasRatio,(ycent-wd/2)*ENV.CanvasRatio,
-						(xcent+wd/2)*ENV.CanvasRatio,(ycent+wd/2)*ENV.CanvasRatio]
-		var outofbounds=checkDisplayBounds(displaycoord)
-		if (outofbounds == 1){
-			outofbounds_str = outofbounds_str + "<br>" + "Test Image" + i + " is out of bounds"
-		}
-		displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
-	}
-
-	//Choice Image Bounding Box(es)
-	if (TASK.TestON > 0){
+	//Choice Image Bounding Box(es) (red)
+	if (TASK.SameDifferent > 0){
 		for (var i = 0; i <= choicegridindex.length-1; i++){
-			var wd = imwidth*choicescale
+			var wd = 2*choiceradius/ENV.CanvasRatio
 			var xcent = gridx[choicegridindex[i]]/ENV.CanvasRatio
 			var ycent = gridy[choicegridindex[i]]/ENV.CanvasRatio
 			context.strokeStyle="red"
@@ -909,11 +766,11 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 			if (outofbounds == 1){
 				outofbounds_str = outofbounds_str + "<br>" + "Choice Image" + i + " is out of bounds"
 			}
-			displayPhysicalSize(TASK.Tablet,displaycoord,canvasobj)
+			displayPhysicalSize(displaycoord,canvasobj)
 		}
-	} //IF testON (same-different choice screen)
+	} //IF same-different choice screen
 
-	if (FLAGS.scene3d == 1 && (VISIBLECANVASWEBGL.width > 4096 || VISIBLECANVASWEBGL.height > 4096) ){
+	if (VISIBLECANVASWEBGL.width > 4096 || VISIBLECANVASWEBGL.height > 4096){
 		outofbounds_str = outofbounds_str + "Canvas may be too large for webgl limit of 4096 pixels in either dimension -- 3d rendering may not be accurate! Consider using a smaller display size."
 	}
 
@@ -939,7 +796,7 @@ function renderPunish(canvasobj){
 					ycanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,400/ENV.CanvasRatio,400/ENV.CanvasRatio);
 }//FUNCTION renderPunish
 
-async function bufferFixationUsingImage(image, gridindex, scale, canvasobj){
+async function bufferFixationUsingImage(image, gridindex, sample_wdpixels, sample_htpixels, canvasobj){
 // 	var context=canvasobj.getContext('2d');
 // 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 
@@ -947,7 +804,7 @@ async function bufferFixationUsingImage(image, gridindex, scale, canvasobj){
 	boundingBoxesFixation['y']=[]
 	
 	if (typeof(image)!= "undefined"){
-	funcreturn = await renderImageOnCanvas(image, gridindex, scale, canvasobj); 
+	funcreturn = await renderImageOnCanvas(image, gridindex, sample_wdpixels, sample_htpixels, canvasobj); 
 	boundingBoxesFixation.x.push(funcreturn[0]);
 	boundingBoxesFixation.y.push(funcreturn[1]);
 	}
@@ -995,8 +852,8 @@ function updateImageLoadingAndDisplayText(str){
 	//DISPLAY TIMING: Software check for frame drops
 	var dt = []
 	var u_dt = 0
-	for (var i=0; i<=CURRTRIAL.tsequenceactual.length-1; i++){
-		dt[i] = CURRTRIAL.tsequenceactual[i] - CURRTRIAL.tsequencedesired[i]
+	for (var i=0; i<=CURRTRIAL.tsequenceactualclip.length-1; i++){
+		dt[i] = CURRTRIAL.tsequenceactualclip[i] - CURRTRIAL.tsequencedesiredclip[i]
 		u_dt = u_dt + Math.abs(dt[i])
 	}
 	u_dt = u_dt/dt.length
@@ -1005,13 +862,15 @@ function updateImageLoadingAndDisplayText(str){
 	str
 	+ imageloadingtimestr
 	+ "<br>" + displayoutofboundsstr 
-	+ "<br>" + 0.1*Math.round(10*ENV.FrameRateDisplay) + "Hz (" + 0.1*Math.round(10000/ENV.FrameRateDisplay) + 'ms) display' 
+	+ "<br>" + 0.01*Math.round(100*ENV.FrameRateDisplay) + "Hz "
+	+ " (" + 0.1*Math.round(10000/ENV.FrameRateDisplay) + 'ms res) display' 
+	+ " --- " + 0.01*Math.round(100*ENV.FrameRateMovie) + "Hz scene update" 
 	+ "<br>" + "<font color=red> mean(t_actual - t_desired) = " + Math.round(u_dt) + " ms"
 	+ "  (min=" + Math.round(Math.min(... dt)) + ", max=" + Math.round(Math.max(... dt)) + ") </font>"
 	+ "<br>" + eyedataratestr
 }
 
-function displayPhysicalSize(tabletname,displayobject_coord,canvasobj){
+function displayPhysicalSize(displayobject_coord,canvasobj){
 	var visible_ctxt = canvasobj.getContext('2d');
 	visible_ctxt.textBaseline = "hanging";
 	visible_ctxt.fillStyle = "white";
@@ -1134,27 +993,25 @@ function estimatefps(){
 	return p
 }//estimatefps
 
-function appendTest(){
+function appendTest(teston){
 	var t0 = CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
-	if (TASK.SampleOFF>0){
-		t0 = t0+TASK.SampleOFF
-	}//blank duration after image
-	if (TASK.TestON <= 0){
+	if (TASK.SameDifferent <= 0){
 		var seq=["test"]
 		var tseq=[t0]; 
 	}//IF SR or MTS, show test
-	else if (TASK.TestON > 0){
+	else
+		if (TASK.SameDifferent > 0){
 		if (TASK.TestOFF > 0){
 			var seq=["test","blank","choice"]
 			var tseq=[	t0,
-						t0+TASK.TestON,
-						t0+TASK.TestON+TASK.TestOFF
+						t0+teston,
+						t0+teston+TASK.TestOFF
 					];
 		}//ELSEIF TestOFF
 		else if (TASK.TestOFF <= 0){
 			var seq=["test","choice"]
 			var tseq=[	t0,
-						t0+TASK.TestON
+						t0+teston
 					];
 		}//ELSEIF no TestOFF
 	}//IF SD, show test & choice

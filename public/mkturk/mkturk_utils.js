@@ -530,6 +530,7 @@ function getLongestArray(x){
   } //if not an enumerable object
   else{
     for (keys in x){
+      if (keys !="meshapplevertexind"){
       if (Array.isArray(x[keys])){
         var n_new = x[keys].length
       } //IF array
@@ -543,8 +544,10 @@ function getLongestArray(x){
       if (n_new > n){
         n = n_new
       } //IF
+      }
       
     } //FOR keys
+
   } //IF object
   return n
 } //FUNCTION getLongestArray
