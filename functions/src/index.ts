@@ -1,7 +1,9 @@
 import * as functions from 'firebase-functions';
 import {BigQuery} from '@google-cloud/bigquery';
 import * as DeviceDetector from 'device-detector-js';
+import * as admin from 'firebase-admin';
 
+admin.initializeApp();
 // // Start writing Firebase Functions
 // // https://firebase.google.com/docs/functions/typescript
 //
@@ -202,4 +204,15 @@ export const detectDevice = functions.https.onCall((userAgent: any) => {
       reject(e);
     }
   });
+});
+
+export const isLabMember = functions.https.onCall((idToken: string) => {
+
+  return admin.auth().verifyIdToken(idToken).then((decodedToken) => {
+    console.log('isLabMember?', decodedToken.labMember);
+    return decodedToken.labMember;
+  }).catch(e => {
+    console.error('Error decoding idToken', e);
+  });
+
 });

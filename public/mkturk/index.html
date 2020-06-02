@@ -850,13 +850,14 @@ while(true){
 
 			for (var m=0; m<=meshes.length-1; m++){
 				var meshlabel = mesh_inds[m][0]
-				OBJECTS[taskscreen][meshlabel] = {"meshes": []}
-			}
-			for (var m=0; m<=meshes.length-1;m++){
-			    var meshlabel = mesh_inds[m][0]
+        OBJECTS[taskscreen][meshlabel] = {"meshes": [] }
+      }//FOR m meshes, initialize corresponding label to empty
+
+      for (var m=0; m<=meshes.length-1; m++){
+        var meshlabel = mesh_inds[m][0]
 				var meshname = mesh_inds[m][1]
 				OBJECTS[taskscreen][meshlabel].meshes[meshname] = meshes[m]
-			} //FOR m meshes
+			}//FOR m meshes, store in corresponding label
 		}//FOR taskscreen
 		//============ (END) 1: LOAD MESHES FOR SCENES ============//
 

@@ -26,7 +26,8 @@
     "@types/google.visualization": "0.0.51",
     "@types/jsoneditor": "^5.28.2",
     "@types/tabulator-tables": "^4.5.2",
-    "firebase": "^7.10.0",
+    "firebase": "^7.14.1",
+    "firebase-admin": "^8.11.0",
     "jsoneditor": "^8.6.1",
     "tabulator-tables": "^4.5.3"
   }

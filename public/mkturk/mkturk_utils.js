@@ -530,24 +530,22 @@ function getLongestArray(x){
   } //if not an enumerable object
   else{
     for (keys in x){
-      if (keys !="meshapplevertexind"){
-      if (Array.isArray(x[keys])){
-        var n_new = x[keys].length
-      } //IF array
-      else if (typeof(x[keys]) == 'object') {
-        var n_new = getLongestArray(x[keys])
-      } //ELSE !array
-      else {
-        var n_new = 0
-      }
+      if (keys !="basevertexind"){
+        if (Array.isArray(x[keys])){
+          var n_new = x[keys].length
+        } //IF array
+        else if (typeof(x[keys]) == 'object') {
+          var n_new = getLongestArray(x[keys])
+        } //ELSE !array
+        else {
+          var n_new = 0
+        }
 
-      if (n_new > n){
-        n = n_new
-      } //IF
-      }
-      
+        if (n_new > n){
+          n = n_new
+        } //IF
+      }//IF array of raw vertexinds     
     } //FOR keys
-
   } //IF object
   return n
 } //FUNCTION getLongestArray

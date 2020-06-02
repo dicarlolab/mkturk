@@ -254,7 +254,6 @@ async function loadDatafromFirebase(textfile_path){
 	response = await fetch(url)
 	var datajson = await response.json()
 
-
     if (Array.isArray(datajson)) {
         file.data = {};
         for (var elem = 0; elem < datajson.length; elem++) {
@@ -262,9 +261,20 @@ async function loadDatafromFirebase(textfile_path){
                 file.data[prop] = datajson[elem][prop]
             } //for property
         } //for array elements
-    } else {
-        file.data = datajson
-    } //if data array
+
+        //Remove array nesting
+        file.data.FixationXYT = removeNesting(file.data.FixationXYT)
+        file.data.ResponseXYT = removeNesting(file.data.ResponseXYT)
+        file.data.Test = removeNesting(file.data.Test)
+    }//IF old array format
+    else {
+        file.data = {}
+        for (p in datajson){
+            for (q in datajson[p]){
+                file.data[q] = datajson[p][q]
+            }//for q properties
+        }//for p param objects
+    }//ELSE new object format
 
     var filemeta = await storage.ref().child(textfile_path).getMetadata()
     console.log("success: loaded file size " + filemeta.size/1000 + ' kb');
@@ -380,93 +390,77 @@ function initializeChartData() {
 }
 
 // Synchronous
-function toTask() {
-    task.rewardstage = 1;
-    if (typeof (file.data.RewardStage) != "undefined") {
-        task.rewardstage = file.data.RewardStage;
-    }
-    task.varsample = 3;
-    if (typeof (file.data.UsePrototypeforSample) != "undefined") {
-        if (file.data.UsePrototypeforSample == true) {
-            task.imagefoldersample = 0;
-        }
-    }
-    if (typeof (file.data.ImageFolderSample) != "undefined") {
-        task.imagefoldersample = file.data.ImageFolderSample;
-    }
-    if (typeof (file.data.ImageFolderTest) != "undefined") {
-        task.imagefoldertest = file.data.ImageFolderTest;
-    }
-
-    task.sampleon = file.data.SampleON;
-    task.sampleoff = file.data.SampleOFF
-    if (typeof (file.data.KeepSampleON) != "undefined") {
-        if (file.data.KeepSampleON == 1) {
-            task.sampleoff = -1;
-            //Sample left on
-        }
-    }
-
-    task.distractor = file.data.HideTestDistractors
-    task.nobj = file.data.ImageBagsTest.length;
-    task.objectlist = file.data.ImageBagsTest
-
-    task.rewardper1000 = 0;
-    if (typeof (file.data.RewardPer1000Trials) != "undefined") {
-        task.rewardper1000 = Math.round(file.data.RewardPer1000Trials);
-    }
-}
-
-// Synchronous
 function toVitals() {
     vitals.subject = file.data.Subject;
     vitals.trials = file.data.Response.length;
     vitals.time = Math.round(Math.round(file.data.StartTime[vitals.trials - 1] - file.data.StartTime[0]) / 60000);
     //convert msec to minutes
-    if (typeof (file.data.RFIDTag) != "undefined") {
+
+    //RFID
+    if (typeof(file.data.RFIDTag) != "undefined" && typeof(file.data.RFIDTime) != "undefined"){
         vitals.RFIDtag = file.data.RFIDTag[file.data.RFIDTag.length - 1];
         vitals.RFIDtime = Math.round(Math.round(file.data.RFIDTime[file.data.RFIDTime.length - 1] - file.data.StartTime[0]) / 60000);
         //convert millisecond to minutes
-    } else {
+    }//IF old data format
+    else if (typeof(file.data.RFIDTag) != "undefined" && Array.isArray(file.data.RFIDTag)){
+        vitals.RFIDtag = file.data.RFIDTag[file.data.RFIDTag.length - 1][2];
+        vitals.RFIDtime = Math.round(Math.round(file.data.RFIDTag[file.data.RFIDTag.length - 1][1] - file.data.StartTime[0]) / 60000);
+        //convert millisecond to minutes
+    }//ELSEIF new data format
+    else {
         vitals.RFIDtag = null
         vitals.RFIDtime = null
     }
 
-    if (typeof (file.data.Weight) != "undefined" && file.data.Weight.length>1 && typeof(file.data.WeightTime!="undefined")) {
+    //WEIGHT
+    if (typeof(file.data.Weight) != "undefined" && file.data.Weight.length>1 && typeof(file.data.WeightTime!="undefined")) {
         vitals.MaxWeight = file.data.Weight.reduce(function(a, b) {
             return Math.max(a, b);
         });
-        
         vitals.LastWeightTime = Math.round(Math.round(file.data.WeightTime[file.data.WeightTime.length - 1] - file.data.StartTime[0]) / 60000);
         //convert millisecond to minutes
-    } else {
+    }//IF old data format
+    else if (typeof(file.data.Weight) != "undefined" && Array.isArray(file.data.Weight) && file.data.Weight.length > 0){
+        vitals.MaxWeight = file.data.Weight.reduce(function(a, b) {
+            return Math.max(a[2], b[2]);
+        });        
+        vitals.LastWeightTime = Math.round(Math.round(file.data.Weight[file.data.Weight.length - 1][1] - file.data.StartTime[0]) / 60000);
+        //convert millisecond to minutes
+    }//ELSEIF new data format
+    else {
         vitals.MaxWeight = null
         vitals.LastWeightTime = null
     }
 
     vitals["automator"]
-    if (typeof (file.data.Automator) != "undefined") {
+    if (typeof(file.data.Automator) != "undefined") {
         vitals.automator = file.data.Automator
     } else {
         vitals.automator = null
     }
 
-    if (typeof (file.data.CurrentAutomatorStage) != "undefined") {
+    if (typeof(file.data.CurrentAutomatorStage) != "undefined") {
         vitals.currentautomatorstage = file.data.CurrentAutomatorStage
     } else {
         vitals.currentautomatorstage = null
     }
 
-    if (typeof (file.data.CurrentAutomatorStageName) != "undefined") {
+    if (typeof(file.data.CurrentAutomatorStageName) != "undefined") {
         vitals.currentautomatorstagename = file.data.CurrentAutomatorStageName
     } else {
         vitals.currentautomatorstagename = null
     }
 
-    if (typeof (file.data.BatteryLDT) != "undefined" && file.data.BatteryLDT.length != 0) {
+    //BATTERY
+    if (typeof(file.data.BatteryLDT) != "undefined" && file.data.BatteryLDT.length != 0) {
         vitals.batteryleft = Math.round(file.data.BatteryLDT[file.data.BatteryLDT.length - 1][0] * 100);
         vitals.batteryused = Math.round(file.data.BatteryLDT[0][0] * 100 - vitals.batteryleft);
-    } else {
+    }//IF old data format
+    else if (typeof(file.data.Battery) != "undefined" && Array.isArray(file.data.Battery) && file.data.Battery.length > 0){
+        vitals.batteryleft = Math.round(file.data.Battery[file.data.Battery.length - 1][2] * 100);
+        vitals.batteryused = Math.round(file.data.Battery[0][2] * 100 - vitals.batteryleft);
+    }//IF old data format    
+    else {
         vitals.batteryleft = null;
         vitals.batteryused = null;
     }
@@ -480,14 +474,14 @@ function toVitals() {
     vitals.ncorrect = ncorrect; 
     vitals.pctcorrect = Math.round(100 * ncorrect / file.data.Response.length);
 
-    if (typeof (file.data.NReward) != "undefined") {
+    if (typeof(file.data.NReward) != "undefined") {
         vitals.nrewards = file.data.NReward.reduce(function(a, b) {
             return a + b;
         }, 0);
     }
 
     vitals.rewardestimate = 0;
-    if (typeof (file.data.RewardPer1000Trials) != "undefined") {
+    if (typeof(file.data.RewardPer1000Trials) != "undefined") {
         vitals.rewardestimate = Math.round(file.data.RewardPer1000Trials * vitals.nrewards / 1000);
     }
 }
@@ -534,10 +528,14 @@ function toPerformanceData() {
 
     // Store fixation in odd indices and choice in even
     // All touchevents. touchevent has a length that is twice the length of file.data.FixationXYT or file.data.ResponseXYT 
-    if (typeof file.data.ResponseXYT != "undefined" && file.data.ResponseXYT.length >= 1) {
-        for (var i = 0; i <= file.data.FixationXYT.length * 2 - 1; i += 2) {
-            touchevent[i] = file.data.FixationXYT[i / 2]
-            touchevent[i + 1] = file.data.ResponseXYT[i / 2]
+    if (typeof file.data.ResponseXYT != "undefined" && file.data.ResponseXYT[0].length >= 1) {
+        for (var i = 0; i <= file.data.FixationXYT[0].length * 2 - 1; i += 2) {
+            touchevent[i]=[]
+            touchevent[i+1]=[]
+            touchevent[i][0] = file.data.FixationXYT[0][i / 2]
+            touchevent[i + 1][0] = file.data.ResponseXYT[0][i / 2]
+            touchevent[i][1] = file.data.FixationXYT[1][i / 2]
+            touchevent[i + 1][1] = file.data.ResponseXYT[1][i / 2]
         }
     }
 
@@ -791,16 +789,16 @@ function toPerformanceData() {
     
 //Referencing to time file was last written & time of last trial rather than to file start.
     //Done because file can be changed on the fly which changes file start relative to performance.now()
-    if (typeof file.data.ResponseXYT === 'undefined' || file.data.ResponseXYT.length < 1 || typeof file.data.ResponseXYT[file.data.ResponseXYT.length - 1][2] === 'undefined') {
-        var tend = file.data.FixationXYT[file.data.FixationXYT.length - 1][2]
+    if (typeof file.data.ResponseXYT === 'undefined' || file.data.ResponseXYT.length < 1 || typeof file.data.ResponseXYT[2][file.data.ResponseXYT[2].length - 1] === 'undefined') {
+        var tend = file.data.FixationXYT[2][file.data.FixationXYT[2].length - 1]
     } else {
-        var tend = file.data.ResponseXYT[file.data.ResponseXYT.length - 1][2]
+        var tend = file.data.ResponseXYT[2][file.data.ResponseXYT[2].length - 1]
     }
 
     
     for (var i = 0; i <= ydata.length - 1; i++){
         dataPerformance.addRows([[xdata[i], ydata_5[i],ydata_100[i]]])
-        var tfix = file.data.FixationXYT[i][2]
+        var tfix = file.data.FixationXYT[2][i]
         //in milliseconds
         var t = new Date(file.dateSaved)
         t.setTime(t.getTime() - (tend - tfix))
@@ -876,7 +874,7 @@ function toObjPerfData(){
         var NdiffObj = Array.apply(null, Array(sampleobj_length)).map(Number.prototype.valueOf, 0);
         for (var i = 0; i <= file.data.Sample.length - 1; i++) {
             for (var j = 0; j <= sampleobj_length - 1; j++) {
-                if (file.data.Test[i][file.data.CorrectItem[i]] == j){
+                if (file.data.Test[file.data.CorrectItem[i]][i] == j){
                     NdiffObj[j]++
                     if (file.data.Response[i] == file.data.CorrectItem[i]){
                         NdiffObjPerf[j]++
@@ -1021,7 +1019,6 @@ function toRewardData() {
 // Synchronous
 function updatePlots() {
     toVitals();
-    toTask();
     toPerformanceData();
     toWeightData();
     toObjPerfData();
@@ -1045,10 +1042,12 @@ function updatePlots() {
 
 // Synchronous
 function addVitalsText() {
-    lineOptions.title = vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.ncorrect + " out of " + vitals.trials + ", r=" + vitals.nrewards + "=" + vitals.rewardestimate + "mL, " + 
-    vitals.time + "min)     " + "Automator: " + vitals.automator + ", Stage " + vitals.currentautomatorstage + "_" + vitals.currentautomatorstagename + "     " + 
-    "Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  " + "Last Trial:" + file.dateSaved.toLocaleTimeString('en-US') + 
-    "\n RFID_Tag:" + vitals.RFIDtag + ", RFID_Time:" + vitals.RFIDtime + " min," + "Max Weight: " + vitals.MaxWeight + " g, Last Weight time:" + vitals.LastWeightTime + " minutes after task start"
+    lineOptions.title =
+    vitals.subject + ": " + vitals.pctcorrect + "% "
+    + "(n=" + vitals.ncorrect + " out of " + vitals.trials + ", r=" + vitals.nrewards + "=" + vitals.rewardestimate + "mL, " + vitals.time + "min)     "
+     + "\n RFID:" + vitals.RFIDtag + " (" + vitals.RFIDtime + " min)"
+     + "\n Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  " 
+     + "\n Last Trial:" + file.dateSaved.toLocaleTimeString('en-US')
     titleobj.innerHTML = vitals.subject;
 }
 
@@ -1064,43 +1063,54 @@ function addTouchSDText(){
 }
 // Synchronous
 function addTaskText() {
-    task["name"] = ""
-    if (task.rewardstage == 0) {
-        task["name"] = "Fixation";
-        var nchoice = 1
-    } 
-    else if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0){
-        task["name"] = "Same-Different"
-        var nchoice = 2
+    var taskname = ""
+    if (file.data.RewardStage == 0)
+    {
+        taskname = "Fixation";
+    }//IF fixation
 
-        if (file.data.HideChoiceDistractors){
-            var nchoice = 1
-        }
-    }
-    else {
-        if (Array.from(new Set(file.data.Sample)).length>1){
-            if (file.data.ObjectGridIndex.length != 0 ){
-                task["name"] = "Stimulus Response"
-                var nchoice = file.data.TestGridIndex.length
-            }else{
-                if (task.distractor==0){
-                    task["name"] = "Match-to-Sample";
-                    var nchoice = file.data.TestGridIndex.length
-                }
-                else{
-                    task["name"] = "No distractor Match-to-Sample"
-                    var nchoice = 1
-                }
-            }
-        }
-        else{
-            task["name"] = "Detection";
-            var nchoice = file.data.TestGridIndex.length
-        }
-    }
+    if (file.data.RewardStage == 1 && 
+        typeof(file.data.NRSVP) != "undefined" && file.data.NRSVP > 0)
+    {
+        taskname = 'RSVP'
+    }//IF RSVP
 
-    tasktextobj.innerHTML = "<b>" + task.name + "</b>:" + " " + task.nobj + "obj " + nchoice + "choice" + "<br>" + "Sample folder " + task.imagefoldersample + ", Test folder " + task.imagefoldertest + "<br>" + "Sample On=" + task.sampleon + " ms" + ", Sample Off=" + task.sampleoff + " ms" + "<br>" + "objs=[" + task.objectlist + "]" + "<br>" + "reward=" + task.rewardper1000 + "mL per 1000 correct trials"
-}
+    if (file.data.RewardStage ==1 && 
+        (typeof(file.data.TestON) == "undefined" || file.data.TestON <= 0) &&
+        file.data.ObjectGridIndex.length == file.data.ImageBagsSample.length)
+    {
+        taskname = "Stimulus-Response"
+    }//IF SR
+    
+    if (file.data.RewardStage == 1 && 
+        (typeof(file.data.TestON) == "undefined" || file.data.TestON <= 0) &&
+        file.data.ObjectGridIndex.length != file.data.ImageBagsSample.length)
+    {
+        taskname = "Match-to-Sample"
+    }//IF M2S
+
+    if (file.data.RewardStage == 1 && 
+        typeof(file.data.TestON) != "undefined" && file.data.TestON > 0)
+    {
+        taskname = "Same-Different"
+    }//IF SD
+
+    tasktextobj.innerHTML = "<b>" + taskname + "</b>:" + " " + file.data.ImageBagsTest.length + "obj " 
+    
+    tasktextobj.innerHTML = tasktextobj.innerHTML
+    + "<br><br>" + "SAMPLE: On=" + file.data.SampleON + "ms" + "  Off=" + file.data.SampleOFF + "ms"
+    + "  Size=" + file.data.SampleSizeInches + "in" 
+    for (i=0; i<=file.data.ImageBagsSample.length-1; i++){
+        tasktextobj.innerHTML = tasktextobj.innerHTML + "<br>" + file.data.ImageBagsSample[i]
+    }//FOR i sample
+
+    tasktextobj.innerHTML = tasktextobj.innerHTML
+    + "<br><br>" + "TEST: On=" + file.data.TestON + "ms" + "  Off=" + file.data.TestOFF + "ms"
+    + "  Size=" + file.data.TestSizeInches + "in"
+    for (i=0; i<=file.data.ImageBagsTest.length-1; i++){
+        tasktextobj.innerHTML = tasktextobj.innerHTML + "<br>" + file.data.ImageBagsTest[i]
+    }//FOR i test
+}//FUNCTION addTaskText
 
 //Synchronous
 function drawLine(){
@@ -1394,17 +1404,6 @@ currentautomatorstagename: "",
 nrewards: 0,
 RFIDtag: "",
 RFIDtime: 0,
-}
-
-var task = {
-rewardstage: 0,
-rewardper1000: 0,
-imagefoldersample: 0,
-imagefoldertest: 0,
-sampleon: 0,
-sampleoff: 0,
-nobj: 0,
-objectlist: [],
 }
 
 var dataPerformance = null; 
