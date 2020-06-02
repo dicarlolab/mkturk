@@ -17,18 +17,19 @@
   },
   "homepage": "https://github.com/issalab/mkturk#readme",
   "devDependencies": {
-    "ts-loader": "^7.0.3",
-    "typescript": "^3.9.0-dev.20200427",
+    "ts-loader": "^7.0.5",
+    "typescript": "^3.9.3",
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
-    "@types/google.visualization": "0.0.52",
+    "@types/google.visualization": "0.0.53",
     "@types/jsoneditor": "^8.6.0",
-    "@types/tabulator-tables": "^4.6.4",
-    "firebase": "^7.14.3",
+    "@types/tabulator-tables": "^4.6.7",
+    "firebase": "^7.14.6",
     "firebase-admin": "^8.12.1",
-    "jsoneditor": "^8.6.6",
-    "tabulator-tables": "^4.6.2"
+    "jsoneditor": "^9.0.0",
+    "package.json": "^2.0.1",
+    "tabulator-tables": "^4.6.3"
   }
 }

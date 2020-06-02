@@ -74,7 +74,7 @@
 															<ul class="style3">
 																<li><a href="#create-project-anc">Create a Firebase Project</a></li>
 																<li><a href="#add-webapp-anc">Add a Webapp</a></li>
-																<li><a href="#firebase-cli-anc">Install Firebase, gsutil & gcloud CLI</a></li>
+																<li><a href="#firebase-cli-anc">Install Firebase CLI & Google Cloud SDK</a></li>
 																<li><a href="#import-template-anc">Import Template Database & Storage</a></li>
 															</ul>
 														</li>
@@ -107,7 +107,7 @@
 
 													<span class="image featured"><img src="images/pic08.jpg" alt="" /></span>
 
-													<h3 id="setup-firebase-anc">1. Setup Firebase</h3>
+													<h3 id="setup-firebase-anc"><u>1. Setup Firebase</u></h3>
 														<p>MKTURK uses <a href="https://firebase.google.com">Google Firebase</a> for database, storage 
 															and backend service needs. Therefore it is imperative that Firebase is setup correctly. 
 															In this section, we will guide you through the steps of setting up Firebase projects,
@@ -115,11 +115,62 @@
 														</p>
 
 														<h4 id="create-project-anc">Create a Firebase Project</h4>
+															<p>Navigate to <a href="https://firebase.google.com>">Firebase</a>, then click 'Add project'.
+																After following the prompt, you will have created a new project. You can enable or disable
+																Google Analytics but for simplicity, you can disable it now and always enable it later.
+															</p>
 														<h4 id="add-webapp-anc">Add a Webapp</h4>
-														<h4 id="firebase-cli-anc">Install Firebase, gsutil & gcloud CLI</h4>
+															<p>
+																Now that you've created a Firebase project, you need to add a Webapp since MKTURK is a
+																web-based software. Click on the Web icon (pointed by the red arrow in the image below)
+																on the Firebase project landing page.
+																<img src="images/firebase-add-webapp.png" alt="Firebase Add Webapp"/>
+																
+																Once you click, you will be guided through another set of configuration prompt. Name your
+																app as 'mkturk' and check the box to set up <b>Firebase Hosting</b>.
+																<img src="images/firebase-add-webapp-prompt.png" alt="Firebase Add Webapp Promp"/>
+															</p>
+														<h4 id="firebase-cli-anc">Install Firebase CLI & Google Cloud SDK</h4>
+															<p>
+																Before continuing to install Firebase CLI, make sure that you have <code>nvm</code>,
+																<code>node</code> and <code>npm</code> installed as you will need a local Node environment
+																on your computer to install and use <b>Firebase</b>, <b>gsutil</b> and <b>gcloud</b> CLIs. 
+																<br /><br />
+																Open up your terminal and run:
+																<br />
+																<code>$ node --version</code>
+																<br /><br />
+																If you have Node, you should get an output such as:
+																<br />
+																<code>v8.16.1</code>
+																<br /><br />
+																If you <b>HAVE</b> Node but <b>NOT</b> v8.x.x, then install the latest Node v8.x.x by running:
+																<br />
+																<code>$ nvm install 8</code>
+																<br /><br />
+																If you don't have Node at all, then use the links below to install <code>nvm</code>.
+																<br />
+																For Windows: <a href="https://github.com/coreybutler/nvm-windows">nvm-windows</a>
+																<br />
+																For MacOS/Linux: <a href="https://github.com/nvm-sh/nvm">nvm</a>
+																<br /><br />
+																Continue <b>ONLY</b> after you have installed Node v8.x.x
+
+																<br /><br />
+																<strong>Installing Firebase CLI</strong>
+																<br />
+																<code>$ npm install -g firebase-tools</code>
+
+																<br /><br />
+																<strong>Installing Google Cloud SDK</strong>
+																<br />
+																Follow this <a href="https://cloud.google.com/storage/docs/gsutil_install">guide</a> from Google.
+
+															</p>
+															
 														<h4 id="import-template-anc">Import Template Database & Storage</h4>
 
-													<h3 id="install-mkturk-anc">2. Setup MKTURK</h3>
+													<h3 id="install-mkturk-anc"><u>2. Setup MKTURK</u></h3>
 														<p>
 															Text about setting up and installing mkturk
 														</p>
@@ -129,7 +180,7 @@
 														<h4 id="build-mkturk-anc">Build MKTURK</h4>
 														<h4 id="deploy-mkturk-anc">Deploy MKTURK</h4>
 
-													<h3 id="run-mkturk-anc">3. Running MKTURK</h3>
+													<h3 id="run-mkturk-anc"><u>3. Running MKTURK</u></h3>
 														<p>
 															Walk through the steps of running mkturk.
 														</p>

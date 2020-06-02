@@ -424,7 +424,7 @@ export class Mkcolony {
             try {
               row[key][key2] = row[key][key2].toDate().toJSON().split('T')[0];
             } catch {
-              // console.log('Not timestamp object');
+              console.log('Not timestamp object');
             }
           }
         }
@@ -433,12 +433,12 @@ export class Mkcolony {
           try {
             row[key] = row[key].toDate().toJSON().split('T')[0];
           } catch {
-            // console.log('Not timestamp object');
+            console.log('Not timestamp object');
           }
         }
       }
     });
-
+  
     return data;
   }
 
@@ -464,8 +464,17 @@ export class Mkcolony {
 
   public processData(data: any[]) {
     data = this.timestampToDate(data);
+    // console.log('data after timestamp conversion', data);
 
     const _processData = (row: any, idx: number, arr: Array<any>) => {
+      // console.log('idx', idx);
+      // if ('dateofdeath' in row) {
+      //   console.log('death in row', arr[idx]);
+      //   arr.splice(idx, 1);
+      //   idx--;
+      //   return;
+      // }
+
       for (let key of Object.keys(row)) {
         if (key == 'albumin_dates') {
           row['recent_albumin_date'] = row['albumin_dates'].slice(-1)[0]; 
@@ -478,13 +487,8 @@ export class Mkcolony {
         }
       }
 
-      if ('dateofdeath' in row) {
-        arr.splice(idx, 1);
-        return;
-      }
-
       try {
-        
+
         let today = new Date();
         let dob = new Date(row.birthdate);
         let yearsDiff = today.getFullYear() - dob.getFullYear();
@@ -508,6 +512,9 @@ export class Mkcolony {
     }
 
     data.forEach(_processData);
+    data = data.filter(row => {
+      return !('dateofdeath' in row);
+    });
     return data;
   }
 
