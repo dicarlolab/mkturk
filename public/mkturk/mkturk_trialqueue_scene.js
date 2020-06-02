@@ -134,32 +134,46 @@ async generate_trials(n_trials){
 		var sample_index = this.selectSampleImage(this.samplebag_block_indices, this.samplingStrategy)
 		var sample_scenebag_label = this.samplebag_labels[sample_index]; 
 		var sample_scenebag_index = this.samplebag_indices[sample_index];
-		var sample_filename = this.samplebag_paths[sample_scenebag_label][IMAGES["Sample"][sample_scenebag_label].IMAGES.imageidx[sample_scenebag_index]] || "";
+
+		var sample_filename = []
+		if (Array.isArray(IMAGES["Sample"][sample_scenebag_label].IMAGES.imageidx[sample_scenebag_index])){
+			for (var j = 0; j<IMAGES["Sample"][sample_scenebag_label].IMAGES.imageidx[sample_scenebag_index].length; j++){
+				sample_filename.push(this.samplebag_paths[sample_scenebag_label][IMAGES["Sample"][sample_scenebag_label].IMAGES.imageidx[sample_scenebag_index][j]] || "")
+			} 
+			image_requests.push(... sample_filename)   
+		}//IF isArray Sample (movie)
+		else {
+		 sample_filename = this.samplebag_paths[sample_scenebag_label][IMAGES["Sample"][sample_scenebag_label].IMAGES.imageidx[sample_scenebag_index]] || "";	
+		 image_requests.push(sample_filename)
+		}//ELSE single image
 
 		this.ntrials_per_bag[sample_scenebag_label] = this.ntrials_per_bag[sample_scenebag_label] + 1
-		
-		image_requests.push(sample_filename)
-		
+				
 		// Select appropriate test images (correct one and distractors) 
 		var funcreturn = this.selectTestImages(sample_scenebag_label, this.testbag_labels) 
 		var test_filenames = []
-		if (TASK.TestON <= 0){
+		if (TASK.SameDifferent <= 0){
 			var test_indices = funcreturn[0]
-			for (var j = 0; j < test_indices.length; j++){
-				var test_scenebag_label = this.testbag_labels[test_indices[j]]; 
-				var test_scenebag_index = this.testbag_indices[test_indices[j]];
-				test_filenames.push(this.testbag_paths[test_scenebag_label][IMAGES["Test"][test_scenebag_label].IMAGES.imageidx[test_scenebag_index]] || "")
-			}			
-		} // m2s or sr2
-		else if (TASK.TestON > 0) {
-			var test_indices = funcreturn[0][0]
-			var test_scenebag_label = this.testbag_labels[test_indices]; 
-			var test_scenebag_index = this.testbag_indices[test_indices]; 
-			test_filenames.push(this.testbag_paths[test_scenebag_label][IMAGES["Test"][test_scenebag_label].IMAGES.imageidx[test_scenebag_index]] || "")
-		} //Same-Different Task = one side of the Match-to-Sample
-		var correctIndex = funcreturn[1]
+		}
+		else if (TASK.SameDifferent > 0){
+			var test_indices = [ funcreturn[0][0] ] //Same-Different Task = one side of the Match-to-Sample
+		}//ELSEIF same-different
+		for (var j = 0; j < test_indices.length; j++){
+			var test_scenebag_label = this.testbag_labels[test_indices[j]]; 
+			var test_scenebag_index = this.testbag_indices[test_indices[j]];
 
-		image_requests.push(... test_filenames)
+			test_filenames[j]=[]
+			if (Array.isArray(IMAGES["Test"][test_scenebag_label].IMAGES.imageidx[test_scenebag_index])){
+				for (var k = 0; k<IMAGES["Test"][test_scenebag_label].IMAGES.imageidx[test_scenebag_index].length; k++){
+					test_filenames[j].push(this.testbag_paths[test_scenebag_label][IMAGES["Test"][test_scenebag_label].IMAGES.imageidx[test_scenebag_index][k]] || "")
+				}//FOR k movie frames
+			}//IF isArray Test (movie)
+			else{
+				test_filenames[j].push(this.testbag_paths[test_scenebag_label][IMAGES["Test"][test_scenebag_label].IMAGES.imageidx[test_scenebag_index]] || "")
+			}//ELSE single image
+			image_requests.push(... test_filenames[j])
+		}//FOR j test items		
+		var correctIndex = funcreturn[1]
 
 		// Add to queue 
 		this.sampleq.index.push(sample_index)
@@ -232,10 +246,19 @@ async get_next_trial(){
 	// Get image from imagebag
 
 	if (typeof(sample_filename) != "undefined"){
-		var sample_image 
-		if (sample_filename != ""){
-			sample_image = await this.IB.get_by_name(sample_filename);
-		}		
+		var sample_image = []
+		if (Array.isArray(sample_filename)){
+			for (var i = 0; i <sample_filename.length;i++){
+				if (sample_filename[i] !=""){
+					sample_image.push(await this.IB.get_by_name(sample_filename[i])); 
+				}
+			}
+		}//IF isArray sample filenames
+		else {
+			if (sample_filename != ""){
+				sample_image = await this.IB.get_by_name(sample_filename);
+		    }		
+		}//ELSE single filename
 	}//IF sample image
 	var sample_reward = -1
 	if (typeof(ImageRewardList[sample_filename]) != "undefined"){
@@ -244,11 +267,23 @@ async get_next_trial(){
 	
 	if (typeof(test_filenames) != "undefined"){
 		var test_images = []
-		for (var i = 0; i < test_filenames.length; i++){
-			if (test_filenames[i] != ""){
-				test_images.push(await this.IB.get_by_name(test_filenames[i]))			
-			}
-		}
+		for (var i = 0; i <= test_filenames.length-1; i++){
+			if (Array.isArray(test_filenames[i])){
+				for (var j = 0; j <= test_filenames[i].length-1;j++){
+					if (i==0){
+						test_images[j] = []
+					}//IF first item in frame
+					if (test_filenames[i][j] !=""){
+						test_images[j].push(await this.IB.get_by_name(test_filenames[i][j])); 
+					}//IF image
+				}//FOR j frames
+			}//IF isArray test filenames
+			else {
+				if (test_filenames[i] != ""){
+					test_images[i].push(await this.IB.get_by_name(test_filenames[i]))			
+				}
+			}//ELSE single image
+		}//FOR i test items
 	}//IF test image
 
 	this.num_in_queue--;
@@ -260,16 +295,22 @@ async get_next_trial(){
 	var test_scenebag_labels = []
 	var test_scenebag_indices = []
 
-	if (TASK.TestON <=0){
+	if (TASK.SameDifferent <= 0){
 	for (var j = 0; j < test_indices.length; j++){
 		test_scenebag_labels[j] = this.testbag_labels[test_indices[j]]; 
 		test_scenebag_indices[j] = this.testbag_indices[test_indices[j]];
 	} //for j test
 	}
-	else if (TASK.TestON >0){
+	else if (TASK.SameDifferent > 0){
 		test_scenebag_labels.push(this.testbag_labels[test_indices])
 		test_scenebag_indices.push(this.testbag_indices[test_indices])
 	}
+
+	//make sample indexing into an array to be consistent with test for display code //XX
+	sample_index = [ sample_index ]
+	sample_scenebag_label = [ sample_scenebag_label ]
+	sample_scenebag_index = [ sample_scenebag_index ]
+
 	return	[sample_image, sample_index, test_images, test_indices, test_correctIndex, sample_scenebag_label, sample_scenebag_index, test_scenebag_labels, test_scenebag_indices, sample_reward]
 // return [sample_image, sample_index]
 } //FUNCTION get_next_trial
@@ -323,7 +364,7 @@ selectTestImages(correct_label, testbag_labels){
 	var correctSelection = NaN;
 
 	// If SR is on, 
-	if ((typeof(TASK.TestON) == "undefined" || TASK.TestON <= 0) &&
+	if ((typeof(TASK.SameDifferent) == "undefined" || TASK.SameDifferent <= 0) &&
 		TASK.ObjectGridIndex.length == TASK.ImageBagsTest.length){
 		// For each object, 
 		for (var i = 0; i<TASK.ObjectGridIndex.length; i++){
@@ -339,6 +380,9 @@ selectTestImages(correct_label, testbag_labels){
 
 			// Determine which location that grid index corresponds to in testIndices: 
 			var order_idx = TASK.TestGridIndex.indexOf(object_grid_index)
+			if (order_idx < 0){
+				console.log("ERROR: Could not find object's grid index in testgridinices, make sure ObjectGridIndex has same indices as TestGridIndex in parameter file.")
+			}
 
 			// Place the selected test image in the appropriate location in testIndices. 
 			testIndices[order_idx] = test_image_index
