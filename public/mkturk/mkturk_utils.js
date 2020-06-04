@@ -530,7 +530,7 @@ function getLongestArray(x){
   } //if not an enumerable object
   else{
     for (keys in x){
-      if (keys !="basevertexind"){
+      if (keys !="baseVertexInd"){
         if (Array.isArray(x[keys])){
           var n_new = x[keys].length
         } //IF array

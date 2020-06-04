@@ -174,6 +174,7 @@ async function addToScene(taskscreen){
         objects.name = classlabel
         scene[taskscreen].add(objects)
         IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetvertdelta = [] //stores delta (Target mesh-origin mesh). same length as morphTarget
+        IMAGES[taskscreen][classlabel].OBJECTS[obj].morphMultiplier = [] //stores multiplier that is multiplied to the morphTargetvertdelta 
         //Expand movie frames if object latent variables vary over time
         if (taskscreen == "Sample" || taskscreen == "Test"){
             for (var i = 0; i<IMAGES[taskscreen][classlabel].nimages;i++){
@@ -234,9 +235,47 @@ async function addToScene(taskscreen){
                     }//FOR m meshes, store original mesh vertices to reset on next trial
 
                     if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i])){
+                        
+                        // change morphTarget string to an array of appropriate integars 
+                        // for example, morphTarget[i] = ["neptune","neptune"] means that original object will reach neptune at durationMS/2 and stay neptune until durationMS ==> morphTime = [0,1,1]
+                        // if morphTarget[i] = ["neptune","elias","elias"] it means that the original object will reach neptune at durationMS/3, elias at durationMS*2/3, and stay as elias until durationMS 
+                        // ==> morphTime = [0,1,2,2]
+                        var morphTime = [0]
+                        for (var j =0;j<IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i].length;j++){
+                            if (j ==0 && IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i][j] != obj){
+                                morphTime.push(j+1)
+                            } else if (j!=0 && IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i][j] != IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i][j-1]){
+                                morphTime.push(j+1)
+                            } else {
+                                morphTime.push(j)
+                            }   
+                        }
+                        var morphTargetInd = math.setDistinct(morphTime)
+                        morphTime = interpParam(morphTime,"continuous",durationMS,framerate)
+                        FLAGS.movieper[taskscreen][classlabel][i] = morphTime.length
+                        IMAGES[taskscreen][classlabel].OBJECTS[obj].morphMultiplier[i] = []
+                        for (var j=0; j<morphTargetInd.length-1;j++){
+                            IMAGES[taskscreen][classlabel].OBJECTS[obj].morphMultiplier[i][j] = []
+                            var arr = math.zeros(morphTime.length)._data
+                            var ind = []
+                            for (var k=0; k<morphTime.length;k++){
+                                if (j == 0 && morphTime[k]>=morphTargetInd[j] && morphTime[k]<=morphTargetInd[j+1]){
+                                    arr[k] = morphTime[k]
+                                    ind.push(k)
+                                } else if (j !=0 && morphTime[k]>morphTargetInd[j] && morphTime[k]<=morphTargetInd[j+1]){
+                                    arr[k] = morphTime[k]-1
+                                    ind.push(k)
+                                }
+                            }
+                            if (ind[ind.length-1] < arr.length-1){
+                            arr = math.subset(arr,math.index(range(ind[ind.length-1],arr.length-1,1)),Array(arr.length-ind[ind.length-1]).fill(arr[ind[ind.length-1]]))
+                            }
+                            IMAGES[taskscreen][classlabel].OBJECTS[obj].morphMultiplier[i][j] = arr
+                        }
+                       
                         IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetvertdelta[i] = []
                         for (var j = 0; j<IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i].length;j++){
-                            IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetvertdelta[i][j] = {}
+                            var morphTargetvertdelta = {}
                             if (j == 0){
                                 var morphOriginname = obj
                             }
@@ -244,6 +283,8 @@ async function addToScene(taskscreen){
                                 var morphOriginname = IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i][j-1]
                             }
                             var morphTargetname = IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i][j]
+
+                            if (morphTargetname != morphOriginname){ 
 
                             var morphOrigin = OBJECTS[taskscreen][classlabel].meshes[morphOriginname].scene
                             var morphTarget = OBJECTS[taskscreen][classlabel].meshes[morphTargetname].scene 
@@ -253,14 +294,14 @@ async function addToScene(taskscreen){
                                 var morphOriginvert = math.matrix(Array.from(morphOrigin.getObjectByName(meshpartnames[m]).geometry.attributes.position.array))
 
                                 if (meshpartnames[m] == "Base" 
-                                    && typeof(IMAGES[taskscreen][classlabel].OBJECTS[obj].basevertexind) != "undefined"
-                                    && IMAGES[taskscreen][classlabel].OBJECTS[obj].basevertexind != [] )
+                                    && typeof(IMAGES[taskscreen][classlabel].OBJECTS[obj].baseVertexInd) != "undefined"
+                                    && IMAGES[taskscreen][classlabel].OBJECTS[obj].baseVertexInd != [] )
                                 {
                                     var objectOriginvert = objects.getObjectByName(meshpartnames[m]).geometry.attributes.position.array
-                                    var objectOriginvertind = IMAGES[taskscreen][classlabel].OBJECTS[obj].basevertexind
+                                    var objectOriginvertind = IMAGES[taskscreen][classlabel].OBJECTS[obj].baseVertexInd
 
-                                    var morphTargetvertind = IMAGES[taskscreen][classlabel].OBJECTS[morphTargetname].basevertexind
-                                    var morphOriginvertind = IMAGES[taskscreen][classlabel].OBJECTS[morphOriginname].basevertexind
+                                    var morphTargetvertind = IMAGES[taskscreen][classlabel].OBJECTS[morphTargetname].baseVertexInd
+                                    var morphOriginvertind = IMAGES[taskscreen][classlabel].OBJECTS[morphOriginname].baseVertexInd
                                     morphTargetvertind = morphTargetvertind.map(function(num){return [...[(num-1)*3-2,(num-1)*3-1,(num-1)*3]]}).flat() //subtract 1 because Javascript starts indexing at 0
                                     morphOriginvertind = morphOriginvertind.map(function(num){return [...[(num-1)*3-2,(num-1)*3-1,(num-1)*3]]}).flat()
                                     objectOriginvertind = objectOriginvertind.map(function(num){return [...[(num-1)*3-2,(num-1)*3-1,(num-1)*3]]}).flat()
@@ -270,19 +311,16 @@ async function addToScene(taskscreen){
 
                                     var objectOriginvertdelta = math.zeros(objectOriginvert.length)
                                     objectOriginvertdelta.subset(math.index(objectOriginvertind), math.subtract(morphTargetvert,morphOriginvert)._data)
-                                    IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetvertdelta[i][j][meshpartnames[m]] = objectOriginvertdelta
+                                    morphTargetvertdelta[meshpartnames[m]] = objectOriginvertdelta
                                 }//IF only morph specific vertices of Base, only move appleface portion of the mesh (Base mesh will have different number of vertices)
                                 else{
-                                    IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetvertdelta[i][j][meshpartnames[m]] = math.subtract(morphTargetvert,morphOriginvert)
+                                    morphTargetvertdelta[meshpartnames[m]] = math.subtract(morphTargetvert,morphOriginvert) 
                                 }//ELSE morph all vertices
                              } //for m meshparts
+                                IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetvertdelta[i].push(morphTargetvertdelta)
+                            } //only if target and object are different
                         } //for j morphTargets
                     }//IF isArray morphTarget
-                    
-                    if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTS[obj].morphStrength[i])){
-                        IMAGES[taskscreen][classlabel].OBJECTS[obj].morphStrength[i] = interpParam(IMAGES[taskscreen][classlabel].OBJECTS[obj].morphStrength[i],"continuous",durationMS,framerate)
-                        FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].OBJECTS[obj].morphStrength[i].length
-                    }//IF isArray morphStrength
                 }//IF morphTarget exists
             }//FOR i images
         }//IF Sample        
@@ -449,22 +487,35 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
 
             //MORPH 
             var morphDelta = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetvertdelta,index,0)
-            var morphStrength = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].morphStrength,index,0)
+            var morphMultiplier= chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].morphMultiplier,index,0)
 
             var nextmorph = {}
             if (Number.isInteger(movieframe)){ //calculate delta for the current movieframe, add to the origin to get new vertices
-                if (morphDelta != undefined && morphStrength != undefined && movieframe!=0){
-                    var nextmorphStrength = chooseArrayElement(morphStrength,movieframe,morphStrength.length-1)
-                    var currentmorphStrength = chooseArrayElement(morphStrength,movieframe-1,morphStrength.length-1)
+                if (morphDelta != undefined){
+                    
+                    var nextmorphDelta = morphDelta[0] //need to get key values 
+                    var meshpartnames = Object.keys(nextmorphDelta)
 
-                    var deltaMultiplier = nextmorphStrength - currentmorphStrength
-                    var nextmorphDelta = morphDelta[Math.floor(nextmorphStrength)]
-                    for (keys in nextmorphDelta){
-                        var currentVert = math.matrix(Array.from(objects.getObjectByName(keys).geometry.attributes.position.array))
-                        nextmorph[keys] = math.add(math.multiply(nextmorphDelta[keys],deltaMultiplier),currentVert)
+                    var deltaMesh = {}
+                    for (var m=0;m<meshpartnames.length;m++){
+                        deltaMesh[meshpartnames[m]] = []
+                        for (var j=0; j<morphDelta.length;j++){
+                            var nextmorphDelta = morphDelta[j][meshpartnames[m]]
+                            var deltaMultiplier= chooseArrayElement(morphMultiplier[j],movieframe,morphMultiplier.length-1)
+                            deltaMesh[meshpartnames[m]][j] = math.multiply(nextmorphDelta,deltaMultiplier)
+                        }
+                    }
+
+                    for (keys in deltaMesh){
+                        var originVert = IMAGES[taskscreen][classlabel].OBJECTS[obj].originmeshvert[keys]
+                        var d = math.zeros(deltaMesh[keys][0]._data.length)
+                        for (var j=0;j<deltaMesh[keys].length;j++){
+                            d = math.add(deltaMesh[keys][j],d)
+                        }
+                        nextmorph[keys] = math.add(d,originVert)
                     }
                 }
-                else if (movieframe ==0){
+                else if (morphDelta == undefined && movieframe ==0){
                     nextmorph = IMAGES[taskscreen][classlabel].OBJECTS[obj].originmeshvert
                 } 
             }//IF morph
@@ -691,9 +742,13 @@ function interpParam(vec,type,durationMS,framerate){
 		tseq.forEach((t,j) => {
 			if ( t>=p1[0]  && t<=p2[0]){
 				vec_flattened[j] = slope * t + intercept
-			}//IF time falls within setgment
+			}//IF time falls within segment
 		})//tseq.forEACH
-	}//FOR i vals
+    }//FOR i vals
+
+    if (isNaN(vec_flattened[vec_flattened.length-1])){
+        vec_flattened[vec_flattened.length-1] = vec[vec.length-1]
+    }
     return vec_flattened
 }//FUNCTION interpParam
 
