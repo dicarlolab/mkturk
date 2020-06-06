@@ -67,8 +67,8 @@ let paramsLink =
     document.querySelector("#quick-link-params") as HTMLElement;
 let paramstorageLink
   = document.querySelector('#quick-link-paramstorage') as HTMLElement;
-let scenesLink =
-    document.querySelector("#quick-link-scenes") as HTMLElement;
+let sceneParamsLink =
+    document.querySelector("#quick-link-sceneparams") as HTMLElement;
 let marmosetsLink = 
     document.querySelector("#quick-link-marmosets") as HTMLElement;
 
@@ -118,13 +118,13 @@ homeLink.addEventListener("click" || "pointerup", (ev: Event) => {
 
 });
 
-scenesLink.addEventListener("click" || "pointerup", (ev: Event) => {
+sceneParamsLink.addEventListener("click" || "pointerup", (ev: Event) => {
   ev.preventDefault();
 
   isRoot = false;
   qryLocSelc.value = "mkturkfiles";
   qryLocSelc.dispatchEvent(new Event("change"));
-  mkf.listStorageFiles(storageRef.child("mkturkfiles/scenebags/objectome3d/face"));
+  mkf.listStorageFiles(storageRef.child("mkturkfiles/scenebags/objectome3d"));
 
 });
 

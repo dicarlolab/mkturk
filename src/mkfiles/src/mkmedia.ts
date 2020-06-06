@@ -455,8 +455,9 @@ export class Mkthree {
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     this.renderer.setClearColor( 0xFFFFFF );
     this.renderer.physicallyCorrectLights = true;
+    this.renderer.toneMapping = THREE.LinearToneMapping;
     this.renderer.toneMappingExposure = 10;
-    this.renderer.gammaOutput = true;
+    this.renderer.outputEncoding = THREE.GammaEncoding;
     this.renderer.gammaFactor = 2.2;
 
     /* camera setup */
@@ -514,7 +515,6 @@ export class Mkthree {
           this.loader?.load(meshUrl, function(gltf) {
             gltf.scene.traverse((child: any) => {
               if (child.material) {
-                //let material = new THREE.MeshPhongMaterial({ color: 0xFF0000, map: child.material.map });
                 let material = new THREE.MeshPhongMaterial({ color: "#FFE0BD" })
                 if ("morphTargetInfluences" in child) {
                   material.morphTargets = true;

@@ -91,10 +91,11 @@ export class Mkcolony {
         {title: 'Age', field: 'ageStr'},
         {title: 'Sex', field: 'sex'},
         {title: 'DOB', field: 'birthdate'},
+        {title: 'RFID', field: 'rfid'},
         {title: 'CWA', field: 'cwa'},
         {title: 'Breeding', field: 'breeding'},
         {title: 'Cage Mate', field: 'grouphoused_values'},
-        {title: 'Last Weighed Date', field: 'last_weight_date', formatter:function(cell: any){
+        {title: 'Weighed', field: 'last_weight_date', formatter:function(cell: any){
           let weighedDate = new Date(cell.getValue()).getTime();
           let today = new Date().getTime();
           let diff = Math.round((today-weighedDate) / (1000 * 60 * 60 * 24));
@@ -115,7 +116,7 @@ export class Mkcolony {
           
           return cell.getValue();
         }},
-        {title: 'Last Weight', field: 'last_weight_value'},
+        {title: 'Weight', field: 'last_weight_value'},
       ],
       rowDblClick: (ev: Event, row) => {
         ev.stopPropagation();

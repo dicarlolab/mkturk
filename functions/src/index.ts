@@ -96,35 +96,6 @@ const createTableOptions = {
   }
 };
 
-// export const insertFixationRow = functions.https.onCall((data: fixationData) => {
-//   const bq = new BigQuery();
-//   const dataset = bq.dataset('fixationdata');
-//   const table = dataset.table(data.agent);
-//   console.log("data received:", data);
-
-//   table.exists().then(async (existsData) => {
-//     const exists = existsData[0];
-//     if (exists) {
-//       delete data.agent;
-//       // data.timestamp = new Date(data.timestamp);
-//       data.timestamp = bq.timestamp(data.timestamp);
-//       console.log('data0', data);
-//       table.insert(data, {}, insertHandler);
-//     } else {
-//       const [newTable] = await dataset.createTable(data.agent, createTableOptions);
-//       console.log(`Table ${newTable.id} created with partitioning: `);
-//       console.log(newTable.metadata.timePartitioning);
-//       delete data.agent;
-//       // data.timestamp = new Date(data.timestamp);
-//       data.timestamp = bq.timestamp(data.timestamp);
-//       console.log('data1', data);
-//       newTable.insert(data, {}, insertHandler);
-//     }
-//   }).catch(error => {
-//     console.error("exists error", error);
-//   });
-// });
-
 /* caller must guarantee that all rows belong to the same agent */
 export const bqInsertEyeData = functions.https.onCall((rows: fixationData[]) => {
   const bq = new BigQuery();
@@ -215,4 +186,19 @@ export const isLabMember = functions.https.onCall((idToken: string) => {
     console.error('Error decoding idToken', e);
   });
 
+});
+
+
+// export const listAllUsers = functions.https.onCall((nextPageToken: any) => {
+//   admin.auth().listUsers(1000, nextPageToken).then(listUsersResult => {
+//     listUsersResult.users.forEach(userRecord)
+//   })
+// })
+
+export const listAllUsers = functions.https.onCall(() => {
+  return admin.auth().listUsers(1000).then(listUserResult => {
+    return listUserResult;
+  }).catch(e => {
+    console.error('Error listing users', e);
+  });
 });

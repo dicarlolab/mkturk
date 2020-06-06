@@ -7,3 +7,5 @@ firebase-debug.log
 .vscode/
 userManagement.js
 initFirestore.js
+*.code-workspace
+Icon*
