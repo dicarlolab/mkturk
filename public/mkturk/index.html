@@ -649,11 +649,6 @@ while(true){
 
 	//============= AWAIT LOAD PARAMS =============//
 	if (FLAGS.need2loadParameters == 1){
-		var old_ImageBagsSample = TASK.ImageBagsSample
-		var old_ImageBagsTest = TASK.ImageBagsTest
-
-		var old_ObjectGridIndex = TASK.ObjectGridIndex
-		var old_NTrialsPerBagBlock = [TASK.NTrialsPerBagBlock]
 		FLAGS.need2loadParameters = await loadParametersfromFirebase(ENV.ParamFileName);
 
 		if (typeof(TASK.TrackEye) != "undefined"){
@@ -744,15 +739,8 @@ while(true){
 			VISIBLECANVAS.height
 		]
 
-		// Check if images (or object meshes) were changed
-		if(!old_ImageBagsTest.equals(TASK.ImageBagsTest) || 
-			!old_ImageBagsSample.equals(TASK.ImageBagsSample) ||
-			!old_ObjectGridIndex.equals(TASK.ObjectGridIndex) || 
-			!old_NTrialsPerBagBlock.equals([TASK.NTrialsPerBagBlock]))
-		{
-			TQS = undefined
-			FLAGS.need2loadScenes = 1; 
-		}//IF new scenebags
+		TQS = undefined
+		FLAGS.need2loadScenes = 1; 
 
 		//Determine task type
 		if (TASK.RewardStage == 0){
@@ -863,7 +851,7 @@ while(true){
 
 
 		//============ 2: INIT SCENE & CAMERA ============//
-        setupCanvas(VISIBLECANVASWEBGL)
+    setupCanvas(VISIBLECANVASWEBGL)
 		await initThreeJS(IMAGES)
 		//============ (END) 2: INIT SCENE & CAMERA ============//
 
@@ -1204,7 +1192,7 @@ while(true){
             FLAGS.waitingforTouches = 1
             FLAGS.acquiredTouch = 1;
             var p1 = hold_promise(0,boundingBoxesSampleFixation,FLAGS.punishOutsideTouch)
-            var p2 = await displayTrial(CURRTRIAL.tsequence, CURRTRIAL.sequencegridindex, CURRTRIAL.sequenceframe,
+            var p2 = displayTrial(CURRTRIAL.tsequence, CURRTRIAL.sequencegridindex, CURRTRIAL.sequenceframe,
 										CURRTRIAL.sequencetaskscreen, CURRTRIAL.sequencelabel, CURRTRIAL.sequenceindex)
             var race_return = await Promise.race([p1,p2])
 
