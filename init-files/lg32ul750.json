@@ -1,0 +1,28 @@
+{
+ "brand": "lg",
+ "weightOunces": 198.4,
+ "screenPhysicalPixels": [
+  3840,
+  2160
+ ],
+ "bodySizeInches": [
+  28.7,
+  16.7,
+  1.96
+ ],
+ "model": "32ul750",
+ "ppi": 137.7,
+ "type": "monitor",
+ "docname": "lg32ul750",
+ "screenSizeInches": [
+  27.9,
+  15.69,
+  32
+ ],
+ "viewportPixels": [
+  3840,
+  2160
+ ],
+ "batterymAh": 0,
+ "screenRatio": 1
+}

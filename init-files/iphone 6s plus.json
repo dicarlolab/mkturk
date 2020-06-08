@@ -1,0 +1,28 @@
+{
+ "weightOunces": 6.77,
+ "type": "phone",
+ "docname": "iphone 6s plus",
+ "brand": "apple",
+ "model": "iphone 6s plus",
+ "screenPhysicalPixels": [
+  1920,
+  1080
+ ],
+ "batterymAh": 2915,
+ "viewportPixels": [
+  736,
+  414
+ ],
+ "screenRatio": 3,
+ "bodySizeInches": [
+  6.23,
+  3.07,
+  0.29
+ ],
+ "ppi": 401,
+ "screenSizeInches": [
+  4.79,
+  2.69,
+  5.5
+ ]
+}
