@@ -122,6 +122,11 @@ async function addToScene(taskscreen){
                         interpParam(IMAGES[taskscreen][classlabel].LIGHTS[lt].position.z[i],"continuous",durationMS,framerate)
                     FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].LIGHTS[lt].position.z[i].length
                 }//IF isArray LIGHTS.position.z
+                if (Array.isArray(IMAGES[taskscreen][classlabel].LIGHTS[lt].intensity[i])){
+                    IMAGES[taskscreen][classlabel].LIGHTS[lt].intensity[i] = 
+                        interpParam(IMAGES[taskscreen][classlabel].LIGHTS[lt].intensity[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].LIGHTS[lt].intensity[i].length
+                }//IF isArray LIGHTS.position.x
                 if (Array.isArray(IMAGES[taskscreen][classlabel].LIGHTS[lt].visible[i])){
                     IMAGES[taskscreen][classlabel].LIGHTS[lt].visible[i] = 
                         interpParam(IMAGES[taskscreen][classlabel].LIGHTS[lt].visible[i],"binary",durationMS,framerate)
@@ -263,7 +268,7 @@ async function addToScene(taskscreen){
                                     arr[k] = morphTime[k]
                                     ind.push(k)
                                 } else if (j !=0 && morphTime[k]>morphTargetInd[j] && morphTime[k]<=morphTargetInd[j+1]){
-                                    arr[k] = morphTime[k]-1
+                                    arr[k] = morphTime[k]-j
                                     ind.push(k)
                                 }
                             }
@@ -417,6 +422,12 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
 	            ]
 	        }//IF get movieframe
 
+           //LIGHT INTENSITY
+	        var nextintensity = chooseArrayElement(IMAGES[taskscreen][classlabel].LIGHTS[lt].intensity,index,0);
+	        if (Number.isInteger(movieframe)){
+	            nextintensity = chooseArrayElement(nextintensity,movieframe,nextintensity.length-1);
+	        }//IF get movieframe    
+            
 	        //LIGHT VISIBILITY
 	        var nextvisible = chooseArrayElement(IMAGES[taskscreen][classlabel].LIGHTS[lt].visible,index,0);
 	        if (Number.isInteger(movieframe)){
@@ -430,7 +441,7 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
 	            light.visible = false
 	        }//IF visible
 
-	        updateLightSingleFrame(light,nextlightPosition)        
+	        updateLightSingleFrame(light,nextlightPosition,nextintensity)        
 	    }//FOR lt lights
 
 		//======= OBJECTS
@@ -544,8 +555,9 @@ function updateCameraSingleFrame(camera,cameraPosition,camTarget){
     camera.updateProjectionMatrix(); // FIX
 }//FUNCTION updateCameraSingleFrame
 
-function updateLightSingleFrame(light,lightPosition){
+function updateLightSingleFrame(light,lightPosition,lightIntensity){
     light.position.set(lightPosition[0],lightPosition[1],lightPosition[2])
+    light.intensity = lightIntensity
 //     console.log('3js: light position change')
 //     console.log(lightPosition)
 }//FUNCTION updateLightSingleFrame

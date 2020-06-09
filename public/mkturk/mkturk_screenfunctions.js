@@ -409,7 +409,7 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 	    	}//FOR s screens within frame
 
 			//----- Save Out Images
-	    	if ( s==0 && (taskscreen=="Sample" || taskscreen=="Test") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
+	    	if ((taskscreen=="Sample" || taskscreen=="Test") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
 	    		saveScreenshot(VISIBLECANVASWEBGL,CURRTRIAL.num,taskscreen,frame.current)
 	    		saveScreenshot(VISIBLECANVAS,CURRTRIAL.num,taskscreen,frame.current)
 	    	}//IF primary sample screen & save out images
@@ -938,6 +938,14 @@ async function saveScreenshot(canvasobj,currtrial,frametype,framenum){
 
 	if (canvasobj.width > 4096 || canvasobj.height > 4096){
 		console.log("Canvas may be too large for webgl limit of 4096 pixels in either dimension -- Image Saving may not be accurate! Consider using a smaller display size.")
+	}
+
+	if (currtrial<=9){
+		currtrial = "0" + currtrial
+	}
+
+	if (framenum<=9){
+		framenum = "0" + framenum
 	}
 
 	canvasobj.toBlob(function(blob){
