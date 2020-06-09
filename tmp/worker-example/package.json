@@ -18,15 +18,16 @@
   "homepage": "https://github.com/issalab/mkturk#readme",
   "devDependencies": {
     "ts-loader": "^7.0.5",
-    "typescript": "^3.9.5",
+    "typescript": "^3.9.3",
     "webpack": "^4.43.0",
-    "webpack-cli": "^3.3.11"
+    "webpack-cli": "^3.3.11",
+    "worker-loader": "^2.0.0"
   },
   "dependencies": {
     "@types/google.visualization": "0.0.53",
     "@types/jsoneditor": "^8.6.0",
     "@types/tabulator-tables": "^4.6.7",
-    "firebase": "^7.15.0",
+    "firebase": "^7.14.6",
     "firebase-admin": "^8.12.1",
     "jsoneditor": "^9.0.0",
     "package.json": "^2.0.1",
