@@ -2,10 +2,10 @@ const path = require('path');
 const webpack = require('webpack');
 
 module.exports = {
-  entry: path.resolve(__dirname, "src") + "/app.ts",
+  entry: path.resolve(__dirname, "src") + "/App.ts",
   output: {
     filename: "app.js",
-    path: path.resolve(__dirname, "./dist")
+    path: path.resolve(__dirname, "../../public/worker-example")
   },
   module: {
     rules: [
