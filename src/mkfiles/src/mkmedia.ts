@@ -28,6 +28,8 @@ export class Mkeditor {
   private fileRenameBtn: HTMLButtonElement;
   private fileDupBtn: HTMLButtonElement;
   private fileDupModal: HTMLDialogElement;
+  private genSceneParamBtn: HTMLButtonElement;
+  private genSceneParamModal: HTMLDialogElement;
 
 
   constructor() {
@@ -57,6 +59,13 @@ export class Mkeditor {
     this.getActiveFile();
     this.fileDupBtnAction();
 
+
+    this.genSceneParamBtn
+      = document.querySelector('#gen-scene-param-btn') as HTMLButtonElement;
+    this.genSceneParamModal
+      = document.querySelector('#gen-scene-param-modal') as HTMLDialogElement;
+    this.generateSceneParamModalAction()
+
   }
 
   public getActiveFile() {
@@ -66,6 +75,7 @@ export class Mkeditor {
   public displayFirebaseTextFile(file: Object, loc: string) {
     this.fileRenameBtn.style.display = 'none';
     this.fileDupBtn.style.display = 'none';
+    this.genSceneParamBtn.style.display = 'none';
     this.storeParamBtn.style.display = 'none';
     this.updateBtn.style.display = 'inline-block';
     this.btnBoxDiv.style.gridTemplateAreas = '"update-btn update-btn"'
@@ -144,16 +154,24 @@ export class Mkeditor {
     this.fileRenameBtn.style.display = 'inline-block';
     this.fileNameInput.value = '';
 
-    const sceneParamFilePath = 'mkturkfiles/scenebags/objectome3d/face';
-    const paramstorageFilePath = 'mkturkfiles/parameterfiles/params_storage';
-    if (fileRef.parent?.parent?.fullPath == sceneParamFilePath) {
+    const sceneParamPath = 'mkturkfiles/scenebags/objectome3d';
+    const taskParamPath = 'mkturkfiles/parameterfiles';
+
+    if (fileRef.fullPath.includes(sceneParamPath)) {
+      if (fileRef.fullPath.includes('template')) {
+        this.fileDupBtn.style.display = 'inline-block';
+        this.genSceneParamBtn.style.display = 'inline-block';
+      } else {
+        this.fileDupBtn.style.display = 'inline-block';
+        this.genSceneParamBtn.style.display = 'none';
+      }
+    } else if (fileRef.fullPath.includes(taskParamPath)) {
       this.fileDupBtn.style.display = 'inline-block';
-    } else if (fileRef.parent?.fullPath == paramstorageFilePath) {
-      this.fileDupBtn.style.display = 'inline-block';
+      this.genSceneParamBtn.style.display = 'none';
     } else {
       this.fileDupBtn.style.display = 'none';
+      this.genSceneParamBtn.style.display = 'none';
     }
-    
 
     let fileUrl = await fileRef.getDownloadURL().catch(e => {
       console.error("Error getting download URL", e);
@@ -211,6 +229,41 @@ export class Mkeditor {
       });
 
       this.fileDupModal.close();
+    });
+  }
+
+  private generateSceneParamModalAction() {
+
+    let collapsibles = document.getElementsByClassName('collapsible') as HTMLCollectionOf<HTMLButtonElement>;
+    for (let i = 0; i < collapsibles.length; i++) {
+      let coll = collapsibles[i];
+      coll.addEventListener('click', (ev: Event) => {
+        coll.classList.toggle('active');
+        let content = coll.nextElementSibling as HTMLButtonElement;
+        if (content.style.display === 'block') {
+          content.style.display = 'none';
+        } else {
+          content.style.display = 'block';
+        }
+      })
+    }
+
+
+
+
+    this.genSceneParamBtn.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      this.genSceneParamModal.showModal();
+    });
+
+    let cancel = this.genSceneParamModal.querySelector('.cancel');
+    cancel?.addEventListener('click', () => {
+      this.genSceneParamModal.close();
+    });
+
+    let generate = this.genSceneParamModal.querySelector('.generate');
+    generate?.addEventListener('click', (ev: Event) => {
+      console.log('generate');
     });
   }
 

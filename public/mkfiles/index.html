@@ -140,6 +140,8 @@
                 </div>
                 <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="file-rename-btn">Rename</button>
                 <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="file-dup-btn">Duplicate</button>
+                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="gen-scene-param-btn">Generate Param</button>
+                
                 <dialog class="mdl-dialog" id="file-dup-modal">
                   <h5 class="mdl-dialog__title">Duplicate File</h5>
                   <div class="mdl-dialog__content">
@@ -151,6 +153,33 @@
                     <button type="button" class="mdl-button save" id="save-dup-file-btn">Save</button>
                     <button type="button" class="mdl-button close" id="cancel-dup-file-btn">Cancel</button>
                   </div>
+                </dialog>
+
+                <dialog class="mdl-dialog" id="gen-scene-param-modal">
+                  <h5 class="mdl-dialog__title">Generate Scene Param</h5>
+                  <div class="mdl-dialog__content">
+                    <button class="collapsible">sizeInches</button>
+                    <div class="content size-inches">
+                      <p>sizeInches stuff</p>
+                    </div>
+
+                    <button class="collapsible">positionInches</button>
+                    <div class="content position-inches">
+                      <p>positionInches stuff</p>
+                    </div>
+
+                    <button class="collapsible">rotationDegrees</button>
+                    <div class="content rotation-degrees">
+                      <p>rotationDegress stuff</p>
+                    </div>
+                    
+                  </div>
+
+                  <div class="mdl-dialog__actions">
+                    <button type="button" class="mdl-button generate">Generate</button>
+                    <button type="button" class="mdl-button cancel">Cancel</button>
+                  </div>
+
                 </dialog>
               </form>
               <div id="editor"></div>

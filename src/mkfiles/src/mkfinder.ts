@@ -634,8 +634,19 @@ export class Mkfinder {
         if (this.imageTypeTest(data)) {
           this.selectedImages = data;
         }
-      }
+      },
 
+      tableBuilt: () => {
+        let selectAllBox = 
+          document.querySelector('#select-all') as HTMLInputElement;
+        selectAllBox.addEventListener('change', ev => {
+          if (selectAllBox.checked == true) {
+            this.finder.selectRow();
+          } else {
+            this.finder.deselectRow();
+          }
+        });
+      }
     });
   }
 
