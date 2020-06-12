@@ -295,6 +295,9 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 			for (var s = 0; s<=frame.frames[frame.current].length-1; s++){
 				f = frame.frames[frame.current][s]
 				var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
+				if (s==0){
+					var taskscreen0 = taskscreen
+				}//IF primary screen
 
 				if (taskscreen=="Sample" || taskscreen=="Test"){
 					renderer.autoClear = false
@@ -337,7 +340,7 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 				}//ELSE hide 3D when plotting 2D elements like buttons and not keeping (overlaying) sample/test
 
 				//=================== 2D rendering =====================//
-				if(f==0 || s>0 || taskscreen != sc[f-1] || id[f] != id[f-1] || fr[f] != fr[f-1]){
+				if(f==0 || s>0 || taskscreen != sc[f-1] || id[f] != id[f-1]){
 					if (ENV.OffscreenCanvasAvailable && s == frame.frames[frame.current].length-1){
 						//everything has been pre-rendered offscreen, now transfer
 						var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
@@ -409,10 +412,31 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 	    	}//FOR s screens within frame
 
 			//----- Save Out Images
-	    	if ( s==0 && (taskscreen=="Sample" || taskscreen=="Test") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
-	    		saveScreenshot(VISIBLECANVASWEBGL,CURRTRIAL.num,taskscreen,frame.current)
-	    		saveScreenshot(VISIBLECANVAS,CURRTRIAL.num,taskscreen,frame.current)
-	    	}//IF primary sample screen & save out images
+	    	if ((taskscreen0=="Sample" || taskscreen0=="Test") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
+				if (
+					(FLAGS.movieper[taskscreen0][ob[frame.current][0]][id[frame.current][0]] < 1 
+					&& (frame.current == 0 
+						|| (sc[frame.current] != sc[frame.current-1]
+							|| ob[frame.current][0] != ob[frame.current-1][0]
+							|| id[frame.current][0] != id[frame.current-1][0])
+						)
+					)//if !movie, save when screen changes
+					|| FLAGS.movieper[taskscreen0][ob[frame.current][0]][id[frame.current][0]] >= 1)//OR movie
+				{
+					saveScreenshot(VISIBLECANVASWEBGL,
+									CURRTRIAL.num,
+									taskscreen0,
+									frame.current,
+									ob[frame.current],
+									id[frame.current])
+					saveScreenshot(VISIBLECANVAS,
+									CURRTRIAL.num,
+									taskscreen0,
+									frame.current,
+									ob[frame.current],
+									id[frame.current])
+				}//IF need to save out this frame
+	    	}//IF sample or test screen & save out images
 
 			CURRTRIAL.tsequenceactual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
 			frame.shown[frame.current]=1;
@@ -909,11 +933,16 @@ function setViewport(gridindex){
 	renderer.setScissorTest(true)
 }
 
-async function saveScreenshot(canvasobj,currtrial,frametype,framenum){
+async function saveScreenshot(canvasobj,currtrial,taskscreen,framenum,objectlabel,objectind){	
 	//---- upload screenshot to firebase 
 	//sample image will be uploaded to the appropriate folder in the scene 
 
-	var currtrial_samplepath = TASK.ImageBagsSample[CURRTRIAL.sample_scenebag_label]
+	if (taskscreen == "Sample"){
+		var currtrial_samplepath = TASK.ImageBagsSample[objectlabel]	
+	}
+	else if (taskscreen == "Test"){
+		var currtrial_samplepath = TASK.ImageBagsSample[CURRTRIAL.sample_scenebag_label]
+	}
 	var currtrial_date = ENV.DataFileName
 	var currtrial_parampath = ENV.ParamFileName
 
@@ -940,22 +969,32 @@ async function saveScreenshot(canvasobj,currtrial,frametype,framenum){
 		console.log("Canvas may be too large for webgl limit of 4096 pixels in either dimension -- Image Saving may not be accurate! Consider using a smaller display size.")
 	}
 
+	currtrial = String(currtrial).padStart(3, '0')
+	framenum = String(framenum).padStart(3, '0')
+
 	canvasobj.toBlob(function(blob){
 		var fullpath = storage_path + '/'
 						+ canvasobj.id 
-						+ '_' + 'trialnum' + currtrial 
-						+ '_' + frametype + framenum 
-						+ '_' + 'label' + CURRTRIAL.sample_scenebag_label
-						+ '.png'
+						+ '_' + 'trialnum' + currtrial
+						+ '_' + taskscreen 
+						+ '_' + 'framenum' + framenum
+
+		for (var i=0; i<=objectlabel.length-1; i++){
+			fullpath = fullpath
+						+ '_' + 'label' + objectlabel[i]
+						+ '_' + 'index' + objectind[i]
+		}//FOR i objects
+		fullpath = fullpath + '.png'
+		
 		try {
 			var response = storage.ref().child(fullpath).put(blob)
 			console.log("saved image: " + fullpath);
-			console.log("FIREBASE: Successful image file upload. Size:" + Math.round(response.totalBytes/1000) + 'kb')
-		}
+			console.log("FIREBASE: Successful image file upload. Size:" + Math.round(response.blob_.size_/1000) + 'kb')
+		}//TRY
 		catch (error){
 			console.log(error)
 		}
-	})
+	})//.toBlob function
 }//FUNCTION saveScreenshot
 
 // Estimate max software fps

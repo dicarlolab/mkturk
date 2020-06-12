@@ -256,7 +256,7 @@ async get_next_trial(){
 		}//IF isArray sample filenames
 		else {
 			if (sample_filename != ""){
-				sample_image = await this.IB.get_by_name(sample_filename);
+				sample_image[0] = await this.IB.get_by_name(sample_filename);
 		    }		
 		}//ELSE single filename
 	}//IF sample image

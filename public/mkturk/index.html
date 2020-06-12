@@ -778,8 +778,9 @@ while(true){
 
 		FLAGS.purge = 1
 		FLAGS.createnewfirestore = 1
+    CURRTRIAL.reset()
 		EVENTS.reset_trialseries()
-    	EVENTS.reset_timeseries()
+    EVENTS.reset_timeseries()
 	} //if need2loadParameters
 
 	if (FLAGS.purge == 1){
@@ -1064,7 +1065,7 @@ while(true){
 
         //what to display
         CURRTRIAL.sequenceclip = [ -1 ] //movieclip# in RSVP
-		CURRTRIAL.sequenceframe = [ -1 ] //frame# in movie
+		    CURRTRIAL.sequenceframe = [ -1 ] //frame# in movie
         CURRTRIAL.sequencetaskscreen = [ 'blank' ]
         CURRTRIAL.sequencelabel = [ [0] ] //image class
         CURRTRIAL.sequenceindex = [ [0] ] //image index        
@@ -1073,6 +1074,7 @@ while(true){
         //Start with blank for max(100,SampleOFF), then append SampleON+blank (eg, blank,Sample,blank,Sample,blank)
         for (var i=0; i<=CURRTRIAL.sample_scenebag_index.length-1; i++){
             var t0=CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
+        	var sampleon = chooseArrayElement(IMAGES["Sample"][CURRTRIAL.sample_scenebag_label[i][0]].durationMS, CURRTRIAL.sample_scenebag_index[i][0],0)
 
             //Timing: blankdurationpre, sampleon, framerate
         	if (i==0){
@@ -1081,17 +1083,10 @@ while(true){
         	else{
         		var blankdurationpre = TASK.SampleOFF
         	}
-        	var sampleon = chooseArrayElement(IMAGES["Sample"][CURRTRIAL.sample_scenebag_label[i][0]].durationMS, CURRTRIAL.sample_scenebag_index[i][0],0)
-            if (FLAGS.movieper["Sample"][CURRTRIAL.sample_scenebag_label[i][0]][CURRTRIAL.sample_scenebag_index[i][0]] > 0){
-            	var framerate = ENV.FrameRateMovie
-            }//IF movie
-            else{
-            	var framerate = 1/(sampleon/1000)
-            }//ELSE !movie
 
             //Create Movie Sequence
             [movie_sequence, movie_tsequence, movie_framenum] = 
-            	createMovieSeq("Sample",blankdurationpre, sampleon, TASK.SampleOFF, framerate)
+            	createMovieSeq("Sample",blankdurationpre, sampleon, TASK.SampleOFF, ENV.FrameRateMovie)
             movie_tsequence = movie_tsequence.map(function (a){return a + t0}) //shift clip's frames to absolute position in rsvp sequence
 
             CURRTRIAL.tsequence.push(...movie_tsequence)
@@ -1108,15 +1103,11 @@ while(true){
         if (TASK.NRSVP <= 0){
 			var t0 = CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
         	var teston = chooseArrayElement(IMAGES["Test"][CURRTRIAL.test_scenebag_labels[0][0]].durationMS, CURRTRIAL.test_scenebag_indices[0][0],0)
-			
-			if (FLAGS.movieper["Test"][CURRTRIAL.test_scenebag_labels[0][0]][CURRTRIAL.test_scenebag_indices[0][0]] > 0){
-				var framerate = ENV.FrameRateMovie
-			}//IF movie
-			else{
-				var framerate = 1/(teston/1000)
-			}//ELSE !movie
+if (typeof(teston) == "undefined"){
+  console.log("Without this if, then print-to-console code, teston is undefined. Not clear why this strange behavior happens. Something to do with chooseArrayElement returning in time.")
+}
             [movie_sequence, movie_tsequence, movie_framenum] = 
-            	createMovieSeq("Test",TASK.SampleOFF, teston, TASK.TestOFF, framerate)
+            	createMovieSeq("Test",TASK.SampleOFF, teston, TASK.TestOFF, ENV.FrameRateMovie)
 			movie_tsequence = movie_tsequence.map(function (a){return a + t0}) //shift frames to absolute position in sequence
 
             CURRTRIAL.tsequence.push(...movie_tsequence)
