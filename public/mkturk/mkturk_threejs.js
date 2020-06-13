@@ -178,7 +178,7 @@ async function addToScene(taskscreen){
         
         objects.name = classlabel
         scene[taskscreen].add(objects)
-        IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetvertdelta = [] //stores delta (Target mesh-origin mesh). same length as morphTarget
+        IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetdelta = [] //stores delta (Target mesh-origin mesh). same length as morphTarget
         IMAGES[taskscreen][classlabel].OBJECTS[obj].morphMultiplier = [] //stores multiplier that is multiplied to the morphTargetvertdelta 
         //Expand movie frames if object latent variables vary over time
         if (taskscreen == "Sample" || taskscreen == "Test"){
@@ -234,9 +234,15 @@ async function addToScene(taskscreen){
 
                 //∆mesh for morphing
                 if (typeof IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget !="undefined"){
-                    IMAGES[taskscreen][classlabel].OBJECTS[obj].originmeshvert = {}
+                    IMAGES[taskscreen][classlabel].OBJECTS[obj].originmesh = {}
                     for (var m = 0; m<meshpartnames.length;m++){
-                        IMAGES[taskscreen][classlabel].OBJECTS[obj].originmeshvert[meshpartnames[m]] =  math.matrix(Array.from(objects.getObjectByName(meshpartnames[m]).geometry.attributes.position.array))
+                        IMAGES[taskscreen][classlabel].OBJECTS[obj].originmesh[meshpartnames[m]] = {"position": [],"normal": []}
+                        IMAGES[taskscreen][classlabel].OBJECTS[obj].originmesh[meshpartnames[m]].position = math.matrix(Array.from(objects.getObjectByName(meshpartnames[m]).geometry.attributes.position.array))
+                        if (meshpartnames[m] == "Base"){
+                            IMAGES[taskscreen][classlabel].OBJECTS[obj].originmesh[meshpartnames[m]].normal =  math.matrix(Array.from(objects.getObjectByName(meshpartnames[m]).geometry.attributes.normal.array))
+                        } else{
+                            IMAGES[taskscreen][classlabel].OBJECTS[obj].originmesh[meshpartnames[m]].normal = []
+                        }
                     }//FOR m meshes, store original mesh vertices to reset on next trial
 
                     if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i])){
@@ -278,9 +284,9 @@ async function addToScene(taskscreen){
                             IMAGES[taskscreen][classlabel].OBJECTS[obj].morphMultiplier[i][j] = arr
                         }
                        
-                        IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetvertdelta[i] = []
+                        IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetdelta[i] = []
                         for (var j = 0; j<IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i].length;j++){
-                            var morphTargetvertdelta = {}
+                            var morphTargetdelta = {}
                             if (j == 0){
                                 var morphOriginname = obj
                             }
@@ -295,34 +301,51 @@ async function addToScene(taskscreen){
                             var morphTarget = OBJECTS[taskscreen][classlabel].meshes[morphTargetname].scene 
 
                             for (var m = 0; m<meshpartnames.length;m++){
+                                morphTargetdelta[meshpartnames[m]] = {"position": [], "normal": []}
                                 var morphTargetvert = math.matrix(Array.from(morphTarget.getObjectByName(meshpartnames[m]).geometry.attributes.position.array))
                                 var morphOriginvert = math.matrix(Array.from(morphOrigin.getObjectByName(meshpartnames[m]).geometry.attributes.position.array))
 
                                 if (meshpartnames[m] == "Base" 
                                     && typeof(IMAGES[taskscreen][classlabel].OBJECTS[obj].baseVertexInd) != "undefined"
-                                    && IMAGES[taskscreen][classlabel].OBJECTS[obj].baseVertexInd != [] )
-                                {
+                                    && IMAGES[taskscreen][classlabel].OBJECTS[obj].baseVertexInd != [] ){
+                                
                                     var objectOriginvert = objects.getObjectByName(meshpartnames[m]).geometry.attributes.position.array
                                     var objectOriginvertind = IMAGES[taskscreen][classlabel].OBJECTS[obj].baseVertexInd
 
                                     var morphTargetvertind = IMAGES[taskscreen][classlabel].OBJECTS[morphTargetname].baseVertexInd
                                     var morphOriginvertind = IMAGES[taskscreen][classlabel].OBJECTS[morphOriginname].baseVertexInd
-                                    morphTargetvertind = morphTargetvertind.map(function(num){return [...[(num-1)*3-2,(num-1)*3-1,(num-1)*3]]}).flat() //subtract 1 because Javascript starts indexing at 0
-                                    morphOriginvertind = morphOriginvertind.map(function(num){return [...[(num-1)*3-2,(num-1)*3-1,(num-1)*3]]}).flat()
-                                    objectOriginvertind = objectOriginvertind.map(function(num){return [...[(num-1)*3-2,(num-1)*3-1,(num-1)*3]]}).flat()
                                     
+         
+                                    morphTargetvertind = morphTargetvertind.map(function(num){return [...[num*3-3,num*3-2,num*3-1]]}).flat() 
+                                    morphOriginvertind = morphOriginvertind.map(function(num){return [...[num*3-3,num*3-2,num*3-1]]}).flat()
+                                    objectOriginvertind = objectOriginvertind.map(function(num){return [...[num*3-3,num*3-2,num*3-1]]}).flat()
+                                     
                                     morphTargetvert = morphTargetvert.subset(math.index(morphTargetvertind))
                                     morphOriginvert = morphOriginvert.subset(math.index(morphOriginvertind))
 
                                     var objectOriginvertdelta = math.zeros(objectOriginvert.length)
                                     objectOriginvertdelta.subset(math.index(objectOriginvertind), math.subtract(morphTargetvert,morphOriginvert)._data)
-                                    morphTargetvertdelta[meshpartnames[m]] = objectOriginvertdelta
+                                    morphTargetdelta[meshpartnames[m]].position = objectOriginvertdelta
+                                    
+                                    //normals 
+                                    var morphTargetnormal = math.matrix(Array.from(morphTarget.getObjectByName(meshpartnames[m]).geometry.attributes.normal.array))
+                                    var morphOriginnormal = math.matrix(Array.from(morphOrigin.getObjectByName(meshpartnames[m]).geometry.attributes.normal.array))
+                                    var objectOriginnormal = objects.getObjectByName(meshpartnames[m]).geometry.attributes.normal.array
+                    
+                                    morphTargetnormal = morphTargetnormal.subset(math.index(morphTargetvertind))
+                                    morphOriginnormal = morphOriginnormal.subset(math.index(morphOriginvertind))
+
+                                    var objectOriginnormaldelta = math.zeros(objectOriginnormal.length)
+                                    objectOriginnormaldelta.subset(math.index(objectOriginvertind), math.subtract(morphTargetnormal,morphOriginnormal)._data)
+                                    morphTargetdelta[meshpartnames[m]].normal = objectOriginnormaldelta
+
                                 }//IF only morph specific vertices of Base, only move appleface portion of the mesh (Base mesh will have different number of vertices)
                                 else{
-                                    morphTargetvertdelta[meshpartnames[m]] = math.subtract(morphTargetvert,morphOriginvert) 
+                                    morphTargetdelta[meshpartnames[m]].position = math.subtract(morphTargetvert,morphOriginvert) 
+                                    morphTargetdelta[meshpartnames[m]].normal = []
                                 }//ELSE morph all vertices
                              } //for m meshparts
-                                IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetvertdelta[i].push(morphTargetvertdelta)
+                                IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetdelta[i].push(morphTargetdelta)
                             } //only if target and object are different
                         } //for j morphTargets
                     }//IF isArray morphTarget
@@ -497,7 +520,7 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
 
 
             //MORPH 
-            var morphDelta = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetvertdelta,index,0)
+            var morphDelta = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetdelta,index,0)
             var morphMultiplier= chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].morphMultiplier,index,0)
 
             var nextmorph = {}
@@ -511,23 +534,38 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
                     for (var m=0;m<meshpartnames.length;m++){
                         deltaMesh[meshpartnames[m]] = []
                         for (var j=0; j<morphDelta.length;j++){
-                            var nextmorphDelta = morphDelta[j][meshpartnames[m]]
+                            deltaMesh[meshpartnames[m]][j] = {"position": [], "normal": []}
+                            var nextmorphDeltaVert = morphDelta[j][meshpartnames[m]].position
+                            var nextmorphDeltaNormal = morphDelta[j][meshpartnames[m]].normal
                             var deltaMultiplier= chooseArrayElement(morphMultiplier[j],movieframe,morphMultiplier.length-1)
-                            deltaMesh[meshpartnames[m]][j] = math.multiply(nextmorphDelta,deltaMultiplier)
+                            deltaMesh[meshpartnames[m]][j].position = math.multiply(nextmorphDeltaVert,deltaMultiplier)
+                            deltaMesh[meshpartnames[m]][j].normal = math.multiply(nextmorphDeltaNormal,deltaMultiplier)
                         }
                     }
 
                     for (keys in deltaMesh){
-                        var originVert = IMAGES[taskscreen][classlabel].OBJECTS[obj].originmeshvert[keys]
-                        var d = math.zeros(deltaMesh[keys][0]._data.length)
+                        nextmorph[keys] = {"position": [], "normal": []}
+                        var originVert = IMAGES[taskscreen][classlabel].OBJECTS[obj].originmesh[keys].position
+                        var originNormal = IMAGES[taskscreen][classlabel].OBJECTS[obj].originmesh[keys].normal
+                        var d = math.zeros(deltaMesh[keys][0].position._data.length)
                         for (var j=0;j<deltaMesh[keys].length;j++){
-                            d = math.add(deltaMesh[keys][j],d)
+                            d = math.add(deltaMesh[keys][j].position,d)
                         }
-                        nextmorph[keys] = math.add(d,originVert)
+                        nextmorph[keys].position = math.add(d,originVert)
+                        
+                        if (originNormal.length != 0){
+                            var d = math.zeros(deltaMesh[keys][0].normal._data.length)
+                            for (var j=0;j<deltaMesh[keys].length;j++){
+                                d = math.add(deltaMesh[keys][j].normal,d)
+                            }
+                            nextmorph[keys].normal = math.add(d,originNormal)
+                        } else{
+                        	nextmorph[keys].normal = []
+                        }
                     }
                 }
                 else if (morphDelta == undefined && movieframe ==0){
-                    nextmorph = IMAGES[taskscreen][classlabel].OBJECTS[obj].originmeshvert
+                    nextmorph = IMAGES[taskscreen][classlabel].OBJECTS[obj].originmesh
                 } 
             }//IF morph
 
@@ -570,8 +608,11 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
     //update vertices if morph
     if (objMorph != undefined && Object.keys(objMorph).length>0){
         for (keys in objMorph){
-        objects.getObjectByName(keys).geometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(objMorph[keys]._data),3))
+        objects.getObjectByName(keys).geometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(objMorph[keys].position._data),3))
         objects.getObjectByName(keys).geometry.attributes.position.needsUpdate = true
+        if (objMorph[keys].normal.length != 0){
+            objects.getObjectByName(keys).geometry.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(objMorph[keys].normal._data),3))
+        }
         }
     }//IF morph mesh
 
