@@ -295,6 +295,9 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 			for (var s = 0; s<=frame.frames[frame.current].length-1; s++){
 				f = frame.frames[frame.current][s]
 				var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
+				if (s==0){
+					var taskscreen0 = taskscreen
+				}//IF primary screen
 
 				if (s==0){
 					var taskscreen0 = taskscreen
@@ -944,7 +947,6 @@ async function saveScreenshot(canvasobj,currtrial,taskscreen,framenum,objectlabe
 	else if (taskscreen == "Test"){
 		var currtrial_samplepath = TASK.ImageBagsSample[CURRTRIAL.sample_scenebag_label]
 	}
-		
 	var currtrial_date = ENV.DataFileName
 	var currtrial_parampath = ENV.ParamFileName
 
@@ -987,7 +989,7 @@ async function saveScreenshot(canvasobj,currtrial,taskscreen,framenum,objectlabe
 						+ '_' + 'index' + objectind[i]
 		}//FOR i objects
 		fullpath = fullpath + '.png'
-
+		
 		try {
 			var response = storage.ref().child(fullpath).put(blob)
 			console.log("saved image: " + fullpath);

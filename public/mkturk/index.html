@@ -649,11 +649,6 @@ while(true){
 
 	//============= AWAIT LOAD PARAMS =============//
 	if (FLAGS.need2loadParameters == 1){
-		var old_ImageBagsSample = TASK.ImageBagsSample
-		var old_ImageBagsTest = TASK.ImageBagsTest
-
-		var old_ObjectGridIndex = TASK.ObjectGridIndex
-		var old_NTrialsPerBagBlock = [TASK.NTrialsPerBagBlock]
 		FLAGS.need2loadParameters = await loadParametersfromFirebase(ENV.ParamFileName);
 
 		if (typeof(TASK.TrackEye) != "undefined"){
@@ -744,15 +739,8 @@ while(true){
 			VISIBLECANVAS.height
 		]
 
-		// Check if images (or object meshes) were changed
-		if(!old_ImageBagsTest.equals(TASK.ImageBagsTest) || 
-			!old_ImageBagsSample.equals(TASK.ImageBagsSample) ||
-			!old_ObjectGridIndex.equals(TASK.ObjectGridIndex) || 
-			!old_NTrialsPerBagBlock.equals([TASK.NTrialsPerBagBlock]))
-		{
-			TQS = undefined
-			FLAGS.need2loadScenes = 1; 
-		}//IF new scenebags
+		TQS = undefined
+		FLAGS.need2loadScenes = 1; 
 
 		//Determine task type
 		if (TASK.RewardStage == 0){
@@ -790,8 +778,9 @@ while(true){
 
 		FLAGS.purge = 1
 		FLAGS.createnewfirestore = 1
+    CURRTRIAL.reset()
 		EVENTS.reset_trialseries()
-    	EVENTS.reset_timeseries()
+    EVENTS.reset_timeseries()
 	} //if need2loadParameters
 
 	if (FLAGS.purge == 1){
@@ -863,7 +852,7 @@ while(true){
 
 
 		//============ 2: INIT SCENE & CAMERA ============//
-        setupCanvas(VISIBLECANVASWEBGL)
+    setupCanvas(VISIBLECANVASWEBGL)
 		await initThreeJS(IMAGES)
 		//============ (END) 2: INIT SCENE & CAMERA ============//
 
@@ -1085,6 +1074,7 @@ while(true){
         //Start with blank for max(100,SampleOFF), then append SampleON+blank (eg, blank,Sample,blank,Sample,blank)
         for (var i=0; i<=CURRTRIAL.sample_scenebag_index.length-1; i++){
             var t0=CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
+        	var sampleon = chooseArrayElement(IMAGES["Sample"][CURRTRIAL.sample_scenebag_label[i][0]].durationMS, CURRTRIAL.sample_scenebag_index[i][0],0)
 
             //Timing: blankdurationpre, sampleon, framerate
         	if (i==0){
@@ -1093,10 +1083,9 @@ while(true){
         	else{
         		var blankdurationpre = TASK.SampleOFF
         	}
-        	var sampleon = chooseArrayElement(IMAGES["Sample"][CURRTRIAL.sample_scenebag_label[i][0]].durationMS, CURRTRIAL.sample_scenebag_index[i][0],0)
-var framerate
+
             //Create Movie Sequence
-            [movie_sequence, movie_tsequence, movie_framenum] =
+            [movie_sequence, movie_tsequence, movie_framenum] = 
             	createMovieSeq("Sample",blankdurationpre, sampleon, TASK.SampleOFF, ENV.FrameRateMovie)
             movie_tsequence = movie_tsequence.map(function (a){return a + t0}) //shift clip's frames to absolute position in rsvp sequence
 
@@ -1114,7 +1103,9 @@ var framerate
         if (TASK.NRSVP <= 0){
 			var t0 = CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
         	var teston = chooseArrayElement(IMAGES["Test"][CURRTRIAL.test_scenebag_labels[0][0]].durationMS, CURRTRIAL.test_scenebag_indices[0][0],0)
-						
+if (typeof(teston) == "undefined"){
+  console.log("Without this if, then print-to-console code, teston is undefined. Not clear why this strange behavior happens. Something to do with chooseArrayElement returning in time.")
+}
             [movie_sequence, movie_tsequence, movie_framenum] = 
             	createMovieSeq("Test",TASK.SampleOFF, teston, TASK.TestOFF, ENV.FrameRateMovie)
 			movie_tsequence = movie_tsequence.map(function (a){return a + t0}) //shift frames to absolute position in sequence
@@ -1192,7 +1183,7 @@ var framerate
             FLAGS.waitingforTouches = 1
             FLAGS.acquiredTouch = 1;
             var p1 = hold_promise(0,boundingBoxesSampleFixation,FLAGS.punishOutsideTouch)
-            var p2 = await displayTrial(CURRTRIAL.tsequence, CURRTRIAL.sequencegridindex, CURRTRIAL.sequenceframe,
+            var p2 = displayTrial(CURRTRIAL.tsequence, CURRTRIAL.sequencegridindex, CURRTRIAL.sequenceframe,
 										CURRTRIAL.sequencetaskscreen, CURRTRIAL.sequencelabel, CURRTRIAL.sequenceindex)
             var race_return = await Promise.race([p1,p2])
 

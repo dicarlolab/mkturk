@@ -155,7 +155,7 @@ console.log('!!!! BROKE FIXATION !!!!')
 				return_event.type = "tbroken"
 				break;
 			}//IF ended touch early			
-		} //while events
+		}//WHILE events
 
 		// console.log('RETURN_EVENT', return_event.type)
 		if (TASK.TrackEye){
