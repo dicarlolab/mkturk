@@ -145,19 +145,38 @@ export class Mkcolony {
     this.plotAgentWeight(agentData);
     let ret = this.loadAndProcessFlData(agentName);
     ret.then(docs => {
-      this.plotAgentFluid(docs);
+      this.plotAgentFluid(docs, agentName);
     });
   }
 
-  private plotAgentFluid(data: {k: string, v: number}) {
+  private plotAgentFluid(data: {k: string, v: string}, agentName: string) {
+    
+    let agentDocRef = db.collection('marmosets').doc(agentName);
+
     const agFlDt = new google.visualization.DataTable();
     let agFlDashboard = new google.visualization.Dashboard(this.agFlCard);
     agFlDt.addColumn('date', 'Date');
     agFlDt.addColumn('number', 'Fluid Intake');
 
+    agentDocRef.get().then(doc => {
+      if (doc.exists) {
+        for (let [key, value] of Object.entries(data)) {
+          let flLvl = Number(value) * 9.0 / 1000.0;
+          agFlDt.addRow([
+            new Date(key),
+            flLvl,
+            
+          ])
+        }
+      }
+    })
+
     for (let [key, value] of Object.entries(data)) {
       let flLvl = Number(value) * 9.0 / 1000.0;
-      agFlDt.addRow([new Date(key), flLvl]);
+      agFlDt.addRow([
+        new Date(key),
+        flLvl
+      ]);
     }
 
     let dateFormatter = new google.visualization.DateFormat({timeZone: 0});
@@ -524,9 +543,17 @@ export class Mkcolony {
     let agWtDashboard = new google.visualization.Dashboard(this.agWtCard);
     agWtDt.addColumn('date', 'Date');
     agWtDt.addColumn('number', 'Weight');
+    agWtDt.addColumn('number', 'Baseline')
+
+    const baselineWt 
+      = data.baseline_weight_values[data.baseline_weight_values.length - 1];
 
     for (let i = 0; i < data.weight_dates.length; i++) {
-      agWtDt.addRow([new Date(data.weight_dates[i]), data.weight_values[i]]);
+      agWtDt.addRow([
+        new Date(data.weight_dates[i]),
+        data.weight_values[i],
+        baselineWt
+      ]);
     }
 
     let plot = document.querySelector('#agent-weight-plot') as div;
@@ -543,6 +570,11 @@ export class Mkcolony {
       height: plot.offsetHeight,
       legend: 'none' as 'none',
       pointSize: 5,
+      series: {
+        1: {
+          pointsVisible: false
+        }
+      }
     };
 
     if (data.ageStr.split(' ')[1] == 'mo' && data.ageStr.split(' ')[0] <= 15) {

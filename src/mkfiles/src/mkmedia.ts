@@ -83,7 +83,8 @@ export class Mkeditor {
     this.fileNameInput.disabled = true;
     try {
       let options = {
-        modes: ['tree' as 'tree', 'code' as 'code']
+        modes: ['tree' as 'tree', 'code' as 'code'],
+        sortObjectKeys: true
       };
       this.editor.destroy();
       this.editor = new JSONEditor(this.editorElement, options, file);
