@@ -149,7 +149,7 @@ export class Mkcolony {
     });
   }
 
-  private plotAgentFluid(data: {k: string, v: string}, agentName: string) {
+  private async plotAgentFluid(data: {k: string, v: string}, agentName: string) {
     
     let agentDocRef = db.collection('marmosets').doc(agentName);
 
@@ -157,27 +157,24 @@ export class Mkcolony {
     let agFlDashboard = new google.visualization.Dashboard(this.agFlCard);
     agFlDt.addColumn('date', 'Date');
     agFlDt.addColumn('number', 'Fluid Intake');
+    agFlDt.addColumn('number', 'Baseline Fluid');
 
-    agentDocRef.get().then(doc => {
+    await agentDocRef.get().then(doc => {
       if (doc.exists) {
+        let baselineFl = doc.data()?.baseline_fluid_values;
+        console.log('baselineFl', baselineFl);
+        baselineFl = baselineFl[baselineFl.length - 1];
         for (let [key, value] of Object.entries(data)) {
+          console.log('hello');
           let flLvl = Number(value) * 9.0 / 1000.0;
           agFlDt.addRow([
             new Date(key),
             flLvl,
-            
-          ])
+            baselineFl
+          ]);
         }
       }
-    })
-
-    for (let [key, value] of Object.entries(data)) {
-      let flLvl = Number(value) * 9.0 / 1000.0;
-      agFlDt.addRow([
-        new Date(key),
-        flLvl
-      ]);
-    }
+    });
 
     let dateFormatter = new google.visualization.DateFormat({timeZone: 0});
     dateFormatter.format(agFlDt, 0);
@@ -197,6 +194,11 @@ export class Mkcolony {
         height: plot.clientHeight,
         legend: 'none' as 'none',
         pointSize: 5,
+        series: {
+          1: {
+            pointsVisible: false
+          }
+        },
         vAxis: {
           minValue: 0,
           maxValue: 50

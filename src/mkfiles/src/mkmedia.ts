@@ -239,6 +239,7 @@ export class Mkeditor {
     for (let i = 0; i < collapsibles.length; i++) {
       let coll = collapsibles[i];
       coll.addEventListener('click', (ev: Event) => {
+        ev.preventDefault();
         coll.classList.toggle('active');
         let content = coll.nextElementSibling as HTMLButtonElement;
         if (content.style.display === 'block') {
@@ -249,23 +250,11 @@ export class Mkeditor {
       })
     }
 
+    // this.genSceneParamBtn.addEventListener('click', (ev: Event) => {
+    //   console.log('Hello');
+    //   this.genSceneParamModal.
+    // })
 
-
-
-    this.genSceneParamBtn.addEventListener('click', (ev: Event) => {
-      ev.preventDefault();
-      this.genSceneParamModal.showModal();
-    });
-
-    let cancel = this.genSceneParamModal.querySelector('.cancel');
-    cancel?.addEventListener('click', () => {
-      this.genSceneParamModal.close();
-    });
-
-    let generate = this.genSceneParamModal.querySelector('.generate');
-    generate?.addEventListener('click', (ev: Event) => {
-      console.log('generate');
-    });
   }
 
   private renameTextFieldAction() {
