@@ -8,15 +8,15 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
     <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
-    <link rel="stylesheet" href="mkfiles.css">
     <link href="https://unpkg.com/tabulator-tables@4.5.1/dist/css/tabulator.css" rel="stylesheet">
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.5.1/dist/js/tabulator.js"></script>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
     <script src="mkfiles_extendKeys.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/7.0.4/jsoneditor.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.3.7/viewer.css" rel="stylesheet">
+    <link rel="stylesheet" href="mkfiles.css">
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
   </head>
 
@@ -143,7 +143,7 @@
                 </div>
                 <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="file-rename-btn">Rename</button>
                 <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="file-dup-btn">Duplicate</button>
-                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="gen-scene-param-btn" data-toggle="modal" data-target="#gen-scene-param-modal">Generate Param</button>
+                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="gen-scene-param-btn" data-toggle="modal" data-target="#gen-scene-param-modal" data-backdrop="false">Generate Param</button>
                 
                 <dialog class="mdl-dialog" id="file-dup-modal">
                   <h5 class="mdl-dialog__title">Duplicate File</h5>
@@ -164,10 +164,45 @@
                       <div class="modal-header">
                         <h4 class="modal-title">Modal Header</h4>
                       </div>
+
                       <div class="modal-body">
-                        <p>Text</p>
+                        <button class="collapsible">sizeInches</button>
+                        <div class="coll-content size-inches">
+                          <div class="gen-scene-rule-box">
+                            <div class="rule-table-controls">
+                              <button type="button" class="mdl-button add-rule-btn">Add Rule</button>
+                              <button type="button" class="mdl-button undo-edit-btn">Undo Edit</button>
+                            </div>
+                            <div class="rule-table" id="size-inches-table"></div>
+                          </div>
+                        </div>
+
+                        <button class="collapsible">positionInches</button>
+                        <div class="coll-content position-inches">
+                          <div class="gen-scene-rule-box">
+                            <div class="rule-table-controls">
+                              <button type="button" class="mdl-button add-rule-btn">Add Rule</button>
+                              <button type="button" class="mdl-button undo-edit-btn">Undo Edit</button>
+                            </div>
+                            <div class="rule-table" id="position-inches-table"></div>
+                          </div>
+                        </div>
+
+                        <button class="collapsible">rotationDegrees</button>
+                        <div class="coll-content rotation-degrees">
+                          <div class="gen-scene-rule-box">
+                            <div class="rule-table-controls">
+                              <button type="button" class="mdl-button add-rule-btn">Add Rule</button>
+                              <button type="button" class="mdl-button undo-edit-btn">Undo Edit</button>
+                            </div>
+                            <div class="rule-table" id="rotation-degrees-table"></div>
+                          </div>
+                        </div>
+
+
                       </div>
                       <div class="modal-footer">
+                        <button type="button" class="btn btn-default" id="generate-scene-param">Generate</button>
                         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                       </div>
                     </div>

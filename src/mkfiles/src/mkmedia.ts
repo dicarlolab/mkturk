@@ -7,6 +7,7 @@ import Viewer from "viewerjs";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { BufferGeometryLoader } from "three";
 
 
 type FileRef = firebase.storage.Reference;
@@ -29,7 +30,7 @@ export class Mkeditor {
   private fileDupBtn: HTMLButtonElement;
   private fileDupModal: HTMLDialogElement;
   private genSceneParamBtn: HTMLButtonElement;
-  private genSceneParamModal: HTMLDialogElement;
+  private genSceneParamModal: HTMLDivElement;
 
 
   constructor() {
@@ -63,7 +64,7 @@ export class Mkeditor {
     this.genSceneParamBtn
       = document.querySelector('#gen-scene-param-btn') as HTMLButtonElement;
     this.genSceneParamModal
-      = document.querySelector('#gen-scene-param-modal') as HTMLDialogElement;
+      = document.querySelector('#gen-scene-param-modal') as HTMLDivElement;
     this.generateSceneParamModalAction()
 
   }
@@ -250,10 +251,94 @@ export class Mkeditor {
       })
     }
 
-    // this.genSceneParamBtn.addEventListener('click', (ev: Event) => {
-    //   console.log('Hello');
-    //   this.genSceneParamModal.
-    // })
+    let initDataSize = [
+      {sampling: 'gaussian', params: '0, 1', n: 5}
+    ];
+
+    let rtSize = new Tabulator('#size-inches-table', {
+      data: initDataSize,
+      layout: 'fitColumns',
+      history: true,
+      columns: [
+        {title: 'Sampling', field: 'sampling', editor: 'select', editorParams: {values: ['gaussian', 'uniform', 'range']}},
+        {title: 'Params', field: 'params', editor: 'input', editable: true},
+        {title: 'n || step size', field: 'n', editor: 'input', editable: true}
+      ]
+    });
+
+    let szDiv = document.querySelector('.size-inches') as HTMLDivElement;
+    let addRowSize = szDiv.querySelector('.add-rule-btn') as HTMLButtonElement;
+    let undoSz = szDiv.querySelector('.undo-edit-btn') as HTMLButtonElement
+
+    addRowSize.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      rtSize.addRow({sampling: '', params: '', n: NaN}, false);
+    });
+
+    undoSz.addEventListener('click', (ev: Event) => {
+      rtSize.undo();
+    });
+
+    let initDataPos = [
+      {target: 'x', sampling: 'gaussian', params: '0, 1', n: 5}
+    ];
+
+    let rtPos = new Tabulator('#position-inches-table', {
+      data: initDataPos,
+      layout: 'fitColumns',
+      history: true,
+      columns: [
+        {title: 'Target', field: 'target', editor: 'select', editorParams: {values: ['x', 'y', 'z']}},
+        {title: 'Sampling', field: 'sampling', editor: 'select', editorParams: {values: ['gaussian', 'uniform', 'range']}},
+        {title: 'Params', field: 'params', editor: 'input', editable: true},
+        {title: 'n || step size', field: 'n', editor: 'input', editable: true}
+      ]
+    });
+
+    let posDiv = document.querySelector('.position-inches') as HTMLDivElement;
+    let addRowPos = posDiv.querySelector('.add-rule-btn') as HTMLButtonElement;
+    let undoPos = posDiv.querySelector('.undo-edit-btn') as HTMLButtonElement
+
+    addRowPos.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      rtPos.addRow({target: '', sampling: '', params: '', n: NaN});
+    });
+
+    undoPos.addEventListener('click', (ev: Event) => {
+      rtPos.undo();
+    });
+
+    let initDataDeg = [
+      {target: 'x', sampling: 'gaussian', params: '0, 1', n: 5}
+    ];
+
+    let rtDeg = new Tabulator('#rotation-degrees-table', {
+      data: initDataDeg,
+      layout: 'fitColumns',
+      history: true,
+      columns: [
+        {title: 'Target', field: 'target', editor: 'select', editorParams: {values: ['x', 'y', 'z']}},
+        {title: 'Sampling', field: 'sampling', editor: 'select', editorParams: {values: ['gaussian', 'uniform', 'range']}},
+        {title: 'Params', field: 'params', editor: 'input', editable: true},
+        {title: 'n || step size', field: 'n', editor: 'input', editable: true}
+      ]
+    });
+
+    let degDiv = document.querySelector('.rotation-degrees') as HTMLDivElement;
+    let addRowDeg = degDiv.querySelector('.add-rule-btn') as HTMLButtonElement;
+    let undoDeg = degDiv.querySelector('.undo-edit-btn') as HTMLButtonElement
+
+    addRowDeg.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      rtDeg.addRow({target: '', sampling: '', params: '', n: NaN});
+    });
+
+    undoDeg.addEventListener('click', (ev: Event) => {
+      rtDeg.undo();
+    });
+    
+
+
 
   }
 

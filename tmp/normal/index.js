@@ -25,6 +25,6 @@ function box(mu, sigma, n) {
 
 }
 
-box(0, 1, 100);
+box(0, 1, 1000);
 
-console.log(math.mean(math.random([10], 0, 10)));
+//console.log(math.mean(math.random([10], 0, 10)));

@@ -343,7 +343,7 @@
 
 .gen-scene-rule-box {
   display: grid;
-  grid-template-rows: repeat(2, 1fr);
+  grid-template-rows: 1fr 4fr;
   grid-template-areas: "table-controls"
                        "rule-table";
 }
