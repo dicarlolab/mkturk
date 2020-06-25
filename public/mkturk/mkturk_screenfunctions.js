@@ -281,6 +281,7 @@ function defineImageGrid(ngridpoints, gridspacing,xoffset,yoffset){
 function displayTrial(ti,gr,fr,sc,ob,id){
 	var resolveFunc
 	var errFunc
+	var new2DImageDrawnOffscreen = 0
 	p = new Promise(function(resolve,reject){
 		resolveFunc = resolve;
 		errFunc = reject;
@@ -340,7 +341,8 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 				}//ELSE hide 3D when plotting 2D elements like buttons and not keeping (overlaying) sample/test
 
 				//=================== 2D rendering =====================//
-				if(f==0 || s>0 || taskscreen != sc[f-1] || id[f] != id[f-1]){
+				if(f==0 || s>0 || taskscreen != sc[f-1] || id[f] != id[f-1] || new2DImageDrawnOffscreen == 1){
+					new2DImageDrawnOffscreen=0
 					if (ENV.OffscreenCanvasAvailable && s == frame.frames[frame.current].length-1){
 						//everything has been pre-rendered offscreen, now transfer
 						var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
@@ -485,6 +487,7 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 																	OFFSCREENCANVAS) //render 2D image offscreen prior to next frame draw
 									boundingBoxes2D.x[j] = boundingBox.x
 									boundingBoxes2D.y[j] = boundingBox.y
+									new2DImageDrawnOffscreen=1
 								}//FOR j display items
 								if (s==0 && boundingBoxesChoice3D.x == []){
 									boundingBoxesChoice3D.x = boundingBoxes2D.x
@@ -494,6 +497,7 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 						}//IF sample/test image
 						else{
 							await renderShape2D(taskscreen,gr[f],OFFSCREENCANVAS)
+							new2DImageDrawnOffscreen=1
 						}//ELSE shape
 
 						if (s==0 && taskscreen=="Choice"){

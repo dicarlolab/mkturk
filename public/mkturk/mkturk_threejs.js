@@ -15,7 +15,6 @@ async function initThreeJS(scenedata) {
     // renderer.toneMappingExposure = 10;   // set exposure to light
     renderer.outputEncoding = THREE.sRGBEncoding;
 
-
     renderer.autoClear = false;
     renderer.setPixelRatio(ENV.ThreeJSRenderRatio)
     document.body.append(renderer.domElement);
@@ -154,7 +153,12 @@ async function addToScene(taskscreen){
                     material.map = child.material.map
                     child.material = material;
                     child.material.needsUpdate = true;
-                }//IF "Base" mesh
+               }//IF "Base" mesh
+               if (child.name == "Eyeriris" || child.name == "Eyeliris"){
+               	child.renderOrder = 1
+               }
+               child.material.transparent = true
+
             } //IF child.material
         }) //object.traverse (material)
     
@@ -648,7 +652,7 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
 //==== OPACITY
     objects.traverse(function(child){
      if (child.material != undefined){
-      child.material.opacity = objOpacity      
+     		child.material.opacity = objOpacity 
      }
     }) //object.traverse (material)
 
@@ -744,7 +748,7 @@ function toTHREEJSOffset(x,y,taskscreen){
 }//FUNCTION toTHREEJSOffset
 
 function createMovieSeq(taskscreen,offdurationMSpre,ondurationMS,offdurationMSpost,framerate){
-    var movie_tseq = range(0,ondurationMS,1000/framerate); //Off times for sample frame
+    var movie_tseq = range(0,ondurationMS,Math.round(1000/framerate)); //Off times for sample frame
 
     if (offdurationMSpost > 0){
         //Postpend blank frame which starts at last Sample Frame OFF time
@@ -771,7 +775,7 @@ function createMovieSeq(taskscreen,offdurationMSpre,ondurationMS,offdurationMSpo
 
 function interpParam(vec,type,durationMS,framerate){
     var dur = durationMS/1000 //convert to seconds
-    var tseq = range(0,dur,1/framerate)
+    var tseq = range(0,dur,Math.round(1000/framerate)/1000)
     var vec_flattened = Array(tseq.length).fill("")
 
     if (type == "binary"){vec[vec.length] = 0}//pad to get correct # of segments for step variables
@@ -799,6 +803,10 @@ function interpParam(vec,type,durationMS,framerate){
 
     if (isNaN(vec_flattened[vec_flattened.length-1])){
         vec_flattened[vec_flattened.length-1] = vec[vec.length-1]
+    }
+
+    if (type == "binary"){
+        vec_flattened[vec_flattened.length-1] = vec[vec.length-2]
     }
     return vec_flattened
 }//FUNCTION interpParam
