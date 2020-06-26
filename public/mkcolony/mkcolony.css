@@ -49,3 +49,33 @@
   font-size: 20px;
   vertical-align: middle;
 }
+
+#preview-entry-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#data-entry-form {
+  display: grid;
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-top: 20px
+}
+
+.mdl-textfield {
+  width: 100%;
+  align-items: center;
+}
+
+#entry-button-box {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+#select-box {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}

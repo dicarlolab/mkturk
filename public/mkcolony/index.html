@@ -60,6 +60,50 @@
             </div>
           </div>
 
+          <div class="page-content mdl-grid" id="data-entry-container">
+            <div class="mdl-cell mdl-cell--1-offset mdl-cell--5-col mdl-card mdl-shadow--2dp">
+              <form id="data-entry-form">
+
+                <div id="select-box">
+                  <select class="selector" id="agent-selector">
+                    <option selected disabled>Agent</option>
+                  </select>
+  
+                  <select class="selector" id="field-selector">
+                    <option selected disabled>Field</option>
+                  </select>
+                </div>
+
+                <div class="mdl-textfield mdl-js-textfield" id="field-name-entry">
+                  <input class="mdl-textfield__input" type="text" id="field-name">
+                  <label class="mdl-textfield__label" for="field-name">Field Name</label>
+                </div>
+
+                <div class="mdl-textfield mdl-js-textfield" id="field-value-entry">
+                  <input class="mdl-textfield__input" type="text" id="field-value">
+                  <label class="mdl-textfield__label" for="field-value">Field Value</label>
+                </div>
+
+                <div class="mdl-textfield mdl-js-textfield">
+                  <input class="mdl-textfield__input" type="text" id="entry-notes">
+                  <label class="mdl-textfield__label" for="entry-notes">Notes</label>
+                </div>
+
+                <div id="entry-button-box">
+                  <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="preview-btn">
+                    Preview
+                  </button>
+
+                  <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="save-btn">
+                    Save
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div class="mdl-cell mdl-cell--5-col mdl-card mdl-shadow--2dp" id="preview-entry-card"></div>
+          </div>
+
           <div class="page-content mdl-grid" id="colony-weight-grid">
             <div id="colony-weight-card" class="mdl-cell mdl-cell--1-offset mdl-cell--10-col mdl-card mdl-shadow--2dp">
               <div id="colony-weight-plot"></div>
