@@ -169,7 +169,10 @@ function updateHeadsUpDisplay(){
 			textobj.innerHTML = textobj.innerHTML + "<br>"
 			+ "<font color = red>" + "WARNING: USB device not connected to check RFID!!" + "<br></font>"
 		}
-	}
+		if (typeof(FLAGS.automatortext) != "undefined"){
+			textobj.innerHTML = textobj.innerHTML + "<br><br>" + FLAGS.automatortext		
+		}
+	}//IF headsupfraction > 0
 	else if (CANVAS.headsupfraction == 0){
 		textobj.innerHTML = '' //port.statustext_connect + blescale.statustext_connect
 	}
@@ -202,7 +205,7 @@ function updateHeadsUpDisplay(){
 		+ "<br>" + "OS name,codename,ver: " + ENV.DeviceOSName + ", "  + "<u><font color = green>"+ ENV.DeviceOSCodeName + "</font></u>" + ", " + ENV.DeviceOSVersion
 		+ "<br>" + "Browser: "  + "<u><font color = green>" + ENV.DeviceBrowserName + "</font></u>" + " v" + ENV.DeviceBrowserVersion
 	}//ELSE IF isnan
-}
+}//FUNCTION updateHeadsUpDisplay
 
 function updateHeadsUpDisplayDevices(){
 	var textobj = document.getElementById("headsuptextdevices");
@@ -224,26 +227,23 @@ function updateHeadsUpDisplayDevices(){
 }
 
 function updateHeadsUpDisplayAutomator(currentautomatorstagename,pctcorrect,ntrials,minpctcorrect,mintrials,eventstring){
-	var textobj = document.getElementById("headsuptextautomator");
 	if (CANVAS.headsupfraction > 0){
-		textobj.innerHTML =
-			"Automator: " + 
-			"<font color=red><b>" + TASK.Automator + "</b></font> " +
-			" " + "<font color=white><b>" +
-			 "Stage" + TASK.CurrentAutomatorStage + "=" +
-				currentautomatorstagename +
-			"</b></font>" +"<br>" +
-			"Performance: " + 
-			"<font color=green><b>" + Math.round(pctcorrect) + "%, last " + 
-			ntrials + " trials</b></font> " + 
-			"(min: " + minpctcorrect + 
-				"%, " + mintrials + " trials)" + "<br>" + "<br>" +
-			eventstring
+		var textstr =
+			"Automator: " +  "<font color=red><b>" + TASK.Automator + "</b></font>"
+			+ ", <font color=white><b>"
+			+ "Stage=" + currentautomatorstagename + TASK.CurrentAutomatorStage
+			+ "</b></font>" 
+			+ "<br> Performance: " + "<font color=green><b>"
+			+ Math.round(pctcorrect) + "%, last "
+			+ ntrials + " trials</b></font> "
+			+ "(min: " + minpctcorrect + "%, " + mintrials + " trials)" 
+			+ "<br>" + eventstring
 	}
 	else if (CANVAS.headsupfraction == 0){
-		textobj.innerHTML = ""
+		var textstr=''
 	}
-}
+	return textstr
+}//FUNCTION update
 
 //================== IMAGE RENDERING ==================//
 function defineImageGrid(ngridpoints, gridspacing,xoffset,yoffset){

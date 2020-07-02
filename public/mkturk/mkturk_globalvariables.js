@@ -50,6 +50,8 @@ ENV.FirestoreDocRoot = ''
 ENV.CurrentAutomatorStageName = ''
 ENV.MinPercentCriterion = -1
 ENV.MinTrialsCriterion = -1
+ENV.StagePctCorrect = -1
+ENV.StageNTrials = -1
 
 ENV.WebBluetoothAvailable = 0
 ENV.WebUSBAvailable = 0
@@ -108,7 +110,8 @@ FLAGS.consecutivehits = 0;
 FLAGS.need2loadImagesTrialQueue = 1; 
 FLAGS.need2loadScenes = 1;
 FLAGS.movieper = {"Sample": [], "Test": []};
-FLAGS.need2loadParameters = 1; 
+FLAGS.need2loadParameters = 1;
+FLAGS.need2saveParameters = 0;
 FLAGS.savedata = 0; 
 FLAGS.stage = 0; 
 FLAGS.imagesPresent = 0;
@@ -125,6 +128,7 @@ FLAGS.firestorelastsavedtrial = 0
 FLAGS.firestoretimeron = 0
 FLAGS.stressTest = 0
 FLAGS.RFIDGeneratorCreated = 0
+FLAGS.automatortext = ''
 
 var CANVAS = {}; 
 var CANVAS = {
