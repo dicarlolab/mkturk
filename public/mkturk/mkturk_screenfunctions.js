@@ -169,7 +169,10 @@ function updateHeadsUpDisplay(){
 			textobj.innerHTML = textobj.innerHTML + "<br>"
 			+ "<font color = red>" + "WARNING: USB device not connected to check RFID!!" + "<br></font>"
 		}
-	}
+		if (typeof(FLAGS.automatortext) != "undefined"){
+			textobj.innerHTML = textobj.innerHTML + "<br><br>" + FLAGS.automatortext		
+		}
+	}//IF headsupfraction > 0
 	else if (CANVAS.headsupfraction == 0){
 		textobj.innerHTML = '' //port.statustext_connect + blescale.statustext_connect
 	}
@@ -202,7 +205,7 @@ function updateHeadsUpDisplay(){
 		+ "<br>" + "OS name,codename,ver: " + ENV.DeviceOSName + ", "  + "<u><font color = green>"+ ENV.DeviceOSCodeName + "</font></u>" + ", " + ENV.DeviceOSVersion
 		+ "<br>" + "Browser: "  + "<u><font color = green>" + ENV.DeviceBrowserName + "</font></u>" + " v" + ENV.DeviceBrowserVersion
 	}//ELSE IF isnan
-}
+}//FUNCTION updateHeadsUpDisplay
 
 function updateHeadsUpDisplayDevices(){
 	var textobj = document.getElementById("headsuptextdevices");
@@ -224,26 +227,23 @@ function updateHeadsUpDisplayDevices(){
 }
 
 function updateHeadsUpDisplayAutomator(currentautomatorstagename,pctcorrect,ntrials,minpctcorrect,mintrials,eventstring){
-	var textobj = document.getElementById("headsuptextautomator");
 	if (CANVAS.headsupfraction > 0){
-		textobj.innerHTML =
-			"Automator: " + 
-			"<font color=red><b>" + TASK.Automator + "</b></font> " +
-			" " + "<font color=white><b>" +
-			 "Stage" + TASK.CurrentAutomatorStage + "=" +
-				currentautomatorstagename +
-			"</b></font>" +"<br>" +
-			"Performance: " + 
-			"<font color=green><b>" + Math.round(pctcorrect) + "%, last " + 
-			ntrials + " trials</b></font> " + 
-			"(min: " + minpctcorrect + 
-				"%, " + mintrials + " trials)" + "<br>" + "<br>" +
-			eventstring
+		var textstr =
+			"Automator: " +  "<font color=red><b>" + TASK.Automator + "</b></font>"
+			+ ", <font color=white><b>"
+			+ "Stage=" + currentautomatorstagename + TASK.CurrentAutomatorStage
+			+ "</b></font>" 
+			+ "<br> Performance: " + "<font color=green><b>"
+			+ Math.round(pctcorrect) + "%, last "
+			+ ntrials + " trials</b></font> "
+			+ "(min: " + minpctcorrect + "%, " + mintrials + " trials)" 
+			+ "<br>" + eventstring
 	}
 	else if (CANVAS.headsupfraction == 0){
-		textobj.innerHTML = ""
+		var textstr=''
 	}
-}
+	return textstr
+}//FUNCTION update
 
 //================== IMAGE RENDERING ==================//
 function defineImageGrid(ngridpoints, gridspacing,xoffset,yoffset){
@@ -281,6 +281,7 @@ function defineImageGrid(ngridpoints, gridspacing,xoffset,yoffset){
 function displayTrial(ti,gr,fr,sc,ob,id){
 	var resolveFunc
 	var errFunc
+	var new2DImageDrawnOffscreen = 0
 	p = new Promise(function(resolve,reject){
 		resolveFunc = resolve;
 		errFunc = reject;
@@ -344,7 +345,8 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 				}//ELSE hide 3D when plotting 2D elements like buttons and not keeping (overlaying) sample/test
 
 				//=================== 2D rendering =====================//
-				if(f==0 || s>0 || taskscreen != sc[f-1] || id[f] != id[f-1]){
+				if(f==0 || s>0 || taskscreen != sc[f-1] || id[f] != id[f-1] || new2DImageDrawnOffscreen == 1){
+					new2DImageDrawnOffscreen=0
 					if (ENV.OffscreenCanvasAvailable && s == frame.frames[frame.current].length-1){
 						//everything has been pre-rendered offscreen, now transfer
 						var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
@@ -489,6 +491,7 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 																	OFFSCREENCANVAS) //render 2D image offscreen prior to next frame draw
 									boundingBoxes2D.x[j] = boundingBox.x
 									boundingBoxes2D.y[j] = boundingBox.y
+									new2DImageDrawnOffscreen=1
 								}//FOR j display items
 								if (s==0 && boundingBoxesChoice3D.x == []){
 									boundingBoxesChoice3D.x = boundingBoxes2D.x
@@ -498,6 +501,7 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 						}//IF sample/test image
 						else{
 							await renderShape2D(taskscreen,gr[f],OFFSCREENCANVAS)
+							new2DImageDrawnOffscreen=1
 						}//ELSE shape
 
 						if (s==0 && taskscreen=="Choice"){

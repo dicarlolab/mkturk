@@ -169,9 +169,7 @@ if (typeof(navigator.bluetooth) == "object"){
 
 	<p id="headsuptextdevices" style="z-index:101; position: absolute; left: 50%; top: 1px; height: 40%; width: 40%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;">No devices connected</p>
 
-	<p id="headsuptextautomator" style="z-index:99; position: absolute; left: 50%; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
 	<p id="imageloadingtext" style="z-index:104; position: absolute; left: 1px; top: 1px; height: 5%; width: 100%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
-
 
   <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="doneEditingParams" style="visibility:hidden; z-index: 102; font-size: 25px; position: absolute; top: 5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
 	Done Editing Params
@@ -592,26 +590,7 @@ function skipHardwareDevice(event){
 		automateTask(automator_data, trialhistory) 
 		await saveParameterstoFirebase() 
 		await loadParametersfromFirebase(ENV.ParamFileName);
-
-		//========= AWAIT PRELOAD IMAGES FOR AUTOMATOR STAGES =======//
-		// Preload stuff now (to ensure smooth transitions between automator stages)
-		var AutomatorPreBuffer = {}; 
-		AutomatorPreBuffer['TrialQueue'] = {}; 
-		
-		console.log('Starting to populate automator prebuffer:')
-
-		for (var a = TASK.CurrentAutomatorStage; a < automator_data.length; a++){
-			console.time('Stage '+a)
-
-			// Make TrialQueue
-			AutomatorPreBuffer['TrialQueue'][a] = new TrialQueue(TASK.SamplingStrategy, automator_data[a].ImageBagsSample, automator_data[a].ImageBagsTest); 
-
-			// Populate the stage's imagebuffer with some images
-			await AutomatorPreBuffer['TrialQueue'][a].build(num_prebuffer_trials)
-			console.timeEnd('Stage '+a)
-		}
-		console.log('Done prebuffering')
-	} //if automator
+	}//IF TASK.Automator != 0
 
 	//============= AWAIT LOAD SOUNDS =============//
 	soundpromises = sounds.serial.map(loadSoundfromFirebase); //create array of sound load Promises
@@ -637,10 +616,10 @@ function skipHardwareDevice(event){
 	}
 
 	FLAGS.need2loadParameters = 1
-    FLAGS.need2loadScenes = 1
+	FLAGS.need2loadScenes = 1
 	CURRTRIAL.num = 0
 	EVENTS.trialnum = 0
-    FLAGS.savedata = 0 // test trials can be performed, but data won't be saved
+  FLAGS.savedata = 0 // test trials can be performed, but data won't be saved
 
 // =========================================================================================================== // 
 // ============ MAIN LOOP ==================================================================================== // 
@@ -764,24 +743,23 @@ while(true){
 			}
 		} //if TASK.RewardStage
 
-		//XX
-        ENV.FixationRadius = TASK.FixationSizeInches/2 * ENV.ViewportPPI
-        ENV.SampleFixationRadius = TASK.SampleFixationSizeInches/2 * ENV.ViewportPPI
-        ENV.ChoiceRadius = TASK.ChoiceSizeInches/2 * ENV.ViewportPPI
+    ENV.FixationRadius = TASK.FixationSizeInches/2 * ENV.ViewportPPI
+    ENV.SampleFixationRadius = TASK.SampleFixationSizeInches/2 * ENV.ViewportPPI
+    ENV.ChoiceRadius = TASK.ChoiceSizeInches/2 * ENV.ViewportPPI
 
-        // define image display grid
-        funcreturn = defineImageGrid(TASK.NGridPoints, TASK.GridSpacingInches*ENV.ViewportPPI,TASK.GridXOffsetInches*ENV.ViewportPPI,TASK.GridYOffsetInches*ENV.ViewportPPI);
-        xcanvascenter = funcreturn[0]
-        ycanvascenter = funcreturn[1]
-        ENV.XGridCenter = funcreturn[2]
-        ENV.YGridCenter = funcreturn[3]
+    // define image display grid
+    funcreturn = defineImageGrid(TASK.NGridPoints, TASK.GridSpacingInches*ENV.ViewportPPI,TASK.GridXOffsetInches*ENV.ViewportPPI,TASK.GridYOffsetInches*ENV.ViewportPPI);
+    xcanvascenter = funcreturn[0]
+    ycanvascenter = funcreturn[1]
+    ENV.XGridCenter = funcreturn[2]
+    ENV.YGridCenter = funcreturn[3]
 
-		FLAGS.purge = 1
-		FLAGS.createnewfirestore = 1
+	FLAGS.purge = 1
+	FLAGS.createnewfirestore = 1
     CURRTRIAL.reset()
-		EVENTS.reset_trialseries()
+	EVENTS.reset_trialseries()
     EVENTS.reset_timeseries()
-	} //if need2loadParameters
+	}//IF need2loadParameters
 
 	if (FLAGS.purge == 1){
 		purgeTrackingVariables()

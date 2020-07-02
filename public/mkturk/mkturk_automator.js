@@ -1,38 +1,38 @@
 async function automateTask(automator_data, trialhistory){
 	// Input: automator array; trialhistory (.trainingstage, .correct), current_automator_stage
-	// Globals: trial.currentAutomatorStage (for reading); trial.stuff (for writing to)
+	// Globals: TASK.currentAutomatorStage (for reading); TASK.stuff (for writing to)
 
-	// Actions: if [mintrials of minpctcorrect] has been achieved, move on to the next automator stage. 
-	// update trial.stuff 
-	// Set flags for updating params file; reloading images (if necessary), starting new textfile, etc.
+	// Actions: if [mintrials of minpctcorrect] has been achieved, move on to the next automator stage by updating TASK.stuff.
+	// Set flags for updating params file, starting new datafile
 
-
-	// ---------- IF THERE ARE DISCREPANCIES, SET TRIAL.STUFF TO AUTOMATOR DATA [ CURRENT_STAGE ] ---------- 
-	// Check for consistency between automator_data[current_stage] and trial.stuff: 
-	// i_current_stage is the master; the ground truth for what trial.stuff should be. 
+	// IF THERE ARE DISCREPANCIES, SET TASK.STUFF TO AUTOMATOR DATA [ CURRENT_STAGE ]
+	// Check for consistency between automator_data[current_stage] and TASK.stuff: 
+	// i_current_stage is the master; the ground truth for what TASK.stuff should be.
 
 	var i_current_stage = TASK.CurrentAutomatorStage; 
 	var current_stage = stageHash(TASK); 
 	var automator_eventstring = []
 
 	for (var property in automator_data[i_current_stage]){
+		if (property == "CurrentAutomatorStageName" || property == "MinPercentCriterion" || property == "MinTrialsCriterion"){
+			continue
+		}//IF stage name or criteria, then these are stored in ENV not TASK
 		if (automator_data[i_current_stage].hasOwnProperty(property)){ // Apparently a necessary 'if' statement, as explained in: http://stackoverflow.com/questions/8312459/iterate-through-object-properties
-			if (property === 'MinPercentCriterion' || property === 'MinTrialsCriterion' || 
-				property === 'CurrentAutomatorStageName'){
-				continue 
-			}
+			if (TASK[property].toString() != automator_data[i_current_stage][property].toString()){
+				automator_eventstring.push('WRITE NEW PARAMS: ' 
+					+ 'Discrepancy between TASK.'+property+'='+TASK[property]
+					+ ' and automator_data['+i_current_stage+']['+property+']='
+					+ automator_data[i_current_stage][property]
+				)
+				console.log(automator_eventstring[automator_eventstring.length-1])
 
-			if (!(TASK[property].toString() == automator_data[i_current_stage][property].toString())){
-automator_eventstring.push('WRITE NEW PARAMS: ' + 'Discrepancy between TASK.'+property+'='+TASK[property]+
-' and automator_data['+i_current_stage+']['+property+']='+automator_data[i_current_stage][property])
-console.log('Discrepancy between TASK.'+property+'='+TASK[property]+' and automator_data['+i_current_stage+']['+property+']='+automator_data[i_current_stage][property])
 				TASK[property] = automator_data[i_current_stage][property]
-				FLAGS.need2writeParameters=1
-			}
-		}
-	}
+				FLAGS.need2saveParameters=1
+			}//IF need to update TASK property to property in current automator stage
+		}//IF
+	}//FOR property
 
-	// ---------- CHECK IF STAGE TRANSITION CRITERIA HAS BEEN MET: -----------------------------------------
+	// ---------- CHECK IF STAGE TRANSITION CRITERIA HAS BEEN MET: ---------------------
 	// Read transition criteria from automator_data
 	ENV.MinPercentCriterion = automator_data[i_current_stage].MinPercentCriterion;
 	ENV.MinTrialsCriterion = automator_data[i_current_stage].MinTrialsCriterion; 
@@ -40,76 +40,73 @@ console.log('Discrepancy between TASK.'+property+'='+TASK[property]+' and automa
 
 	// Calculate current pctcorrect and ntrials
 	var funcreturn = computeRunningHistory(ENV.MinTrialsCriterion, current_stage, trialhistory.trainingstage, trialhistory.correct)
-	pctcorrect = funcreturn[0]
-	ntrials = funcreturn[1]
+	ENV.StagePctCorrect = funcreturn[0]
+	ENV.StageNTrials = funcreturn[1]
 
-	console.log('For '+ntrials+' trials, pctcorrect='+pctcorrect)
+	console.log('Performance history: '+ENV.StageNTrials+' trials, pctcorrect='+ ENV.StagePctCorrect)
 
-	// ---------- CHANGE TASK.STUFF TO AUTOMATOR DATA [ NEXT_STAGE ] --------------------------------------- 
+	// ---------- CHANGE TASK.STUFF TO AUTOMATOR DATA [ NEXT_STAGE ] ----------------------
 	// If transition criteria are met, 
-	if(pctcorrect > ENV.MinPercentCriterion && ntrials >= ENV.MinTrialsCriterion){
-
-		
+	if (ENV.StagePctCorrect > ENV.MinPercentCriterion && ENV.StageNTrials >= ENV.MinTrialsCriterion){
 		// If finished final stage of automator,
-		if(automator_data.length <= TASK.CurrentAutomatorStage+1){
-			// Stay in current stage settings, and 
-			// Turn automator off
-			TASK.Automator = 0; 
-			TASK.CurrentAutomatorStage = -1;
-			ENV.CurrentAutomatorStageName = '';
-automator_eventstring.push('COMPLETED FINAL STAGE, TURNING AUTOMATOR OFF')
-updateHeadsUpDisplayAutomator(ENV.CurrentAutomatorStageName,pctcorrect,ntrials,ENV.MinPercentCriterion,ENV.MinTrialsCriterion,automator_eventstring)
-			console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject completed the final stage '+(i_current_stage)+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
+		if (automator_data.length <= TASK.CurrentAutomatorStage+1){
+			// Stay in current stage settings, and turn automator off
+			TASK.Automator = 0;
+			FLAGS.need2saveParameters=1
+			
+			automator_eventstring.push('COMPLETED FINAL STAGE, TURNING AUTOMATOR OFF')
+			FLAGS.automatortext = updateHeadsUpDisplayAutomator(ENV.CurrentAutomatorStageName,ENV.StagePctCorrect,ENV.StageNTrials,ENV.MinPercentCriterion,ENV.MinTrialsCriterion,automator_eventstring)
+			updateHeadsUpDisplay()
+			console.log('With '+ENV.StagePctCorrect+'\% performance on n='+ENV.StageNTrials
+						+', subject completed the final stage '+(i_current_stage)
+						+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
 			console.log('Turning automator OFF.')
 			return 
-		}
+		}//IF finished final automator state
 
 		// Otherwise, advance to the next stage.
 		TASK.CurrentAutomatorStage = TASK.CurrentAutomatorStage + 1; 
-automator_eventstring.push(
-	'SUBJECT ADVANCED TO STAGE ' + (i_current_stage+1) + ' of '+(automator_data.length-1) + 
-	' with ' + pctcorrect+'\% performance on n='+ntrials)
-		console.log('With '+pctcorrect+'\% performance on n='+ntrials+', subject advanced to stage '+(i_current_stage+1)+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
+		automator_eventstring.push( 'SUBJECT ADVANCED TO STAGE ' + (i_current_stage+1) 
+									+ ' of '+(automator_data.length-1)
+									+ ' with ' + ENV.StagePctCorrect+'\% performance on n='+ENV.StageNTrials)
+		console.log('With '+ENV.StagePctCorrect+'\% performance on n='+ENV.StageNTrials
+					+', subject advanced to stage '+(i_current_stage+1)
+					+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
 
 		// Save behavior with current TASK, ENV, and EVENTS before moving on. 
 		saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS);
+		updateEventDataonFirestore(EVENTS);
 
 		// Reset tracking variables 
 		purgeTrackingVariables()
 
-
-		// Update TASK 
-		var old_imageBagsSample = TASK.ImageBagsSample
-		var old_imageBagsTest = TASK.ImageBagsTest
-
+		// Update TASK
 		for (var property in automator_data[i_current_stage+1]){
-			if (property === 'MinPercentCriterion' || property === 'MinTrialsCriterion' ||
-				property === 'CurrentAutomatorStageName'){
-				continue 
-			}
+			if (property == "CurrentAutomatorStageName" || property == "MinPercentCriterion" || property == "MinTrialsCriterion"){
+				continue
+			}//IF stage name or criteria, these ENV variables don't need to be stored in TASK
 
 			if (automator_data[i_current_stage+1].hasOwnProperty(property)){ 
-				if (!(TASK[property].toString() == automator_data[i_current_stage+1][property].toString())){
-					console.log('\"'+property+'\" changed from '+TASK[property]+' to '+automator_data[i_current_stage+1][property])
-
+				if (TASK[property].toString() != automator_data[i_current_stage+1][property].toString())
+				{
 					TASK[property] = automator_data[i_current_stage+1][property]
-				}
-			}			
-		}
 
-		// If imagebags are changed by automator, load images at beginning of next trial. 
-		if(!old_imageBagsTest.equals(TASK.ImageBagsTest) || !old_imageBagsSample.equals(TASK.ImageBagsSample)){
-			FLAGS.need2loadImagesTrialQueue = 1; 
-automator_eventstring.push('NEW IMAGES NEEDED for this automator stage')
-		}
-
+					console.log('\"'+property+'\" changed from '+TASK[property]
+								+' to '+automator_data[i_current_stage+1][property])
+				}//IF need to update TASK property
+			}//IF property
+		}//FOR property
 		FLAGS.need2saveParameters=1
-	}
-updateHeadsUpDisplayAutomator(ENV.CurrentAutomatorStageName,pctcorrect,ntrials,ENV.MinPercentCriterion,ENV.MinTrialsCriterion,automator_eventstring)
+		FLAGS.need2loadParameters=1
+	}//IF stage transition
 
-
+	FLAGS.automatortext = updateHeadsUpDisplayAutomator(
+		ENV.CurrentAutomatorStageName,
+		ENV.StagePctCorrect, ENV.StageNTrials, ENV.MinPercentCriterion, ENV.MinTrialsCriterion,
+		automator_eventstring)
+	updateHeadsUpDisplay()
 	return 
-}
+}//FUNCTION automateTask(automator_data,trialhistory)
 
 
 function stageHash(task){
@@ -126,15 +123,15 @@ function stageHash(task){
 	return current_stage_hash_string
 
 	// Todo: decide whether to count trials which have TASK that is consistent with an automator stage, as being part of that stage
-}
+}//FUNCTION stageHash(task)
 
 
 async function readTrialHistoryFromFirebase(filepaths){
-	
 	var trialhistory = {}
 	trialhistory.trainingstage = []
 	trialhistory.starttime = []
 	trialhistory.correct = []
+	trialhistory.response = []
 
 	if (typeof filepaths == "string"){
 		filepaths = [filepaths]
@@ -147,28 +144,30 @@ async function readTrialHistoryFromFirebase(filepaths){
 	// Iterate over files and add relevant variables
 	for (var i = 0; i< filepaths.length; i++){
 		data = await loadTextfromFirebase(filepaths[i])
-		task_data = data[3]
-		trial_data = data[4]
 
-		var numTRIALs = trial_data.Response.length; 
+		var numTRIALs = data.TRIALEVENTS.Response.length; 
 		// Iterate over TRIALs
 		for (var i_trial = 0; i_trial<numTRIALs; i_trial++){
-			// Correct/incorrect trial
-			var correct = Number(trial_data.Response[i_trial] == trial_data.CorrectItem[i_trial])
+			//Correct/incorrect trial
+			var correct = Number(data.TRIALEVENTS.Response[i_trial] == data.TRIALEVENTS.CorrectItem[i_trial])
 			trialhistory.correct.push(correct)
 
-			// Current automator stage 
-			var current_stage = stageHash(task_data)
+			//Response
+			var response = data.TRIALEVENTS.Response[i_trial]
+			trialhistory.response.push(response)
+
+			//Current automator stage 
+			var current_stage = stageHash(data.TASK)
 			trialhistory.trainingstage.push(current_stage)
 
-			// Start time (fixation dot appears) of trial 
-			var starttime = trial_data.StartTime[i_trial]
+			//Start time (fixation dot appears) of trial 
+			var starttime = data.TRIALEVENTS.StartTime[i_trial]
 			trialhistory.starttime.push(starttime)
 		}
 	}
 	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
 	return trialhistory
-}
+}//FUNCTION readTrialHistoryFromFirebase(filepaths)
 
 
 function computeRunningHistory(mintrials, current_stage, history_trainingstage, history_corrects){
@@ -182,12 +181,9 @@ function computeRunningHistory(mintrials, current_stage, history_trainingstage, 
  		throw('The history arrays are of different length. Check what went wrong; cannot compute performance history.')
 	}
 
-	// returns 
-	// The at most current-mintrials trial which starts a contiguous sequence to current trial with the same trainingstage/automatorfilepath as the current state,  
-
+	// Returns: The at most current-mintrials trial which starts a contiguous sequence to current trial with the same trainingstage/automatorfilepath as the current state,  
 	// trialhistory is assumed to include all trials except the current one
-	// It is arranged in [oldest, ..., current-1] order
-
+	// trialhistory is arranged in [oldest, ..., current-1] order
 
 	// Starting from the most recent trial, move backwards until you hit either 1) mintrials or 2) another automatorstage
 	var startingindex = history_trainingstage.length;
@@ -210,7 +206,7 @@ function computeRunningHistory(mintrials, current_stage, history_trainingstage, 
 			console.log(current_stage)
 			throw "Something went wrong 2"
 		}
-	}
+	}//FOR i trials
 
 	var ndiscrepancy = 0
 	var ncountedtrials = 0
@@ -241,4 +237,4 @@ function computeRunningHistory(mintrials, current_stage, history_trainingstage, 
 	}
 	pctcorrect = 100 * ncorrect/ntrial;
 	return [pctcorrect, ntrial]
-}
+}//FUNCTION computeRunningHistory(mintrials, current_stage, history_trainingstage, history_corrects)
