@@ -5,7 +5,9 @@ Automator: Boolean on/off
 
 AutomatorFilePath: File path to params for the automator curriculum.
 
-BackgroundColor2D: specify the background color in hex (eg, #FFFFFF for white or #000000 for black). Not required in param file. If not provided, defaults to gray screen background (#7F7F7F)
+BackgroundColor2D (optional): specify the background color in hex (eg, #FFFFFF for white or #000000 for black). Not required in param file. If not provided, defaults to gray screen background (#7F7F7F)
+
+CalibrateEye (optional): If >0, will calibrate for TASK.CalibrateEye number of trials for train & same number for test. Afte test, saves calibration in firestore collection "eyecalibrations." Requires TASK.TrackEye>0.
 
 CheckRFID: Time in milliseconds over which at least one matching RFID read is required so that agent doesn't get kicked off of task. If there is a read within the last CheckRFID ms, task continues, otherwise agent is locked out at start of next trial. CheckRFID <= 0 turns off RFID checking.
 
@@ -37,6 +39,8 @@ GridXOffsetInches: Determines how much to horizontally shift grid from center in
 
 GridYOffsetInches: Determines how much to vertically shift grid from center in physical inches on screen. >0 => shifts downward
 
+HeadsupDisplayFraction (optional): Vertical fraction of screen to use for displaying task stats and device outputs such as RFID detection. If not specified, default is 0% for human, 27.3% for marmoset.
+
 HideChoiceDistractors: HideChoiceDistractors=1, hides the same or different button so that subject sees only the correct one to touch. Still gets punished if touches blank area where the incorrect button would have been. This only applies to same-different choice screen. See HideTestDistractors for test response screen used in SR2 and M2S.
 
 HideTestDistractors: HideTestDistractors=1, hides the distractor choices so that subject only sees matching choice. Still gets punished if touches blank area where the incorrect button would have been.
@@ -49,7 +53,7 @@ ImageBagsTest: List of (list of) paths, where entries at the top level are direc
 
 ImageRewardsList: List of paths containing user-specified reward per image. Images in the image_reward_list file need to be referenced by their complete path. ImageReward values: 0=no feedback (no reward or punish for that sample image) >0=user set reward for that sample image, overrides bonus reward behavior. These can be partial lists. For images where reward is manually specified, then default bonus reward behavior is used. No corresponding list is used for test (choice) images. Instead, specify reward for a whole class by listing reward for each image in that class in ImageRewardsList.
 
-InterTrialInterval: How long to wait after reward/punish is delivered before starting next trial. Only a gray screen is shown for InterTrialInterval milliseconds, followed by the fixation dot.
+InterTrialInterval (optional): How long to wait after reward/punish is delivered before starting next trial. Only a gray screen is shown for InterTrialInterval milliseconds, followed by the fixation dot. If not specified, is set to 0 ms.
 
 KeepSampleON: KeepSampleON=0, sample is presented only for sampleON milliseconds for a delayed match-to-sample, KeepSampleON=1 sample remains on during choice screen. This implements a spatial match to sample.
 
@@ -91,7 +95,7 @@ SampleOFF: Duration in milliseconds that a gray screen is presented after the sa
 
 SampleFixationSizeInches: Width of box within which subject has to hold fixation during sample screen. If 0, then subject does not have to hold fixation on the sample image.
 
-SampleSizeInches: Size of sample image in physical inches on the screen. sampleSizeInches = 0.834444 displays a 256 x 256 image on 256 x 256 screen pixels on the google pixel c screen (i.e. no up or down sampling/resizing/filtering of the image)
+SampleSizeInches (deprecated, now specified in scene param file): Size of sample image in physical inches on the screen. sampleSizeInches = 0.834444 displays a 256 x 256 image on 256 x 256 screen pixels on the google pixel c screen (i.e. no up or down sampling/resizing/filtering of the image)
 
 Separated: 0=subject was paired with conspecific during task, 1=individual housed was separated from conspecific
 
@@ -105,7 +109,9 @@ TestGridIndex: Index on grid where test images (choices) appear.
 
 TestOFF: Choice screen appears TestOFF milliseconds after test image is extinguished. If TestOFF=0, then test screen does not extinguish (go to blank gray) until same-different choice screen appears. If KeepTestON=1, then test image reappears during the same-different choice screen.
 
-TestSizeImages: Size of the test image in physical inches on the screen
+TestSizeInches (deprecated, now specified in scene param file): Size of the test image in physical inches on the screen
+
+TrackEye (optional): Utilizes eye tracker input instead of touch for response. Can be set along with complementary TASK.CalibrateEye variable for calibrating. Otherwise, will use existing calibration record for agent on firestore. IF not set, default is TASK.TrackEye=0.
 
 
 ## ENV

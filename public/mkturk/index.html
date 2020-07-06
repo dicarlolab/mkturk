@@ -573,6 +573,34 @@ function skipHardwareDevice(event){
 	} //IF !QuickLoad.load
 	//================== (END) AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
 
+  //======================== CHECK IF FIRST NEED TO SAVE OUT IMAGE BAGS ==========================//
+  if (TASK.Agent != "SaveImages"){
+	  var needsImageBag = []
+	  var needsImageBagStr = ''
+	  for (var i=0; i<=TASK.ImageBagsSample.length-1; i++){
+		scenebag = TASK.ImageBagsSample[i]
+		scenebag_dir = scenebag.slice(0,scenebag.lastIndexOf('/')+1)
+		// var filelist = await getFileListRecursiveFirebase(scenebag_dir)
+		var fileList = await storage.ref().child(scenebag_dir).listAll()
+		needsImageBag[i] = 1
+		for (var j=0; j<=fileList.prefixes.length-1; j++){
+			var containsSceneBagName = fileList.prefixes[j].name.indexOf(scenebag)
+			if (containsSceneBagName >= 0){
+				needsImageBag[i] = 0
+			}//IF found imagebag folder
+		}//FOR j folders
+		if (needsImageBag[i] == 1){
+			needsImageBagStr = needsImageBagStr + "<br>"
+							+ "Scene bag <b><i><font color=yellow>" + scenebag + "</font color></b></i> needs an image bag"
+		}
+	  }//FOR i scenebag files
+	  if (needsImageBagStr != ''){
+		var textobj = document.getElementById("headsuptext");
+		textobj.innerHTML = needsImageBagStr + "<br><br><b><font color=red> !!! PLEASE SAVE OUT IMAGES FIRST, THEN RELOAD TASK !!! <font color></b>"
+		return
+	  }//IF needsImageBagStr
+  }//IF !SaveImages
+  //===================== (END) CHECK IF FIRST NEED TO SAVE OUT IMAGE BAGS =======================//
 
 	//============= AWAIT READ SUBJECT PERFORMANCE HISTORY =============//
 	// Read performance history
@@ -613,7 +641,9 @@ function skipHardwareDevice(event){
 	document.querySelector("button[id=stressTest]").style.visibility = "visible"
 	if (TASK.Agent == "SaveImages"){
 		document.querySelector("button[id=stressTest]").innerHTML = "Save Images"
-	}
+    	TASK.SamplingStrategy = "sequential"
+    	console.log("Automatically using sequential sampling since SAVE IMAGES was specified.")
+	}//IF SaveImages
 
 	FLAGS.need2loadParameters = 1
 	FLAGS.need2loadScenes = 1
