@@ -159,9 +159,12 @@ var CURRTRIAL = {}
 CURRTRIAL.reset = function(){
 	this.num = 0;
 	this.starttime = NaN; 
+	this.samplestarttime = NaN; 
+	this.samplestarttime_string = ""; 	
 	this.fixationgridindex = NaN; 
 	this.fixationxyt = [];
 	this.allfixationxyt = [];
+	this.samplegridindex = NaN; 
 	this.sampleindex = [];
 	this.sampleindex_nonarray = [];
 	this.sampleimage = [];
@@ -200,11 +203,13 @@ EVENTS.reset_trialseries = function(){
 	this.trialseries.CorrectItem = {}
 	this.trialseries.FixationGridIndex = {}
 	this.trialseries.StartTime = {}
+	this.trialseries.SampleStartTime = {}; 	
 	this.trialseries.FixationTouchEvent = {}
 	this.trialseries.FixationXYT = {}
 	this.trialseries.Response = {}
 	this.trialseries.TSequenceDesiredClip = {}
 	this.trialseries.TSequenceActualClip = {}
+	this.trialseries.SampleGridIndex = {}
 	this.trialseries.SampleFixationTouchEvent = {}	
 	this.trialseries.SampleFixationXYT = {}
 	this.trialseries.ResponseTouchEvent = {}
@@ -218,6 +223,9 @@ EVENTS.reset_timeseries = function(){
 	this.timeseries.BLEBattery = {}
 	this.timeseries.RFIDTag = {}
 	this.timeseries.Weight = {}
+	this.timeseries.FrameNum = {}
+	this.timeseries.TSequenceDesired = {}
+	this.timeseries.TSequenceActual = {}
 	this.timeseries.EyeData = {}
 }
 EVENTS.reset_trialseries()
@@ -289,7 +297,7 @@ function logEVENTS(eventname,eventval,eventtype){
 	else if (eventtype == 'timeseries'){
 		//running index
 		var indevent = Object.keys(EVENTS[eventtype][eventname]).length
-		var trialtime = [EVENTS.trialnum, Date.now() - ENV.CurrentDate.valueOf()]
+		var trialtime = [EVENTS.trialnum, new Date(Date.now()).toJSON()]
 		EVENTS[eventtype][eventname][indevent.toString()] = trialtime.concat(eventval)
 	}
 }

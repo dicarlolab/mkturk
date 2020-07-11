@@ -550,7 +550,7 @@ async function renderShape2D(sc,gr,canvasobj){
 	if (FLAGS.savedata == 0){
 		renderBlankWithGridMarkers(
 			ENV.XGridCenter,ENV.YGridCenter, 
-			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, TASK.ChoiceGridIndex,
+			CURRTRIAL.FixationGridIndex,CURRTRIAL.samplegridindex,TASK.TestGridIndex, TASK.ChoiceGridIndex,
 			ENV.FixationRadius,
 			// IMAGES["Sample"][0].IMAGES.sizeInches[0]*ENV.ViewportPPI/(ENV.CanvasRatio), 
 			ENV.SampleFixationRadius, 

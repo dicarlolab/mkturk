@@ -588,7 +588,17 @@ function toPerformanceData() {
     //FIXATION
     ndisplayelements++
 
-    fixation_xcoord = file.data.XGridCenter[file.data.StaticFixationGridIndex]
+    if (typeof(file.data.StaticFixationGridIndex) != "undefined"){
+        fixation_xcoord = file.data.XGridCenter[file.data.StaticFixationGridIndex]        
+    }
+    else{
+        if (file.data.FixationGridIndex >= 0){
+            fixation_xcoord = file.data.XGridCenter[file.data.FixationGridIndex]
+        }
+        else{
+            fixation_xcoord = file.data.XGridCenter[0] //moving fixation
+        }
+    }
     fixation_ycoord = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.StaticFixationGridIndex]
 
     var  arr = new Array(nColumn)
@@ -614,7 +624,12 @@ function toPerformanceData() {
 
     //SAMPLE
     ndisplayelements++
-    sample_xcoord = file.data.XGridCenter[file.data.SampleGridIndex]
+    if (file.data.SampleGridIndex >= 0){
+        sample_xcoord = file.data.XGridCenter[file.data.SampleGridIndex]
+    }//IF fixed grid location
+    else{
+        sample_xcoord = file.data.XGridCenter[0]
+    }//ELSE moving grid location
     sample_ycoord = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.SampleGridIndex]    
 
     var  arr = new Array(nColumn)

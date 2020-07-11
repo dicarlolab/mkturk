@@ -661,8 +661,9 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
     if (FLAGS.savedata == 0){
         box.material.visible = true //show bounding boxes during practice
     }
-    else{
-        box.material.visible = false //hide the bounding boxes during testing
+    else if (FLAGS.savedata == 1){
+        box.material.opacity = 0
+        box.material.transparent = true //hide the bounding boxes during testing
     }
     box.name = taskscreen
 	scene[taskscreen].add(box)

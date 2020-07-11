@@ -239,7 +239,7 @@ serial.Port.prototype.onReceive = data => {
 			}
 
 			// STORE calibrated eye signal
-			logEVENTS("EyeData",[new Date(Date.now()).toJSON(),CURRTRIAL.num,eyebuffer.numeyes_HARDCODED,
+			logEVENTS("EyeData",[eyebuffer.numeyes_HARDCODED,
 						xy[0],xy[1],w,a,null,null,null,null],"timeseries");
 
 
@@ -250,28 +250,28 @@ serial.Port.prototype.onReceive = data => {
 				//EVENTS[idx] -- 3:X 4:Y 5:Diameter 6:Aspect
 			 	var eyedatalen = Object.keys(EVENTS['timeseries']['EyeData']).length
 				if (eyedatalen >= 4){
-					var X_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][5],
+					var X_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][3],
+									EVENTS['timeseries']['EyeData'][eyedatalen-3][3],
+									EVENTS['timeseries']['EyeData'][eyedatalen-2][3],
+									EVENTS['timeseries']['EyeData'][eyedatalen-1][3]
+								 ] )
+
+					var Y_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][4],
+									EVENTS['timeseries']['EyeData'][eyedatalen-3][4],
+									EVENTS['timeseries']['EyeData'][eyedatalen-2][4],
+									EVENTS['timeseries']['EyeData'][eyedatalen-1][4]
+								 ] )
+
+					var D_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][5],
 									EVENTS['timeseries']['EyeData'][eyedatalen-3][5],
 									EVENTS['timeseries']['EyeData'][eyedatalen-2][5],
 									EVENTS['timeseries']['EyeData'][eyedatalen-1][5]
 								 ] )
 
-					var Y_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][6],
+					var A_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][6],
 									EVENTS['timeseries']['EyeData'][eyedatalen-3][6],
 									EVENTS['timeseries']['EyeData'][eyedatalen-2][6],
 									EVENTS['timeseries']['EyeData'][eyedatalen-1][6]
-								 ] )
-
-					var D_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][7],
-									EVENTS['timeseries']['EyeData'][eyedatalen-3][7],
-									EVENTS['timeseries']['EyeData'][eyedatalen-2][7],
-									EVENTS['timeseries']['EyeData'][eyedatalen-1][7]
-								 ] )
-
-					var A_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][8],
-									EVENTS['timeseries']['EyeData'][eyedatalen-3][8],
-									EVENTS['timeseries']['EyeData'][eyedatalen-2][8],
-									EVENTS['timeseries']['EyeData'][eyedatalen-1][8]
 								 ] )
 					xy[0] = X_mdn
 					xy[1] = Y_mdn

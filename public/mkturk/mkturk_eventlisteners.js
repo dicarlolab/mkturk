@@ -104,7 +104,7 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 						ENV.Eye.EventType = "eyemove" //in box, so future states are "eyemove" (from "undefined" in usb code)
 						console.log('!!!! EYE ENTERED BOX !!!!  ' + touchcxyt)
 					}
-
+console.log('!!!!! ACQUIRED !!!!!!')
 					//START TIMER touchduration milliseconds
 					if (touchduration > 0){
 						touchTimer = setTimeout(function(){
@@ -112,7 +112,9 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 							FLAGS.acquiredTouch = 0
 							FLAGS.touchGeneratorCreated = 0 //block other callbacks
 console.log('!!!! HELD FIXATION !!!!')
-							if (TASK.TrackEye > 0){ ENV.Eye.EventType = "theld"}
+							if (TASK.TrackEye > 0){ 
+								ENV.Eye.EventType = "theld"
+							}
 							waitforEvent.next({type: "theld"})
 						},touchduration)
 					} //if touch hold required
@@ -121,9 +123,9 @@ console.log('!!!! HELD FIXATION !!!!')
 						FLAGS.acquiredTouch = 0
 						return_event.type = "theld"
 						break;
-					} //if no touch hold required
-				} //if touched inside box		
-			} //if !acquiredTouch
+					}//IF no touch hold required
+				} //IF touched inside box		
+			} //IF !acquiredTouch
 
 			//================== HOLDING TOUCH ==================//
 			if ( (touchevent.type == "touchmove" || touchevent.type == "eyemove") && FLAGS.acquiredTouch){
@@ -157,7 +159,6 @@ console.log('!!!! BROKE FIXATION !!!!')
 			}//IF ended touch early			
 		}//WHILE events
 
-		// console.log('RETURN_EVENT', return_event.type)
 		if (TASK.TrackEye){
 			//Median x,y = final eye position estimate
 			var xs = []

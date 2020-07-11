@@ -23,7 +23,9 @@ CurrentAutomatorStage: index of current training stage of automator.
 
 FixationDuration: How long subject has to hold fixation touch in milliseconds for a successful fixation to register.
 
-FixationMove: FixationMove=0, fixation image is presented at fixationGridindex. FixationMove=N, N>0, fixation image is presented at a randomly selected grid point and the fixation position is redrawn every N milliseconds. FixationMove > 0 can be used to train subjects to touch different screen locations or to calibrate an eyetracker.
+FixationGridIndex: Index on the grid where the fixation image will appear. If FixationGridIncex<0, then fixation image is presented at a randomly selected grid point and the fixation position is redrawn every FixationTimeOut milliseconds. FixationMove > 0 can be used to train subjects to touch different screen locations or to calibrate an eyetrackers.
+
+FixationMove (deprecated, replaced by setting FixationGridIndex < 0): FixationMove=0, fixation image is presented at fixationGridindex. FixationMove=N, N>0, fixation image is presented at a randomly selected grid point and the fixation position is redrawn every N milliseconds. FixationMove > 0 can be used to train subjects to touch different screen locations or to calibrate an eyetracker.
 
 FixationSizeInches: Size of fixation dot or image (ie FixationUsesSample=1) in physical inches on the screen
 
@@ -87,7 +89,7 @@ RewardStage: RewardStage=0 rewards for successful fixtion and skips the choice p
 
 SameDifferent: SameDifferent > 0 indicates a Same-Different task so that last screen is a new choice screen with same (circle) and different (square) buttons. Test image extinguishes after scenedurationMS milliseconds, followed by TestOFF pause, followed by choice screen. If KeepTestON=1, then test image is on for scenedurationMS milliseconds and then remains on for choice screen
 
-SampleGridIndex: Index on grid where sample image appears. SampleGridIndex=4 centers the image on a 3x3 grid, where ngridpoints=3
+SampleGridIndex: Index on grid where sample image appears. SampleGridIndex=4 centers the image on a 3x3 grid, where ngridpoints=3. If SampleGridIndex<0, then sample scene appears at a randomly selected grid location unless FixationGridIndex is also <0, in which case, the sample grid index will be set to be the same as the randomly generated fixation grid index (i.e., sample scene's location is yoked to where the fixation was for that trial).
 
 SamplingStrategy: Determines how sample images are drawn: uniform_with_replacement, uniform_without_replacement, sequential
 
@@ -101,7 +103,7 @@ Separated: 0=subject was paired with conspecific during task, 1=individual house
 
 Species: marmoset, macaque, or human
 
-StaticFixationGridIndex: Index on the grid where the fixation image will appear. If FixationMove>0, then StaticFixationGridindex is ignored.
+StaticFixationGridIndex (deprecated, replaced by FixationGridIndex): Index on the grid where the fixation image will appear. If FixationMove>0, then StaticFixationGridindex is ignored.
 
 Tablet (deprecated, replaced by auto-detected ENV.DeviceName): nexus9, samsung10, pixelc
 
