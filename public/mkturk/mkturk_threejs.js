@@ -396,9 +396,11 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
 	}//FOR sceneElements
 
 	//==== TURN BACK ON THE CURRENT DISPLAY ITEMS
+    var allBoundingBoxes = []
 	if (typeof(classlabels) == "number"){ classlabels = [classlabels] }
 	for (var i=0; i<=classlabels.length-1; i++){
 		var classlabel = classlabels[i]
+        allBoundingBoxes[classlabel] = []
 
 		//======= CAMERAS
 	    for (var cam in IMAGES[taskscreen][classlabel].CAMERAS){
@@ -583,9 +585,10 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
 	        var scenecenterY = ENV.YGridCenter[gridindex]
 	        var [objPosition, objSize, boundingBox] = 
 	        	updateObjectSingleFrame(taskscreen,objects,nextobjPosition,nextobjRotation,nextobjSize,nexttransparent,nextmorph,maxlength,camera,scenecenterX,scenecenterY)
+                allBoundingBoxes[classlabel].push(boundingBox)
 	    }//FOR obj in scene
 	}//FOR classlabel in classlabels
-	return boundingBox
+	return allBoundingBoxes
 }//FUNCTION updateSingleFrame3D
 
 function updateCameraSingleFrame(camera,cameraPosition,camTarget){

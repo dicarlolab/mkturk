@@ -1,284 +1,7 @@
-//================== CANVAS SETUP ==================//
-function refreshCanvasSettings(TASK){
-	// Adjust location of CANVAS based on species-specific setup
-	if (typeof(TASK.HeadsupDisplayFraction) != "undefined"){
-		CANVAS.headsupfraction=TASK.HeadsupDisplayFraction
-	} //IF headsupdisplayfraction specified
-	else{
-		if (TASK.Species == "macaque" || TASK.Species == "human"){
-			CANVAS.headsupfraction=0;
-		}
-		else if (TASK.Species == "marmoset"){
-			CANVAS.headsupfraction=1/3-0.06;
-		}		
-	}
-
-	if (CANVAS.headsupfraction == 0){
-		var textobj = document.getElementById("headsuptext");
-		textobj.innerHTML = ''
-		var textobj = document.getElementById("headsuptextdevices");
-		textobj.innerHTML = ''
-	}
-}//refreshCanvasSettings
-
-function writeTextonBlankCanvas(textstr,x,y){
-	var blank_canvasobj=CANVAS.obj.blank
-	var visible_ctxt = blank_canvasobj.getContext('2d')
-	visible_ctxt.textBaseline = "hanging"
-	visible_ctxt.fillStyle = "white"
-	visible_ctxt.font = "18px Verdana"
-	visible_ctxt.fillText(textstr,x,y)
-}
-
-function updateStatusText(text){
-	var textobj = document.getElementById("headsuptext");
-	textobj.innerHTML = text
-}
-
-function setupCanvasHeadsUp(){
-	canvasobj=document.getElementById("canvasheadsup");
-	canvasobj.width=document.body.clientWidth;
-	canvasobj.height=Math.round(document.body.clientHeight*CANVAS.headsupfraction);
-	CANVAS.offsettop = canvasobj.height;
-	if (CANVAS.headsupfraction == 0){
-		canvasobj.style.display="none";
-
-		//hide buttons for triggering pump
-		document.querySelector("button[id=pumpflush]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
-		document.querySelector("button[id=pumptrigger]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
-	}
-	else{
-		canvasobj.style.display="block";
-
-		//show buttons for triggering pump
-		document.querySelector("button[id=pumpflush]").style.display = "block"
-		document.querySelector("button[id=pumpflush]").style.visibility = "visible"
-		document.querySelector("button[id=pumptrigger]").style.display = "block"
-		document.querySelector("button[id=pumptrigger]").style.visibility = "visible"
-		document.querySelector("button[id=connectblescale]").style.display = "block"
-		document.querySelector("button[id=connectblescale]").style.visibility = "visible"
-
-		document.querySelector("button[id=pumpflush]").addEventListener(
-			'pointerup',function(){ event.preventDefault(); runPump("flush") },false)
-		document.querySelector("button[id=pumptrigger]").addEventListener(
-			'pointerup',function(){ event.preventDefault(); runPump("trigger") },false)
-	}
-	var context=canvasobj.getContext('2d');
-
-	context.fillStyle="#202020";
-	context.fillRect(0,0,canvasobj.width,canvasobj.height);
-	canvasobj.addEventListener('touchstart',touchstart_listener,false);
-}
-function setupCanvas(canvasobj){
-	// center in page
-	canvasobj.style.top=CANVAS.offsettop + "px";
-	canvasobj.style.left=CANVAS.offsetleft + "px";
-	canvasobj.width=windowWidth - CANVAS.offsetleft;
-	canvasobj.height=windowHeight - CANVAS.offsettop;
-	canvasobj.style.margin="0 auto";
-	canvasobj.style.display="block"; //visible
-
-	setupCanvasListeners(canvasobj)
-} 
-
-function setupEyeTrackerCanvas(){
-	//SETUP similar to visiblecanvas
-	EYETRACKERCANVAS.style.top=VISIBLECANVAS.style.top//mimic VISIBLECANVAS
-	EYETRACKERCANVAS.style.left=VISIBLECANVAS.style.left;//mimic VISIBLECANVAS
-	EYETRACKERCANVAS.width=VISIBLECANVAS.width //mimic VISIBLECANVAS
-	EYETRACKERCANVAS.height=VISIBLECANVAS.height//mimic VISIBLECANVAS
-
-	EYETRACKERCANVAS.style.margin="0 auto";
-	EYETRACKERCANVAS.style.display="visible";
-
-	setupCanvasListeners(EYETRACKERCANVAS)
-}
-
-function setupCanvasListeners(canvasobj){
-		// assign listeners
-	canvasobj.addEventListener('touchstart',touchstart_listener,{capture: false,passive: false}); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
-	canvasobj.addEventListener('touchmove',touchmove_listener,{passive: false}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
-	canvasobj.addEventListener('touchend',touchend_listener,{capture: false, passive:false});
-	canvasobj.addEventListener('mousedown',touchstart_listener,{capture: false,passive: false}); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
-	canvasobj.addEventListener('mousemove',touchmove_listener,{passive: false}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
-	canvasobj.addEventListener('mouseup',touchend_listener,{capture: false, passive:false});
-}
-
-// Sync: Adjust canvas for the device pixel ratio & browser backing store size
-// from http://www.html5rocks.com/en/tutorials/canvas/hidpi/#disqus_thread
-function scaleCanvasforHiDPI(canvasobj){
-	if (ENV.DevicePixelRatio !== backingStoreRatio){
-		context=canvasobj.getContext("2d");
-		var oldWidth = canvasobj.width;
-		var oldHeight = canvasobj.height;
-		canvasobj.width = oldWidth/ENV.CanvasRatio;
-		canvasobj.height = oldHeight/ENV.CanvasRatio;
-		canvasobj.style.width = windowWidth - CANVAS.offsetleft + "px";
-		canvasobj.style.height = windowHeight - CANVAS.offsettop + "px";
-		canvasobj.style.margin="0 auto";
-	} 
-}
-
-function updateHeadsUpDisplay(){
-	if (CANVAS.headsupfraction == 0){
-		return
-	}
-
-	var textobj = document.getElementById("headsuptext");
-
-	// Overall performance
-	var ncorrect = 0;
-	var nreward = 0;
-	for (var i=0; i<=EVENTS['trialseries']['Response'].length-1; i++){
-		if (EVENTS['trialseries']['Response'][i] == EVENTS['trialseries']['CorrectItem'][i]){
-			ncorrect = ncorrect + 1
-			nreward = nreward + EVENTS['trialseries']['NReward'][i]
-		}
-	}//FOR i trials
-
-	var pctcorrect = Math.round(100 * ncorrect / EVENTS['trialseries']['Response'].length);
-
-	// Task type
-	var task1 = "";
-	var task2 = "";
-	if (TASK.RewardStage == 0){
-		task1 = "Fixation";
-	}
-	else if (TASK.RewardStage == 1){
-		task1 = TASK.TestGridIndex.length + "-way AFC:"
-		task2 = TASK.ImageBagsTest.length + "-categories in pool"
-	}
-	if (CANVAS.headsupfraction > 0){
-		textobj.innerHTML = 
- 		'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail + "<br>"
-		+ 'Agent: ' + ENV.Subject + ", <font color=green><b>" + pctcorrect 
-		+ "%</b></font> " + "(" + ncorrect + " of " + EVENTS['trialseries']['Response'].length + " trials)" 
-		+ "<br>" + "NRewards=" + nreward + ", <font color=green><b>" 
-		+ Math.round(TASK.RewardPer1000Trials*nreward/1000) 
-		+ "mL</b></font> (" + Math.round(TASK.RewardPer1000Trials) 
-		+ " mL per 1000)" + "<br> " 
-		+ task1 + "<br>" + task2 + "<br>" + "<br>"
-		+ "last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>"
-		+ "last saved to firebase @ " + CURRTRIAL.lastFirebaseSave.toLocaleTimeString("en-US")
-
-		if (FLAGS.RFIDGeneratorCreated == 1){
-			textobj.innerHTML = textobj.innerHTML + "<br>"
-			+ "<font color = red>" + "PAUSED: waiting for RFID read!!" + "<br></font>"
-		}
-		if (TASK.CheckRFID > 0 && port.connected == false){
-			textobj.innerHTML = textobj.innerHTML + "<br>"
-			+ "<font color = red>" + "WARNING: USB device not connected to check RFID!!" + "<br></font>"
-		}
-		if (typeof(FLAGS.automatortext) != "undefined"){
-			textobj.innerHTML = textobj.innerHTML + "<br><br>" + FLAGS.automatortext		
-		}
-	}//IF headsupfraction > 0
-	else if (CANVAS.headsupfraction == 0){
-		textobj.innerHTML = '' //port.statustext_connect + blescale.statustext_connect
-	}
-	else if (isNaN(CANVAS.headsupfraction)){ //before task params load
-		if (ENV.ScreenRatio == -1) {
-			var firestoreRecordFound = "<font color = red> DEVICE RECORD NOT FOUND! </font>"
-			var screenRatioMatchesDPR = ''
-		}
-		else {
-			var firestoreRecordFound = "<font color = green> DEVICE RECORD FOUND </font>"
-			if (ENV.ScreenRatio != ENV.DevicePixelRatio){
-				var screenRatioMatchesDPR = 'Detected DevicePixelRatio <font color = red>DOES NOT match record </font>'
-			}
-			else {
-				var screenRatioMatchesDPR = 'Detected DevicePixelRatio <font color = green>MATCHES record </font>'
-			}
-		}
-		textobj.innerHTML = 
-		'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail
-		+ "<br>" + "No trials performed"
-		+ "<br>"
-		+ "<br><b>" + firestoreRecordFound + " for " + ENV.DeviceName.toLowerCase() + "</b>"
-		+ "<br>" + "Screen Size = " + ENV.ScreenSizeInches[2] + "in (" + ENV.ViewportPixels + "px; " + ENV.ScreenRatio + "x" + ")"
-		+ "<br>" + screenRatioMatchesDPR
-		+ "<br>"
-		+ "<br>" + "Device brand,name,type: " + ENV.DeviceBrand + ", "  + "<u><font color = green>" + ENV.DeviceName + "</font></u>" + ", " + ENV.DeviceType
-		+ "<br>" + "Screen: " + ENV.DeviceScreenWidth + "x" + ENV.DeviceScreenHeight + " pixels"
-		+ "<br>" + "TouchScreen: " + ENV.DeviceTouchScreen
-		+ "<br>" + "GPU: " + ENV.DeviceGPU
-		+ "<br>" + "OS name,codename,ver: " + ENV.DeviceOSName + ", "  + "<u><font color = green>"+ ENV.DeviceOSCodeName + "</font></u>" + ", " + ENV.DeviceOSVersion
-		+ "<br>" + "Browser: "  + "<u><font color = green>" + ENV.DeviceBrowserName + "</font></u>" + " v" + ENV.DeviceBrowserVersion
-	}//ELSE IF isnan
-}//FUNCTION updateHeadsUpDisplay
-
-function updateHeadsUpDisplayDevices(){
-	var textobj = document.getElementById("headsuptextdevices");
-	if (CANVAS.headsupfraction > 0){
-		textobj.innerHTML = "<font color=red><b>" + ble.statustext
-		+ port.statustext_connect + "<br></font>" 
-		+ "<font color=green><b>" + port.statustext_sent + "<br></font>" 
-		+ "<font color=blue><b>" + port.statustext_received + "<br></font>"
-		+ "<font color=red><b>" + blescale.statustext_connect + "<br></font>" 		
-		+ "<font color=blue><b>" + blescale.statustext_received + "<br></font>"
-	}
-	else if (CANVAS.headsupfraction == 0){
-		textobj.innerHTML = '' //port.statustext_connect + blescale.statustext_connect
-	}
-	else if (isNaN(CANVAS.headsupfraction)){
-		//before task params load
-		textobj.innerHTML =  port.statustext_connect + blescale.statustext_connect
-	}
-}
-
-function updateHeadsUpDisplayAutomator(currentautomatorstagename,pctcorrect,ntrials,minpctcorrect,mintrials,eventstring){
-	if (CANVAS.headsupfraction > 0){
-		var textstr =
-			"Automator: " +  "<font color=red><b>" + TASK.Automator + "</b></font>"
-			+ ", <font color=white><b>"
-			+ "Stage=" + currentautomatorstagename + TASK.CurrentAutomatorStage
-			+ "</b></font>" 
-			+ "<br> Performance: " + "<font color=green><b>"
-			+ Math.round(pctcorrect) + "%, last "
-			+ ntrials + " trials</b></font> "
-			+ "(min: " + minpctcorrect + "%, " + mintrials + " trials)" 
-			+ "<br>" + eventstring
-	}
-	else if (CANVAS.headsupfraction == 0){
-		var textstr=''
-	}
-	return textstr
-}//FUNCTION update
-
 //================== IMAGE RENDERING ==================//
-function defineImageGrid(ngridpoints, gridspacing,xoffset,yoffset){
-	var xgrid =[]
-	var ygrid =[]
-	var xgridcent =[] 
-	var ygridcent =[]
-	var cnt=0;
-	for (var i=1; i<=ngridpoints; i++){
-		for (var j=1; j<=ngridpoints; j++){
-			xgrid[cnt]=i - 1/2;
-			ygrid[cnt]=j - 1/2;
-			cnt++;
-		}
-	}
-
-	//center x & y grid within canvas
-	var xcanvascent = (document.body.clientWidth - CANVAS.offsetleft)*ENV.CanvasRatio*ENV.DevicePixelRatio/2
-	xcanvascent = xcanvascent + xoffset
-	var dx = xcanvascent - gridspacing*ngridpoints/2; //left side of grid
-
-	var ycanvascent = (document.body.clientHeight - CANVAS.offsettop)*ENV.CanvasRatio*ENV.DevicePixelRatio/2
-	ycanvascent = ycanvascent + yoffset
-	var dy = ycanvascent - gridspacing*ngridpoints/2; //top of grid
-
-	for (var i=0; i<=xgrid.length-1; i++){
-		xgridcent[i]=Math.round(xgrid[i]*gridspacing + dx);
-		ygridcent[i]=Math.round(ygrid[i]*gridspacing + dy);
-	}
-
-	return [xcanvascent, ycanvascent, xgridcent, ygridcent]
-}//FUNCTION defineImageGrid
-
-
 function displayTrial(ti,gr,fr,sc,ob,id){
+// ti = time, gr = grid, fr = frame
+// sc = screen, ob = object label, id = index of renderparam
 	var resolveFunc
 	var errFunc
 	var new2DImageDrawnOffscreen = 0
@@ -325,8 +48,8 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 																		fr[f],
 																		gr[f][j])
 								if (s==0){
-									boundingBoxesChoice3D.x[j] = boundingBox3D.x
-									boundingBoxesChoice3D.y[j] = boundingBox3D.y									
+									boundingBoxesChoice3D.x[j] = boundingBox3D[ob[f][j]][0].x
+									boundingBoxesChoice3D.y[j] = boundingBox3D[ob[f][j]][0].y						
 								}//IF first screen
 								setViewport(gr[f][j])
 								var camera = scene[taskscreen].getObjectByName("cam"+ob[f][j])
@@ -447,18 +170,19 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 		
 //----- BUFFER 1ST ELEMENT
 		if (frame.shown[frame.shown.length-1] != 1){//Continue if not all frames shown
-			var taskscreen = sc[frame.current].charAt(0).toUpperCase() + sc[frame.current].slice(1)
+			f = frame.frames[frame.current][0]
+			var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
 			boundingBoxesChoice3D = {'x':[],'y':[]}
 
 			//================= 3D update frame =================//
 			if ((taskscreen=="Sample" || taskscreen=="Test") && frame.shown[frame.current]==0){
 				var boundingBox3D = updateSingleFrame3D(taskscreen,
-														ob[frame.current][0],
-														id[frame.current][0],
-														fr[frame.current],
-														gr[frame.current][0])//Update 3D scene prior to next frame draw
-				boundingBoxesChoice3D.x[0] = boundingBox3D.x
-				boundingBoxesChoice3D.y[0] = boundingBox3D.y
+														ob[f][0],
+														id[f][0],
+														fr[f],
+														gr[f][0])//Update 3D scene prior to next frame draw
+				boundingBoxesChoice3D.x[0] = boundingBox3D[ob[f][0]][0].x
+				boundingBoxesChoice3D.y[0] = boundingBox3D[ob[f][0]][0].y
 			}//IF Sample/Test
 
 			//================= 2D buffer image =================//
@@ -1060,3 +784,282 @@ function appendTest(teston){
 	}//IF SD, show test & choice
 	return [seq,tseq]
 }//FUNCTION appendTest
+
+
+//================== CANVAS SETUP ==================//
+function refreshCanvasSettings(TASK){
+	// Adjust location of CANVAS based on species-specific setup
+	if (typeof(TASK.HeadsupDisplayFraction) != "undefined"){
+		CANVAS.headsupfraction=TASK.HeadsupDisplayFraction
+	} //IF headsupdisplayfraction specified
+	else{
+		if (TASK.Species == "macaque" || TASK.Species == "human"){
+			CANVAS.headsupfraction=0;
+		}
+		else if (TASK.Species == "marmoset"){
+			CANVAS.headsupfraction=1/3-0.06;
+		}		
+	}
+
+	if (CANVAS.headsupfraction == 0){
+		var textobj = document.getElementById("headsuptext");
+		textobj.innerHTML = ''
+		var textobj = document.getElementById("headsuptextdevices");
+		textobj.innerHTML = ''
+	}
+}//refreshCanvasSettings
+
+function writeTextonBlankCanvas(textstr,x,y){
+	var blank_canvasobj=CANVAS.obj.blank
+	var visible_ctxt = blank_canvasobj.getContext('2d')
+	visible_ctxt.textBaseline = "hanging"
+	visible_ctxt.fillStyle = "white"
+	visible_ctxt.font = "18px Verdana"
+	visible_ctxt.fillText(textstr,x,y)
+}
+
+function updateStatusText(text){
+	var textobj = document.getElementById("headsuptext");
+	textobj.innerHTML = text
+}
+
+function setupCanvasHeadsUp(){
+	canvasobj=document.getElementById("canvasheadsup");
+	canvasobj.width=document.body.clientWidth;
+	canvasobj.height=Math.round(document.body.clientHeight*CANVAS.headsupfraction);
+	CANVAS.offsettop = canvasobj.height;
+	if (CANVAS.headsupfraction == 0){
+		canvasobj.style.display="none";
+
+		//hide buttons for triggering pump
+		document.querySelector("button[id=pumpflush]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+		document.querySelector("button[id=pumptrigger]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+	}
+	else{
+		canvasobj.style.display="block";
+
+		//show buttons for triggering pump
+		document.querySelector("button[id=pumpflush]").style.display = "block"
+		document.querySelector("button[id=pumpflush]").style.visibility = "visible"
+		document.querySelector("button[id=pumptrigger]").style.display = "block"
+		document.querySelector("button[id=pumptrigger]").style.visibility = "visible"
+		document.querySelector("button[id=connectblescale]").style.display = "block"
+		document.querySelector("button[id=connectblescale]").style.visibility = "visible"
+
+		document.querySelector("button[id=pumpflush]").addEventListener(
+			'pointerup',function(){ event.preventDefault(); runPump("flush") },false)
+		document.querySelector("button[id=pumptrigger]").addEventListener(
+			'pointerup',function(){ event.preventDefault(); runPump("trigger") },false)
+	}
+	var context=canvasobj.getContext('2d');
+
+	context.fillStyle="#202020";
+	context.fillRect(0,0,canvasobj.width,canvasobj.height);
+	canvasobj.addEventListener('touchstart',touchstart_listener,false);
+}
+function setupCanvas(canvasobj){
+	// center in page
+	canvasobj.style.top=CANVAS.offsettop + "px";
+	canvasobj.style.left=CANVAS.offsetleft + "px";
+	canvasobj.width=windowWidth - CANVAS.offsetleft;
+	canvasobj.height=windowHeight - CANVAS.offsettop;
+	canvasobj.style.margin="0 auto";
+	canvasobj.style.display="block"; //visible
+
+	setupCanvasListeners(canvasobj)
+} 
+
+function setupEyeTrackerCanvas(){
+	//SETUP similar to visiblecanvas
+	EYETRACKERCANVAS.style.top=VISIBLECANVAS.style.top//mimic VISIBLECANVAS
+	EYETRACKERCANVAS.style.left=VISIBLECANVAS.style.left;//mimic VISIBLECANVAS
+	EYETRACKERCANVAS.width=VISIBLECANVAS.width //mimic VISIBLECANVAS
+	EYETRACKERCANVAS.height=VISIBLECANVAS.height//mimic VISIBLECANVAS
+
+	EYETRACKERCANVAS.style.margin="0 auto";
+	EYETRACKERCANVAS.style.display="visible";
+
+	setupCanvasListeners(EYETRACKERCANVAS)
+}
+
+function setupCanvasListeners(canvasobj){
+		// assign listeners
+	canvasobj.addEventListener('touchstart',touchstart_listener,{capture: false,passive: false}); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
+	canvasobj.addEventListener('touchmove',touchmove_listener,{passive: false}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
+	canvasobj.addEventListener('touchend',touchend_listener,{capture: false, passive:false});
+	canvasobj.addEventListener('mousedown',touchstart_listener,{capture: false,passive: false}); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
+	canvasobj.addEventListener('mousemove',touchmove_listener,{passive: false}) // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
+	canvasobj.addEventListener('mouseup',touchend_listener,{capture: false, passive:false});
+}
+
+// Sync: Adjust canvas for the device pixel ratio & browser backing store size
+// from http://www.html5rocks.com/en/tutorials/canvas/hidpi/#disqus_thread
+function scaleCanvasforHiDPI(canvasobj){
+	if (ENV.DevicePixelRatio !== backingStoreRatio){
+		context=canvasobj.getContext("2d");
+		var oldWidth = canvasobj.width;
+		var oldHeight = canvasobj.height;
+		canvasobj.width = oldWidth/ENV.CanvasRatio;
+		canvasobj.height = oldHeight/ENV.CanvasRatio;
+		canvasobj.style.width = windowWidth - CANVAS.offsetleft + "px";
+		canvasobj.style.height = windowHeight - CANVAS.offsettop + "px";
+		canvasobj.style.margin="0 auto";
+	} 
+}
+
+function updateHeadsUpDisplay(){
+	if (CANVAS.headsupfraction == 0){
+		return
+	}
+
+	var textobj = document.getElementById("headsuptext");
+
+	// Overall performance
+	var ncorrect = 0;
+	var nreward = 0;
+	for (var i=0; i<=EVENTS['trialseries']['Response'].length-1; i++){
+		if (EVENTS['trialseries']['Response'][i] == EVENTS['trialseries']['CorrectItem'][i]){
+			ncorrect = ncorrect + 1
+			nreward = nreward + EVENTS['trialseries']['NReward'][i]
+		}
+	}//FOR i trials
+
+	var pctcorrect = Math.round(100 * ncorrect / EVENTS['trialseries']['Response'].length);
+
+	// Task type
+	var task1 = "";
+	var task2 = "";
+	if (TASK.RewardStage == 0){
+		task1 = "Fixation";
+	}
+	else if (TASK.RewardStage == 1){
+		task1 = TASK.TestGridIndex.length + "-way AFC:"
+		task2 = TASK.ImageBagsTest.length + "-categories in pool"
+	}
+	if (CANVAS.headsupfraction > 0){
+		textobj.innerHTML = 
+ 		'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail + "<br>"
+		+ 'Agent: ' + ENV.Subject + ", <font color=green><b>" + pctcorrect 
+		+ "%</b></font> " + "(" + ncorrect + " of " + EVENTS['trialseries']['Response'].length + " trials)" 
+		+ "<br>" + "NRewards=" + nreward + ", <font color=green><b>" 
+		+ Math.round(TASK.RewardPer1000Trials*nreward/1000) 
+		+ "mL</b></font> (" + Math.round(TASK.RewardPer1000Trials) 
+		+ " mL per 1000)" + "<br> " 
+		+ task1 + "<br>" + task2 + "<br>" + "<br>"
+		+ "last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>"
+		+ "last saved to firebase @ " + CURRTRIAL.lastFirebaseSave.toLocaleTimeString("en-US")
+
+		if (FLAGS.RFIDGeneratorCreated == 1){
+			textobj.innerHTML = textobj.innerHTML + "<br>"
+			+ "<font color = red>" + "PAUSED: waiting for RFID read!!" + "<br></font>"
+		}
+		if (TASK.CheckRFID > 0 && port.connected == false){
+			textobj.innerHTML = textobj.innerHTML + "<br>"
+			+ "<font color = red>" + "WARNING: USB device not connected to check RFID!!" + "<br></font>"
+		}
+		if (typeof(FLAGS.automatortext) != "undefined"){
+			textobj.innerHTML = textobj.innerHTML + "<br><br>" + FLAGS.automatortext		
+		}
+	}//IF headsupfraction > 0
+	else if (CANVAS.headsupfraction == 0){
+		textobj.innerHTML = '' //port.statustext_connect + blescale.statustext_connect
+	}
+	else if (isNaN(CANVAS.headsupfraction)){ //before task params load
+		if (ENV.ScreenRatio == -1) {
+			var firestoreRecordFound = "<font color = red> DEVICE RECORD NOT FOUND! </font>"
+			var screenRatioMatchesDPR = ''
+		}
+		else {
+			var firestoreRecordFound = "<font color = green> DEVICE RECORD FOUND </font>"
+			if (ENV.ScreenRatio != ENV.DevicePixelRatio){
+				var screenRatioMatchesDPR = 'Detected DevicePixelRatio <font color = red>DOES NOT match record </font>'
+			}
+			else {
+				var screenRatioMatchesDPR = 'Detected DevicePixelRatio <font color = green>MATCHES record </font>'
+			}
+		}
+		textobj.innerHTML = 
+		'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail
+		+ "<br>" + "No trials performed"
+		+ "<br>"
+		+ "<br><b>" + firestoreRecordFound + " for " + ENV.DeviceName.toLowerCase() + "</b>"
+		+ "<br>" + "Screen Size = " + ENV.ScreenSizeInches[2] + "in (" + ENV.ViewportPixels + "px; " + ENV.ScreenRatio + "x" + ")"
+		+ "<br>" + screenRatioMatchesDPR
+		+ "<br>"
+		+ "<br>" + "Device brand,name,type: " + ENV.DeviceBrand + ", "  + "<u><font color = green>" + ENV.DeviceName + "</font></u>" + ", " + ENV.DeviceType
+		+ "<br>" + "Screen: " + ENV.DeviceScreenWidth + "x" + ENV.DeviceScreenHeight + " pixels"
+		+ "<br>" + "TouchScreen: " + ENV.DeviceTouchScreen
+		+ "<br>" + "GPU: " + ENV.DeviceGPU
+		+ "<br>" + "OS name,codename,ver: " + ENV.DeviceOSName + ", "  + "<u><font color = green>"+ ENV.DeviceOSCodeName + "</font></u>" + ", " + ENV.DeviceOSVersion
+		+ "<br>" + "Browser: "  + "<u><font color = green>" + ENV.DeviceBrowserName + "</font></u>" + " v" + ENV.DeviceBrowserVersion
+	}//ELSE IF isnan
+}//FUNCTION updateHeadsUpDisplay
+
+function updateHeadsUpDisplayDevices(){
+	var textobj = document.getElementById("headsuptextdevices");
+	if (CANVAS.headsupfraction > 0){
+		textobj.innerHTML = "<font color=red><b>" + ble.statustext
+		+ port.statustext_connect + "<br></font>" 
+		+ "<font color=green><b>" + port.statustext_sent + "<br></font>" 
+		+ "<font color=blue><b>" + port.statustext_received + "<br></font>"
+		+ "<font color=red><b>" + blescale.statustext_connect + "<br></font>" 		
+		+ "<font color=blue><b>" + blescale.statustext_received + "<br></font>"
+	}
+	else if (CANVAS.headsupfraction == 0){
+		textobj.innerHTML = '' //port.statustext_connect + blescale.statustext_connect
+	}
+	else if (isNaN(CANVAS.headsupfraction)){
+		//before task params load
+		textobj.innerHTML =  port.statustext_connect + blescale.statustext_connect
+	}
+}
+
+function updateHeadsUpDisplayAutomator(currentautomatorstagename,pctcorrect,ntrials,minpctcorrect,mintrials,eventstring){
+	if (CANVAS.headsupfraction > 0){
+		var textstr =
+			"Automator: " +  "<font color=red><b>" + TASK.Automator + "</b></font>"
+			+ ", <font color=white><b>"
+			+ "Stage=" + currentautomatorstagename + TASK.CurrentAutomatorStage
+			+ "</b></font>" 
+			+ "<br> Performance: " + "<font color=green><b>"
+			+ Math.round(pctcorrect) + "%, last "
+			+ ntrials + " trials</b></font> "
+			+ "(min: " + minpctcorrect + "%, " + mintrials + " trials)" 
+			+ "<br>" + eventstring
+	}
+	else if (CANVAS.headsupfraction == 0){
+		var textstr=''
+	}
+	return textstr
+}//FUNCTION update
+
+function defineImageGrid(ngridpoints, gridspacing,xoffset,yoffset){
+	var xgrid =[]
+	var ygrid =[]
+	var xgridcent =[] 
+	var ygridcent =[]
+	var cnt=0;
+	for (var i=1; i<=ngridpoints; i++){
+		for (var j=1; j<=ngridpoints; j++){
+			xgrid[cnt]=i - 1/2;
+			ygrid[cnt]=j - 1/2;
+			cnt++;
+		}
+	}
+
+	//center x & y grid within canvas
+	var xcanvascent = (document.body.clientWidth - CANVAS.offsetleft)*ENV.CanvasRatio*ENV.DevicePixelRatio/2
+	xcanvascent = xcanvascent + xoffset
+	var dx = xcanvascent - gridspacing*ngridpoints/2; //left side of grid
+
+	var ycanvascent = (document.body.clientHeight - CANVAS.offsettop)*ENV.CanvasRatio*ENV.DevicePixelRatio/2
+	ycanvascent = ycanvascent + yoffset
+	var dy = ycanvascent - gridspacing*ngridpoints/2; //top of grid
+
+	for (var i=0; i<=xgrid.length-1; i++){
+		xgridcent[i]=Math.round(xgrid[i]*gridspacing + dx);
+		ygridcent[i]=Math.round(ygrid[i]*gridspacing + dy);
+	}
+
+	return [xcanvascent, ycanvascent, xgridcent, ygridcent]
+}//FUNCTION defineImageGrid

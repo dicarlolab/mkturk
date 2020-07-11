@@ -940,6 +940,94 @@ while(true){
 	logEVENTS("Sample",CURRTRIAL.sampleindex_nonarray,"trialseries")
 	logEVENTS("Test",CURRTRIAL.testindices[0],"trialseries")
 	logEVENTS("CorrectItem",CURRTRIAL.correctitem,"trialseries")
+    //============(END) SELECT SAMPLE & TEST IMAGES ============//
+
+
+    //============ SET UP SAMPLE & TEST SEQUENCE ============//
+    //when & where to display
+    CURRTRIAL.tsequence = [ 0 ]
+    CURRTRIAL.sequencegridindex = [ [-1] ]
+
+    //what to display
+    CURRTRIAL.sequenceclip = [ -1 ] //movieclip# in RSVP
+    CURRTRIAL.sequenceframe = [ -1 ] //frame# in movie
+    CURRTRIAL.sequencetaskscreen = [ 'blank' ]
+    CURRTRIAL.sequencelabel = [ [0] ] //image class
+    CURRTRIAL.sequenceindex = [ [0] ] //image index
+
+    //EXPAND SAMPLE (for rsvp & movies)
+    //Start with blank for max(100,SampleOFF), then append SampleON+blank (eg, blank,Sample,blank,Sample,blank)
+    for (var i=0; i<=CURRTRIAL.sample_scenebag_index.length-1; i++){
+        var t0=CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
+        var sampleon = chooseArrayElement(IMAGES["Sample"][CURRTRIAL.sample_scenebag_label[i][0]].durationMS, CURRTRIAL.sample_scenebag_index[i][0],0)
+
+        //Timing: blankdurationpre, sampleon, framerate
+        if (i==0){
+            var blankdurationpre = Math.max(100,TASK.SampleOFF)
+        }//if first blank, prepend at least 100ms
+        else{
+            var blankdurationpre = TASK.SampleOFF
+        }
+
+        //Create Movie Sequence
+        [movie_sequence, movie_tsequence, movie_framenum] = 
+        createMovieSeq("Sample",blankdurationpre, sampleon, TASK.SampleOFF, ENV.FrameRateMovie)
+        movie_tsequence = movie_tsequence.map(function (a){return a + t0}) //shift clip's frames to absolute position in rsvp sequence
+
+        CURRTRIAL.tsequence.push(...movie_tsequence)
+        CURRTRIAL.sequencegridindex.push(...Array(movie_tsequence.length).fill([TASK.SampleGridIndex]))
+
+        CURRTRIAL.sequenceclip.push(...Array(movie_tsequence.length).fill(i))
+        CURRTRIAL.sequenceframe.push(...movie_framenum)
+        CURRTRIAL.sequencetaskscreen.push(...movie_sequence)
+        CURRTRIAL.sequencelabel.push(...Array(movie_tsequence.length).fill(CURRTRIAL.sample_scenebag_label[i]))
+        CURRTRIAL.sequenceindex.push(...Array(movie_tsequence.length).fill(CURRTRIAL.sample_scenebag_index[i]))
+    }//FOR i RSVP Sample
+
+    //APPEND TEST OR CHOICE
+    if (TASK.NRSVP <= 0){
+        var t0 = CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
+        var teston = chooseArrayElement(IMAGES["Test"][CURRTRIAL.test_scenebag_labels[0][0]].durationMS, CURRTRIAL.test_scenebag_indices[0][0],0)
+
+if (typeof(teston) == "undefined"){
+    console.log("Without this if, then print-to-console code, teston is undefined. Not clear why this strange behavior happens. Something to do with chooseArrayElement returning in time.")
+}
+        [movie_sequence, movie_tsequence, movie_framenum] = 
+            createMovieSeq("Test",TASK.SampleOFF, teston, TASK.TestOFF, ENV.FrameRateMovie)
+        movie_tsequence = movie_tsequence.map(function (a){return a + t0}) //shift frames to absolute position in sequence
+
+        CURRTRIAL.tsequence.push(...movie_tsequence)
+        CURRTRIAL.sequencegridindex.push(...Array(movie_tsequence.length).fill(TASK.TestGridIndex))
+
+        CURRTRIAL.sequenceclip.push(...Array(movie_tsequence.length).fill(0))
+        CURRTRIAL.sequenceframe.push(...movie_framenum)
+        CURRTRIAL.sequencetaskscreen.push(...movie_sequence)
+        CURRTRIAL.sequencelabel.push(...Array(movie_tsequence.length).fill(CURRTRIAL.test_scenebag_labels[0]))
+        CURRTRIAL.sequenceindex.push(...Array(movie_tsequence.length).fill(CURRTRIAL.test_scenebag_indices[0]))
+
+        //Append choice if needed
+        if (TASK.SameDifferent > 0){
+            var t0 = CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
+            if (TASK.TestOFF > 0){
+                var seq=["blank","choice"]
+                var tseq=[ t0,t0+TASK.TestOFF ];
+            }//ELSEIF TestOFF
+            else if (TASK.TestOFF <= 0){
+                var seq=["choice"]
+                var tseq=[ t0 ];
+            }//ELSEIF no TestOFF
+            CURRTRIAL.tsequence.push(...tseq)
+            CURRTRIAL.sequencegridindex.push(...Array(tseq.length).fill(TASK.ChoiceGridIndex))
+
+            CURRTRIAL.sequenceclip.push(...Array(tseq.length).fill(0))
+            CURRTRIAL.sequenceframe.push(...Array(tseq.length).fill(0))
+            CURRTRIAL.sequencetaskscreen.push(...seq)
+            CURRTRIAL.sequencelabel.push(...Array(tseq.length).fill([0]))
+            CURRTRIAL.sequenceindex.push(...Array(tseq.length).fill([0]))
+        }//IF Same-Different, show test & choice
+    }//IF !RSVP, then show test/choice screen
+//============(END) SET UP SAMPLE & TEST SEQUENCE ============//
+
 
 	//================= RFID check =================//
 	// If no matching read in the last TASK.CheckRFID seconds, wait for matching read
@@ -982,14 +1070,45 @@ while(true){
 		}
 		logEVENTS("FixationGridIndex",CURRTRIAL.fixationgridindex,"trialseries")
 
-		// Render fixation screen 
-		if (TASK.Species == "macaque" || TASK.Species == "human"){
-			ENV.FixationColor = "white";
-		}
-		else if (TASK.Species == "marmoset"){
-			ENV.FixationColor = "blue";
-		}
-		
+        if (TASK.FixationUsesSample <= 0){
+            // Render fixation screen 
+            if (TASK.Species == "macaque" || TASK.Species == "human"){
+                ENV.FixationColor = "white";
+            }
+            else if (TASK.Species == "marmoset"){
+                ENV.FixationColor = "blue";
+            }  
+            frame.shown=[]; frame.frames=[]
+            for (var q in CANVAS.sequencepre){ frame.shown[q]=0; frame.frames[q]=[q]}; 
+            frame.current=0;                      
+        }//IF !Sample, show fixation dot
+		else if (TASK.FixationUsesSample > 0){
+            //Update grid location of sample to current fixation grid index
+            frame.shown = []; frame.frames=[]; frame.current=0
+            for (var i=0; i<=CURRTRIAL.sequencegridindex.length-1; i++){
+                for (var j=0; j<=CURRTRIAL.sequencegridindex[i].length-1; j++){
+                    if (CURRTRIAL.sequencetaskscreen[i] == "Sample"){
+                        CURRTRIAL.sequencegridindex[i][j] = CURRTRIAL.fixationgridindex
+                        if (CURRTRIAL.sequenceclip[i] == 0 && j==0){
+                            frame.shown.push(0)
+                            frame.frames.push([i])
+                        }//IF first clip, add frame
+                    }//IF Sample
+                }//FOR j display items
+            }//FOR i frames
+
+            boundingBoxesChoice3D = {'x':[],'y':[]} //determined on the fly during display
+            //Get bounding box of first frame ahead of time
+            f = frame.frames[0][0]
+            var boundingBox3D = updateSingleFrame3D(CURRTRIAL.sequencetaskscreen[f],
+                                                    CURRTRIAL.sequencelabel[f][0],
+                                                    CURRTRIAL.sequenceindex[f][0],
+                                                    CURRTRIAL.sequenceframe[f],
+                                                    CURRTRIAL.sequencegridindex[f][0])//Update 3D scene prior to next frame draw
+            boundingBoxesChoice3D.x[0] = boundingBox3D[CURRTRIAL.sequencelabel[f][0]][0].x
+            boundingBoxesChoice3D.y[0] = boundingBox3D[CURRTRIAL.sequencelabel[f][0]][0].y            
+        }//IF Sample, show first image/movie
+
 		// Start timer for this fixation render trial. 
 		CURRTRIAL.starttime=Date.now() - ENV.CurrentDate.valueOf();
 		logEVENTS("StartTime",CURRTRIAL.starttime,"trialseries")
@@ -1000,13 +1119,15 @@ while(true){
 			playSound(0)
 		}
 
-		frame.shown=[]; frame.frames=[]
-		for (var q in CANVAS.sequencepre){ frame.shown[q]=0; frame.frames[q]=[q]}; 
-		frame.current=0;
-		// renderShape2D(CANVAS.sequencepre[0],OFFSCREENCANVAS) //XX
-		await displayTrial(CANVAS.tsequencepre,
-							[CURRTRIAL.fixationgridindex],[0],
-							CANVAS.sequencepre,[0],[0]) // dispTrial(time,grid,frame,screen,obj,idx)
+        if (TASK.FixationUsesSample <= 0){
+            displayTrial(CANVAS.tsequencepre,
+                                [CURRTRIAL.fixationgridindex],[0],
+                                CANVAS.sequencepre,[0],[0]) // dispTrial(time,grid,frame,screen,obj,idx)            
+        }//IF !Sample, show fixation dot
+        else if (TASK.FixationUsesSample > 0){
+            displayTrial(CURRTRIAL.tsequence, CURRTRIAL.sequencegridindex, CURRTRIAL.sequenceframe,
+                    CURRTRIAL.sequencetaskscreen, CURRTRIAL.sequencelabel, CURRTRIAL.sequenceindex)
+        }//ELSE Sample, show image/movie
 
 		audiocontext.suspend()
 
@@ -1020,13 +1141,21 @@ while(true){
 			touchhold_return.cxyt = [0,x,y,Date.now() - ENV.CurrentDate.valueOf()]
 
 			FLAGS.waitingforTouches--
-		}
+		}//IF automated stress test
 		else {
-			var p1 = hold_promise(TASK.FixationDuration,boundingBoxesFixation,FLAGS.punishOutsideTouch)
+            if (TASK.FixationUsesSample <= 0){
+                var p1 = hold_promise(TASK.FixationDuration,boundingBoxesFixation,FLAGS.punishOutsideTouch)
+            }
+            else if (TASK.FixationUsesSample > 0){
+                var p1 = hold_promise(TASK.FixationDuration,boundingBoxesChoice3D,FLAGS.punishOutsideTouch)
+            }
 			var p2 = choiceTimeOut(TASK.FixationTimeOut)
-
 			var touchhold_return = await Promise.race([p1,p2])
-		}
+
+			//So that sample movie does not continue playing after fixation acquired
+			frame.current = frame.shown.length
+			frame.shown[frame.current] = 1
+		}//ELSE await fixation hold
 
 		CURRTRIAL.fixationtouchevent = touchhold_return.type
 		CURRTRIAL.fixationxyt = [touchhold_return.cxyt[1], touchhold_return.cxyt[2], touchhold_return.cxyt[3]]
@@ -1048,7 +1177,7 @@ while(true){
 		}//IF broke fixation & fixation task, count as incorrect
 		else if ( (CURRTRIAL.fixationtouchevent == "tbroken" && TASK.RewardStage == 1)
               || (CURRTRIAL.fixationtouchevent == "TimeOut")){
-    }//IF timed out OR dms task, ok if touched outside, just wait for touch inside fixation area
+        }//IF timed out OR dms task, ok if touched outside, just wait for touch inside fixation area
 
 		//========= AWAIT CLEAR FIXATION =========//
 		for (var q in CANVAS.sequenceblank){frame.shown[q]=0; frame.frames[q]=[q] }
@@ -1065,102 +1194,29 @@ while(true){
 //SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    //
 	//============== AWAIT SHOW SAMPLE THEN TEST ==============//
 	if (TASK.RewardStage === 1){
-        //when & where to display
-        CURRTRIAL.tsequence = [ 0 ]
-        CURRTRIAL.sequencegridindex = [ [-1] ]
-
-        //what to display
-        CURRTRIAL.sequenceclip = [ -1 ] //movieclip# in RSVP
-	      CURRTRIAL.sequenceframe = [ -1 ] //frame# in movie
-        CURRTRIAL.sequencetaskscreen = [ 'blank' ]
-        CURRTRIAL.sequencelabel = [ [0] ] //image class
-        CURRTRIAL.sequenceindex = [ [0] ] //image index
 
         //Set where to display
         if (TASK.SampleGridIndex > 0){
-            CURRTRIAL.samplegridindex = TASK.SampleGridIndex;
+          CURRTRIAL.samplegridindex = TASK.SampleGridIndex;
         }//IF fixed sample location
         else if (TASK.SampleGridIndex < 0){
-            if (TASK.FixationGridIndex < 0){
-                CURRTRIAL.samplegridindex = CURRTRIAL.fixationgridindex
-            }//IF moving fixation, use its grid location for sample
-            else {
-                CURRTRIAL.samplegridindex = Math.floor((ENV.XGridCenter.length)*Math.random()); 
-            }//ELSE use random grid location for sample
+          if (TASK.FixationGridIndex < 0){
+              CURRTRIAL.samplegridindex = CURRTRIAL.fixationgridindex
+          }//IF moving fixation, use its grid location for sample
+          else {
+              CURRTRIAL.samplegridindex = Math.floor((ENV.XGridCenter.length)*Math.random()); 
+          }//ELSE use random grid location for sample
+
+          //Update grid location of each Sample frame
+          for (var i=0; i<=CURRTRIAL.sequencegridindex.length-1; i++){
+            for (var j=0; j<=CURRTRIAL.sequencegridindex[i].length-1; j++){
+                if (CURRTRIAL.sequencetaskscreen[i] == "Sample"){
+                    CURRTRIAL.sequencegridindex[i][j] = CURRTRIAL.samplegridindex
+                }//IF Sample
+            }//FOR j display items
+          }//FOR i frames
         }//ELSE IF random sample location
         logEVENTS("SampleGridIndex",CURRTRIAL.samplegridindex,"trialseries")
-
-        //EXPAND SAMPLE (for rsvp & movies)
-        //Start with blank for max(100,SampleOFF), then append SampleON+blank (eg, blank,Sample,blank,Sample,blank)
-        for (var i=0; i<=CURRTRIAL.sample_scenebag_index.length-1; i++){
-            var t0=CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
-        	var sampleon = chooseArrayElement(IMAGES["Sample"][CURRTRIAL.sample_scenebag_label[i][0]].durationMS, CURRTRIAL.sample_scenebag_index[i][0],0)
-
-            //Timing: blankdurationpre, sampleon, framerate
-        	if (i==0){
-        		var blankdurationpre = Math.max(100,TASK.SampleOFF)
-        	}//if first blank, prepend at least 100ms
-        	else{
-        		var blankdurationpre = TASK.SampleOFF
-        	}
-
-            //Create Movie Sequence
-            [movie_sequence, movie_tsequence, movie_framenum] = 
-            	createMovieSeq("Sample",blankdurationpre, sampleon, TASK.SampleOFF, ENV.FrameRateMovie)
-            movie_tsequence = movie_tsequence.map(function (a){return a + t0}) //shift clip's frames to absolute position in rsvp sequence
-
-            CURRTRIAL.tsequence.push(...movie_tsequence)
-            CURRTRIAL.sequencegridindex.push(...Array(movie_tsequence.length).fill([CURRTRIAL.samplegridindex]))
-
-            CURRTRIAL.sequenceclip.push(...Array(movie_tsequence.length).fill(i))
-            CURRTRIAL.sequenceframe.push(...movie_framenum)
-            CURRTRIAL.sequencetaskscreen.push(...movie_sequence)
-            CURRTRIAL.sequencelabel.push(...Array(movie_tsequence.length).fill(CURRTRIAL.sample_scenebag_label[i]))
-            CURRTRIAL.sequenceindex.push(...Array(movie_tsequence.length).fill(CURRTRIAL.sample_scenebag_index[i]))
-        }//FOR i RSVP Sample
-
-        //APPEND TEST OR CHOICE
-        if (TASK.NRSVP <= 0){
-			var t0 = CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
-        	var teston = chooseArrayElement(IMAGES["Test"][CURRTRIAL.test_scenebag_labels[0][0]].durationMS, CURRTRIAL.test_scenebag_indices[0][0],0)
-
-if (typeof(teston) == "undefined"){
-  console.log("Without this if, then print-to-console code, teston is undefined. Not clear why this strange behavior happens. Something to do with chooseArrayElement returning in time.")
-}
-            [movie_sequence, movie_tsequence, movie_framenum] = 
-            	createMovieSeq("Test",TASK.SampleOFF, teston, TASK.TestOFF, ENV.FrameRateMovie)
-			movie_tsequence = movie_tsequence.map(function (a){return a + t0}) //shift frames to absolute position in sequence
-
-            CURRTRIAL.tsequence.push(...movie_tsequence)
-            CURRTRIAL.sequencegridindex.push(...Array(movie_tsequence.length).fill(TASK.TestGridIndex))
-
-            CURRTRIAL.sequenceclip.push(...Array(movie_tsequence.length).fill(0))
-            CURRTRIAL.sequenceframe.push(...movie_framenum)
-            CURRTRIAL.sequencetaskscreen.push(...movie_sequence)
-            CURRTRIAL.sequencelabel.push(...Array(movie_tsequence.length).fill(CURRTRIAL.test_scenebag_labels[0]))
-            CURRTRIAL.sequenceindex.push(...Array(movie_tsequence.length).fill(CURRTRIAL.test_scenebag_indices[0]))
-
-            //Append choice if needed
-			if (TASK.SameDifferent > 0){
-				var t0 = CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
-				if (TASK.TestOFF > 0){
-					var seq=["blank","choice"]
-					var tseq=[ t0,t0+TASK.TestOFF ];
-				}//ELSEIF TestOFF
-				else if (TASK.TestOFF <= 0){
-					var seq=["choice"]
-					var tseq=[ t0 ];
-				}//ELSEIF no TestOFF
-				CURRTRIAL.tsequence.push(...tseq)
-	            CURRTRIAL.sequencegridindex.push(...Array(tseq.length).fill(TASK.ChoiceGridIndex))
-
-	            CURRTRIAL.sequenceclip.push(...Array(tseq.length).fill(0))
-	            CURRTRIAL.sequenceframe.push(...Array(tseq.length).fill(0))
-	            CURRTRIAL.sequencetaskscreen.push(...seq)
-	            CURRTRIAL.sequencelabel.push(...Array(tseq.length).fill([0]))
-	            CURRTRIAL.sequenceindex.push(...Array(tseq.length).fill([0]))
-			}//IF Same-Different, show test & choice
-        }//IF !RSVP, then show test/choice screen
 
         frame.shown=[]
         frame.frames=[]
@@ -1172,28 +1228,28 @@ if (typeof(teston) == "undefined"){
 
         //Add KeepSampleON & KeepTestON
         if (TASK.KeepSampleON == 1){
-        	var indices = []
-			var idx = CURRTRIAL.sequencetaskscreen.indexOf("Sample");
-			while (idx != -1) {
-				indices.push(idx);
-				idx = CURRTRIAL.sequencetaskscreen.indexOf("Sample", idx + 1);
-			}//WHILE
-			for (var i=indices[indices.length-1]+1; i<=frame.frames.length-1; i++){
-				frame.frames[i].push(indices[indices.length-1]) //Append last Sample scene rendered
-			}//FOR i remaining frames after Sample
-		}//IF KeepSampleON
+            var indices = []
+            var idx = CURRTRIAL.sequencetaskscreen.indexOf("Sample");
+            while (idx != -1) {
+                indices.push(idx);
+                idx = CURRTRIAL.sequencetaskscreen.indexOf("Sample", idx + 1);
+            }//WHILE
+            for (var i=indices[indices.length-1]+1; i<=frame.frames.length-1; i++){
+                frame.frames[i].push(indices[indices.length-1]) //Append last Sample scene rendered
+            }//FOR i remaining frames after Sample
+        }//IF KeepSampleON
 
         if (TASK.KeepTestON == 1 && TASK.SameDifferent > 0){
-        	var indices = []
-			var idx = CURRTRIAL.sequencetaskscreen.indexOf("Test");
-			while (idx != -1) {
-				indices.push(idx);
-				idx = CURRTRIAL.sequencetaskscreen.indexOf("Test", idx + 1);
-			}//WHILE
-			for (var i=indices[indices.length-1]+1; i<=frame.frames.length-1; i++){
-				frame.frames[i].push(indices[indices.length-1]) //Append last Test scene rendered
-			}//FOR i remaining frames after Test
-		}//IF KeepSampleON
+            var indices = []
+            var idx = CURRTRIAL.sequencetaskscreen.indexOf("Test");
+            while (idx != -1) {
+                indices.push(idx);
+                idx = CURRTRIAL.sequencetaskscreen.indexOf("Test", idx + 1);
+            }//WHILE
+            for (var i=indices[indices.length-1]+1; i<=frame.frames.length-1; i++){
+                frame.frames[i].push(indices[indices.length-1]) //Append last Test scene rendered
+            }//FOR i remaining frames after Test
+        }//IF KeepSampleON
 
         //Display Sample & Test/Choice
         if (TASK.NRSVP>0 && TASK.SampleFixationSizeInches>0){
@@ -1250,7 +1306,7 @@ if (typeof(teston) == "undefined"){
         }//FOR f frames
     	logEVENTS("TSequenceDesiredClip",CURRTRIAL.tsequencedesiredclip,"trialseries")
     	logEVENTS("TSequenceActualClip",CURRTRIAL.tsequenceactualclip,"trialseries")
-      logEVENTS("SampleStartTime",CURRTRIAL.samplestarttime,"trialseries")
+        logEVENTS("SampleStartTime",CURRTRIAL.samplestarttime,"trialseries")
         logEVENTS("FrameNum",CURRTRIAL.sequenceframe,'timeseries')
         logEVENTS("TSequenceDesired",CURRTRIAL.tsequence,"timeseries")
         logEVENTS("TSequenceActual",CURRTRIAL.tsequenceactual,"timeseries")
