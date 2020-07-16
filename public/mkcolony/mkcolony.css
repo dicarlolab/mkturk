@@ -7,14 +7,7 @@
 }
 
 #agent-tab {
-  min-height: 80vh;
-}
-
-/* #colony-table-card {
-} */
-
-#colony-table {
-  overflow-y: scroll;
+  min-height: 100vh;
 }
 
 #colony-weight-card {
@@ -34,6 +27,24 @@
 
 #colony-weight-date-filter {
   grid-area: clWtDateFilter;
+}
+
+#agent-notes-grid {
+  min-height: 40vh;
+  overflow: visible;
+}
+
+#agent-weight-grid {
+  min-height: 40vh;
+}
+
+#agent-fluid-grid {
+  min-height: 40vh;
+}
+
+#agent-json {
+  height: 100%;
+  overflow: visible;
 }
 
 #agent-bio {

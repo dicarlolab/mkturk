@@ -23,27 +23,16 @@
           <!-- Title -->
           <span class="mdl-layout-title">MKCOLONY</span>
           <div class="mdl-layout-spacer"></div>
+          
           <nav class="mdl-navigation">
-            <a class="mdl-navigation__link" id="sign-in-nav-link" href="#" onclick="getElementById('sign-in-modal').showModal();">Sign In</a>
-            <a class="mdl-navigation__link" id="sign-out-nav-link" href="#">Sign Out</a>
+            <a class="mdl-navigation__link" id="sign-in-nav-link" href="#" onclick="getElementById('sign-in-modal').showModal();">SignIn</a>
+            <a class="mdl-navigation__link" id="sign-out-nav-link" href="#">SignOut</a>
+            <label class="mdl-switch mdl-js-switch mdl-js-ripple-effect" for="rfid-switch">
+              <input type="checkbox" id="rfid-switch" class="mdl-switch__input">
+              <span class="mdl-switch__label" id="rfid-switch-span" style="color:red; font-weight: bolder;">RFID OFF</span>
+            </label>
           </nav>
         </div>
-
-        <!-- <dialog class="mdl-dialog" id="sign-in-modal">
-          <h3 class="mdl-dialog__title">SIGN IN</h3>
-          <div class="mdl-dialog__content">
-            <form id="sign-in-form">
-              <label for="email">Email:</label>
-              <input type="email" id="email" name="email" required><br>
-              <label for="pw">Password:</label>
-              <input type="password" id="pw" name="pw" required>
-            </form>
-          </div>
-          <div class="mdl-dialog__actions">
-            <button type="submit" class="mdl-button" id="modal-sign-in-btn">Sign In</button>
-            <button type="button" class="mdl-button" id="modal-close-btn">Close</button>
-          </div>
-        </dialog> -->
 
         <!-- Tabs -->
         <div class="mdl-layout__tab-bar mdl-js-ripple-effect">
@@ -71,12 +60,10 @@
   
                   <select class="selector" id="field-selector">
                     <option selected disabled>Field</option>
+                    <option value="fluid">Fluid</option>
+                    <option value="lab_notes">Lab Notes</option>
+                    <option value="vet_notes">Vet Notes</option>
                   </select>
-                </div>
-
-                <div class="mdl-textfield mdl-js-textfield" id="field-name-entry">
-                  <input class="mdl-textfield__input" type="text" id="field-name">
-                  <label class="mdl-textfield__label" for="field-name">Field Name</label>
                 </div>
 
                 <div class="mdl-textfield mdl-js-textfield" id="field-value-entry">
@@ -145,5 +132,6 @@
       </main> <!-- mdl-layout__content -->
     </div> <!-- mdl-layout mdl-js-layout -->
     <script src="mkcolony.js"></script>
+    <script src="mkcolony_rfid.js"></script>
   </body>
 </html>

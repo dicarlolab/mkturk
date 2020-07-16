@@ -180,6 +180,58 @@ export class Mkfinder {
       });
     }
 
+    else if (database == "mkdailydata") {
+      this.finder.destroy();
+      this.pathName.innerText = "mkdailydata";
+      this.finder = new Tabulator("#finder", {
+        data: dataArr,
+        index: "index",
+        layout: "fitColumns",
+        initialSort: [
+          {column: "agent", dir: "asc"}
+        ],
+        columns: [
+          {title: "<input id='select-all' type='checkbox'/>", width: 15, headerSort: false},
+          {title: "Agent", field: "agent"},
+        ],
+        selectable: true,
+        selectableRangeMode: "click",
+        rowClick: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+          
+        },
+        rowTap: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+        },
+        tableBuilt: () => {          
+          /* selectAllBox function */
+          let selectAllBox 
+            = document.querySelector("#select-all") as HTMLInputElement;
+          selectAllBox.addEventListener("change", ev => {
+            if (selectAllBox.checked == true) {
+              this.finder.selectRow();
+            } else {
+              this.finder.deselectRow();
+            }
+          });
+        }
+      });
+    }
+
     else if (database == "objects") {
       this.finder.destroy();
       this.pathName.innerText = "objects";

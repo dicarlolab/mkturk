@@ -34,6 +34,15 @@ interface fixationData {
   right_aux_1: number | null
 };
 
+interface displayTimesData {
+  agent: string,
+  timestamp: any,
+  trial_num: number,
+  frame_num: Array<number>,
+  t_desired: Array<number>,
+  t_actual: Array<number>
+};
+
 
 const schema = {
   "fields": [
@@ -188,17 +197,78 @@ export const isLabMember = functions.https.onCall((idToken: string) => {
 
 });
 
-
-// export const listAllUsers = functions.https.onCall((nextPageToken: any) => {
-//   admin.auth().listUsers(1000, nextPageToken).then(listUsersResult => {
-//     listUsersResult.users.forEach(userRecord)
-//   })
-// })
-
 export const listAllUsers = functions.https.onCall(() => {
   return admin.auth().listUsers(1000).then(listUserResult => {
     return listUserResult;
   }).catch(e => {
     console.error('Error listing users', e);
+  });
+});
+
+const displayTimeSchema = {
+  'fields': [
+    {
+      'name': 'timestamp',
+      'type': 'TIMESTAMP',
+      'mode': 'REQUIRED'
+    },
+    {
+      'name': 'trial_num',
+      'type': 'INTEGER',
+      'mode': 'REQUIRED'
+    },
+    {
+      'name': 'frame_num',
+      'type': 'INTEGER',
+      'mode': 'REPEATED'
+    },
+    {
+      'name': 't_desired',
+      'type': 'FLOAT',
+      'mode': 'REPEATED'
+    },
+    {
+      'name': 't_actual',
+      'type': 'FLOAT',
+      'mode': 'REPEATED'
+    }
+  ]
+};
+
+const displayTimeTableOptions = {
+  'schema': displayTimeSchema,
+  'timePartitioning': {
+    'type': 'DAY',
+    'field': 'timestamp'
+  }
+};
+
+export const bqInsertDisplayTimes = functions.https.onCall((rows: displayTimesData[]) => {
+  const bq = new BigQuery();
+  const dataset = bq.dataset('displaytimedata');
+  const table = dataset.table(rows[0].agent);
+
+  table.exists().then(async (existsData) => {
+    const exists = existsData[0];
+    if (exists) {
+      rows.forEach((row: any) => {
+        delete row.agent;
+        row.timestamp = new Date(row.timestamp);
+      });
+      table.insert(rows, {}, insertHandler);
+      console.log('Rows inserted to existing table');
+    } else {
+      const [newTable] = await dataset.createTable(rows[0].agent, displayTimeTableOptions);
+      console.log(`Table ${newTable.id} created with partitioning: `);
+      console.log(newTable.metadata.timePartitioning);
+      rows.forEach((row: any) => {
+        delete row.agent;
+        row.timestamp = new Date(row.timestamp);
+      })
+      newTable.insert(rows, {}, insertHandler);
+      console.log('Row inserted to newly created table');
+    }
+  }).catch(error => {
+    console.log('Exists function error:', error);
   });
 });

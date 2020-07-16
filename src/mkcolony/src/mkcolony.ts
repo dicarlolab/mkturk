@@ -30,6 +30,9 @@ export class Mkcolony {
 
   private clTable: Tabulator;
 
+  private previewBtn: HTMLButtonElement;
+  private saveBtn: HTMLButtonElement;
+
 
   constructor() {
     google.charts.load('current', {packages: ['corechart', 'controls']});
@@ -55,11 +58,18 @@ export class Mkcolony {
     this.clTable.clearData();
   }
 
+  public saveBtnAction() {
+
+  }
+
+  public previewBtnAction() {
+    
+  }
+
   public populateTable(data: any[]) {
     this.marmosetDataDic = {};
     this.marmosetData = this.processData(data);
-
-    // console.log('data', this.marmosetData);
+    console.log('this.marmosetData', this.marmosetData);
 
     let clTableCard 
       = document.querySelector('#colony-table-card') as div;
@@ -113,7 +123,6 @@ export class Mkcolony {
               cell.getElement().style.backgroundColor = 'Yellow';
             }
           }
-          
           return cell.getValue();
         }},
         {title: 'Weight', field: 'last_weight_value'},
@@ -134,7 +143,20 @@ export class Mkcolony {
         colonyTabBar.classList.remove('is-active');
         this.populateAgentTab(row.getData().name)
       }
-    })
+    });
+
+    document.addEventListener('RFID', (ev: any) => {
+      ev.preventDefault();
+      this.marmosetData.forEach(row => {
+        if (row.rfid != undefined && row.rfid == ev.detail) {
+          agentTab.classList.add('is-active');
+          colonyTab.classList.remove('is-active');
+          agentTabBar.classList.add('is-active');
+          colonyTabBar.classList.remove('is-active');
+          this.populateAgentTab(row.name);
+        }
+      });
+    });
   }
 
   private populateAgentTab(agentName: string) {
@@ -158,19 +180,20 @@ export class Mkcolony {
     agFlDt.addColumn('date', 'Date');
     agFlDt.addColumn('number', 'Fluid Intake');
     agFlDt.addColumn('number', 'Baseline Fluid');
+    agFlDt.addColumn('number', 'Baseline Fluid -50%');
 
     await agentDocRef.get().then(doc => {
       if (doc.exists) {
         let baselineFl = doc.data()?.baseline_fluid_values;
-        console.log('baselineFl', baselineFl);
         baselineFl = baselineFl[baselineFl.length - 1];
+        let baselineFlLowerBound = baselineFl * 0.50;
         for (let [key, value] of Object.entries(data)) {
-          console.log('hello');
           let flLvl = Number(value) * 9.0 / 1000.0;
           agFlDt.addRow([
             new Date(key),
             flLvl,
-            baselineFl
+            baselineFl,
+            baselineFlLowerBound
           ]);
         }
       }
@@ -192,10 +215,17 @@ export class Mkcolony {
         title: 'Fluid Plot',
         width: plot.clientWidth,
         height: plot.clientHeight,
+        chartArea: {
+          width: '80%',
+          height: '80%'
+        },
         legend: 'none' as 'none',
         pointSize: 5,
         series: {
           1: {
+            pointsVisible: false
+          },
+          2: {
             pointsVisible: false
           }
         },
@@ -488,6 +518,9 @@ export class Mkcolony {
     data = this.timestampToDate(data);
     // console.log('data after timestamp conversion', data);
 
+    const agentSelector 
+      = document.querySelector('#agent-selector') as HTMLSelectElement;
+
     const _processData = (row: any, idx: number, arr: Array<any>) => {
       // console.log('idx', idx);
       // if ('dateofdeath' in row) {
@@ -496,6 +529,13 @@ export class Mkcolony {
       //   idx--;
       //   return;
       // }
+
+      if ('dateofdeath' in row === false) {
+        let opt = document.createElement('option');
+        opt.textContent = row.name;
+        opt.value = row.name;
+        agentSelector.appendChild(opt);
+      } 
 
       for (let key of Object.keys(row)) {
         if (key == 'albumin_dates') {
@@ -533,10 +573,11 @@ export class Mkcolony {
       }
     }
 
-    data.forEach(_processData);
+    // data.forEach(_processData);
     data = data.filter(row => {
       return !('dateofdeath' in row);
     });
+    data.forEach(_processData);
     return data;
   }
 
@@ -545,16 +586,28 @@ export class Mkcolony {
     let agWtDashboard = new google.visualization.Dashboard(this.agWtCard);
     agWtDt.addColumn('date', 'Date');
     agWtDt.addColumn('number', 'Weight');
-    agWtDt.addColumn('number', 'Baseline')
+    agWtDt.addColumn('number', 'Baseline');
+    agWtDt.addColumn('number', 'Soft Upper Bound');
+    agWtDt.addColumn('number', 'Soft Lower Bound');
+    agWtDt.addColumn('number', 'Hard Upper Bound');
+    agWtDt.addColumn('number', 'Hard Lower Bound');
 
     const baselineWt 
       = data.baseline_weight_values[data.baseline_weight_values.length - 1];
+    let baselineWtSoftUpper = baselineWt * 1.05;
+    let baselineWtSoftLower = baselineWt * 0.95;
+    let baselineWtHardUpper = baselineWt * 1.08;
+    let baselineWtHardLower = baselineWt * 0.92;
 
     for (let i = 0; i < data.weight_dates.length; i++) {
       agWtDt.addRow([
         new Date(data.weight_dates[i]),
         data.weight_values[i],
-        baselineWt
+        baselineWt,
+        baselineWtSoftUpper,
+        baselineWtSoftLower,
+        baselineWtHardUpper,
+        baselineWtHardLower
       ]);
     }
 
@@ -564,6 +617,8 @@ export class Mkcolony {
     plot.style.height = '80%';
     filter.style.height = '20%';
 
+    
+
 
     let plotOptions: any = {
       interpolateNulls: true,
@@ -571,10 +626,37 @@ export class Mkcolony {
       width: plot.clientWidth,
       height: plot.offsetHeight,
       legend: 'none' as 'none',
+      chartArea: {
+        width: '80%',
+        height: '80%'
+      },
       pointSize: 5,
       series: {
         1: {
-          pointsVisible: false
+          pointsVisible: false,
+          color: 'black',
+          lineDashStyle: [4, 4],
+          lineWidth: 3
+        },
+        2: {
+          pointsVisible: false,
+          color: 'green',
+          lineWidth: 2
+        },
+        3: {
+          pointsVisible: false,
+          color: 'green',
+          lineWidth: 2
+        },
+        4: {
+          pointsVisible: false,
+          color: 'red',
+          lineWidth: 1
+        },
+        5: {
+          pointsVisible: false,
+          color: 'red',
+          lineWidth: 1
         }
       }
     };
