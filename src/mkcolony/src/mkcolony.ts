@@ -27,11 +27,16 @@ export class Mkcolony {
   
   public marmosetData: any[];
   public marmosetDataDic: any;
+  public cleanMarmosetDataDic: any;
+  public cleanMarmosetData: any[];
 
   private clTable: Tabulator;
 
   private previewBtn: HTMLButtonElement;
   private saveBtn: HTMLButtonElement;
+  private agSlt: HTMLSelectElement;
+  private fldSlt: HTMLSelectElement;
+  private fldVal: HTMLInputElement;
 
 
   constructor() {
@@ -52,6 +57,16 @@ export class Mkcolony {
 
     this.agJsonCard = document.querySelector('#agent-json-card') as div;
     this.agJsonDiv = document.querySelector('#agent-json') as div;
+
+    this.saveBtn = document.querySelector('#save-btn') as HTMLButtonElement;
+
+    this.agSlt 
+      = document.querySelector('#agent-selector') as HTMLSelectElement;
+    this.fldSlt
+      = document.querySelector('#field-selector') as HTMLSelectElement;
+    
+    
+    this.saveBtnAction();
   }
 
   public deleteAll() {
@@ -59,17 +74,32 @@ export class Mkcolony {
   }
 
   public saveBtnAction() {
+    this.saveBtn.addEventListener('click', (ev: Event) => {
+      if (this.agSlt.value != 'Agent') {
+        const marmosetRef = db.collection('marmosets').doc(this.agSlt.value);
+        const dlydataRef = db.collection('mkdailydata').doc(this.agSlt.value);
 
+        if (this.fldSlt.value == 'lab_notes') {
+          marmosetRef.update({
+            lab_notes: firebase.firestore.FieldValue.arrayUnion()
+          })
+
+        }
+      }
+    });
   }
 
   public previewBtnAction() {
-    
+
   }
 
   public populateTable(data: any[]) {
+    let stuff = {...data}
     this.marmosetDataDic = {};
     this.marmosetData = this.processData(data);
     console.log('this.marmosetData', this.marmosetData);
+    console.log('stuff', stuff);
+    
 
     let clTableCard 
       = document.querySelector('#colony-table-card') as div;
@@ -314,6 +344,61 @@ export class Mkcolony {
     return data;
   }
 
+  private keepCleanCopyData(data: any) {
+    let cleanData = {...data};
+
+    function tsArrToDate(elem: Timestamp, idx: number, arr: any[]) {
+      try {
+        arr[idx] = elem.toDate().toJSON();
+      } catch {
+
+      }
+    }
+
+    function isDict(val: any) {
+      return val && typeof val === 'object' && val.constructor === Object;
+    }
+
+    function isString(val: any) {
+      return typeof val === 'string' || val.constructor === String;
+    }
+
+    function isNumber (val: any) {
+      return typeof val === 'number' && isFinite(val);
+    }
+
+    cleanData.forEach((row: any)  => {
+      for (let key of Object.keys(row)) {
+        if (Array.isArray(row[key])) {
+          row[key].forEach(tsArrToDate);
+        } else if (isDict(row[key])) {
+          try {
+            row[key] = row[key].toDate().toJSON();
+            continue;
+          } catch {
+
+          }
+
+          for (let key2 of Object.keys(row[key])) {
+            try {
+              row[key][key2] = row[key][key2].toDate().toJSON();
+            } catch {
+              console.log('not a timestamp obj');
+            }
+          }
+        } else if (!isString(row[key]) && !isNumber(row[key])) {
+          try {
+            row[key] = row[key].toDate().toJSON();
+          } catch {
+            console.log('Not timestamp object');
+          }
+        }
+      }
+    });
+
+    return cleanData;
+  }
+
   private populateAgentBio(data: any) {
 
     this.agBioDiv.querySelectorAll('*').forEach(childNode => {
@@ -511,6 +596,10 @@ export class Mkcolony {
       console.error('Error loading documents:', e);
     });
 
+    console.log('data', data);
+    const newArray = data.map(a => ({...a}));
+    console.log('newArray', newArray);
+
     return data;
   }
 
@@ -518,8 +607,8 @@ export class Mkcolony {
     data = this.timestampToDate(data);
     // console.log('data after timestamp conversion', data);
 
-    const agentSelector 
-      = document.querySelector('#agent-selector') as HTMLSelectElement;
+    // const agentSelector 
+    //   = document.querySelector('#agent-selector') as HTMLSelectElement;
 
     const _processData = (row: any, idx: number, arr: Array<any>) => {
       // console.log('idx', idx);
@@ -534,7 +623,7 @@ export class Mkcolony {
         let opt = document.createElement('option');
         opt.textContent = row.name;
         opt.value = row.name;
-        agentSelector.appendChild(opt);
+        this.agSlt.appendChild(opt);
       } 
 
       for (let key of Object.keys(row)) {
@@ -821,6 +910,23 @@ export class Mkcolony {
     }
 
     return dt;
+  }
+
+  public async init() {
+
+    let marmData = await this.getData('marmosets');
+    console.log('marmData', marmData);
+  }
+
+  public async getData(collectionName: string) {
+    function loadData(doc: any, arr: any[]) {
+      arr.push(doc.data());
+    }
+    
+    return db.collection(collectionName).get().then(async snapshot => {
+      let promises = snapshot.docs.map(x => x.data());
+      await Promise.all(promises)
+    });
   }
 
 }
