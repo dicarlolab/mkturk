@@ -29,6 +29,11 @@
   grid-area: clWtDateFilter;
 }
 
+
+#data-entry-container {
+  max-height: 30vh;
+}
+
 #agent-notes-grid {
   min-height: 40vh;
   overflow: visible;
@@ -40,6 +45,16 @@
 
 #agent-fluid-grid {
   min-height: 40vh;
+}
+
+#preview-entry-card {
+  min-height: 100%;
+  max-height: inherit;
+}
+
+#entry-json {
+  height: 100%;
+  width: 100%;
 }
 
 #agent-json {

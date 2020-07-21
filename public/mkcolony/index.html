@@ -60,7 +60,7 @@
   
                   <select class="selector" id="field-selector">
                     <option selected disabled>Field</option>
-                    <option value="fluid">Fluid</option>
+                    <option value="fluid">Fluid (in mL)</option>
                     <option value="lab_notes">Lab Notes</option>
                     <option value="vet_notes">Vet Notes</option>
                   </select>
@@ -71,7 +71,7 @@
                   <label class="mdl-textfield__label" for="field-value">Field Value</label>
                 </div>
 
-                <div class="mdl-textfield mdl-js-textfield">
+                <div class="mdl-textfield mdl-js-textfield" id="field-notes-entry">
                   <input class="mdl-textfield__input" type="text" id="entry-notes">
                   <label class="mdl-textfield__label" for="entry-notes">Notes</label>
                 </div>
@@ -88,7 +88,9 @@
               </form>
             </div>
 
-            <div class="mdl-cell mdl-cell--5-col mdl-card mdl-shadow--2dp" id="preview-entry-card"></div>
+            <div class="mdl-cell mdl-cell--5-col mdl-card mdl-shadow--2dp" id="preview-entry-card">
+              <div id="entry-json"></div>
+            </div>
           </div>
 
           <div class="page-content mdl-grid" id="colony-weight-grid">

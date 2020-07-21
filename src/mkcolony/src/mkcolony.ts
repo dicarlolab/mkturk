@@ -25,14 +25,10 @@ export class Mkcolony {
   private agJsonCard: div;
   private agJsonDiv: div;
   private agJson: JSONEditor;
-  
-  public marmosetData: any[];
-  public marmosetDataDic: any;
-  public cleanMarmosetDataDic: any;
-  public cleanMarmosetData: any[];
 
   public cleanData: any;
-  public vizData: any;
+  public vizData: any[];
+  public vizDataDic: any;
 
   private clTable: Tabulator;
 
@@ -40,7 +36,8 @@ export class Mkcolony {
   private saveBtn: HTMLButtonElement;
   private agSlt: HTMLSelectElement;
   private fldSlt: HTMLSelectElement;
-  private fldVal: HTMLInputElement;
+  
+  private entryJson: JSONEditor;
 
 
   constructor() {
@@ -73,24 +70,105 @@ export class Mkcolony {
     
     
     this.saveBtnAction();
+    this.selectorAction();
+    this.setupEntryCard();
   }
 
   public deleteAll() {
     this.clTable.clearData();
   }
 
+  public selectorAction() {
+    let field = document.querySelector('#field-selector') as HTMLSelectElement;
+    let notes = document.querySelector('#field-notes-entry') as HTMLDivElement;
+    let fieldValueInput = document.querySelector('#field-value') as HTMLInputElement;
+    let entryBox = document.querySelector('#field-value-entry') as HTMLDivElement;
+
+    field.addEventListener('change', (ev: Event) => {
+      if (field.value === 'lab_notes' || field.value === 'vet_notes') {
+        notes.style.display = 'none';
+        // fieldValueInput.pattern = '';
+        if (fieldValueInput.hasAttribute('pattern')) {
+          fieldValueInput.removeAttribute('pattern');
+        }
+      } else if (field.value === 'fluid') {
+        notes.style.display = 'block';
+        fieldValueInput.setAttribute('pattern', '-?[0-9]*(\.[0-9]+)?');
+        let errorLabel = document.createElement('span');
+        errorLabel.setAttribute('class', 'mdl-textfield__error');
+        errorLabel.textContent = 'Input is not a number!';
+        entryBox.appendChild(errorLabel);
+      }
+    });
+  }
+
   public saveBtnAction() {
     this.saveBtn.addEventListener('click', (ev: Event) => {
-      if (this.agSlt.value != 'Agent') {
-        const marmosetRef = db.collection('marmosets').doc(this.agSlt.value);
-        const dlydataRef = db.collection('mkdailydata').doc(this.agSlt.value);
+      let agent = document.querySelector('#agent-selector') as HTMLSelectElement;
+      let field = document.querySelector('#field-selector') as HTMLSelectElement;
+      let value = document.querySelector('#field-value') as HTMLInputElement;
+      let notes = document.querySelector('#entry-notes') as HTMLInputElement;
 
-        if (this.fldSlt.value == 'lab_notes') {
-          marmosetRef.update({
-            lab_notes: firebase.firestore.FieldValue.arrayUnion()
-          })
+      // sanity check
+      if (agent.value === 'Agent') {
+        alert('Please select an agent');
+        return;
+      } else if (field.value === 'Field') {
+        alert('Please select a field');
+        return;
+      }
 
+      if (field.value === 'fluid') {
+        let data = this.cleanData.mkdailydataDic[agent.value];
+        let newFluidValue = Number(value.value);
+        if (Number.isNaN(newFluidValue)) {
+          alert('Enter only numbers');
+          return;
         }
+        data.fluid_values.push(newFluidValue);
+        data.fluid_notes.push(notes.value);
+        data.fluid_dates.push(new Date().toJSON());
+        // this.entryJson.set(data);
+        let dataToServer = this.dateToTimestamp(data);
+        db.collection('mkdailydata').doc(data.agent).set(dataToServer).then(() => {
+          console.log('[Document Updated]: mkdailydata.' + data.agent);
+          alert('Document Updated');
+          this.entryJson.set(data);
+        }).catch(e => {
+          alert('Entry Failed');
+          console.error('[Document Update Failed]', 'mkdailydata.' + data.agent)
+          console.error('[ERROR]:', e);
+        });
+        
+      } else if (field.value === 'lab_notes') {
+        let data = this.cleanData.marmosetDataDic[agent.value];
+        data.lab_notes.push(value.value);
+        data.lab_notes_dates.push(new Date().toJSON());
+        // this.entryJson.set(data);
+        let dataToServer = this.dateToTimestamp(data);
+        db.collection('marmosets').doc(data.name).set(dataToServer).then(() => {
+          console.log('[Document Updated]: marmoset.' + data.name);
+          alert('Document Updated');
+          this.entryJson.set(data);
+        }).catch(e => {
+          alert('Entry Failed');
+          console.error('[Document Update Failed]', 'marmoset.' + data.name)
+          console.error('[ERROR]:', e);
+        });
+      } else if (field.value === 'vet_notes') {
+        let data = this.cleanData.marmosetDataDic[agent.value];
+        data.vet_notes.push(value.value);
+        data.vet_notes_dates.push(new Date().toJSON());
+        let dataToServer = this.dateToTimestamp(data);
+        db.collection('marmosets').doc(data.name).set(dataToServer).then(() => {
+          console.log('[Document Updated]: marmoset.' + data.name);
+          alert('Document Updated');
+          this.entryJson.set(data);
+        }).catch(e => {
+          alert('Entry Failed');
+          console.error('[Document Update Failed]', 'marmoset.' + data.name)
+          console.error('[ERROR]:', e);
+        });
       }
     });
   }
@@ -99,14 +177,14 @@ export class Mkcolony {
 
   }
 
-  public populateTable(data: any[]) {
-    let stuff = {...data}
-    this.marmosetDataDic = {};
-    this.marmosetData = this.processData(data);
-    console.log('this.marmosetData', this.marmosetData);
-    console.log('stuff', stuff);
-    
+  public setupEntryCard() {
+    let entryJsonDiv = document.querySelector('#entry-json') as div;
+    this.entryJson = new JSONEditor(entryJsonDiv, {mode: "tree" ,sortObjectKeys: true});
+  }
 
+  
+
+  public populateTable(data: any[]) {
     let clTableCard 
       = document.querySelector('#colony-table-card') as div;
     let colonyTab 
@@ -126,7 +204,7 @@ export class Mkcolony {
     clTableCard.style.minHeight = String(colonyTab.clientHeight / 2) + 'px';
 
     this.clTable = new Tabulator(this.clTableDiv, {
-      data: this.marmosetData,
+      data: this.vizData,
       index: 'name',
       layout: 'fitColumns',
       initialSort: [
@@ -161,7 +239,41 @@ export class Mkcolony {
           }
           return cell.getValue();
         }},
-        {title: 'Weight', field: 'last_weight_value'},
+        {title: 'Weight', field: 'last_weight_value', formatter:function(cell: any){
+          try {
+            let recentWt = cell.getValue();
+            let baselineWt = cell.getData().baseline_weight_values.slice(-1)[0];
+            let softBound = baselineWt * 0.95;
+            let hardBound = baselineWt * 0.92;
+
+            if (recentWt < hardBound) {
+              cell.getElement().style.backgroundColor = 'Red';
+            } else if (recentWt < softBound && recentWt >= hardBound) {
+              cell.getElement().style.backgroundColor = 'Yellow';
+            } else {
+              cell.getElement().style.backgroundColor = '#00FF00';
+            }
+          } catch {
+            console.error('[' + cell.getData().name + '] has no baseline weight data');
+          }
+          return cell.getValue();
+        }},
+        {title: 'Fluid Date', field: 'last_fluid_date'},
+        {title: 'Fluid Value', field: 'last_fluid_value', formatter: function(cell: any){
+          try {
+            let recentFl = cell.getValue();
+            let baselineFl = cell.getData().baseline_fluid_values.slice(-1)[0];
+            let hardBound = baselineFl * 0.5;
+            if (recentFl < hardBound) {
+              cell.getElement().style.backgroundColor = 'Red';
+            } else {
+              cell.getElement().style.backgroundColor = '#00FF00';
+            }
+          } catch {
+            console.error('[' + cell.getData().name + '] has no baseline weight data');
+          }
+          return cell.getValue();
+        }},
       ],
       rowDblClick: (ev: Event, row) => {
         ev.stopPropagation();
@@ -183,7 +295,7 @@ export class Mkcolony {
 
     document.addEventListener('RFID', (ev: any) => {
       ev.preventDefault();
-      this.marmosetData.forEach(row => {
+      this.vizData.forEach(row => {
         if (row.rfid != undefined && row.rfid == ev.detail) {
           agentTab.classList.add('is-active');
           colonyTab.classList.remove('is-active');
@@ -196,21 +308,14 @@ export class Mkcolony {
   }
 
   private populateAgentTab(agentName: string) {
-    console.log('marmoDataDic', this.marmosetDataDic);
-    let agentData = this.marmosetDataDic[agentName];
+    let agentData = this.vizDataDic[agentName];
     console.log(agentData);
     this.populateAgentBio(agentData);
     this.plotAgentWeight(agentData);
-    let ret = this.loadAndProcessFlData(agentName);
-    ret.then(docs => {
-      this.plotAgentFluid(docs, agentName);
-    });
+    this.plotAgentFluid(agentData);
   }
 
-  private async plotAgentFluid(data: {k: string, v: string}, agentName: string) {
-    
-    let agentDocRef = db.collection('marmosets').doc(agentName);
-
+  private async plotAgentFluid(data: any) {
     const agFlDt = new google.visualization.DataTable();
     let agFlDashboard = new google.visualization.Dashboard(this.agFlCard);
     agFlDt.addColumn('date', 'Date');
@@ -218,22 +323,33 @@ export class Mkcolony {
     agFlDt.addColumn('number', 'Baseline Fluid');
     agFlDt.addColumn('number', 'Baseline Fluid -50%');
 
-    await agentDocRef.get().then(doc => {
-      if (doc.exists) {
-        let baselineFl = doc.data()?.baseline_fluid_values;
-        baselineFl = baselineFl[baselineFl.length - 1];
-        let baselineFlLowerBound = baselineFl * 0.50;
-        for (let [key, value] of Object.entries(data)) {
-          let flLvl = Number(value) * 9.0 / 1000.0;
-          agFlDt.addRow([
-            new Date(key),
-            flLvl,
-            baselineFl,
-            baselineFlLowerBound
-          ]);
-        }
-      }
-    });
+    // await agentDocRef.get().then(doc => {
+    //   if (doc.exists) {
+    //     let baselineFl = doc.data()?.baseline_fluid_values;
+    //     baselineFl = baselineFl[baselineFl.length - 1];
+    //     let baselineFlLowerBound = baselineFl * 0.50;
+    //     for (let [key, value] of Object.entries(data)) {
+    //       let flLvl = Number(value) * 9.0 / 1000.0;
+    //       agFlDt.addRow([
+    //         new Date(key),
+    //         flLvl,
+    //         baselineFl,
+    //         baselineFlLowerBound
+    //       ]);
+    //     }
+    //   }
+    // });
+
+    let baselineFl = data.baseline_fluid_values.slice(-1)[0];
+    let lowerBound = baselineFl * 0.5;
+    for (let i = 0; i < data.fluid_values.length; i++) {
+      agFlDt.addRow([
+        new Date(data.fluid_dates[i]),
+        data.fluid_values[i],
+        baselineFl,
+        lowerBound
+      ]);
+    }
 
     let dateFormatter = new google.visualization.DateFormat({timeZone: 0});
     dateFormatter.format(agFlDt, 0);
@@ -303,106 +419,6 @@ export class Mkcolony {
 
     agFlDashboard.bind(agFlFilter, agFlPlot);
     agFlDashboard.draw(agFlDt);
-  }
-
-  private async loadAndProcessFlData(agentName: string) {
-    function _loadFlData(doc: any, data: any) {
-      if (doc.data().hasOwnProperty('NReward')) {
-        let totalReward
-          = doc.data().NReward.reduce((a: number, b: number) => {
-            if (isNaN(b)) {
-              b = 0;
-            }
-
-            return a + b;
-          }, 0);
-        let curDate = doc.data().CurrentDate.toDate().toJSON().split('T')[0];
-        if (data.hasOwnProperty(curDate)) {
-          data[curDate] = data[curDate] + totalReward;
-        } else {
-          data[curDate] = totalReward;
-        }
-      }
-    }
-    
-    let data: any = {};
-    let endDate = new Date(); // hard-coded because of issues with firestore as of 03/23/2020
-    let startDate = new Date(endDate).setMonth(endDate.getMonth() - 1);
-    
-    let query 
-      = db.collection('mkturkdata')
-      .where('Agent', '==', agentName)
-      .where('Doctype', '==', 'task')
-      .where('CurrentDate', '>=', new Date(startDate))
-      .where('CurrentDate', '<=', new Date(endDate));
-
-    await query.get().then(async snapshot => {
-      if (!snapshot.empty) {
-        let promises = snapshot.docs.map(doc => _loadFlData(doc, data));
-        await Promise.all(promises);
-      } else {
-        console.error('Found no documents');
-      }
-    }).catch(e => {
-      console.error('Error loading documents:', e);
-    });
-
-    return data;
-  }
-
-  private keepCleanCopyData(data: any) {
-    let cleanData = {...data};
-
-    function tsArrToDate(elem: Timestamp, idx: number, arr: any[]) {
-      try {
-        arr[idx] = elem.toDate().toJSON();
-      } catch {
-
-      }
-    }
-
-    function isDict(val: any) {
-      return val && typeof val === 'object' && val.constructor === Object;
-    }
-
-    function isString(val: any) {
-      return typeof val === 'string' || val.constructor === String;
-    }
-
-    function isNumber (val: any) {
-      return typeof val === 'number' && isFinite(val);
-    }
-
-    cleanData.forEach((row: any)  => {
-      for (let key of Object.keys(row)) {
-        if (Array.isArray(row[key])) {
-          row[key].forEach(tsArrToDate);
-        } else if (isDict(row[key])) {
-          try {
-            row[key] = row[key].toDate().toJSON();
-            continue;
-          } catch {
-
-          }
-
-          for (let key2 of Object.keys(row[key])) {
-            try {
-              row[key][key2] = row[key][key2].toDate().toJSON();
-            } catch {
-              console.log('not a timestamp obj');
-            }
-          }
-        } else if (!isString(row[key]) && !isNumber(row[key])) {
-          try {
-            row[key] = row[key].toDate().toJSON();
-          } catch {
-            console.log('Not timestamp object');
-          }
-        }
-      }
-    });
-
-    return cleanData;
   }
 
   private populateAgentBio(data: any) {
@@ -602,155 +618,6 @@ export class Mkcolony {
     return data;
   }
 
-
-  private timestampToDate(data: any[]) {
-    function tsArrToDate(elem: Timestamp, idx: number, arr: any[]) {
-      try {
-        arr[idx] = elem.toDate().toJSON().split('T')[0];
-      } catch {
-
-      }
-    }
-
-    function isDict(val: any) {
-      return val && typeof val === 'object' && val.constructor === Object; 
-    }
-
-    function isString(val: any) {
-      return typeof val === 'string' || val.constructor === String;
-    }
-
-    function isNumber(val: any) {
-      return typeof val === 'number' && isFinite(val);
-    }
-
-    data.forEach(row => {
-      for (let key of Object.keys(row)) {
-        if (Array.isArray(row[key])) {
-          row[key].forEach(tsArrToDate);
-        }
-
-        else if (isDict(row[key])) {
-          try {
-            row[key] = row[key].toDate().toJSON().split('T')[0];
-            continue;
-          } catch {
-
-          }
-
-          for (let key2 of Object.keys(row[key])) {
-            try {
-              row[key][key2] = row[key][key2].toDate().toJSON().split('T')[0];
-            } catch {
-              console.log('Not timestamp object');
-            }
-          }
-        }
-
-        else if (!isString(row[key]) && !isNumber(row[key])) {
-          try {
-            row[key] = row[key].toDate().toJSON().split('T')[0];
-          } catch {
-            console.log('Not timestamp object');
-          }
-        }
-      }
-    });
-  
-    return data;
-  }
-
-  public async loadWtData(query: firebase.firestore.Query) {
-    function _loadWtData(doc: any, arr: any[]) {
-      arr.push(doc.data());  
-    }
-
-    let data = new Array();
-    await query.get().then(async querySnapshot => {
-      if (!querySnapshot.empty) {
-        let promises = querySnapshot.docs.map(doc => _loadWtData(doc, data));
-        await Promise.all(promises);
-      } else {
-        console.log('Found No Documents');
-      }
-    }).catch(e => {
-      console.error('Error loading documents:', e);
-    });
-
-    console.log('data', data);
-    const newArray = data.map(a => ({...a}));
-    console.log('newArray', newArray);
-
-    return data;
-  }
-
-  public processData(data: any[]) {
-    data = this.timestampToDate(data);
-    // console.log('data after timestamp conversion', data);
-
-    // const agentSelector 
-    //   = document.querySelector('#agent-selector') as HTMLSelectElement;
-
-    const _processData = (row: any, idx: number, arr: Array<any>) => {
-      // console.log('idx', idx);
-      // if ('dateofdeath' in row) {
-      //   console.log('death in row', arr[idx]);
-      //   arr.splice(idx, 1);
-      //   idx--;
-      //   return;
-      // }
-
-      if ('dateofdeath' in row === false) {
-        let opt = document.createElement('option');
-        opt.textContent = row.name;
-        opt.value = row.name;
-        this.agSlt.appendChild(opt);
-      } 
-
-      for (let key of Object.keys(row)) {
-        if (key == 'albumin_dates') {
-          row['recent_albumin_date'] = row['albumin_dates'].slice(-1)[0]; 
-        } else if (key == 'albumin_values') {
-          row['recent_albumin_value'] = row['albumin_values'].slice(-1)[0];
-        } else if (key == 'weight_dates') {
-          row['last_weight_date'] = row['weight_dates'].slice(-1)[0];
-        } else if (key == 'weight_values') {
-          row['last_weight_value'] = row['weight_values'].slice(-1)[0];
-        }
-      }
-
-      try {
-
-        let today = new Date();
-        let dob = new Date(row.birthdate);
-        let yearsDiff = today.getFullYear() - dob.getFullYear();
-
-        if (yearsDiff > 2) {
-          let ageStr = String(yearsDiff) + ' yo';
-          row.age = yearsDiff;
-          row.ageStr = ageStr;
-        } else {
-          let monthsDiff = (yearsDiff * 12) + (today.getMonth() - dob.getMonth());
-          let ageStr = String(monthsDiff) + ' mo';
-          row.age = monthsDiff;
-          row.ageStr = ageStr;
-        }
-
-        this.marmosetDataDic[row.name] = row;
-
-      } catch (e) {
-
-      }
-    }
-
-    // data.forEach(_processData);
-    data = data.filter(row => {
-      return !('dateofdeath' in row);
-    });
-    data.forEach(_processData);
-    return data;
-  }
-
   private plotAgentWeight(data: any) {
     const agWtDt = new google.visualization.DataTable();
     let agWtDashboard = new google.visualization.Dashboard(this.agWtCard);
@@ -895,7 +762,7 @@ export class Mkcolony {
   }
 
   private plotColonyWeight() {
-    const clWtDataTable = this.clWtDataToDataTable(this.marmosetData);
+    const clWtDataTable = this.clWtDataToDataTable(this.vizData);
     let clWtDashboard = new google.visualization.Dashboard(this.clWtCard);
 
     let plot = document.querySelector('#colony-weight-plot') as div;
@@ -955,10 +822,6 @@ export class Mkcolony {
     clWtDashboard.draw(clWtDataTable);
   }
 
-  public plotColonyData() {
-    this.plotColonyWeight();
-  }
-
   private clWtDataToDataTable(data: any[]) {
     let chartData: any[][] = [];
     let dtArr: google.visualization.DataTable[] = [];
@@ -996,17 +859,21 @@ export class Mkcolony {
   public async init() {
     let marmData = await this.getData('marmosets');
     let mkdailydata = await this.getData('mkdailydata');
-    this.pData(marmData, mkdailydata);
+    let data = await this.pData(marmData, mkdailydata);
+    this.populateTable(data);
+    this.plotColonyWeight();
   }
 
   public pData(data1: any[], data2: any[]) {
     this.cleanData.mkdailydata = new Array();
     this.cleanData.marmosetData = new Array();
-    
+    this.cleanData.mkdailydataDic = {};
+    this.cleanData.marmosetDataDic = {};
 
     this.cleanData.mkdailydata = cloneDeep(data2);
     this.cleanData.marmosetData = cloneDeep(data1);
     this.vizData = cloneDeep(data1);
+    this.vizDataDic = {};
 
     data2.forEach(row => {
       let idx = this.vizData.findIndex((doc: any) => {
@@ -1026,6 +893,14 @@ export class Mkcolony {
       return !('dateofdeath' in row);
     });
 
+    this.cleanData.marmosetData.forEach((row: any) => {
+      this.cleanData.marmosetDataDic[row.name] = row;
+    });
+
+    this.cleanData.mkdailydata.forEach((row: any) => {
+      this.cleanData.mkdailydataDic[row.agent] = row;
+    });
+
     this.vizData.forEach((row: any) => {
       let opt = document.createElement('option');
       opt.textContent = row.name;
@@ -1033,10 +908,10 @@ export class Mkcolony {
       this.agSlt.appendChild(opt);
 
       for (let key of Object.keys(row)) {
-        if (key == 'albumin_dates') {
-          row['recent_albumin_date'] = row['albumin_dates'].slice(-1)[0]; 
-        } else if (key == 'albumin_values') {
-          row['recent_albumin_value'] = row['albumin_values'].slice(-1)[0];
+        if (key == 'fluid_dates') {
+          row['last_fluid_date'] = row['fluid_dates'].slice(-1)[0]; 
+        } else if (key == 'fluid_values') {
+          row['last_fluid_value'] = row['fluid_values'].slice(-1)[0];
         } else if (key == 'weight_dates') {
           row['last_weight_date'] = row['weight_dates'].slice(-1)[0];
         } else if (key == 'weight_values') {
@@ -1061,13 +936,15 @@ export class Mkcolony {
           row.ageStr = ageStr;
         }
 
-        this.marmosetDataDic[row.name] = row;
+        this.vizDataDic[row.name] = row;
 
       } catch (e) {
 
       }
-    })
-    
+    });
+
+    console.log('vizDataDic', this.vizDataDic);
+    return this.vizData;
   }
 
   public async getData(collectionName: string) {
@@ -1075,6 +952,52 @@ export class Mkcolony {
       let promises = snapshot.docs.map(x => x.data());
       return promises;
     });
+  }
+
+  private dateToTimestamp(incomingData: any) {
+    let data = cloneDeep(incomingData);
+    function _dateToTimestamp(element: string, idx: number, arr: any[]) {
+      let dt = new Date(element);
+      if (!isNaN(Number(dt)) && dt instanceof Date && typeof element === "string") {
+        arr[idx] = firebase.firestore.Timestamp.fromDate(dt);
+      }
+    }
+
+    function isDict(val: any) {
+      return val && typeof val === 'object' && val.constructor === Object;
+    }
+
+    function isString(val: any) {
+      return typeof val === 'string' || val.constructor === String;
+    }
+
+    for (let key of Object.keys(data)) {
+      if (Array.isArray(data[key]) 
+        && (key.toLowerCase().includes('times') || key.toLowerCase().includes('dates'))) {
+        console.log("ARRAY " + "data[" + key + "]" + "=" + data[key]);
+        data[key].forEach(_dateToTimestamp);
+      }
+
+      else if (isDict(data[key])) {
+        for (let key2 of Object.keys(data[key])) {
+          let dt = new Date(data[key][key2]);
+          if (!isNaN(Number(dt)) && dt instanceof Date && isString(data[key][key2])) {
+            console.log("Dictionary " + "data[" + key + "]" + "=" + data[key]);
+            data[key][key2] = firebase.firestore.Timestamp.fromDate(dt);
+          }
+        }
+      }
+
+      else if (isString(data[key])
+        && (key.toLowerCase().includes('date') || key.toLowerCase().includes('time'))) {
+        
+        let dt = new Date(data[key]);
+        if (!isNaN(Number(dt)) && dt instanceof Date) {
+          data[key] = firebase.firestore.Timestamp.fromDate(dt);
+        }
+      }
+    }
+    return data;
   }
 
 }

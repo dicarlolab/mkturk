@@ -47,11 +47,11 @@ auth.onAuthStateChanged(user => {
         console.log('idTokenResult', idTokenResult);
         mkcolony = new Mkcolony();
         mkcolony.init();
-        let ret = mkcolony.loadWtData(db.collection('marmosets'));
-        ret.then(docs => {
-          mkcolony?.populateTable(docs);
-          mkcolony?.plotColonyData();
-        });
+        // let ret = mkcolony.loadWtData(db.collection('marmosets'));
+        // ret.then(docs => {
+        //   mkcolony?.populateTable(docs);
+        //   mkcolony?.plotColonyData();
+        // });
       } else {
         console.log('Unauthorized user');
         let alertStr = 'You do not have permission to view this app.'
