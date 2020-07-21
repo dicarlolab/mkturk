@@ -25,10 +25,12 @@
   "dependencies": {
     "@types/google.visualization": "0.0.53",
     "@types/jsoneditor": "^8.6.0",
+    "@types/lodash.clonedeep": "^4.5.6",
     "@types/tabulator-tables": "^4.6.7",
     "firebase": "^7.15.0",
     "firebase-admin": "^8.12.1",
     "jsoneditor": "^9.0.0",
+    "lodash.clonedeep": "^4.5.0",
     "package.json": "^2.0.1",
     "tabulator-tables": "^4.6.3"
   }

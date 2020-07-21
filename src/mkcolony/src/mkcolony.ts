@@ -1,6 +1,7 @@
 import * as firebase from 'firebase/app';
 import 'firebase/firestore';
 import JSONEditor from 'jsoneditor';
+import cloneDeep from 'lodash.cloneDeep';
 
 type div = HTMLDivElement;
 type Timestamp = firebase.firestore.Timestamp;
@@ -29,6 +30,9 @@ export class Mkcolony {
   public marmosetDataDic: any;
   public cleanMarmosetDataDic: any;
   public cleanMarmosetData: any[];
+
+  public cleanData: any;
+  public vizData: any;
 
   private clTable: Tabulator;
 
@@ -64,6 +68,8 @@ export class Mkcolony {
       = document.querySelector('#agent-selector') as HTMLSelectElement;
     this.fldSlt
       = document.querySelector('#field-selector') as HTMLSelectElement;
+    this.cleanData = {};
+    this.vizData = [];
     
     
     this.saveBtnAction();
@@ -522,6 +528,81 @@ export class Mkcolony {
 
   }
 
+  private tsToDate(data: any[], precision: string) {
+    function helperDate(elem: Timestamp, idx: number, arr: any[]) {
+      try {
+        arr[idx] = elem.toDate().toJSON().split('T')[0];
+      } catch {
+      }
+    }
+
+    function helperTime(elem: Timestamp, idx: number, arr: any[]) {
+      try {
+        arr[idx] = elem.toDate().toJSON();
+      } catch {
+
+      }
+    }
+
+    function isDict(val: any) {
+      return val && typeof val === 'object' && val.constructor === Object;
+    }
+
+    function isString(val: any) {
+      return val && typeof val === 'string' || val.constructor === String;
+    }
+
+    function isNumber(val: any) {
+      return typeof val === 'number' && isFinite(val);
+    }
+
+    data.forEach(row => {
+      for (let key of Object.keys(row)) {
+        if (Array.isArray(row[key])) {
+          if (precision === 'date') {
+            row[key].forEach(helperDate);
+          } else if (precision === 'time') {
+            row[key].forEach(helperTime);
+          }
+        } else if (isDict(row[key])) {
+          try {
+            if(precision === 'date') {
+              row[key] = row[key].toDate().toJSON().split('T')[0];
+            } else if (precision === 'time') {
+              row[key] = row[key].toDate().toJSON();
+            }
+            continue;
+          } catch {
+          }
+
+          for (let key2 of Object.keys(row[key])) {
+            try {
+              if (precision === 'date') {
+                row[key][key2] = row[key][key2].toDate().toJSON().split('T')[0];
+              } else if (precision === 'time') {
+                row[key][key2] = row[key][key2].toDate().toJSON();
+              }
+            } catch {
+
+            }
+          }
+        } else if (!isString(row[key]) && !isNumber(row[key])) {
+          try {
+            if (precision === 'date') {
+              row[key] = row[key].toDate().toJSON().split('T')[0];
+            } else if (precision === 'time') {
+              row[key] = row[key].toDate().toJSON();
+            }
+          } catch {
+          }
+        }
+      }
+    });
+
+    return data;
+  }
+
+
   private timestampToDate(data: any[]) {
     function tsArrToDate(elem: Timestamp, idx: number, arr: any[]) {
       try {
@@ -913,19 +994,86 @@ export class Mkcolony {
   }
 
   public async init() {
-
     let marmData = await this.getData('marmosets');
-    console.log('marmData', marmData);
+    let mkdailydata = await this.getData('mkdailydata');
+    this.pData(marmData, mkdailydata);
+  }
+
+  public pData(data1: any[], data2: any[]) {
+    this.cleanData.mkdailydata = new Array();
+    this.cleanData.marmosetData = new Array();
+    
+
+    this.cleanData.mkdailydata = cloneDeep(data2);
+    this.cleanData.marmosetData = cloneDeep(data1);
+    this.vizData = cloneDeep(data1);
+
+    data2.forEach(row => {
+      let idx = this.vizData.findIndex((doc: any) => {
+        return doc.name === row.agent;
+      });
+      console.log('idx', idx);
+      if (idx >= 0) {
+        this.vizData[idx] = {...this.vizData[idx], ...row};
+      }
+    });
+
+    this.cleanData.marmosetData = this.tsToDate(this.cleanData.marmosetData, 'time');
+    this.cleanData.mkdailydata = this.tsToDate(this.cleanData.mkdailydata, 'time');
+    this.vizData = this.tsToDate(this.vizData, 'date');
+
+    this.vizData = this.vizData.filter((row: any) => {
+      return !('dateofdeath' in row);
+    });
+
+    this.vizData.forEach((row: any) => {
+      let opt = document.createElement('option');
+      opt.textContent = row.name;
+      opt.value = row.name;
+      this.agSlt.appendChild(opt);
+
+      for (let key of Object.keys(row)) {
+        if (key == 'albumin_dates') {
+          row['recent_albumin_date'] = row['albumin_dates'].slice(-1)[0]; 
+        } else if (key == 'albumin_values') {
+          row['recent_albumin_value'] = row['albumin_values'].slice(-1)[0];
+        } else if (key == 'weight_dates') {
+          row['last_weight_date'] = row['weight_dates'].slice(-1)[0];
+        } else if (key == 'weight_values') {
+          row['last_weight_value'] = row['weight_values'].slice(-1)[0];
+        }
+      }
+
+      try {
+
+        let today = new Date();
+        let dob = new Date(row.birthdate);
+        let yearsDiff = today.getFullYear() - dob.getFullYear();
+
+        if (yearsDiff > 2) {
+          let ageStr = String(yearsDiff) + ' yo';
+          row.age = yearsDiff;
+          row.ageStr = ageStr;
+        } else {
+          let monthsDiff = (yearsDiff * 12) + (today.getMonth() - dob.getMonth());
+          let ageStr = String(monthsDiff) + ' mo';
+          row.age = monthsDiff;
+          row.ageStr = ageStr;
+        }
+
+        this.marmosetDataDic[row.name] = row;
+
+      } catch (e) {
+
+      }
+    })
+    
   }
 
   public async getData(collectionName: string) {
-    function loadData(doc: any, arr: any[]) {
-      arr.push(doc.data());
-    }
-    
     return db.collection(collectionName).get().then(async snapshot => {
       let promises = snapshot.docs.map(x => x.data());
-      await Promise.all(promises)
+      return promises;
     });
   }
 
