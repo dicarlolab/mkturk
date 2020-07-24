@@ -102,7 +102,7 @@ let entrySelector = document.querySelector('#entry-selector')
 
 window.addEventListener('load', (ev) => {
   let marmosetEntry = document.querySelector('#marmosets-entry');
-  db.collection('marmosets').get().then(sns => {
+  db.collection('mkdailydata').get().then(sns => {
     sns.forEach(doc => {
       let marmosetOption = document.createElement('option');
       marmosetOption.setAttribute('label', doc.id);
@@ -568,52 +568,73 @@ entryForm.addEventListener("submit", ev => {
 
 
       if (entrySelector.value != "mkscale") {
-        db.collection('marmosets').doc(name).get().then(doc => {
-          // try {
-          //   console.log(doc.data().weight_values.length);
-          // } catch (e) {
-          //   db.collection('marmosets').doc(name).update({
-          //     weight_values: [Number(wt)],
-          //     weight_dates: [firebase.firestore.Timestamp.fromDate(today)],
-          //     weight_notes: [notes] 
-          //   }).catch(e => {
-          //     console.error("Error saving to firestore/marmosets");
-          //     alert("firestore/marmosets weight save fail. Will continue operation");
-          //   });
-          //   console.log("firestore/marmosets Weight Save Success:", name);
-          // }
+        // db.collection('marmosets').doc(name).get().then(doc => {
+        //   // try {
+        //   //   console.log(doc.data().weight_values.length);
+        //   // } catch (e) {
+        //   //   db.collection('marmosets').doc(name).update({
+        //   //     weight_values: [Number(wt)],
+        //   //     weight_dates: [firebase.firestore.Timestamp.fromDate(today)],
+        //   //     weight_notes: [notes] 
+        //   //   }).catch(e => {
+        //   //     console.error("Error saving to firestore/marmosets");
+        //   //     alert("firestore/marmosets weight save fail. Will continue operation");
+        //   //   });
+        //   //   console.log("firestore/marmosets Weight Save Success:", name);
+        //   // }
+        //   if ("weight_values" in doc.data()) {
+        //     let file = doc.data();
+        //     file.weight_values.push(Number(wt));
+        //     file.weight_notes.push(notes);
+        //     file.weight_dates.push(firebase.firestore.Timestamp.fromDate(today));
+        //     console.log(file.weight_dates);
+        //     // console.log(file.weight_dates);
+        //     // console.log(today);
+        //     // file.weight_dates = file.weight_dates.forEach(timestampToDate);
+        //     // file.weight_dates.push(today.toJSON());
+        //     // file.weight_dates = file.weight_dates.forEach(dateToTimestamp);
+
+        //     db.collection('marmosets').doc(name).update({
+        //       weight_values: file.weight_values,
+        //       weight_dates: file.weight_dates,
+        //       weight_notes: file.weight_notes,
+        //     }).then(msg => {
+        //       console.log("firestore/marmosets weight save success:", msg, name);
+        //     }).catch(e => {
+        //       console.error("Error saving to firestore/marmosets");
+        //       alert("firestore/marmosets weight save fail. will continue operation");
+        //     });
+        //   } else {
+        //     db.collection('marmosets').doc(name).update({
+        //       weight_values: [Number(wt)],
+        //       weight_dates: [firebase.firestore.Timestamp.fromDate(today)],
+        //       weight_notes: [notes]
+        //     }).then(msg => {
+        //       console.log("firestore/marmosets weight save success", msg, name);
+        //     }).catch(e => {
+        //       console.error("Error saving to firestore/marmosets", e);
+        //       alert("firestore/marmosets weight save fail. will continue operation");
+        //     });
+        //   }
+        // });
+
+        db.collection('mkdailydata').doc(name).get().then(doc => {
           if ("weight_values" in doc.data()) {
             let file = doc.data();
             file.weight_values.push(Number(wt));
             file.weight_notes.push(notes);
             file.weight_dates.push(firebase.firestore.Timestamp.fromDate(today));
             console.log(file.weight_dates);
-            // console.log(file.weight_dates);
-            // console.log(today);
-            // file.weight_dates = file.weight_dates.forEach(timestampToDate);
-            // file.weight_dates.push(today.toJSON());
-            // file.weight_dates = file.weight_dates.forEach(dateToTimestamp);
 
-            db.collection('marmosets').doc(name).update({
+            db.collection('mkdailydata').doc(name).update({
               weight_values: file.weight_values,
               weight_dates: file.weight_dates,
-              weight_notes: file.weight_notes,
+              weight_notes: file.weight_notes
             }).then(msg => {
-              console.log("firestore/marmosets weight save success:", msg, name);
+              console.log('firestore/mkdailydata weight save success:', msg, name);
             }).catch(e => {
-              console.error("Error saving to firestore/marmosets");
-              alert("firestore/marmosets weight save fail. will continue operation");
-            });
-          } else {
-            db.collection('marmosets').doc(name).update({
-              weight_values: [Number(wt)],
-              weight_dates: [firebase.firestore.Timestamp.fromDate(today)],
-              weight_notes: [notes]
-            }).then(msg => {
-              console.log("firestore/marmosets weight save success", msg, name);
-            }).catch(e => {
-              console.error("Error saving to firestore/marmosets", e);
-              alert("firestore/marmosets weight save fail. will continue operation");
+              console.error('Error saving to firestore/mkdailydata:', e);
+              alert('firestore/mkdailydata save fail. will continue operation');
             });
           }
         });

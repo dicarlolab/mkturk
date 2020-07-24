@@ -1,11 +1,13 @@
 import * as firebase from 'firebase/app';
 import 'firebase/firestore';
+import 'firebase/storage';
 import JSONEditor from 'jsoneditor';
 import cloneDeep from 'lodash.cloneDeep';
 
 type div = HTMLDivElement;
 type Timestamp = firebase.firestore.Timestamp;
 const db = firebase.firestore();
+const storage = firebase.storage();
 
 export class Mkcolony {
 
@@ -103,7 +105,7 @@ export class Mkcolony {
   }
 
   public saveBtnAction() {
-    this.saveBtn.addEventListener('click', (ev: Event) => {
+    this.saveBtn.addEventListener('click', async (ev: Event) => {
       let agent = document.querySelector('#agent-selector') as HTMLSelectElement;
       let field = document.querySelector('#field-selector') as HTMLSelectElement;
       let value = document.querySelector('#field-value') as HTMLInputElement;
@@ -119,25 +121,60 @@ export class Mkcolony {
       }
 
       if (field.value === 'fluid') {
-        let data = this.cleanData.mkdailydataDic[agent.value];
+
         let newFluidValue = Number(value.value);
         if (Number.isNaN(newFluidValue)) {
           alert('Enter only numbers');
           return;
         }
+        let data = cloneDeep(this.cleanData.mkdailydataDic[agent.value]);
+        if (!data.hasOwnProperty('fluid_values')) {
+          data.fluid_values = [];
+          data.fluid_dates = [];
+          data.fluid_notes = [];
+        }
         data.fluid_values.push(newFluidValue);
+        let entryTimestamp = new Date().toJSON();
+        data.fluid_dates.push(entryTimestamp);
         data.fluid_notes.push(notes.value);
-        data.fluid_dates.push(new Date().toJSON());
-        // this.entryJson.set(data);
-        let dataToServer = this.dateToTimestamp(data);
-        db.collection('mkdailydata').doc(data.agent).set(dataToServer).then(() => {
+
+        let dataToFirebase = this.dateToTimestamp(data);
+        db.collection('mkdailydata').doc(agent.value).set(dataToFirebase)
+        .then(() => {
           console.log('[Document Updated]: mkdailydata.' + data.agent);
           alert('Document Updated');
           this.entryJson.set(data);
         }).catch(e => {
-          alert('Entry Failed');
-          console.error('[Document Update Failed]', 'mkdailydata.' + data.agent)
+          alert('Entry Insertion Failed');
+          console.error('[Insertion Failed]', 'mkdailydata.' + data.agent);
           console.error('[ERROR]:', e);
+        });
+
+        let path = 'mkturkfiles/mkdailydata/' + agent.value + '.json';
+        let fileRef = storage.ref().child(path);
+        let url = await fileRef.getDownloadURL().catch(e => {
+          console.error('Error getting URL', e);
+        });
+        let response = await fetch(url);
+        let fileToGCS = await response.json();
+
+        if (!fileToGCS.hasOwnProperty('fluid_values')) {
+          fileToGCS.fluid_values = [];
+          fileToGCS.fluid_dates = [];
+          fileToGCS.fluid_notes = [];
+        }
+        fileToGCS.fluid_values.push(newFluidValue);
+        fileToGCS.fluid_dates.push(entryTimestamp);
+        fileToGCS.fluid_notes.push(notes.value);
+
+        fileToGCS = new Blob(
+          [JSON.stringify(fileToGCS, Object.keys(fileToGCS).sort(), 1)]
+        );
+        fileRef.put(fileToGCS, {contentType: 'application/json'}).then(sns => {
+          console.log('File Uploaded to GCS/mkturkfiles/mkdailydata');
+        }).catch(e => {
+          console.error('Error:', e);
+          alert('Error uploading file to GCS');
         });
         
       } else if (field.value === 'lab_notes') {
@@ -229,12 +266,16 @@ export class Mkcolony {
               cell.getElement().style.backgroundColor = 'Red';
             } else if (diff >= 7) {
               cell.getElement().style.backgroundColor = 'Yellow';
+            } else {
+              cell.getElement().style.backgroundColor = '#00FF00';
             }
           } else if (cell.getData().cwa == 0) {
             if (diff >= 21) {
               cell.getElement().style.backgroundColor = 'Red';
             } else if (diff >= 14) {
               cell.getElement().style.backgroundColor = 'Yellow';
+            } else {
+              cell.getElement().style.backgroundColor = '#00FF00';
             }
           }
           return cell.getValue();
@@ -258,21 +299,100 @@ export class Mkcolony {
           }
           return cell.getValue();
         }},
-        {title: 'Fluid Date', field: 'last_fluid_date'},
-        {title: 'Fluid Value', field: 'last_fluid_value', formatter: function(cell: any){
+        {title: 'Fluid Date', field: 'last_fluid_date', formatter: function(cell: any){
           try {
-            let recentFl = cell.getValue();
+            if (cell.getData().cwa) {
+
+              function isSameDay(first: any, second: any) {
+                return first.getFullYear() === second.getFullYear() &&
+                  first.getMonth() === second.getMonth() &&
+                  first.getDate() === second.getDate();
+              }
+
+              function isYesterday(date: any) {
+                let ref = new Date(new Date().setDate(new Date().getDate() - 1));
+                return isSameDay(ref, date);
+              }
+
+              let lastFluidDate: any = new Date(cell.getValue() + ' EST');
+              let now = new Date();
+              if (isSameDay(now, lastFluidDate)) {
+                cell.getElement().style.backgroundColor = '#00FF00';
+              } else if (isYesterday(lastFluidDate)) {
+                cell.getElement().style.backgroundColor = 'Orange';
+              } else {
+                cell.getElement().style.backgroundColor = 'Red';
+              }
+
+              return cell.getValue();
+              
+            }
+          } catch {
+            console.log('[' + cell.getData().name + '] is not CWA monkey');
+          }
+        }},
+        {title: 'Fluid This Week', field: 'last_fluid_value', formatter: function(cell: any){
+          try {
             let baselineFl = cell.getData().baseline_fluid_values.slice(-1)[0];
             let hardBound = baselineFl * 0.5;
-            if (recentFl < hardBound) {
+            
+            function countFromMonday(day: number) {
+              if (day == 0) {
+                return 6;
+              } else {
+                return day - 1;
+              }
+            }
+
+            function isSameDay(first: any, second: any) {
+              return first.getFullYear() === second.getFullYear() &&
+                first.getMonth() === second.getMonth() &&
+                first.getDate() === second.getDate();
+            }
+
+
+            let lastFluidDate: any = cell.getData().last_fluid_date + 'T05:00:00.000Z';
+            lastFluidDate = new Date(lastFluidDate);
+            let today = new Date();
+            let fluidThisWeek = 0;
+
+            if (isSameDay(lastFluidDate, today)) {
+              for (let i = 0; i <= countFromMonday(today.getDay()); i++) {
+                let targetDate = new Date(new Date().setDate(new Date().getDate() - i));
+                let idx = cell.getData().fluid_dates.findIndex((row: any) => {
+                  let rowDate = new Date(row + ' EST');
+                  return isSameDay(targetDate, rowDate);
+                });
+                if (idx != -1) {
+                  fluidThisWeek += cell.getData().fluid_values[idx];
+                }
+              }
+            } else {
+              for (let i = 1; i <= countFromMonday(today.getDay()); i++) {
+                let targetDate = new Date(new Date().setDate(new Date().getDate() - i));
+                let idx = cell.getData().fluid_dates.findIndex((row: any) => {
+                  let rowDate = new Date(row + ' EST');
+                  return isSameDay(targetDate, rowDate);
+                });
+                console.log('agent:', cell.getData().agent, 'else idx', idx);
+                if (idx != -1) {
+                  fluidThisWeek += cell.getData().fluid_values[idx];
+                }
+              }
+            }
+
+            let dailyAverage = fluidThisWeek / (countFromMonday(today.getDay()) + 1);
+            if (dailyAverage < hardBound) {
               cell.getElement().style.backgroundColor = 'Red';
             } else {
               cell.getElement().style.backgroundColor = '#00FF00';
             }
+
+            return fluidThisWeek;
+
           } catch {
             console.error('[' + cell.getData().name + '] has no baseline weight data');
           }
-          return cell.getValue();
         }},
       ],
       rowDblClick: (ev: Event, row) => {
@@ -859,12 +979,12 @@ export class Mkcolony {
   public async init() {
     let marmData = await this.getData('marmosets');
     let mkdailydata = await this.getData('mkdailydata');
-    let data = await this.pData(marmData, mkdailydata);
+    let data = await this.processData(marmData, mkdailydata);
     this.populateTable(data);
     this.plotColonyWeight();
   }
 
-  public pData(data1: any[], data2: any[]) {
+  public processData(data1: any[], data2: any[]) {
     this.cleanData.mkdailydata = new Array();
     this.cleanData.marmosetData = new Array();
     this.cleanData.mkdailydataDic = {};
@@ -879,7 +999,7 @@ export class Mkcolony {
       let idx = this.vizData.findIndex((doc: any) => {
         return doc.name === row.agent;
       });
-      console.log('idx', idx);
+
       if (idx >= 0) {
         this.vizData[idx] = {...this.vizData[idx], ...row};
       }
