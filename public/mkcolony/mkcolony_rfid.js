@@ -14,21 +14,23 @@ const rfidToggleText = document.querySelector("#rfid-switch-span");
 
 
 rfidToggle.addEventListener("change", async ev => {
+  let rfidResultGrid = document.querySelector('#rfid-result-grid');
   if (rfidToggle.checked) {
     rfidToggleText.innerText = "RFID Not in Range";
 
     port.statusTextConnect = "Reconnecting USB Device";
     console.log(port.statusTextConnect);
     let ev = new Event("Reconnect");
+    rfidResultGrid.style.display = 'block';
     await findUSBDevice(ev);
   } else {
     rfidToggleText.innerText = "RFID Off";
-
-
+    rfidToggleText.style.color = 'red';
     port.connected = false;
     port.disconnect();
     port.statusTextConnect = "USB Device Disconnected";
     console.log(port.statusTextConnect);
+    rfidResultGrid.style.display = 'none';
   }
 });
 
@@ -111,7 +113,7 @@ serial.Port.prototype.onReceive = async data => {
   rfidToggleText.innerText = "RFID Connected";
 
   if (rfid != prevRFIDTag || Date.now() - lastReceived > 3000) {
-    //document.querySelector("#keyword-input-0").value = rfid;
+    rfidToggleText.style.color = 'green';
     console.log('rfid', rfid);
     prevRFIDTag = rfid;
     const event = new CustomEvent('RFID', {detail: rfid});
@@ -175,6 +177,7 @@ function inRangeTest() {
     console.log(port.connected);
     console.log("Status: (RED) No Tag in Range");
     rfidToggleText.innerText = "No Tag in Range";
+    rfidToggleText.style.color = 'orange';
   }
 
   if (port.connected) {

@@ -613,7 +613,7 @@ export class Mkfinder {
       ],
       columns: [
         { title: "<input id='select-all' type='checkbox'/>", width: 15, headerSort: false },
-        { title: "Name", field: "name" },
+        { title: "Name", field: "name", widthGrow: 3 },
         { title: "Type", field: "contentType" },
         { title: "Path", field: "fullPath" },
         { title: "Size", field: "size" },

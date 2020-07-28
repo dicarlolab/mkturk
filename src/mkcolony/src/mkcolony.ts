@@ -415,15 +415,23 @@ export class Mkcolony {
 
     document.addEventListener('RFID', (ev: any) => {
       ev.preventDefault();
+      let rfidAgent = document.querySelector('#rfid-agent') as HTMLSpanElement;
+      let rfidTag = document.querySelector('#rfid-tag') as HTMLSpanElement;
       this.vizData.forEach(row => {
         if (row.rfid != undefined && row.rfid == ev.detail) {
           agentTab.classList.add('is-active');
           colonyTab.classList.remove('is-active');
           agentTabBar.classList.add('is-active');
           colonyTabBar.classList.remove('is-active');
-          this.populateAgentTab(row.name);
+          rfidAgent.textContent = row.name;
+          rfidTag.textContent = row.rfid;
+          return;
         }
       });
+      if (ev.detail) {
+        rfidTag.textContent = ev.detail;
+        rfidAgent.textContent = 'Not In List'
+      }
     });
   }
 
@@ -442,23 +450,6 @@ export class Mkcolony {
     agFlDt.addColumn('number', 'Fluid Intake');
     agFlDt.addColumn('number', 'Baseline Fluid');
     agFlDt.addColumn('number', 'Baseline Fluid -50%');
-
-    // await agentDocRef.get().then(doc => {
-    //   if (doc.exists) {
-    //     let baselineFl = doc.data()?.baseline_fluid_values;
-    //     baselineFl = baselineFl[baselineFl.length - 1];
-    //     let baselineFlLowerBound = baselineFl * 0.50;
-    //     for (let [key, value] of Object.entries(data)) {
-    //       let flLvl = Number(value) * 9.0 / 1000.0;
-    //       agFlDt.addRow([
-    //         new Date(key),
-    //         flLvl,
-    //         baselineFl,
-    //         baselineFlLowerBound
-    //       ]);
-    //     }
-    //   }
-    // });
 
     let baselineFl = data.baseline_fluid_values.slice(-1)[0];
     let lowerBound = baselineFl * 0.5;

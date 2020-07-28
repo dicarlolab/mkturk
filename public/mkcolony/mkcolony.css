@@ -105,3 +105,19 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
 }
+
+#rfid-result-grid {
+  display: none;
+}
+
+#rfid-result {
+  display: grid;
+  height: 100%;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: 1fr 5fr;
+  text-align: center;
+}
+
+#rfid-result > * {
+  display: inline-block;
+}
