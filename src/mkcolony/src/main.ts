@@ -43,13 +43,15 @@ auth.onAuthStateChanged(user => {
   if (user) {
     user.getIdTokenResult().then(idTokenResult => {
       if (idTokenResult.claims.labMember) {
-        console.log('Authorized user');
+        console.log('Authorized user', user);
+        console.log('idTokenResult', idTokenResult);
         mkcolony = new Mkcolony();
-        let ret = mkcolony.loadWtData(db.collection('marmosets'));
-        ret.then(docs => {
-          mkcolony?.populateTable(docs);
-          mkcolony?.plotColonyData();
-        });
+        mkcolony.init();
+        // let ret = mkcolony.loadWtData(db.collection('marmosets'));
+        // ret.then(docs => {
+        //   mkcolony?.populateTable(docs);
+        //   mkcolony?.plotColonyData();
+        // });
       } else {
         console.log('Unauthorized user');
         let alertStr = 'You do not have permission to view this app.'

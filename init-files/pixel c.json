@@ -1,0 +1,30 @@
+{
+ "viewportPixels": [
+  1280,
+  900
+ ],
+ "brand": "google",
+ "screenPhysicalPixels": [
+  2560,
+  1800
+ ],
+ "weightOunces": 18.24,
+ "type": "tablet",
+ "screenSizeInches": [
+  8.34,
+  5.87,
+  10.2
+ ],
+ "gpurenderer": "nvidia tegra",
+ "model": "pixel c",
+ "docname": "pixel c",
+ "batterymAh": 9240,
+ "bodySizeInches": [
+  9.53,
+  7.05,
+  0.276
+ ],
+ "ppi": 308,
+ "screenRatio": 2,
+ "gpuvendor": "nvidia corporation"
+}

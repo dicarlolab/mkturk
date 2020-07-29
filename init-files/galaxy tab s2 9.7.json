@@ -1,0 +1,28 @@
+{
+ "weightOunces": 13.72,
+ "docname": "galaxy tab s2 9.7",
+ "type": "tablet",
+ "screenSizeInches": [
+  7.76,
+  5.82,
+  9.7
+ ],
+ "bodySizeInches": [
+  9.34,
+  6.65,
+  0.22
+ ],
+ "viewportPixels": [
+  1024,
+  768
+ ],
+ "brand": "samsung",
+ "model": "galaxy tab s2 9.7",
+ "screenPhysicalPixels": [
+  2048,
+  1536
+ ],
+ "batterymAh": 5870,
+ "ppi": 263.92,
+ "screenRatio": 2
+}

@@ -1,0 +1,28 @@
+{
+ "docname": "galaxy tab s2 9.7 (2016)",
+ "type": "tablet",
+ "screenSizeInches": [
+  7.76,
+  5.82,
+  9.7
+ ],
+ "brand": "samsung",
+ "screenRatio": 2,
+ "bodySizeInches": [
+  9.34,
+  6.65,
+  0.22
+ ],
+ "viewportPixels": [
+  1024,
+  768
+ ],
+ "ppi": 263.92,
+ "screenPhysicalPixels": [
+  2048,
+  1536
+ ],
+ "weightOunces": 13.72,
+ "batterymAh": 5870,
+ "model": "galaxy tab s2 9.7 (2016)"
+}

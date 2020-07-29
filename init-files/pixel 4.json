@@ -1,0 +1,30 @@
+{
+ "viewportPixels": [
+  869,
+  411
+ ],
+ "batterymAh": 2800,
+ "screenSizeInches": [
+  5.15,
+  2.44,
+  5.7
+ ],
+ "screenRatio": 2.625,
+ "type": "phone",
+ "brand": "google",
+ "weightOunces": 5.71,
+ "docname": "pixel 4",
+ "bodySizeInches": [
+  5.7,
+  2.7,
+  0.3
+ ],
+ "model": "pixel 4",
+ "ppi": 444,
+ "gpurenderer": "nvidia tegra",
+ "gpuvendor": "nvidia corporation",
+ "screenPhysicalPixels": [
+  2280,
+  1080
+ ]
+}

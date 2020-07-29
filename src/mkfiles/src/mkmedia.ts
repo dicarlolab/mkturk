@@ -7,6 +7,7 @@ import Viewer from "viewerjs";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { BufferGeometryLoader } from "three";
 
 
 type FileRef = firebase.storage.Reference;
@@ -28,6 +29,8 @@ export class Mkeditor {
   private fileRenameBtn: HTMLButtonElement;
   private fileDupBtn: HTMLButtonElement;
   private fileDupModal: HTMLDialogElement;
+  private genSceneParamBtn: HTMLButtonElement;
+  private genSceneParamModal: HTMLDivElement;
 
 
   constructor() {
@@ -57,6 +60,13 @@ export class Mkeditor {
     this.getActiveFile();
     this.fileDupBtnAction();
 
+
+    this.genSceneParamBtn
+      = document.querySelector('#gen-scene-param-btn') as HTMLButtonElement;
+    this.genSceneParamModal
+      = document.querySelector('#gen-scene-param-modal') as HTMLDivElement;
+    this.generateSceneParamModalAction()
+
   }
 
   public getActiveFile() {
@@ -66,6 +76,7 @@ export class Mkeditor {
   public displayFirebaseTextFile(file: Object, loc: string) {
     this.fileRenameBtn.style.display = 'none';
     this.fileDupBtn.style.display = 'none';
+    this.genSceneParamBtn.style.display = 'none';
     this.storeParamBtn.style.display = 'none';
     this.updateBtn.style.display = 'inline-block';
     this.btnBoxDiv.style.gridTemplateAreas = '"update-btn update-btn"'
@@ -73,7 +84,8 @@ export class Mkeditor {
     this.fileNameInput.disabled = true;
     try {
       let options = {
-        modes: ['tree' as 'tree', 'code' as 'code']
+        modes: ['tree' as 'tree', 'code' as 'code'],
+        sortObjectKeys: true
       };
       this.editor.destroy();
       this.editor = new JSONEditor(this.editorElement, options, file);
@@ -115,6 +127,11 @@ export class Mkeditor {
       }
     }
 
+    else if (loc === 'mkdailydata') {
+      this.activeFile = { loc: loc, id: file.agent };
+      this.fileNameInput.placeholder = String(this.activeFile.id);
+    }
+
     else if (loc === "objects") {
       this.activeFile = { loc: loc, id: file.docname };
       this.fileNameInput.placeholder = String(this.activeFile.id);
@@ -144,16 +161,24 @@ export class Mkeditor {
     this.fileRenameBtn.style.display = 'inline-block';
     this.fileNameInput.value = '';
 
-    const sceneParamFilePath = 'mkturkfiles/scenebags/objectome3d/face';
-    const paramstorageFilePath = 'mkturkfiles/parameterfiles/params_storage';
-    if (fileRef.parent?.parent?.fullPath == sceneParamFilePath) {
+    const sceneParamPath = 'mkturkfiles/scenebags/objectome3d';
+    const taskParamPath = 'mkturkfiles/parameterfiles';
+
+    if (fileRef.fullPath.includes(sceneParamPath)) {
+      if (fileRef.fullPath.includes('template')) {
+        this.fileDupBtn.style.display = 'inline-block';
+        this.genSceneParamBtn.style.display = 'inline-block';
+      } else {
+        this.fileDupBtn.style.display = 'inline-block';
+        this.genSceneParamBtn.style.display = 'none';
+      }
+    } else if (fileRef.fullPath.includes(taskParamPath)) {
       this.fileDupBtn.style.display = 'inline-block';
-    } else if (fileRef.parent?.fullPath == paramstorageFilePath) {
-      this.fileDupBtn.style.display = 'inline-block';
+      this.genSceneParamBtn.style.display = 'none';
     } else {
       this.fileDupBtn.style.display = 'none';
+      this.genSceneParamBtn.style.display = 'none';
     }
-    
 
     let fileUrl = await fileRef.getDownloadURL().catch(e => {
       console.error("Error getting download URL", e);
@@ -214,6 +239,114 @@ export class Mkeditor {
     });
   }
 
+  private generateSceneParamModalAction() {
+
+    let collapsibles = document.getElementsByClassName('collapsible') as HTMLCollectionOf<HTMLButtonElement>;
+    for (let i = 0; i < collapsibles.length; i++) {
+      let coll = collapsibles[i];
+      coll.addEventListener('click', (ev: Event) => {
+        ev.preventDefault();
+        coll.classList.toggle('active');
+        let content = coll.nextElementSibling as HTMLButtonElement;
+        if (content.style.display === 'block') {
+          content.style.display = 'none';
+        } else {
+          content.style.display = 'block';
+        }
+      })
+    }
+
+    let initDataSize = [
+      {sampling: 'gaussian', params: '0, 1', n: 5}
+    ];
+
+    let rtSize = new Tabulator('#size-inches-table', {
+      data: initDataSize,
+      layout: 'fitColumns',
+      history: true,
+      columns: [
+        {title: 'Sampling', field: 'sampling', editor: 'select', editorParams: {values: ['gaussian', 'uniform', 'range']}},
+        {title: 'Params', field: 'params', editor: 'input', editable: true},
+        {title: 'n || step size', field: 'n', editor: 'input', editable: true}
+      ]
+    });
+
+    let szDiv = document.querySelector('.size-inches') as HTMLDivElement;
+    let addRowSize = szDiv.querySelector('.add-rule-btn') as HTMLButtonElement;
+    let undoSz = szDiv.querySelector('.undo-edit-btn') as HTMLButtonElement
+
+    addRowSize.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      rtSize.addRow({sampling: '', params: '', n: NaN}, false);
+    });
+
+    undoSz.addEventListener('click', (ev: Event) => {
+      rtSize.undo();
+    });
+
+    let initDataPos = [
+      {target: 'x', sampling: 'gaussian', params: '0, 1', n: 5}
+    ];
+
+    let rtPos = new Tabulator('#position-inches-table', {
+      data: initDataPos,
+      layout: 'fitColumns',
+      history: true,
+      columns: [
+        {title: 'Target', field: 'target', editor: 'select', editorParams: {values: ['x', 'y', 'z']}},
+        {title: 'Sampling', field: 'sampling', editor: 'select', editorParams: {values: ['gaussian', 'uniform', 'range']}},
+        {title: 'Params', field: 'params', editor: 'input', editable: true},
+        {title: 'n || step size', field: 'n', editor: 'input', editable: true}
+      ]
+    });
+
+    let posDiv = document.querySelector('.position-inches') as HTMLDivElement;
+    let addRowPos = posDiv.querySelector('.add-rule-btn') as HTMLButtonElement;
+    let undoPos = posDiv.querySelector('.undo-edit-btn') as HTMLButtonElement
+
+    addRowPos.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      rtPos.addRow({target: '', sampling: '', params: '', n: NaN});
+    });
+
+    undoPos.addEventListener('click', (ev: Event) => {
+      rtPos.undo();
+    });
+
+    let initDataDeg = [
+      {target: 'x', sampling: 'gaussian', params: '0, 1', n: 5}
+    ];
+
+    let rtDeg = new Tabulator('#rotation-degrees-table', {
+      data: initDataDeg,
+      layout: 'fitColumns',
+      history: true,
+      columns: [
+        {title: 'Target', field: 'target', editor: 'select', editorParams: {values: ['x', 'y', 'z']}},
+        {title: 'Sampling', field: 'sampling', editor: 'select', editorParams: {values: ['gaussian', 'uniform', 'range']}},
+        {title: 'Params', field: 'params', editor: 'input', editable: true},
+        {title: 'n || step size', field: 'n', editor: 'input', editable: true}
+      ]
+    });
+
+    let degDiv = document.querySelector('.rotation-degrees') as HTMLDivElement;
+    let addRowDeg = degDiv.querySelector('.add-rule-btn') as HTMLButtonElement;
+    let undoDeg = degDiv.querySelector('.undo-edit-btn') as HTMLButtonElement
+
+    addRowDeg.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      rtDeg.addRow({target: '', sampling: '', params: '', n: NaN});
+    });
+
+    undoDeg.addEventListener('click', (ev: Event) => {
+      rtDeg.undo();
+    });
+    
+
+
+
+  }
+
   private renameTextFieldAction() {
     this.fileNameInput.addEventListener('click', (ev: Event) => {
       let tmpName = this.activeFile.id as FileRef;
@@ -262,7 +395,7 @@ export class Mkeditor {
       let loc = this.activeFile.loc;
 
       if (loc === "marmosets" || loc === "mkturkdata" || loc === "devices"
-        || loc === "mkscale" || loc === "eyecalibrations") {
+        || loc === "mkscale" || loc === "eyecalibrations" || loc === 'mkdailydata') {
         // handle marmosets && mkturkdata
         let id = this.activeFile.id as string;
         db.collection(loc).doc(id).set(
@@ -455,8 +588,9 @@ export class Mkthree {
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     this.renderer.setClearColor( 0xFFFFFF );
     this.renderer.physicallyCorrectLights = true;
+    this.renderer.toneMapping = THREE.LinearToneMapping;
     this.renderer.toneMappingExposure = 10;
-    this.renderer.gammaOutput = true;
+    this.renderer.outputEncoding = THREE.GammaEncoding;
     this.renderer.gammaFactor = 2.2;
 
     /* camera setup */
@@ -514,7 +648,6 @@ export class Mkthree {
           this.loader?.load(meshUrl, function(gltf) {
             gltf.scene.traverse((child: any) => {
               if (child.material) {
-                //let material = new THREE.MeshPhongMaterial({ color: 0xFF0000, map: child.material.map });
                 let material = new THREE.MeshPhongMaterial({ color: "#FFE0BD" })
                 if ("morphTargetInfluences" in child) {
                   material.morphTargets = true;

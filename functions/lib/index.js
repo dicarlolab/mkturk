@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.bqInsertDisplayTimes = exports.listAllUsers = exports.isLabMember = exports.detectDevice = exports.bqListDatasets = exports.listTables = exports.bqQuery = exports.bqInsertEyeData = void 0;
 const functions = require("firebase-functions");
 const bigquery_1 = require("@google-cloud/bigquery");
 const DeviceDetector = require("device-detector-js");
@@ -19,6 +20,7 @@ function insertHandler(err, apiResp) {
         }
     }
 }
+;
 ;
 const schema = {
     "fields": [
@@ -79,33 +81,6 @@ const createTableOptions = {
         "field": "timestamp"
     }
 };
-// export const insertFixationRow = functions.https.onCall((data: fixationData) => {
-//   const bq = new BigQuery();
-//   const dataset = bq.dataset('fixationdata');
-//   const table = dataset.table(data.agent);
-//   console.log("data received:", data);
-//   table.exists().then(async (existsData) => {
-//     const exists = existsData[0];
-//     if (exists) {
-//       delete data.agent;
-//       // data.timestamp = new Date(data.timestamp);
-//       data.timestamp = bq.timestamp(data.timestamp);
-//       console.log('data0', data);
-//       table.insert(data, {}, insertHandler);
-//     } else {
-//       const [newTable] = await dataset.createTable(data.agent, createTableOptions);
-//       console.log(`Table ${newTable.id} created with partitioning: `);
-//       console.log(newTable.metadata.timePartitioning);
-//       delete data.agent;
-//       // data.timestamp = new Date(data.timestamp);
-//       data.timestamp = bq.timestamp(data.timestamp);
-//       console.log('data1', data);
-//       newTable.insert(data, {}, insertHandler);
-//     }
-//   }).catch(error => {
-//     console.error("exists error", error);
-//   });
-// });
 /* caller must guarantee that all rows belong to the same agent */
 exports.bqInsertEyeData = functions.https.onCall((rows) => {
     const bq = new bigquery_1.BigQuery();
@@ -187,6 +162,78 @@ exports.isLabMember = functions.https.onCall((idToken) => {
         return decodedToken.labMember;
     }).catch(e => {
         console.error('Error decoding idToken', e);
+    });
+});
+exports.listAllUsers = functions.https.onCall(() => {
+    return admin.auth().listUsers(1000).then(listUserResult => {
+        return listUserResult;
+    }).catch(e => {
+        console.error('Error listing users', e);
+    });
+});
+const displayTimeSchema = {
+    'fields': [
+        {
+            'name': 'timestamp',
+            'type': 'TIMESTAMP',
+            'mode': 'REQUIRED'
+        },
+        {
+            'name': 'trial_num',
+            'type': 'INTEGER',
+            'mode': 'REQUIRED'
+        },
+        {
+            'name': 'frame_num',
+            'type': 'INTEGER',
+            'mode': 'REPEATED'
+        },
+        {
+            'name': 't_desired',
+            'type': 'FLOAT',
+            'mode': 'REPEATED'
+        },
+        {
+            'name': 't_actual',
+            'type': 'FLOAT',
+            'mode': 'REPEATED'
+        }
+    ]
+};
+const displayTimeTableOptions = {
+    'schema': displayTimeSchema,
+    'timePartitioning': {
+        'type': 'DAY',
+        'field': 'timestamp'
+    }
+};
+exports.bqInsertDisplayTimes = functions.https.onCall((rows) => {
+    const bq = new bigquery_1.BigQuery();
+    const dataset = bq.dataset('displaytimedata');
+    const table = dataset.table(rows[0].agent);
+    table.exists().then(async (existsData) => {
+        const exists = existsData[0];
+        if (exists) {
+            rows.forEach((row) => {
+                delete row.agent;
+                row.timestamp = new Date(row.timestamp);
+            });
+            table.insert(rows, {}, insertHandler);
+            console.log('Rows inserted to existing table');
+        }
+        else {
+            const [newTable] = await dataset.createTable(rows[0].agent, displayTimeTableOptions);
+            console.log(`Table ${newTable.id} created with partitioning: `);
+            console.log(newTable.metadata.timePartitioning);
+            rows.forEach((row) => {
+                delete row.agent;
+                row.timestamp = new Date(row.timestamp);
+            });
+            newTable.insert(rows, {}, insertHandler);
+            console.log('Row inserted to newly created table');
+        }
+    }).catch(error => {
+        console.log('Exists function error:', error);
     });
 });
 //# sourceMappingURL=index.js.map
