@@ -253,7 +253,10 @@ function choiceTimeOut(timeout){
   return new Promise(
     function(resolve, reject){
       var timer_return = {type: "TimeOut", cxyt: [-1,-1,-1,-1]}
-      setTimeout(function(){resolve(timer_return)},timeout)
+      setTimeout(function(){
+        clearTimeout(touchTimer);
+        resolve(timer_return)
+      },timeout)//setTimeout
     })
 }
 

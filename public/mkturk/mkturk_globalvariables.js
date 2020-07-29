@@ -129,6 +129,7 @@ FLAGS.firestoretimeron = 0
 FLAGS.stressTest = 0
 FLAGS.RFIDGeneratorCreated = 0
 FLAGS.automatortext = ''
+FLAGS.trackeye = 0
 
 var CANVAS = {}; 
 var CANVAS = {

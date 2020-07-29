@@ -32,25 +32,31 @@ var nsamples = Object.keys(EVENTS[eventtype][eventname]).length
 
 	var eyedata = []
 	for (var i=0; i<=nsamples-1; i++){
-		eyedata.push(
-			{
-				'agent': ENV.Subject,
-				'timestamp': EVENTS[eventtype][eventname][i][1],
-	  			'trial_num': EVENTS[eventtype][eventname][i][0],
-				'num_eyes': EVENTS[eventtype][eventname][i][2],
-				'left_x': EVENTS[eventtype][eventname][i][3],
-				'left_y': EVENTS[eventtype][eventname][i][4],
-				'left_aux_0': EVENTS[eventtype][eventname][i][5],
-				'left_aux_1': EVENTS[eventtype][eventname][i][6],
-				'right_x': EVENTS[eventtype][eventname][i][7],
-				'right_y': EVENTS[eventtype][eventname][i][8],
-				'right_aux_0': EVENTS[eventtype][eventname][i][9],
-				'right_aux_1': EVENTS[eventtype][eventname][i][10]
-			}
-		)//push single event
+		var trialnum = EVENTS[eventtype][eventname][i][0]
+		var timestamp = new Date(EVENTS[eventtype][eventname][i][1]) - ENV.CurrentDate
+		if (timestamp >= EVENTS['trialseries']['StartTime'][trialnum]-2000){
+			eyedata.push(
+				{
+					'agent': ENV.Subject,
+					'timestamp': EVENTS[eventtype][eventname][i][1],
+		  			'trial_num': EVENTS[eventtype][eventname][i][0],
+					'num_eyes': EVENTS[eventtype][eventname][i][2],
+					'left_x': EVENTS[eventtype][eventname][i][3],
+					'left_y': EVENTS[eventtype][eventname][i][4],
+					'left_aux_0': EVENTS[eventtype][eventname][i][5],
+					'left_aux_1': EVENTS[eventtype][eventname][i][6],
+					'right_x': EVENTS[eventtype][eventname][i][7],
+					'right_y': EVENTS[eventtype][eventname][i][8],
+					'right_aux_0': EVENTS[eventtype][eventname][i][9],
+					'right_aux_1': EVENTS[eventtype][eventname][i][10]
+				}
+			)//push single event			
+		}//IF after trial start minus 2 seconds
 	}//FOR i events
 
 	bqInsertEyeData(eyedata)
+
+console.log("Sent EyeData to BIGQUERY")
 
 	//reset eye event accumulation in mkturk (reduce memory load)
 	EVENTS[eventtype][eventname] = {}

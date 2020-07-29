@@ -661,14 +661,19 @@ while(true){
 	if (FLAGS.need2loadParameters == 1){
 		FLAGS.need2loadParameters = await loadParametersfromFirebase(ENV.ParamFileName);
 
-		if (typeof(TASK.TrackEye) != "undefined"){
-		}
+		if (typeof(TASK.DragtoRespond) != "undefined"){
+		}//IF defined, do nothing
 		else {
-			TASK.TrackEye = 0;
-		} //ELSE default to no eye tracking
+      if (FLAGS.trackeye == 0){
+        TASK.DragtoRespond = 0 //click in box
+      }//IF touch, then only clicking
+      else if (FLAGS.trackeye != 0){
+        TASK.DragtoRespond = 1 //drag into box
+      }//ELSE IF eyetracker, allow dragging
+		}//ELSE default to no eye tracking
 
 		//load previous calibration if available
-		if (TASK.TrackEye > 0 ){
+		if (FLAGS.trackeye > 0 ){
 			//Calibration
 			ENV.Eye.calibration = 0;
 			ENV.Eye.CalibXTransform = []
@@ -1088,7 +1093,10 @@ if (typeof(teston) == "undefined"){
             for (var i=0; i<=CURRTRIAL.sequencegridindex.length-1; i++){
                 for (var j=0; j<=CURRTRIAL.sequencegridindex[i].length-1; j++){
                     if (CURRTRIAL.sequencetaskscreen[i] == "Sample"){
-                        CURRTRIAL.sequencegridindex[i][j] = CURRTRIAL.fixationgridindex
+
+						//Set location to fixation
+						CURRTRIAL.sequencegridindex[i][j] = CURRTRIAL.fixationgridindex
+                        
                         if (CURRTRIAL.sequenceclip[i] == 0 && j==0){
                             frame.shown.push(0)
                             frame.frames.push([i])
@@ -1125,7 +1133,7 @@ if (typeof(teston) == "undefined"){
                                 CANVAS.sequencepre,[0],[0]) // dispTrial(time,grid,frame,screen,obj,idx)            
         }//IF !Sample, show fixation dot
         else if (TASK.FixationUsesSample > 0){
-            displayTrial(CURRTRIAL.tsequence, CURRTRIAL.sequencegridindex, CURRTRIAL.sequenceframe,
+           displayTrial(CURRTRIAL.tsequence, CURRTRIAL.sequencegridindex, CURRTRIAL.sequenceframe,
                     CURRTRIAL.sequencetaskscreen, CURRTRIAL.sequencelabel, CURRTRIAL.sequenceindex)
         }//ELSE Sample, show image/movie
 
@@ -1153,10 +1161,9 @@ if (typeof(teston) == "undefined"){
 			var touchhold_return = await Promise.race([p1,p2])
 
 			//So that sample movie does not continue playing after fixation acquired
-			frame.current = frame.shown.length
+			frame.current = frame.shown.length-1
 			frame.shown[frame.current] = 1
 		}//ELSE await fixation hold
-
 		CURRTRIAL.fixationtouchevent = touchhold_return.type
 		CURRTRIAL.fixationxyt = [touchhold_return.cxyt[1], touchhold_return.cxyt[2], touchhold_return.cxyt[3]]
 		CURRTRIAL.allfixationxyt[TASK.NFixations - FLAGS.waitingforTouches - 1] = CURRTRIAL.fixationxyt
@@ -1206,16 +1213,17 @@ if (typeof(teston) == "undefined"){
           else {
               CURRTRIAL.samplegridindex = Math.floor((ENV.XGridCenter.length)*Math.random()); 
           }//ELSE use random grid location for sample
-
-          //Update grid location of each Sample frame
-          for (var i=0; i<=CURRTRIAL.sequencegridindex.length-1; i++){
-            for (var j=0; j<=CURRTRIAL.sequencegridindex[i].length-1; j++){
-                if (CURRTRIAL.sequencetaskscreen[i] == "Sample"){
-                    CURRTRIAL.sequencegridindex[i][j] = CURRTRIAL.samplegridindex
-                }//IF Sample
-            }//FOR j display items
-          }//FOR i frames
         }//ELSE IF random sample location
+
+		//Update grid location of each Sample frame
+		for (var i=0; i<=CURRTRIAL.sequencegridindex.length-1; i++){
+			for (var j=0; j<=CURRTRIAL.sequencegridindex[i].length-1; j++){
+				if (CURRTRIAL.sequencetaskscreen[i] == "Sample"){
+					CURRTRIAL.sequencegridindex[i][j] = CURRTRIAL.samplegridindex
+				}//IF Sample
+			}//FOR j display items
+		}//FOR i frames
+        
         logEVENTS("SampleGridIndex",CURRTRIAL.samplegridindex,"trialseries")
 
         frame.shown=[]
@@ -1259,6 +1267,9 @@ if (typeof(teston) == "undefined"){
             FLAGS.punishOutsideTouch = 1
             FLAGS.waitingforTouches = 1
             FLAGS.acquiredTouch = 1;
+            if (FLAGS.trackeye){
+              ENV.Eye.EventType = "eyemove"
+            }//IF trackeye
             var p1 = hold_promise(0,boundingBoxesSampleFixation,FLAGS.punishOutsideTouch)
             var p2 = displayTrial(CURRTRIAL.tsequence, CURRTRIAL.sequencegridindex, CURRTRIAL.sequenceframe, CURRTRIAL.sequencetaskscreen, CURRTRIAL.sequencelabel, CURRTRIAL.sequenceindex)
             CURRTRIAL.samplestarttime=Date.now() - ENV.CurrentDate.valueOf();
@@ -1266,7 +1277,12 @@ if (typeof(teston) == "undefined"){
             var race_return = await Promise.race([p1,p2])
             FLAGS.acquiredTouch = 0;
             FLAGS.waitingforTouches = 0
-            if (TASK.TrackEye > 0){
+
+            //Stop movie in case broke fixation before end
+            frame.current = frame.shown.length-1
+            frame.shown[frame.current] = 1
+
+            if (FLAGS.trackeye > 0){
                 ENV.Eye.EventType = "eyestart" //Reset eye state
             }//IF TrackEye
 
@@ -1533,7 +1549,7 @@ if (typeof(teston) == "undefined"){
 	var ITIstart = performance.now()
 
 	// CALIBRATE eye
-	if (TASK.TrackEye > 0){
+	if (FLAGS.trackeye > 0){
 		// Can manually adjust params only when on practice screen
 		// Can automatically calibrate when on test screen
 		if (FLAGS.savedata == 1 && ENV.Eye.calibration == 1){
@@ -1606,7 +1622,7 @@ if (typeof(teston) == "undefined"){
       }//IF first trial, kick-off bigquery writes
 
       // Save eye data asynchronously to BigQuery
-      if (TASK.TrackEye > 0 && CURRTRIAL.num == 0){
+      if (FLAGS.trackeye > 0 && CURRTRIAL.num == 0){
           pingBigQueryEyeTable() //uploads eyedata to bigquery every 10 seconds        
       }//IF first trial, kick-off bigquery writes
 		}//IF not saving images, save data

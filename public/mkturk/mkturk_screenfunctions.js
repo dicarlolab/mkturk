@@ -164,8 +164,9 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 	    	}//IF sample or test screen & save out images
 
 			CURRTRIAL.tsequenceactual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
-			frame.shown[frame.current]=1;
-			frame.current++;
+			frame.shown[frame.current]=1
+			frame.current++
+			if (frame.current >= frame.shown.length){ frame.current = frame.shown.length-1 } //for prematurely ending movies externally
 		}//IF time to show new frame
 		
 //----- BUFFER 1ST ELEMENT
