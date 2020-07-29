@@ -111,13 +111,22 @@
 }
 
 #rfid-result {
+  padding-top: 10px;
   display: grid;
   height: 100%;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: 1fr 5fr;
+  grid-template-rows: 2fr 1fr;
+  grid-template-areas: 'sp-box'
+                       'btn';
   text-align: center;
 }
 
-#rfid-result > * {
-  display: inline-block;
+#rfid-result > div {
+  display: grid;
+  grid-area: sp-box;
+  grid-template-rows: repeat(2, 1fr);
+  grid-template-columns: repeat(6, 1fr);
+}
+
+#rfid-result > button {
+  grid-area: btn;
 }

@@ -219,6 +219,15 @@ export class Mkcolony {
     this.entryJson = new JSONEditor(entryJsonDiv, {mode: "tree" ,sortObjectKeys: true});
   }
 
+  public viewAgentBioBtnAction() {
+    let btn = document.querySelector('#view-agent-btn') as HTMLButtonElement;
+    let name = document.querySelector('#rfid-name-tag')?.textContent;
+    btn.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      
+    });
+  }
+
   
 
   public populateTable(data: any[]) {
@@ -355,9 +364,10 @@ export class Mkcolony {
             lastFluidDate = new Date(lastFluidDate);
             let today = new Date();
             let fluidThisWeek = 0;
+            let daysFromMonday = countFromMonday(today.getDay());
 
             if (isSameDay(lastFluidDate, today)) {
-              for (let i = 0; i <= countFromMonday(today.getDay()); i++) {
+              for (let i = 0; i <= daysFromMonday; i++) {
                 let targetDate = new Date(new Date().setDate(new Date().getDate() - i));
                 let idx = cell.getData().fluid_dates.findIndex((row: any) => {
                   let rowDate = new Date(row + ' EST');
@@ -368,7 +378,7 @@ export class Mkcolony {
                 }
               }
             } else {
-              for (let i = 1; i <= countFromMonday(today.getDay()); i++) {
+              for (let i = 1; i <= daysFromMonday; i++) {
                 let targetDate = new Date(new Date().setDate(new Date().getDate() - i));
                 let idx = cell.getData().fluid_dates.findIndex((row: any) => {
                   let rowDate = new Date(row + ' EST');
@@ -381,14 +391,19 @@ export class Mkcolony {
               }
             }
 
-            let dailyAverage = fluidThisWeek / (countFromMonday(today.getDay()) + 1);
+            let dailyAverage = fluidThisWeek / (daysFromMonday + 1);
             if (dailyAverage < hardBound) {
               cell.getElement().style.backgroundColor = 'Red';
             } else {
               cell.getElement().style.backgroundColor = '#00FF00';
             }
 
-            return fluidThisWeek;
+            // deal with precision
+            let fluidBoundToday = String((daysFromMonday + 1) * hardBound);
+            fluidBoundToday = parseFloat(fluidBoundToday).toPrecision(4);
+            let fluidThisWeekStr = String(fluidThisWeek) + '(' + fluidBoundToday +')'
+
+            return fluidThisWeekStr;
 
           } catch {
             console.error('[' + cell.getData().name + '] has no baseline weight data');
@@ -415,23 +430,55 @@ export class Mkcolony {
 
     document.addEventListener('RFID', (ev: any) => {
       ev.preventDefault();
-      let rfidAgent = document.querySelector('#rfid-agent') as HTMLSpanElement;
-      let rfidTag = document.querySelector('#rfid-tag') as HTMLSpanElement;
+      let rfidAgent = document.querySelector('#rfid-name-tag') as HTMLSpanElement;
+      let rfidTag = document.querySelector('#rfid-rfid-tag') as HTMLSpanElement;
+      let viewAgentBtn = document.querySelector('#view-agent-btn') as HTMLButtonElement;
+
       this.vizData.forEach(row => {
         if (row.rfid != undefined && row.rfid == ev.detail) {
-          agentTab.classList.add('is-active');
-          colonyTab.classList.remove('is-active');
-          agentTabBar.classList.add('is-active');
-          colonyTabBar.classList.remove('is-active');
-          rfidAgent.textContent = row.name;
-          rfidTag.textContent = row.rfid;
+          let rfidSpanBox = document.querySelector('#rfid-span-box') as div;
+          let attr: any[] = [];
+          attr.push(row.name);
+          attr.push(row.rfid);
+          attr.push(row.last_fluid_date + '; ' + String(row.last_fluid_value) + 'mL');
+          attr.push(row.ageStr);
+          attr.push(row.cwa);
+          attr.push(row.last_weight_date + '; ' + String(row.last_weight_value) + 'g');
+          attr = attr.reverse();
+          console.log(rfidSpanBox.childNodes);
+        
+          rfidSpanBox.childNodes.forEach((node: any) => {
+            try {
+              if (node.id.includes('tag')) {
+                node.textContent = attr.pop();
+              }
+            } catch {
+            }
+         });
+          viewAgentBtn.disabled = false;
           return;
         }
       });
-      if (ev.detail) {
+
+      if (rfidAgent.textContent != null && ev.detail) {
+        return;
+      } else {
         rfidTag.textContent = ev.detail;
         rfidAgent.textContent = 'Not In List'
       }
+    });
+
+
+    let btn = document.querySelector('#view-agent-btn') as HTMLButtonElement;
+    btn.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      let nameSpan = document.querySelector('#rfid-name-tag') as HTMLSpanElement;
+      let name = nameSpan.textContent!;
+      agentTab.classList.add('is-active');
+      colonyTab.classList.remove('is-active');
+      agentTabBar.classList.add('is-active');
+      colonyTabBar.classList.remove('is-active');
+      this.populateAgentTab(name);
     });
   }
 

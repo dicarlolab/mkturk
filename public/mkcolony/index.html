@@ -46,10 +46,26 @@
           <div class="page-content mdl-grid" id="rfid-result-grid">
             <div id="rfid-result-card" class="mdl-cell mdl-cell--1-offset mdl-cell--10-col mdl-card mdl-shadow--2dp">
               <div id="rfid-result">
-                <span id="rfid-agent-label">RFID AGENT LABEL</span>
-                <span id="rfid-tag-label">RFID TAG LABEL</span>
-                <span id="rfid-agent">RFID AGENT</span>
-                <span id="rfid-tag">RFID TAG</span>
+                <div id="rfid-span-box">
+                  <span id="rfid-name-label">Name:</span>
+                  <span id="rfid-name-tag"></span>
+                  <span id="rfid-rfid-label">RFID:</span>
+                  <span id="rfid-rfid-tag"></span>
+                  <span id="rfid-fl-label">Recent Fluid:</span>
+                  <span id="rfid-fl-tag"></span>
+                  <span id="rfid-age-label">Age:</span>
+                  <span id="rfid-age-tag"></span>
+                  <span id="rfid-cwa-label">CWA:</span>
+                  <span id="rfid-cwa-tag"></span>
+                  <span id="rfid-wt-label">Recent Weight:</span>
+                  <span id="rfid-wt-tag"></span>
+                </div>
+                
+                <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="view-agent-btn" disabled>
+                  View Agent Bio
+                </button>
+                
+
               </div>
             </div>
           </div>
