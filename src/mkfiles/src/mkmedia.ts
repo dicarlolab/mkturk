@@ -439,7 +439,7 @@ export class Mkeditor {
       console.log(this.activeFile);
       let storageRef = storage.ref();
       let file = this.editor.get();
-      let fileName = "mkturkfiles/parameterfiles/subjects/" + file.Agent + "_params.txt";
+      let fileName = "mkturkfiles/parameterfiles/subjects/" + file.Agent + "_params.json";
       let fileRef = storageRef.child(fileName);
       file = new Blob([ JSON.stringify(file, null, 1) ]);
       let metadata = {
