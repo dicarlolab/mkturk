@@ -123,7 +123,6 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 						FLAGS.acquiredTouch = 0
 						FLAGS.touchGeneratorCreated = 0 //block other callbacks
 						return_event.type = "theld"
-						console.log('theld, broke out of while loop')
 						break
 					}//IF no touch hold required
 				} //IF touched inside box		
@@ -263,7 +262,7 @@ function headsuptext_listener(event){
 }
 function doneTestingTask_listener(event){
 	event.preventDefault()
-	console.log("User is done testing. Start saving data");
+	console.log("START SAVING DATA");
 	FLAGS.savedata=1
 	FLAGS.purge=1
 	purgeTrackingVariables()
@@ -378,7 +377,7 @@ function rfid_promise(agentTag,recencyInMS){
 			rfidevent = yield rfidevent
 
 			if ( typeof(agentTag) == "undefined" ||
-				( rfidevent.tag == agentTag && (Date.now() - ENV.CurrentDate.valueOf()) - rfidevent.time <= recencyInMS) )
+				( rfidevent.tag == agentTag && Date.now() - new Date(rfidevent.time) <= recencyInMS) )
 			{
 				return_event = "done"
 				break;
@@ -402,13 +401,61 @@ function rfid_promise(agentTag,recencyInMS){
 }
 
 
+async function moviestart_promise(){
+	var resolveFunc
+	var errFunc
+	p = new Promise(function(resolve,reject){
+		resolveFunc = resolve;
+		errFunc = reject;
+	}).then(function(resolveval){
+			return resolveval
+	});
+	function *waitforMovieGenerator(){
+		var movieevent
+		while (FLAGS.movieplaying==0){
+			movieevent = yield movieevent
+			if (FLAGS.movieplaying == 1){
+				break
+			}
+		} //while movieplaying
+		resolveFunc("movie started, 1st frame pre-rendered & bounding boxes determined")
+	}//generator
+	waitforMovieStart = waitforMovieGenerator(); // start async function
+	waitforMovieStart.next(); //move out of default state
+	return p;
+}//FUNCTION moviestart_promise
+
+
+async function moviefinish_promise(){
+	var resolveFunc
+	var errFunc
+	p = new Promise(function(resolve,reject){
+		resolveFunc = resolve;
+		errFunc = reject;
+	}).then(function(resolveval){
+			return resolveval
+	});
+	function *waitforMovieGenerator(){
+		var movieevent
+		while (FLAGS.movieplaying==1){
+			movieevent = yield movieevent
+			if (FLAGS.movieplaying == 0){
+				break
+			}
+		} //while movieplaying
+		resolveFunc("movie done")
+	}//generator
+	waitforMovieFinish = waitforMovieGenerator(); // start async function
+	waitforMovieFinish.next(); //move out of default state
+	return p;
+}//FUNCTION moviefinish_promise
+
 function preemptRFID_listener(event){
 	event.preventDefault()
 	document.querySelector("button[id=preemptRFID]").style.display = "none"
-	waitforRFIDEvent.next({tag: ENV.AgentRFID, time: (Date.now() - ENV.CurrentDate.valueOf())})
+	waitforRFIDEvent.next({ tag: ENV.AgentRFID, time: Date.now() })
 	return
 }
-
 
 function quickLoad_listener(event){
 	event.preventDefault()

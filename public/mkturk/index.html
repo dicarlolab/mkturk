@@ -141,7 +141,7 @@ if (typeof(navigator.bluetooth) == "object"){
 
 <div class="custom-select" id="subjectID_div" style="z-index: 102; font-size: 25px; position: absolute; top: 7.5%; left: 75%; height: 75px; width: 200px;">
 	<label for="subjectID_select" >Select subject:</label>
-	<select class="mdl-textfield__input" name="subjects" id="subjectID_select">
+	<select class="mdl-textfield__input" name="subjects" id="subjectID_select" style="visibility:hidden">
 		<option value="-1">--</option>
 	</select>
 </div>
@@ -238,18 +238,6 @@ firebase.auth().getRedirectResult().then(function(result) {
   }
 });
 //================== (end) AUTHENTICATE GOOGLE ==================//
-
-
-// GET PARAMFILE NAME
-var subjectlistobj = document.getElementById("subjectID_select");
-for (var i=subjectlist.length-1; i>=0; i--){
-	var opt = document.createElement('option');
-	opt.value = i;
-	opt.innerHTML = subjectlist[i];
-	subjectlistobj.appendChild(opt);
-}
-subjectlistobj.addEventListener("change",subjectlist_listener,false);
-
 
 // Check Availability of APIs
 if (typeof(navigator.usb) == "object"){ ENV.WebUSBAvailable = 1 }
@@ -471,6 +459,17 @@ function skipHardwareDevice(event){
 	}
 
 	//====================== Quickload Button Set-up ===========================//
+	// GET PARAMFILE NAME
+	var subjectlistobj = document.getElementById("subjectID_select");
+	for (var i=subjectlist.length-1; i>=0; i--){
+		var opt = document.createElement('option');
+		opt.value = i;
+		opt.innerHTML = subjectlist[i];
+		subjectlistobj.appendChild(opt);
+	}
+	subjectlistobj.addEventListener("change",subjectlist_listener,false);
+	subjectlistobj.style.visibility = "visible"
+
 	if ( localStorage.getItem("Agent") != null ){
 		QuickLoad.agent = localStorage.getItem("Agent")
 		QuickLoad.connectusb = localStorage.getItem("ConnectUSB")
@@ -500,7 +499,7 @@ function skipHardwareDevice(event){
 
 	localStorage.setItem("Agent",ENV.Subject)	
 
-	ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.txt";
+	ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.json";
 	await loadParametersfromFirebase(ENV.ParamFileName)
 	//================== (END) AWAIT LOAD SUBJECT PARAMS ==================//
 
@@ -1042,9 +1041,9 @@ if (typeof(teston) == "undefined"){
 			console.log('NO USB DEVICE CONNECTED: cannot check RFID!!')
 		}//IF !connected
 		else if (port.connected == true){
-			var nreads = EVENTS['timeseries']['RFIDTag'].length
-	    	if (    EVENTS['timeseries']['RFIDTag'][nreads-1][2] == ENV.AgentRFID && 
-                    (Date.now() - ENV.CurrentDate.valueOf()) - EVENTS['timeseries']['RFIDTag'][nreads-1][1] < TASK.CheckRFID
+			var nreads = Object.keys(EVENTS['timeseries']['RFIDTag']).length
+	    	if ( nreads>0 && EVENTS['timeseries']['RFIDTag'][nreads-1][2] == ENV.AgentRFID && 
+                    Date.now() - new Date(EVENTS['timeseries']['RFIDTag'][nreads-1][1]) < TASK.CheckRFID
                 ){
 	    		// RFID checks out
 	    	}
@@ -1083,9 +1082,8 @@ if (typeof(teston) == "undefined"){
             else if (TASK.Species == "marmoset"){
                 ENV.FixationColor = "blue";
             }  
-            frame.shown=[]; frame.frames=[]
+            frame.shown=[]; frame.frames=[]; frame.current=0;
             for (var q in CANVAS.sequencepre){ frame.shown[q]=0; frame.frames[q]=[q]}; 
-            frame.current=0;                      
         }//IF !Sample, show fixation dot
 		else if (TASK.FixationUsesSample > 0){
             //Update grid location of sample to current fixation grid index
@@ -1104,17 +1102,6 @@ if (typeof(teston) == "undefined"){
                     }//IF Sample
                 }//FOR j display items
             }//FOR i frames
-
-            boundingBoxesChoice3D = {'x':[],'y':[]} //determined on the fly during display
-            //Get bounding box of first frame ahead of time
-            f = frame.frames[0][0]
-            var boundingBox3D = updateSingleFrame3D(CURRTRIAL.sequencetaskscreen[f],
-                                                    CURRTRIAL.sequencelabel[f][0],
-                                                    CURRTRIAL.sequenceindex[f][0],
-                                                    CURRTRIAL.sequenceframe[f],
-                                                    CURRTRIAL.sequencegridindex[f][0])//Update 3D scene prior to next frame draw
-            boundingBoxesChoice3D.x[0] = boundingBox3D[CURRTRIAL.sequencelabel[f][0]][0].x
-            boundingBoxesChoice3D.y[0] = boundingBox3D[CURRTRIAL.sequencelabel[f][0]][0].y            
         }//IF Sample, show first image/movie
 
 		// Start timer for this fixation render trial. 
@@ -1128,13 +1115,13 @@ if (typeof(teston) == "undefined"){
 		}
 
         if (TASK.FixationUsesSample <= 0){
-            displayTrial(CANVAS.tsequencepre,
-                                [CURRTRIAL.fixationgridindex],[0],
-                                CANVAS.sequencepre,[0],[0]) // dispTrial(time,grid,frame,screen,obj,idx)            
+            await displayTrial(CANVAS.tsequencepre,[CURRTRIAL.fixationgridindex],[0],
+                         CANVAS.sequencepre,[0],[0]) // dispTrial(time,grid,frame,screen,obj,idx)            
         }//IF !Sample, show fixation dot
         else if (TASK.FixationUsesSample > 0){
            displayTrial(CURRTRIAL.tsequence, CURRTRIAL.sequencegridindex, CURRTRIAL.sequenceframe,
                     CURRTRIAL.sequencetaskscreen, CURRTRIAL.sequencelabel, CURRTRIAL.sequenceindex)
+			await moviestart_promise()
         }//ELSE Sample, show image/movie
 
 		audiocontext.suspend()
@@ -1159,11 +1146,15 @@ if (typeof(teston) == "undefined"){
             }
 			var p2 = choiceTimeOut(TASK.FixationTimeOut)
 			var touchhold_return = await Promise.race([p1,p2])
+		}//ELSE await fixation hold
 
+		if (FLAGS.movieplaying==1){
 			//So that sample movie does not continue playing after fixation acquired
 			frame.current = frame.shown.length-1
 			frame.shown[frame.current] = 1
-		}//ELSE await fixation hold
+			await moviefinish_promise()
+		}//IF movie playing
+
 		CURRTRIAL.fixationtouchevent = touchhold_return.type
 		CURRTRIAL.fixationxyt = [touchhold_return.cxyt[1], touchhold_return.cxyt[2], touchhold_return.cxyt[3]]
 		CURRTRIAL.allfixationxyt[TASK.NFixations - FLAGS.waitingforTouches - 1] = CURRTRIAL.fixationxyt
@@ -1278,9 +1269,12 @@ if (typeof(teston) == "undefined"){
             FLAGS.acquiredTouch = 0;
             FLAGS.waitingforTouches = 0
 
-            //Stop movie in case broke fixation before end
-            frame.current = frame.shown.length-1
-            frame.shown[frame.current] = 1
+			if (FLAGS.movieplaying==1){
+				//So that sample movie does not continue playing after fixation broken
+				frame.current = frame.shown.length-1
+				frame.shown[frame.current] = 1
+				await moviefinish_promise()
+			}//IF movie playing
 
             if (FLAGS.trackeye > 0){
                 ENV.Eye.EventType = "eyestart" //Reset eye state
@@ -1475,8 +1469,8 @@ if (typeof(teston) == "undefined"){
 	if (  CURRTRIAL.nreward == -1 ){
 		CANVAS.sequencepost[1] = "blank";
 		CANVAS.tsequencepost[2] = 2*CANVAS.tsequencepost[1];
-		frame.shown=[]; frame.frames=[]
-		for (var q in CANVAS.sequencepost){frame.shown[q]=0; frame.frames[q]=[q]}; frame.current=0;
+		frame.shown=[]; frame.frames=[];  frame.current=0;
+		for (var q in CANVAS.sequencepost){frame.shown[q]=0; frame.frames[q]=[q]};
 
 		renderShape2D(CANVAS.sequencepost[0],-1,OFFSCREENCANVAS)
 
@@ -1494,8 +1488,8 @@ if (typeof(teston) == "undefined"){
 		CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+ENV.RewardDuration*1000;
 
 		for (var q = 0; q <= CURRTRIAL.nreward-1; q++){
-			frame.shown=[]; frame.frames=[]
-			for (var q2 in CANVAS.sequencepost){frame.shown[q2]=0; frame.frames[q2] = [q2]}; frame.current=0;
+			frame.shown=[]; frame.frames=[]; frame.current=0;
+			for (var q2 in CANVAS.sequencepost){frame.shown[q2]=0; frame.frames[q2] = [q2]};
 
 			playSound(2);
 			renderShape2D(CANVAS.sequencepost[0],-1,OFFSCREENCANVAS)
@@ -1523,8 +1517,8 @@ if (typeof(teston) == "undefined"){
 	else if (!CURRTRIAL.correct) {
 		CANVAS.sequencepost[1] = "punish";
 		CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+TASK.PunishTimeOut;
-		frame.shown=[]; frame.frames=[]
-		for (var q in CANVAS.sequencepost){frame.shown[q]=0; frame.frames[q]=[q]}; frame.current=0;
+		frame.shown=[]; frame.frames=[];  frame.current=0;
+		for (var q in CANVAS.sequencepost){frame.shown[q]=0; frame.frames[q]=[q]};
 
 		renderShape2D(CANVAS.sequencepost[0],-1,OFFSCREENCANVAS)
  		var len = CANVAS.sequencepost.length
@@ -1645,7 +1639,7 @@ if (typeof(teston) == "undefined"){
 	//================= (end) HOUSEKEEPING =================//
 
 	updateHeadsUpDisplay();
-	console.log('End of trial ', CURRTRIAL.num)
+	console.log('END OF TRIAL ', CURRTRIAL.num)
 	CURRTRIAL.num++
 	EVENTS.trialnum = CURRTRIAL.num
 

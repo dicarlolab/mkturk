@@ -186,10 +186,10 @@ serial.Port.prototype.onReceive = data => {
 		var tagend = port.statustext_received.indexOf('}',0);
 		logEVENTS("RFIDTag",port.statustext_received.slice(tagstart+4,tagend),"timeseries");
 
-		var nrfid = EVENTS['timeseries']['RFIDTag'].length
+		var nrfid = Object.keys(EVENTS['timeseries']['RFIDTag']).length
 		if (nrfid >= 2){
-			var dt = EVENTS['timeseries']['RFIDTag'][nrfid-1][1] - 
-					EVENTS['timeseries']['RFIDTag'][nrfid-2][1]
+			var dt = new Date(EVENTS['timeseries']['RFIDTag'][nrfid-1][1]) - 
+					new Date(EVENTS['timeseries']['RFIDTag'][nrfid-2][1])
 		}
 		port.statustext_received = 'Parsed TAG ' + EVENTS['timeseries']['RFIDTag'][nrfid-1][2] + 
 									' @ ' + new Date().toLocaleTimeString("en-US") + 

@@ -218,15 +218,28 @@ async function queryFirestoreCallback(querySnapshot){
 
           DATA.lastdatevalue[DATA.ndocs] = doc.data().CurrentDateValue + doc.data().StartTime[doc.data().StartTime.length-1]
 
-          if (Array.isArray(doc.data().BatteryLDT[0]) == true){
-              var nupdates = doc.data().BatteryLDT[0].length
-              DATA.lastbatterypct[DATA.ndocs] = 100*doc.data().BatteryLDT[0][nupdates-1]
-              DATA.batterypctperhour[DATA.ndocs] = 100*1000*60*60*
-                  (doc.data().BatteryLDT[0][nupdates-1] - 
-                  doc.data().BatteryLDT[0][0]) / 
-                  (doc.data().BatteryLDT[2][nupdates-1] - doc.data().BatteryLDT[2][0])
-              DATA.batterypctperhour[DATA.ndocs] = 0.1*Math.round(10*DATA.batterypctperhour[DATA.ndocs])
-          }
+          if (typeof(doc.data().BatteryLDT) != "undefined"){
+            if (Array.isArray(doc.data().BatteryLDT[0]) == true){
+                var nupdates = doc.data().BatteryLDT[0].length
+                DATA.lastbatterypct[DATA.ndocs] = 100*doc.data().BatteryLDT[0][nupdates-1]
+                DATA.batterypctperhour[DATA.ndocs] = 100*1000*60*60*
+                    (doc.data().BatteryLDT[0][nupdates-1] - 
+                    doc.data().BatteryLDT[0][0]) / 
+                    (doc.data().BatteryLDT[2][nupdates-1] - doc.data().BatteryLDT[2][0])
+                DATA.batterypctperhour[DATA.ndocs] = 0.1*Math.round(10*DATA.batterypctperhour[DATA.ndocs])
+            }
+          }//IF old format
+          else if (typeof(doc.data().Battery) != "undefined"){
+            if (Array.isArray(doc.data().Battery[0]) == true){
+                var nupdates = Object.keys(doc.data().Battery).length
+                DATA.lastbatterypct[DATA.ndocs] = 100*doc.data().Battery[nupdates-1][2]
+                DATA.batterypctperhour[DATA.ndocs] = 100*1000*60*60*
+                    (doc.data().Battery[nupdates-1][2] - 
+                    doc.data().Battery[0][2]) /
+                    (new Date(doc.data().Battery[nupdates-1][1]) - new Date(doc.data().Battery[0][1]))
+                DATA.batterypctperhour[DATA.ndocs] = 0.1*Math.round(10*DATA.batterypctperhour[DATA.ndocs])
+            }
+          }//ELSEIF new format
           else {
               DATA.lastbatterypct[DATA.ndocs] = 0
               DATA.batterypctperhour[DATA.ndocs] = 0

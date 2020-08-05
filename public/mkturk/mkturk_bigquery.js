@@ -56,7 +56,7 @@ var nsamples = Object.keys(EVENTS[eventtype][eventname]).length
 
 	bqInsertEyeData(eyedata)
 
-console.log("Sent EyeData to BIGQUERY")
+console.log("BIGQUERY: Upload EyeData")
 
 	//reset eye event accumulation in mkturk (reduce memory load)
 	EVENTS[eventtype][eventname] = {}
@@ -88,7 +88,7 @@ var nsamples = Object.keys(EVENTS[eventtype][eventname0]).length
 
 	bqInsertDisplayTimes(displaydata)
 
-console.log("Sent DisplayTimes to BIGQUERY")
+console.log("BIGQUERY: Upload DisplayTimes")
 
 	//reset eye event accumulation in mkturk (reduce memory load)
 	EVENTS[eventtype][eventname0] = {}

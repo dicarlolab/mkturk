@@ -175,7 +175,7 @@ async function loadImageArrayfromFirebase(imagepathlist){
 			for (var i = 0; i < 3; i++){
 				var image_requests = imagepathlist.map(loadImagefromFirebase);
 
-				console.log('FIREBASE: buffering ' + imagepathlist.length + ' images')
+				console.log('FIREBASE: Buffering ' + imagepathlist.length + ' images')
 				var tstart = performance.now()
 				var image_array = await Promise.all(image_requests)
 				.catch(function(error){ console.log(error)}).then()
@@ -279,7 +279,7 @@ async function saveParameterTexttoFirebase(parameter_text){
 				// Upload the file and metadata
 				var response = await storage.ref().child(ENV.ParamFileName).put(blob, metadata);
 				CURRTRIAL.lastFirebaseSave = new Date(response.metadata.timeCreated)
-				console.log("FIREBASE: Successful parameter file upload. Size:" + Math.round(response.totalBytes/1000) + 'kb')
+				console.log("FIREBASE: Save TaskParams. Size:" + Math.round(response.totalBytes/1000) + 'kb')
 			}
 			catch(error){
 				console.log(error)
@@ -301,7 +301,7 @@ async function saveParameterTexttoFirebase(parameter_text){
 		if (ENV.ParamFileRev != filemeta.generation){
 			ENV.ParamFileRev = filemeta.generation
 			ENV.ParamFileDate = new Date(filemeta.updated)
-			console.log('FIREBASE: Parameter file was updated. Rev=' + ENV.ParamFileRev)
+			console.log('FIREBASE: Update TaskParams. Rev=' + ENV.ParamFileRev)
 		}//if
 	} //try
 	catch(error) {
@@ -357,7 +357,7 @@ async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS){
 	// Upload the file and metadata
 	var response = await storage.ref().child(ENV.DataFileName).put(blob, metadata);
 	CURRTRIAL.lastFirebaseSave = new Date(response.metadata.updated)
-	console.log("FIREBASE: Successful behavior file upload. Size:" + Math.round(response.totalBytes/1000) + 'kb')
+	console.log("FIREBASE: Save Data, " + Math.round(response.totalBytes/1000) + 'kb')
 } //UploadToFirebase
 
 

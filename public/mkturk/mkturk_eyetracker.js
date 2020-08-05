@@ -19,8 +19,8 @@ function runCallibration() {
 
 			//RAW EYE POSITIONS (invert back to raw coords)
 			xy = apply_linear_transform(
-				EVENTS['trialseries']['FixationXYT'][0] - ENV.Eye.CalibXTransform[2],//X shifted back prior to inverse
-				EVENTS['trialseries']['FixationXYT'][1] - ENV.Eye.CalibYTransform[2],//Y shifted back prior to inverse
+				EVENTS['trialseries']['FixationXYT'][0][i] - ENV.Eye.CalibXTransform[2],//X shifted back prior to inverse
+				EVENTS['trialseries']['FixationXYT'][1][i] - ENV.Eye.CalibYTransform[2],//Y shifted back prior to inverse
 				xtform_inverse, ytform_inverse)
 			fixation_meanxy.push([xy[0],xy[1]])		
 		}//IF touch held, keep data
@@ -69,8 +69,8 @@ function evaluateCalibration(){
 				actualy.push(ENV.YGridCenter[EVENTS['trialseries']['FixationGridIndex'][i]] + CANVAS.offsettop)
 
 				//PREDICTED
-				predictedx.push(EVENTS['trialseries']['FixationXYT'][i][0])
-				predictedy.push(EVENTS['trialseries']['FixationXYT'][i][1])
+				predictedx.push(EVENTS['trialseries']['FixationXYT'][0][i])
+				predictedy.push(EVENTS['trialseries']['FixationXYT'][1][i])
 			}//IF test point
 		}//IF held
 	}//FOR i trials

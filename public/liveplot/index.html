@@ -144,7 +144,6 @@ function loadGoogleCharts() {
 //================== GOOGLE CHARTS LOADING (end) ==================//
 
 
-
 //================== FIREBASE STORAGE STUFF ==================//
 async function getFileListRecursiveFirebase(dir,ext){
 	var fileList = await storage.ref().child(dir).listAll()
@@ -168,12 +167,12 @@ async function getFileListRecursiveFirebase(dir,ext){
 		} //if file extension required
 	}
 	return files
-} //recursviely accumulate files from subfolders (if any)
+}//FUNCTION getFileListRecursiveFirebase -- recursviely accumulate files from subfolders (if any)
 
 
 async function populateFileDropDownMenu(){
     try {
-        var filelist = await getFileListRecursiveFirebase(file.dir,'.txt')
+        var filelist = await getFileListRecursiveFirebase(file.dir)
 
 // // sort by value
 // items.sort(function (a, b) {
@@ -216,7 +215,7 @@ filelist.sort(function(a, b) {
     catch (error) {
         console.error(error)
     }
-} //populateFileDropDownMenu
+}//FUNCTION populateFileDropDownMenu
 
 // Asynchronous: Check for file updates
 async function checkFileStatusFirebase() {
@@ -244,69 +243,61 @@ async function checkFileStatusFirebase() {
         console.error(error)
     } //try
     return false
-}
+}//FUNCTION checkFileStatusFirebase
 
 //------------- LOAD JSON TEXT --------------//
 async function loadDatafromFirebase(textfile_path){
     try{
-    var textfileRef = storage.ref().child(textfile_path)
-	url = await textfileRef.getDownloadURL()
-	response = await fetch(url)
-	var datajson = await response.json()
+	    var textfileRef = storage.ref().child(textfile_path)
+		url = await textfileRef.getDownloadURL()
+		response = await fetch(url)
+		var datajson = await response.json()
 
-    if (Array.isArray(datajson)) {
-        file.data = {};
-        for (var elem = 0; elem < datajson.length; elem++) {
-            for (var prop in datajson[elem]) {
-                file.data[prop] = datajson[elem][prop]
-            } //for property
-        } //for array elements
+	    if (Array.isArray(datajson)) {
+	        file.data = {};
+	        for (var elem = 0; elem < datajson.length; elem++) {
+	            for (var prop in datajson[elem]) {
+	                file.data[prop] = datajson[elem][prop]
+	            } //for property
+	        } //for array elements
 
-        //Remove array nesting
-        file.data.FixationXYT = removeNesting(file.data.FixationXYT)
-        file.data.ResponseXYT = removeNesting(file.data.ResponseXYT)
-        file.data.Test = removeNesting(file.data.Test)
-    }//IF old array format
-    else {
-        file.data = {}
-        for (p in datajson){
-            for (q in datajson[p]){
-                file.data[q] = datajson[p][q]
-            }//for q properties
-        }//for p param objects
-    }//ELSE new object format
+	        //Remove array nesting
+	        file.data.FixationXYT = removeNesting(file.data.FixationXYT)
+	        file.data.ResponseXYT = removeNesting(file.data.ResponseXYT)
+	        file.data.Test = removeNesting(file.data.Test)
+	    }//IF old array format
+	    else {
+	        file.data = {}
+	        for (p in datajson){
+	            for (q in datajson[p]){
+	                file.data[q] = datajson[p][q]
+	            }//for q properties
+	        }//for p param objects
+	    }//ELSE new object format
 
-    var filemeta = await storage.ref().child(textfile_path).getMetadata()
-    console.log("success: loaded file size " + filemeta.size/1000 + ' kb');
-    file.rev = filemeta.generation
-    file.dateSaved = new Date(filemeta.updated)
+	    var filemeta = await storage.ref().child(textfile_path).getMetadata()
+	    console.log("success: loaded file size " + filemeta.size/1000 + ' kb');
+	    file.rev = filemeta.generation
+	    file.dateSaved = new Date(filemeta.updated)
 
-    //Parse date
-    var ind1 = file.name.indexOf("/2")
-    var ind2 = file.name.indexOf('_')
-    var datestr = file.name.substring(ind1 + 1, ind2)
-    file.dateCreated = new Date(datestr)
+	    //Parse date
+	    var ind1 = file.name.indexOf("/2")
+	    var ind2 = file.name.indexOf('_')
+	    var datestr = file.name.substring(ind1 + 1, ind2)
+	    file.dateCreated = new Date(datestr)
 
-    parseImageInfo()
-    }
+		if (file.filehasChanged == true) {
+			initializeChartData()
+		} else if (file.datahasChanged == true) {
+			updatePlots()
+		}
+	}//TRY
     catch (error) {
         console.error(error)
-    } //try
+    }//CATCH
     return false
-} //ReadFromFirebase
+}//FUNCTION loadDatafromFirebase
 //================== FIREBASE STORAGE STUFF (end) ==================//
-
-function parseImageInfo() {
-    objlabels = objlabelsOBJ;
-    cat = catOBJ;
-    catlist = catlistOBJ;
-
-    if (file.filehasChanged == true) {
-        initializeChartData()
-    } else if (file.datahasChanged == true) {
-        updatePlots()
-    }
-}
 
 //================== DATA HANDLING ==================//
 // Synchronous: Initialize chart data matrices
@@ -331,45 +322,38 @@ function initializeChartData() {
     dataPerformance.addColumn('number','100trialsAvg')
 
     dataCumulative.addColumn('datetime', 'time')
-    //0
     dataCumulative.addColumn('number', 'Trials')
-    //1
     dataCumulative.addColumn('number', 'Performance')
-    //2
     dataCumulative.addColumn('number', 'RFID')
-    //3
     dataCumulative.addColumn('number', 'Weight')
-    //4
 
     dataWeight.addColumn('datetime','time')
     dataWeight.addColumn('number','WeightReads')
 
-
-//dataXYPos for 2 test choices
-// 0: x
-// 1: y fix (box)
-// 2: y sample (box)
-// 3: y test1 (box)
-// 4: y test2 (box)
-// 3: y same (box)
-// 4: y different (box)
-// 5: y Fix_reward (dots)
-// 6: y Fix_punish (dots)
-// 7: y Target_reward (dots)
-// 8: y Target_punish (dots)
+	//dataXYPos for 2 test choices
+	// 0: x
+	// 1: y fix (box)
+	// 2: y sample (box)
+	// 3: y test1 (box)
+	// 4: y test2 (box)
+	// 3: y same (box)
+	// 4: y different (box)
+	// 5: y Fix_reward (dots)
+	// 6: y Fix_punish (dots)
+	// 7: y Target_reward (dots)
+	// 8: y Target_punish (dots)
     dataXYPos.addColumn('number', 'xpos')
     dataXYPos.addColumn('number','Fixation')
     dataXYPos.addColumn('number','Sample')  
-    for (var i = 0; i<=file.data.TestGridIndex.length-1;i++){
-        if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0 && i > 0){
-            break
-        }
-        dataXYPos.addColumn('number', 'Test' + (i+1))
-    }
-    if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0){
+    if (file.data.SameDifferent <= 0){
+	    for (var i = 0; i<=file.data.TestGridIndex.length-1;i++){
+	        dataXYPos.addColumn('number', 'Test' + (i+1))
+	    }    	
+    }//IF !SD
+    else if (file.data.SameDifferent > 0){
         dataXYPos.addColumn('number', 'Same')
         dataXYPos.addColumn('number', 'Different')
-    }
+    }//ELSEIF SD
 
     dataXYPos.addColumn('number', 'Fix_Reward')
     dataXYPos.addColumn('number', 'Fix_Punish')
@@ -387,7 +371,7 @@ function initializeChartData() {
 
     updatePlots()
     file.filehasChanged = false
-}
+}//FUNCTION initializeChartData()
 
 // Synchronous
 function toVitals() {
@@ -402,9 +386,9 @@ function toVitals() {
         vitals.RFIDtime = Math.round(Math.round(file.data.RFIDTime[file.data.RFIDTime.length - 1] - file.data.StartTime[0]) / 60000);
         //convert millisecond to minutes
     }//IF old data format
-    else if (typeof(file.data.RFIDTag) != "undefined" && Array.isArray(file.data.RFIDTag)){
-        vitals.RFIDtag = file.data.RFIDTag[file.data.RFIDTag.length - 1][2];
-        vitals.RFIDtime = Math.round(Math.round(file.data.RFIDTag[file.data.RFIDTag.length - 1][1] - file.data.StartTime[0]) / 60000);
+    else if (typeof(file.data.RFIDTag) != "undefined" && Object.keys(file.data.RFIDTag).length>0){
+        vitals.RFIDtag = file.data.RFIDTag[Object.keys(file.data.RFIDTag).length - 1][2];
+        vitals.RFIDtime = Math.round(Math.round(new Date(file.data.RFIDTag[Object.keys(file.data.RFIDTag).length - 1][1]) - new Date(file.data.CurrentDate)) / 60000);
         //convert millisecond to minutes
     }//ELSEIF new data format
     else {
@@ -420,11 +404,12 @@ function toVitals() {
         vitals.LastWeightTime = Math.round(Math.round(file.data.WeightTime[file.data.WeightTime.length - 1] - file.data.StartTime[0]) / 60000);
         //convert millisecond to minutes
     }//IF old data format
-    else if (typeof(file.data.Weight) != "undefined" && Array.isArray(file.data.Weight) && file.data.Weight.length > 0){
+    else if (typeof(file.data.Weight) != "undefined" && Object.keys(file.data.Weight).length > 0){
+        //XX not implemented for new data format
         vitals.MaxWeight = file.data.Weight.reduce(function(a, b) {
             return Math.max(a[2], b[2]);
         });        
-        vitals.LastWeightTime = Math.round(Math.round(file.data.Weight[file.data.Weight.length - 1][1] - file.data.StartTime[0]) / 60000);
+        vitals.LastWeightTime = Math.round(Math.round(file.data.Weight[Object.keys(file.data.Weight).length - 1][1] - file.data.StartTime[0]) / 60000);
         //convert millisecond to minutes
     }//ELSEIF new data format
     else {
@@ -456,10 +441,10 @@ function toVitals() {
         vitals.batteryleft = Math.round(file.data.BatteryLDT[file.data.BatteryLDT.length - 1][0] * 100);
         vitals.batteryused = Math.round(file.data.BatteryLDT[0][0] * 100 - vitals.batteryleft);
     }//IF old data format
-    else if (typeof(file.data.Battery) != "undefined" && Array.isArray(file.data.Battery) && file.data.Battery.length > 0){
-        vitals.batteryleft = Math.round(file.data.Battery[file.data.Battery.length - 1][2] * 100);
+    else if (typeof(file.data.Battery) != "undefined" && Object.keys(file.data.Battery).length > 0){
+        vitals.batteryleft = Math.round(file.data.Battery[Object.keys(file.data.Battery).length - 1][2] * 100);
         vitals.batteryused = Math.round(file.data.Battery[0][2] * 100 - vitals.batteryleft);
-    }//IF old data format    
+    }//ELSEIF new data format    
     else {
         vitals.batteryleft = null;
         vitals.batteryused = null;
@@ -484,11 +469,10 @@ function toVitals() {
     if (typeof(file.data.RewardPer1000Trials) != "undefined") {
         vitals.rewardestimate = Math.round(file.data.RewardPer1000Trials * vitals.nrewards / 1000);
     }
-}
+}//FUNCTION toVitals()
 
 // Synchronous
 function toPerformanceData() {
-
     dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
     dataCumulative.removeRows(0,dataCumulative.getNumberOfRows());
     dataXYPos.removeRows(0,dataXYPos.getNumberOfRows());
@@ -508,7 +492,6 @@ function toPerformanceData() {
     var touchevent = []
 
     for (var i = 0; i <= file.data.CorrectItem.length - 1; i++) {
-
         if (file.data.CorrectItem[i] == file.data.Response[i]) {
             // | file.data.RewardStage==0){
             ydata[i] = 1;
@@ -524,11 +507,11 @@ function toPerformanceData() {
         } else if (i == 0) {
             ncorrect[i] = ydata[i]
         }
-    }
+    }//FOR i trials
 
     // Store fixation in odd indices and choice in even
     // All touchevents. touchevent has a length that is twice the length of file.data.FixationXYT or file.data.ResponseXYT 
-    if (typeof file.data.ResponseXYT != "undefined" && file.data.ResponseXYT[0].length >= 1) {
+    if (typeof file.data.ResponseXYT != "undefined" && Object.keys(file.data.ResponseXYT).length > 0 && file.data.ResponseXYT[0].length > 0) {
         for (var i = 0; i <= file.data.FixationXYT[0].length * 2 - 1; i += 2) {
             touchevent[i]=[]
             touchevent[i+1]=[]
@@ -536,121 +519,130 @@ function toPerformanceData() {
             touchevent[i + 1][0] = file.data.ResponseXYT[0][i / 2]
             touchevent[i][1] = file.data.FixationXYT[1][i / 2]
             touchevent[i + 1][1] = file.data.ResponseXYT[1][i / 2]
-        }
-    }
-
-    //Fixation, Sample, Test Box
-    if (file.data.FixationUsesSample == 0){
-        fixationscale = file.data.FixationScale
-    }
+        }//FOR
+    }//IF ResponseXYT
     else{
-        fixationscale = file.data.SampleScale
-    }
+        for (var i = 0; i <= file.data.FixationXYT[0].length * 2 - 1; i += 2){
+            touchevent[i]=[]
+            touchevent[i+1]=[]
+            touchevent[i][0] = file.data.FixationXYT[0][i / 2]
+            touchevent[i + 1][0] = file.data.FixationXYT[0][i / 2]
+            touchevent[i][1] = file.data.FixationXYT[1][i / 2]
+            touchevent[i + 1][1] = file.data.FixationXYT[1][i / 2]
+        }//FOR i fixations
+    }//ELSE !ResponseXYT
 
     nColumn = dataXYPos.getNumberOfColumns()
 
-    // Size of sample, test & choice targets. Draw them as a bounding box in the touch plot
-    if (typeof(file.data.ViewportPPI != "undefined")){
-        fixationwidth = file.data.FixationSizeInches * file.data.ViewportPPI
-        fixationheight = file.data.FixationSizeInches * file.data.ViewportPPI
-        if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0){
-            choicewidth = file.data.ChoiceSizeInches * file.data.ViewportPPI
-            choiceheight = file.data.ChoiceSizeInches * file.data.ViewportPPI
-        }                
+    //Sample & Test Boxes -- Draw them as a bounding box in the touch plot
+    if (file.data.SampleScenes[0].IMAGES.imageidx.length > 0){
+		if (Array.isArray(file.data.SampleScenes[0].IMAGES.sizeInches)) {
+	    	samplewidth = Math.max(...file.data.SampleScenes[0].IMAGES.sizeInches) * file.data.ViewportPPI			
+		}
+		else{
+			console.log("! array, please fix scene file")
+    		samplewidth = file.data.SampleScenes[0].IMAGES.sizeInches * file.data.ViewportPPI	
+  		}
+    }//IF 2D bkgd image
+    else{
+	    samplewidth = Math.max(...file.data.SampleScenes[0].OBJECTS[Object.keys(file.data.SampleScenes[0].OBJECTS)[0]].sizeInches) * file.data.ViewportPPI
+    }//ELSE 3D size
+
+    if (file.data.TestScenes[0].IMAGES.imageidx.length > 0) {
+		if (Array.isArray(file.data.TestScenes[0].IMAGES.sizeInches)){
+	    	testwidth = Math.max(...file.data.TestScenes[0].IMAGES.sizeInches) * file.data.ViewportPPI			
+		}
+		else{
+			console.log("! array, please fix scene file")
+    		testwidth = file.data.TestScenes[0].IMAGES.sizeInches * file.data.ViewportPPI
+  		}
+    }//IF 2D bkgd image
+    else{
+	    testwidth = Math.max(...file.data.TestScenes[0].OBJECTS[Object.keys(file.data.TestScenes[0].OBJECTS)[0]].sizeInches) * file.data.ViewportPPI
+    }//ELSE 3D size
+    sampleheight = samplewidth
+    testheight = testwidth
+
+    //Fixation & Choice Boxes
+    if (file.data.FixationUsesSample <= 0){
+	    fixationwidth = file.data.FixationSizeInches * file.data.ViewportPPI
+    }//IF !sample
+    else{
+    	fixationwidth = samplewidth
+    }//ELSE sample
+	fixationheight = fixationwidth
+
+    if (typeof(file.data.SameDifferent) != "undefined" && file.data.SameDifferent > 0){
+        choicewidth = file.data.ChoiceSizeInches * file.data.ViewportPPI
+        choiceheight = file.data.ChoiceSizeInches * file.data.ViewportPPI
+    }  
+
+    if (typeof(file.data.NRSVP) != "undefined" && file.data.NRSVP > 0){
+    	testwidth = file.data.SampleFixationSizeInches * file.data.ViewportPPI
     }
-    else {
-        fixationwidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.FixationScale
-        fixationheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.FixationScale
-        if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0){
-            choicewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.ChoiceScale
-            choiceheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.ChoiceScale 
-        }        
-    }//IF screen-specific physical PPI implemented
-
-
-    if (file.data.ImageBagsSample[0].includes("scenebags")){
-        samplewidth = Math.max(...file.data.SampleScenes[0].OBJECTS[Object.keys(file.data.SampleScenes[0].OBJECTS)[0]].sizeInches) * file.data.ViewportPPI
-        sampleheight = Math.max(...file.data.SampleScenes[0].OBJECTS[Object.keys(file.data.SampleScenes[0].OBJECTS)[0]].sizeInches) * file.data.ViewportPPI
-
-        testwidth = Math.max(...file.data.TestScenes[0].OBJECTS[Object.keys(file.data.TestScenes[0].OBJECTS)[0]].sizeInches) * file.data.ViewportPPI
-        testheight = Math.max(...file.data.TestScenes[0].OBJECTS[Object.keys(file.data.TestScenes[0].OBJECTS)[0]].sizeInches) * file.data.ViewportPPI
-    } //IF 3D
-    else {
-        samplewidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.SampleScale
-        sampleheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.SampleScale
-        testwidth = file.data.CanvasRatio * file.data.ImageWidthPixels * file.data.TestScale
-        testheight = file.data.CanvasRatio * file.data.ImageHeightPixels * file.data.TestScale
-    } //ELSE 2D
+    testheight = testwidth
 
     
     var ndisplayelements = 0
 
+//NOTE for positioning elements: grid x,y is offset || fixation&response x,y is not
+
     //FIXATION
     ndisplayelements++
-
-    if (typeof(file.data.StaticFixationGridIndex) != "undefined"){
-        fixation_xcoord = file.data.XGridCenter[file.data.StaticFixationGridIndex]        
-    }
-    else{
-        if (file.data.FixationGridIndex >= 0){
-            fixation_xcoord = file.data.XGridCenter[file.data.FixationGridIndex]
-        }
-        else{
-            fixation_xcoord = file.data.XGridCenter[0] //moving fixation
-        }
-    }
-    fixation_ycoord = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.StaticFixationGridIndex]
+	fixation_xcoord = file.data.XGridCenter[ Math.max(...file.data.FixationGridIndex)]
+	fixation_ycoord = file.data.ViewportPixels[1] - (file.data.YGridCenter[Math.max(...file.data.FixationGridIndex)] + file.data.offsettop)
 
     var  arr = new Array(nColumn)
-    arr[0] = fixation_xcoord-fixationwidth*file.data.CanvasRatio
-    arr[ndisplayelements] = fixation_ycoord-fixationheight*file.data.CanvasRatio
+    arr[0] = fixation_xcoord-fixationwidth/2
+    arr[ndisplayelements] = fixation_ycoord-fixationheight/2
     dataXYPos.addRows([arr])
 
-    arr[0] = fixation_xcoord+fixationwidth*file.data.CanvasRatio
-    arr[ndisplayelements] = fixation_ycoord-fixationheight*file.data.CanvasRatio
+    arr[0] = fixation_xcoord+fixationwidth/2
+    arr[ndisplayelements] = fixation_ycoord-fixationheight/2
     dataXYPos.addRows([arr])
 
-    arr[0] = fixation_xcoord+fixationwidth*file.data.CanvasRatio
-    arr[ndisplayelements] = fixation_ycoord+fixationheight*file.data.CanvasRatio
+    arr[0] = fixation_xcoord+fixationwidth/2
+    arr[ndisplayelements] = fixation_ycoord+fixationheight/2
     dataXYPos.addRows([arr])
 
-    arr[0] = fixation_xcoord-fixationwidth*file.data.CanvasRatio
-    arr[ndisplayelements] = fixation_ycoord+fixationheight*file.data.CanvasRatio
+    arr[0] = fixation_xcoord-fixationwidth/2
+    arr[ndisplayelements] = fixation_ycoord+fixationheight/2
     dataXYPos.addRows([arr])
 
-    arr[0] = fixation_xcoord-fixationwidth*file.data.CanvasRatio
-    arr[ndisplayelements] = fixation_ycoord-fixationheight*file.data.CanvasRatio
+    arr[0] = fixation_xcoord-fixationwidth/2
+    arr[ndisplayelements] = fixation_ycoord-fixationheight/2
     dataXYPos.addRows([arr])
 
     //SAMPLE
     ndisplayelements++
-    if (file.data.SampleGridIndex >= 0){
-        sample_xcoord = file.data.XGridCenter[file.data.SampleGridIndex]
-    }//IF fixed grid location
-    else{
-        sample_xcoord = file.data.XGridCenter[0]
-    }//ELSE moving grid location
-    sample_ycoord = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.SampleGridIndex]    
+    if (file.data.RewardStage > 0){
+	    sample_xcoord = file.data.XGridCenter[Math.max(...file.data.SampleGridIndex)]
+    	sample_ycoord = file.data.ViewportPixels[1] - (file.data.YGridCenter[Math.max(...file.data.SampleGridIndex)] + file.data.offsettop)
+    }
+    else {
+    	sample_xcoord = fixation_xcoord
+    	sample_ycoord = fixation_ycoord
+    }
 
     var  arr = new Array(nColumn)
-    arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
-    arr[ndisplayelements] = sample_ycoord-sampleheight*file.data.CanvasRatio
+    arr[0] = sample_xcoord-samplewidth/2
+    arr[ndisplayelements] = sample_ycoord-sampleheight/2
     dataXYPos.addRows([arr])
 
-    arr[0] = sample_xcoord+samplewidth*file.data.CanvasRatio
-    arr[ndisplayelements] = sample_ycoord-sampleheight*file.data.CanvasRatio
+    arr[0] = sample_xcoord+samplewidth/2
+    arr[ndisplayelements] = sample_ycoord-sampleheight/2
     dataXYPos.addRows([arr])
 
-    arr[0] = sample_xcoord+samplewidth*file.data.CanvasRatio
-    arr[ndisplayelements] = sample_ycoord+sampleheight*file.data.CanvasRatio
+    arr[0] = sample_xcoord+samplewidth/2
+    arr[ndisplayelements] = sample_ycoord+sampleheight/2
     dataXYPos.addRows([arr])
 
-    arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
-    arr[ndisplayelements] = sample_ycoord+sampleheight*file.data.CanvasRatio
+    arr[0] = sample_xcoord-samplewidth/2
+    arr[ndisplayelements] = sample_ycoord+sampleheight/2
     dataXYPos.addRows([arr])
 
-    arr[0] = sample_xcoord-samplewidth*file.data.CanvasRatio
-    arr[ndisplayelements] = sample_ycoord-sampleheight*file.data.CanvasRatio
+    arr[0] = sample_xcoord-samplewidth/2
+    arr[ndisplayelements] = sample_ycoord-sampleheight/2
     dataXYPos.addRows([arr])
 
     //TEST
@@ -659,33 +651,40 @@ function toPerformanceData() {
     if (file.data.RewardStage != 0 ){
         for (var i =0; i<=file.data.TestGridIndex.length-1; i++){
 
-            if (typeof(file.data.TestON) != "undefined" && file.data.TestON > 0 && i > 0){
+            if ( (file.data.SameDifferent > 0 || file.data.NRSVP > 0) ){
                 break
-            } // IF same-different, only show first test
+            }//IF same-different, only show first test
 
             ndisplayelements++
             var arr = new Array(nColumn)
-            test_xcoord[i] = file.data.XGridCenter[file.data.TestGridIndex[i]]
-            test_ycoord[i] = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.TestGridIndex[i]]
 
-            arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
-            arr[ndisplayelements] = test_ycoord[i]-testheight*file.data.CanvasRatio
+            if (file.data.NRSVP>0){
+	            test_xcoord[i] = file.data.XGridCenter[Math.max(...file.data.SampleGridIndex)]
+    	        test_ycoord[i] = file.data.ViewportPixels[1]- (file.data.YGridCenter[Math.max(...file.data.SampleGridIndex)] + file.data.offsettop)
+            }
+            else{
+	            test_xcoord[i] = file.data.XGridCenter[file.data.TestGridIndex[i]]
+    	        test_ycoord[i] = file.data.ViewportPixels[1]- (file.data.YGridCenter[file.data.TestGridIndex[i]] + file.data.offsettop)
+            }
+
+            arr[0] = test_xcoord[i]-testwidth/2
+            arr[ndisplayelements] = test_ycoord[i]-testheight/2
             dataXYPos.addRows([arr])
 
-            arr[0] = test_xcoord[i]+testwidth*file.data.CanvasRatio
-            arr[ndisplayelements] = test_ycoord[i]-testheight*file.data.CanvasRatio
+            arr[0] = test_xcoord[i]+testwidth/2
+            arr[ndisplayelements] = test_ycoord[i]-testheight/2
             dataXYPos.addRows([arr])
 
-            arr[0] = test_xcoord[i]+testwidth*file.data.CanvasRatio
-            arr[ndisplayelements] = test_ycoord[i]+testheight*file.data.CanvasRatio
+            arr[0] = test_xcoord[i]+testwidth/2
+            arr[ndisplayelements] = test_ycoord[i]+testheight/2
             dataXYPos.addRows([arr])
 
-            arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
-            arr[ndisplayelements] = test_ycoord[i]+testheight*file.data.CanvasRatio
+            arr[0] = test_xcoord[i]-testwidth/2
+            arr[ndisplayelements] = test_ycoord[i]+testheight/2
             dataXYPos.addRows([arr])
 
-            arr[0] = test_xcoord[i]-testwidth*file.data.CanvasRatio
-            arr[ndisplayelements] = test_ycoord[i]-testheight*file.data.CanvasRatio
+            arr[0] = test_xcoord[i]-testwidth/2
+            arr[ndisplayelements] = test_ycoord[i]-testheight/2
             dataXYPos.addRows([arr])
         } //for n-way
     } //if rewardstage != 0
@@ -693,34 +692,34 @@ function toPerformanceData() {
     //CHOICE
     var choice_xcoord = []
     var choice_ycoord = []
-    if (typeof(file.data.TestON) != "undefined" && file.data.RewardStage != 0 && file.data.TestON > 0){
+    if (file.data.RewardStage != 0 && file.data.SameDifferent > 0){
         for (var i =0; i<=file.data.ChoiceGridIndex.length-1; i++){
             ndisplayelements++
             var arr = new Array(nColumn)
             choice_xcoord[i] = file.data.XGridCenter[file.data.ChoiceGridIndex[i]]
-            choice_ycoord[i] = file.data.workspace[3]*file.data.CanvasRatio-file.data.YGridCenter[file.data.ChoiceGridIndex[i]]
+            choice_ycoord[i] = file.data.ViewportPixels[1]-(file.data.YGridCenter[file.data.ChoiceGridIndex[i]]+file.data.offsettop)
 
-            arr[0] = choice_xcoord[i]-choicewidth*file.data.CanvasRatio
-            arr[ndisplayelements] = choice_ycoord[i]-choiceheight*file.data.CanvasRatio
+            arr[0] = choice_xcoord[i]-choicewidth/2
+            arr[ndisplayelements] = choice_ycoord[i]-choiceheight/2
             dataXYPos.addRows([arr])
 
-            arr[0] = choice_xcoord[i]+choicewidth*file.data.CanvasRatio
-            arr[ndisplayelements] = choice_ycoord[i]-choiceheight*file.data.CanvasRatio
+            arr[0] = choice_xcoord[i]+choicewidth/2
+            arr[ndisplayelements] = choice_ycoord[i]-choiceheight/2
             dataXYPos.addRows([arr])
 
-            arr[0] = choice_xcoord[i]+choicewidth*file.data.CanvasRatio
-            arr[ndisplayelements] = choice_ycoord[i]+choiceheight*file.data.CanvasRatio
+            arr[0] = choice_xcoord[i]+choicewidth/2
+            arr[ndisplayelements] = choice_ycoord[i]+choiceheight/2
             dataXYPos.addRows([arr])
 
-            arr[0] = choice_xcoord[i]-choicewidth*file.data.CanvasRatio
-            arr[ndisplayelements] = choice_ycoord[i]+choiceheight*file.data.CanvasRatio
+            arr[0] = choice_xcoord[i]-choicewidth/2
+            arr[ndisplayelements] = choice_ycoord[i]+choiceheight/2
             dataXYPos.addRows([arr])
 
-            arr[0] = choice_xcoord[i]-choicewidth*file.data.CanvasRatio
-            arr[ndisplayelements] = choice_ycoord[i]-choiceheight*file.data.CanvasRatio
+            arr[0] = choice_xcoord[i]-choicewidth/2
+            arr[ndisplayelements] = choice_ycoord[i]-choiceheight/2
             dataXYPos.addRows([arr])
-        } //for n-way
-    } //if rewardstage != 0    
+        }//FOR n-way
+    }//IF rewardstage != 0    
 
     var xpos_Fix = []
     var ypos_Fix = []
@@ -730,7 +729,7 @@ function toPerformanceData() {
     
     for (var i = 0; i <= touchevent.length - 1; i++) {
         xpos = touchevent[i][0]
-        ypos = file.data.workspace[3]*file.data.CanvasRatio-touchevent[i][1]+file.data.offsettop
+        ypos = file.data.ViewportPixels[1]-touchevent[i][1]
         
         var ydata_index = []
         if (i % 2 == 0) {
@@ -804,7 +803,10 @@ function toPerformanceData() {
     
 //Referencing to time file was last written & time of last trial rather than to file start.
     //Done because file can be changed on the fly which changes file start relative to performance.now()
-    if (typeof file.data.ResponseXYT === 'undefined' || file.data.ResponseXYT.length < 1 || typeof file.data.ResponseXYT[2][file.data.ResponseXYT[2].length - 1] === 'undefined') {
+    if (typeof file.data.ResponseXYT === 'undefined' 
+        || Object.keys(file.data.ResponseXYT).length < 1 
+        || typeof file.data.ResponseXYT[2][file.data.ResponseXYT[2].length - 1] === 'undefined')
+    {
         var tend = file.data.FixationXYT[2][file.data.FixationXYT[2].length - 1]
     } else {
         var tend = file.data.ResponseXYT[2][file.data.ResponseXYT[2].length - 1]
@@ -819,14 +821,17 @@ function toPerformanceData() {
         t.setTime(t.getTime() - (tend - tfix))
 
         var minIndex = 0;
-        if (typeof(file.data.RFIDTime) != "undefined"){
-        for (var j = 0; j <= file.data.RFIDTime.length - 1; j++) {
+        if (typeof(file.data.RFIDTag) != "undefined" && Object.keys(file.data.RFIDTag).length > 0){
+            for (var j = 0; j <= Object.keys(file.data.RFIDTag).length - 1; j++) {
 
-            if (Math.abs(file.data.RFIDTime[j] - tfix) < Math.abs(file.data.RFIDTime[minIndex]-tfix)) {
-                minIndex = j;
-            }
-        }
-        }
+                var tj = new Date(file.data.RFIDTag[j][1]) - new Date(file.data.CurrentDate)
+                var tmin = new Date(file.data.RFIDTag[minIndex][1]) - new Date(file.data.CurrentDate)
+                
+                if (Math.abs(tj-tfix) < Math.abs(tmin-tfix)) {
+                    minIndex = j;
+                }
+            }//FOR j RFID reads, find the closest read in time to tfix
+        }//IF RFID
         nRFID[i] = minIndex
 
         var minIndex = 0;
@@ -845,8 +850,8 @@ function toPerformanceData() {
     }
 
     formatterDate.format(dataCumulative, 0)
-   
-}
+}//FUNCTION toPerformanceData()
+
 //Synchronous
 function toWeightData(){
     dataWeight.removeRows(0,dataWeight.getNumberOfRows());
@@ -861,7 +866,7 @@ function toWeightData(){
     
 }
     formatterDate.format(dataWeight, 0)
-}
+}//FUNCTION toWeightData
 
 //Synchronous
 function toObjPerfData(){
@@ -887,22 +892,14 @@ function toObjPerfData(){
 
         var NdiffObjPerf = Array.apply(null, Array(sampleobj_length)).map(Number.prototype.valueOf, 0);
         var NdiffObj = Array.apply(null, Array(sampleobj_length)).map(Number.prototype.valueOf, 0);
-        for (var i = 0; i <= file.data.Sample.length - 1; i++) {
+        for (var i = 0; i <= file.data.Sample[0].length - 1; i++) {
             for (var j = 0; j <= sampleobj_length - 1; j++) {
-                if (file.data.Test[file.data.CorrectItem[i]][i] == j){
+                if (file.data.SampleBagIdx[file.data.Sample[0][i]] == j){
                     NdiffObj[j]++
                     if (file.data.Response[i] == file.data.CorrectItem[i]){
                         NdiffObjPerf[j]++
                     } //IF correct
                 }//IF sample was that object
-
-//                 if (file.data.Ordered_Samplebag_Filenames[file.data.Sample[i]].split("/")[5]==sampleobj[j]){
-//                     NdiffObj[j]++
-//                 }
-//                 if (file.data.Response[i] == file.data.CorrectItem[i] && (file.data.Ordered_Samplebag_Filenames[file.data.Sample[i]].split("/")[5]==sampleobj[j])) {
-//                     NdiffObjPerf[j]++
-//                 }
-
                 dataObjPerf.setValue(j, 1, NdiffObjPerf[j] / NdiffObj[j])
             }//FOR j sampleobj
         }//FOR i trials
@@ -985,8 +982,7 @@ function toChoiceData() {
            
         }
     }
-
-}
+}//FUNCTION toChoiceData()
     
 
 // Synchronous
@@ -1022,12 +1018,7 @@ function toRewardData() {
         }
 
     }
-}
-
-
-
-
-
+}//FUNCTION toRewardData()
 //================== DATA HANDLING (end) ==================//
 
 //================== PLOTTING ==================//
@@ -1041,7 +1032,7 @@ function updatePlots() {
     toRewardData();
     addVitalsText();
     addTouchSDText();
-    addTaskText();
+    showTaskText();
 
     drawLine() //current
     drawArea()
@@ -1053,7 +1044,7 @@ function updatePlots() {
     drawReward()
     file.datahasChanged = false
     checkFileStatusFirebase();
-}
+}//FUNCTION updatePlots()
 
 // Synchronous
 function addVitalsText() {
@@ -1064,7 +1055,7 @@ function addVitalsText() {
      + "\n Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  " 
      + "\n Last Trial:" + file.dateSaved.toLocaleTimeString('en-US')
     titleobj.innerHTML = vitals.subject;
-}
+}//FUNCTION addVitalsText()
 
 //Synchronous
 function addTouchSDText(){
@@ -1075,57 +1066,26 @@ function addTouchSDText(){
         scatterOptions.title = scatterOptions.title + 
         "\n Target" + i + ": " + Math.round(vitals.std_T[i]*10)/10
     }
-}
+}//FUNCTION addVitalsText()
+
 // Synchronous
-function addTaskText() {
-    var taskname = ""
-    if (file.data.RewardStage == 0)
-    {
-        taskname = "Fixation";
-    }//IF fixation
+function showTaskText(){
+	//add object metadata
+	var taskname = file.data.task
 
-    if (file.data.RewardStage == 1 && 
-        typeof(file.data.NRSVP) != "undefined" && file.data.NRSVP > 0)
-    {
-        taskname = 'RSVP'
-    }//IF RSVP
-
-    if (file.data.RewardStage ==1 && 
-        (typeof(file.data.TestON) == "undefined" || file.data.TestON <= 0) &&
-        file.data.ObjectGridIndex.length == file.data.ImageBagsSample.length)
-    {
-        taskname = "Stimulus-Response"
-    }//IF SR
-    
-    if (file.data.RewardStage == 1 && 
-        (typeof(file.data.TestON) == "undefined" || file.data.TestON <= 0) &&
-        file.data.ObjectGridIndex.length != file.data.ImageBagsSample.length)
-    {
-        taskname = "Match-to-Sample"
-    }//IF M2S
-
-    if (file.data.RewardStage == 1 && 
-        typeof(file.data.TestON) != "undefined" && file.data.TestON > 0)
-    {
-        taskname = "Same-Different"
-    }//IF SD
-
-    tasktextobj.innerHTML = "<b>" + taskname + "</b>:" + " " + file.data.ImageBagsTest.length + "obj " 
-    
-    tasktextobj.innerHTML = tasktextobj.innerHTML
-    + "<br><br>" + "SAMPLE: On=" + file.data.SampleON + "ms" + "  Off=" + file.data.SampleOFF + "ms"
-    + "  Size=" + file.data.SampleSizeInches + "in" 
-    for (i=0; i<=file.data.ImageBagsSample.length-1; i++){
-        tasktextobj.innerHTML = tasktextobj.innerHTML + "<br>" + file.data.ImageBagsSample[i]
-    }//FOR i sample
-
-    tasktextobj.innerHTML = tasktextobj.innerHTML
-    + "<br><br>" + "TEST: On=" + file.data.TestON + "ms" + "  Off=" + file.data.TestOFF + "ms"
-    + "  Size=" + file.data.TestSizeInches + "in"
-    for (i=0; i<=file.data.ImageBagsTest.length-1; i++){
-        tasktextobj.innerHTML = tasktextobj.innerHTML + "<br>" + file.data.ImageBagsTest[i]
-    }//FOR i test
-}//FUNCTION addTaskText
+	var textobj = document.getElementById("tasktext");
+	textobj.innerHTML = 
+	"<b>" + taskname + "</b>"
+	+"<br> <b>Sample nouns:</b> " + file.data.SampleNouns + '  (' + file.data.SampleBagNames + ')'
+	+ "<br> <b>Test nouns:</b> " + file.data.SampleNouns + '  (' + file.data.TestBagNames + ')'
+	+ "<br>"
+	+ "<br> Sample object models: " + file.data.SampleObjects
+	+ "<br> Test object models: " + file.data.TestObjects
+	+ "<br><br>"
+	+ JSON.stringify(file.data, function(a, b) {
+	return (Object.prototype.toString.call(b) === '[object Array]') ? JSON.stringify(b) : b;
+	}, 4)
+}//FUNCTION showTaskText()
 
 //Synchronous
 function drawLine(){
@@ -1162,7 +1122,7 @@ function drawLine(){
     livesliderTrial.setState({'range': {'start': sliderstate.range.start,'end': sliderstate.range.end}})
     dashboard1.draw(dataPerformance)
     ntrials = nrows //new trial range
-}
+}//FUNCTION drawLine()
 
 //Synchronous
 function drawArea() {
@@ -1208,18 +1168,17 @@ function drawArea() {
     })
     livearea.setOptions(areaOptions)
     dashboard2.draw(dataCumulative)
-}
+}//FUNCTION drawArea()
 
 //Synchronous
 function drawWeight() {
     liveweight.draw(dataWeight,weightOptions)
-}
+}//FUNCTION drawWeight()
 
 //Synchronous
 function drawObjPerfBar() {
     liveobjperf.draw(dataObjPerf, objPerfBarOptions)   
-}
-
+}//FUNCTION drawObjPerfBar
 
 // Synchronous
 function drawScatter() {
@@ -1261,21 +1220,18 @@ function drawScatter() {
         min: 0, max: file.data.workspace[3]*file.data.CanvasRatio}
     }
     livescatter.draw(dataXYPos, scatterOptions)
-}
+}//FUNCTION drawScatter()
 
 
 //Synchronous
 function drawChoiceBar() {
     livechoice.draw(dataChoice, choiceBarOptions)
-}
+}//FUNCTION drawChoiceBar()
 
 //Synchronous
 function drawReward() {
     livereward.draw(dataReward, rewardBarOptions)
-}
-
-
-
+}//FUNCTION drawReward()
 
 //================== PLOTTING (end) ==================//
 </script>
@@ -1283,142 +1239,59 @@ function drawReward() {
 <body>
 <h1>liveplot2_mkturk</h1>
 <div id="filelist_div">
-<select id="file_list"></select>
-<!--Pull down menu that will hold file list-->
+	<!--Pull down menu that will hold file list-->
+	<select id="file_list"></select>
 </div>
+
 <div id="dashboard1_div">
-<div id="line_div"></div> <!--Div that will hold the line chart-->
-<div id="filtertrial_div"></div>
+	<div id="line_div"></div> <!--Div that will hold the line chart-->
+	<div id="filtertrial_div"></div>
 </div>
+
 <div id="dashboard2_div">
-<div id="area_div"></div>
-<!--Div that will hold the area chart-->
-<div id="filtertime_div"></div>
+	<div id="area_div"></div>
+	<!--Div that will hold the area chart-->
+	<div id="filtertime_div"></div>
 </div>
-<div id= 'weight_div'></div>
-</div>
-<div id='objectPerf_div'></div>
-</div>
-<div id="scatter_div"></div>
-</div>
-<div id='choice_div'></div>
-</div>
-<div id='reward_div'></div>
-</div><p id="task_text"></p>
+
+<div id= 'weight_div'></div> </div>
+<div id='objectPerf_div'></div> </div>
+<div id="scatter_div"></div> </div>
+<div id='choice_div'></div> </div>
+<div id='reward_div'></div></div>
+<pre id="tasktext" style="position: absolute; left: 1px; width: 100%; font-size: 18px; color: black; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;"></pre>
 <script type="text/javascript">
 var file = {
-dir: DATA_SAVEPATH,
-// from mkturk_installsettings.js
-list: [],
-filelist: [],
-name: "",
-data: null,
-ver: null,
-date: null,
-dateCreated: null,
-datahasChanged: false,
-filehasChanged: false,
+	dir: DATA_SAVEPATH, // from mkturk_installsettings.js
+	list: [],
+	filelist: [],
+	name: "",
+	data: null,
+	ver: null,
+	date: null,
+	dateCreated: null,
+	datahasChanged: false,
+	filehasChanged: false,
 };
 
 var titleobj = document.getElementById("page_title");
 var menuobj = document.getElementById("file_list");
-var tasktextobj = document.getElementById("task_text");
 menuobj.addEventListener("change", filelist_listener, false);
 
-//_____________ LABELS (begin)
-var objlabels = ['wrench', 'rhino', 'leg', 'camel', 'tank', 'bird', 'shorts', 'elephant', 'house', 'hanger', 'pen', 'hammer', 'zebra', 'fork', 'guitar', 'bear', 'watch', 'dog', 'spider', 'truck', 'drawer table', 'calculator', 'gun', 'knife', 'head', 'shoe', 'drum', 'cat', 'camera', 'train', 'frog', 'shirt', 'helicopter', 'pear', 'piano', 'horse', 'plane'];
-var objlabelsOBJ = objlabels;
-var objlabelsMURI = ['bucket', 'cradle', 'dishwasher', 'drum', 'fourpostbed', 'fryingpan', 'golfcart', 'jeep', 'microphone', 'microwave', 'panpipe', 'parkbench', 'piano', 'plate', 'pooltable', 'stationwagon', 'sunglasses', 'umbrella', 'ant', 'cat', 'chameleon', 'chihuahua', 'cockroach', 'crockodile', 'eel', 'gilamonster', 'hound', 'lizard', 'mantis', 'mongoose', 'pig', 'platypus', 'spaniel', 'turtle', 'vase', 'bookcase', 'stove', 'glockenspiel', 'chiffonier', 'pot', 'gokart', 'hotrod', 'subwoofer', 'oven', 'bagpipe', 'flatbench', 'accordion', 'bowl', 'pinballmachine', 'taxi', 'goggles', 'awning', 'hornet', 'horse', 'snake', 'termite', 'gecko', 'cod', 'walkingstick', 'meerkat', 'llama', 'echidna'];
-var objlabelsHVM = ['bear', 'elephant', 'table', 'head', 'car', 'dog', 'turtle', 'apple', 'plane', 'chair']
-var objlabelsCOCO = ['bear', 'elephant', 'head', 'car', 'dog', 'apple', 'chair', 'plane', 'bird', 'zebra']
-
-var cat = [];
-for (var i = 0; i <= 3699; i++) {
-cat[i] = Math.floor(i / 100);
-}
-
-var catOBJ = cat;
-
-var catMURI = [];
-var perobjvec = [12, 8, 10, 12, 6, 12, 8, 10, 12, 12, 8, 10, 6, 14, 6, 6, 12, 10, 8, 6, 6, 8, 6, 8, 12, 6, 12, 6, 8, 6, 10, 12, 6, 6, 12, 8, 10, 12, 6, 12, 8, 10, 12, 12, 8, 10, 6, 14, 6, 6, 12, 10, 8, 32, 24, 6, 8, 12, 8, 6, 10, 12];
-var cnt = 0;
-for (var i = 0; i <= perobjvec.length - 1; i++) {
-for (var j = 0; j <= perobjvec[i] - 1; j++) {
-catMURI[cnt] = i;
-cnt++;
-}
-}
-
-catHVM = []
-for (var i = 0; i <= 999; i++) {
-catHVM[i] = Math.floor(i / 100)
-}
-
-catCOCO = []
-for (var i = 0; i <= 999; i++) {
-catCOCO[i] = Math.floor(i / 100)
-}
-
-var catSample = [];
-var catTest = [];
-
-// Generate cat list
-var catlist = [];
-for (var i = 0; i <= cat.length - 1; i++) {
-if (catlist.indexOf(cat[i]) == -1) {
-catlist[catlist.length] = cat[i];
-//add category
-}
-//if
-}
-//for
-var catlistOBJ = catlist;
-
-var catlistMURI = [];
-for (var i = 0; i <= catMURI.length - 1; i++) {
-if (catlistMURI.indexOf(catMURI[i]) == -1) {
-catlistMURI[catlistMURI.length] = catMURI[i];
-//add category
-}
-//if
-}
-//for
-
-var catlistHVM = [];
-for (var i = 0; i <= catHVM.length - 1; i++) {
-if (catlistHVM.indexOf(catHVM[i]) == -1) {
-catlistHVM[catlistHVM.length] = catHVM[i];
-//add category
-}
-//if
-}
-//for
-
-var catlistCOCO = [];
-for (var i = 0; i <= catCOCO.length - 1; i++) {
-if (catlistCOCO.indexOf(catCOCO[i]) == -1) {
-catlistCOCO[catlistCOCO.length] = catCOCO[i];
-//add category
-}
-//if
-}
-//for
-//_____________ LABELS (end)
-
 var vitals = {
-subject: null,
-pctcorrect: 0,
-trials: 0,
-time: 0,
-batteryleft: 0,
-batteryused: 0,
-rewardestimate: 0,
-automator: "",
-currentautomatorstage: 0,
-currentautomatorstagename: "",
-nrewards: 0,
-RFIDtag: "",
-RFIDtime: 0,
+	subject: null,
+	pctcorrect: 0,
+	trials: 0,
+	time: 0,
+	batteryleft: 0,
+	batteryused: 0,
+	rewardestimate: 0,
+	automator: "",
+	currentautomatorstage: 0,
+	currentautomatorstagename: "",
+	nrewards: 0,
+	RFIDtag: "",
+	RFIDtime: 0,
 }
 
 var dataPerformance = null; 

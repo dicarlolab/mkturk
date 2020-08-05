@@ -16,10 +16,11 @@ async function saveBehaviorDatatoFirestore(TASK,ENV,CANVAS){
 	batch.update(taskRef,ENV) // write all ENV metadata once
 	batch.update(taskRef,TASK) // write all TASK metadata once
 	batch.update(taskRef,CANVAS) // write all CANVAS metadata once
+	batch.update(taskRef,{'Battery': EVENTS['timeseries']['Battery']})
 
 	// Commit the batch
 	batch.commit().then(function () {
-	    console.log("FIRESTORE: task doc batch created");
+	    console.log("FIRESTORE: New TaskParams");
 	    FLAGS.createnewfirestore = 0;
 	})
 	.catch(function(error) {
@@ -56,12 +57,13 @@ async function updateEventDataonFirestore(EVENTS){
 
 	var taskRef = db.collection(FIRESTORECOLLECTION.DATA).doc(ENV.FirestoreDocRoot + '_task')
 	batch.update(taskRef,EVENTS.trialseries)
-		
+	batch.update(taskRef,{'Battery': EVENTS['timeseries']['Battery']})
+
 	// Commit the batch
 	var currtrial = CURRTRIAL.num
 	await batch.commit().then(function () {
 		FLAGS.firestorelastsavedtrial = currtrial
-	    console.log("FIRESTORE: Trial " + FLAGS.firestorelastsavedtrial + "--Batch updated database task doc");
+	    console.log("FIRESTORE: Trial " + FLAGS.firestorelastsavedtrial + "--Update Task Doc");
 
 	    delete firestoreTimer //to start a new timer
 		pingFirestore()
@@ -150,6 +152,7 @@ async function saveEyeCalibrationtoFirestore(xparams,yparams,calibtype,ntrain,tr
 			ResearcherDisplayName: ENV.ResearcherDisplayName,
 			CurrentDate: ENV.CurrentDate,
 			CurrentDateValue: ENV.CurrentDate.valueOf(),
+			Docname: ENV.Subject,
 			Taskdoc: ENV.FirestoreDocRoot + '_task',
 			//Calib specific
 			CalibXTransform: xparams,
@@ -161,7 +164,7 @@ async function saveEyeCalibrationtoFirestore(xparams,yparams,calibtype,ntrain,tr
 			CalibTestMSE: testmse
 		}) //link docs
 	.then(function () {
-	    console.log("FIRESTORE: eye calibration doc created");
+	    console.log("FIRESTORE: New EyeCalibration");
 	})
 	.catch(function(error) {
 		console.error("FIRESTORE: !Error creating eye calibration doc: ", error);
