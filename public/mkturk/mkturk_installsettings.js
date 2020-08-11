@@ -6,10 +6,12 @@ var subjectlist = [
 "Eliaso","Youno","Hectoro","Ericao","Alexo",
 "You-Nah","Tahereh","Hector","Erica","Elias","Andrea","Alex",
 "West","Waffles","Shirley","Sherlock","Sausage",
-"Rafiki","Hutch","East",
-"Boris","Bool","Bolo","Boba",
+"Rafiki","Ollie","Hutch","East",
+"Bourgeois","Boris","Bolshevik",
+"Bool","Bolo","Boba",
 "Bloo","Blizzard","Blintz",
 "Blast","Blasco","Blaise",
+"Barb",
 "AJ"
 ];
 

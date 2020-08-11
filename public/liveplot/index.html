@@ -148,6 +148,9 @@ function loadGoogleCharts() {
 async function getFileListRecursiveFirebase(dir,ext){
 	var fileList = await storage.ref().child(dir).listAll()
 
+    //only keep files within last 2 years
+    yr = new Date().getYear() + 1900
+
 	var files = []
 	for (const item of fileList.prefixes){
 		var subfileList = await getFileListRecursiveFirebase(dir + item.name + '/',ext)
@@ -162,9 +165,9 @@ async function getFileListRecursiveFirebase(dir,ext){
 				// file does not have requested extension
 			}
 		}
-		else {
+		else if (fileList.items[i].name.slice(0,4) >= yr-1){
             files.push({fullpath: fileList.items[i].fullPath, name: fileList.items[i].name})
-		} //if file extension required
+		}//IF file extension required
 	}
 	return files
 }//FUNCTION getFileListRecursiveFirebase -- recursviely accumulate files from subfolders (if any)
@@ -280,11 +283,8 @@ async function loadDatafromFirebase(textfile_path){
 	    file.rev = filemeta.generation
 	    file.dateSaved = new Date(filemeta.updated)
 
-	    //Parse date
-	    var ind1 = file.name.indexOf("/2")
-	    var ind2 = file.name.indexOf('_')
-	    var datestr = file.name.substring(ind1 + 1, ind2)
-	    file.dateCreated = new Date(datestr)
+        // Trim RFID
+        file.data.CurrentDate = new Date(file.data.CurrentDate).valueOf() //convert to number
 
 		if (file.filehasChanged == true) {
 			initializeChartData()
@@ -388,8 +388,8 @@ function toVitals() {
     }//IF old data format
     else if (typeof(file.data.RFIDTag) != "undefined" && Object.keys(file.data.RFIDTag).length>0){
         vitals.RFIDtag = file.data.RFIDTag[Object.keys(file.data.RFIDTag).length - 1][2];
-        vitals.RFIDtime = Math.round(Math.round(new Date(file.data.RFIDTag[Object.keys(file.data.RFIDTag).length - 1][1]) - new Date(file.data.CurrentDate)) / 60000);
-        //convert millisecond to minutes
+        // vitals.RFIDtime = Math.round(file.data.RFIDTag[Object.keys(file.data.RFIDTag).length - 1][1] / 60000); //convert millisecond to minutes
+        vitals.RFIDtime = new Date(file.data.RFIDTag[Object.keys(file.data.RFIDTag).length - 1][1]).toLocaleTimeString('en-US')
     }//ELSEIF new data format
     else {
         vitals.RFIDtag = null
@@ -812,42 +812,49 @@ function toPerformanceData() {
         var tend = file.data.ResponseXYT[2][file.data.ResponseXYT[2].length - 1]
     }
 
+    //Process RFID
+    var ntrials = ydata.length
+    var nreads = Object.keys(file.data.RFIDTag).length
+    nRFID = Array(ntrials).fill(0)
+    vitals.tagcount = {}
+
+    for (i=0; i<=nreads-1; i++){
+        if ( typeof(vitals.tagcount[ file.data.RFIDTag[i][2] ]) == "undefined"){
+            vitals.tagcount[ file.data.RFIDTag[i][2] ] = 0
+        }
+        vitals.tagcount[ file.data.RFIDTag[i][2] ]++
+
+        nRFID[ file.data.RFIDTag[i][0] ]++
+    }//FOR i reads
+	
+	//Accumulate
+	for (i=1; i<=nRFID.length-1; i++){
+		nRFID[i] = nRFID[i] + nRFID[i-1]
+	}
     
     for (var i = 0; i <= ydata.length - 1; i++){
-        dataPerformance.addRows([[xdata[i], ydata_5[i],ydata_100[i]]])
-        var tfix = file.data.FixationXYT[2][i]
-        //in milliseconds
+        var tfix = file.data.FixationXYT[2][i]//in milliseconds
+        if (tfix < 0){
+            continue
+        }
+
         var t = new Date(file.dateSaved)
         t.setTime(t.getTime() - (tend - tfix))
 
         var minIndex = 0;
-        if (typeof(file.data.RFIDTag) != "undefined" && Object.keys(file.data.RFIDTag).length > 0){
-            for (var j = 0; j <= Object.keys(file.data.RFIDTag).length - 1; j++) {
+        if (typeof(file.data.WeightTime) != "undefined"){
+            for (var j = 0; j <= file.data.WeightTime.length - 1; j++) {
 
-                var tj = new Date(file.data.RFIDTag[j][1]) - new Date(file.data.CurrentDate)
-                var tmin = new Date(file.data.RFIDTag[minIndex][1]) - new Date(file.data.CurrentDate)
-                
-                if (Math.abs(tj-tfix) < Math.abs(tmin-tfix)) {
+                if (Math.abs(file.data.WeightTime[j] - tfix) < Math.abs(file.data.WeightTime[minIndex]-tfix)) {
                     minIndex = j;
                 }
-            }//FOR j RFID reads, find the closest read in time to tfix
-        }//IF RFID
-        nRFID[i] = minIndex
-
-        var minIndex = 0;
-
-        if (typeof(file.data.WeightTime) != "undefined"){
-        for (var j = 0; j <= file.data.WeightTime.length - 1; j++) {
-
-            if (Math.abs(file.data.WeightTime[j] - tfix) < Math.abs(file.data.WeightTime[minIndex]-tfix)) {
-                minIndex = j;
-            }
-        }
+            }//FOR j weight reads
         }
         nWeight[i] = minIndex
 
+        dataPerformance.addRows([[xdata[i], ydata_5[i],ydata_100[i]]])
         dataCumulative.addRows([[new Date(t), ntotal[i], ncorrect[i], nRFID[i], nWeight[i]]])
-    }
+    }//FOR i trials
 
     formatterDate.format(dataCumulative, 0)
 }//FUNCTION toPerformanceData()
@@ -1051,9 +1058,15 @@ function addVitalsText() {
     lineOptions.title =
     vitals.subject + ": " + vitals.pctcorrect + "% "
     + "(n=" + vitals.ncorrect + " out of " + vitals.trials + ", r=" + vitals.nrewards + "=" + vitals.rewardestimate + "mL, " + vitals.time + "min)     "
-     + "\n RFID:" + vitals.RFIDtag + " (" + vitals.RFIDtime + " min)"
+     + "\n RFID: " + vitals.RFIDtag + " (" + vitals.RFIDtime + ")"
+   	 + "...."
+     for (obj in vitals.tagcount){
+        lineOptions.title = lineOptions.title + obj + ' n=' + vitals.tagcount[obj] + ', ' 
+     }//FOR obj
+
+     lineOptions.title = lineOptions.title
      + "\n Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  " 
-     + "\n Last Trial:" + file.dateSaved.toLocaleTimeString('en-US')
+     + "\n Last Trial: " + file.dateSaved.toLocaleTimeString('en-US')
     titleobj.innerHTML = vitals.subject;
 }//FUNCTION addVitalsText()
 
@@ -1269,7 +1282,6 @@ var file = {
 	data: null,
 	ver: null,
 	date: null,
-	dateCreated: null,
 	datahasChanged: false,
 	filehasChanged: false,
 };
@@ -1292,6 +1304,7 @@ var vitals = {
 	nrewards: 0,
 	RFIDtag: "",
 	RFIDtime: 0,
+	tagcount: {},
 }
 
 var dataPerformance = null; 

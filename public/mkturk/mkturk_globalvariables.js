@@ -326,7 +326,7 @@ function purgeTrackingVariables(){
 
 	ENV.CurrentDate = new Date;
 	var datestr = ENV.CurrentDate.toISOString();
-	ENV.DataFileName = DATA_SAVEPATH + ENV.Subject + "/" + datestr.slice(0,datestr.indexOf(".")) + "_" + ENV.Subject + ".txt";
+	ENV.DataFileName = DATA_SAVEPATH + ENV.Subject + "/" + datestr.slice(0,datestr.indexOf(".")) + "_" + ENV.Subject + ".json";
 	ENV.FirestoreDocRoot = datestr.slice(0,datestr.indexOf(".")) + "_" + ENV.Subject
 
 	if(FLAGS.waitingforTouches > 0 || FLAGS.purge == 1){

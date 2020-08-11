@@ -401,7 +401,7 @@ async function getMostRecentBehavioralFilePathsFromFirebase(num_files_to_get, su
 	var file_list = []
 	try{
 		// TODO: add code for reading huge folders -- (see getImageListDropboxRecursive)
-		response = await getFileListRecursiveFirebase(save_directory,'.txt')
+		response = await getFileListRecursiveFirebase(save_directory,'.json')
 
 		var q2=0;
 		for (var q = 0; q <= response.length-1; q++){

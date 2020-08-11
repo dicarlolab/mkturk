@@ -667,7 +667,7 @@ async function saveScreenshot(canvasobj,currtrial,taskscreen,framenum,objectlabe
 
 	//paramfolder name
 	var ind_start = currtrial_parampath.lastIndexOf('/')
-	var ind_end = currtrial_parampath.indexOf('.txt')
+	var ind_end = currtrial_parampath.indexOf('.json')
 	var paramfolder = currtrial_parampath.substring(ind_start+1,ind_end)
 
 	//date 
