@@ -548,6 +548,7 @@ export class Mkfinder {
 
     if (fileRef.fullPath == "mkturkfiles/parameterfiles/params_storage") {
       this.mke.storeParamBtn.style.display = 'none';
+      this.mke.genSceneParamBtn.style.display = 'none';
       this.mke.makeActiveBtn.style.display = 'inline-block';
       this.mke.updateBtn.style.display = 'inline-block';
       this.mke.btnBoxDiv.style.gridTemplateAreas = '"update-btn active-btn"';

@@ -300,6 +300,7 @@
 #gen-scene-param-btn {
   display: none;
   float: right;
+  grid-area: gen-scene-param-btn;
 }
 
 #gen-scene-param-modal {

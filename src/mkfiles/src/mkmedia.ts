@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { BufferGeometryLoader } from "three";
+import {ParseEngine} from './parser'
 
 
 type FileRef = firebase.storage.Reference;
@@ -29,8 +30,9 @@ export class Mkeditor {
   private fileRenameBtn: HTMLButtonElement;
   private fileDupBtn: HTMLButtonElement;
   private fileDupModal: HTMLDialogElement;
-  private genSceneParamBtn: HTMLButtonElement;
+  public genSceneParamBtn: HTMLButtonElement;
   private genSceneParamModal: HTMLDivElement;
+  private pe: ParseEngine;
 
 
   constructor() {
@@ -66,6 +68,7 @@ export class Mkeditor {
     this.genSceneParamModal
       = document.querySelector('#gen-scene-param-modal') as HTMLDivElement;
     this.generateSceneParamModalAction()
+    this.pe = new ParseEngine();
 
   }
 
@@ -164,10 +167,100 @@ export class Mkeditor {
     const sceneParamPath = 'mkturkfiles/scenebags/objectome3d';
     const taskParamPath = 'mkturkfiles/parameterfiles';
 
+    let sceneTemplateOptions = {
+      modes: ['tree' as 'tree', 'code' as 'code'],
+      templates: [
+        {
+          text: 'Camera',
+          title: 'Insert a Camera node',
+          field: 'CameraTemplate',
+          value: {
+            type: 'PerspectiveCamera',
+            fieldOfView: 45,
+            near: 0.1,
+            far: 2000,
+            position: {
+              x: [0],
+              y: [0],
+              z: [0]
+            },
+            targetInches: {
+              x: [0],
+              y: [0],
+              z: [0]
+            },
+            visible: [1]
+          }
+        },
+        {
+          text: 'Light',
+          title: 'Insert a Light node',
+          field: 'LightTemplate',
+          value: {
+            type: 'DirectionalLight',
+            color: '0xffffff',
+            intensity: [5],
+            position: {
+              x: [0],
+              y: [0],
+              z: [0]
+            },
+            visible: [1]
+          }
+        },
+        {
+          text: 'Object',
+          title: 'Insert an Object node',
+          field: 'ObjectTemplate',
+          value: {
+            meshpath: '',
+            objectdoc: '',
+            sizeInches: [0.5],
+            positionInches: {
+              x: [0],
+              y: [0],
+              z: [0]
+            },
+            rotationDegrees: {
+              x: [0],
+              y: [0],
+              z: [0]
+            },
+            material: {
+              type: 'MeshPhysicalMaterial',
+              color: '#7F7F7F',
+              metalness: 0.25,
+              roughness: 0.65,
+              reflectivity: 0.5,
+              opacity: [1],
+              transparent: false
+            },
+            visible: [1],
+            morphTarget: []
+          }
+        },
+        {
+          text: 'Background',
+          title: 'Insert a Background node',
+          field: 'ImagesTemplate',
+          value: {
+            imagebag: '',
+            imageidx: []
+          }
+        }
+      ]
+    }
+
+    let options = {
+      modes: ['tree' as 'tree', 'code' as 'code']
+    }
+
+
     if (fileRef.fullPath.includes(sceneParamPath)) {
       if (fileRef.fullPath.includes('template')) {
         this.fileDupBtn.style.display = 'inline-block';
         this.genSceneParamBtn.style.display = 'inline-block';
+        options = sceneTemplateOptions
       } else {
         this.fileDupBtn.style.display = 'inline-block';
         this.genSceneParamBtn.style.display = 'none';
@@ -188,12 +281,15 @@ export class Mkeditor {
     let file = await response.json();
 
     this.editor.destroy();
-    let options = {
-      modes: ['tree' as 'tree', 'code' as 'code']
-    };
+    // let options = {
+    //   modes: ['tree' as 'tree', 'code' as 'code']
+    // };
     this.editor = new JSONEditor(this.editorElement, options, file);
     this.activeFile = { loc: "mkturkfiles", id: fileRef };
     console.log("activeFile", this.activeFile);
+    if (fileRef.fullPath.includes('template')) {
+      this.pe.generateParamObject(file);
+    }
     this.fileNameInput.placeholder = fileRef.name;
   }
 
@@ -341,9 +437,6 @@ export class Mkeditor {
     undoDeg.addEventListener('click', (ev: Event) => {
       rtDeg.undo();
     });
-    
-
-
 
   }
 
