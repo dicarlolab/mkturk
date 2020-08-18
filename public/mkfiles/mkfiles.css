@@ -204,6 +204,16 @@
   /* visibility: hidden; */
 }
 
+#generate-btn {
+  grid-area: gen-btn;
+  display: none;
+}
+
+#save-scene-param-btn {
+  grid-area: sv-scene-param-btn;
+  display: none;
+}
+
 #image-canvas-div {
   z-index: 2;
   grid-column: 1;

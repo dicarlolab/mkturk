@@ -7,46 +7,31 @@ export class ParseEngine {
 
   }
 
-  private parse(type: string, object: any) {
-
-  }
-
   public generateParamObject(obj: any) {
-    let generatedParamObj = {
-      CAMERAS: {},
-      LIGHTS: {},
-      OBJECTS: {},
-      IMAGES: {}
-    };
-
-    let sample = this.normal(0, 1, 10);
-    console.log('sample', sample);
-
     let userObj = cloneDeep(obj);
-
     for (let key in userObj) {
       if (userObj.hasOwnProperty(key)) {
         if (key == 'CAMERAS') {
           // generatedParamObj.CAMERAS = this.genParamObj(key, userObj[key]);
-          console.log('key', key, 'Obj[CAMERAS]:', userObj[key])
+          // console.log('key', key, 'Obj[CAMERAS]:', userObj[key])
           this.genParamObj('CAMERAS', userObj[key]);
         } else if (key == 'LIGHTS') {
           // generatedParamObj.LIGHTS = this.genParamObj(key, userObj[key]);
-          console.log('key', key, 'Obj[LIGHTS]:', userObj[key])
+          // console.log('key', key, 'Obj[LIGHTS]:', userObj[key])
           this.genParamObj('LIGHTS', userObj[key]);
         } else if (key == 'OBJECTS') {
           // generatedParamObj.OBJECTS = this.genParamObj(key, userObj[key]);
-          console.log('key', key, 'Obj[OBJECTS]:', userObj[key])
+          // console.log('key', key, 'Obj[OBJECTS]:', userObj[key])
           this.genParamObj('OBJECTS', userObj[key]);
         } else if (key == 'IMAGES') {
           // generatedParamObj.IMAGES = this.genParamObj(key, userObj[key]);
-          console.log('key', key, 'Obj[IMAGES]:', userObj[key])
+          // console.log('key', key, 'Obj[IMAGES]:', userObj[key]);
+          this.genParamObj('IMAGES', userObj[key]);
         }
       }
     }
-
-    console.log('userObjComplete', userObj);
-
+    // console.log('userObjComplete', userObj);
+    return userObj;
   }
 
   private genParamObj(type: string, obj: any) {
@@ -54,23 +39,31 @@ export class ParseEngine {
     if (type == 'CAMERAS') {
       for (let key in obj) {
         if (obj.hasOwnProperty(key)) {
-          obj[key].position = this.parseAndVectorize(obj[key].position);
-          obj[key].targetInches = this.parseAndVectorize(obj[key].targetInches);
+          obj[key].position = this.vectorize(obj[key].position, 'cartesianObj');
+          obj[key].targetInches = this.vectorize(obj[key].targetInches, 'cartesianObj');
+          obj[key].visible = this.vectorize(obj[key].visible, 'array');
         }
       }
     } else if (type == 'LIGHTS') {
       for (let key in obj) {
         if (obj.hasOwnProperty(key)) {
-          obj[key].position = this.parseAndVectorize(obj[key].position);
+          obj[key].position = this.vectorize(obj[key].position, 'cartesianObj');
+          obj[key].intensity = this.vectorize(obj[key].intensity, 'array');
+          obj[key].visible = this.vectorize(obj[key].visible, 'array');
         }
       }
     } else if (type == 'OBJECTS') {
       for (let key in obj) {
         if (obj.hasOwnProperty(key)) {
-          obj[key].positionInches = this.parseAndVectorize(obj[key].positionInches);
-          obj[key].rotationDegrees = this.parseAndVectorize(obj[key].rotationDegrees);
+          obj[key].positionInches = this.vectorize(obj[key].positionInches, 'cartesianObj');
+          obj[key].rotationDegrees = this.vectorize(obj[key].rotationDegrees, 'cartesianObj');
+          obj[key].sizeInches = this.vectorize(obj[key].sizeInches, 'array');
+          obj[key].material.opacity = this.vectorize(obj[key].material.opacity, 'array');
+          obj[key].visible = this.vectorize(obj[key].visible, 'array');
         }
       }
+    } else if (type == 'IMAGES') {
+      obj.imageidx = this.vectorize(obj.imageidx, 'array');
     }
   }
 
@@ -87,54 +80,92 @@ export class ParseEngine {
     return sample;
   }
 
-  private parseAndVectorize(obj: any) {
-    let tmp: any = {x: [], y: [], z: []};
-
-    for (let axis in obj) {
-      if (obj.hasOwnProperty(axis)) {
-        
-        obj[axis].forEach((row: any) => {
-          console.log('row', row);
-          if (Object.prototype.toString.call(row) === '[object String]') {
-            console.log('string row', row);
-            let recipe = row.split('/');
-            if (recipe[0] == 'normal' || recipe[0] == 'n') {
-              let mu = Number(recipe[1].split(',')[0]);
-              let sigma = Number (recipe[1].split(',')[1]);
-              let n = Number(recipe[2]);
-              let sample = this.normal(mu, sigma, n) as number[];
-              tmp[axis].push(...sample);
-            } else if (recipe[0] == 'uniform' || recipe[0] == 'u') {
-              let min = Number(recipe[1].split(',')[0]);
-              let max = Number(recipe[1].split(',')[1]);
-              let size = [Number(recipe[2])];
-              let sample = math.random(size, min, max);
-              tmp[axis].push(...sample);
-            } else if (recipe[0] == 'range' || recipe[0] == 'r') {
-              let start = Number(recipe[1].split(',')[0]);
-              let end = Number(recipe[1].split(',')[1]);
-              let step = Number(recipe[2]);
-              let range = math.range(start, end, step);
-              range.forEach(value => {
-                tmp[axis].push(Number(parseFloat(value).toPrecision(4)));
-              });
-            } else if (recipe[0] == 'linspace' || recipe[0] == 'l') {
-              let start = Number(recipe[1].split(',')[0]);
-              let end = Number(recipe[1].split(',')[1]);
-              let num = Number(recipe[2]);
-              let step = (end - start) / (num - 1);
-              let linspace = math.range(start, end, step, true);
-              console.log('linspace', linspace);
-              linspace.forEach(value => {
-                tmp[axis].push(Number(parseFloat(value).toPrecision(4)));
-              });
-            }
-          } else {
-            if (isNaN(row) == false) {
-              tmp[axis].push(row);
-            }
-          }
+  private parseAndGenerate(row: any) {
+    let sample: any;
+    if (Object.prototype.toString.call(row) === '[object String]') {
+      let recipe = row.split('/');
+      if (recipe[0] == 'normal' || recipe[0] == 'n') {
+        let mu = Number(recipe[1].split(',')[0]);
+        let sigma = Number (recipe[1].split(',')[1]);
+        let n = Number(recipe[2]);
+        sample = this.normal(mu, sigma, n) as number[];
+      } else if (recipe[0] == 'uniform' || recipe[0] == 'u') {
+        let min = Number(recipe[1].split(',')[0]);
+        let max = Number(recipe[1].split(',')[1]);
+        let size = [Number(recipe[2])];
+        sample = math.random(size, min, max);
+      } else if (recipe[0] == 'range' || recipe[0] == 'r') {
+        let start = Number(recipe[1].split(',')[0]);
+        let end = Number(recipe[1].split(',')[1]);
+        let step = Number(recipe[2]);
+        let range = math.range(start, end, step);
+        sample = [];
+        range.forEach(value => {
+          sample.push(Number(parseFloat(value).toPrecision(4)));
         });
+      } else if (recipe[0] == 'linspace' || recipe[0] == 'l') {
+        let start = Number(recipe[1].split(',')[0]);
+        let end = Number(recipe[1].split(',')[1]);
+        let num = Number(recipe[2]);
+        let step = (end - start) / (num - 1);
+        let linspace = math.range(start, end, step, true);
+        sample = [];
+        linspace.forEach(value => {
+          sample.push(Number(parseFloat(value).toPrecision(4)));
+        });
+      } else {
+        let list = recipe[0].split(',');
+        sample = [];
+        list.forEach((value: string) => {
+          sample.push(Number(parseFloat(value).toPrecision(4)));
+        });
+      }
+    } else {
+      if (isNaN(row) == false) {
+        console.log('single number', row);
+        sample = [];
+        sample.push(row);
+      }
+    }
+
+    return sample;
+  }
+
+  private vectorize(obj: any, type: string) {
+    let tmp: any;
+    if (type == 'array') {
+      tmp = [];
+      obj.forEach((row: any) => {
+        tmp.push(...this.parseAndGenerate(row));
+      });
+    } else if (type == 'cartesianObj') {
+      
+      tmp = {x: [], y: [], z: []};
+
+      let tmp2: any = {x: [], y: [], z: []};
+
+      for (let axis in obj) {
+        if (obj.hasOwnProperty(axis)) {
+          obj[axis].forEach((row: any) => {
+            tmp2[axis].push(...this.parseAndGenerate(row));
+          });
+        }
+      }
+
+      if (!(tmp2.x.length == tmp2.y.length && tmp2.y.length == tmp2.z.length)) {
+        tmp2.x.forEach((x: number) => {
+          tmp2.y.forEach((y: number) => {
+            tmp2.z.forEach((z: number) => {
+              tmp.x.push(x);
+              tmp.y.push(y);
+              tmp.z.push(z);
+            });
+          });
+        });
+      } else {
+        tmp.x = tmp2.x;
+        tmp.y = tmp2.y;
+        tmp.z = tmp2.z;
       }
     }
     return tmp;

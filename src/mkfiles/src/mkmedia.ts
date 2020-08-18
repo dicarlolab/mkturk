@@ -32,7 +32,11 @@ export class Mkeditor {
   private fileDupModal: HTMLDialogElement;
   public genSceneParamBtn: HTMLButtonElement;
   private genSceneParamModal: HTMLDivElement;
+  public genBtn: HTMLButtonElement;
+  public svSceneBtn: HTMLButtonElement;
   private pe: ParseEngine;
+  private userEditedSceneParam: Object;
+  private generatedSceneParam: Object;
 
 
   constructor() {
@@ -68,7 +72,16 @@ export class Mkeditor {
     this.genSceneParamModal
       = document.querySelector('#gen-scene-param-modal') as HTMLDivElement;
     this.generateSceneParamModalAction()
+    
+    
+    this.genBtn = document.querySelector('#generate-btn') as HTMLButtonElement;
+    this.svSceneBtn = document.querySelector('#save-scene-param-btn') as HTMLButtonElement;
+    this.genBtnAction();
+    this.svSceneBtnAction();
+    
     this.pe = new ParseEngine();
+    this.userEditedSceneParam = {};
+    this.generatedSceneParam = {};
 
   }
 
@@ -287,9 +300,9 @@ export class Mkeditor {
     this.editor = new JSONEditor(this.editorElement, options, file);
     this.activeFile = { loc: "mkturkfiles", id: fileRef };
     console.log("activeFile", this.activeFile);
-    if (fileRef.fullPath.includes('template')) {
-      this.pe.generateParamObject(file);
-    }
+    // if (fileRef.fullPath.includes('template')) {
+    //   this.pe.generateParamObject(file);
+    // }
     this.fileNameInput.placeholder = fileRef.name;
   }
 
@@ -573,6 +586,76 @@ export class Mkeditor {
         console.error('[PARAM STORAGE FAILED]', 'FILE:', fileRef, 'ERROR', e);
         alert('Param Storage Failed');
       });
+    });
+  }
+
+  private genBtnAction() {
+    this.genBtn.addEventListener('click', (ev: Event) => {
+      if (this.genBtn.value == 'generate') {
+        this.userEditedSceneParam = this.editor.get();
+        this.generatedSceneParam = this.pe.generateParamObject(this.userEditedSceneParam);
+        this.editor.destroy();
+        let options = {
+          modes: ['tree' as 'tree', 'code' as 'code']
+        };
+        this.editor = new JSONEditor(this.editorElement, options, this.generatedSceneParam);
+        this.genBtn.value = 'revert';
+        this.genBtn.textContent = 'Revert';
+        this.updateBtn.style.display = 'none';
+        this.svSceneBtn.style.display = 'inline-block';
+        this.btnBoxDiv.style.gridTemplateAreas = '"gen-btn sv-scene-param-btn"';
+      } else if (this.genBtn.value == 'revert') {
+        this.editor.destroy();
+        this.generatedSceneParam = {};
+        let options = {
+          modes: ['tree' as 'tree', 'code' as 'code']
+        };
+        this.editor = new JSONEditor(this.editorElement, options, this.userEditedSceneParam);
+        this.genBtn.value = 'generate';
+        this.genBtn.textContent = 'Generate Param';
+        this.svSceneBtn.style.display = 'none';
+        this.updateBtn.style.display = 'inline-block';
+        this.btnBoxDiv.style.gridTemplateAreas = '"gen-btn update-btn"';
+      }
+    });
+  }
+
+  private svSceneBtnAction() {
+    let modal = document.querySelector('#filename-modal') as HTMLDialogElement;
+    let modalFilename = modal.querySelector('.filename-input') as HTMLInputElement;
+
+    this.svSceneBtn.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      modal.showModal();
+      let activeFileName = this.activeFile.id as FileRef;
+      let now = new Date();
+      modalFilename.value = now.toJSON().split('T')[0] + '_' + activeFileName.name;
+      modalFilename.focus();
+      modalFilename.select();
+    });
+
+    modal.querySelector('.cl')?.addEventListener('click', () => {
+      modal.close();
+    });
+
+    modal.querySelector('.sv')?.addEventListener('click', () => {
+      let srcRef = this.activeFile.id as FileRef;
+      let destRef = srcRef.parent?.parent?.child('generatedParams').child(modalFilename.value);
+      let file = new Blob([JSON.stringify(this.generatedSceneParam, null, 1)]);
+      let md = {
+        contentType: 'application/json'
+      };
+
+      destRef?.put(file, md).then(async (sns) => {
+        alert('Generated param file was saved');
+        this.generatedSceneParam = {};
+        this.userEditedSceneParam = {};
+        this.displayStorageTextFile(srcRef);
+      }).catch(e => {
+        console.error('Param Generation Failed');
+        alert('Generated param file was NOT saved');
+      });
+      modal.close();
     });
   }
 
