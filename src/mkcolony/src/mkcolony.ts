@@ -210,10 +210,6 @@ export class Mkcolony {
     });
   }
 
-  public previewBtnAction() {
-
-  }
-
   public setupEntryCard() {
     let entryJsonDiv = document.querySelector('#entry-json') as div;
     this.entryJson = new JSONEditor(entryJsonDiv, {mode: "tree" ,sortObjectKeys: true});
@@ -227,8 +223,6 @@ export class Mkcolony {
       
     });
   }
-
-  
 
   public populateTable(data: any[]) {
     let clTableCard 
@@ -1020,6 +1014,7 @@ export class Mkcolony {
     let data = await this.processData(marmData, mkdailydata);
     this.populateTable(data);
     this.plotColonyWeight();
+    this.setupLogbook();
   }
 
   public processData(data1: any[], data2: any[]) {
@@ -1158,4 +1153,83 @@ export class Mkcolony {
     return data;
   }
 
+  private setupLogbook() {
+    let logbookTableDiv = document.querySelector('#logbook') as div;
+    let logbookData = cloneDeep(this.vizData);
+
+    function entryTodayMutator(value: any, data: any, type: any, mutatorParams: any, cell?: Tabulator.CellComponent) {
+      //console.log('cell', cell);
+      try {
+        let today = new Date();
+        function isSameDay(first: Date, second: Date) {
+          return first.getFullYear() === second.getFullYear() &&
+            first.getMonth() === second.getMonth() &&
+            first.getDate() === second.getDate();
+        }
+        let ref = new Date(data.last_fluid_date + ' 12:00 AM');
+        if (isSameDay(today, ref)) {
+          return true;
+        } else {
+          return false;
+        }
+      } catch (error) {
+        console.error('Entry Today Mutator Error', error);
+        return false;
+      }
+    }
+
+    function fmt(cell: any) {
+      try {
+        if (cell.getValue() == true) {
+          cell.getElement().style.backgroundColor = '#00FF00';
+        } else {
+          cell.getElement().style.backgroundColor = 'red';
+        }
+        return cell.getValue();
+      } catch (error) {
+        cell.getElement().style.backgroundColor = 'red';
+        return cell.getValue();
+      }
+    }
+
+    function editCheck(cell: any) {
+      try {
+        let entryToday = cell.getData().entry_today;
+        if (entryToday) {
+          return false;
+        } else {
+          return true;
+        }
+      } catch (error) {
+        console.error('editCheck Error', error);
+        return true;
+      }
+    }
+
+    // function entryTodayMutatorParams(value: any, data: any, type: any, component)
+
+    let logbook = new Tabulator(logbookTableDiv, {
+      data: logbookData,
+      index: 'name',
+      layout: 'fitColumns',
+      initialSort: [
+        { column: 'name', dir: 'asc' }
+      ],
+      columns: [
+        {title: 'Name', field: 'name'},
+        {title: 'Entry Today?', field: 'entry_today', mutator: entryTodayMutator, formatter: fmt},
+        {title: 'Implant\n Cleaned', field: 'implant_cleaned', hozAlign: 'center', formatter: 'tickCross', editor: true, editable: editCheck},
+        {title: 'Reward (mL)', field: 'reward_amount', editor: true, editable: editCheck},
+        {title: 'Supplement (mL)', field: 'supplement_amount', editor: true, editable: editCheck},
+        {title: 'Time ON', field: 'time_on', editor: true, editable: editCheck},
+        {title: 'Time OFF', field: 'time_off', editor: true, editable: editCheck},
+        {title: 'Comments', field: 'comments', editor: true, editable: editCheck},
+        {title: 'Initials', field: 'initials', editor: true, editable: editCheck}
+      ],
+      tableBuilt: function() {
+        console.log('logbookdata', logbookData);
+      }
+
+    });
+  }
 }
