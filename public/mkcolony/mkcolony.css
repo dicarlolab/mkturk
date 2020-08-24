@@ -101,6 +101,11 @@
   margin-right: 0;
 }
 
+#logbook-button-box {
+  margin-left: auto;
+  margin-right: 0;
+}
+
 #select-box {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

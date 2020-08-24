@@ -1178,7 +1178,7 @@ export class Mkcolony {
       }
     }
 
-    function fmt(cell: any) {
+    function entryTodayFmt(cell: any) {
       try {
         if (cell.getValue() == true) {
           cell.getElement().style.backgroundColor = '#00FF00';
@@ -1217,10 +1217,10 @@ export class Mkcolony {
       ],
       columns: [
         {title: 'Name', field: 'name'},
-        {title: 'Entry Today?', field: 'entry_today', mutator: entryTodayMutator, formatter: fmt},
-        {title: 'Implant\n Cleaned', field: 'implant_cleaned', hozAlign: 'center', formatter: 'tickCross', editor: true, editable: editCheck},
-        {title: 'Reward (mL)', field: 'reward_amount', editor: true, editable: editCheck},
-        {title: 'Supplement (mL)', field: 'supplement_amount', editor: true, editable: editCheck},
+        {title: 'Entry Today?', field: 'entry_today', mutator: entryTodayMutator, formatter: entryTodayFmt},
+        {title: 'Implant Cleaned', field: 'implant_cleaned', hozAlign: 'center', formatter: 'tickCross', editor: 'tickCross', editable: editCheck},
+        {title: 'Reward (mL)', field: 'reward_amount', editor: 'number', editable: editCheck},
+        {title: 'Supplement (mL)', field: 'supplement_amount', editor: 'number', editable: editCheck},
         {title: 'Time ON', field: 'time_on', editor: true, editable: editCheck},
         {title: 'Time OFF', field: 'time_off', editor: true, editable: editCheck},
         {title: 'Comments', field: 'comments', editor: true, editable: editCheck},
