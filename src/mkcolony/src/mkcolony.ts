@@ -1153,7 +1153,7 @@ export class Mkcolony {
     return data;
   }
 
-  private setupLogbook() {
+  private async setupLogbook() {
     let logbookTableDiv = document.querySelector('#logbook') as div;
     let logbookData = cloneDeep(this.vizData);
 
@@ -1206,6 +1206,21 @@ export class Mkcolony {
       }
     }
 
+    function implantEditCheck(cell: any) {
+      try {
+        let implant = cell.getData().implant;
+        let entryToday = cell.getData().entry_today;
+        if (!entryToday && implant) {
+          return true;
+        } else {
+          return false;
+        }
+      } catch (error) {
+        console.error('Implant Edit Check Error', error);
+        return false;
+      }
+    }
+
     // function entryTodayMutatorParams(value: any, data: any, type: any, component)
 
     let logbook = new Tabulator(logbookTableDiv, {
@@ -1218,7 +1233,7 @@ export class Mkcolony {
       columns: [
         {title: 'Name', field: 'name'},
         {title: 'Entry Today?', field: 'entry_today', mutator: entryTodayMutator, formatter: entryTodayFmt},
-        {title: 'Implant Cleaned', field: 'implant_cleaned', hozAlign: 'center', formatter: 'tickCross', editor: 'tickCross', editable: editCheck},
+        {title: 'Implant Cleaned', field: 'implant_cleaned', hozAlign: 'center', formatter: 'tickCross', editor: 'tickCross', editable: implantEditCheck},
         {title: 'Reward (mL)', field: 'reward_amount', editor: 'number', editable: editCheck},
         {title: 'Supplement (mL)', field: 'supplement_amount', editor: 'number', editable: editCheck},
         {title: 'Time ON', field: 'time_on', editor: true, editable: editCheck},
@@ -1226,10 +1241,16 @@ export class Mkcolony {
         {title: 'Comments', field: 'comments', editor: true, editable: editCheck},
         {title: 'Initials', field: 'initials', editor: true, editable: editCheck}
       ],
-      tableBuilt: function() {
+      tableBuilt: async function() {
         console.log('logbookdata', logbookData);
+        // console.log('activeLogbook', await logbook.getData('active'));
+        //let dt = await logbook.getData('active');
+        //await console.log(dt);
       }
 
     });
+
+    let activeData = await logbook.getData('visible');
+    console.log('activeData', activeData);
   }
 }
