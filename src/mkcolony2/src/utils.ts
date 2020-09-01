@@ -19,15 +19,9 @@ export class Utils {
 
   }
 
-  
-
-
-
-
-
-
-
-
+  public isValidDate(obj: any) {
+    return !isNaN(obj) && obj instanceof Date;
+  }
 
 
   public isDictionary(obj: any) {
@@ -52,6 +46,25 @@ export class Utils {
         
       }
     }
+  }
+
+
+  public findLastValidIndexOf(arr: any[]) {
+    for (let idx = arr.length - 1; idx >= 0; idx--) {
+      if (arr[idx]) {
+        return idx;
+      }
+    }
+    return -1;
+  }
+
+  public isNotEmptyObject(obj: any) {
+    for (let k in obj) {
+      if (obj[k]) {
+        return true;
+      }
+    }
+    return false;
   }
 
 

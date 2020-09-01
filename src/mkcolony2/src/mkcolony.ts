@@ -3,6 +3,7 @@ import 'firebase/firestore';
 import 'firebase/storage';
 import JSONEditor from 'jsoneditor';
 import cloneDeep from 'lodash.cloneDeep';
+import { Utils } from './utils';
 
 type div = HTMLDivElement;
 type Timestamp = firebase.firestore.Timestamp;
@@ -40,6 +41,9 @@ export class Mkcolony {
   private fldSlt: HTMLSelectElement;
   
   private entryJson: JSONEditor;
+  private logbook: Tabulator;
+
+  private utils: Utils;
 
 
   constructor() {
@@ -74,6 +78,11 @@ export class Mkcolony {
     this.saveBtnAction();
     this.selectorAction();
     this.setupEntryCard();
+
+    this.submitLogsheetAction();
+
+    // this.utils = new Utils();
+    this.utils = new Utils();
   }
 
   public deleteAll() {
@@ -1001,7 +1010,7 @@ export class Mkcolony {
     });
 
     chartData.forEach(chartCol => {
-      console.log('chartCol', chartCol);
+      // console.log('chartCol', chartCol);
       let temp = google.visualization.arrayToDataTable(chartCol, false);
       dtArr.push(temp);
     });
@@ -1019,14 +1028,14 @@ export class Mkcolony {
       try {
         dt = google.visualization.data.join(dt, dtArr[i], 'full', [[0, 0]],
         colIdx, [1]);
-        console.log('NO JOIN ERROR IDX', i);
-        console.log('NO JOIN ERROR dt', dt);
-        console.log('NO JOIN ERROR dtArr[i]', dtArr[i]);
+        // console.log('NO JOIN ERROR IDX', i);
+        // console.log('NO JOIN ERROR dt', dt);
+        // console.log('NO JOIN ERROR dtArr[i]', dtArr[i]);
       } catch (e) {
-        console.error('JOIN ERROR', e);
-        console.error('JOIN ERROR IDX', i);
-        console.error('JOIN ERROR dt', dt);
-        console.error('JOIN ERROR dtArr[i]', dtArr[i])
+        // console.error('JOIN ERROR', e);
+        // console.error('JOIN ERROR IDX', i);
+        // console.error('JOIN ERROR dt', dt);
+        // console.error('JOIN ERROR dtArr[i]', dtArr[i])
       }
     }
 
@@ -1036,13 +1045,37 @@ export class Mkcolony {
   public async init() {
     let marmData = await this.getData('marmosets');
     let mkdailydata = await this.getData('mkdailydata');
-    let data = await this.processData(marmData, mkdailydata);
+    let what = await this.getStorageData('mkturkfiles/mkdailydatatest');
+
+    let data = await this.processData(marmData, mkdailydata, what);
     this.populateTable(data);
     this.plotColonyWeight();
     this.setupLogbook();
   }
 
-  public processData(data1: any[], data2: any[]) {
+  public async getStorageData(path: string) {
+    console.log('hello');
+    let tmp: any = {};
+    let mkdailydatatestRef = storage.ref().child(path);
+    await mkdailydatatestRef.listAll().then(res => {
+      console.log('res', res);
+      res.items.forEach(async itemRef => {
+        console.log('itemRef', itemRef);
+        let url = await itemRef.getDownloadURL().catch(e => {
+          console.error('Error getting URL', e);
+        });
+        let response = await fetch(url);
+        let file = await response.json();
+        tmp[itemRef.name] = file;
+      });
+    }).catch(e => {
+      console.error('error', e);
+    });
+
+    return tmp;
+  }
+
+  public async processData(data1: any[], data2: any[], data3: any) {
     this.cleanData.mkdailydata = new Array();
     this.cleanData.marmosetData = new Array();
     this.cleanData.mkdailydataDic = {};
@@ -1052,6 +1085,8 @@ export class Mkcolony {
     this.cleanData.marmosetData = cloneDeep(data1);
     this.vizData = cloneDeep(data1);
     this.vizDataDic = {};
+
+    console.log('datat3', await data3);
 
     data2.forEach(row => {
       let idx = this.vizData.findIndex((doc: any) => {
@@ -1248,7 +1283,7 @@ export class Mkcolony {
 
     // function entryTodayMutatorParams(value: any, data: any, type: any, component)
 
-    let logbook = new Tabulator(logbookTableDiv, {
+    this.logbook = new Tabulator(logbookTableDiv, {
       data: logbookData,
       index: 'name',
       layout: 'fitColumns',
@@ -1258,6 +1293,7 @@ export class Mkcolony {
       columns: [
         {title: 'Name', field: 'name'},
         {title: 'Entry Today?', field: 'entry_today', mutator: entryTodayMutator, formatter: entryTodayFmt},
+        {title: 'Weight', field: 'weight', editor: 'number', editable: editCheck},
         {title: 'Implant Cleaned', field: 'implant_cleaned', hozAlign: 'center', formatter: 'tickCross', editor: 'tickCross', editable: implantEditCheck},
         {title: 'Reward (mL)', field: 'reward_amount', editor: 'number', editable: editCheck},
         {title: 'Supplement (mL)', field: 'supplement_amount', editor: 'number', editable: editCheck},
@@ -1275,7 +1311,40 @@ export class Mkcolony {
 
     });
 
-    let activeData = await logbook.getData('visible');
-    console.log('activeData', activeData);
+    // let activeData = await this.logbook.getData('visible');
+    // console.log('activeData', activeData);
+  }
+
+  private submitLogsheetAction() {
+    let submitBtn = document.querySelector('#logbook-submit-btn') as HTMLButtonElement;
+    submitBtn.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      console.log('submitlogsheetbtn', this.logbook.getData('visible'));
+
+      let currentSheetData = this.logbook.getData('visible');
+      let toSubmit: any = {};
+      let now = new Date();
+      for (let row of currentSheetData) {
+        let tmp: any = {};
+        tmp.weight = row.weight ? row.weight : '';
+        tmp.implant_cleaned = row.implant_cleaned ? row.implant_cleaned : '';
+        tmp.reward = row.reward ? row.reward : '';
+        tmp.supplement = row.supplement ? row.supplement : '';
+        tmp.time_on = row.time_on ? new Date(now.toLocaleDateString() + ' ' + row.time_on).toJSON() : '';
+        tmp.time_off = row.time_off ? new Date(now.toLocaleDateString() + ' ' + row.time_off).toJSON() : '';
+        tmp.comments = row.comments ? row.comments : '';
+        tmp.initials = row.initials ? row.initials : '';
+        console.log('tmp', tmp);
+        if (this.utils.isNotEmptyObject(tmp)) {
+          tmp.timestamp = new Date().toJSON();
+          toSubmit[row.agent] = tmp;
+        }
+      }
+      console.log('tosubmit', toSubmit);
+
+
+
+
+    });
   }
 }

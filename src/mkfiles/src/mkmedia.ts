@@ -669,7 +669,7 @@ export class Mkeditor {
 
     for (let key of Object.keys(data)) {
       if (Array.isArray(data[key]) 
-        && (key.toLowerCase().includes('times') || key.toLowerCase().includes('dates'))) {
+        && (key.toLowerCase().includes('time') || key.toLowerCase().includes('dates'))) {
         console.log("ARRAY " + "data[" + key + "]" + "=" + data[key]);
         data[key].forEach(_dateToTimestamp);
       }
