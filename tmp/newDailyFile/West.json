@@ -678,8 +678,8 @@
   "implant_cleaned": "N/A",
   "reward": 12.5,
   "supplement": 0,
-  "time_on": "",
-  "time_off": "",
+  "time_on": "2020-07-31T19:30:00.000Z",
+  "time_off": "2020-07-31T22:30:00.000Z",
   "comments": "reward; 15:30-18:30; HC",
   "initials": ""
  },
@@ -726,10 +726,10 @@
   "implant_cleaned": "N/A",
   "reward": 8,
   "supplement": 0,
-  "time_on": "",
-  "time_off": "",
+  "time_on": "2020-08-03T19:30:43.771Z",
+  "time_off": "2020-08-03T22:00:43.771Z",
   "comments": "reward; 15:30-18:00; HC",
-  "initials": ""
+  "initials": "HC"
  },
  {
   "agent": "West",
@@ -750,10 +750,10 @@
   "implant_cleaned": "N/A",
   "reward": 5,
   "supplement": 0,
-  "time_on": "",
-  "time_off": "",
+  "time_on": "2020-08-04T19:50:28.480",
+  "time_off": "2020-08-04T21:50:28.480",
   "comments": "reward; 15:50-17:50; HC",
-  "initials": ""
+  "initials": "HC"
  },
  {
   "agent": "West",
@@ -762,10 +762,10 @@
   "implant_cleaned": "N/A",
   "reward": 2.5,
   "supplement": 0,
-  "time_on": "",
-  "time_off": "",
+  "time_on": "2020-08-05T20:00:55.423Z",
+  "time_off": "2020-08-05T22:30:55.423Z",
   "comments": "reward; 16:00-18:30; HC",
-  "initials": ""
+  "initials": "HC"
  },
  {
   "agent": "West",
@@ -786,10 +786,10 @@
   "implant_cleaned": "N/A",
   "reward": 2.5,
   "supplement": 0,
-  "time_on": "",
-  "time_off": "",
+  "time_on": "2020-08-06T19:45:30.446Z",
+  "time_off": "2020-08-06T22:00:30.446Z",
   "comments": "reward; 15:45-18:00; HC",
-  "initials": ""
+  "initials": "HC"
  },
  {
   "agent": "West",
@@ -798,10 +798,10 @@
   "implant_cleaned": "N/A",
   "reward": 15,
   "supplement": 0,
-  "time_on": "",
-  "time_off": "",
+  "time_on": "2020-08-07T18:40:28.076Z",
+  "time_off": "2020-08-07T21:00:28.076Z",
   "comments": "reward; 14:40-17:00; HC",
-  "initials": ""
+  "initials": "HC"
  },
  {
   "agent": "West",
@@ -810,10 +810,10 @@
   "implant_cleaned": "N/A",
   "reward": 17,
   "supplement": 0,
-  "time_on": "",
-  "time_off": "",
+  "time_on": "2020-08-10T19:30:01.652Z",
+  "time_off": "2020-08-10T21:30:01.652Z",
   "comments": "reward; 15:30-17:30; HC",
-  "initials": ""
+  "initials": "HC"
  },
  {
   "agent": "West",
@@ -822,10 +822,10 @@
   "implant_cleaned": "N/A",
   "reward": 13,
   "supplement": 0,
-  "time_on": "",
-  "time_off": "",
+  "time_on": "2020-08-11T20:00:14.104Z",
+  "time_off": "2020-08-11T22:30:14.104Z",
   "comments": "reward; 16:00-18:30; HC",
-  "initials": ""
+  "initials": "HC"
  },
  {
   "agent": "West",
@@ -858,10 +858,10 @@
   "implant_cleaned": "N/A",
   "reward": 6,
   "supplement": 0,
-  "time_on": "",
-  "time_off": "",
+  "time_on": "2020-08-12T18:30:14.615Z",
+  "time_off": "2020-08-12T21:00:14.615Z",
   "comments": "reward; 14:30-17:00; HC",
-  "initials": ""
+  "initials": "HC"
  },
  {
   "agent": "West",
@@ -870,10 +870,10 @@
   "implant_cleaned": "N/A",
   "reward": 7,
   "supplement": 0,
-  "time_on": "",
-  "time_off": "",
+  "time_on": "2020-08-13T18:30:30.261Z",
+  "time_off": "2020-08-13T21:00:30.261Z",
   "comments": "reward; 14:30:17:00; HC",
-  "initials": ""
+  "initials": "HC"
  },
  {
   "agent": "West",
@@ -906,10 +906,10 @@
   "implant_cleaned": "N/A",
   "reward": 16,
   "supplement": 0,
-  "time_on": "",
-  "time_off": "",
+  "time_on": "2020-08-14T17:20:58.615Z",
+  "time_off": "2020-08-14T19:45:58.615Z",
   "comments": "reward; 13:20-15:45; HC",
-  "initials": ""
+  "initials": "HC"
  },
  {
   "agent": "West",
@@ -918,10 +918,10 @@
   "implant_cleaned": "N/A",
   "reward": 18,
   "supplement": 0,
-  "time_on": "",
-  "time_off": "",
+  "time_on": "2020-08-17T19:00:55.895Z",
+  "time_off": "2020-08-17T21:15:55.895Z",
   "comments": "reward; 15:00-17:15; HC",
-  "initials": ""
+  "initials": "HC"
  },
  {
   "agent": "West",
@@ -930,10 +930,10 @@
   "implant_cleaned": "N/A",
   "reward": 10,
   "supplement": 0,
-  "time_on": "",
-  "time_off": "",
+  "time_on": "2020-08-18T19:00:18.800Z",
+  "time_off": "2020-08-18T21:30:18.800Z",
   "comments": "reward; 15:00-17:30; HC",
-  "initials": ""
+  "initials": "HC"
  },
  {
   "agent": "West",
@@ -942,10 +942,10 @@
   "implant_cleaned": "N/A",
   "reward": 10,
   "supplement": 0,
-  "time_on": "",
-  "time_off": "",
+  "time_on": "2020-08-20T19:30:23.243Z",
+  "time_off": "2020-08-20T21:40:23.243Z",
   "comments": "reward; 15:30-17:40; HC",
-  "initials": ""
+  "initials": "HC"
  },
  {
   "agent": "West",
@@ -954,10 +954,10 @@
   "implant_cleaned": "N/A",
   "reward": 16,
   "supplement": 0,
-  "time_on": "",
-  "time_off": "",
+  "time_on": "2020-08-21T19:30:23.978Z",
+  "time_off": "2020-08-21T22:00:23.978Z",
   "comments": "reward; 15:30-18:00; HC",
-  "initials": ""
+  "initials": "HC"
  },
  {
   "agent": "West",
@@ -990,9 +990,9 @@
   "implant_cleaned": "N/A",
   "reward": 15,
   "supplement": 0,
-  "time_on": "",
-  "time_off": "",
+  "time_on": "2020-08-24T19:30:04.960Z",
+  "time_off": "2020-08-24T22:00:04.960Z",
   "comments": "reward; 15:30-18:00; HC",
-  "initials": ""
+  "initials": "HC"
  }
 ]

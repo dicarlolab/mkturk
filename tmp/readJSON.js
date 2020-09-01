@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-let agent = 'West';
+let agent = 'Bloo';
 let oldPath = 'oldDailyFile/' + agent + '.json';
 let raw = fs.readFileSync(oldPath);
 let data = JSON.parse(raw);
