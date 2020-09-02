@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-let agent = 'East';
+let agent = 'Athena';
 let oldPath = 'newDailyFile/' + agent + '.json';
 let raw = fs.readFileSync(oldPath);
 let data = JSON.parse(raw);

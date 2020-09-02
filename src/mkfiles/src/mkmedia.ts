@@ -148,6 +148,11 @@ export class Mkeditor {
       this.fileNameInput.placeholder = String(this.activeFile.id);
     }
 
+    else if (loc === 'mkdailydatatest') {
+      this.activeFile = { loc: loc, id: file.agent };
+      this.fileNameInput.placeholder = String(this.activeFile.id);
+    }
+
     else if (loc === "objects") {
       this.activeFile = { loc: loc, id: file.docname };
       this.fileNameInput.placeholder = String(this.activeFile.id);
@@ -501,7 +506,8 @@ export class Mkeditor {
       let loc = this.activeFile.loc;
 
       if (loc === "marmosets" || loc === "mkturkdata" || loc === "devices"
-        || loc === "mkscale" || loc === "eyecalibrations" || loc === 'mkdailydata') {
+        || loc === "mkscale" || loc === "eyecalibrations" || loc === 'mkdailydata'
+        || loc === "mkdailydatatest") {
         // handle marmosets && mkturkdata
         let id = this.activeFile.id as string;
         db.collection(loc).doc(id).set(
