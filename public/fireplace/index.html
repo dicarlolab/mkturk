@@ -185,7 +185,7 @@ async function queryFirestoreCallback(querySnapshot){
 
   querySnapshot.forEach(function(doc)
   {
-      if (typeof(doc.data().Response) == "undefined"){
+      if (typeof(doc.data().Response) == "undefined" || !Array.isArray(doc.data().Response)){
           // do nothing
           if (doc.data().Doctype == "task"){
               console.log('Doc contains no response data, skipping')
