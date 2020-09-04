@@ -3,6 +3,7 @@ import 'firebase/firestore';
 import 'firebase/storage';
 
 const db = firebase.firestore();
+const storage = firebase.storage();
 type Timestamp = firebase.firestore.Timestamp;
 
 export class Utils {
@@ -66,6 +67,61 @@ export class Utils {
     }
     return false;
   }
+
+  public async getDocumentData(collection: string, id: string) {
+    return db.collection(collection).doc(id).get().then(doc => {
+      return doc.data();
+    });
+  }
+
+  public async getStorageFile(path: string) {
+    let fileRef = storage.ref().child(path);
+    let url = await fileRef.getDownloadURL().catch(e => {
+      console.error('Error Getting URL');
+    });
+    let response = await fetch(url);
+    let file = await response.json();
+    return file;
+  }
+
+  public createContinuousArray(reference: any[], target: any[]) {
+    if (reference.length === target.length) {
+      let ref = [];
+      let tar = [];
+
+      for (let i = 0; i < reference.length; i++) {
+        if (reference[i]) {
+          ref.push(reference[i]);
+          tar.push(target[i]);
+        }
+      }
+      return {reference: ref, target: tar};
+    } else {
+      throw "Array Length Mismatch";
+    }
+  }
+
+  public mergeTwoNumberArrays(arr1: any[], arr2: any[]) {
+    if (arr1.length === arr2.length) {
+      let arr: Number[] = [];
+      for (let i = 0; i < arr1.length; i++) {
+        if (!arr1[i]) {
+          arr1[i] = 0;
+        }
+
+        if (!arr2[i]) {
+          arr2[i] = 0;
+        }
+
+        arr.push(arr1[i] + arr2[i])
+      }
+      return arr;
+    } else {
+      throw "Array Length Mismatch";
+    }
+  }
+
+  
 
 
 }

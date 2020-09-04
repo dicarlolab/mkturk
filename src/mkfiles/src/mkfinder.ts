@@ -883,6 +883,17 @@ export class Mkfinder {
         }
       }
 
+      else if (qryLoc.value == "mkdailydatatest") {
+        for (let i = 0; i < row.length; i++) {
+          let file = row[i].getData();
+          let blob = new Blob(
+            [ JSON.stringify(file, null, 1) ],
+            { type: "application/json; charset=utf-8" }
+          );
+          FileSaver.saveAs(blob, file.agent + ".json");
+        }
+      }
+
       else if (qryLoc.value == "mkturkdata") {
         for (let i = 0; i < row.length; i++) {
           let docName = row[i].getData().FirestoreDocRoot + "_" +

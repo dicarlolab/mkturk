@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-let agent = 'Sherlock';
+let agent = 'West';
 let oldPath = 'newDailyFile/' + agent + '.json';
 let raw = fs.readFileSync(oldPath);
 let data = JSON.parse(raw);

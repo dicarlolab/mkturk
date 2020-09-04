@@ -499,346 +499,85 @@ getWeightBtn.addEventListener("pointerup", ev => {
   divvv.classList.add("is-dirty");
 });
 
+async function getDocumentData(collection, id) {
+  return db.collection(collection).doc(id).get().then(doc => {
+    return doc.data();
+  });
+}
+
+async function getStorageFile(path) {
+  let fileRef = storage.ref().child(path);
+  let url = await fileRef.getDownloadURL().catch(e => {
+    console.error('Error Getting URL:', e);
+  });
+
+  let response = await fetch(url);
+  let file = await response.json();
+
+  return file;
+}
+
 let entryForm = document.querySelector("#entry-form");
-// entryForm.addEventListener("submit", ev => {
-//   ev.preventDefault();
-  
-//   let name = "";
-
-//   if (entrySelector.value != "mkscale") {
-//     name = entrySelector.value;
-//   } else if (entrySelector.value == "mkscale") {
-//     name = document.querySelector("#entry-name").value;
-//   }
-
-//   let wt = document.querySelector("#entry-weight").value;
-//   let notes = document.querySelector("#entry-notes").value;
-
-//   let refDate = new Date(Date.now());
-//   refDate = new Date(refDate.toLocaleDateString());
-//   let upperDate = new Date(refDate.getTime() + 86400000);
-
-//   console.log("refDate", refDate.toJSON());
-//   console.log("upperDate", upperDate.toJSON());
-
-//   let query = db.collection("mkscale").where("CurrentDate", ">=", refDate)
-//     .where("CurrentDate", "<=", upperDate).where("Name", "==", name);
-
-//   query.get().then(sns => {
-//     console.log(sns);
-//     if (sns.empty) {
-//       function timestampToDate(element, idx, arr) {
-//         try {
-//           arr[idx] = element.toDate().toJSON();
-//         } catch (e) {
-//           console.error("Error converting t_weights:", e);
-//         }
-//       }
-
-//       function dateToTimestamp(element, idx, arr) {
-//         try {
-//           arr[idx] = firebase.firestore.Timestamp.fromDate(new Date(element));
-//         } catch (e) {
-//           console.error("Error converting t_weights:", e);
-//         }
-//       }
-
-//       let today = new Date(Date.now());
-//       let idFirestore = today.toISOString() + "_" + name + "_weight";
-//       let idStorage = idFirestore + ".json";
-
-//       db.collection("mkscale").doc(idFirestore).set({
-//         Name: name,
-//         WeightValues: [Number(wt)],
-//         WeightTimes: [firebase.firestore.Timestamp.fromDate(today)],
-//         WeightNotes: [notes],
-//         CurrentDateValue: today.getTime(),
-//         CurrentDate: firebase.firestore.Timestamp.fromDate(today),
-//         Doctype: "weights",
-//         Docname: idFirestore,
-//         ResearcherDisplayName: blescale.displayName,
-//         ResearcherEmail: blescale.email,
-//         ResearcherID: blescale.uid
-//       }).then(() => {
-//         console.log("Firestore Weight Save Success:", idFirestore);
-//       }).catch(e => {
-//         console.error("Firestore Weight Save Fail:", idFirestore);
-//         alert("Firestore Weight Save Failed");
-//         throw "FIRESTORE SAVE FAILED EXCEPTION";
-//       });
-
-
-//       if (entrySelector.value != "mkscale") {
-//         // db.collection('marmosets').doc(name).get().then(doc => {
-//         //   // try {
-//         //   //   console.log(doc.data().weight_values.length);
-//         //   // } catch (e) {
-//         //   //   db.collection('marmosets').doc(name).update({
-//         //   //     weight_values: [Number(wt)],
-//         //   //     weight_dates: [firebase.firestore.Timestamp.fromDate(today)],
-//         //   //     weight_notes: [notes] 
-//         //   //   }).catch(e => {
-//         //   //     console.error("Error saving to firestore/marmosets");
-//         //   //     alert("firestore/marmosets weight save fail. Will continue operation");
-//         //   //   });
-//         //   //   console.log("firestore/marmosets Weight Save Success:", name);
-//         //   // }
-//         //   if ("weight_values" in doc.data()) {
-//         //     let file = doc.data();
-//         //     file.weight_values.push(Number(wt));
-//         //     file.weight_notes.push(notes);
-//         //     file.weight_dates.push(firebase.firestore.Timestamp.fromDate(today));
-//         //     console.log(file.weight_dates);
-//         //     // console.log(file.weight_dates);
-//         //     // console.log(today);
-//         //     // file.weight_dates = file.weight_dates.forEach(timestampToDate);
-//         //     // file.weight_dates.push(today.toJSON());
-//         //     // file.weight_dates = file.weight_dates.forEach(dateToTimestamp);
-
-//         //     db.collection('marmosets').doc(name).update({
-//         //       weight_values: file.weight_values,
-//         //       weight_dates: file.weight_dates,
-//         //       weight_notes: file.weight_notes,
-//         //     }).then(msg => {
-//         //       console.log("firestore/marmosets weight save success:", msg, name);
-//         //     }).catch(e => {
-//         //       console.error("Error saving to firestore/marmosets");
-//         //       alert("firestore/marmosets weight save fail. will continue operation");
-//         //     });
-//         //   } else {
-//         //     db.collection('marmosets').doc(name).update({
-//         //       weight_values: [Number(wt)],
-//         //       weight_dates: [firebase.firestore.Timestamp.fromDate(today)],
-//         //       weight_notes: [notes]
-//         //     }).then(msg => {
-//         //       console.log("firestore/marmosets weight save success", msg, name);
-//         //     }).catch(e => {
-//         //       console.error("Error saving to firestore/marmosets", e);
-//         //       alert("firestore/marmosets weight save fail. will continue operation");
-//         //     });
-//         //   }
-//         // });
-
-//         db.collection('mkdailydata').doc(name).get().then(doc => {
-//           if ("weight_values" in doc.data()) {
-//             let file = doc.data();
-//             file.weight_values.push(Number(wt));
-//             file.weight_notes.push(notes);
-//             file.weight_dates.push(firebase.firestore.Timestamp.fromDate(today));
-//             console.log(file.weight_dates);
-
-//             db.collection('mkdailydata').doc(name).update({
-//               weight_values: file.weight_values,
-//               weight_dates: file.weight_dates,
-//               weight_notes: file.weight_notes
-//             }).then(msg => {
-//               console.log('firestore/mkdailydata weight save success:', msg, name);
-//             }).catch(e => {
-//               console.error('Error saving to firestore/mkdailydata:', e);
-//               alert('firestore/mkdailydata save fail. will continue operation');
-//             });
-//           }
-//         });
-//       }
-
-//       let file = {
-//         Name: name,
-//         WeightValues: [Number(wt)],
-//         WeightTimes: [today.toJSON()],
-//         WeightNotes: [notes],
-//         CurrentDateValue: today.getTime(),
-//         CurrentDate: today.toJSON(),
-//         Doctype: "weights",
-//         Docname: idStorage,
-//         ResearcherDisplayName: blescale.displayName,
-//         ResearcherEmail: blescale.email,
-//         ResearcherID: blescale.uid
-//       };
-
-//       let fileRef = mkscaledataRef.child(idStorage);
-//       let storageFile = new Blob([JSON.stringify(file, null, 1)]);
-//       let metadata = { contentType: "application/json" };
-//       fileRef.put(storageFile, metadata).then(sns => {
-//         console.log("Storage Weight Save Success:", idStorage);
-//       }).catch(e => {
-//         console.error("Storage Weight Save Fail:", idStorage);
-//         alert("Storage Weight Save Failed");
-//         throw "STORAGE SAVE FAILED EXCEPTION";
-//       });
-
-//       alert("Firestore/Storage Weight Save Success. Displaying Result...");
-
-//       editor.destroy();
-//       editor = 
-//         new JSONEditor(editorContainer, {}, file);
-//     }
-    
-//     else if (sns.size == 1) {
-//       sns.forEach(doc => {
-//         function timestampToDate(element, idx, arr) {
-//           try {
-//             arr[idx] = element.toDate().toJSON();
-//           } catch (e) {
-//             console.error("Error converting t_weights:", e);
-//           }
-//         }
-
-//         function dateToTimestamp(element, idx, arr) {
-//           try {
-//             arr[idx] = firebase.firestore.Timestamp.fromDate(new Date(element));
-//           } catch (e) {
-//             console.error("Error converting t_weights:", e);
-//           }
-//         }
-
-//         let file = doc.data();
-//         file.WeightTimes.forEach(timestampToDate);
-//         file.CurrentDate = file.CurrentDate.toDate().toJSON();
-
-//         let timeNow = new Date(Date.now());
-//         file.WeightValues.push(Number(wt));
-//         file.WeightTimes.push(timeNow.toJSON());
-//         file.WeightNotes.push(notes);
-
-//         let fileRef = mkscaledataRef.child(doc.id + ".json");
-//         let storageFile = new Blob([JSON.stringify(file, null, 1)]);
-//         let metadata = { contentType: "application/json" };
-//         fileRef.put(storageFile, metadata).then(sns => {
-//           console.log("Storage Weight Save Success:" , doc.id + ".json");
-//         }).catch(e => {
-//           console.error("Storage Weight Save Fail:", doc.id + ".json");
-//           alert("Storage Weight Save Failed");
-//           throw "STORAGE SAVE FAILED EXCEPTION";
-//         });
-
-//         // perform deep copy
-//         let firestoreFile = JSON.parse(JSON.stringify(file));
-//         firestoreFile.WeightTimes.forEach(dateToTimestamp);
-//         firestoreFile.CurrentDate 
-//           = firebase.firestore.Timestamp.fromDate(new Date(firestoreFile.CurrentDate));
-
-//         db.collection("mkscale").doc(doc.id).set(
-//           firestoreFile
-//         ).then(() => {
-//           console.log("Firestore Weight Save Success:", doc.id);
-//         }).catch(e => {
-//           console.error("Firestore Weight Save Fail:", doc.id);
-//           alert("Firestore Weight Save Failed");
-//           throw "FIRESTORE SAVE FAILED EXCEPTION";
-//         });
-
-//         if (entrySelector.value != "mkscale") {
-//           db.collection('marmosets').doc(name).get().then(doc => {
-//             // try {
-//             //   console.log(doc.data().weight_values.length);
-//             // } catch (e) {
-//             //   db.collection('marmosets').doc(name).update({
-//             //     weight_values: [Number(wt)],
-//             //     weight_dates: [firebase.firestore.Timestamp.fromDate(today)],
-//             //     weight_notes: [notes] 
-//             //   }).catch(e => {
-//             //     console.error("Error saving to firestore/marmosets");
-//             //     alert("firestore/marmosets weight save fail. Will continue operation");
-//             //   });
-//             //   console.log("firestore/marmosets Weight Save Success:", name);
-//             // }
-//             let fileMarmosts = doc.data();
-//             fileMarmosts.weight_values.push(Number(wt));
-//             fileMarmosts.weight_notes.push(notes);
-//             fileMarmosts.weight_dates.push(firebase.firestore.Timestamp.fromDate(timeNow));
-//             console.log(fileMarmosts.weight_dates);
-//               // console.log(file.weight_dates);
-//               // console.log(today);
-//               // file.weight_dates = file.weight_dates.forEach(timestampToDate);
-//               // file.weight_dates.push(today.toJSON());
-//               // file.weight_dates = file.weight_dates.forEach(dateToTimestamp);
-  
-//             db.collection('marmosets').doc(name).update({
-//               weight_values: fileMarmosts.weight_values,
-//               weight_dates: fileMarmosts.weight_dates,
-//               weight_notes: fileMarmosts.weight_notes,
-//             }).then(msg => {
-//               console.log("firestore/marmosets weight save success:", msg, name);
-//             }).catch(e => {
-//               console.error("Error saving to firestore/marmosets");
-//               alert("firestore/marmosets weight save fail. will continue operation");
-//             });
-            
-//           });
-//         }
-
-//         alert("Firestore/Storage Weight Save Success. Displaying Result...");
-
-//         editor.destroy();
-//         editor = new JSONEditor(editorContainer, {}, file);
-
-//       });
-//     }
-//   }).catch(e => {
-//     console.error("ERROR:", e);
-//     alert("Unknown Error. Check console output");
-//   });
-// });
 entryForm.addEventListener('submit', async (ev) => {
   ev.preventDefault();
   let name = '';
   let today = new Date();
   let wt = document.querySelector('#entry-weight').value;
   let notes = document.querySelector('#entry-notes').value;
+  let initials = document.querySelector('#entry-initials').value;
   
   if (entrySelector.value != 'mkscale') {
     name = entrySelector.value;
-    db.collection('mkdailydata').doc(name).get().then(doc => {
-      if ('weight_values' in doc.data()) {
-        let file = doc.data();
-        file.weight_values.push(Number(wt));
-        file.weight_notes.push(notes);
-        file.weight_dates.push(firebase.firestore.Timestamp.fromDate(today));
 
-        db.collection('mkdailydata').doc(name).update({
-          weight_values: file.weight_values,
-          weight_dates: file.weight_dates,
-          weight_notes: file.weight_notes
-        }).then(msg => {
-          console.log('firestore/mkdailydata weight save success:', msg, name);
-        }).catch(e => {
-          console.error('Error saving to firestore/mkdailydata', e);
-          alert('firestore/mkdailydata save fail. will continue operation');
-        });
+    let path = 'mkturkfiles/mkdailydatatest/' + name + '.json';
+    let storageFile = await getStorageFile(path);
+    let firestoreDoc = await getDocumentData('mkdailydatatest', name);
+
+    let tmp = {};
+    tmp.weight = Number(wt);
+    tmp.implant_cleaned = '';
+    tmp.reward = '';
+    tmp.supplement = '';
+    tmp.time_on = '';
+    tmp.time_off = '';
+    tmp.comments = notes ? notes : '';
+    tmp.initials = initials ? initials : '';
+    tmp.timestamp = new Date();
+
+    for (let key in tmp) {
+      if (firestoreDoc !== undefined) {
+        if (key === 'timestamp') {
+          storageFile[key].push(tmp[key].toJSON());
+          firestoreDoc[key].push(firebase.firestore.Timestamp.fromDate(tmp[key]));
+        } else {
+          storageFile[key].push(tmp[key]);
+          firestoreDoc[key].push(tmp[key]);
+        }
+      } else {
+        throw 'firestore/mkdailydata Document Not Found';
       }
-    });
-
-
-    let path = 'mkturkfiles/mkdailydata/' + name + '.json';
-    let fileRef = storage.ref().child(path);
-    let url = await fileRef.getDownloadURL().catch(e => {
-      console.error('Error getting url', e);
-    });
-    let response = await fetch(url);
-    let file = await response.json();
-  
-
-    if (!file.hasOwnProperty('weight_values')) {
-      file.weight_values = [];
-      file.weight_dates = [];
-      file.weight_notes = [];
     }
-    file.weight_values.push(Number(wt));
-    file.weight_notes.push(notes);
-    file.weight_dates.push(today.toJSON());
 
-    let fileToGCS = new Blob(
-      [JSON.stringify(file, Object.keys(file).sort(), 1)]
-    );
-    fileRef.put(fileToGCS, {contentType: 'application/json'}).then(sns => {
-      console.log('File Uploaded to GCS/mkturkfiles/mkdailydata');
-      editor.destroy();
-      editor = new JSONEditor(editorContainer, {}, file);
+    await db.collection('mkdailydatatest').doc(name).set(firestoreDoc).then(async () => {
+      console.log(name, 'weight uploaded to firestore/mkdailydatatest');
+      storageFile = new Blob(
+        [JSON.stringify(storageFile, Object.keys(storageFile).sort(), 1)]
+      );
+      let fileRef = storage.ref().child(path);
+      await fileRef.put(storageFile, {contentType: 'application/json'}).then(() => {
+        console.log(name, 'weight uploaded to mkturkfiles/mkdailydatatest');
+        editor.destroy();
+        tmp.timestamp = tmp.timestamp.toJSON();
+        editor = new JSONEditor(editorContainer, {}, tmp);
+        alert('Weight Successfully Uploaded/Updated');
+      }).catch(e => {
+        console.error('Error uploading weight to mkturkfiles/mkdailydatatest', e);
+        alert('Error Uploading file to GCS');
+      });
     }).catch(e => {
-      alert('Error uploading file to GCS');
+      console.error('Error uploading weight to firestore/mkdailydatatest', e);
+      alert('Error updating Firestore doc');
     });
-
-
 
   } else if (entrySelector.value == 'mkscale') {
     name = document.querySelector('#entry-name').value;
