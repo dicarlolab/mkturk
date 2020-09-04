@@ -113,6 +113,14 @@ export class ParseEngine {
         linspace.forEach(value => {
           sample.push(Number(parseFloat(value).toPrecision(4)));
         });
+      } else if (recipe[0] == 'movie' || recipe[0] == 'm') {
+        let list = recipe[1].split(',');
+        let tmp: any[] = [];
+        list.forEach((value: string) => {
+          tmp.push(Number(parseFloat(value).toPrecision(4)));
+        });
+        sample = [];
+        sample.push(tmp);
       } else {
         let list = recipe[0].split(',');
         sample = [];
@@ -122,7 +130,7 @@ export class ParseEngine {
       }
     } else {
       if (isNaN(row) == false) {
-        console.log('single number', row);
+        // console.log('single number', row);
         sample = [];
         sample.push(row);
       }

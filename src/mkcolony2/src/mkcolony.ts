@@ -269,7 +269,8 @@ export class Mkcolony {
               }
 
               return cell.getValue();
-              
+            } else {
+              return cell.getValue();
             }
           } catch {
             console.log('[' + cell.getData().name + '] is not CWA monkey');
@@ -341,7 +342,8 @@ export class Mkcolony {
             return fluidThisWeekStr;
 
           } catch {
-            console.error('[' + cell.getData().name + '] has no baseline weight data');
+            console.error('[' + cell.getData().name + '] has no baseline fluid data');
+            return cell.getValue();
           }
         }},
       ],
@@ -1280,6 +1282,7 @@ export class Mkcolony {
     submitBtn.addEventListener('click', async (ev: Event) => {
       ev.preventDefault();
       let currentSheetData = this.logbook.getData('visible');
+      console.log('currentSheetData', currentSheetData);
       let toSubmit: any = {};
       let now = new Date();
       for (let row of currentSheetData) {
@@ -1294,12 +1297,14 @@ export class Mkcolony {
         tmp.initials = row.initials ? row.initials : '';
         if (utils.isNotEmptyObject(tmp)) {
           tmp.timestamp = new Date();
-          toSubmit[row.agent] = tmp;
+          toSubmit[row.name] = tmp;
         }
       }
 
       if (Object.keys(toSubmit).length > 0) {
+        console.log('toSubmit', toSubmit);
         for (let agent in toSubmit) {
+          console.log('agent', agent);
           let path = 'mkturkfiles/mkdailydatatest/' + agent + '.json';
           let storageFile = await utils.getStorageFile(path);
           let firestoreDoc = await utils.getDocumentData('mkdailydatatest', agent);
@@ -1329,6 +1334,7 @@ export class Mkcolony {
             let fileRef = storage.ref().child(path);
             await fileRef.put(storageFile, {contentType: 'application/json'}).then(() => {
               console.log(agent, 'log uploaded to mkturkfiles/mkdailydatatest');
+              // this.init();
             }).catch(e => {
               console.error('Error:', e);
               alert('Error Uploading file to GCS');
@@ -1337,9 +1343,8 @@ export class Mkcolony {
             console.error('Error:', e);
             alert('Error updating doc to Firestore');
           });
-  
-          alert('Logsheet Successfully Uploaded');
         }
+        alert('Logsheet Successfully Uploaded');
       } else {
         alert('Nothing to submit');
       }
