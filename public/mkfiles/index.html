@@ -144,9 +144,7 @@
                   <input class="mdl-textfield__input" type="text" id="file-name-input">
                 </div>
                 <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="file-rename-btn">Rename</button>
-                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="file-dup-btn">Duplicate</button>
-                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="gen-scene-param-btn" data-toggle="modal" data-target="#gen-scene-param-modal" data-backdrop="false">Generate Param</button>
-                
+                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="file-dup-btn">Duplicate</button>                
                 <dialog class="mdl-dialog" id="file-dup-modal">
                   <h5 class="mdl-dialog__title">Duplicate File</h5>
                   <div class="mdl-dialog__content">
@@ -171,56 +169,7 @@
                   </div>
                 </dialog>
 
-                <div class="modal" id="gen-scene-param-modal" role="dialog">
-                  <div class="modal-dialog">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h4 class="modal-title">Modal Header</h4>
-                      </div>
-
-                      <div class="modal-body">
-                        <button class="collapsible">sizeInches</button>
-                        <div class="coll-content size-inches">
-                          <div class="gen-scene-rule-box">
-                            <div class="rule-table-controls">
-                              <button type="button" class="mdl-button add-rule-btn">Add Rule</button>
-                              <button type="button" class="mdl-button undo-edit-btn">Undo Edit</button>
-                            </div>
-                            <div class="rule-table" id="size-inches-table"></div>
-                          </div>
-                        </div>
-
-                        <button class="collapsible">positionInches</button>
-                        <div class="coll-content position-inches">
-                          <div class="gen-scene-rule-box">
-                            <div class="rule-table-controls">
-                              <button type="button" class="mdl-button add-rule-btn">Add Rule</button>
-                              <button type="button" class="mdl-button undo-edit-btn">Undo Edit</button>
-                            </div>
-                            <div class="rule-table" id="position-inches-table"></div>
-                          </div>
-                        </div>
-
-                        <button class="collapsible">rotationDegrees</button>
-                        <div class="coll-content rotation-degrees">
-                          <div class="gen-scene-rule-box">
-                            <div class="rule-table-controls">
-                              <button type="button" class="mdl-button add-rule-btn">Add Rule</button>
-                              <button type="button" class="mdl-button undo-edit-btn">Undo Edit</button>
-                            </div>
-                            <div class="rule-table" id="rotation-degrees-table"></div>
-                          </div>
-                        </div>
-
-
-                      </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-default" id="generate-scene-param">Generate</button>
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                
               </form>
               <div id="editor"></div>
               <div id="button-box">

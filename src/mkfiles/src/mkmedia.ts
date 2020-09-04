@@ -30,8 +30,8 @@ export class Mkeditor {
   private fileRenameBtn: HTMLButtonElement;
   private fileDupBtn: HTMLButtonElement;
   private fileDupModal: HTMLDialogElement;
-  public genSceneParamBtn: HTMLButtonElement;
-  private genSceneParamModal: HTMLDivElement;
+  // public genSceneParamBtn: HTMLButtonElement;
+  // private genSceneParamModal: HTMLDivElement;
   public genBtn: HTMLButtonElement;
   public svSceneBtn: HTMLButtonElement;
   private pe: ParseEngine;
@@ -67,11 +67,11 @@ export class Mkeditor {
     this.fileDupBtnAction();
 
 
-    this.genSceneParamBtn
-      = document.querySelector('#gen-scene-param-btn') as HTMLButtonElement;
-    this.genSceneParamModal
-      = document.querySelector('#gen-scene-param-modal') as HTMLDivElement;
-    this.generateSceneParamModalAction()
+    // this.genSceneParamBtn
+    //   = document.querySelector('#gen-scene-param-btn') as HTMLButtonElement;
+    // this.genSceneParamModal
+    //   = document.querySelector('#gen-scene-param-modal') as HTMLDivElement;
+    // this.generateSceneParamModalAction()
     
     
     this.genBtn = document.querySelector('#generate-btn') as HTMLButtonElement;
@@ -92,7 +92,7 @@ export class Mkeditor {
   public displayFirebaseTextFile(file: Object, loc: string) {
     this.fileRenameBtn.style.display = 'none';
     this.fileDupBtn.style.display = 'none';
-    this.genSceneParamBtn.style.display = 'none';
+    // this.genSceneParamBtn.style.display = 'none';
     this.storeParamBtn.style.display = 'none';
     this.updateBtn.style.display = 'inline-block';
     this.btnBoxDiv.style.gridTemplateAreas = '"update-btn update-btn"'
@@ -277,18 +277,18 @@ export class Mkeditor {
     if (fileRef.fullPath.includes(sceneParamPath)) {
       if (fileRef.fullPath.includes('template')) {
         this.fileDupBtn.style.display = 'inline-block';
-        this.genSceneParamBtn.style.display = 'inline-block';
+        // this.genSceneParamBtn.style.display = 'inline-block';
         options = sceneTemplateOptions
       } else {
         this.fileDupBtn.style.display = 'inline-block';
-        this.genSceneParamBtn.style.display = 'none';
+        // this.genSceneParamBtn.style.display = 'none';
       }
     } else if (fileRef.fullPath.includes(taskParamPath)) {
       this.fileDupBtn.style.display = 'inline-block';
-      this.genSceneParamBtn.style.display = 'none';
+      // this.genSceneParamBtn.style.display = 'none';
     } else {
       this.fileDupBtn.style.display = 'none';
-      this.genSceneParamBtn.style.display = 'none';
+      // this.genSceneParamBtn.style.display = 'none';
     }
 
     let fileUrl = await fileRef.getDownloadURL().catch(e => {
