@@ -261,6 +261,14 @@ qryLocSelc!.addEventListener("change", ev => {
 
       break;
 
+    case "mkdailydatatest":
+      let retTest = mkq.decodeQuery(db.collection('mkdailydatatest'));
+      retTest.then(docs => {
+        mkf.listFirestoreDocs(docs, 'mkdailydatatest');
+      });
+
+      break;
+
     case "mkturkfiles":
       fs.style.visibility = "hidden";
       ki0.style.visibility = "hidden";

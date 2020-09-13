@@ -3,11 +3,13 @@ import 'firebase/firestore';
 import 'firebase/storage';
 import JSONEditor from 'jsoneditor';
 import cloneDeep from 'lodash.cloneDeep';
+import { Utils } from './utils';
 
 type div = HTMLDivElement;
 type Timestamp = firebase.firestore.Timestamp;
 const db = firebase.firestore();
 const storage = firebase.storage();
+const utils = new Utils();
 
 export class Mkcolony {
 
@@ -40,6 +42,7 @@ export class Mkcolony {
   private fldSlt: HTMLSelectElement;
   
   private entryJson: JSONEditor;
+  private logbook: Tabulator;
 
 
   constructor() {
@@ -74,6 +77,9 @@ export class Mkcolony {
     this.saveBtnAction();
     this.selectorAction();
     this.setupEntryCard();
+
+    this.submitLogsheetAction();
+
   }
 
   public deleteAll() {
@@ -93,13 +99,6 @@ export class Mkcolony {
         if (fieldValueInput.hasAttribute('pattern')) {
           fieldValueInput.removeAttribute('pattern');
         }
-      } else if (field.value === 'fluid') {
-        notes.style.display = 'block';
-        fieldValueInput.setAttribute('pattern', '-?[0-9]*(\.[0-9]+)?');
-        let errorLabel = document.createElement('span');
-        errorLabel.setAttribute('class', 'mdl-textfield__error');
-        errorLabel.textContent = 'Input is not a number!';
-        entryBox.appendChild(errorLabel);
       }
     });
   }
@@ -120,68 +119,10 @@ export class Mkcolony {
         return;
       }
 
-      if (field.value === 'fluid') {
-
-        let newFluidValue = Number(value.value);
-        if (Number.isNaN(newFluidValue)) {
-          alert('Enter only numbers');
-          return;
-        }
-        let data = cloneDeep(this.cleanData.mkdailydataDic[agent.value]);
-        if (!data.hasOwnProperty('fluid_values')) {
-          data.fluid_values = [];
-          data.fluid_dates = [];
-          data.fluid_notes = [];
-        }
-        data.fluid_values.push(newFluidValue);
-        let entryTimestamp = new Date().toJSON();
-        data.fluid_dates.push(entryTimestamp);
-        data.fluid_notes.push(notes.value);
-
-        let dataToFirebase = this.dateToTimestamp(data);
-        db.collection('mkdailydata').doc(agent.value).set(dataToFirebase)
-        .then(() => {
-          console.log('[Document Updated]: mkdailydata.' + data.agent);
-          alert('Document Updated');
-          this.entryJson.set(data);
-        }).catch(e => {
-          alert('Entry Insertion Failed');
-          console.error('[Insertion Failed]', 'mkdailydata.' + data.agent);
-          console.error('[ERROR]:', e);
-        });
-
-        let path = 'mkturkfiles/mkdailydata/' + agent.value + '.json';
-        let fileRef = storage.ref().child(path);
-        let url = await fileRef.getDownloadURL().catch(e => {
-          console.error('Error getting URL', e);
-        });
-        let response = await fetch(url);
-        let fileToGCS = await response.json();
-
-        if (!fileToGCS.hasOwnProperty('fluid_values')) {
-          fileToGCS.fluid_values = [];
-          fileToGCS.fluid_dates = [];
-          fileToGCS.fluid_notes = [];
-        }
-        fileToGCS.fluid_values.push(newFluidValue);
-        fileToGCS.fluid_dates.push(entryTimestamp);
-        fileToGCS.fluid_notes.push(notes.value);
-
-        fileToGCS = new Blob(
-          [JSON.stringify(fileToGCS, Object.keys(fileToGCS).sort(), 1)]
-        );
-        fileRef.put(fileToGCS, {contentType: 'application/json'}).then(sns => {
-          console.log('File Uploaded to GCS/mkturkfiles/mkdailydata');
-        }).catch(e => {
-          console.error('Error:', e);
-          alert('Error uploading file to GCS');
-        });
-        
-      } else if (field.value === 'lab_notes') {
+      if (field.value === 'lab_notes') {
         let data = this.cleanData.marmosetDataDic[agent.value];
         data.lab_notes.push(value.value);
         data.lab_notes_dates.push(new Date().toJSON());
-        // this.entryJson.set(data);
         let dataToServer = this.dateToTimestamp(data);
         db.collection('marmosets').doc(data.name).set(dataToServer).then(() => {
           console.log('[Document Updated]: marmoset.' + data.name);
@@ -210,10 +151,6 @@ export class Mkcolony {
     });
   }
 
-  public previewBtnAction() {
-
-  }
-
   public setupEntryCard() {
     let entryJsonDiv = document.querySelector('#entry-json') as div;
     this.entryJson = new JSONEditor(entryJsonDiv, {mode: "tree" ,sortObjectKeys: true});
@@ -227,8 +164,6 @@ export class Mkcolony {
       
     });
   }
-
-  
 
   public populateTable(data: any[]) {
     let clTableCard 
@@ -334,7 +269,8 @@ export class Mkcolony {
               }
 
               return cell.getValue();
-              
+            } else {
+              return cell.getValue();
             }
           } catch {
             console.log('[' + cell.getData().name + '] is not CWA monkey');
@@ -406,7 +342,8 @@ export class Mkcolony {
             return fluidThisWeekStr;
 
           } catch {
-            console.error('[' + cell.getData().name + '] has no baseline weight data');
+            console.error('[' + cell.getData().name + '] has no baseline fluid data');
+            return cell.getValue();
           }
         }},
       ],
@@ -495,18 +432,29 @@ export class Mkcolony {
     let agFlDashboard = new google.visualization.Dashboard(this.agFlCard);
     agFlDt.addColumn('date', 'Date');
     agFlDt.addColumn('number', 'Fluid Intake');
-    agFlDt.addColumn('number', 'Baseline Fluid');
-    agFlDt.addColumn('number', 'Baseline Fluid -50%');
 
-    let baselineFl = data.baseline_fluid_values.slice(-1)[0];
-    let lowerBound = baselineFl * 0.5;
-    for (let i = 0; i < data.fluid_values.length; i++) {
-      agFlDt.addRow([
-        new Date(data.fluid_dates[i]),
-        data.fluid_values[i],
-        baselineFl,
-        lowerBound
-      ]);
+    try {
+      let baselineFl = data.baseline_fluid_values.slice(-1)[0];
+      let lowerBound = baselineFl * 0.5;
+      agFlDt.addColumn('number', 'Baseline Fluid');
+      agFlDt.addColumn('number', 'Baseline Fluid -50%');
+      for (let i = 0; i < data.fluid_values.length; i++) {
+        agFlDt.addRow([
+          new Date(data.fluid_dates[i]),
+          data.fluid_values[i],
+          baselineFl,
+          lowerBound
+        ]);
+      }
+    } catch {
+      console.log('[' + data.name + '] No Baseline Fluid Data');
+      console.log('Plotting without baselines');
+      for (let i = 0; i < data.fluid_values.length; i++) {
+        agFlDt.addRow([
+          new Date(data.fluid_dates[i]),
+          data.fluid_values[i]
+        ]);
+      }
     }
 
     let dateFormatter = new google.visualization.DateFormat({timeZone: 0});
@@ -705,14 +653,16 @@ export class Mkcolony {
   private tsToDate(data: any[], precision: string) {
     function helperDate(elem: Timestamp, idx: number, arr: any[]) {
       try {
-        arr[idx] = elem.toDate().toJSON().split('T')[0];
+        // arr[idx] = elem.toDate().toJSON().split('T')[0];
+        arr[idx] = elem.toDate().toLocaleString('en-US').split(',')[0];
       } catch {
       }
     }
 
     function helperTime(elem: Timestamp, idx: number, arr: any[]) {
       try {
-        arr[idx] = elem.toDate().toJSON();
+        // arr[idx] = elem.toDate().toJSON();
+        arr[idx] = elem.toDate().toLocaleString('en-US');
       } catch {
 
       }
@@ -741,9 +691,11 @@ export class Mkcolony {
         } else if (isDict(row[key])) {
           try {
             if(precision === 'date') {
-              row[key] = row[key].toDate().toJSON().split('T')[0];
+              // row[key] = row[key].toDate().toJSON().split('T')[0];
+              row[key] = row[key].toDate().toLocaleString('en-US').split(',')[0];
             } else if (precision === 'time') {
-              row[key] = row[key].toDate().toJSON();
+              // row[key] = row[key].toDate().toJSON();
+              row[key] = row[key].toDate().toLocaleString('en-US');
             }
             continue;
           } catch {
@@ -752,9 +704,11 @@ export class Mkcolony {
           for (let key2 of Object.keys(row[key])) {
             try {
               if (precision === 'date') {
-                row[key][key2] = row[key][key2].toDate().toJSON().split('T')[0];
+                // row[key][key2] = row[key][key2].toDate().toJSON().split('T')[0];
+                row[key][key2] = row[key][key2].toDate().toLocaleString('en-US').split(',')[0];
               } else if (precision === 'time') {
-                row[key][key2] = row[key][key2].toDate().toJSON();
+                // row[key][key2] = row[key][key2].toDate().toJSON();
+                row[key][key2] = row[key][key2].toDate().toLocaleString('en-US');
               }
             } catch {
 
@@ -763,9 +717,11 @@ export class Mkcolony {
         } else if (!isString(row[key]) && !isNumber(row[key])) {
           try {
             if (precision === 'date') {
-              row[key] = row[key].toDate().toJSON().split('T')[0];
+              // row[key] = row[key].toDate().toJSON().split('T')[0];
+              row[key] = row[key].toDate().toLocaleString('en-US').split(',')[0]
             } else if (precision === 'time') {
-              row[key] = row[key].toDate().toJSON();
+              // row[key] = row[key].toDate().toJSON();
+              row[key] = row[key].toDate().toLocaleString('en-US');
             }
           } catch {
           }
@@ -777,33 +733,45 @@ export class Mkcolony {
   }
 
   private plotAgentWeight(data: any) {
-    const agWtDt = new google.visualization.DataTable();
+    console.log('plotagentweight data', data);
+    let agWtDt = new google.visualization.DataTable();
     let agWtDashboard = new google.visualization.Dashboard(this.agWtCard);
     agWtDt.addColumn('date', 'Date');
     agWtDt.addColumn('number', 'Weight');
-    agWtDt.addColumn('number', 'Baseline');
-    agWtDt.addColumn('number', 'Soft Upper Bound');
-    agWtDt.addColumn('number', 'Soft Lower Bound');
-    agWtDt.addColumn('number', 'Hard Upper Bound');
-    agWtDt.addColumn('number', 'Hard Lower Bound');
+  
+    try {
+      let baselineWt = data.baseline_weight_values.slice(-1)[0];
+      let baselineWtSoftUpper = baselineWt * 1.05;
+      let baselineWtSoftLower = baselineWt * 0.95;
+      let baselineWtHardUpper = baselineWt * 1.08;
+      let baselineWtHardLower = baselineWt * 0.92;
 
-    const baselineWt 
-      = data.baseline_weight_values[data.baseline_weight_values.length - 1];
-    let baselineWtSoftUpper = baselineWt * 1.05;
-    let baselineWtSoftLower = baselineWt * 0.95;
-    let baselineWtHardUpper = baselineWt * 1.08;
-    let baselineWtHardLower = baselineWt * 0.92;
+      agWtDt.addColumn('number', 'Baseline');
+      agWtDt.addColumn('number', 'Soft Upper Bound');
+      agWtDt.addColumn('number', 'Soft Lower Bound');
+      agWtDt.addColumn('number', 'Hard Upper Bound');
+      agWtDt.addColumn('number', 'Hard Lower Bound');
 
-    for (let i = 0; i < data.weight_dates.length; i++) {
-      agWtDt.addRow([
-        new Date(data.weight_dates[i]),
-        data.weight_values[i],
-        baselineWt,
-        baselineWtSoftUpper,
-        baselineWtSoftLower,
-        baselineWtHardUpper,
-        baselineWtHardLower
-      ]);
+      for (let i = 0; i < data.weight_dates.length; i++) {
+        agWtDt.addRow([
+          new Date(data.weight_dates[i]),
+          data.weight_values[i],
+          baselineWt,
+          baselineWtSoftUpper,
+          baselineWtSoftLower,
+          baselineWtHardUpper,
+          baselineWtHardLower
+        ]);
+      }
+    } catch {
+      console.log('[' + data.name + '] No baseline weight data');
+      console.log('Plotting weight without baselines');
+      for (let i = 0; i < data.weight_dates.length; i++) {
+        agWtDt.addRow([
+          new Date(data.weight_dates[i]),
+          data.weight_values[i],
+        ]);
+      }
     }
 
     let plot = document.querySelector('#agent-weight-plot') as div;
@@ -919,8 +887,8 @@ export class Mkcolony {
 
   }
 
-  private plotColonyWeight() {
-    const clWtDataTable = this.clWtDataToDataTable(this.vizData);
+  private async plotColonyWeight() {
+    const clWtDataTable = await this.clWtDataToDataTable(this.vizData);
     let clWtDashboard = new google.visualization.Dashboard(this.clWtCard);
 
     let plot = document.querySelector('#colony-weight-plot') as div;
@@ -980,7 +948,7 @@ export class Mkcolony {
     clWtDashboard.draw(clWtDataTable);
   }
 
-  private clWtDataToDataTable(data: any[]) {
+  private async clWtDataToDataTable(data: any[]) {
     let chartData: any[][] = [];
     let dtArr: google.visualization.DataTable[] = [];
     let i = 0;
@@ -998,6 +966,7 @@ export class Mkcolony {
     });
 
     chartData.forEach(chartCol => {
+      // console.log('chartCol', chartCol);
       let temp = google.visualization.arrayToDataTable(chartCol, false);
       dtArr.push(temp);
     });
@@ -1007,8 +976,23 @@ export class Mkcolony {
     for (let i = 2; i < dtArr.length; i++) {
       let colIdx = [...Array(i+1).keys()];
       colIdx.shift();
-      dt = google.visualization.data.join(dt, dtArr[i], 'full', [[0, 0]],
+      // console.log('dt', dt);
+      // console.log('dtarrlength', dtArr.length);
+      // dt = google.visualization.data.join(dt, dtArr[i], 'full', [[0, 0]],
+      //   colIdx, [1]);
+
+      try {
+        dt = google.visualization.data.join(dt, dtArr[i], 'full', [[0, 0]],
         colIdx, [1]);
+        // console.log('NO JOIN ERROR IDX', i);
+        // console.log('NO JOIN ERROR dt', dt);
+        // console.log('NO JOIN ERROR dtArr[i]', dtArr[i]);
+      } catch (e) {
+        // console.error('JOIN ERROR', e);
+        // console.error('JOIN ERROR IDX', i);
+        // console.error('JOIN ERROR dt', dt);
+        // console.error('JOIN ERROR dtArr[i]', dtArr[i])
+      }
     }
 
     return dt;
@@ -1020,9 +1004,32 @@ export class Mkcolony {
     let data = await this.processData(marmData, mkdailydata);
     this.populateTable(data);
     this.plotColonyWeight();
+    this.setupLogbook();
   }
 
-  public processData(data1: any[], data2: any[]) {
+  public async getStorageData(path: string) {
+    console.log('hello');
+    let tmp: any = {};
+    let mkdailydataRef = storage.ref().child(path);
+    await mkdailydataRef.listAll().then(res => {
+      console.log('res', res);
+      res.items.forEach(async itemRef => {
+        console.log('itemRef', itemRef);
+        let url = await itemRef.getDownloadURL().catch(e => {
+          console.error('Error getting URL', e);
+        });
+        let response = await fetch(url);
+        let file = await response.json();
+        tmp[itemRef.name] = file;
+      });
+    }).catch(e => {
+      console.error('error', e);
+    });
+
+    return tmp;
+  }
+
+  public async processData(data1: any[], data2: any[]) {
     this.cleanData.mkdailydata = new Array();
     this.cleanData.marmosetData = new Array();
     this.cleanData.mkdailydataDic = {};
@@ -1038,8 +1045,18 @@ export class Mkcolony {
         return doc.name === row.agent;
       });
 
+      // concatenating marmoset data and mkdailydata
       if (idx >= 0) {
-        this.vizData[idx] = {...this.vizData[idx], ...row};
+        let fluidTmp = utils.mergeTwoNumberArrays(row.reward, row.supplement);
+        let fluidObj = utils.createContinuousArray(fluidTmp, row.timestamp);
+        let weightObj = utils.createContinuousArray(row.weight, row.timestamp);
+        let vizDataRow: any = {};
+        vizDataRow.fluid_dates = fluidObj.target;
+        vizDataRow.fluid_values = fluidObj.reference;
+        vizDataRow.weight_dates = weightObj.target;
+        vizDataRow.weight_values = weightObj.reference;
+
+        this.vizData[idx] = {...this.vizData[idx], ...vizDataRow};
       }
     });
 
@@ -1158,4 +1175,181 @@ export class Mkcolony {
     return data;
   }
 
+  private async setupLogbook() {
+    let logbookTableDiv = document.querySelector('#logbook') as div;
+    let logbookData = cloneDeep(this.vizData);
+
+    function entryTodayMutator(value: any, data: any, type: any, mutatorParams: any, cell?: Tabulator.CellComponent) {
+      //console.log('cell', cell);
+      try {
+        let today = new Date();
+        function isSameDay(first: Date, second: Date) {
+          return first.getFullYear() === second.getFullYear() &&
+            first.getMonth() === second.getMonth() &&
+            first.getDate() === second.getDate();
+        }
+        let ref = new Date(data.last_fluid_date + ' 12:00 AM');
+        if (isSameDay(today, ref)) {
+          return true;
+        } else {
+          return false;
+        }
+      } catch (error) {
+        console.error('Entry Today Mutator Error', error);
+        return false;
+      }
+    }
+
+    function entryTodayFmt(cell: any) {
+      try {
+        if (cell.getValue() == true) {
+          cell.getElement().style.backgroundColor = '#00FF00';
+        } else {
+          cell.getElement().style.backgroundColor = 'red';
+        }
+        return cell.getValue();
+      } catch (error) {
+        cell.getElement().style.backgroundColor = 'red';
+        return cell.getValue();
+      }
+    }
+
+    function editCheck(cell: any) {
+      try {
+        let entryToday = cell.getData().entry_today;
+        if (entryToday) {
+          return false;
+        } else {
+          return true;
+        }
+      } catch (error) {
+        console.error('editCheck Error', error);
+        return true;
+      }
+    }
+
+    function implantEditCheck(cell: any) {
+      try {
+        let implant = cell.getData().implant;
+        let entryToday = cell.getData().entry_today;
+        if (!entryToday && implant) {
+          return true;
+        } else {
+          return false;
+        }
+      } catch (error) {
+        console.error('Implant Edit Check Error', error);
+        return false;
+      }
+    }
+
+    // function entryTodayMutatorParams(value: any, data: any, type: any, component)
+
+    this.logbook = new Tabulator(logbookTableDiv, {
+      data: logbookData,
+      index: 'name',
+      layout: 'fitColumns',
+      initialSort: [
+        { column: 'name', dir: 'asc' }
+      ],
+      columns: [
+        {title: 'Name', field: 'name'},
+        {title: 'Entry Today?', field: 'entry_today', mutator: entryTodayMutator, formatter: entryTodayFmt},
+        {title: 'Weight', field: 'weight', editor: 'number', editable: editCheck},
+        {title: 'Implant Cleaned', field: 'implant_cleaned', hozAlign: 'center', formatter: 'tickCross', editor: 'tickCross', editable: implantEditCheck},
+        {title: 'Reward (mL)', field: 'reward', editor: 'number', editable: editCheck},
+        {title: 'Supplement (mL)', field: 'supplement', editor: 'number', editable: editCheck},
+        {title: 'Time ON', field: 'time_on', editor: true, editable: editCheck},
+        {title: 'Time OFF', field: 'time_off', editor: true, editable: editCheck},
+        {title: 'Comments', field: 'comments', editor: true, editable: editCheck},
+        {title: 'Initials', field: 'initials', editor: true, editable: editCheck}
+      ],
+      tableBuilt: async function() {
+        console.log('logbookdata', logbookData);
+        // console.log('activeLogbook', await logbook.getData('active'));
+        //let dt = await logbook.getData('active');
+        //await console.log(dt);
+      }
+
+    });
+
+    // let activeData = await this.logbook.getData('visible');
+    // console.log('activeData', activeData);
+  }
+
+  private async submitLogsheetAction() {
+    let submitBtn = document.querySelector('#logbook-submit-btn') as HTMLButtonElement;
+    submitBtn.addEventListener('click', async (ev: Event) => {
+      ev.preventDefault();
+      let currentSheetData = this.logbook.getData('visible');
+      console.log('currentSheetData', currentSheetData);
+      let toSubmit: any = {};
+      let now = new Date();
+      for (let row of currentSheetData) {
+        let tmp: any = {};
+        tmp.weight = row.weight ? row.weight : '';
+        tmp.implant_cleaned = row.implant_cleaned ? row.implant_cleaned : '';
+        tmp.reward = row.reward ? row.reward : '';
+        tmp.supplement = row.supplement ? row.supplement : '';
+        tmp.time_on = row.time_on ? new Date(now.toLocaleDateString() + ' ' + row.time_on) : '';
+        tmp.time_off = row.time_off ? new Date(now.toLocaleDateString() + ' ' + row.time_off) : '';
+        tmp.comments = row.comments ? row.comments : '';
+        tmp.initials = row.initials ? row.initials : '';
+        if (utils.isNotEmptyObject(tmp)) {
+          tmp.timestamp = new Date();
+          toSubmit[row.name] = tmp;
+        }
+      }
+
+      if (Object.keys(toSubmit).length > 0) {
+        console.log('toSubmit', toSubmit);
+        for (let agent in toSubmit) {
+          console.log('agent', agent);
+          let path = 'mkturkfiles/mkdailydata/' + agent + '.json';
+          let storageFile = await utils.getStorageFile(path);
+          let firestoreDoc = await utils.getDocumentData('mkdailydata', agent);
+  
+          for (let key in toSubmit[agent]) {
+            if (firestoreDoc !== undefined) {
+              if (key === 'time_on' || key === 'time_off' || key === 'timestamp') {
+                try {
+                  storageFile[key].push(toSubmit[agent][key].toJSON());
+                  firestoreDoc[key].push(firebase.firestore.Timestamp.fromDate(toSubmit[agent][key]));
+                } catch {
+                  storageFile[key].push(toSubmit[agent][key]);
+                  firestoreDoc[key].push(toSubmit[agent][key]);
+                }
+              } else {
+                storageFile[key].push(toSubmit[agent][key]);
+                firestoreDoc[key].push(toSubmit[agent][key]);
+              }
+            }
+          }
+          
+          await db.collection('mkdailydata').doc(agent).set(firestoreDoc!).then(async () => {
+            console.log(agent, 'log uploaded to firestore/mkdailydata');
+            storageFile = new Blob(
+              [JSON.stringify(storageFile, Object.keys(storageFile).sort(), 1)]
+            );
+            let fileRef = storage.ref().child(path);
+            await fileRef.put(storageFile, {contentType: 'application/json'}).then(() => {
+              console.log(agent, 'log uploaded to mkturkfiles/mkdailydata');
+              // this.init();
+            }).catch(e => {
+              console.error('Error:', e);
+              alert('Error Uploading file to GCS');
+            });
+          }).catch(e => {
+            console.error('Error:', e);
+            alert('Error updating doc to Firestore');
+          });
+        }
+        alert('Logsheet Successfully Uploaded');
+      } else {
+        alert('Nothing to submit');
+      }
+
+
+    });
+  }
 }

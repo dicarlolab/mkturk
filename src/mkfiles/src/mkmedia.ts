@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { BufferGeometryLoader } from "three";
+import {ParseEngine} from './parser'
 
 
 type FileRef = firebase.storage.Reference;
@@ -29,8 +30,13 @@ export class Mkeditor {
   private fileRenameBtn: HTMLButtonElement;
   private fileDupBtn: HTMLButtonElement;
   private fileDupModal: HTMLDialogElement;
-  private genSceneParamBtn: HTMLButtonElement;
-  private genSceneParamModal: HTMLDivElement;
+  // public genSceneParamBtn: HTMLButtonElement;
+  // private genSceneParamModal: HTMLDivElement;
+  public genBtn: HTMLButtonElement;
+  public svSceneBtn: HTMLButtonElement;
+  private pe: ParseEngine;
+  private userEditedSceneParam: Object;
+  private generatedSceneParam: Object;
 
 
   constructor() {
@@ -61,11 +67,21 @@ export class Mkeditor {
     this.fileDupBtnAction();
 
 
-    this.genSceneParamBtn
-      = document.querySelector('#gen-scene-param-btn') as HTMLButtonElement;
-    this.genSceneParamModal
-      = document.querySelector('#gen-scene-param-modal') as HTMLDivElement;
-    this.generateSceneParamModalAction()
+    // this.genSceneParamBtn
+    //   = document.querySelector('#gen-scene-param-btn') as HTMLButtonElement;
+    // this.genSceneParamModal
+    //   = document.querySelector('#gen-scene-param-modal') as HTMLDivElement;
+    // this.generateSceneParamModalAction()
+    
+    
+    this.genBtn = document.querySelector('#generate-btn') as HTMLButtonElement;
+    this.svSceneBtn = document.querySelector('#save-scene-param-btn') as HTMLButtonElement;
+    this.genBtnAction();
+    this.svSceneBtnAction();
+    
+    this.pe = new ParseEngine();
+    this.userEditedSceneParam = {};
+    this.generatedSceneParam = {};
 
   }
 
@@ -76,7 +92,7 @@ export class Mkeditor {
   public displayFirebaseTextFile(file: Object, loc: string) {
     this.fileRenameBtn.style.display = 'none';
     this.fileDupBtn.style.display = 'none';
-    this.genSceneParamBtn.style.display = 'none';
+    // this.genSceneParamBtn.style.display = 'none';
     this.storeParamBtn.style.display = 'none';
     this.updateBtn.style.display = 'inline-block';
     this.btnBoxDiv.style.gridTemplateAreas = '"update-btn update-btn"'
@@ -132,6 +148,11 @@ export class Mkeditor {
       this.fileNameInput.placeholder = String(this.activeFile.id);
     }
 
+    else if (loc === 'mkdailydatatest') {
+      this.activeFile = { loc: loc, id: file.agent };
+      this.fileNameInput.placeholder = String(this.activeFile.id);
+    }
+
     else if (loc === "objects") {
       this.activeFile = { loc: loc, id: file.docname };
       this.fileNameInput.placeholder = String(this.activeFile.id);
@@ -164,20 +185,110 @@ export class Mkeditor {
     const sceneParamPath = 'mkturkfiles/scenebags/objectome3d';
     const taskParamPath = 'mkturkfiles/parameterfiles';
 
+    let sceneTemplateOptions = {
+      modes: ['tree' as 'tree', 'code' as 'code'],
+      templates: [
+        {
+          text: 'Camera',
+          title: 'Insert a Camera node',
+          field: 'CameraTemplate',
+          value: {
+            type: 'PerspectiveCamera',
+            fieldOfView: 45,
+            near: 0.1,
+            far: 2000,
+            position: {
+              x: [0],
+              y: [0],
+              z: [0]
+            },
+            targetInches: {
+              x: [0],
+              y: [0],
+              z: [0]
+            },
+            visible: [1]
+          }
+        },
+        {
+          text: 'Light',
+          title: 'Insert a Light node',
+          field: 'LightTemplate',
+          value: {
+            type: 'DirectionalLight',
+            color: '0xffffff',
+            intensity: [5],
+            position: {
+              x: [0],
+              y: [0],
+              z: [0]
+            },
+            visible: [1]
+          }
+        },
+        {
+          text: 'Object',
+          title: 'Insert an Object node',
+          field: 'ObjectTemplate',
+          value: {
+            meshpath: '',
+            objectdoc: '',
+            sizeInches: [0.5],
+            positionInches: {
+              x: [0],
+              y: [0],
+              z: [0]
+            },
+            rotationDegrees: {
+              x: [0],
+              y: [0],
+              z: [0]
+            },
+            material: {
+              type: 'MeshPhysicalMaterial',
+              color: '#7F7F7F',
+              metalness: 0.25,
+              roughness: 0.65,
+              reflectivity: 0.5,
+              opacity: [1],
+              transparent: false
+            },
+            visible: [1],
+            morphTarget: []
+          }
+        },
+        {
+          text: 'Background',
+          title: 'Insert a Background node',
+          field: 'ImagesTemplate',
+          value: {
+            imagebag: '',
+            imageidx: []
+          }
+        }
+      ]
+    }
+
+    let options = {
+      modes: ['tree' as 'tree', 'code' as 'code']
+    }
+
+
     if (fileRef.fullPath.includes(sceneParamPath)) {
       if (fileRef.fullPath.includes('template')) {
         this.fileDupBtn.style.display = 'inline-block';
-        this.genSceneParamBtn.style.display = 'inline-block';
+        // this.genSceneParamBtn.style.display = 'inline-block';
+        options = sceneTemplateOptions
       } else {
         this.fileDupBtn.style.display = 'inline-block';
-        this.genSceneParamBtn.style.display = 'none';
+        // this.genSceneParamBtn.style.display = 'none';
       }
     } else if (fileRef.fullPath.includes(taskParamPath)) {
       this.fileDupBtn.style.display = 'inline-block';
-      this.genSceneParamBtn.style.display = 'none';
+      // this.genSceneParamBtn.style.display = 'none';
     } else {
       this.fileDupBtn.style.display = 'none';
-      this.genSceneParamBtn.style.display = 'none';
+      // this.genSceneParamBtn.style.display = 'none';
     }
 
     let fileUrl = await fileRef.getDownloadURL().catch(e => {
@@ -188,12 +299,15 @@ export class Mkeditor {
     let file = await response.json();
 
     this.editor.destroy();
-    let options = {
-      modes: ['tree' as 'tree', 'code' as 'code']
-    };
+    // let options = {
+    //   modes: ['tree' as 'tree', 'code' as 'code']
+    // };
     this.editor = new JSONEditor(this.editorElement, options, file);
     this.activeFile = { loc: "mkturkfiles", id: fileRef };
     console.log("activeFile", this.activeFile);
+    // if (fileRef.fullPath.includes('template')) {
+    //   this.pe.generateParamObject(file);
+    // }
     this.fileNameInput.placeholder = fileRef.name;
   }
 
@@ -341,9 +455,6 @@ export class Mkeditor {
     undoDeg.addEventListener('click', (ev: Event) => {
       rtDeg.undo();
     });
-    
-
-
 
   }
 
@@ -395,7 +506,8 @@ export class Mkeditor {
       let loc = this.activeFile.loc;
 
       if (loc === "marmosets" || loc === "mkturkdata" || loc === "devices"
-        || loc === "mkscale" || loc === "eyecalibrations" || loc === 'mkdailydata') {
+        || loc === "mkscale" || loc === "eyecalibrations" || loc === 'mkdailydata'
+        || loc === "mkdailydatatest") {
         // handle marmosets && mkturkdata
         let id = this.activeFile.id as string;
         db.collection(loc).doc(id).set(
@@ -483,6 +595,76 @@ export class Mkeditor {
     });
   }
 
+  private genBtnAction() {
+    this.genBtn.addEventListener('click', (ev: Event) => {
+      if (this.genBtn.value == 'generate') {
+        this.userEditedSceneParam = this.editor.get();
+        this.generatedSceneParam = this.pe.generateParamObject(this.userEditedSceneParam);
+        this.editor.destroy();
+        let options = {
+          modes: ['tree' as 'tree', 'code' as 'code']
+        };
+        this.editor = new JSONEditor(this.editorElement, options, this.generatedSceneParam);
+        this.genBtn.value = 'revert';
+        this.genBtn.textContent = 'Revert';
+        this.updateBtn.style.display = 'none';
+        this.svSceneBtn.style.display = 'inline-block';
+        this.btnBoxDiv.style.gridTemplateAreas = '"gen-btn sv-scene-param-btn"';
+      } else if (this.genBtn.value == 'revert') {
+        this.editor.destroy();
+        this.generatedSceneParam = {};
+        let options = {
+          modes: ['tree' as 'tree', 'code' as 'code']
+        };
+        this.editor = new JSONEditor(this.editorElement, options, this.userEditedSceneParam);
+        this.genBtn.value = 'generate';
+        this.genBtn.textContent = 'Generate Param';
+        this.svSceneBtn.style.display = 'none';
+        this.updateBtn.style.display = 'inline-block';
+        this.btnBoxDiv.style.gridTemplateAreas = '"gen-btn update-btn"';
+      }
+    });
+  }
+
+  private svSceneBtnAction() {
+    let modal = document.querySelector('#filename-modal') as HTMLDialogElement;
+    let modalFilename = modal.querySelector('.filename-input') as HTMLInputElement;
+
+    this.svSceneBtn.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      modal.showModal();
+      let activeFileName = this.activeFile.id as FileRef;
+      let now = new Date();
+      modalFilename.value = now.toJSON().split('T')[0] + '_' + activeFileName.name;
+      modalFilename.focus();
+      modalFilename.select();
+    });
+
+    modal.querySelector('.cl')?.addEventListener('click', () => {
+      modal.close();
+    });
+
+    modal.querySelector('.sv')?.addEventListener('click', () => {
+      let srcRef = this.activeFile.id as FileRef;
+      let destRef = srcRef.parent?.parent?.child('generatedParams').child(modalFilename.value);
+      let file = new Blob([JSON.stringify(this.generatedSceneParam, null, 1)]);
+      let md = {
+        contentType: 'application/json'
+      };
+
+      destRef?.put(file, md).then(async (sns) => {
+        alert('Generated param file was saved');
+        this.generatedSceneParam = {};
+        this.userEditedSceneParam = {};
+        this.displayStorageTextFile(srcRef);
+      }).catch(e => {
+        console.error('Param Generation Failed');
+        alert('Generated param file was NOT saved');
+      });
+      modal.close();
+    });
+  }
+
   private dateToTimestamp(data: any) {
     function _dateToTimestamp(element: string, idx: number, arr: any[]) {
       let dt = new Date(element);
@@ -493,7 +675,7 @@ export class Mkeditor {
 
     for (let key of Object.keys(data)) {
       if (Array.isArray(data[key]) 
-        && (key.toLowerCase().includes('times') || key.toLowerCase().includes('dates'))) {
+        && (key.toLowerCase().includes('time') || key.toLowerCase().includes('dates'))) {
         console.log("ARRAY " + "data[" + key + "]" + "=" + data[key]);
         data[key].forEach(_dateToTimestamp);
       }

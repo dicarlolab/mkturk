@@ -64,6 +64,7 @@
                     <option value="marmosets">firestore/marmosets</option>
                     <option value="mkturkdata">firestore/mkturkdata</option>
                     <option value="mkdailydata">firestore/mkdailydata</option>
+                    <option value="mkdailydatatest">firestore/mkdailydatatest</option>
                     <option value="objects">firestore/objects</option>
                     <option value="devices">firestore/devices</option>
                     <option value="eyecalibrations">firestore/eyecalibrations</option>
@@ -143,9 +144,7 @@
                   <input class="mdl-textfield__input" type="text" id="file-name-input">
                 </div>
                 <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="file-rename-btn">Rename</button>
-                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="file-dup-btn">Duplicate</button>
-                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="gen-scene-param-btn" data-toggle="modal" data-target="#gen-scene-param-modal" data-backdrop="false">Generate Param</button>
-                
+                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="file-dup-btn">Duplicate</button>                
                 <dialog class="mdl-dialog" id="file-dup-modal">
                   <h5 class="mdl-dialog__title">Duplicate File</h5>
                   <div class="mdl-dialog__content">
@@ -159,105 +158,26 @@
                   </div>
                 </dialog>
 
-                <div class="modal" id="gen-scene-param-modal" role="dialog">
-                  <div class="modal-dialog">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h4 class="modal-title">Modal Header</h4>
-                      </div>
-
-                      <div class="modal-body">
-                        <button class="collapsible">sizeInches</button>
-                        <div class="coll-content size-inches">
-                          <div class="gen-scene-rule-box">
-                            <div class="rule-table-controls">
-                              <button type="button" class="mdl-button add-rule-btn">Add Rule</button>
-                              <button type="button" class="mdl-button undo-edit-btn">Undo Edit</button>
-                            </div>
-                            <div class="rule-table" id="size-inches-table"></div>
-                          </div>
-                        </div>
-
-                        <button class="collapsible">positionInches</button>
-                        <div class="coll-content position-inches">
-                          <div class="gen-scene-rule-box">
-                            <div class="rule-table-controls">
-                              <button type="button" class="mdl-button add-rule-btn">Add Rule</button>
-                              <button type="button" class="mdl-button undo-edit-btn">Undo Edit</button>
-                            </div>
-                            <div class="rule-table" id="position-inches-table"></div>
-                          </div>
-                        </div>
-
-                        <button class="collapsible">rotationDegrees</button>
-                        <div class="coll-content rotation-degrees">
-                          <div class="gen-scene-rule-box">
-                            <div class="rule-table-controls">
-                              <button type="button" class="mdl-button add-rule-btn">Add Rule</button>
-                              <button type="button" class="mdl-button undo-edit-btn">Undo Edit</button>
-                            </div>
-                            <div class="rule-table" id="rotation-degrees-table"></div>
-                          </div>
-                        </div>
-
-
-                      </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-default" id="generate-scene-param">Generate</button>
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                      </div>
-                    </div>
+                <dialog class="mdl-dialog" id="filename-modal">
+                  <h5 class="mdl-dialog__title"></h5>
+                  <div class="mdl-textfield mdl-js-textfield">
+                    <input class="mdl-textfield__input filename-input" type="text">
                   </div>
-                </div>
-
-                <!-- <dialog class="mdl-dialog" id="gen-scene-param-modal">
-                  <h5 class="mdl-dialog__title">Generate Scene Param</h5>
-                  <div class="mdl-dialog__content">
-                    <button class="collapsible">sizeInches</button>
-                    <div class="coll-content size-inches">
-                      <div class="gen-scene-rule-box">
-                        <div class="rule-table-controls">
-                          <button type="button" class="mdl-button add-rule-btn">Add Rule</button>
-                          <button type="button" class="mdl-button undo-edit-btn">Undo Edit</button>
-                        </div>
-                        <div class="rule-table" id="size-inches-table"></div>
-                      </div>
-                    </div>
-
-                    <button class="collapsible">positionInches</button>
-                    <div class="coll-content position-inches">
-                      <div class="gen-scene-rule-box">
-                        <div class="rule-table-controls">
-                          <button type="button" class="mdl-button add-rule-btn">Add Rule</button>
-                          <button type="button" class="mdl-button undo-edit-btn">Undo Edit</button>
-                        </div>
-                        <div class="rule-table" id="position-inches-table"></div>
-                      </div>
-                    </div>
-
-                    <button class="collapsible">rotationDegrees</button>
-                    <div class="coll-content rotation-degrees">
-                      <div class="rule-table-controls">
-                        <button type="button" class="mdl-button add-rule-btn">Add Rule</button>
-                        <button type="button" class="mdl-button undo-edit-btn">Undo Edit</button>
-                      </div>
-                      <div class="rule-table" id="rotation-degrees-table"></div>
-                    </div>
-                    
+                  <div class="mdl-dialog__action">
+                    <button type="button" class="mdl-button sv">Save</button> 
+                    <button type="button" class="mdl-button cl">Close</button>
                   </div>
+                </dialog>
 
-                  <div class="mdl-dialog__actions">
-                    <button type="button" class="mdl-button generate">Generate</button>
-                    <button type="button" class="mdl-button cancel">Cancel</button>
-                  </div>
-
-                </dialog> -->
+                
               </form>
               <div id="editor"></div>
               <div id="button-box">
                 <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="update-btn">UPDATE</button>
                 <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="active-btn">Make Active</button>
                 <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="store-param-btn">Store</button>
+                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="generate-btn" value="generate">Generate Param</button>
+                <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" id="save-scene-param-btn">Save Param</button>
               </div>
             </div>
 
