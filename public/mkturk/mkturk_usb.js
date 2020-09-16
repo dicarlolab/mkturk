@@ -176,8 +176,9 @@ serial.Port.prototype.onReceive = data => {
 		if (eyebuffer.accumulateEye == 3){
 			//strip start characters (eg, '/') up front
 			port.statustext_received = port.statustext_received.slice(lastslash+1, port.statustext_received.length-1)
-		}
-	}
+			FLAGS.trackeye = 1
+		}//IF '///'
+	}//IF '/'
 
 //=============== RFID ===============//
 	if (tagstart >= 0){
@@ -185,10 +186,10 @@ serial.Port.prototype.onReceive = data => {
 		var tagend = port.statustext_received.indexOf('}',0);
 		logEVENTS("RFIDTag",port.statustext_received.slice(tagstart+4,tagend),"timeseries");
 
-		var nrfid = EVENTS['timeseries']['RFIDTag'].length
+		var nrfid = Object.keys(EVENTS['timeseries']['RFIDTag']).length
 		if (nrfid >= 2){
-			var dt = EVENTS['timeseries']['RFIDTag'][nrfid-1][1] - 
-					EVENTS['timeseries']['RFIDTag'][nrfid-2][1]
+			var dt = new Date(EVENTS['timeseries']['RFIDTag'][nrfid-1][1]) - 
+					new Date(EVENTS['timeseries']['RFIDTag'][nrfid-2][1])
 		}
 		port.statustext_received = 'Parsed TAG ' + EVENTS['timeseries']['RFIDTag'][nrfid-1][2] + 
 									' @ ' + new Date().toLocaleTimeString("en-US") + 
@@ -239,39 +240,39 @@ serial.Port.prototype.onReceive = data => {
 			}
 
 			// STORE calibrated eye signal
-			logEVENTS("EyeData",[new Date(Date.now()).toJSON(),CURRTRIAL.num,eyebuffer.numeyes_HARDCODED,
+			logEVENTS("EyeData",[eyebuffer.numeyes_HARDCODED,
 						xy[0],xy[1],w,a,null,null,null,null],"timeseries");
 
 
-			if (FLAGS.touchGeneratorCreated == 1 && TASK.TrackEye > 0){
+			if (FLAGS.touchGeneratorCreated == 1 && FLAGS.trackeye > 0){
 				//Send calibrated signal, convert from eye coordinates to tablet coordinates
 
 				// DISPLAY median filtered calibrated eye signal
 				//EVENTS[idx] -- 3:X 4:Y 5:Diameter 6:Aspect
 			 	var eyedatalen = Object.keys(EVENTS['timeseries']['EyeData']).length
 				if (eyedatalen >= 4){
-					var X_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][5],
+					var X_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][3],
+									EVENTS['timeseries']['EyeData'][eyedatalen-3][3],
+									EVENTS['timeseries']['EyeData'][eyedatalen-2][3],
+									EVENTS['timeseries']['EyeData'][eyedatalen-1][3]
+								 ] )
+
+					var Y_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][4],
+									EVENTS['timeseries']['EyeData'][eyedatalen-3][4],
+									EVENTS['timeseries']['EyeData'][eyedatalen-2][4],
+									EVENTS['timeseries']['EyeData'][eyedatalen-1][4]
+								 ] )
+
+					var D_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][5],
 									EVENTS['timeseries']['EyeData'][eyedatalen-3][5],
 									EVENTS['timeseries']['EyeData'][eyedatalen-2][5],
 									EVENTS['timeseries']['EyeData'][eyedatalen-1][5]
 								 ] )
 
-					var Y_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][6],
+					var A_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][6],
 									EVENTS['timeseries']['EyeData'][eyedatalen-3][6],
 									EVENTS['timeseries']['EyeData'][eyedatalen-2][6],
 									EVENTS['timeseries']['EyeData'][eyedatalen-1][6]
-								 ] )
-
-					var D_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][7],
-									EVENTS['timeseries']['EyeData'][eyedatalen-3][7],
-									EVENTS['timeseries']['EyeData'][eyedatalen-2][7],
-									EVENTS['timeseries']['EyeData'][eyedatalen-1][7]
-								 ] )
-
-					var A_mdn = math.median( [ EVENTS['timeseries']['EyeData'][eyedatalen-4][8],
-									EVENTS['timeseries']['EyeData'][eyedatalen-3][8],
-									EVENTS['timeseries']['EyeData'][eyedatalen-2][8],
-									EVENTS['timeseries']['EyeData'][eyedatalen-1][8]
 								 ] )
 					xy[0] = X_mdn
 					xy[1] = Y_mdn
@@ -346,7 +347,7 @@ serial.Port.prototype.onReceive = data => {
 			if (FLAGS.savedata == 0){
 				updateImageLoadingAndDisplayText('')
 			}
-			console.log(eyedataratestr)
+			// console.log(eyedataratestr)
 
 			port.statustext_received = eyedataratestr
 			updateHeadsUpDisplayDevices()

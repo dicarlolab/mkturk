@@ -5,7 +5,9 @@ Automator: Boolean on/off
 
 AutomatorFilePath: File path to params for the automator curriculum.
 
-BackgroundColor2D: specify the background color in hex (eg, #FFFFFF for white or #000000 for black). Not required in param file. If not provided, defaults to gray screen background (#7F7F7F)
+BackgroundColor2D (optional): specify the background color in hex (eg, #FFFFFF for white or #000000 for black). Not required in param file. If not provided, defaults to gray screen background (#7F7F7F)
+
+CalibrateEye (optional): If >0, will calibrate for TASK.CalibrateEye number of trials for train & same number for test. Afte test, saves calibration in firestore collection "eyecalibrations." Requires FLAGS.trackeye>0.
 
 CheckRFID: Time in milliseconds over which at least one matching RFID read is required so that agent doesn't get kicked off of task. If there is a read within the last CheckRFID ms, task continues, otherwise agent is locked out at start of next trial. CheckRFID <= 0 turns off RFID checking.
 
@@ -19,9 +21,13 @@ ConsecutiveHitsITI: Maximum time in milliseconds allowed to elapse from the prev
 
 CurrentAutomatorStage: index of current training stage of automator.
 
+DragtoRespond: Flag tht specifies whether a continuous move (drag) into a choice box is allowed (DragtoRespond=1) versus a discrete click in the box (DragtoRespond=0). Defaults to 0 (click to respond) if not provided.
+
 FixationDuration: How long subject has to hold fixation touch in milliseconds for a successful fixation to register.
 
-FixationMove: FixationMove=0, fixation image is presented at fixationGridindex. FixationMove=N, N>0, fixation image is presented at a randomly selected grid point and the fixation position is redrawn every N milliseconds. FixationMove > 0 can be used to train subjects to touch different screen locations or to calibrate an eyetracker.
+FixationGridIndex: Index on the grid where the fixation image will appear. If FixationGridIncex<0, then fixation image is presented at a randomly selected grid point and the fixation position is redrawn every FixationTimeOut milliseconds. FixationMove > 0 can be used to train subjects to touch different screen locations or to calibrate an eyetrackers.
+
+FixationMove (deprecated, replaced by setting FixationGridIndex < 0): FixationMove=0, fixation image is presented at fixationGridindex. FixationMove=N, N>0, fixation image is presented at a randomly selected grid point and the fixation position is redrawn every N milliseconds. FixationMove > 0 can be used to train subjects to touch different screen locations or to calibrate an eyetracker.
 
 FixationSizeInches: Size of fixation dot or image (ie FixationUsesSample=1) in physical inches on the screen
 
@@ -37,6 +43,8 @@ GridXOffsetInches: Determines how much to horizontally shift grid from center in
 
 GridYOffsetInches: Determines how much to vertically shift grid from center in physical inches on screen. >0 => shifts downward
 
+HeadsupDisplayFraction (optional): Vertical fraction of screen to use for displaying task stats and device outputs such as RFID detection. If not specified, default is 0% for human, 27.3% for marmoset.
+
 HideChoiceDistractors: HideChoiceDistractors=1, hides the same or different button so that subject sees only the correct one to touch. Still gets punished if touches blank area where the incorrect button would have been. This only applies to same-different choice screen. See HideTestDistractors for test response screen used in SR2 and M2S.
 
 HideTestDistractors: HideTestDistractors=1, hides the distractor choices so that subject only sees matching choice. Still gets punished if touches blank area where the incorrect button would have been.
@@ -49,7 +57,7 @@ ImageBagsTest: List of (list of) paths, where entries at the top level are direc
 
 ImageRewardsList: List of paths containing user-specified reward per image. Images in the image_reward_list file need to be referenced by their complete path. ImageReward values: 0=no feedback (no reward or punish for that sample image) >0=user set reward for that sample image, overrides bonus reward behavior. These can be partial lists. For images where reward is manually specified, then default bonus reward behavior is used. No corresponding list is used for test (choice) images. Instead, specify reward for a whole class by listing reward for each image in that class in ImageRewardsList.
 
-InterTrialInterval: How long to wait after reward/punish is delivered before starting next trial. Only a gray screen is shown for InterTrialInterval milliseconds, followed by the fixation dot.
+InterTrialInterval (optional): How long to wait after reward/punish is delivered before starting next trial. Only a gray screen is shown for InterTrialInterval milliseconds, followed by the fixation dot. If not specified, is set to 0 ms.
 
 KeepSampleON: KeepSampleON=0, sample is presented only for sampleON milliseconds for a delayed match-to-sample, KeepSampleON=1 sample remains on during choice screen. This implements a spatial match to sample.
 
@@ -83,7 +91,7 @@ RewardStage: RewardStage=0 rewards for successful fixtion and skips the choice p
 
 SameDifferent: SameDifferent > 0 indicates a Same-Different task so that last screen is a new choice screen with same (circle) and different (square) buttons. Test image extinguishes after scenedurationMS milliseconds, followed by TestOFF pause, followed by choice screen. If KeepTestON=1, then test image is on for scenedurationMS milliseconds and then remains on for choice screen
 
-SampleGridIndex: Index on grid where sample image appears. SampleGridIndex=4 centers the image on a 3x3 grid, where ngridpoints=3
+SampleGridIndex: Index on grid where sample image appears. SampleGridIndex=4 centers the image on a 3x3 grid, where ngridpoints=3. If SampleGridIndex<0, then sample scene appears at a randomly selected grid location unless FixationGridIndex is also <0, in which case, the sample grid index will be set to be the same as the randomly generated fixation grid index (i.e., sample scene's location is yoked to where the fixation was for that trial).
 
 SamplingStrategy: Determines how sample images are drawn: uniform_with_replacement, uniform_without_replacement, sequential
 
@@ -91,13 +99,13 @@ SampleOFF: Duration in milliseconds that a gray screen is presented after the sa
 
 SampleFixationSizeInches: Width of box within which subject has to hold fixation during sample screen. If 0, then subject does not have to hold fixation on the sample image.
 
-SampleSizeInches: Size of sample image in physical inches on the screen. sampleSizeInches = 0.834444 displays a 256 x 256 image on 256 x 256 screen pixels on the google pixel c screen (i.e. no up or down sampling/resizing/filtering of the image)
+SampleSizeInches (deprecated, now specified in scene param file): Size of sample image in physical inches on the screen. sampleSizeInches = 0.834444 displays a 256 x 256 image on 256 x 256 screen pixels on the google pixel c screen (i.e. no up or down sampling/resizing/filtering of the image)
 
 Separated: 0=subject was paired with conspecific during task, 1=individual housed was separated from conspecific
 
 Species: marmoset, macaque, or human
 
-StaticFixationGridIndex: Index on the grid where the fixation image will appear. If FixationMove>0, then StaticFixationGridindex is ignored.
+StaticFixationGridIndex (deprecated, replaced by FixationGridIndex): Index on the grid where the fixation image will appear. If FixationMove>0, then StaticFixationGridindex is ignored.
 
 Tablet (deprecated, replaced by auto-detected ENV.DeviceName): nexus9, samsung10, pixelc
 
@@ -105,7 +113,7 @@ TestGridIndex: Index on grid where test images (choices) appear.
 
 TestOFF: Choice screen appears TestOFF milliseconds after test image is extinguished. If TestOFF=0, then test screen does not extinguish (go to blank gray) until same-different choice screen appears. If KeepTestON=1, then test image reappears during the same-different choice screen.
 
-TestSizeImages: Size of the test image in physical inches on the screen
+TestSizeInches (deprecated, now specified in scene param file): Size of the test image in physical inches on the screen
 
 
 ## ENV

@@ -359,16 +359,20 @@ async function addToScene(taskscreen){
     //BACKGROUND 2D IMAGE
     if (taskscreen == "Sample" || taskscreen == "Test"){
         for (var i = 0; i<IMAGES[taskscreen][classlabel].nimages; i++){
-            if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i])){
-                var durationMS = chooseArrayElement(IMAGES[taskscreen][classlabel].durationMS,i,0)
-                IMAGES[taskscreen][classlabel].IMAGES.imageidx[i] =
-                    interpParam(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i],"binary",durationMS,framerate)
-
-                for (var j = 0; j<= IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].length-1; j++){
-                	IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j] = Math.round(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j])
-                }//FOR j img indices, round
-                FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].length
+            if (!Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i])){
+            	var imind = [IMAGES[taskscreen][classlabel].IMAGES.imageidx[i], IMAGES[taskscreen][classlabel].IMAGES.imageidx[i]]
             }//IF isArray background image index
+            else {
+            	var imind = IMAGES[taskscreen][classlabel].IMAGES.imageidx[i]
+            }//ELSE !isArray
+		    var durationMS = chooseArrayElement(IMAGES[taskscreen][classlabel].durationMS,i,0)
+			IMAGES[taskscreen][classlabel].IMAGES.imageidx[i] = 
+				interpParam(imind,"binary",durationMS,framerate)
+
+			for (var j = 0; j<= IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].length-1; j++){
+				IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j] = Math.round(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j])
+			}//FOR j img indices, round
+			FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].length
         }//FOR i images
     }//IF Sample
 }//FOR classlabels
@@ -396,9 +400,11 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
 	}//FOR sceneElements
 
 	//==== TURN BACK ON THE CURRENT DISPLAY ITEMS
+    var allBoundingBoxes = []
 	if (typeof(classlabels) == "number"){ classlabels = [classlabels] }
 	for (var i=0; i<=classlabels.length-1; i++){
 		var classlabel = classlabels[i]
+        allBoundingBoxes[classlabel] = []
 
 		//======= CAMERAS
 	    for (var cam in IMAGES[taskscreen][classlabel].CAMERAS){
@@ -583,9 +589,10 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
 	        var scenecenterY = ENV.YGridCenter[gridindex]
 	        var [objPosition, objSize, boundingBox] =
 	        	updateObjectSingleFrame(taskscreen,objects,nextobjPosition,nextobjRotation,nextobjSize,nexttransparent,nextmorph,maxlength,camera,scenecenterX,scenecenterY)
+                allBoundingBoxes[classlabel].push(boundingBox)
 	    }//FOR obj in scene
 	}//FOR classlabel in classlabels
-	return boundingBox
+	return allBoundingBoxes
 }//FUNCTION updateSingleFrame3D
 
 function updateCameraSingleFrame(camera,cameraPosition,camTarget){
@@ -661,8 +668,9 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
     if (FLAGS.savedata == 0){
         box.material.visible = true //show bounding boxes during practice
     }
-    else{
-        box.material.visible = false //hide the bounding boxes during testing
+    else if (FLAGS.savedata == 1){
+        box.material.opacity = 0
+        box.material.transparent = true //hide the bounding boxes during testing
     }
     box.name = taskscreen
 	scene[taskscreen].add(box)
@@ -673,12 +681,6 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
     twodcoord_max = toScreenPosition(bbox.max,camera,objects)
     twodcoord_min = toScreenPosition(bbox.min,camera,objects)
 
-    // if (taskscreen == "Test"){
-    //     boundingBoxesChoice3D.x.push([twodcoord_min.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x),
-    //                                     twodcoord_max.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x)].sort(function(a, b){return a-b}))
-    //     boundingBoxesChoice3D.y.push([twodcoord_max.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y),
-    //                                     twodcoord_min.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y)].sort(function(a, b){return a-b}))
-    // }
     var boundingBox = {
     	"x": [twodcoord_min.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x),
             	twodcoord_max.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x)].sort(function(a, b){return a-b}),

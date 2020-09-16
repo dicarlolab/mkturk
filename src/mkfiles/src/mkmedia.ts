@@ -7,6 +7,8 @@ import Viewer from "viewerjs";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { BufferGeometryLoader } from "three";
+import {ParseEngine} from './parser'
 
 
 type FileRef = firebase.storage.Reference;
@@ -28,6 +30,13 @@ export class Mkeditor {
   private fileRenameBtn: HTMLButtonElement;
   private fileDupBtn: HTMLButtonElement;
   private fileDupModal: HTMLDialogElement;
+  // public genSceneParamBtn: HTMLButtonElement;
+  // private genSceneParamModal: HTMLDivElement;
+  public genBtn: HTMLButtonElement;
+  public svSceneBtn: HTMLButtonElement;
+  private pe: ParseEngine;
+  private userEditedSceneParam: Object;
+  private generatedSceneParam: Object;
 
 
   constructor() {
@@ -57,6 +66,23 @@ export class Mkeditor {
     this.getActiveFile();
     this.fileDupBtnAction();
 
+
+    // this.genSceneParamBtn
+    //   = document.querySelector('#gen-scene-param-btn') as HTMLButtonElement;
+    // this.genSceneParamModal
+    //   = document.querySelector('#gen-scene-param-modal') as HTMLDivElement;
+    // this.generateSceneParamModalAction()
+    
+    
+    this.genBtn = document.querySelector('#generate-btn') as HTMLButtonElement;
+    this.svSceneBtn = document.querySelector('#save-scene-param-btn') as HTMLButtonElement;
+    this.genBtnAction();
+    this.svSceneBtnAction();
+    
+    this.pe = new ParseEngine();
+    this.userEditedSceneParam = {};
+    this.generatedSceneParam = {};
+
   }
 
   public getActiveFile() {
@@ -66,6 +92,7 @@ export class Mkeditor {
   public displayFirebaseTextFile(file: Object, loc: string) {
     this.fileRenameBtn.style.display = 'none';
     this.fileDupBtn.style.display = 'none';
+    // this.genSceneParamBtn.style.display = 'none';
     this.storeParamBtn.style.display = 'none';
     this.updateBtn.style.display = 'inline-block';
     this.btnBoxDiv.style.gridTemplateAreas = '"update-btn update-btn"'
@@ -73,7 +100,8 @@ export class Mkeditor {
     this.fileNameInput.disabled = true;
     try {
       let options = {
-        modes: ['tree' as 'tree', 'code' as 'code']
+        modes: ['tree' as 'tree', 'code' as 'code'],
+        sortObjectKeys: true
       };
       this.editor.destroy();
       this.editor = new JSONEditor(this.editorElement, options, file);
@@ -115,6 +143,16 @@ export class Mkeditor {
       }
     }
 
+    else if (loc === 'mkdailydata') {
+      this.activeFile = { loc: loc, id: file.agent };
+      this.fileNameInput.placeholder = String(this.activeFile.id);
+    }
+
+    else if (loc === 'mkdailydatatest') {
+      this.activeFile = { loc: loc, id: file.agent };
+      this.fileNameInput.placeholder = String(this.activeFile.id);
+    }
+
     else if (loc === "objects") {
       this.activeFile = { loc: loc, id: file.docname };
       this.fileNameInput.placeholder = String(this.activeFile.id);
@@ -144,16 +182,114 @@ export class Mkeditor {
     this.fileRenameBtn.style.display = 'inline-block';
     this.fileNameInput.value = '';
 
-    const sceneParamFilePath = 'mkturkfiles/scenebags/objectome3d/face';
-    const paramstorageFilePath = 'mkturkfiles/parameterfiles/params_storage';
-    if (fileRef.parent?.parent?.fullPath == sceneParamFilePath) {
+    const sceneParamPath = 'mkturkfiles/scenebags/objectome3d';
+    const taskParamPath = 'mkturkfiles/parameterfiles';
+
+    let sceneTemplateOptions = {
+      modes: ['tree' as 'tree', 'code' as 'code'],
+      templates: [
+        {
+          text: 'Camera',
+          title: 'Insert a Camera node',
+          field: 'CameraTemplate',
+          value: {
+            type: 'PerspectiveCamera',
+            fieldOfView: 45,
+            near: 0.1,
+            far: 2000,
+            position: {
+              x: [0],
+              y: [0],
+              z: [0]
+            },
+            targetInches: {
+              x: [0],
+              y: [0],
+              z: [0]
+            },
+            visible: [1]
+          }
+        },
+        {
+          text: 'Light',
+          title: 'Insert a Light node',
+          field: 'LightTemplate',
+          value: {
+            type: 'DirectionalLight',
+            color: '0xffffff',
+            intensity: [5],
+            position: {
+              x: [0],
+              y: [0],
+              z: [0]
+            },
+            visible: [1]
+          }
+        },
+        {
+          text: 'Object',
+          title: 'Insert an Object node',
+          field: 'ObjectTemplate',
+          value: {
+            meshpath: '',
+            objectdoc: '',
+            sizeInches: [0.5],
+            positionInches: {
+              x: [0],
+              y: [0],
+              z: [0]
+            },
+            rotationDegrees: {
+              x: [0],
+              y: [0],
+              z: [0]
+            },
+            material: {
+              type: 'MeshPhysicalMaterial',
+              color: '#7F7F7F',
+              metalness: 0.25,
+              roughness: 0.65,
+              reflectivity: 0.5,
+              opacity: [1],
+              transparent: false
+            },
+            visible: [1],
+            morphTarget: []
+          }
+        },
+        {
+          text: 'Background',
+          title: 'Insert a Background node',
+          field: 'ImagesTemplate',
+          value: {
+            imagebag: '',
+            imageidx: []
+          }
+        }
+      ]
+    }
+
+    let options = {
+      modes: ['tree' as 'tree', 'code' as 'code']
+    }
+
+
+    if (fileRef.fullPath.includes(sceneParamPath)) {
+      if (fileRef.fullPath.includes('template')) {
+        this.fileDupBtn.style.display = 'inline-block';
+        // this.genSceneParamBtn.style.display = 'inline-block';
+        options = sceneTemplateOptions
+      } else {
+        this.fileDupBtn.style.display = 'inline-block';
+        // this.genSceneParamBtn.style.display = 'none';
+      }
+    } else if (fileRef.fullPath.includes(taskParamPath)) {
       this.fileDupBtn.style.display = 'inline-block';
-    } else if (fileRef.parent?.fullPath == paramstorageFilePath) {
-      this.fileDupBtn.style.display = 'inline-block';
+      // this.genSceneParamBtn.style.display = 'none';
     } else {
       this.fileDupBtn.style.display = 'none';
+      // this.genSceneParamBtn.style.display = 'none';
     }
-    
 
     let fileUrl = await fileRef.getDownloadURL().catch(e => {
       console.error("Error getting download URL", e);
@@ -163,12 +299,15 @@ export class Mkeditor {
     let file = await response.json();
 
     this.editor.destroy();
-    let options = {
-      modes: ['tree' as 'tree', 'code' as 'code']
-    };
+    // let options = {
+    //   modes: ['tree' as 'tree', 'code' as 'code']
+    // };
     this.editor = new JSONEditor(this.editorElement, options, file);
     this.activeFile = { loc: "mkturkfiles", id: fileRef };
     console.log("activeFile", this.activeFile);
+    // if (fileRef.fullPath.includes('template')) {
+    //   this.pe.generateParamObject(file);
+    // }
     this.fileNameInput.placeholder = fileRef.name;
   }
 
@@ -212,6 +351,111 @@ export class Mkeditor {
 
       this.fileDupModal.close();
     });
+  }
+
+  private generateSceneParamModalAction() {
+
+    let collapsibles = document.getElementsByClassName('collapsible') as HTMLCollectionOf<HTMLButtonElement>;
+    for (let i = 0; i < collapsibles.length; i++) {
+      let coll = collapsibles[i];
+      coll.addEventListener('click', (ev: Event) => {
+        ev.preventDefault();
+        coll.classList.toggle('active');
+        let content = coll.nextElementSibling as HTMLButtonElement;
+        if (content.style.display === 'block') {
+          content.style.display = 'none';
+        } else {
+          content.style.display = 'block';
+        }
+      })
+    }
+
+    let initDataSize = [
+      {sampling: 'gaussian', params: '0, 1', n: 5}
+    ];
+
+    let rtSize = new Tabulator('#size-inches-table', {
+      data: initDataSize,
+      layout: 'fitColumns',
+      history: true,
+      columns: [
+        {title: 'Sampling', field: 'sampling', editor: 'select', editorParams: {values: ['gaussian', 'uniform', 'range']}},
+        {title: 'Params', field: 'params', editor: 'input', editable: true},
+        {title: 'n || step size', field: 'n', editor: 'input', editable: true}
+      ]
+    });
+
+    let szDiv = document.querySelector('.size-inches') as HTMLDivElement;
+    let addRowSize = szDiv.querySelector('.add-rule-btn') as HTMLButtonElement;
+    let undoSz = szDiv.querySelector('.undo-edit-btn') as HTMLButtonElement
+
+    addRowSize.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      rtSize.addRow({sampling: '', params: '', n: NaN}, false);
+    });
+
+    undoSz.addEventListener('click', (ev: Event) => {
+      rtSize.undo();
+    });
+
+    let initDataPos = [
+      {target: 'x', sampling: 'gaussian', params: '0, 1', n: 5}
+    ];
+
+    let rtPos = new Tabulator('#position-inches-table', {
+      data: initDataPos,
+      layout: 'fitColumns',
+      history: true,
+      columns: [
+        {title: 'Target', field: 'target', editor: 'select', editorParams: {values: ['x', 'y', 'z']}},
+        {title: 'Sampling', field: 'sampling', editor: 'select', editorParams: {values: ['gaussian', 'uniform', 'range']}},
+        {title: 'Params', field: 'params', editor: 'input', editable: true},
+        {title: 'n || step size', field: 'n', editor: 'input', editable: true}
+      ]
+    });
+
+    let posDiv = document.querySelector('.position-inches') as HTMLDivElement;
+    let addRowPos = posDiv.querySelector('.add-rule-btn') as HTMLButtonElement;
+    let undoPos = posDiv.querySelector('.undo-edit-btn') as HTMLButtonElement
+
+    addRowPos.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      rtPos.addRow({target: '', sampling: '', params: '', n: NaN});
+    });
+
+    undoPos.addEventListener('click', (ev: Event) => {
+      rtPos.undo();
+    });
+
+    let initDataDeg = [
+      {target: 'x', sampling: 'gaussian', params: '0, 1', n: 5}
+    ];
+
+    let rtDeg = new Tabulator('#rotation-degrees-table', {
+      data: initDataDeg,
+      layout: 'fitColumns',
+      history: true,
+      columns: [
+        {title: 'Target', field: 'target', editor: 'select', editorParams: {values: ['x', 'y', 'z']}},
+        {title: 'Sampling', field: 'sampling', editor: 'select', editorParams: {values: ['gaussian', 'uniform', 'range']}},
+        {title: 'Params', field: 'params', editor: 'input', editable: true},
+        {title: 'n || step size', field: 'n', editor: 'input', editable: true}
+      ]
+    });
+
+    let degDiv = document.querySelector('.rotation-degrees') as HTMLDivElement;
+    let addRowDeg = degDiv.querySelector('.add-rule-btn') as HTMLButtonElement;
+    let undoDeg = degDiv.querySelector('.undo-edit-btn') as HTMLButtonElement
+
+    addRowDeg.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      rtDeg.addRow({target: '', sampling: '', params: '', n: NaN});
+    });
+
+    undoDeg.addEventListener('click', (ev: Event) => {
+      rtDeg.undo();
+    });
+
   }
 
   private renameTextFieldAction() {
@@ -262,7 +506,8 @@ export class Mkeditor {
       let loc = this.activeFile.loc;
 
       if (loc === "marmosets" || loc === "mkturkdata" || loc === "devices"
-        || loc === "mkscale" || loc === "eyecalibrations") {
+        || loc === "mkscale" || loc === "eyecalibrations" || loc === 'mkdailydata'
+        || loc === "mkdailydatatest") {
         // handle marmosets && mkturkdata
         let id = this.activeFile.id as string;
         db.collection(loc).doc(id).set(
@@ -306,7 +551,7 @@ export class Mkeditor {
       console.log(this.activeFile);
       let storageRef = storage.ref();
       let file = this.editor.get();
-      let fileName = "mkturkfiles/parameterfiles/subjects/" + file.Agent + "_params.txt";
+      let fileName = "mkturkfiles/parameterfiles/subjects/" + file.Agent + "_params.json";
       let fileRef = storageRef.child(fileName);
       file = new Blob([ JSON.stringify(file, null, 1) ]);
       let metadata = {
@@ -350,6 +595,76 @@ export class Mkeditor {
     });
   }
 
+  private genBtnAction() {
+    this.genBtn.addEventListener('click', (ev: Event) => {
+      if (this.genBtn.value == 'generate') {
+        this.userEditedSceneParam = this.editor.get();
+        this.generatedSceneParam = this.pe.generateParamObject(this.userEditedSceneParam);
+        this.editor.destroy();
+        let options = {
+          modes: ['tree' as 'tree', 'code' as 'code']
+        };
+        this.editor = new JSONEditor(this.editorElement, options, this.generatedSceneParam);
+        this.genBtn.value = 'revert';
+        this.genBtn.textContent = 'Revert';
+        this.updateBtn.style.display = 'none';
+        this.svSceneBtn.style.display = 'inline-block';
+        this.btnBoxDiv.style.gridTemplateAreas = '"gen-btn sv-scene-param-btn"';
+      } else if (this.genBtn.value == 'revert') {
+        this.editor.destroy();
+        this.generatedSceneParam = {};
+        let options = {
+          modes: ['tree' as 'tree', 'code' as 'code']
+        };
+        this.editor = new JSONEditor(this.editorElement, options, this.userEditedSceneParam);
+        this.genBtn.value = 'generate';
+        this.genBtn.textContent = 'Generate Param';
+        this.svSceneBtn.style.display = 'none';
+        this.updateBtn.style.display = 'inline-block';
+        this.btnBoxDiv.style.gridTemplateAreas = '"gen-btn update-btn"';
+      }
+    });
+  }
+
+  private svSceneBtnAction() {
+    let modal = document.querySelector('#filename-modal') as HTMLDialogElement;
+    let modalFilename = modal.querySelector('.filename-input') as HTMLInputElement;
+
+    this.svSceneBtn.addEventListener('click', (ev: Event) => {
+      ev.preventDefault();
+      modal.showModal();
+      let activeFileName = this.activeFile.id as FileRef;
+      let now = new Date();
+      modalFilename.value = now.toJSON().split('T')[0] + '_' + activeFileName.name;
+      modalFilename.focus();
+      modalFilename.select();
+    });
+
+    modal.querySelector('.cl')?.addEventListener('click', () => {
+      modal.close();
+    });
+
+    modal.querySelector('.sv')?.addEventListener('click', () => {
+      let srcRef = this.activeFile.id as FileRef;
+      let destRef = srcRef.parent?.parent?.child('generatedParams').child(modalFilename.value);
+      let file = new Blob([JSON.stringify(this.generatedSceneParam, null, 1)]);
+      let md = {
+        contentType: 'application/json'
+      };
+
+      destRef?.put(file, md).then(async (sns) => {
+        alert('Generated param file was saved');
+        this.generatedSceneParam = {};
+        this.userEditedSceneParam = {};
+        this.displayStorageTextFile(srcRef);
+      }).catch(e => {
+        console.error('Param Generation Failed');
+        alert('Generated param file was NOT saved');
+      });
+      modal.close();
+    });
+  }
+
   private dateToTimestamp(data: any) {
     function _dateToTimestamp(element: string, idx: number, arr: any[]) {
       let dt = new Date(element);
@@ -360,7 +675,7 @@ export class Mkeditor {
 
     for (let key of Object.keys(data)) {
       if (Array.isArray(data[key]) 
-        && (key.toLowerCase().includes('times') || key.toLowerCase().includes('dates'))) {
+        && (key.toLowerCase().includes('time') || key.toLowerCase().includes('dates'))) {
         console.log("ARRAY " + "data[" + key + "]" + "=" + data[key]);
         data[key].forEach(_dateToTimestamp);
       }
@@ -455,8 +770,9 @@ export class Mkthree {
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     this.renderer.setClearColor( 0xFFFFFF );
     this.renderer.physicallyCorrectLights = true;
+    this.renderer.toneMapping = THREE.LinearToneMapping;
     this.renderer.toneMappingExposure = 10;
-    this.renderer.gammaOutput = true;
+    this.renderer.outputEncoding = THREE.GammaEncoding;
     this.renderer.gammaFactor = 2.2;
 
     /* camera setup */
@@ -514,7 +830,6 @@ export class Mkthree {
           this.loader?.load(meshUrl, function(gltf) {
             gltf.scene.traverse((child: any) => {
               if (child.material) {
-                //let material = new THREE.MeshPhongMaterial({ color: 0xFF0000, map: child.material.map });
                 let material = new THREE.MeshPhongMaterial({ color: "#FFE0BD" })
                 if ("morphTargetInfluences" in child) {
                   material.morphTargets = true;

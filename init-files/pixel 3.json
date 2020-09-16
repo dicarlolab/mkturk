@@ -1,0 +1,28 @@
+{
+ "bodySizeInches": [
+  5.73,
+  2.69,
+  0.3
+ ],
+ "screenPhysicalPixels": [
+  2160,
+  1080
+ ],
+ "screenSizeInches": [
+  4.92,
+  2.46,
+  5.5
+ ],
+ "model": "pixel 3",
+ "brand": "google",
+ "docname": "pixel 3",
+ "batterymAh": 2915,
+ "ppi": 443,
+ "viewportPixels": [
+  640,
+  320
+ ],
+ "type": "phone",
+ "weightOunces": 5.22,
+ "screenRatio": 2.625
+}

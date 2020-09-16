@@ -1,3 +1,777 @@
+//================== IMAGE RENDERING ==================//
+function displayTrial(ti,gr,fr,sc,ob,id){
+// ti = time, gr = grid, fr = frame
+// sc = screen, ob = object label, id = index of renderparam
+	var resolveFunc
+	var errFunc
+	updated2d = 0
+	updated3d = 0
+	boundingBoxesChoice2D = {'x':[],'y':[]}
+	boundingBoxesChoice3JS = {'x':[],'y':[]}
+	boundingBoxesChoice3D = {'x':[],'y':[]}
+	p = new Promise(function(resolve,reject){
+		resolveFunc = resolve;
+		errFunc = reject;
+	}).then();
+
+	var start = null;
+	CURRTRIAL.tsequenceactual = []
+	async function updateCanvas(timestamp){
+		if (!start) start = timestamp; //IF start has not been set to a float timestamp, set it now.
+
+		if (timestamp - start > ti[frame.current]){
+			//----- RENDER ALL ELEMENTS
+			for (var s = 0; s<=frame.frames[frame.current].length-1; s++){
+				f = frame.frames[frame.current][s]
+				var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
+				if (s==0){
+					var taskscreen0 = taskscreen
+				}//IF primary screen
+
+//------------------- DISPLAY THE FRAME 3D ---------------------//
+				if (taskscreen=="Sample" || taskscreen=="Test"){
+					render3D(taskscreen,s,f,gr,fr,sc,ob,id)
+					VISIBLECANVASWEBGL.style.visibility='visible';
+				} //IF sample || test
+				else {
+				    VISIBLECANVASWEBGL.style.visibility='hidden';
+				    updated3d = 0
+				}//ELSE hide 3D when plotting 2D elements like buttons and not keeping (overlaying) sample/test
+
+//------------------- DISPLAY THE FRAME 2D ---------------------//
+				//TRANSFER 2D ONSCREEN (everything has been pre-rendered offscreen)
+				if (ENV.OffscreenCanvasAvailable && s == frame.frames[frame.current].length-1 && updated2d){
+					var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
+
+					//FAILED render
+					if (renderstr.status == "failed"){
+						console.log("**** FAILED on 1ST rendering attempt of " + taskscreen)
+						// attempt again
+						CURRTRIAL.tsequenceactual[f] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+						var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))				
+						console.log("**** " + renderstr.status + " on 2ND rendering attempt of " + taskscreen)
+
+						if (renderstr.status == "failed"){
+							if (taskscreen == "Touchfix" || taskscreen == "Test" || taskscreen == "Choice"){
+								for (var j=0; j < 100; j++){
+									// attempt again
+									await setTimeout(j*100)
+									CURRTRIAL.tsequenceactual[f] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+									var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
+									if (renderstr.status == "succeeded"){
+										break
+									}//IF success
+								}//FOR j attempts
+								console.log("Render "  + taskscreen + " " + renderstr.status + " after " + j + " attempts")
+							}//IF fix/test/choice
+							else {
+								CURRTRIAL.tsequenceactual[f] = -99
+								console.log("Skipping render since not touchfix or test screen")
+							}//ELSE sample
+						}//IF failed again
+					}//IF failed
+				}//IF Offscreen api available
+
+				//RENDER 2D directly onscreen
+				if (!ENV.OffscreenCanvasAvailable) {
+					if (f==0 || s>0 || taskscreen != sc[f-1] || id[f] != id[f-1]){
+						//Blank out between taskscreens
+						if ( s==0 && taskscreen != sc[f-1] ){
+							renderShape2D('Blank',[-1],OFFSCREENCANVAS)
+						}//IF new taskscreen
+
+						//----- RENDER ALL 2D ELEMENTS DIRECTLY TO DISPLAY NOW -- offscreencanvas is visiblecanvas
+						render2D(taskscreen,s,f,gr,fr,sc,ob,id,OFFSCREENCANVAS)
+					}//IF new taskscreen, render 2D image
+				}//IF !Offscreen
+	    	}//FOR s screens within frame
+
+//------------------- Frame is fully on display ---------------------//
+	    	//----- (1) Merge Bounding Boxes
+			if (updated2d){
+				boundingBoxesChoice3D.x = boundingBoxesChoice2D.x
+				boundingBoxesChoice3D.y = boundingBoxesChoice2D.y
+			}//
+			if (updated3d){
+				boundingBoxesChoice3D.x = boundingBoxesChoice3JS.x
+				boundingBoxesChoice3D.y = boundingBoxesChoice3JS.y			
+			}
+
+	    	//----- (2) Update Status
+	    	updated2d = 0
+	    	updated3d = 0
+	    	if (FLAGS.movieplaying == 0){
+				FLAGS.movieplaying = 1
+				if (typeof(waitforMovieStart) != "undefined"){
+						waitforMovieStart.next()
+				}
+			}//IF
+
+			//----- (3) Save Out Images
+	    	if ((taskscreen0=="Sample" || taskscreen0=="Test") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
+				if (
+					(FLAGS.movieper[taskscreen0][ob[frame.current][0]][id[frame.current][0]] < 1 
+					&& (frame.current == 0 
+						|| (sc[frame.current] != sc[frame.current-1]
+							|| ob[frame.current][0] != ob[frame.current-1][0]
+							|| id[frame.current][0] != id[frame.current-1][0])
+						)
+					)//if !movie, save when screen changes
+					|| FLAGS.movieper[taskscreen0][ob[frame.current][0]][id[frame.current][0]] >= 1)//OR movie
+				{
+					saveScreenshot(VISIBLECANVASWEBGL,
+									CURRTRIAL.num,
+									taskscreen0,
+									frame.current,
+									ob[frame.current],
+									id[frame.current])
+					saveScreenshot(VISIBLECANVAS,
+									CURRTRIAL.num,
+									taskscreen0,
+									frame.current,
+									ob[frame.current],
+									id[frame.current])
+				}//IF need to save out this frame
+	    	}//IF sample or test screen & save out images
+
+			CURRTRIAL.tsequenceactual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+			frame.shown[frame.current]=1
+			frame.current++
+			if (frame.current >= frame.shown.length){ frame.current = frame.shown.length-1; frame.shown[frame.current] = 1} //for prematurely ending movies externally
+		}//IF time to show new frame
+//---------------- (end) DISPLAY THE FRAME ------------------//
+
+//------------------- PRE-RENDER if not all frames shown --------------------//
+		if (frame.shown[frame.shown.length-1] != 1){
+			f = frame.frames[frame.current][0]
+			var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
+
+			//================= Render all 2D elements =================//
+			if (ENV.OffscreenCanvasAvailable){
+				//Blank out between taskscreens
+				if ( taskscreen != sc[f-1] ){
+					renderShape2D('Blank',[-1],OFFSCREENCANVAS)
+					updated2d = 1
+				}//IF new taskscreen
+
+				//----- RENDER ALL 2D ELEMENTS NOW (commit to screen later)			
+				for (var s = 0; s<=frame.frames[frame.current].length-1; s++){
+					f = frame.frames[frame.current][s]
+					var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
+					render2D(taskscreen,s,f,gr,fr,sc,ob,id,OFFSCREENCANVAS)				
+				}//FOR s screens
+			}//IF 2D offscreenAvailable, pre-render next frame
+			window.requestAnimationFrame(updateCanvas);
+		}//IF frames left to show
+		else {
+			FLAGS.movieplaying = 0
+			if (typeof(waitforMovieFinish) != "undefined"){
+				waitforMovieFinish.next()
+			}
+			resolveFunc(CURRTRIAL.tsequenceactual);
+		}//ELSE all frames shown, promise resolve, exit animation loop
+	}//FUNCTION updateCanvas
+	window.requestAnimationFrame(updateCanvas); // kick off async work, requestAnimationFrame: goes on next screen refresh and syncs to browser's refresh rate on separate clock (not js clock)
+	return p
+}//FUNCTION displayTrial
+
+
+function render3D(taskscreen,s,f,gr,fr,sc,ob,id){
+	f = frame.frames[frame.current][s]
+	var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
+
+	renderer.autoClear = false
+	for (var j = 0; j<=ob[f].length - 1; j++){
+		var boundingBox = updateSingleFrame3D(taskscreen,
+												ob[f][j],
+												id[f][j],
+												fr[f],
+												gr[f][j])
+		if (s==0 && typeof(boundingBox) != "undefined" && typeof(boundingBox[ob[f][j]]) != "undefined" && typeof(boundingBox[ob[f][j]][0]) != "undefined"){
+			boundingBoxesChoice3JS.x[j] = boundingBox[ob[f][j]][0].x
+			boundingBoxesChoice3JS.y[j] = boundingBox[ob[f][j]][0].y
+			updated3d = 1
+		}//IF first screen
+		setViewport(gr[f][j])
+		var camera = scene[taskscreen].getObjectByName("cam"+ob[f][j])
+    	renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
+	}//FOR j display items
+}//FUNCTION render3D
+
+async function render2D(taskscreen,s,f,gr,fr,sc,ob,id,canvasobj){
+	if (FLAGS.savedata == 0 && s==0){
+		renderBlankWithGridMarkers(
+			ENV.XGridCenter,ENV.YGridCenter, 
+			CURRTRIAL.FixationGridIndex,CURRTRIAL.samplegridindex,TASK.TestGridIndex, TASK.ChoiceGridIndex,
+			ENV.FixationRadius,ENV.SampleFixationRadius,ENV.ChoiceRadius,
+			ENV.CanvasRatio,canvasobj);
+	}//IF !savedata, underlay grid
+	
+	if (f==0  || taskscreen != sc[f-1] || id[f] != id[f-1] || fr[f] != fr[f-1]){
+		if (taskscreen=="Sample" || taskscreen=="Test"){
+			if (taskscreen == "Sample"){
+				var ims = [ CURRTRIAL.sampleimage[CURRTRIAL.sequenceclip[f]][fr[f]] ] //fr[f] frame within clip
+			}
+			else if (taskscreen == "Test"){
+				var clip = 0
+				var ims = CURRTRIAL.testimages[clip][fr[f]]
+			}
+			if (typeof(ims) != "undefined" && typeof(ims[0])=="object"){
+				for (var j = 0; j<=ob[f].length - 1; j++){
+					var boundingBox = renderImage2D(ims[j],taskscreen,
+													ob[f][j],
+													id[f][j],
+													fr[f],
+													gr[f][j],
+													canvasobj) //render 2D image offscreen prior to next frame draw
+					if (s==0 && typeof(boundingBox[0]) != "undefined" && boundingBox[0].length>0){
+						boundingBoxesChoice2D.x[j] = boundingBox[0]
+						boundingBoxesChoice2D.y[j] = boundingBox[1]
+					}
+					updated2d=1
+				}//FOR j display items
+			}//IF image available
+		}//IF 2D image
+		else{
+			var boundingBox = renderShape2D(taskscreen,gr[f],canvasobj)
+			if (s==0 && taskscreen == "Choice"){
+				boundingBoxesChoice2D = boundingBox
+			}
+			updated2d=1
+		}//ELSE 2D shape
+	}//IF new taskscreen
+}//FUNCTION render2D
+
+function renderImage2D(im,sc,ob,id,fr,gr,canvasobj){
+	var sz = chooseArrayElement(IMAGES[sc][ob].IMAGES.sizeInches,id,0)
+	var wdpixels = 	sz*ENV.ViewportPPI/ENV.CanvasRatio
+	var htpixels = 	wdpixels*im.height/im.width
+	var context=canvasobj.getContext('2d');
+	var xleft=NaN;
+	var ytop=NaN;
+	var xbound=[];
+	var ybound=[];
+	xleft = Math.round(ENV.XGridCenter[gr]/ENV.CanvasRatio - 0.5*wdpixels);
+	ytop = Math.round(ENV.YGridCenter[gr]/ENV.CanvasRatio - 0.5*htpixels);
+	
+	context.drawImage(im,xleft,ytop,wdpixels,htpixels);
+
+	// Bounding boxes of images on canvas
+	xbound=[xleft*ENV.CanvasRatio, (xleft+wdpixels)*ENV.CanvasRatio];
+	ybound=[ytop*ENV.CanvasRatio, (ytop+htpixels)*ENV.CanvasRatio];
+
+	xbound[0]=xbound[0]+CANVAS.offsetleft;
+	xbound[1]=xbound[1]+CANVAS.offsetleft;
+	ybound[0]=ybound[0]+CANVAS.offsettop;
+	ybound[1]=ybound[1]+CANVAS.offsettop;
+
+	return [xbound, ybound]
+}//FUNCTION renderImage2D
+//XX hidetestdistractors needs to go somewhere
+
+function renderShape2D(sc,gr,canvasobj){
+	//0: Blank out screen
+	if (FLAGS.savedata == 1){
+		renderBlank(canvasobj,TASK.BackgroundColor2D)
+	}//ELSEIF savingdata
+
+	//1: Plot shape
+	switch (sc) {
+	case 'Blank':
+		renderBlank(canvasobj,TASK.BackgroundColor2D)
+		break
+	case 'Touchfix':
+		if (TASK.SameDifferent <= 0){
+			bufferFixationUsingDot(ENV.FixationColor,gr,ENV.FixationRadius,canvasobj);
+		}//IF !same-different
+		else if (TASK.SameDifferent > 0){
+			bufferFixationUsingTriangle(ENV.ChoiceColor,gr,ENV.FixationRadius,canvasobj);
+		}//IF same-different
+		break
+	case 'Choice':
+		return bufferChoiceUsingCircleSquare(ENV.ChoiceColor,ENV.ChoiceRadius,gr,canvasobj);
+	case 'Reward':
+		renderReward(canvasobj)
+		break
+	case 'Punish':
+		renderPunish(canvasobj)
+		break
+	default:
+	}//SWITCH taskscreen
+}//FUNCTION renderShape2D
+
+
+//========== BUFFER CHOICE CANVAS ==========//
+function bufferChoiceUsingCircleSquare(choice_color,choice_radius,choice_grid_indices,canvasobj){
+	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)	
+	var boundingBoxes={x: [], y: []}
+	// Draw test object(s): 
+	for (var i = 0; i<=choice_grid_indices.length-1; i++){
+		// If HideTestDistractors, simply do not draw the image
+		if(TASK.HideChoiceDistractors == 1){
+			if (correct_index != i){
+				boundingBoxes.x.push([NaN, NaN]); 
+				boundingBoxes.y.push([NaN, NaN]); 
+				continue 
+			}
+		}
+		if (i==0){
+			var funcreturn = renderDotOnCanvas(choice_color, choice_grid_indices[i], choice_radius, canvasobj);
+		} //same = circle
+		else if (i==1){
+			var funcreturn = renderSquareOnCanvas(choice_color, choice_grid_indices[i], 2*choice_radius, canvasobj);
+		} //different = square
+		boundingBoxes.x.push(funcreturn[0]); 
+		boundingBoxes.y.push(funcreturn[1]); 
+	} //FOR i choices
+	return boundingBoxes
+} //FUNCTION bufferChoiceUsingCircleSquare
+
+// Dot render using gridindex
+function renderDotOnCanvas(color, gridindex, dot_pixelradius, canvasobj){
+	var context=canvasobj.getContext('2d');
+
+	// Draw fixation dot
+	if (Array.isArray(gridindex)){
+		var xcent = gridindex[0]/ENV.CanvasRatio
+		var ycent = gridindex[1]/ENV.CanvasRatio
+	}//IF x,y coord provided
+	else {
+		var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
+		var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;	
+	}//IF gridindex provided
+	var rad = dot_pixelradius/ENV.CanvasRatio;
+	context.beginPath();
+	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
+	context.fillStyle=color; 
+	context.fill();
+
+	// Define (rectangular) boundaries of fixation
+	// Bounding boxes of dot on canvas
+	xbound = [ (xcent-rad)*ENV.CanvasRatio, (xcent+rad)*ENV.CanvasRatio ];
+	ybound = [ (ycent-rad)*ENV.CanvasRatio, (ycent+rad)*ENV.CanvasRatio ];
+
+	xbound[0]=xbound[0]+CANVAS.offsetleft;
+	xbound[1]=xbound[1]+CANVAS.offsetleft;
+	ybound[0]=ybound[0]+CANVAS.offsettop;
+	ybound[1]=ybound[1]+CANVAS.offsettop;
+	return [xbound, ybound]
+}//FUNCTION renderDotOnCanvas
+
+function getSampleFixationBoundingBox(gridindex,rad){
+	var xcent = ENV.XGridCenter[gridindex]
+	var ycent = ENV.YGridCenter[gridindex]
+
+	// Bounding boxes of dot on canvas
+	xbound = [ (xcent-rad), (xcent+rad)];
+	ybound = [ (ycent-rad), (ycent+rad)];
+
+	xbound[0]=xbound[0]+CANVAS.offsetleft;
+	xbound[1]=xbound[1]+CANVAS.offsetleft;
+	ybound[0]=ybound[0]+CANVAS.offsettop;
+	ybound[1]=ybound[1]+CANVAS.offsettop;
+
+	return [xbound,ybound]
+}//FUNCTION getSampleFixationBoundingBox
+
+function renderSquareOnCanvas(color, gridindex, square_pixelwidth, canvasobj){
+	// Draw Square
+	var context=canvasobj.getContext('2d');
+	var wd = square_pixelwidth/ENV.CanvasRatio;
+	var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
+	var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;
+	context.fillStyle=color;
+	context.fillRect(xcent-wd/2,ycent-wd/2,wd,wd);
+
+	// Define (rectangular) boundaries of fixation
+	// Bounding boxes of dot on canvas
+	xbound = [ (xcent-wd/2)*ENV.CanvasRatio, (xcent+wd/2)*ENV.CanvasRatio ];
+	ybound = [ (ycent-wd/2)*ENV.CanvasRatio, (ycent+wd/2)*ENV.CanvasRatio ];
+
+	xbound[0]=xbound[0]+CANVAS.offsetleft;
+	xbound[1]=xbound[1]+CANVAS.offsetleft;
+	ybound[0]=ybound[0]+CANVAS.offsettop;
+	ybound[1]=ybound[1]+CANVAS.offsettop;
+	return [xbound, ybound]
+}//FUNCTION renderSquareOnCanvas
+
+function renderTriangleOnCanvas(color, gridindex, square_pixelwidth, canvasobj){
+	// Draw Triangle
+	var context=canvasobj.getContext('2d');
+	var wd = square_pixelwidth/ENV.CanvasRatio;
+	var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
+	var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;
+	context.fillStyle=color;
+
+	// var len_side = Math.sqrt(Math.pow(2*(wd/2),2))
+	// var len_side = Math.sin(30 * Math.PI / 180);     // returns 1 (the sine of 90 degrees)
+
+
+	context.beginPath();
+    // context.moveTo(xcent, ycent + wd/2); //bottom vertex
+    // context.lineTo(xcent-wd/2, ycent-wd/2); //top left
+    // context.lineTo(xcent+wd/2, ycent-wd/2); //top right
+    context.moveTo(xcent, ycent - wd/2); //bottom vertex
+    context.lineTo(xcent-wd/2, ycent+wd/2); //top left
+    context.lineTo(xcent+wd/2, ycent+wd/2); //top right
+    context.fill();
+
+	// Define (rectangular) boundaries of fixation
+	// Bounding boxes of dot on canvas
+	xbound = [ (xcent-wd/2)*ENV.CanvasRatio, (xcent+wd/2)*ENV.CanvasRatio ];
+	ybound = [ (ycent-wd/2)*ENV.CanvasRatio, (ycent+wd/2)*ENV.CanvasRatio ];
+
+	xbound[0]=xbound[0]+CANVAS.offsetleft;
+	xbound[1]=xbound[1]+CANVAS.offsetleft;
+	ybound[0]=ybound[0]+CANVAS.offsettop;
+	ybound[1]=ybound[1]+CANVAS.offsettop;
+	return [xbound, ybound]
+}//FUNCTION renderTriangleOnCanvas
+
+
+function renderBlank(canvasobj,bkgdcolor){
+	var context=canvasobj.getContext('2d');
+	context.fillStyle=bkgdcolor;
+	context.fillRect(0,100,canvasobj.width,canvasobj.height);
+	// context.clearRect(0,0,canvasobj.width,canvasobj.height);
+}//FUNCTION renderBlank
+
+function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,choicegridindex,
+				fixationradius,samplefixationradius,choiceradius,canvasratio,canvasobj)
+{
+	var outofbounds_str = ''
+	var context=canvasobj.getContext('2d');
+	context.clearRect(0,0,canvasobj.width,canvasobj.height);
+
+	//Display grid (red)
+	for (var i = 0; i <= gridx.length-1; i++){
+		rad = 10
+		context.beginPath()
+		context.arc(gridx[i]/ENV.CanvasRatio,gridy[i]/ENV.CanvasRatio,rad/ENV.CanvasRatio,0*Math.PI,2*Math.PI)
+		context.fillStyle="red"
+		context.fill();
+
+		var displaycoord = [gridx[i]-rad,gridy[i]-rad,gridx[i]+rad,gridy[i]+rad]
+		var outofbounds=checkDisplayBounds(displaycoord)
+		if (outofbounds == 1){
+			outofbounds_str = outofbounds_str + "<br>" + "gridpoint" + i + " is out of bounds"
+		}
+		displayGridCoordinate(i,[gridx[i],gridy[i]],canvasobj)
+	}
+
+	//Fixation Image Bounding Box (white)
+	var wd = 2*fixationradius/ENV.CanvasRatio
+	var xcent = gridx[fixationgridindex]/ENV.CanvasRatio
+	var ycent = gridy[fixationgridindex]/ENV.CanvasRatio
+	context.strokeStyle="white"
+	context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
+
+	var displaycoord = [(xcent-wd/2)*ENV.CanvasRatio,(ycent-wd/2)*ENV.CanvasRatio,
+						(xcent+wd/2)*ENV.CanvasRatio,(ycent+wd/2)*ENV.CanvasRatio]
+	var outofbounds=checkDisplayBounds(displaycoord)
+	if (outofbounds == 1){
+		outofbounds_str = outofbounds_str + "<br>" + "Fixation dot is out of bounds"
+	}
+	displayPhysicalSize(displaycoord,canvasobj)
+
+	//Sample Fixation Bounding Box (yellow)
+	var wd = 2*samplefixationradius/ENV.CanvasRatio
+	var xcent = gridx[samplegridindex]/ENV.CanvasRatio
+	var ycent = gridy[samplegridindex]/ENV.CanvasRatio
+	context.strokeStyle="yellow"
+	context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
+
+	var displaycoord = [(xcent-wd/2)*ENV.CanvasRatio,(ycent-wd/2)*ENV.CanvasRatio,
+						(xcent+wd/2)*ENV.CanvasRatio,(ycent+wd/2)*ENV.CanvasRatio]
+	var outofbounds=checkDisplayBounds(displaycoord)
+	if (outofbounds == 1){
+		outofbounds_str = outofbounds_str + "<br>" + "Sample Fixation Window is out of bounds"
+	}
+	displayPhysicalSize(displaycoord,canvasobj)
+
+	//Choice Image Bounding Box(es) (red)
+	if (TASK.SameDifferent > 0){
+		for (var i = 0; i <= choicegridindex.length-1; i++){
+			var wd = 2*choiceradius/ENV.CanvasRatio
+			var xcent = gridx[choicegridindex[i]]/ENV.CanvasRatio
+			var ycent = gridy[choicegridindex[i]]/ENV.CanvasRatio
+			context.strokeStyle="red"
+			context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
+
+			var displaycoord = [(xcent-wd/2)*ENV.CanvasRatio,(ycent-wd/2)*ENV.CanvasRatio,
+							(xcent+wd/2)*ENV.CanvasRatio,(ycent+wd/2)*ENV.CanvasRatio]
+			var outofbounds=checkDisplayBounds(displaycoord)
+			if (outofbounds == 1){
+				outofbounds_str = outofbounds_str + "<br>" + "Choice Image" + i + " is out of bounds"
+			}
+			displayPhysicalSize(displaycoord,canvasobj)
+		}
+	} //IF same-different choice screen
+
+	if (VISIBLECANVASWEBGL.width > 4096 || VISIBLECANVASWEBGL.height > 4096){
+		outofbounds_str = outofbounds_str + "Canvas may be too large for webgl limit of 4096 pixels in either dimension -- 3d rendering may not be accurate! Consider using a smaller display size."
+	}
+
+	if (outofbounds_str == ''){
+		outofbounds_str = 'All display elements are fully visible'
+	}
+
+	displayoutofboundsstr = outofbounds_str
+	updateImageLoadingAndDisplayText(' ')
+}//FUNCTION renderBlankwithGridMarkers
+
+function renderReward(canvasobj){
+	var context=canvasobj.getContext('2d');
+	context.fillStyle="green";
+	context.fillRect(xcanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,
+					ycanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,400/ENV.CanvasRatio,400/ENV.CanvasRatio);
+}//FUNCTION renderReward
+
+function renderPunish(canvasobj){
+	var context=canvasobj.getContext('2d');
+	context.fillStyle="#3c3c3c";
+	context.fillRect(xcanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,
+					ycanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,400/ENV.CanvasRatio,400/ENV.CanvasRatio);
+}//FUNCTION renderPunish
+
+async function bufferFixationUsingImage(image, gridindex, sample_wdpixels, sample_htpixels, canvasobj){
+// 	var context=canvasobj.getContext('2d');
+// 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
+
+	boundingBoxesFixation['x']=[]
+	boundingBoxesFixation['y']=[]
+	
+	if (typeof(image)!= "undefined"){
+	funcreturn = await renderImageOnCanvas(image, gridindex, sample_wdpixels, sample_htpixels, canvasobj); 
+	boundingBoxesFixation.x.push(funcreturn[0]);
+	boundingBoxesFixation.y.push(funcreturn[1]);
+	}
+}//FUNCTION bufferFixationUsingImage
+
+async function bufferFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
+	boundingBoxesFixation['x']=[]
+	boundingBoxesFixation['y']=[]
+
+	funcreturn = renderDotOnCanvas(color, gridindex, dot_pixelradius, canvasobj)
+	boundingBoxesFixation.x.push(funcreturn[0]);
+	boundingBoxesFixation.y.push(funcreturn[1]);
+}//FUNCTION bufferFixationUsingDot
+
+async function bufferFixationUsingTriangle(color, gridindex, dot_pixelradius, canvasobj){
+	boundingBoxesFixation['x']=[]
+	boundingBoxesFixation['y']=[]
+
+	funcreturn = renderTriangleOnCanvas(color, gridindex, 2*dot_pixelradius, canvasobj);
+	boundingBoxesFixation.x.push(funcreturn[0]);
+	boundingBoxesFixation.y.push(funcreturn[1]);
+}//FUNCTION bufferFixationUsingTriangle
+
+
+function checkDisplayBounds(displayobject_coord){
+	var outofbounds=0
+	if (displayobject_coord[0]/ENV.CanvasRatio < CANVAS.workspace[0] ||
+		displayobject_coord[1]/ENV.CanvasRatio < CANVAS.workspace[1] ||
+		displayobject_coord[2]/ENV.CanvasRatio > CANVAS.workspace[2] ||
+		displayobject_coord[3]/ENV.CanvasRatio > CANVAS.workspace[3]){
+		outofbounds=1
+	}
+	return outofbounds
+}
+function setupImageLoadingText(){
+	var textobj = document.getElementById("imageloadingtext")
+	textobj.style.top = CANVAS.offsettop + "px"
+	textobj.innerHTML = ''
+	setupCanvasListeners(textobj)
+}
+
+function updateImageLoadingAndDisplayText(str){
+	var textobj = document.getElementById("imageloadingtext")
+
+	//DISPLAY TIMING: Software check for frame drops
+	var dt = []
+	var u_dt = 0
+	for (var i=0; i<=CURRTRIAL.tsequenceactualclip.length-1; i++){
+		dt[i] = CURRTRIAL.tsequenceactualclip[i] - CURRTRIAL.tsequencedesiredclip[i]
+		u_dt = u_dt + Math.abs(dt[i])
+	}
+	u_dt = u_dt/dt.length
+
+	textobj.innerHTML =
+	str
+	+ imageloadingtimestr
+	+ "<br>" + displayoutofboundsstr 
+	+ "<br>" + 0.01*Math.round(100*ENV.FrameRateDisplay) + "Hz "
+	+ " (" + 0.1*Math.round(10000/ENV.FrameRateDisplay) + 'ms res) display' 
+	+ " --- " + 0.01*Math.round(100*ENV.FrameRateMovie) + "Hz scene update" 
+	+ "<br>" + "<font color=red> mean(t_actual - t_desired) = " + Math.round(u_dt) + " ms"
+	+ "  (min=" + Math.round(Math.min(... dt)) + ", max=" + Math.round(Math.max(... dt)) + ") </font>"
+	+ "<br>" + eyedataratestr
+}
+
+function displayPhysicalSize(displayobject_coord,canvasobj){
+	var visible_ctxt = canvasobj.getContext('2d');
+	visible_ctxt.textBaseline = "hanging";
+	visible_ctxt.fillStyle = "white";
+	visible_ctxt.font = "16px Verdana";
+	visible_ctxt.fillText( 
+		Math.round(100*(displayobject_coord[2]-displayobject_coord[0])/ENV.ViewportPPI)/100 +
+		' x ' +
+		Math.round(100*(displayobject_coord[3]-displayobject_coord[1])/ENV.ViewportPPI)/100 + 
+		' in', 
+		displayobject_coord[0]/ENV.CanvasRatio,(displayobject_coord[1]-16)/ENV.CanvasRatio
+	);
+}
+
+function displayGridCoordinate(idx,xycoord,canvasobj){
+	var visible_ctxt = canvasobj.getContext('2d');
+	visible_ctxt.textAlign = "center";
+	visible_ctxt.textBaseline = "middle";
+	visible_ctxt.fillStyle = "white";
+	visible_ctxt.font = "20px Verdana";
+	visible_ctxt.fillText(idx,xycoord[0]/ENV.CanvasRatio, xycoord[1]/ENV.CanvasRatio)
+}
+
+function setViewport(gridindex){
+	//==== RENDERER 2D VIEWPORT
+	//width and height are determined by object size Inches. the viewport can't be smaller than the object's size. otherwise the object will look cropped
+	var scenecenterX = ENV.XGridCenter[gridindex]
+	var scenecenterY = ENV.YGridCenter[gridindex]
+	var scenewidth = renderer.getContext().canvas.width
+	var sceneheight = renderer.getContext().canvas.height
+	var left = scenecenterX - scenewidth/2
+	var bottom = -sceneheight/2 + (VISIBLECANVAS.clientHeight-scenecenterY)
+
+
+	renderer.setViewport(left, bottom, scenewidth, sceneheight);
+	renderer.setScissor(left,bottom,scenewidth,sceneheight)
+	renderer.setScissorTest(true)
+}
+
+async function saveScreenshot(canvasobj,currtrial,taskscreen,framenum,objectlabel,objectind){	
+	//---- upload screenshot to firebase 
+	//sample image will be uploaded to the appropriate folder in the scene 
+
+	if (taskscreen == "Sample"){
+		var currtrial_samplepath = TASK.ImageBagsSample[objectlabel]	
+	}
+	else if (taskscreen == "Test"){
+		var currtrial_samplepath = TASK.ImageBagsSample[CURRTRIAL.sample_scenebag_label]
+	}
+	var currtrial_date = ENV.DataFileName
+	var currtrial_parampath = ENV.ParamFileName
+
+	//path to scene folder
+	var ind_start = currtrial_samplepath.lastIndexOf('/')
+	var ind_end = currtrial_samplepath.indexOf('.js')
+	var scenefolder = currtrial_samplepath.substring(0,ind_end)
+
+	//paramfolder name
+	var ind_start = currtrial_parampath.lastIndexOf('/')
+	var ind_end = currtrial_parampath.indexOf('.json')
+	var paramfolder = currtrial_parampath.substring(ind_start+1,ind_end)
+
+	//date 
+	var ind_start = currtrial_date.lastIndexOf('/')
+	var ind_end = currtrial_date.indexOf('T')
+	var date = currtrial_date.substring(ind_start+1,ind_end) 
+
+	var storage_path = scenefolder + '_scene_'
+ 						+ date + '_' + paramfolder + '_'
+						+ ENV.DeviceName + '_device'
+
+	if (canvasobj.width > 4096 || canvasobj.height > 4096){
+		console.log("Canvas may be too large for webgl limit of 4096 pixels in either dimension -- Image Saving may not be accurate! Consider using a smaller display size.")
+	}
+
+	currtrial = String(currtrial).padStart(3, '0')
+	framenum = String(framenum).padStart(3, '0')
+
+	canvasobj.toBlob(function(blob){
+		var fullpath = storage_path + '/'
+						+ canvasobj.id 
+						+ '_' + 'trialnum' + currtrial
+						+ '_' + taskscreen 
+						+ '_' + 'framenum' + framenum
+
+		for (var i=0; i<=objectlabel.length-1; i++){
+			fullpath = fullpath
+						+ '_' + 'label' + objectlabel[i]
+						+ '_' + 'index' + objectind[i]
+		}//FOR i objects
+		fullpath = fullpath + '.png'
+		
+		try {
+			var response = storage.ref().child(fullpath).put(blob)
+			console.log("saved image: " + fullpath);
+			console.log("FIREBASE: Successful image file upload. Size:" + Math.round(response.blob_.size_/1000) + 'kb')
+		}//TRY
+		catch (error){
+			console.log(error)
+		}
+	})//.toBlob function
+}//FUNCTION saveScreenshot
+
+// Estimate max software fps
+function estimatefps(){
+	var resolveFunc
+	var errFunc
+	p = new Promise(function(resolve,reject){
+		resolveFunc = resolve;
+		errFunc = reject;
+	}).then();
+
+
+	var lasttime = null
+	var elapsedSinceLastFrame = [];
+	var nframes = 0
+	var dtScreen = 0;
+	async function dummyLoop(timestamp){
+		if (!lasttime) lasttime = timestamp
+		elapsedSinceLastFrame[nframes]=(timestamp-lasttime)
+		lasttime=timestamp
+		nframes=nframes+1
+	  	if (nframes < 20){
+	  		window.requestAnimationFrame(dummyLoop)
+	  	}
+	  	else {
+	  		for (var i=10; i<=nframes-1; i++){
+				dtScreen = dtScreen + elapsedSinceLastFrame[i]
+	  		}
+	  		dtScreen = dtScreen / (nframes - 10)
+	  		resolveFunc(1000/dtScreen)
+	  	}
+	}//dummyLoop
+	
+	window.requestAnimationFrame(dummyLoop);
+	return p
+}//estimatefps
+
+function appendTest(teston){
+	var t0 = CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
+	if (TASK.SameDifferent <= 0){
+		var seq=["test"]
+		var tseq=[t0]; 
+	}//IF SR or MTS, show test
+	else
+		if (TASK.SameDifferent > 0){
+		if (TASK.TestOFF > 0){
+			var seq=["test","blank","choice"]
+			var tseq=[	t0,
+						t0+teston,
+						t0+teston+TASK.TestOFF
+					];
+		}//ELSEIF TestOFF
+		else if (TASK.TestOFF <= 0){
+			var seq=["test","choice"]
+			var tseq=[	t0,
+						t0+teston
+					];
+		}//ELSEIF no TestOFF
+	}//IF SD, show test & choice
+	return [seq,tseq]
+}//FUNCTION appendTest
+
+
 //================== CANVAS SETUP ==================//
 function refreshCanvasSettings(TASK){
 	// Adjust location of CANVAS based on species-specific setup
@@ -245,7 +1019,6 @@ function updateHeadsUpDisplayAutomator(currentautomatorstagename,pctcorrect,ntri
 	return textstr
 }//FUNCTION update
 
-//================== IMAGE RENDERING ==================//
 function defineImageGrid(ngridpoints, gridspacing,xoffset,yoffset){
 	var xgrid =[]
 	var ygrid =[]
@@ -276,791 +1049,3 @@ function defineImageGrid(ngridpoints, gridspacing,xoffset,yoffset){
 
 	return [xcanvascent, ycanvascent, xgridcent, ygridcent]
 }//FUNCTION defineImageGrid
-
-
-function displayTrial(ti,gr,fr,sc,ob,id){
-	var resolveFunc
-	var errFunc
-	var new2DImageDrawnOffscreen = 0
-	p = new Promise(function(resolve,reject){
-		resolveFunc = resolve;
-		errFunc = reject;
-	}).then();
-
-	var start = null;
-	CURRTRIAL.tsequenceactual = []
-	async function updateCanvas(timestamp){
-		if (!start) start = timestamp; //IF start has not been set to a float timestamp, set it now.
-		if (timestamp - start > ti[frame.current]){ //IF time to show new frame
-//----- RENDER ALL ELEMENTS
-			for (var s = 0; s<=frame.frames[frame.current].length-1; s++){
-				f = frame.frames[frame.current][s]
-				var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
-				if (s==0){
-					var taskscreen0 = taskscreen
-				}//IF primary screen
-
-				if (s==0){
-					var taskscreen0 = taskscreen
-				}
-
-				if (taskscreen=="Sample" || taskscreen=="Test"){
-					renderer.autoClear = false
-					if (taskscreen=="Sample" || taskscreen=="Test"){
-						//1st item
-						if (s==0){
-							setViewport(gr[f][0])
-							var camera = scene[taskscreen].getObjectByName("cam"+ob[f][0])
-							renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)							
-						}//IF first screen
-						
-						//Subsequent items
-						if (ob[f].length > 1 || s>0){
-							if (s==0){
-								var jstart=1;
-							}//IF first screen, render second onward
-							else if (s>0){
-								var jstart=0;
-							}//ELSEIF second screen, render all
-							for (var j = jstart; j<=ob[f].length - 1; j++){
-								var boundingBox3D = updateSingleFrame3D(taskscreen,
-																		ob[f][j],
-																		id[f][j],
-																		fr[f],
-																		gr[f][j])
-								if (s==0){
-									boundingBoxesChoice3D.x[j] = boundingBox3D.x
-									boundingBoxesChoice3D.y[j] = boundingBox3D.y									
-								}//IF first screen
-								setViewport(gr[f][j])
-								var camera = scene[taskscreen].getObjectByName("cam"+ob[f][j])
-						    	renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
-				    		}//FOR j display items						
-						}//IF multiple items || multiple screens
-					} //IF sample || test
-					VISIBLECANVASWEBGL.style.visibility='visible';
-				} //IF sample || test
-				else {
-				    VISIBLECANVASWEBGL.style.visibility='hidden';
-				}//ELSE hide 3D when plotting 2D elements like buttons and not keeping (overlaying) sample/test
-
-				//=================== 2D rendering =====================//
-				if(f==0 || s>0 || taskscreen != sc[f-1] || id[f] != id[f-1] || new2DImageDrawnOffscreen == 1){
-					new2DImageDrawnOffscreen=0
-					if (ENV.OffscreenCanvasAvailable && s == frame.frames[frame.current].length-1){
-						//everything has been pre-rendered offscreen, now transfer
-						var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
-
-						if (renderstr.status == "failed"){
-							console.log("**** FAILED on 1ST rendering attempt of " + taskscreen)
-							// attempt again
-							CURRTRIAL.tsequenceactual[f] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
-							var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))				
-							console.log("**** " + renderstr.status + " on 2ND rendering attempt of " + taskscreen)
-
-							if (renderstr.status == "failed"){
-								if (taskscreen == "Touchfix" || taskscreen == "Test" || taskscreen == "Choice"){
-									for (var j=0; j < 100; j++){
-										// attempt again
-										await setTimeout(j*100)
-										CURRTRIAL.tsequenceactual[f] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
-										var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
-										if (renderstr.status == "succeeded"){
-											break
-										}//IF success
-									}//FOR j attempts
-									console.log("Render "  + taskscreen + " " + renderstr.status + " after " + j + " attempts")
-								}//IF fix/test/choice
-								else {
-									CURRTRIAL.tsequenceactual[f] = -99
-									console.log("Skipping render since not touchfix or test screen")
-								}//ELSE sample
-							}//IF failed again
-						}//IF failed
-					}//IF Offscreen api available
-					else if (!ENV.OffscreenCanvasAvailable || (ENV.OffscreenCanvasAvailable && s>0) ) {
-						//render directly, offscreencanvas is visiblecanvas
-						if (taskscreen=="Sample" || taskscreen=="Test"){
-							if (taskscreen == "Sample"){
-								var ims = [ CURRTRIAL.sampleimage[CURRTRIAL.sequenceclip[f]][fr[f]]]
-							}//IF Sample
-							else if (taskscreen == "Test"){
-								var ims = CURRTRIAL.testimages[0][fr[f]]
-							}//IF Test
-							if (typeof(ims) != "undefined" && typeof(ims[0])=="object"){
-								var boundingBoxes2D = {"x": [], "y": []}
-								for (var j = 0; j<=ob[f].length - 1; j++){
-									var boundingBox = renderImage2D(ims[j],taskscreen,
-																	ob[f][j],
-																	id[f][j],
-																	fr[f],
-																	gr[f][j],
-																	OFFSCREENCANVAS) //render 2D image onscreen during this frame draw
-									boundingBoxes2D.x[j] = boundingBox.x
-									boundingBoxes2D.y[j] = boundingBox.y
-								}//FOR j display items
-								if (s==0 && boundingBoxesChoice3D.x == []){
-									boundingBoxesChoice3D.x = boundingBoxes2D.x
-									boundingBoxesChoice3D.y = boundingBoxes2D.y
-								}//IF use image bounding box
-							}//IF image available
-						}//IF sample/test image
-						else{
-							await renderShape2D(taskscreen,gr[f],OFFSCREENCANVAS)
-						}//ELSE shape
-
-						if (s==0 && taskscreen=="Choice"){
-							boundingBoxesChoice3D = boundingBoxesChoice //default to 2D coords for same different buttons
-						}//IF Choice
-					}//IF Offscreen not available
-				}//IF new taskscreen, render 2D image
-				//=================== 2D rendering (END) =====================//
-	    	}//FOR s screens within frame
-
-			//----- Save Out Images
-	    	if ((taskscreen0=="Sample" || taskscreen0=="Test") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
-				if (
-					(FLAGS.movieper[taskscreen0][ob[frame.current][0]][id[frame.current][0]] < 1 
-					&& (frame.current == 0 
-						|| (sc[frame.current] != sc[frame.current-1]
-							|| ob[frame.current][0] != ob[frame.current-1][0]
-							|| id[frame.current][0] != id[frame.current-1][0])
-						)
-					)//if !movie, save when screen changes
-					|| FLAGS.movieper[taskscreen0][ob[frame.current][0]][id[frame.current][0]] >= 1)//OR movie
-				{
-					saveScreenshot(VISIBLECANVASWEBGL,
-									CURRTRIAL.num,
-									taskscreen0,
-									frame.current,
-									ob[frame.current],
-									id[frame.current])
-					saveScreenshot(VISIBLECANVAS,
-									CURRTRIAL.num,
-									taskscreen0,
-									frame.current,
-									ob[frame.current],
-									id[frame.current])
-				}//IF need to save out this frame
-	    	}//IF sample or test screen & save out images
-
-			CURRTRIAL.tsequenceactual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
-			frame.shown[frame.current]=1;
-			frame.current++;
-		}//IF time to show new frame
-		
-//----- BUFFER 1ST ELEMENT
-		if (frame.shown[frame.shown.length-1] != 1){//Continue if not all frames shown
-			var taskscreen = sc[frame.current].charAt(0).toUpperCase() + sc[frame.current].slice(1)
-			boundingBoxesChoice3D = {'x':[],'y':[]}
-
-			//================= 3D update frame =================//
-			if ((taskscreen=="Sample" || taskscreen=="Test") && frame.shown[frame.current]==0){
-				var boundingBox3D = updateSingleFrame3D(taskscreen,
-														ob[frame.current][0],
-														id[frame.current][0],
-														fr[frame.current],
-														gr[frame.current][0])//Update 3D scene prior to next frame draw
-				boundingBoxesChoice3D.x[0] = boundingBox3D.x
-				boundingBoxesChoice3D.y[0] = boundingBox3D.y
-			}//IF Sample/Test
-
-			//================= 2D buffer image =================//
-			if (ENV.OffscreenCanvasAvailable){// && sequencetaskscreen[frame.current] != "sample" && sequencetaskscreen[frame.current] != "test"){
-				for (var s = 0; s<=frame.frames[frame.current].length-1; s++){
-					f = frame.frames[frame.current][s]
-					var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
-						
-					if (f==0  || taskscreen != sc[f-1] || id[f] != id[f-1] || fr[f] != fr[f-1]){
-						if (taskscreen=="Sample" || taskscreen=="Test"){
-							if (taskscreen == "Sample"){
-								var ims = [ CURRTRIAL.sampleimage[CURRTRIAL.sequenceclip[f]][fr[f]]]
-							}
-							else if (taskscreen == "Test"){
-								var ims = CURRTRIAL.testimages[0][fr[f]]
-							}
-
-							if (typeof(ims) != "undefined" && typeof(ims[0])=="object"){
-								var boundingBoxes2D = {"x": [], "y": []}
-								for (var j = 0; j<=ob[f].length - 1; j++){
-									var boundingBox = renderImage2D(ims[j],taskscreen,
-																	ob[f][j],
-																	id[f][j],
-																	fr[f],
-																	gr[f][j],
-																	OFFSCREENCANVAS) //render 2D image offscreen prior to next frame draw
-									boundingBoxes2D.x[j] = boundingBox.x
-									boundingBoxes2D.y[j] = boundingBox.y
-									new2DImageDrawnOffscreen=1
-								}//FOR j display items
-								if (s==0 && boundingBoxesChoice3D.x == []){
-									boundingBoxesChoice3D.x = boundingBoxes2D.x
-									boundingBoxesChoice3D.y = boundingBoxes2D.y
-								}//IF use image bounding box
-							}//IF image available
-						}//IF sample/test image
-						else{
-							await renderShape2D(taskscreen,gr[f],OFFSCREENCANVAS)
-							new2DImageDrawnOffscreen=1
-						}//ELSE shape
-
-						if (s==0 && taskscreen=="Choice"){
-							boundingBoxesChoice3D = boundingBoxesChoice //default to 2D coords for same different buttons
-						}//IF Choice
-					}//IF new taskscreen
-				}//FOR s screen overlays
-			}//IF offscreenAvailable, pre-render next frame
-			window.requestAnimationFrame(updateCanvas);
-		}//IF frames left to show
-		else{
-			resolveFunc(CURRTRIAL.tsequenceactual);
-		}//ELSE all frames shown
-	}//FUNCTION updateCanvas
-
-	window.requestAnimationFrame(updateCanvas); // kick off async work, requestAnimationFrame: goes on next screen refresh and syncs to browser's refresh rate on separate clock (not js clock)
-	return p
-}//FUNCTION displayTrial
-
-
-async function renderImage2D(im,sc,ob,id,fr,gr,canvasobj){
-	var sz = chooseArrayElement(IMAGES[sc][ob].IMAGES.sizeInches,id,0)
-	var wdpixels = 	sz*ENV.ViewportPPI/ENV.CanvasRatio
-	var htpixels = 	wdpixels*im.height/im.width
-	var context=canvasobj.getContext('2d');
-	var xleft=NaN;
-	var ytop=NaN;
-	var xbound=[];
-	var ybound=[];
-	xleft = Math.round(ENV.XGridCenter[gr]/ENV.CanvasRatio - 0.5*wdpixels);
-	ytop = Math.round(ENV.YGridCenter[gr]/ENV.CanvasRatio - 0.5*htpixels);
-	
-	context.drawImage(im,xleft,ytop,wdpixels,htpixels);
-
-	// Bounding boxes of images on canvas
-	xbound=[xleft*ENV.CanvasRatio, (xleft+wdpixels)*ENV.CanvasRatio];
-	ybound=[ytop*ENV.CanvasRatio, (ytop+htpixels)*ENV.CanvasRatio];
-
-	xbound[0]=xbound[0]+CANVAS.offsetleft;
-	xbound[1]=xbound[1]+CANVAS.offsetleft;
-	ybound[0]=ybound[0]+CANVAS.offsettop;
-	ybound[1]=ybound[1]+CANVAS.offsettop;
-
-	return [xbound, ybound]
-}//FUNCTION renderImage2D
-//XX hidetestdistractors needs to go somewhere
-
-async function renderShape2D(sc,gr,canvasobj){
-	//0: Blank out screen
-	if (FLAGS.savedata == 0){
-		renderBlankWithGridMarkers(
-			ENV.XGridCenter,ENV.YGridCenter, 
-			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, TASK.ChoiceGridIndex,
-			ENV.FixationRadius,
-			// IMAGES["Sample"][0].IMAGES.sizeInches[0]*ENV.ViewportPPI/(ENV.CanvasRatio), 
-			ENV.SampleFixationRadius, 
-			// IMAGES["Test"][0].IMAGES.sizeInches[0]*ENV.ViewportPPI/(ENV.CanvasRatio), 
-			ENV.ChoiceRadius,
-			ENV.CanvasRatio,canvasobj);
-	}//IF !savedata
-	else if (FLAGS.savedata == 1){
-		renderBlank(canvasobj,TASK.BackgroundColor2D)
-	}//ELSEIF savingdata
-
-	//1: Plot shape
-	switch (sc) {
-	case 'Blank':
-		renderBlank(canvasobj,TASK.BackgroundColor2D)
-		break
-	case 'Touchfix':
-		if (TASK.SameDifferent <= 0){
-			bufferFixationUsingDot(ENV.FixationColor,gr,ENV.FixationRadius,canvasobj);
-		}//IF !same-different
-		else if (TASK.SameDifferent > 0){
-			bufferFixationUsingTriangle(ENV.ChoiceColor,gr,ENV.FixationRadius,canvasobj);
-		}//IF same-different
-		break
-	case 'Choice':
-		bufferChoiceUsingCircleSquare(ENV.ChoiceColor,ENV.ChoiceRadius,gr,canvasobj);
-		break
-	case 'Reward':
-		renderReward(canvasobj)
-		break
-	case 'Punish':
-		renderPunish(canvasobj)
-		break
-	default:
-	}//SWITCH taskscreen
-}//FUNCTION renderShape2D
-
-
-//========== BUFFER CHOICE CANVAS ==========//
-async function bufferChoiceUsingCircleSquare(choice_color,choice_radius,choice_grid_indices,canvasobj){
-	// Option: gray out before buffering test: (for overriding previous trial's test screen if current trial test screen has transparent elements?)	
-	boundingBoxesChoice={x: [], y: []}
-	// Draw test object(s): 
-	for (i = 0; i<choice_grid_indices.length; i++){
-		// If HideTestDistractors, simply do not draw the image
-		if(TASK.HideChoiceDistractors == 1){
-			if (correct_index != i){
-				boundingBoxesChoice.x.push([NaN, NaN]); 
-				boundingBoxesChoice.y.push([NaN, NaN]); 
-				continue 
-			}
-		}
-		if (i==0){
-			funcreturn = await renderDotOnCanvas(choice_color, choice_grid_indices[i], choice_radius, canvasobj);
-		} //same = circle
-		else if (i==1){
-			funcreturn = await renderSquareOnCanvas(choice_color, choice_grid_indices[i], 2*choice_radius, canvasobj);
-		} //different = square
-		boundingBoxesChoice.x.push(funcreturn[0]); 
-		boundingBoxesChoice.y.push(funcreturn[1]); 
-		console.log(i + boundingBoxesChoice.x)
-	} //FOR i choices
-	console.log(boundingBoxesChoice)
-} //FUNCTION bufferChoiceUsingCircleSquare
-
-// Dot render using gridindex
-async function renderDotOnCanvas(color, gridindex, dot_pixelradius, canvasobj){
-	var context=canvasobj.getContext('2d');
-
-	// Draw fixation dot
-	if (Array.isArray(gridindex)){
-		var xcent = gridindex[0]/ENV.CanvasRatio
-		var ycent = gridindex[1]/ENV.CanvasRatio
-	}//IF x,y coord provided
-	else {
-		var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
-		var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;	
-	}//IF gridindex provided
-	var rad = dot_pixelradius/ENV.CanvasRatio;
-	context.beginPath();
-	context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
-	context.fillStyle=color; 
-	context.fill();
-
-	// Define (rectangular) boundaries of fixation
-	// Bounding boxes of dot on canvas
-	xbound = [ (xcent-rad)*ENV.CanvasRatio, (xcent+rad)*ENV.CanvasRatio ];
-	ybound = [ (ycent-rad)*ENV.CanvasRatio, (ycent+rad)*ENV.CanvasRatio ];
-
-	xbound[0]=xbound[0]+CANVAS.offsetleft;
-	xbound[1]=xbound[1]+CANVAS.offsetleft;
-	ybound[0]=ybound[0]+CANVAS.offsettop;
-	ybound[1]=ybound[1]+CANVAS.offsettop;
-	return [xbound, ybound]
-}//FUNCTION renderDotOnCanvas
-
-function getSampleFixationBoundingBox(gridindex,rad){
-	var xcent = ENV.XGridCenter[gridindex]
-	var ycent = ENV.YGridCenter[gridindex]
-
-	// Bounding boxes of dot on canvas
-	xbound = [ (xcent-rad), (xcent+rad)];
-	ybound = [ (ycent-rad), (ycent+rad)];
-
-	xbound[0]=xbound[0]+CANVAS.offsetleft;
-	xbound[1]=xbound[1]+CANVAS.offsetleft;
-	ybound[0]=ybound[0]+CANVAS.offsettop;
-	ybound[1]=ybound[1]+CANVAS.offsettop;
-
-	return [xbound,ybound]
-}//FUNCTION getSampleFixationBoundingBox
-
-async function renderSquareOnCanvas(color, gridindex, square_pixelwidth, canvasobj){
-	// Draw Square
-	var context=canvasobj.getContext('2d');
-	var wd = square_pixelwidth/ENV.CanvasRatio;
-	var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
-	var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;
-	context.fillStyle=color;
-	context.fillRect(xcent-wd/2,ycent-wd/2,wd,wd);
-
-
-	// Define (rectangular) boundaries of fixation
-	// Bounding boxes of dot on canvas
-	xbound = [ (xcent-wd/2)*ENV.CanvasRatio, (xcent+wd/2)*ENV.CanvasRatio ];
-	ybound = [ (ycent-wd/2)*ENV.CanvasRatio, (ycent+wd/2)*ENV.CanvasRatio ];
-
-	xbound[0]=xbound[0]+CANVAS.offsetleft;
-	xbound[1]=xbound[1]+CANVAS.offsetleft;
-	ybound[0]=ybound[0]+CANVAS.offsettop;
-	ybound[1]=ybound[1]+CANVAS.offsettop;
-	return [xbound, ybound]
-}//FUNCTION renderSquareOnCanvas
-
-async function renderTriangleOnCanvas(color, gridindex, square_pixelwidth, canvasobj){
-	// Draw Triangle
-	var context=canvasobj.getContext('2d');
-	var wd = square_pixelwidth/ENV.CanvasRatio;
-	var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
-	var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;
-	context.fillStyle=color;
-
-	// var len_side = Math.sqrt(Math.pow(2*(wd/2),2))
-	// var len_side = Math.sin(30 * Math.PI / 180);     // returns 1 (the sine of 90 degrees)
-
-
-	context.beginPath();
-    // context.moveTo(xcent, ycent + wd/2); //bottom vertex
-    // context.lineTo(xcent-wd/2, ycent-wd/2); //top left
-    // context.lineTo(xcent+wd/2, ycent-wd/2); //top right
-    context.moveTo(xcent, ycent - wd/2); //bottom vertex
-    context.lineTo(xcent-wd/2, ycent+wd/2); //top left
-    context.lineTo(xcent+wd/2, ycent+wd/2); //top right
-    context.fill();
-
-	// Define (rectangular) boundaries of fixation
-	// Bounding boxes of dot on canvas
-	xbound = [ (xcent-wd/2)*ENV.CanvasRatio, (xcent+wd/2)*ENV.CanvasRatio ];
-	ybound = [ (ycent-wd/2)*ENV.CanvasRatio, (ycent+wd/2)*ENV.CanvasRatio ];
-
-	xbound[0]=xbound[0]+CANVAS.offsetleft;
-	xbound[1]=xbound[1]+CANVAS.offsetleft;
-	ybound[0]=ybound[0]+CANVAS.offsettop;
-	ybound[1]=ybound[1]+CANVAS.offsettop;
-	return [xbound, ybound]
-}//FUNCTION renderTriangleOnCanvas
-
-
-function renderBlank(canvasobj,bkgdcolor){
-	var context=canvasobj.getContext('2d');
-	context.fillStyle=bkgdcolor;
-	context.fillRect(0,100,canvasobj.width,canvasobj.height);
-	// context.clearRect(0,0,canvasobj.width,canvasobj.height);
-}//FUNCTION renderBlank
-
-function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,choicegridindex,
-				fixationradius,samplefixationradius,choiceradius,canvasratio,canvasobj)
-{
-	var outofbounds_str = ''
-	var context=canvasobj.getContext('2d');
-	context.clearRect(0,0,canvasobj.width,canvasobj.height);
-
-	//Display grid (red)
-	for (var i = 0; i <= gridx.length-1; i++){
-		rad = 10
-		context.beginPath()
-		context.arc(gridx[i]/ENV.CanvasRatio,gridy[i]/ENV.CanvasRatio,rad/ENV.CanvasRatio,0*Math.PI,2*Math.PI)
-		context.fillStyle="red"
-		context.fill();
-
-		var displaycoord = [gridx[i]-rad,gridy[i]-rad,gridx[i]+rad,gridy[i]+rad]
-		var outofbounds=checkDisplayBounds(displaycoord)
-		if (outofbounds == 1){
-			outofbounds_str = outofbounds_str + "<br>" + "gridpoint" + i + " is out of bounds"
-		}
-		displayGridCoordinate(i,[gridx[i],gridy[i]],canvasobj)
-	}
-
-	//Fixation Image Bounding Box (white)
-	var wd = 2*fixationradius/ENV.CanvasRatio
-	var xcent = gridx[fixationgridindex]/ENV.CanvasRatio
-	var ycent = gridy[fixationgridindex]/ENV.CanvasRatio
-	context.strokeStyle="white"
-	context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
-
-	var displaycoord = [(xcent-wd/2)*ENV.CanvasRatio,(ycent-wd/2)*ENV.CanvasRatio,
-						(xcent+wd/2)*ENV.CanvasRatio,(ycent+wd/2)*ENV.CanvasRatio]
-	var outofbounds=checkDisplayBounds(displaycoord)
-	if (outofbounds == 1){
-		outofbounds_str = outofbounds_str + "<br>" + "Fixation dot is out of bounds"
-	}
-	displayPhysicalSize(displaycoord,canvasobj)
-
-	//Sample Fixation Bounding Box (yellow)
-	var wd = 2*samplefixationradius/ENV.CanvasRatio
-	var xcent = gridx[samplegridindex]/ENV.CanvasRatio
-	var ycent = gridy[samplegridindex]/ENV.CanvasRatio
-	context.strokeStyle="yellow"
-	context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
-
-	var displaycoord = [(xcent-wd/2)*ENV.CanvasRatio,(ycent-wd/2)*ENV.CanvasRatio,
-						(xcent+wd/2)*ENV.CanvasRatio,(ycent+wd/2)*ENV.CanvasRatio]
-	var outofbounds=checkDisplayBounds(displaycoord)
-	if (outofbounds == 1){
-		outofbounds_str = outofbounds_str + "<br>" + "Sample Fixation Window is out of bounds"
-	}
-	displayPhysicalSize(displaycoord,canvasobj)
-
-	//Choice Image Bounding Box(es) (red)
-	if (TASK.SameDifferent > 0){
-		for (var i = 0; i <= choicegridindex.length-1; i++){
-			var wd = 2*choiceradius/ENV.CanvasRatio
-			var xcent = gridx[choicegridindex[i]]/ENV.CanvasRatio
-			var ycent = gridy[choicegridindex[i]]/ENV.CanvasRatio
-			context.strokeStyle="red"
-			context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
-
-			var displaycoord = [(xcent-wd/2)*ENV.CanvasRatio,(ycent-wd/2)*ENV.CanvasRatio,
-							(xcent+wd/2)*ENV.CanvasRatio,(ycent+wd/2)*ENV.CanvasRatio]
-			var outofbounds=checkDisplayBounds(displaycoord)
-			if (outofbounds == 1){
-				outofbounds_str = outofbounds_str + "<br>" + "Choice Image" + i + " is out of bounds"
-			}
-			displayPhysicalSize(displaycoord,canvasobj)
-		}
-	} //IF same-different choice screen
-
-	if (VISIBLECANVASWEBGL.width > 4096 || VISIBLECANVASWEBGL.height > 4096){
-		outofbounds_str = outofbounds_str + "Canvas may be too large for webgl limit of 4096 pixels in either dimension -- 3d rendering may not be accurate! Consider using a smaller display size."
-	}
-
-	if (outofbounds_str == ''){
-		outofbounds_str = 'All display elements are fully visible'
-	}
-
-	displayoutofboundsstr = outofbounds_str
-	updateImageLoadingAndDisplayText(' ')
-}//FUNCTION renderBlankwithGridMarkers
-
-function renderReward(canvasobj){
-	var context=canvasobj.getContext('2d');
-	context.fillStyle="green";
-	context.fillRect(xcanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,
-					ycanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,400/ENV.CanvasRatio,400/ENV.CanvasRatio);
-}//FUNCTION renderReward
-
-function renderPunish(canvasobj){
-	var context=canvasobj.getContext('2d');
-	context.fillStyle="#3c3c3c";
-	context.fillRect(xcanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,
-					ycanvascenter/ENV.CanvasRatio-200/ENV.CanvasRatio,400/ENV.CanvasRatio,400/ENV.CanvasRatio);
-}//FUNCTION renderPunish
-
-async function bufferFixationUsingImage(image, gridindex, sample_wdpixels, sample_htpixels, canvasobj){
-// 	var context=canvasobj.getContext('2d');
-// 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
-
-	boundingBoxesFixation['x']=[]
-	boundingBoxesFixation['y']=[]
-	
-	if (typeof(image)!= "undefined"){
-	funcreturn = await renderImageOnCanvas(image, gridindex, sample_wdpixels, sample_htpixels, canvasobj); 
-	boundingBoxesFixation.x.push(funcreturn[0]);
-	boundingBoxesFixation.y.push(funcreturn[1]);
-	}
-}//FUNCTION bufferFixationUsingImage
-
-async function bufferFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
-	boundingBoxesFixation['x']=[]
-	boundingBoxesFixation['y']=[]
-
-	funcreturn = await renderDotOnCanvas(color, gridindex, dot_pixelradius, canvasobj)
-	boundingBoxesFixation.x.push(funcreturn[0]);
-	boundingBoxesFixation.y.push(funcreturn[1]);
-}//FUNCTION bufferFixationUsingDot
-
-async function bufferFixationUsingTriangle(color, gridindex, dot_pixelradius, canvasobj){
-	boundingBoxesFixation['x']=[]
-	boundingBoxesFixation['y']=[]
-
-	funcreturn = await renderTriangleOnCanvas(color, gridindex, 2*dot_pixelradius, canvasobj);
-	boundingBoxesFixation.x.push(funcreturn[0]);
-	boundingBoxesFixation.y.push(funcreturn[1]);
-}//FUNCTION bufferFixationUsingTriangle
-
-
-function checkDisplayBounds(displayobject_coord){
-	var outofbounds=0
-	if (displayobject_coord[0]/ENV.CanvasRatio < CANVAS.workspace[0] ||
-		displayobject_coord[1]/ENV.CanvasRatio < CANVAS.workspace[1] ||
-		displayobject_coord[2]/ENV.CanvasRatio > CANVAS.workspace[2] ||
-		displayobject_coord[3]/ENV.CanvasRatio > CANVAS.workspace[3]){
-		outofbounds=1
-	}
-	return outofbounds
-}
-function setupImageLoadingText(){
-	var textobj = document.getElementById("imageloadingtext")
-	textobj.style.top = CANVAS.offsettop + "px"
-	textobj.innerHTML = ''
-	setupCanvasListeners(textobj)
-}
-
-function updateImageLoadingAndDisplayText(str){
-	var textobj = document.getElementById("imageloadingtext")
-
-	//DISPLAY TIMING: Software check for frame drops
-	var dt = []
-	var u_dt = 0
-	for (var i=0; i<=CURRTRIAL.tsequenceactualclip.length-1; i++){
-		dt[i] = CURRTRIAL.tsequenceactualclip[i] - CURRTRIAL.tsequencedesiredclip[i]
-		u_dt = u_dt + Math.abs(dt[i])
-	}
-	u_dt = u_dt/dt.length
-
-	textobj.innerHTML =
-	str
-	+ imageloadingtimestr
-	+ "<br>" + displayoutofboundsstr 
-	+ "<br>" + 0.01*Math.round(100*ENV.FrameRateDisplay) + "Hz "
-	+ " (" + 0.1*Math.round(10000/ENV.FrameRateDisplay) + 'ms res) display' 
-	+ " --- " + 0.01*Math.round(100*ENV.FrameRateMovie) + "Hz scene update" 
-	+ "<br>" + "<font color=red> mean(t_actual - t_desired) = " + Math.round(u_dt) + " ms"
-	+ "  (min=" + Math.round(Math.min(... dt)) + ", max=" + Math.round(Math.max(... dt)) + ") </font>"
-	+ "<br>" + eyedataratestr
-}
-
-function displayPhysicalSize(displayobject_coord,canvasobj){
-	var visible_ctxt = canvasobj.getContext('2d');
-	visible_ctxt.textBaseline = "hanging";
-	visible_ctxt.fillStyle = "white";
-	visible_ctxt.font = "16px Verdana";
-	visible_ctxt.fillText( 
-		Math.round(100*(displayobject_coord[2]-displayobject_coord[0])/ENV.ViewportPPI)/100 +
-		' x ' +
-		Math.round(100*(displayobject_coord[3]-displayobject_coord[1])/ENV.ViewportPPI)/100 + 
-		' in', 
-		displayobject_coord[0]/ENV.CanvasRatio,(displayobject_coord[1]-16)/ENV.CanvasRatio
-	);
-}
-
-function displayGridCoordinate(idx,xycoord,canvasobj){
-	var visible_ctxt = canvasobj.getContext('2d');
-	visible_ctxt.textAlign = "center";
-	visible_ctxt.textBaseline = "middle";
-	visible_ctxt.fillStyle = "white";
-	visible_ctxt.font = "20px Verdana";
-	visible_ctxt.fillText(idx,xycoord[0]/ENV.CanvasRatio, xycoord[1]/ENV.CanvasRatio)
-}
-
-function setViewport(gridindex){
-	//==== RENDERER 2D VIEWPORT
-	//width and height are determined by object size Inches. the viewport can't be smaller than the object's size. otherwise the object will look cropped
-	var scenecenterX = ENV.XGridCenter[gridindex]
-	var scenecenterY = ENV.YGridCenter[gridindex]
-	var scenewidth = renderer.getContext().canvas.width
-	var sceneheight = renderer.getContext().canvas.height
-	var left = scenecenterX - scenewidth/2
-	var bottom = -sceneheight/2 + (VISIBLECANVAS.clientHeight-scenecenterY)
-
-
-	renderer.setViewport(left, bottom, scenewidth, sceneheight);
-	renderer.setScissor(left,bottom,scenewidth,sceneheight)
-	renderer.setScissorTest(true)
-}
-
-async function saveScreenshot(canvasobj,currtrial,taskscreen,framenum,objectlabel,objectind){	
-	//---- upload screenshot to firebase 
-	//sample image will be uploaded to the appropriate folder in the scene 
-
-	if (taskscreen == "Sample"){
-		var currtrial_samplepath = TASK.ImageBagsSample[objectlabel]	
-	}
-	else if (taskscreen == "Test"){
-		var currtrial_samplepath = TASK.ImageBagsSample[CURRTRIAL.sample_scenebag_label]
-	}
-	var currtrial_date = ENV.DataFileName
-	var currtrial_parampath = ENV.ParamFileName
-
-	//path to scene folder
-	var ind_start = currtrial_samplepath.lastIndexOf('/')
-	var ind_end = currtrial_samplepath.indexOf('.js')
-	var scenefolder = currtrial_samplepath.substring(0,ind_end)
-
-	//paramfolder name
-	var ind_start = currtrial_parampath.lastIndexOf('/')
-	var ind_end = currtrial_parampath.indexOf('.txt')
-	var paramfolder = currtrial_parampath.substring(ind_start+1,ind_end)
-
-	//date 
-	var ind_start = currtrial_date.lastIndexOf('/')
-	var ind_end = currtrial_date.indexOf('T')
-	var date = currtrial_date.substring(ind_start+1,ind_end) 
-
-	var storage_path = scenefolder + '_scene_'
- 						+ date + '_' + paramfolder + '_'
-						+ ENV.DeviceName + '_device'
-
-	if (canvasobj.width > 4096 || canvasobj.height > 4096){
-		console.log("Canvas may be too large for webgl limit of 4096 pixels in either dimension -- Image Saving may not be accurate! Consider using a smaller display size.")
-	}
-
-	currtrial = String(currtrial).padStart(3, '0')
-	framenum = String(framenum).padStart(3, '0')
-
-	canvasobj.toBlob(function(blob){
-		var fullpath = storage_path + '/'
-						+ canvasobj.id 
-						+ '_' + 'trialnum' + currtrial
-						+ '_' + taskscreen 
-						+ '_' + 'framenum' + framenum
-
-		for (var i=0; i<=objectlabel.length-1; i++){
-			fullpath = fullpath
-						+ '_' + 'label' + objectlabel[i]
-						+ '_' + 'index' + objectind[i]
-		}//FOR i objects
-		fullpath = fullpath + '.png'
-		
-		try {
-			var response = storage.ref().child(fullpath).put(blob)
-			console.log("saved image: " + fullpath);
-			console.log("FIREBASE: Successful image file upload. Size:" + Math.round(response.blob_.size_/1000) + 'kb')
-		}//TRY
-		catch (error){
-			console.log(error)
-		}
-	})//.toBlob function
-}//FUNCTION saveScreenshot
-
-// Estimate max software fps
-function estimatefps(){
-	var resolveFunc
-	var errFunc
-	p = new Promise(function(resolve,reject){
-		resolveFunc = resolve;
-		errFunc = reject;
-	}).then();
-
-
-	var lasttime = null
-	var elapsedSinceLastFrame = [];
-	var nframes = 0
-	var dtScreen = 0;
-	async function dummyLoop(timestamp){
-		if (!lasttime) lasttime = timestamp
-		elapsedSinceLastFrame[nframes]=(timestamp-lasttime)
-		lasttime=timestamp
-		nframes=nframes+1
-	  	if (nframes < 20){
-	  		window.requestAnimationFrame(dummyLoop)
-	  	}
-	  	else {
-	  		for (var i=10; i<=nframes-1; i++){
-				dtScreen = dtScreen + elapsedSinceLastFrame[i]
-	  		}
-	  		dtScreen = dtScreen / (nframes - 10)
-	  		resolveFunc(1000/dtScreen)
-	  	}
-	}//dummyLoop
-	
-	window.requestAnimationFrame(dummyLoop);
-	return p
-}//estimatefps
-
-function appendTest(teston){
-	var t0 = CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
-	if (TASK.SameDifferent <= 0){
-		var seq=["test"]
-		var tseq=[t0]; 
-	}//IF SR or MTS, show test
-	else
-		if (TASK.SameDifferent > 0){
-		if (TASK.TestOFF > 0){
-			var seq=["test","blank","choice"]
-			var tseq=[	t0,
-						t0+teston,
-						t0+teston+TASK.TestOFF
-					];
-		}//ELSEIF TestOFF
-		else if (TASK.TestOFF <= 0){
-			var seq=["test","choice"]
-			var tseq=[	t0,
-						t0+teston
-					];
-		}//ELSEIF no TestOFF
-	}//IF SD, show test & choice
-	return [seq,tseq]
-}//FUNCTION appendTest

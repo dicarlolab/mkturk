@@ -44,6 +44,7 @@ export class Mkfinder {
     this.showImagesBtnAction();
     this.numImgSliderAction();
     this.downloadBtnAction();
+    this.refreshStorageTable();
 
     this.mkt = new Mkthree();
     this.mki = new Mkimage();
@@ -60,6 +61,9 @@ export class Mkfinder {
   private displayFirestoreTable(dataArr: any[], database: string) {
     
     dataArr = this.timestampToDate(dataArr);
+    this.mke.makeActiveBtn.style.display = "none";
+    this.mke.storeParamBtn.style.display = 'none';
+    
 
     if (database == "marmosets") {
       this.finder.destroy();
@@ -137,6 +141,110 @@ export class Mkfinder {
           {title: "Doctype", field: "Doctype"},
           {title: "CurrentDate", field: "CurrentDate"},
           {title: "FirestoreDocRoot", field: "FirestoreDocRoot", visible: false},
+        ],
+        selectable: true,
+        selectableRangeMode: "click",
+        rowClick: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+          
+        },
+        rowTap: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+        },
+        tableBuilt: () => {          
+          /* selectAllBox function */
+          let selectAllBox 
+            = document.querySelector("#select-all") as HTMLInputElement;
+          selectAllBox.addEventListener("change", ev => {
+            if (selectAllBox.checked == true) {
+              this.finder.selectRow();
+            } else {
+              this.finder.deselectRow();
+            }
+          });
+        }
+      });
+    }
+
+    else if (database == "mkdailydata") {
+      this.finder.destroy();
+      this.pathName.innerText = "mkdailydata";
+      this.finder = new Tabulator("#finder", {
+        data: dataArr,
+        index: "index",
+        layout: "fitColumns",
+        initialSort: [
+          {column: "agent", dir: "asc"}
+        ],
+        columns: [
+          {title: "<input id='select-all' type='checkbox'/>", width: 15, headerSort: false},
+          {title: "Agent", field: "agent"},
+        ],
+        selectable: true,
+        selectableRangeMode: "click",
+        rowClick: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+          
+        },
+        rowTap: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = "3";
+          this.mki.imgCanvasDiv.style.zIndex = "2";
+          this.mkt.canvas.style.zIndex = "1";
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+        },
+        tableBuilt: () => {          
+          /* selectAllBox function */
+          let selectAllBox 
+            = document.querySelector("#select-all") as HTMLInputElement;
+          selectAllBox.addEventListener("change", ev => {
+            if (selectAllBox.checked == true) {
+              this.finder.selectRow();
+            } else {
+              this.finder.deselectRow();
+            }
+          });
+        }
+      });
+    }
+
+    else if (database == "mkdailydatatest") {
+      this.finder.destroy();
+      this.pathName.innerText = "mkdailydatatest";
+      this.finder = new Tabulator("#finder", {
+        data: dataArr,
+        index: "index",
+        layout: "fitColumns",
+        initialSort: [
+          {column: "agent", dir: "asc"}
+        ],
+        columns: [
+          {title: "<input id='select-all' type='checkbox'/>", width: 15, headerSort: false},
+          {title: "Agent", field: "agent"},
         ],
         selectable: true,
         selectableRangeMode: "click",
@@ -491,14 +599,33 @@ export class Mkfinder {
     this.backBtn.disabled = (fileRef.fullPath == "mkturkfiles") ? true: false;
 
     if (fileRef.fullPath == "mkturkfiles/parameterfiles/params_storage") {
-      this.mke.makeActiveBtn.style.display = "inline-block";
+      this.mke.storeParamBtn.style.display = 'none';
+      this.mke.genBtn.style.display = 'none';
+      // this.mke.genSceneParamBtn.style.display = 'none';
+      this.mke.svSceneBtn.style.display = 'none';
+      this.mke.makeActiveBtn.style.display = 'inline-block';
+      this.mke.updateBtn.style.display = 'inline-block';
       this.mke.btnBoxDiv.style.gridTemplateAreas = '"update-btn active-btn"';
     } else if (fileRef.fullPath == 'mkturkfiles/parameterfiles/subjects') {
+      this.mke.makeActiveBtn.style.display = 'none';
+      this.mke.genBtn.style.display = 'none';
+      this.mke.svSceneBtn.style.display = 'none';
+      this.mke.updateBtn.style.display = 'inline-block';
       this.mke.storeParamBtn.style.display = 'inline-block';
       this.mke.btnBoxDiv.style.gridTemplateAreas = '"update-btn store-param-btn"';
-    } else {
-      this.mke.makeActiveBtn.style.display = "none";
+    } else if (fileRef.fullPath == 'mkturkfiles/scenebags/objectome3d/templates') {
+      this.mke.makeActiveBtn.style.display = 'none';
       this.mke.storeParamBtn.style.display = 'none';
+      this.mke.svSceneBtn.style.display = 'none';
+      this.mke.genBtn.style.display = 'inline-block';
+      this.mke.updateBtn.style.display = 'inline-block';
+      this.mke.btnBoxDiv.style.gridTemplateAreas = '"gen-btn update-btn"';
+    } else {
+      this.mke.makeActiveBtn.style.display = 'none';
+      this.mke.storeParamBtn.style.display = 'none';
+      this.mke.genBtn.style.display = 'none';
+      this.mke.svSceneBtn.style.display = 'none';
+      this.mke.updateBtn.style.display = 'inline-block';
       this.mke.btnBoxDiv.style.gridTemplateAreas = '"update-btn update-btn"';
     }
 
@@ -532,6 +659,13 @@ export class Mkfinder {
     this.displayStorageTable(mdArr);
   }
 
+  private refreshStorageTable() {
+    document.addEventListener('storageFileChanged', (ev: Event) => {
+      let folderRef = this.mke.getActiveFile().id as firebase.storage.Reference;
+      this.listStorageFiles(folderRef.parent!);
+    });
+  }
+
   private displayStorageTable(metadataArr: any[]) {
     this.finder.destroy();
     this.finder = new Tabulator("#finder", {
@@ -545,7 +679,7 @@ export class Mkfinder {
       ],
       columns: [
         { title: "<input id='select-all' type='checkbox'/>", width: 15, headerSort: false },
-        { title: "Name", field: "name" },
+        { title: "Name", field: "name", widthGrow: 3 },
         { title: "Type", field: "contentType" },
         { title: "Path", field: "fullPath" },
         { title: "Size", field: "size" },
@@ -618,8 +752,19 @@ export class Mkfinder {
         if (this.imageTypeTest(data)) {
           this.selectedImages = data;
         }
-      }
+      },
 
+      tableBuilt: () => {
+        let selectAllBox = 
+          document.querySelector('#select-all') as HTMLInputElement;
+        selectAllBox.addEventListener('change', ev => {
+          if (selectAllBox.checked == true) {
+            this.finder.selectRow();
+          } else {
+            this.finder.deselectRow();
+          }
+        });
+      }
     });
   }
 
@@ -735,6 +880,28 @@ export class Mkfinder {
             { type: "application/json; charset=utf-8" }
           );
           FileSaver.saveAs(blob, file.name + ".json");
+        }
+      }
+
+      else if (qryLoc.value == "mkdailydatatest") {
+        for (let i = 0; i < row.length; i++) {
+          let file = row[i].getData();
+          let blob = new Blob(
+            [ JSON.stringify(file, null, 1) ],
+            { type: "application/json; charset=utf-8" }
+          );
+          FileSaver.saveAs(blob, file.agent + ".json");
+        }
+      }
+
+      else if (qryLoc.value == "mkdailydata") {
+        for (let i = 0; i < row.length; i++) {
+          let file = row[i].getData();
+          let blob = new Blob(
+            [ JSON.stringify(file, null, 1) ],
+            { type: "application/json; charset=utf-8" }
+          );
+          FileSaver.saveAs(blob, file.agent + ".json");
         }
       }
 

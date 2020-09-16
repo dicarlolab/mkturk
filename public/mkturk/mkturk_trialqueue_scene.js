@@ -208,43 +208,31 @@ async get_next_trial(){
 	var test_indices = this.testq.indices.shift(); 
 	var test_correctIndex = this.testq.correctIndex.shift();
 
-	// If the past NStickyResponse trials has been on one side, then make this upcoming trial's correct answer be at another location. 
-	if (FLAGS.stickyresponse >= TASK.NStickyResponse &&
-		TASK.NStickyResponse > 0 && 
-		test_correctIndex == EVENTS['trialseries']['Response'][CURRTRIAL.num-1])
-	{
-		console.log('Moving correct response to nonstick location')
-		var sticky_grid_location = EVENTS['trialseries']['Response'][CURRTRIAL.num-1]; 
-		if (sticky_grid_location == undefined){
-			console.log('Something strange has happened in the stickyresponse logic')
-		}
-
-		var candidate_nonstick_locations = []
-		for (var i = 0; i < test_indices.length; i++){
-			if (i == sticky_grid_location)
-				{continue}
-			else if (i != sticky_grid_location){
-				candidate_nonstick_locations.push(i)
+	//IF the past NStickyResponse trials have been on one side ==> 
+	//THEN draw until this upcoming trial's correct answer is at another location
+	while(true){
+		if (FLAGS.stickyresponse >= TASK.NStickyResponse
+			&& TASK.NStickyResponse > 0
+			&& test_correctIndex == EVENTS['trialseries']['Response'][CURRTRIAL.num-1])
+		{
+			if (this.sampleq.filename.length == 0){
+				// console.log("Reached end of trial queue... generating one more in this.get_next_trial")
+				await this.generate_trials(1); 
 			}
-			else{throw 'Error occurred in sticky response logic'}
-		} //FOR i test_trial_indices
-		
-		// Switch correct_label into correct_label_nonstick_location
-		var correct_label_nonstick_location =candidate_nonstick_locations[Math.floor((candidate_nonstick_locations.length)*Math.random())];
 
-		var tempfilename = test_filenames[correct_label_nonstick_location]
-		test_filenames[correct_label_nonstick_location] = test_filenames[sticky_grid_location]
-		test_filenames[sticky_grid_location] = tempfilename
-
-		var tempindex = test_indices[correct_label_nonstick_location]
-		test_indices[correct_label_nonstick_location] = test_indices[sticky_grid_location]
-		test_indices[sticky_grid_location] = tempindex
-
-		test_correctIndex = correct_label_nonstick_location
-	} //IF sticky response
+			// DRAW FROM INDEX LIST
+			sample_filename = this.sampleq.filename.shift(); 
+			sample_index = this.sampleq.index.shift(); 
+			test_filenames = this.testq.filenames.shift(); 
+			test_indices = this.testq.indices.shift(); 
+			test_correctIndex = this.testq.correctIndex.shift();
+		}//IF sticky && correct response equals sticky side, then continue drawing trials
+		else {
+			break
+		}//ELSE not stick
+	}//WHILE not drawing correct response on opposite side of response bias (sticky side)
 
 	// Get image from imagebag
-
 	if (typeof(sample_filename) != "undefined"){
 		var sample_image = []
 		sample_image = []

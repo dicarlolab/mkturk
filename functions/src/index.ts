@@ -34,6 +34,15 @@ interface fixationData {
   right_aux_1: number | null
 };
 
+interface displayTimesData {
+  agent: string,
+  timestamp: any,
+  trial_num: number,
+  frame_num: Array<number>,
+  t_desired: Array<number>,
+  t_actual: Array<number>
+};
+
 
 const schema = {
   "fields": [
@@ -95,35 +104,6 @@ const createTableOptions = {
     "field": "timestamp"
   }
 };
-
-// export const insertFixationRow = functions.https.onCall((data: fixationData) => {
-//   const bq = new BigQuery();
-//   const dataset = bq.dataset('fixationdata');
-//   const table = dataset.table(data.agent);
-//   console.log("data received:", data);
-
-//   table.exists().then(async (existsData) => {
-//     const exists = existsData[0];
-//     if (exists) {
-//       delete data.agent;
-//       // data.timestamp = new Date(data.timestamp);
-//       data.timestamp = bq.timestamp(data.timestamp);
-//       console.log('data0', data);
-//       table.insert(data, {}, insertHandler);
-//     } else {
-//       const [newTable] = await dataset.createTable(data.agent, createTableOptions);
-//       console.log(`Table ${newTable.id} created with partitioning: `);
-//       console.log(newTable.metadata.timePartitioning);
-//       delete data.agent;
-//       // data.timestamp = new Date(data.timestamp);
-//       data.timestamp = bq.timestamp(data.timestamp);
-//       console.log('data1', data);
-//       newTable.insert(data, {}, insertHandler);
-//     }
-//   }).catch(error => {
-//     console.error("exists error", error);
-//   });
-// });
 
 /* caller must guarantee that all rows belong to the same agent */
 export const bqInsertEyeData = functions.https.onCall((rows: fixationData[]) => {
@@ -215,4 +195,80 @@ export const isLabMember = functions.https.onCall((idToken: string) => {
     console.error('Error decoding idToken', e);
   });
 
+});
+
+export const listAllUsers = functions.https.onCall(() => {
+  return admin.auth().listUsers(1000).then(listUserResult => {
+    return listUserResult;
+  }).catch(e => {
+    console.error('Error listing users', e);
+  });
+});
+
+const displayTimeSchema = {
+  'fields': [
+    {
+      'name': 'timestamp',
+      'type': 'TIMESTAMP',
+      'mode': 'REQUIRED'
+    },
+    {
+      'name': 'trial_num',
+      'type': 'INTEGER',
+      'mode': 'REQUIRED'
+    },
+    {
+      'name': 'frame_num',
+      'type': 'INTEGER',
+      'mode': 'REPEATED'
+    },
+    {
+      'name': 't_desired',
+      'type': 'FLOAT',
+      'mode': 'REPEATED'
+    },
+    {
+      'name': 't_actual',
+      'type': 'FLOAT',
+      'mode': 'REPEATED'
+    }
+  ]
+};
+
+const displayTimeTableOptions = {
+  'schema': displayTimeSchema,
+  'timePartitioning': {
+    'type': 'DAY',
+    'field': 'timestamp'
+  }
+};
+
+export const bqInsertDisplayTimes = functions.https.onCall((rows: displayTimesData[]) => {
+  const bq = new BigQuery();
+  const dataset = bq.dataset('displaytimedata');
+  const table = dataset.table(rows[0].agent);
+
+  table.exists().then(async (existsData) => {
+    const exists = existsData[0];
+    if (exists) {
+      rows.forEach((row: any) => {
+        delete row.agent;
+        row.timestamp = new Date(row.timestamp);
+      });
+      table.insert(rows, {}, insertHandler);
+      console.log('Rows inserted to existing table');
+    } else {
+      const [newTable] = await dataset.createTable(rows[0].agent, displayTimeTableOptions);
+      console.log(`Table ${newTable.id} created with partitioning: `);
+      console.log(newTable.metadata.timePartitioning);
+      rows.forEach((row: any) => {
+        delete row.agent;
+        row.timestamp = new Date(row.timestamp);
+      })
+      newTable.insert(rows, {}, insertHandler);
+      console.log('Row inserted to newly created table');
+    }
+  }).catch(error => {
+    console.log('Exists function error:', error);
+  });
 });

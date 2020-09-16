@@ -1,0 +1,30 @@
+{
+ "screenSizeInches": [
+  5.69,
+  2.7,
+  6.3
+ ],
+ "type": "phone",
+ "docname": "pixel 4 xl",
+ "brand": "google",
+ "bodySizeInches": [
+  6.3,
+  2.9,
+  0.3
+ ],
+ "viewportPixels": [
+  869,
+  411
+ ],
+ "model": "pixel 4 xl",
+ "batterymAh": 3700,
+ "gpurenderer": "nvidia tegra",
+ "gpuvendor": "nvidia corporation",
+ "weightOunces": 6.81,
+ "screenRatio": 3.5,
+ "screenPhysicalPixels": [
+  3040,
+  1440
+ ],
+ "ppi": 537
+}
