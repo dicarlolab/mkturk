@@ -43,6 +43,12 @@ export class Mkcolony {
   
   private entryJson: JSONEditor;
   private logbook: Tabulator;
+  private logsheet: Tabulator;
+
+  private logsheetAgentSelector: HTMLSelectElement;
+  private logsheetMonthSelector: HTMLSelectElement;
+
+  
 
 
   constructor() {
@@ -72,11 +78,15 @@ export class Mkcolony {
       = document.querySelector('#field-selector') as HTMLSelectElement;
     this.cleanData = {};
     this.vizData = [];
+
+    this.logsheetAgentSelector = document.querySelector('#logsheet-agent-selector') as HTMLSelectElement;
+    this.logsheetMonthSelector = document.querySelector('#logsheet-month-selector') as HTMLSelectElement;
     
     
     this.saveBtnAction();
     this.selectorAction();
     this.setupEntryCard();
+    this.viewBtnAction();
 
     this.submitLogsheetAction();
 
@@ -84,6 +94,91 @@ export class Mkcolony {
 
   public deleteAll() {
     this.clTable.clearData();
+  }
+
+  public viewBtnAction() {
+    let viewBtn = document.querySelector('#view-btn') as HTMLButtonElement;
+    viewBtn.addEventListener('click', async (ev: Event) => {
+      let logsheetDiv = document.querySelector('#logsheet') as div;
+      let agent = this.logsheetAgentSelector.value;
+      let month = Number(this.logsheetMonthSelector.value);
+      let logsheetData: any = [];
+      let agentData = await utils.getDocumentData('mkdailydata', agent);
+
+      let timeOption = {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      };
+      let dateOption = {
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric'
+      };
+
+      if (agentData) {
+        agentData.timestamp.forEach((item: any, idx: number) => {
+          agentData!.timestamp[idx] = item!.toDate();
+          if (agentData!.timestamp[idx].getMonth() == month) {
+            try {
+              agentData!.time_on[idx] = agentData!.time_on[idx].toDate().toLocaleTimeString('en-US', timeOption);
+            } catch {
+
+            }
+
+            try {
+              agentData!.time_off[idx] = agentData!.time_off[idx].toDate().toLocaleTimeString('en-US', timeOption);
+            } catch {
+
+            }
+
+            let tmp = {
+              timestamp: agentData!.timestamp[idx],
+              time_off: agentData!.time_off[idx],
+              time_on: agentData!.time_on[idx],
+              implant_cleaned: agentData!.implant_cleaned[idx],
+              reward: agentData!.reward[idx],
+              supplement: agentData!.supplement[idx],
+              comments: agentData!.comments[idx],
+              initial: agentData!.initials[idx],
+              weight: agentData!.weight[idx]
+            };
+            logsheetData.push(tmp);
+          }
+        });
+      }
+
+      let logsheet = new Tabulator(logsheetDiv, {
+        data: await logsheetData,
+        index: 'timestamp',
+        initialSort: [
+          { column: 'timestamp', dir: 'asc' }
+        ],
+        layout: 'fitColumns',
+        columns: [
+          {title: 'Date', field: 'timestamp', formatter: timestampFormatter},
+          {title: 'Weight', field: 'weight'},
+          {title: 'Implant Cleaned', field: 'implant_cleaned'},
+          {title: 'Reward (mL)', field: 'reward'},
+          {title: 'Supplement (mL)', field: 'supplement'},
+          {title: 'Time ON', field: 'time_on'},
+          {title: 'Time OFF', field: 'time_off'},
+          {title: 'Comments', field: 'comments'},
+          {title: 'Initials', field: 'initial'}
+        ],
+      });
+
+        // function customFilter(data: any, filterParams: any) {
+        //   return data.timestamp.getMonth() == filterParams.month;
+        // }
+
+      function timestampFormatter(cell: any) {
+        return cell.getValue().toLocaleDateString([], dateOption);
+      }
+
+        // logsheet.setFilter(customFilter, {month: 8});
+      
+    });
   }
 
   public selectorAction() {
@@ -1081,6 +1176,7 @@ export class Mkcolony {
       opt.textContent = row.name;
       opt.value = row.name;
       this.agSlt.appendChild(opt);
+      this.logsheetAgentSelector.appendChild(opt);
 
       for (let key of Object.keys(row)) {
         if (key == 'fluid_dates') {
@@ -1117,6 +1213,18 @@ export class Mkcolony {
 
       }
     });
+
+    let thisMonth = new Date().getMonth();
+    for (let i = 0; i <= thisMonth; i++) {
+      let monthNames = [
+        'January', 'Febuary', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      let opt = document.createElement('option');
+      opt.value = String(i);
+      opt.textContent = monthNames[i];
+      this.logsheetMonthSelector.appendChild(opt);
+    }
 
     console.log('vizDataDic', this.vizDataDic);
     return this.vizData;
@@ -1177,6 +1285,7 @@ export class Mkcolony {
 
   private async setupLogbook() {
     let logbookTableDiv = document.querySelector('#logbook') as div;
+    let logsheetTableDiv = document.querySelector('#logsheet') as div;
     let logbookData = cloneDeep(this.vizData);
 
     function entryTodayMutator(value: any, data: any, type: any, mutatorParams: any, cell?: Tabulator.CellComponent) {
@@ -1266,10 +1375,89 @@ export class Mkcolony {
       ],
       tableBuilt: async function() {
         console.log('logbookdata', logbookData);
-        // console.log('activeLogbook', await logbook.getData('active'));
-        //let dt = await logbook.getData('active');
-        //await console.log(dt);
+      },
+      rowDblClick: async function(e, row) {
+        console.log('row agent', row.getData().name);
+        // let logsheetData: any = [];
+        // let agentDailyData = await utils.getDocumentData('mkdailydata', row.getData().name);
+        // let timeOption = {
+        //   hour: '2-digit',
+        //   minute: '2-digit',
+        //   hour12: false
+        // };
+        // let dateOption = {
+        //   month: '2-digit',
+        //   day: '2-digit',
+        //   year: 'numeric'
+        // };
+        // if (agentDailyData) {
+
+        //   agentDailyData.time_on.forEach((item: any, idx: number) => {
+        //     try {
+        //       agentDailyData!.time_on[idx] = item.toDate().toLocaleTimeString('en-US', timeOption);
+        //     } catch {
+
+        //     }
+        //   });
+
+        //   agentDailyData.time_off.forEach((item: any, idx: number) => {
+        //     try {
+        //       agentDailyData!.time_off[idx] = item.toDate().toLocaleTimeString('en-US', timeOption);
+        //     } catch {
+
+        //     }
+        //   });
+
+        //   agentDailyData.timestamp.forEach((item: any, idx: number) => {
+        //     // agentDailyData!.timestamp[idx] = item!.toDate().toLocaleDateString([], dateOption);
+        //     agentDailyData!.timestamp[idx] = item!.toDate();
+        //     console.log('idx', idx);
+        //     let tmp = {
+        //       timestamp: agentDailyData!.timestamp[idx],
+        //       time_off: agentDailyData!.time_off[idx],
+        //       time_on: agentDailyData!.time_on[idx],
+        //       implant_cleaned: agentDailyData!.implant_cleaned[idx],
+        //       reward: agentDailyData!.reward[idx],
+        //       supplement: agentDailyData!.supplement[idx],
+        //       comments: agentDailyData!.comments[idx],
+        //       initial: agentDailyData!.initials[idx],
+        //       weight: agentDailyData!.weight[idx]
+        //     };
+        //     logsheetData.push(tmp);
+        //   });
+
+
+        // }
+        // console.log(agentDailyData);
+        // console.log(logsheetData);
+        // let logsheet = new Tabulator(logsheetTableDiv, {
+        //   data: await logsheetData,
+        //   index: 'timestamp',
+        //   layout: 'fitColumns',
+        //   columns: [
+        //     {title: 'Date', field: 'timestamp', formatter: timestampFormatter},
+        //     {title: 'Weight', field: 'weight'},
+        //     {title: 'Implant Cleaned', field: 'implant_cleaned'},
+        //     {title: 'Reward (mL)', field: 'reward'},
+        //     {title: 'Supplement (mL)', field: 'supplement'},
+        //     {title: 'Time ON', field: 'time_on'},
+        //     {title: 'Time OFF', field: 'time_off'},
+        //     {title: 'Comments', field: 'comments'},
+        //     {title: 'Initials', field: 'initial'}
+        //   ],
+        // });
+        
+        // function customFilter(data: any, filterParams: any) {
+        //   return data.timestamp.getMonth() == filterParams.month;
+        // }
+
+        // function timestampFormatter(cell: any) {
+        //   return cell.getValue().toLocaleDateString([], dateOption);
+        // }
+
+        // logsheet.setFilter(customFilter, {month: 8});
       }
+
 
     });
 

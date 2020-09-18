@@ -135,3 +135,8 @@
 #rfid-result > button {
   grid-area: btn;
 }
+
+#logsheet-search-div {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
