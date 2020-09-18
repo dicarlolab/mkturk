@@ -97,8 +97,9 @@ export class Mkcolony {
   }
 
   public viewBtnAction() {
-    let viewBtn = document.querySelector('#view-btn') as HTMLButtonElement;
-    viewBtn.addEventListener('click', async (ev: Event) => {
+    let logsheetSearchDiv = document.querySelector('#logsheet-search-div') as div;
+    // this.logsheetMonthSelector.value = 
+    logsheetSearchDiv.addEventListener('change', async (ev: Event) => {
       let logsheetDiv = document.querySelector('#logsheet') as div;
       let agent = this.logsheetAgentSelector.value;
       let month = Number(this.logsheetMonthSelector.value);
@@ -158,9 +159,9 @@ export class Mkcolony {
         columns: [
           {title: 'Date', field: 'timestamp', formatter: timestampFormatter},
           {title: 'Weight', field: 'weight'},
-          {title: 'Implant Cleaned', field: 'implant_cleaned'},
           {title: 'Reward (mL)', field: 'reward'},
           {title: 'Supplement (mL)', field: 'supplement'},
+          {title: 'Implant Cleaned', field: 'implant_cleaned'},
           {title: 'Time ON', field: 'time_on'},
           {title: 'Time OFF', field: 'time_off'},
           {title: 'Comments', field: 'comments'},
@@ -168,17 +169,11 @@ export class Mkcolony {
         ],
       });
 
-        // function customFilter(data: any, filterParams: any) {
-        //   return data.timestamp.getMonth() == filterParams.month;
-        // }
-
       function timestampFormatter(cell: any) {
-        return cell.getValue().toLocaleDateString([], dateOption);
+        // return cell.getValue().toLocaleDateString([], dateOption);
+        return cell.getValue().getDate();
       }
-
-        // logsheet.setFilter(customFilter, {month: 8});
-      
-    });
+    });  
   }
 
   public selectorAction() {
@@ -1215,14 +1210,17 @@ export class Mkcolony {
     });
 
     let thisMonth = new Date().getMonth();
+    let monthNames = [
+      'January', 'Febuary', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
     for (let i = 0; i <= thisMonth; i++) {
-      let monthNames = [
-        'January', 'Febuary', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-      ];
       let opt = document.createElement('option');
       opt.value = String(i);
       opt.textContent = monthNames[i];
+      if (i == thisMonth) {
+        opt.setAttribute('selected', 'selected');
+      }
       this.logsheetMonthSelector.appendChild(opt);
     }
 
@@ -1365,9 +1363,9 @@ export class Mkcolony {
         {title: 'Name', field: 'name'},
         {title: 'Entry Today?', field: 'entry_today', mutator: entryTodayMutator, formatter: entryTodayFmt},
         {title: 'Weight', field: 'weight', editor: 'number', editable: editCheck},
-        {title: 'Implant Cleaned', field: 'implant_cleaned', hozAlign: 'center', formatter: 'tickCross', editor: 'tickCross', editable: implantEditCheck},
         {title: 'Reward (mL)', field: 'reward', editor: 'number', editable: editCheck},
         {title: 'Supplement (mL)', field: 'supplement', editor: 'number', editable: editCheck},
+        {title: 'Implant Cleaned', field: 'implant_cleaned', hozAlign: 'center', formatter: 'tickCross', editor: 'tickCross', editable: implantEditCheck},
         {title: 'Time ON', field: 'time_on', editor: true, editable: editCheck},
         {title: 'Time OFF', field: 'time_off', editor: true, editable: editCheck},
         {title: 'Comments', field: 'comments', editor: true, editable: editCheck},
