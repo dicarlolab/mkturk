@@ -139,4 +139,5 @@
 #logsheet-search-div {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+  min-height: 50px;
 }
