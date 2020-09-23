@@ -359,16 +359,20 @@ async function addToScene(taskscreen){
     //BACKGROUND 2D IMAGE
     if (taskscreen == "Sample" || taskscreen == "Test"){
         for (var i = 0; i<IMAGES[taskscreen][classlabel].nimages; i++){
-            if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i])){
-                var durationMS = chooseArrayElement(IMAGES[taskscreen][classlabel].durationMS,i,0)
-                IMAGES[taskscreen][classlabel].IMAGES.imageidx[i] = 
-                    interpParam(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i],"binary",durationMS,framerate)
-
-                for (var j = 0; j<= IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].length-1; j++){
-                	IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j] = Math.round(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j])
-                }//FOR j img indices, round
-                FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].length
+            if (!Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i])){
+            	var imind = [IMAGES[taskscreen][classlabel].IMAGES.imageidx[i], IMAGES[taskscreen][classlabel].IMAGES.imageidx[i]]
             }//IF isArray background image index
+            else {
+            	var imind = IMAGES[taskscreen][classlabel].IMAGES.imageidx[i]
+            }//ELSE !isArray
+		    var durationMS = chooseArrayElement(IMAGES[taskscreen][classlabel].durationMS,i,0)
+			IMAGES[taskscreen][classlabel].IMAGES.imageidx[i] = 
+				interpParam(imind,"binary",durationMS,framerate)
+
+			for (var j = 0; j<= IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].length-1; j++){
+				IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j] = Math.round(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j])
+			}//FOR j img indices, round
+			FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].length
         }//FOR i images
     }//IF Sample
 }//FOR classlabels
@@ -677,12 +681,6 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
     twodcoord_max = toScreenPosition(bbox.max,camera,objects)
     twodcoord_min = toScreenPosition(bbox.min,camera,objects)
 
-    // if (taskscreen == "Test"){
-    //     boundingBoxesChoice3D.x.push([twodcoord_min.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x),
-    //                                     twodcoord_max.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x)].sort(function(a, b){return a-b}))
-    //     boundingBoxesChoice3D.y.push([twodcoord_max.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y),
-    //                                     twodcoord_min.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y)].sort(function(a, b){return a-b}))
-    // }
     var boundingBox = {
     	"x": [twodcoord_min.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x),
             	twodcoord_max.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x)].sort(function(a, b){return a-b}),

@@ -176,8 +176,9 @@ serial.Port.prototype.onReceive = data => {
 		if (eyebuffer.accumulateEye == 3){
 			//strip start characters (eg, '/') up front
 			port.statustext_received = port.statustext_received.slice(lastslash+1, port.statustext_received.length-1)
-		}
-	}
+			FLAGS.trackeye = 1
+		}//IF '///'
+	}//IF '/'
 
 //=============== RFID ===============//
 	if (tagstart >= 0){
@@ -185,10 +186,10 @@ serial.Port.prototype.onReceive = data => {
 		var tagend = port.statustext_received.indexOf('}',0);
 		logEVENTS("RFIDTag",port.statustext_received.slice(tagstart+4,tagend),"timeseries");
 
-		var nrfid = EVENTS['timeseries']['RFIDTag'].length
+		var nrfid = Object.keys(EVENTS['timeseries']['RFIDTag']).length
 		if (nrfid >= 2){
-			var dt = EVENTS['timeseries']['RFIDTag'][nrfid-1][1] - 
-					EVENTS['timeseries']['RFIDTag'][nrfid-2][1]
+			var dt = new Date(EVENTS['timeseries']['RFIDTag'][nrfid-1][1]) - 
+					new Date(EVENTS['timeseries']['RFIDTag'][nrfid-2][1])
 		}
 		port.statustext_received = 'Parsed TAG ' + EVENTS['timeseries']['RFIDTag'][nrfid-1][2] + 
 									' @ ' + new Date().toLocaleTimeString("en-US") + 
@@ -243,7 +244,7 @@ serial.Port.prototype.onReceive = data => {
 						xy[0],xy[1],w,a,null,null,null,null],"timeseries");
 
 
-			if (FLAGS.touchGeneratorCreated == 1 && TASK.TrackEye > 0){
+			if (FLAGS.touchGeneratorCreated == 1 && FLAGS.trackeye > 0){
 				//Send calibrated signal, convert from eye coordinates to tablet coordinates
 
 				// DISPLAY median filtered calibrated eye signal
@@ -346,7 +347,7 @@ serial.Port.prototype.onReceive = data => {
 			if (FLAGS.savedata == 0){
 				updateImageLoadingAndDisplayText('')
 			}
-			console.log(eyedataratestr)
+			// console.log(eyedataratestr)
 
 			port.statustext_received = eyedataratestr
 			updateHeadsUpDisplayDevices()

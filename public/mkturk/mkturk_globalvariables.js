@@ -110,6 +110,7 @@ FLAGS.consecutivehits = 0;
 FLAGS.need2loadImagesTrialQueue = 1; 
 FLAGS.need2loadScenes = 1;
 FLAGS.movieper = {"Sample": [], "Test": []};
+FLAGS.movieplaying = 0;
 FLAGS.need2loadParameters = 1;
 FLAGS.need2saveParameters = 0;
 FLAGS.savedata = 0; 
@@ -129,6 +130,7 @@ FLAGS.firestoretimeron = 0
 FLAGS.stressTest = 0
 FLAGS.RFIDGeneratorCreated = 0
 FLAGS.automatortext = ''
+FLAGS.trackeye = 0
 
 var CANVAS = {}; 
 var CANVAS = {
@@ -227,7 +229,23 @@ EVENTS.reset_timeseries = function(){
 	this.timeseries.TSequenceDesired = {}
 	this.timeseries.TSequenceActual = {}
 	this.timeseries.EyeData = {}
-}
+
+	// Initialize battery value
+	if (ENV.BatteryAPIAvailable){
+		//Monitor Battery - from: http://www.w3.org/TR/battery-status/
+		navigator.getBattery().then(function(batteryobj){
+			logEVENTS("Battery",[batteryobj.level, batteryobj.dischargingTime],"timeseries")
+
+			batteryobj.addEventListener('levelchange',function(){
+  		        logEVENTS("Battery",[batteryobj.level, batteryobj.dischargingTime],"timeseries")
+			})//batteryobj.addEventListener
+		}); //navigator.getBattery()
+	}//IF battery API present
+	else {
+		//do nothing
+	}//ELSE no battery api present
+
+}//EVENTS.reset_timeseries
 EVENTS.reset_trialseries()
 EVENTS.reset_timeseries()
 
@@ -308,17 +326,15 @@ function purgeTrackingVariables(){
 
 	ENV.CurrentDate = new Date;
 	var datestr = ENV.CurrentDate.toISOString();
-	ENV.DataFileName = DATA_SAVEPATH + ENV.Subject + "/" + datestr.slice(0,datestr.indexOf(".")) + "_" + ENV.Subject + ".txt";
+	ENV.DataFileName = DATA_SAVEPATH + ENV.Subject + "/" + datestr.slice(0,datestr.indexOf(".")) + "_" + ENV.Subject + ".json";
 	ENV.FirestoreDocRoot = datestr.slice(0,datestr.indexOf(".")) + "_" + ENV.Subject
 
 	if(FLAGS.waitingforTouches > 0 || FLAGS.purge == 1){
 		// purge requested by user at beginning of trial during fixation (most likely) 
-		console.log('setting to 0')
 		CURRTRIAL.num = 0
 		EVENTS.trialnum = 0
 	}
 	else{
-		console.log('setting to -1')
 		// purge requested by automator at end of trial
 		CURRTRIAL.num = -1;
 	}

@@ -7,7 +7,7 @@ AutomatorFilePath: File path to params for the automator curriculum.
 
 BackgroundColor2D (optional): specify the background color in hex (eg, #FFFFFF for white or #000000 for black). Not required in param file. If not provided, defaults to gray screen background (#7F7F7F)
 
-CalibrateEye (optional): If >0, will calibrate for TASK.CalibrateEye number of trials for train & same number for test. Afte test, saves calibration in firestore collection "eyecalibrations." Requires TASK.TrackEye>0.
+CalibrateEye (optional): If >0, will calibrate for TASK.CalibrateEye number of trials for train & same number for test. Afte test, saves calibration in firestore collection "eyecalibrations." Requires FLAGS.trackeye>0.
 
 CheckRFID: Time in milliseconds over which at least one matching RFID read is required so that agent doesn't get kicked off of task. If there is a read within the last CheckRFID ms, task continues, otherwise agent is locked out at start of next trial. CheckRFID <= 0 turns off RFID checking.
 
@@ -20,6 +20,8 @@ ChoiceTimeOut: Time in milliseconds that subject has to make a choice in AFC tas
 ConsecutiveHitsITI: Maximum time in milliseconds allowed to elapse from the previous trial for the current trial to count toward reward accumulation for a string of correct responses. For example, if ConsecutiveHitsITI=8000, then subject has 8 seconds to complete the next trial successfully and the consecutivehits counter will be incremented. Otherwise, the number of consecutivehits will get set to 0
 
 CurrentAutomatorStage: index of current training stage of automator.
+
+DragtoRespond: Flag tht specifies whether a continuous move (drag) into a choice box is allowed (DragtoRespond=1) versus a discrete click in the box (DragtoRespond=0). Defaults to 0 (click to respond) if not provided.
 
 FixationDuration: How long subject has to hold fixation touch in milliseconds for a successful fixation to register.
 
@@ -112,8 +114,6 @@ TestGridIndex: Index on grid where test images (choices) appear.
 TestOFF: Choice screen appears TestOFF milliseconds after test image is extinguished. If TestOFF=0, then test screen does not extinguish (go to blank gray) until same-different choice screen appears. If KeepTestON=1, then test image reappears during the same-different choice screen.
 
 TestSizeInches (deprecated, now specified in scene param file): Size of the test image in physical inches on the screen
-
-TrackEye (optional): Utilizes eye tracker input instead of touch for response. Can be set along with complementary TASK.CalibrateEye variable for calibrating. Otherwise, will use existing calibration record for agent on firestore. IF not set, default is TASK.TrackEye=0.
 
 
 ## ENV

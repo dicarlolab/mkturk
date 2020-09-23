@@ -253,7 +253,10 @@ function choiceTimeOut(timeout){
   return new Promise(
     function(resolve, reject){
       var timer_return = {type: "TimeOut", cxyt: [-1,-1,-1,-1]}
-      setTimeout(function(){resolve(timer_return)},timeout)
+      setTimeout(function(){
+        clearTimeout(touchTimer);
+        resolve(timer_return)
+      },timeout)//setTimeout
     })
 }
 
@@ -487,7 +490,19 @@ function objectomeSceneNamesToLatentVars(scenefilepaths,scenelabels,scenes){
     BagIdx: [],
     ImageIdx:[]
   }
-  images.ImageSetDir = scenefilepaths[0].slice(0,scenefilepaths[0].indexOf("objectome3d")) + "objectome3d/"
+
+  var imagecollection = ''
+  if (scenefilepaths[0].indexOf("objectome3d") > 0){
+    imagecollection = 'objectome3d'
+  }
+  else if (scenefilepaths[0].indexOf("objectome") > 0){
+    imagecollection = 'objectome'
+  }
+  else{
+    imagecollection = 'imagebags'
+  }
+
+  images.ImageSetDir = scenefilepaths[0].slice(0,scenefilepaths[0].indexOf(imagecollection)) + imagecollection +"/"
 
   for (var i=0; i<=scenefilepaths.length-1; i++){
     var nimages = Math.max(scenes[i].nimages,scenes[i].nbackgroundimages)
@@ -499,7 +514,7 @@ function objectomeSceneNamesToLatentVars(scenefilepaths,scenelabels,scenes){
     // Noun, object model, image folder
     var findnext = 0;
     for (var j=0; j<=strs.length-1; j++){
-      if (findnext == 0 && strs[j] == "objectome3d"){
+      if (findnext == 0 && strs[j] == imagecollection){
         findnext++
       }
       else if (findnext == 1){
