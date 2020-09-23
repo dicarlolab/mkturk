@@ -188,6 +188,10 @@ if (typeof(navigator.bluetooth) == "object"){
 	Preempt RFID
    </button>
 
+   <button class="mdl-button mdl-js-button mdl-button--raised" id="gridPoints" style="visibility:hidden; background-color:white; z-index: 102; font-size: 25px; position: absolute; top: 5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
+	Grid Points
+   </button>
+
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasvisible" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasvisiblewebgl" width="0" height="0" src="" style="z-index:3; position: absolute; left: 0px; top: 0px;"> </canvas>
@@ -385,6 +389,8 @@ function skipHardwareDevice(event){
 		'pointerup',doneTestingTask_listener,false)
 	document.querySelector("button[id=stressTest]").addEventListener(
 		'touchstart',stressTest_listener,false)
+	document.querySelector("button[id=gridPoints]").addEventListener(
+		'touchstart',gridPoints_listener,false)
 
 		//---- for Safari
 		document.querySelector("button[id=doneEditingParams]").addEventListener(
@@ -393,6 +399,8 @@ function skipHardwareDevice(event){
 			'click',doneTestingTask_listener,false)
 		document.querySelector("button[id=stressTest]").addEventListener(
 			'click',stressTest_listener,false)
+		document.querySelector("button[id=gridPoints]").addEventListener(
+			'click',gridPoints_listener,false)
 		//---- (END) for Safari
 
 
@@ -639,6 +647,8 @@ function skipHardwareDevice(event){
 	document.querySelector("button[id=doneTestingTask]").style.visibility = "visible"
 	document.querySelector("button[id=stressTest]").style.display = "block"
 	document.querySelector("button[id=stressTest]").style.visibility = "visible"
+	document.querySelector("button[id=gridPoints]").style.display = "block"
+	document.querySelector("button[id=gridPoints]").style.visibility = "visible"
 	if (TASK.Agent == "SaveImages"){
 		document.querySelector("button[id=stressTest]").innerHTML = "Save Images"
     	TASK.SamplingStrategy = "sequential"
@@ -725,6 +735,7 @@ while(true){
 			scaleCanvasforHiDPI(VISIBLECANVAS);
 			scaleCanvasforHiDPI(EYETRACKERCANVAS);
 		}
+		
 		if (ENV.OffscreenCanvasAvailable){
 			OFFSCREENCANVAS = new OffscreenCanvas(VISIBLECANVAS.width, VISIBLECANVAS.height)
 			OFFSCREENCANVAS.commitTo = function(dest){
@@ -739,7 +750,7 @@ while(true){
 					str = {status: "failed"}
 					return str				
 				}
-			}			
+			}
 		}
 		else
 		{

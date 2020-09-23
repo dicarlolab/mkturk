@@ -271,6 +271,7 @@ function doneTestingTask_listener(event){
 	document.querySelector("p[id=imageloadingtext]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	document.querySelector("button[id=doneTestingTask]").style.display = "none"
 	document.querySelector("button[id=stressTest]").style.display = "none"
+	document.querySelector("button[id=gridPoints]").style.display = "none"
 	// EYETRACKERCANVAS.style.display="none";
 	return
 }
@@ -295,6 +296,23 @@ function stressTest_listener(event){
 	document.querySelector("button[id=doneTestingTask]").style.display = "none"
 	return
 }
+
+function gridPoints_listener(event){
+	event.preventDefault()
+	console.log("Show Grid Points. This might delay rendering.");
+	// FLAGS.purge=1
+	// purgeTrackingVariables()
+	// FLAGS.purge=0
+	
+	if (FLAGS.gridPoints == 0){
+		FLAGS.gridPoints = 1
+	}
+	else if (FLAGS.gridPoints == 1){
+		FLAGS.gridPoints = 0
+	}
+	return
+}
+
 
 
 function subjectlist_listener(event){
