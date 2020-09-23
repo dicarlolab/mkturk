@@ -134,29 +134,35 @@
 															<p>
 																Before continuing to install Firebase CLI, make sure that you have <code>nvm</code>,
 																<code>node</code> and <code>npm</code> installed as you will need a local Node environment
-																on your computer to install and use <b>Firebase</b>, <b>gsutil</b> and <b>gcloud</b> CLIs. 
+																on your computer to install and use <b>Firebase</b>, <b>gsutil</b> and <b>gcloud</b> CLIs.
+																The following guide is based on MacOS and Linux.
 																<br /><br />
-																Open up your terminal and run:
-																<br />
-																<code>$ node --version</code>
+																The recommended way to install Node environment is through the use of <code>nvm</code>
+																('Node Version Manager'). You can think of <code>nvm</code> as a sort of <code>conda</code>
+																for Node which allows you to install and setup multiple versions of Node depending on the usage.
 																<br /><br />
-																If you have Node, you should get an output such as:
+																To check if you have a working installation of nvm, open up your terminal and run:
 																<br />
-																<code>v8.16.1</code>
+																<code>$ command -v nvm</code>
 																<br /><br />
-																If you <b>HAVE</b> Node but <b>NOT</b> v8.x.x, then install the latest Node v8.x.x by running:
-																<br />
-																<code>$ nvm install 8</code>
+																which should output <code>nvm</code> if you have nvm.
 																<br /><br />
-																If you don't have Node at all, then use the links below to install <code>nvm</code>.
-																<br />
-																For Windows: <a href="https://github.com/coreybutler/nvm-windows">nvm-windows</a>
-																<br />
-																For MacOS/Linux: <a href="https://github.com/nvm-sh/nvm">nvm</a>
-																<br /><br />
-																Continue <b>ONLY</b> after you have installed Node v8.x.x
 
+																If you do not have <code>nvm</code>, please visit <a href="https://github.com/nvm-sh/nvm">nvm for MacOS/Linux</a> 
+																and follow their installation steps.
 																<br /><br />
+
+																Now that you have installed <code>nvm</code>, install the latest Node v10 by running
+																<br />
+																<code>$ nvm install 10</code>
+																<br />
+																followed by
+																<br />
+																<code>$ nvm use 10</code>
+																<br />
+																At this point you have successfully installed <code>nvm</code>, <code>node</code> and <code>npm</code>
+																<br /><br />
+																
 																<strong>Installing Firebase CLI</strong>
 																<br />
 																<code>$ npm install -g firebase-tools</code>
@@ -169,6 +175,11 @@
 															</p>
 															
 														<h4 id="import-template-anc">Import Template Database & Storage</h4>
+															<p>
+																MKTURK takes advantage of the different Google Firebase and Cloud database infrastructure. Data that need to be queried are saved in Firestore while
+																data dump operations usually takes place in Google Cloud Storage. In order to get MKTURK working correctly, it is crucial that the databases are
+																initialized correctly.
+															</p>
 
 													<h3 id="install-mkturk-anc"><u>2. Setup MKTURK</u></h3>
 														<p>
@@ -176,7 +187,25 @@
 														</p>
 
 														<h4 id="clone-repo-anc">Clone MKTURK Repository</h4>
+															<p>
+																To clone Issalab's distribution of MKTURK, run:
+																<br />
+																<code>$ git clone https://github.com/issalab/mkturk.git</code>
+															</p>
 														<h4 id="install-modules-anc">Install Modules</h4>
+															<p>
+																Simply running MKTURK does not additional module installations. In fact, all data manipulations can be done through
+																the native Google Firebase/Cloud consoles. However, MKTURK includes a webapp called MKFILES that centralizes
+																all data viewing/editing/updating operations. To build this webapp, run the following sequence of commands on terminal:
+																<br />
+																<code>$ cd ~/mkturk/src/mkfiles</code>
+																<br />
+																<code>$ npm install</code>
+																<br />
+																<code>$ npx webpack</code>
+																<br />
+																At this point, navigate to <code>~/mkturk/public/mkfiles</code> and check to see that <code>mkfiles.js</code> was added.
+															</p>
 														<h4 id="build-mkturk-anc">Build MKTURK</h4>
 														<h4 id="deploy-mkturk-anc">Deploy MKTURK</h4>
 

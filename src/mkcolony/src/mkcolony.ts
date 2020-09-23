@@ -391,6 +391,7 @@ export class Mkcolony {
             let today = new Date();
             let fluidThisWeek = 0;
             let daysFromMonday = countFromMonday(today.getDay());
+            console.log(cell.getData().name, daysFromMonday);
 
             if (isSameDay(lastFluidDate, today)) {
               for (let i = 0; i <= daysFromMonday; i++) {
@@ -410,7 +411,7 @@ export class Mkcolony {
                   let rowDate = new Date(row + ' EST');
                   return isSameDay(targetDate, rowDate);
                 });
-                console.log('agent:', cell.getData().agent, 'else idx', idx);
+                console.log('agent:', cell.getData().name, 'else idx', idx);
                 if (idx != -1) {
                   fluidThisWeek += cell.getData().fluid_values[idx];
                 }
