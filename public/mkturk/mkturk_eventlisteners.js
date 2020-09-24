@@ -294,6 +294,7 @@ function stressTest_listener(event){
 	
 	document.querySelector("p[id=imageloadingtext]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 	document.querySelector("button[id=doneTestingTask]").style.display = "none"
+	document.querySelector("button[id=gridPoints").style.display = "none"
 	return
 }
 
@@ -312,8 +313,6 @@ function gridPoints_listener(event){
 	}
 	return
 }
-
-
 
 function subjectlist_listener(event){
 	ENV.Subject = subjectlist[this.value];

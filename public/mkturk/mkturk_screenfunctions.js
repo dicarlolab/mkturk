@@ -126,13 +126,14 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 									frame.current,
 									ob[frame.current],
 									id[frame.current])
+					}
 					saveScreenshot(VISIBLECANVAS,
 									CURRTRIAL.num,
 									taskscreen0,
 									frame.current,
 									ob[frame.current],
 									id[frame.current])
-					} 
+					 
 					
 				}//IF need to save out this frame
 			}//IF sample or test screen & save out images
@@ -157,9 +158,6 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 					updated2d = 1
 				//}//IF new taskscreen
 
-				if (!updated3d && ENV.OffscreenCanvasAvailable){
-					renderer.clear()
-				}
 				//----- RENDER ALL 2D ELEMENTS NOW (commit to screen later)			
 				//if (!updated3d){
 				for (var s = 0; s<=frame.frames[frame.current].length-1; s++){
@@ -198,7 +196,6 @@ function render3D(taskscreen,s,f,gr,fr,sc,ob,id){
 	//var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
 
 	renderer.autoClear = false
-	
 	for (var j = 0; j<=ob[f].length - 1; j++){
 		if (ENV.OffscreenCanvasAvailable){
 			renderer.clear()
@@ -220,24 +217,18 @@ function render3D(taskscreen,s,f,gr,fr,sc,ob,id){
 		renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
 			
 		if (ENV.OffscreenCanvasAvailable){
-			var numshot = 0
-			if (taskscreen == "Sample" && TASK.Agent == "SaveImages" && FLAGS.savedata == 1 &&
+			if ((taskscreen == "Test" || taskscreen == "Sample") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1 &&
 			(frame.current == 0 
-				|| (sc[frame.current] != sc[frame.current-1]
-					|| ob[frame.current][0] != ob[frame.current-1][0]
-					|| id[frame.current][0] != id[frame.current-1][0])
-				)){
-					saveScreenshot(OFFSCREENCANVAS,
-						CURRTRIAL.num,
-						taskscreen,
-						fr[f],
-						ob[f][j],
-						id[f][j], numshot)
-					
-						numshot = numshot + 1 
-				}	
-			
-				console.log(numshot)
+					|| (sc[frame.current] != sc[frame.current-1]
+						|| ob[frame.current][0] != ob[frame.current-1][0]
+						|| id[frame.current][0] != id[frame.current-1][0]))){
+				saveScreenshot(VISIBLECANVASWEBGL,
+					CURRTRIAL.num,
+					taskscreen,
+					fr[f],
+					ob[f][j],
+					id[f][j])
+			}		
 			var [objFilterSingleFrame, imgFilterSingleFrame] = updateFilterSingleFrame(taskscreen,ob[f][j],id[f][j],
 				fr[f],
 				gr[f][j])
@@ -245,22 +236,6 @@ function render3D(taskscreen,s,f,gr,fr,sc,ob,id){
 		    OFFSCREENCANVAS.getContext('2d').filter = objFilterSingleFrame
 			OFFSCREENCANVAS.getContext('2d').drawImage(renderer.domElement,0,0,OFFSCREENCANVAS.width,OFFSCREENCANVAS.height)	
 			OFFSCREENCANVAS.getContext('2d').filter = 'none'
-			if ((taskscreen == "Test" || taskscreen == "Sample") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1 &&
-			(frame.current == 0 
-				|| (sc[frame.current] != sc[frame.current-1]
-					|| ob[frame.current][0] != ob[frame.current-1][0]
-					|| id[frame.current][0] != id[frame.current-1][0])
-				)){
-				
-				saveScreenshot(OFFSCREENCANVAS,
-					CURRTRIAL.num,
-					taskscreen,
-					fr[f],
-					ob[f][j],
-					id[f][j],numshot)
-					
-			}		
-
 		}
 		
 	}//FOR j display items
@@ -723,7 +698,7 @@ function setViewport(gridindex){
 	renderer.setScissorTest(true)
 }
 
-async function saveScreenshot(canvasobj,currtrial,taskscreen,framenum,objectlabel,objectind,numshot){	
+async function saveScreenshot(canvasobj,currtrial,taskscreen,framenum,objectlabel,objectind){	
 	//---- upload screenshot to firebase 
 	//sample image will be uploaded to the appropriate folder in the scene 
 
@@ -770,10 +745,17 @@ async function saveScreenshot(canvasobj,currtrial,taskscreen,framenum,objectlabe
 							+ '_' + taskscreen 
 							+ '_' + 'framenum' + framenum
 	
+			if (objectlabel.length >1){
+				for (var i=0; i<=objectlabel.length-1; i++){
+					fullpath = fullpath
+								+ '_' + 'label' + objectlabel[i]
+								+ '_' + 'index' + objectind[i]
+				}//FOR i objects
+			} else{
 				fullpath = fullpath
-							+ '_' + 'label' + objectlabel
-							+ '_' + 'index' + objectind
-							+ '_' + 'numshot' + numshot
+								+ '_' + 'label' + objectlabel
+								+ '_' + 'index' + objectind
+			}
 
 			fullpath = fullpath + '.png'
 			
@@ -793,12 +775,19 @@ async function saveScreenshot(canvasobj,currtrial,taskscreen,framenum,objectlabe
 							+ '_' + 'trialnum' + currtrial
 							+ '_' + taskscreen 
 							+ '_' + 'framenum' + framenum
-	
+			
+			if (objectlabel.length >1){
 			for (var i=0; i<=objectlabel.length-1; i++){
 				fullpath = fullpath
 							+ '_' + 'label' + objectlabel[i]
 							+ '_' + 'index' + objectind[i]
 			}//FOR i objects
+		} else{
+			fullpath = fullpath
+							+ '_' + 'label' + objectlabel
+							+ '_' + 'index' + objectind
+		}
+
 			fullpath = fullpath + '.png'
 			
 			try {

@@ -405,28 +405,30 @@ async function addToScene(taskscreen){
         } // if SAMPLE
     } // if FILTERS exist
 
-    //BACKGROUND 2D IMAGE
-    if (typeof IMAGES[taskscreen][classlabel].IMAGES.FILTERS != "undefined"){
-        if (taskscreen == "Sample" || taskscreen == "Test"){
-            for (var i = 0; i<IMAGES[taskscreen][classlabel].nimages; i++){
-                if (!Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i])){
-                    var imind = [IMAGES[taskscreen][classlabel].IMAGES.imageidx[i], IMAGES[taskscreen][classlabel].IMAGES.imageidx[i]]
-                }//IF isArray background image index
-                else {
-                    var imind = IMAGES[taskscreen][classlabel].IMAGES.imageidx[i]
-                }//ELSE !isArray
-                var durationMS = chooseArrayElement(IMAGES[taskscreen][classlabel].durationMS,i,0)
-                IMAGES[taskscreen][classlabel].IMAGES.imageidx[i] = 
-                    interpParam(imind,"binary",durationMS,framerate)
+//BACKGROUND 2D IMAGE
+    if (taskscreen == "Sample" || taskscreen == "Test"){
+        for (var i = 0; i<IMAGES[taskscreen][classlabel].nimages; i++){
+            if (!Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i])){
+                var imind = [IMAGES[taskscreen][classlabel].IMAGES.imageidx[i], IMAGES[taskscreen][classlabel].IMAGES.imageidx[i]]
+            }//IF isArray background image index
+            else {
+                var imind = IMAGES[taskscreen][classlabel].IMAGES.imageidx[i]
+            }//ELSE !isArray
+            var durationMS = chooseArrayElement(IMAGES[taskscreen][classlabel].durationMS,i,0)
+            IMAGES[taskscreen][classlabel].IMAGES.imageidx[i] = 
+                interpParam(imind,"binary",durationMS,framerate)
 
-                for (var j = 0; j<= IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].length-1; j++){
-                    IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j] = Math.round(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j])
-                }//FOR j img indices, round
+            for (var j = 0; j<= IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].length-1; j++){
+                IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j] = Math.round(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j])
+            }//FOR j img indices, round
+
+            if (!IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].every( (val, i, arr) => val === arr[0])){
                 FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].length
-            
-                //2D FILTERS
-                //available filters are blur(), brightness(), contrast(), grayscale(), hue-rotate(), invert(), opacity(), saturate(), and sepia()
-                // refer to https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/filter
+            } 
+            //2D FILTERS
+            //available filters are blur(), brightness(), contrast(), grayscale(), hue-rotate(), invert(), opacity(), saturate(), and sepia()
+            // refer to https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/filter
+            if (typeof IMAGES[taskscreen][classlabel].IMAGES.FILTERS != "undefined"){
                 if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.blur[i])){
                     IMAGES[taskscreen][classlabel].IMAGES.FILTERS.blur[i] =
                         interpParam(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.blur[i],"continuous",durationMS,framerate)
@@ -455,9 +457,9 @@ async function addToScene(taskscreen){
                     IMAGES[taskscreen][classlabel].IMAGES.FILTERS.blur[i] =
                         interpParam(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.blur[i],"continuous",durationMS,framerate)
                 }
-            }//FOR i images
-        }//IF Sample
-    }// if background image filter exists
+            }// if background image filter exists
+        }//FOR i images
+    }//IF  Sample
 }//FOR classlabels
 
 //==== GridCenters in 3JS (==> POSSIBLE CAMERA OFFSETS FOR SAMPLE,TEST,CHOICE "ROOMS")
