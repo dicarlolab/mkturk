@@ -194,7 +194,7 @@ if (typeof(navigator.bluetooth) == "object"){
 
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasvisible" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
-	<canvas id="canvasvisiblewebgl" width="0" height="0" src="" style="z-index:3; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvasvisiblewebgl" width="0" height="0" src="" style="visibility:hidden; z-index:3; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvaseyetracker" width="0" height="0" src="" style="z-index:4; position: absolute; left: 0px; top: 0px;"> </canvas>
 </div>
 
@@ -649,11 +649,6 @@ function skipHardwareDevice(event){
 	document.querySelector("button[id=stressTest]").style.visibility = "visible"
 	document.querySelector("button[id=gridPoints]").style.display = "block"
 	document.querySelector("button[id=gridPoints]").style.visibility = "visible"
-	if (TASK.Agent == "SaveImages"){
-		document.querySelector("button[id=stressTest]").innerHTML = "Save Images"
-    	TASK.SamplingStrategy = "sequential"
-    	console.log("Automatically using sequential sampling since SAVE IMAGES was specified.")
-	}//IF SaveImages
 
 	FLAGS.need2loadParameters = 1
 	FLAGS.need2loadScenes = 1
@@ -669,6 +664,12 @@ while(true){
 	//============= AWAIT LOAD PARAMS =============//
 	if (FLAGS.need2loadParameters == 1){
 		FLAGS.need2loadParameters = await loadParametersfromFirebase(ENV.ParamFileName);
+
+    if (TASK.Agent == "SaveImages"){
+      document.querySelector("button[id=stressTest]").innerHTML = "Save Images"
+      TASK.SamplingStrategy = "sequential"
+      console.log("Automatically using sequential sampling since SAVE IMAGES was specified.")
+    }//IF SaveImages
 
 		if (typeof(TASK.DragtoRespond) != "undefined"){
 		}//IF defined, do nothing

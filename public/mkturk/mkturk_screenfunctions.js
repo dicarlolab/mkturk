@@ -21,6 +21,10 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 
 		if (timestamp - start > ti[frame.current]){
 			//----- RENDER ALL ELEMENTS
+			if (!ENV.OffscreenCanvasAvailable){
+					renderShape2D('Blank',[-1],OFFSCREENCANVAS)				
+			}
+
 			for (var s = 0; s<=frame.frames[frame.current].length-1; s++){
 				f = frame.frames[frame.current][s]
 				var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
@@ -30,7 +34,7 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 
 //------------------- DISPLAY THE FRAME 2D ---------------------//
 				//TRANSFER 2D ONSCREEN (everything has been pre-rendered offscreen)
-				if (ENV.OffscreenCanvasAvailable && s == frame.frames[frame.current].length-1 && updated2d){
+				if (ENV.OffscreenCanvasAvailable && s == frame.frames[frame.current].length-1 && (updated2d || updated3d)){
 					var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
 
 					//FAILED render
@@ -64,25 +68,16 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 
 				//RENDER 2D directly onscreen
 				if (!ENV.OffscreenCanvasAvailable) {
-					if (f==0 || s>0 || taskscreen != sc[f-1] || id[f] != id[f-1]){
-						//Blank out between taskscreens
-						if ( s==0 && taskscreen != sc[f-1] ){
-							renderShape2D('Blank',[-1],OFFSCREENCANVAS)
-						}//IF new taskscreen
-
-						//----- RENDER ALL 2D ELEMENTS DIRECTLY TO DISPLAY NOW -- offscreencanvas is visiblecanvas
-						render2D(taskscreen,s,f,gr,fr,sc,ob,id,OFFSCREENCANVAS)
-					}//IF new taskscreen, render 2D image
+					//----- RENDER ALL 2D ELEMENTS DIRECTLY TO DISPLAY NOW -- offscreencanvas is visiblecanvas
+					render2D(taskscreen,s,f,gr,fr,sc,ob,id,OFFSCREENCANVAS)
 
 					//------------------- DISPLAY THE FRAME 3D ---------------------//
-				if (taskscreen=="Sample" || taskscreen=="Test"){
-					render3D(taskscreen,s,f,gr,fr,sc,ob,id)
-					VISIBLECANVASWEBGL.style.visibility='visible';
-				} //IF sample || test
-				else {
-					VISIBLECANVASWEBGL.style.visibility='hidden';
-					updated3d = 0
-				}//ELSE hide 3D when plotting 2D elements like buttons and not keeping (overlaying) sample/test
+					if (taskscreen=="Sample" || taskscreen=="Test"){
+						render3D(taskscreen,s,f,gr,fr,sc,ob,id)
+					} //IF sample || test
+					else {
+						updated3d = 0
+					}//ELSE hide 3D when plotting 2D elements like buttons and not keeping (overlaying) sample/test
 				}//IF !Offscreen
 			}//FOR s screens within frame
 
@@ -119,22 +114,12 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 					)//if !movie, save when screen changes
 					|| FLAGS.movieper[taskscreen0][ob[frame.current][0]][id[frame.current][0]] >= 1)//OR movie
 				{
-					if (ENV.OffscreenCanvasAvailable == 0){
-					saveScreenshot(VISIBLECANVASWEBGL,
-									CURRTRIAL.num,
-									taskscreen0,
-									frame.current,
-									ob[frame.current],
-									id[frame.current])
-					}
-					saveScreenshot(VISIBLECANVAS,
-									CURRTRIAL.num,
-									taskscreen0,
-									frame.current,
-									ob[frame.current],
-									id[frame.current])
-					 
-					
+						saveScreenshot(VISIBLECANVAS,
+										CURRTRIAL.num,
+										taskscreen0,
+										frame.current,
+										ob[frame.current],
+										id[frame.current])
 				}//IF need to save out this frame
 			}//IF sample or test screen & save out images
 
@@ -153,10 +138,7 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 			//================= Render all 2D elements =================//
 			if (ENV.OffscreenCanvasAvailable){
 				//Blank out between taskscreens
-				//if ( taskscreen != sc[f-1] ){
 					renderShape2D('Blank',[-1],OFFSCREENCANVAS)
-					updated2d = 1
-				//}//IF new taskscreen
 
 				//----- RENDER ALL 2D ELEMENTS NOW (commit to screen later)			
 				//if (!updated3d){
@@ -165,14 +147,12 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 					var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
 					render2D(taskscreen,s,f,gr,fr,sc,ob,id,OFFSCREENCANVAS)	
 					//------------------- DISPLAY THE FRAME 3D ---------------------//
-				if (taskscreen=="Sample" || taskscreen=="Test"){
-					render3D(taskscreen,s,f,gr,fr,sc,ob,id)
+					if (taskscreen=="Sample" || taskscreen=="Test"){
+						render3D(taskscreen,s,f,gr,fr,sc,ob,id)
 				} //IF sample || test
 				else {
 					updated3d = 0
-				}
-				VISIBLECANVASWEBGL.style.visibility='hidden';
-				
+				}				
 				}//FOR s screens
 			//}
 			}//IF 2D offscreenAvailable, pre-render next frame
@@ -197,9 +177,7 @@ function render3D(taskscreen,s,f,gr,fr,sc,ob,id){
 
 	renderer.autoClear = false
 	for (var j = 0; j<=ob[f].length - 1; j++){
-		if (ENV.OffscreenCanvasAvailable){
-			renderer.clear()
-		}
+		renderer.clear()
 		
 		var boundingBox = updateSingleFrame3D(taskscreen,
 											ob[f][j],
@@ -208,38 +186,43 @@ function render3D(taskscreen,s,f,gr,fr,sc,ob,id){
 											gr[f][j])
 		
 		if (s==0 && typeof(boundingBox) != "undefined" && typeof(boundingBox[ob[f][j]]) != "undefined" && typeof(boundingBox[ob[f][j]][0]) != "undefined"){
-		boundingBoxesChoice3JS.x[j] = boundingBox[ob[f][j]][0].x
-		boundingBoxesChoice3JS.y[j] = boundingBox[ob[f][j]][0].y
-		updated3d = 1
+			boundingBoxesChoice3JS.x[j] = boundingBox[ob[f][j]][0].x
+			boundingBoxesChoice3JS.y[j] = boundingBox[ob[f][j]][0].y
+			updated3d = 1
 		}//IF first screen
 		setViewport(gr[f][j])
 		var camera = scene[taskscreen].getObjectByName("cam"+ob[f][j])
 		renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
 			
-		if (ENV.OffscreenCanvasAvailable){
-			if ((taskscreen == "Test" || taskscreen == "Sample") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1 &&
-			(frame.current == 0 
-					|| (sc[frame.current] != sc[frame.current-1]
-						|| ob[frame.current][0] != ob[frame.current-1][0]
-						|| id[frame.current][0] != id[frame.current-1][0]))){
+		if ((taskscreen == "Test" || taskscreen == "Sample") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
+			if ((FLAGS.movieper[taskscreen][ob[frame.current][0]][id[frame.current][0]] < 1 
+					&& (frame.current == 0 
+						|| (sc[frame.current] != sc[frame.current-1]
+							|| ob[frame.current][0] != ob[frame.current-1][0]
+							|| id[frame.current][0] != id[frame.current-1][0])
+						)
+					)//if !movie, save when screen changes
+					|| FLAGS.movieper[taskscreen][ob[frame.current][0]][id[frame.current][0]] >= 1) //OR movie
+			{
 				saveScreenshot(VISIBLECANVASWEBGL,
 					CURRTRIAL.num,
 					taskscreen,
 					fr[f],
 					ob[f][j],
 					id[f][j])
-			}		
-			var [objFilterSingleFrame, imgFilterSingleFrame] = updateFilterSingleFrame(taskscreen,ob[f][j],id[f][j],
-				fr[f],
-				gr[f][j])
-				
-		    OFFSCREENCANVAS.getContext('2d').filter = objFilterSingleFrame
-			OFFSCREENCANVAS.getContext('2d').drawImage(renderer.domElement,0,0,OFFSCREENCANVAS.width,OFFSCREENCANVAS.height)	
-			OFFSCREENCANVAS.getContext('2d').filter = 'none'
-		}
-		
+			}//IF movie
+		}//IF taskscreen
+
+
+		//Post-render 2D filtering in pixel space
+		var [objFilterSingleFrame, imgFilterSingleFrame] = updateFilterSingleFrame(taskscreen,ob[f][j],id[f][j],
+			fr[f],
+			gr[f][j])
+			
+	    OFFSCREENCANVAS.getContext('2d').filter = objFilterSingleFrame
+		OFFSCREENCANVAS.getContext('2d').drawImage(renderer.domElement,0,0,OFFSCREENCANVAS.width,OFFSCREENCANVAS.height)	
+		OFFSCREENCANVAS.getContext('2d').filter = 'none'
 	}//FOR j display items
-	
 }//FUNCTION render3D
 
 async function render2D(taskscreen,s,f,gr,fr,sc,ob,id,canvasobj){
@@ -262,7 +245,6 @@ async function render2D(taskscreen,s,f,gr,fr,sc,ob,id,canvasobj){
 			}
 			if (typeof(ims) != "undefined" && typeof(ims[0])=="object"){
 				for (var j = 0; j<=ob[f].length - 1; j++){
-
 					var [objFilterSingleFrame,imgFilterSingleFrame] = updateFilterSingleFrame(taskscreen,ob[f][j],id[f][j],
 						fr[f],
 						gr[f][j])
@@ -1141,3 +1123,187 @@ function defineImageGrid(ngridpoints, gridspacing,xoffset,yoffset){
 
 	return [xcanvascent, ycanvascent, xgridcent, ygridcent]
 }//FUNCTION defineImageGrid
+
+function updateFilterSingleFrame(taskscreen,classlabel,index,movieframe,gridindex){
+
+if (typeof(IMAGES[taskscreen][classlabel].OBJECTFILTERS) != "undefined"){
+    // ======= OBJECT FILTERS
+    var objFilterSingleFrame = {blur: 0, brightness: 100, contrast: 100, grayscale: 0, huerotate: 0, invert: 0, opacity: 100,
+    saturate: 100, sepia: 0}
+
+    var nextblur = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.blur,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nextblur = chooseArrayElement(nextblur,movieframe,nextblur.length-1)
+    //         }
+    if (nextblur != "" && nextblur != undefined){
+        objFilterSingleFrame.blur = nextblur
+    }
+
+    var nextbrightness = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.brightness,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nextbrightness = chooseArrayElement(nextbrightness,movieframe,nextbrightness.length-1)
+    //         }
+
+    if (nextbrightness != "" && nextbrightness != undefined){
+        objFilterSingleFrame.brightness = nextbrightness 
+    }
+
+    var nextcontrast = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.contrast,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nextcontrast = chooseArrayElement(nextcontrast,movieframe,nextcontrast.length-1)
+    //         }
+
+    if (nextcontrast != "" && nextcontrast != undefined){
+        objFilterSingleFrame.contrast = nextcontrast
+    }
+
+    var nextgrayscale = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.grayscale,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nextgrayscale = chooseArrayElement(nextgrayscale,movieframe,nextgrayscale.length-1)
+    //         }
+
+    if (nextgrayscale != "" && nextgrayscale != undefined){
+        objFilterSingleFrame.grayscale = nextgrayscale
+    }
+
+    var nexthuerotate = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.huerotate,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nexthuerotate = chooseArrayElement(nexthuerotate,movieframe,nexthuerotate.length-1)
+    //         }
+
+    if (nexthuerotate != "" && nexthuerotate != undefined){
+        objFilterSingleFrame.huerotate = nexthuerotate
+    }
+            
+    var nextinvert = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.invert,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nextinvert = chooseArrayElement(nextinvert,movieframe,nextinvert.length-1)
+    //         }
+    if (nextinvert != "" && nextinvert != undefined){
+        objFilterSingleFrame.invert = nextinvert
+    }
+
+    var nextopacity = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.opacity,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nextopacity = chooseArrayElement(nextopacity,movieframe,nextopacity.length-1)
+    //         }
+    if (nextopacity != "" && nextopacity != undefined){
+        objFilterSingleFrame.opacity = nextopacity
+    }
+    var nextsaturate = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.saturate,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nextsaturate = chooseArrayElement(nextsaturate,movieframe,nextsaturate.length-1)
+    //         }
+
+    if (nextsaturate != "" && nextsaturate != undefined){
+        objFilterSingleFrame.saturate = nextsaturate
+    }
+
+    var nextsepia = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.sepia,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nextsepia = chooseArrayElement(nextsepia,movieframe,nextsepia.length-1)
+    //         }
+
+    if (nextsepia != "" && nextsepia != undefined){
+        objFilterSingleFrame.sepia = nextsepia
+    }
+
+    var objFilterstr = 'blur(' + objFilterSingleFrame.blur + 'px) ' + 'brightness(' + objFilterSingleFrame.brightness + '%) ' + 
+    'contrast(' + objFilterSingleFrame.contrast + '%) ' + 'grayscale(' + objFilterSingleFrame.grayscale + '%) ' + 
+    'hue-rotate(' + objFilterSingleFrame.huerotate + 'deg) ' + 'invert(' + objFilterSingleFrame.invert + '%) ' + 
+    'opacity(' + objFilterSingleFrame.opacity + '%) ' + 'saturate(' + objFilterSingleFrame.saturate + '%) ' +
+    'sepia(' + objFilterSingleFrame.sepia + '%)'
+}//IF OBJECTFILTERS defined
+    
+
+if (typeof(IMAGES[taskscreen][classlabel].IMAGEFILTERS) != "undefined"){
+    //===== 2D IMAGE FILTERS 
+    var imgFilterSingleFrame = {blur: 0, brightness: 100, contrast: 100, grayscale: 0, huerotate: 0, invert: 0, opacity: 100,
+        saturate: 100, sepia: 0}
+    
+    var nextblur = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nextblur = chooseArrayElement(nextblur,movieframe,nextblur.length-1)
+    //         }
+    if (nextblur != "" && nextblur != undefined){
+        imgFilterSingleFrame.blur = nextblur
+    }
+
+    var nextbrightness = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.brightness,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nextbrightness = chooseArrayElement(nextbrightness,movieframe,nextbrightness.length-1)
+    //         }
+
+    if (nextbrightness != "" && nextbrightness != undefined){
+        imgFilterSingleFrame.brightness = nextbrightness 
+    }
+
+    var nextcontrast = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.contrast,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nextcontrast = chooseArrayElement(nextcontrast,movieframe,nextcontrast.length-1)
+    //         }
+
+    if (nextcontrast != "" && nextcontrast != undefined){
+        imgFilterSingleFrame.contrast = nextcontrast
+    }
+
+    var nextgrayscale = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.grayscale,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nextgrayscale = chooseArrayElement(nextgrayscale,movieframe,nextgrayscale.length-1)
+    //         }
+
+    if (nextgrayscale != "" && nextgrayscale != undefined){
+        imgFilterSingleFrame.grayscale = nextgrayscale
+    }
+
+    var nexthuerotate = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.huerotate,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nexthuerotate = chooseArrayElement(nexthuerotate,movieframe,nexthuerotate.length-1)
+    //         }
+
+    if (nexthuerotate != "" && nexthuerotate != undefined){
+        imgFilterSingleFrame.huerotate = nexthuerotate
+    }
+            
+    var nextinvert = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.invert,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nextinvert = chooseArrayElement(nextinvert,movieframe,nextinvert.length-1)
+    //         }
+    if (nextinvert != "" && nextinvert != undefined){
+        imgFilterSingleFrame.invert = nextinvert
+    }
+
+    var nextopacity = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.opacity,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nextopacity = chooseArrayElement(nextopacity,movieframe,nextopacity.length-1)
+    //         }
+    if (nextopacity != "" && nextopacity != undefined){
+        imgFilterSingleFrame.opacity = nextopacity
+    }
+    var nextsaturate = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.saturate,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nextsaturate = chooseArrayElement(nextsaturate,movieframe,nextsaturate.length-1)
+    //         }
+
+    if (nextsaturate != "" && nextsaturate != undefined){
+        imgFilterSingleFrame.saturate = nextsaturate
+    }
+
+    var nextsepia = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.sepia,index,0)
+    //         if (Number.isInteger(movieframe)){
+    //             nextsepia = chooseArrayElement(nextsepia,movieframe,nextsepia.length-1)
+    //         }
+
+    if (nextsepia != "" && nextsepia != undefined){
+        imgFilterSingleFrame.sepia = nextsepia
+    }
+
+    var imgFilterstr = 'blur(' + imgFilterSingleFrame.blur + 'px) ' + 'brightness(' + imgFilterSingleFrame.brightness + '%) ' + 
+    'contrast(' + imgFilterSingleFrame.contrast + '%) ' + 'grayscale(' + imgFilterSingleFrame.grayscale + '%) ' + 
+    'hue-rotate(' + objFilterSingleFrame.huerotate + 'deg) ' + 'invert(' + imgFilterSingleFrame.invert + '%) ' + 
+    'opacity(' + imgFilterSingleFrame.opacity + '%) ' + 'saturate(' + imgFilterSingleFrame.saturate + '%) ' +
+    'sepia(' + imgFilterSingleFrame.sepia + '%)'
+}//IF IMAGEFILTERS defined
+
+    return [objFilterstr,imgFilterstr]
+}

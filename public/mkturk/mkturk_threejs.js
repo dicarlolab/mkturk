@@ -370,36 +370,36 @@ async function addToScene(taskscreen){
     //available filters are blur(), brightness(), contrast(), grayscale(), hue-rotate(), invert(), opacity(), saturate(), and sepia()
     //refer to https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/filter
 
-    if (typeof IMAGES[taskscreen][classlabel].FILTERS != "undefined"){
+    if (typeof IMAGES[taskscreen][classlabel].OBJECTFILTERS != "undefined"){
         if (taskscreen == "Sample" || taskscreen == "Test"){
             for (var i = 0; i<IMAGES[taskscreen][classlabel].nimages;i++){
-                if (Array.isArray(IMAGES[taskscreen][classlabel].FILTERS.blur[i])){
-                    IMAGES[taskscreen][classlabel].FILTERS.blur[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].FILTERS.blur[i],"continuous",durationMS,framerate)
+                if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS.blur[i])){
+                    IMAGES[taskscreen][classlabel].OBJECTFILTERS.blur[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].OBJECTFILTERS.blur[i],"continuous",durationMS,framerate)
                 }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].FILTERS.brightness[i])){
-                    IMAGES[taskscreen][classlabel].FILTERS.brightness[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].FILTERS.brightness[i],"continuous",durationMS,framerate)
+                if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS.brightness[i])){
+                    IMAGES[taskscreen][classlabel].OBJECTFILTERS.brightness[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].OBJECTFILTERS.brightness[i],"continuous",durationMS,framerate)
                 }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].FILTERS.contrast[i])){
-                    IMAGES[taskscreen][classlabel].FILTERS.contrast[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].FILTERS.contrast[i],"continuous",durationMS,framerate)
+                if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS.contrast[i])){
+                    IMAGES[taskscreen][classlabel].OBJECTFILTERS.contrast[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].OBJECTFILTERS.contrast[i],"continuous",durationMS,framerate)
                 }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].FILTERS.grayscale[i])){
-                    IMAGES[taskscreen][classlabel].FILTERS.grayscale[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].FILTERS.grayscale[i],"continuous",durationMS,framerate)
+                if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS.grayscale[i])){
+                    IMAGES[taskscreen][classlabel].OBJECTFILTERS.grayscale[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].OBJECTFILTERS.grayscale[i],"continuous",durationMS,framerate)
                 }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].FILTERS.huerotate[i])){
-                    IMAGES[taskscreen][classlabel].FILTERS.huerotate[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].FILTERS.huerotate[i],"continuous",durationMS,framerate)
+                if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS.huerotate[i])){
+                    IMAGES[taskscreen][classlabel].OBJECTFILTERS.huerotate[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].OBJECTFILTERS.huerotate[i],"continuous",durationMS,framerate)
                 }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].FILTERS.invert[i])){
-                    IMAGES[taskscreen][classlabel].FILTERS.invert[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].FILTERS.invert[i],"continuous",durationMS,framerate)
+                if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS.invert[i])){
+                    IMAGES[taskscreen][classlabel].OBJECTFILTERS.invert[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].OBJECTFILTERS.invert[i],"continuous",durationMS,framerate)
                 }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].FILTERS.opacity[i])){
-                    IMAGES[taskscreen][classlabel].FILTERS.blur[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].FILTERS.blur[i],"continuous",durationMS,framerate)
+                if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS.opacity[i])){
+                    IMAGES[taskscreen][classlabel].OBJECTFILTERS.blur[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].OBJECTFILTERS.blur[i],"continuous",durationMS,framerate)
                 }
             } // n images
         } // if SAMPLE
@@ -428,34 +428,34 @@ async function addToScene(taskscreen){
             //2D FILTERS
             //available filters are blur(), brightness(), contrast(), grayscale(), hue-rotate(), invert(), opacity(), saturate(), and sepia()
             // refer to https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/filter
-            if (typeof IMAGES[taskscreen][classlabel].IMAGES.FILTERS != "undefined"){
-                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.blur[i])){
-                    IMAGES[taskscreen][classlabel].IMAGES.FILTERS.blur[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.blur[i],"continuous",durationMS,framerate)
+            if (typeof IMAGES[taskscreen][classlabel].IMAGEFILTERS != "undefined"){
+                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur[i])){
+                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur[i],"continuous",durationMS,framerate)
                 }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.brightness[i])){
-                    IMAGES[taskscreen][classlabel].IMAGES.FILTERS.brightness[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.brightness[i],"continuous",durationMS,framerate)
+                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.brightness[i])){
+                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.brightness[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.brightness[i],"continuous",durationMS,framerate)
                 }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.contrast[i])){
-                    IMAGES[taskscreen][classlabel].IMAGES.FILTERS.contrast[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.contrast[i],"continuous",durationMS,framerate)
+                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.contrast[i])){
+                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.contrast[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.contrast[i],"continuous",durationMS,framerate)
                 }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.grayscale[i])){
-                    IMAGES[taskscreen][classlabel].IMAGES.FILTERS.grayscale[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.grayscale[i],"continuous",durationMS,framerate)
+                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.grayscale[i])){
+                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.grayscale[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.grayscale[i],"continuous",durationMS,framerate)
                 }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.huerotate[i])){
-                    IMAGES[taskscreen][classlabel].IMAGES.FILTERS.huerotate[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.huerotate[i],"continuous",durationMS,framerate)
+                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.huerotate[i])){
+                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.huerotate[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.huerotate[i],"continuous",durationMS,framerate)
                 }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.invert[i])){
-                    IMAGES[taskscreen][classlabel].IMAGES.FILTERS.invert[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.invert[i],"continuous",durationMS,framerate)
+                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.invert[i])){
+                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.invert[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.invert[i],"continuous",durationMS,framerate)
                 }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.opacity[i])){
-                    IMAGES[taskscreen][classlabel].IMAGES.FILTERS.blur[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.blur[i],"continuous",durationMS,framerate)
+                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.opacity[i])){
+                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur[i],"continuous",durationMS,framerate)
                 }
             }// if background image filter exists
         }//FOR i images
@@ -679,185 +679,6 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
 	}//FOR classlabel in classlabels
 	return allBoundingBoxes
 }//FUNCTION updateSingleFrame3D
-
-function updateFilterSingleFrame(taskscreen,classlabel,index,movieframe,gridindex){
-
-    // ======= OBJECT FILTERS
-    var objFilterSingleFrame = {blur: 0, brightness: 100, contrast: 100, grayscale: 0, huerotate: 0, invert: 0, opacity: 100,
-    saturate: 100, sepia: 0}
-
-    var nextblur = chooseArrayElement(IMAGES[taskscreen][classlabel].FILTERS.blur,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextblur = chooseArrayElement(nextblur,movieframe,nextblur.length-1)
-    //         }
-    if (nextblur != "" && nextblur != undefined){
-        objFilterSingleFrame.blur = nextblur
-    }
-
-    var nextbrightness = chooseArrayElement(IMAGES[taskscreen][classlabel].FILTERS.brightness,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextbrightness = chooseArrayElement(nextbrightness,movieframe,nextbrightness.length-1)
-    //         }
-
-    if (nextbrightness != "" && nextbrightness != undefined){
-        objFilterSingleFrame.brightness = nextbrightness 
-    }
-
-    var nextcontrast = chooseArrayElement(IMAGES[taskscreen][classlabel].FILTERS.contrast,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextcontrast = chooseArrayElement(nextcontrast,movieframe,nextcontrast.length-1)
-    //         }
-
-    if (nextcontrast != "" && nextcontrast != undefined){
-        objFilterSingleFrame.contrast = nextcontrast
-    }
-
-    var nextgrayscale = chooseArrayElement(IMAGES[taskscreen][classlabel].FILTERS.grayscale,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextgrayscale = chooseArrayElement(nextgrayscale,movieframe,nextgrayscale.length-1)
-    //         }
-
-    if (nextgrayscale != "" && nextgrayscale != undefined){
-        objFilterSingleFrame.grayscale = nextgrayscale
-    }
-
-    var nexthuerotate = chooseArrayElement(IMAGES[taskscreen][classlabel].FILTERS.huerotate,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nexthuerotate = chooseArrayElement(nexthuerotate,movieframe,nexthuerotate.length-1)
-    //         }
-
-    if (nexthuerotate != "" && nexthuerotate != undefined){
-        objFilterSingleFrame.huerotate = nexthuerotate
-    }
-            
-    var nextinvert = chooseArrayElement(IMAGES[taskscreen][classlabel].FILTERS.invert,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextinvert = chooseArrayElement(nextinvert,movieframe,nextinvert.length-1)
-    //         }
-    if (nextinvert != "" && nextinvert != undefined){
-        objFilterSingleFrame.invert = nextinvert
-    }
-
-    var nextopacity = chooseArrayElement(IMAGES[taskscreen][classlabel].FILTERS.opacity,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextopacity = chooseArrayElement(nextopacity,movieframe,nextopacity.length-1)
-    //         }
-    if (nextopacity != "" && nextopacity != undefined){
-        objFilterSingleFrame.opacity = nextopacity
-    }
-    var nextsaturate = chooseArrayElement(IMAGES[taskscreen][classlabel].FILTERS.saturate,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextsaturate = chooseArrayElement(nextsaturate,movieframe,nextsaturate.length-1)
-    //         }
-
-    if (nextsaturate != "" && nextsaturate != undefined){
-        objFilterSingleFrame.saturate = nextsaturate
-    }
-
-    var nextsepia = chooseArrayElement(IMAGES[taskscreen][classlabel].FILTERS.sepia,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextsepia = chooseArrayElement(nextsepia,movieframe,nextsepia.length-1)
-    //         }
-
-    if (nextsepia != "" && nextsepia != undefined){
-        objFilterSingleFrame.sepia = nextsepia
-    }
-
-    var objFilterstr = 'blur(' + objFilterSingleFrame.blur + 'px) ' + 'brightness(' + objFilterSingleFrame.brightness + '%) ' + 
-    'contrast(' + objFilterSingleFrame.contrast + '%) ' + 'grayscale(' + objFilterSingleFrame.grayscale + '%) ' + 
-    'hue-rotate(' + objFilterSingleFrame.huerotate + 'deg) ' + 'invert(' + objFilterSingleFrame.invert + '%) ' + 
-    'opacity(' + objFilterSingleFrame.opacity + '%) ' + 'saturate(' + objFilterSingleFrame.saturate + '%) ' +
-    'sepia(' + objFilterSingleFrame.sepia + '%)'
-    
-    //===== 2D IMAGE FILTERS 
-    var imgFilterSingleFrame = {blur: 0, brightness: 100, contrast: 100, grayscale: 0, huerotate: 0, invert: 0, opacity: 100,
-        saturate: 100, sepia: 0}
-    
-    var nextblur = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.blur,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextblur = chooseArrayElement(nextblur,movieframe,nextblur.length-1)
-    //         }
-    if (nextblur != "" && nextblur != undefined){
-        imgFilterSingleFrame.blur = nextblur
-    }
-
-    var nextbrightness = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.brightness,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextbrightness = chooseArrayElement(nextbrightness,movieframe,nextbrightness.length-1)
-    //         }
-
-    if (nextbrightness != "" && nextbrightness != undefined){
-        imgFilterSingleFrame.brightness = nextbrightness 
-    }
-
-    var nextcontrast = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.contrast,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextcontrast = chooseArrayElement(nextcontrast,movieframe,nextcontrast.length-1)
-    //         }
-
-    if (nextcontrast != "" && nextcontrast != undefined){
-        imgFilterSingleFrame.contrast = nextcontrast
-    }
-
-    var nextgrayscale = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.grayscale,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextgrayscale = chooseArrayElement(nextgrayscale,movieframe,nextgrayscale.length-1)
-    //         }
-
-    if (nextgrayscale != "" && nextgrayscale != undefined){
-        imgFilterSingleFrame.grayscale = nextgrayscale
-    }
-
-    var nexthuerotate = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.huerotate,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nexthuerotate = chooseArrayElement(nexthuerotate,movieframe,nexthuerotate.length-1)
-    //         }
-
-    if (nexthuerotate != "" && nexthuerotate != undefined){
-        imgFilterSingleFrame.huerotate = nexthuerotate
-    }
-            
-    var nextinvert = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.invert,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextinvert = chooseArrayElement(nextinvert,movieframe,nextinvert.length-1)
-    //         }
-    if (nextinvert != "" && nextinvert != undefined){
-        imgFilterSingleFrame.invert = nextinvert
-    }
-
-    var nextopacity = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.opacity,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextopacity = chooseArrayElement(nextopacity,movieframe,nextopacity.length-1)
-    //         }
-    if (nextopacity != "" && nextopacity != undefined){
-        imgFilterSingleFrame.opacity = nextopacity
-    }
-    var nextsaturate = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.saturate,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextsaturate = chooseArrayElement(nextsaturate,movieframe,nextsaturate.length-1)
-    //         }
-
-    if (nextsaturate != "" && nextsaturate != undefined){
-        imgFilterSingleFrame.saturate = nextsaturate
-    }
-
-    var nextsepia = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGES.FILTERS.sepia,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextsepia = chooseArrayElement(nextsepia,movieframe,nextsepia.length-1)
-    //         }
-
-    if (nextsepia != "" && nextsepia != undefined){
-        imgFilterSingleFrame.sepia = nextsepia
-    }
-
-    var imgFilterstr = 'blur(' + imgFilterSingleFrame.blur + 'px) ' + 'brightness(' + imgFilterSingleFrame.brightness + '%) ' + 
-    'contrast(' + imgFilterSingleFrame.contrast + '%) ' + 'grayscale(' + imgFilterSingleFrame.grayscale + '%) ' + 
-    'hue-rotate(' + objFilterSingleFrame.huerotate + 'deg) ' + 'invert(' + imgFilterSingleFrame.invert + '%) ' + 
-    'opacity(' + imgFilterSingleFrame.opacity + '%) ' + 'saturate(' + imgFilterSingleFrame.saturate + '%) ' +
-    'sepia(' + imgFilterSingleFrame.sepia + '%)'
-
-    return [objFilterstr,imgFilterstr]
-}
 
 function updateCameraSingleFrame(camera,cameraPosition,camTarget){
     camera.position.set(cameraPosition[0],cameraPosition[1],cameraPosition[2])
