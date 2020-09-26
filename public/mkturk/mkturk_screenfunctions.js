@@ -1132,77 +1132,77 @@ if (typeof(IMAGES[taskscreen][classlabel].OBJECTFILTERS) != "undefined"){
     saturate: 100, sepia: 0}
 
     var nextblur = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.blur,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextblur = chooseArrayElement(nextblur,movieframe,nextblur.length-1)
-    //         }
+	if (Number.isInteger(movieframe) && nextblur != undefined){
+		nextblur = chooseArrayElement(nextblur,movieframe,nextblur.length-1)
+	}
     if (nextblur != "" && nextblur != undefined){
         objFilterSingleFrame.blur = nextblur
     }
 
     var nextbrightness = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.brightness,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextbrightness = chooseArrayElement(nextbrightness,movieframe,nextbrightness.length-1)
-    //         }
+	if (Number.isInteger(movieframe) && nextbrightness != undefined){
+		nextbrightness = chooseArrayElement(nextbrightness,movieframe,nextbrightness.length-1)
+	}
 
     if (nextbrightness != "" && nextbrightness != undefined){
         objFilterSingleFrame.brightness = nextbrightness 
     }
 
     var nextcontrast = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.contrast,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextcontrast = chooseArrayElement(nextcontrast,movieframe,nextcontrast.length-1)
-    //         }
+	if (Number.isInteger(movieframe) && nextcontrast != undefined){
+		nextcontrast = chooseArrayElement(nextcontrast,movieframe,nextcontrast.length-1)
+	}
 
     if (nextcontrast != "" && nextcontrast != undefined){
         objFilterSingleFrame.contrast = nextcontrast
     }
 
     var nextgrayscale = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.grayscale,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextgrayscale = chooseArrayElement(nextgrayscale,movieframe,nextgrayscale.length-1)
-    //         }
+	if (Number.isInteger(movieframe) && nextgrayscale != undefined){
+		nextgrayscale = chooseArrayElement(nextgrayscale,movieframe,nextgrayscale.length-1)
+	}
 
     if (nextgrayscale != "" && nextgrayscale != undefined){
         objFilterSingleFrame.grayscale = nextgrayscale
     }
 
     var nexthuerotate = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.huerotate,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nexthuerotate = chooseArrayElement(nexthuerotate,movieframe,nexthuerotate.length-1)
-    //         }
+	if (Number.isInteger(movieframe) && nexthuerotate != undefined){
+		nexthuerotate = chooseArrayElement(nexthuerotate,movieframe,nexthuerotate.length-1)
+	}
 
     if (nexthuerotate != "" && nexthuerotate != undefined){
         objFilterSingleFrame.huerotate = nexthuerotate
     }
             
     var nextinvert = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.invert,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextinvert = chooseArrayElement(nextinvert,movieframe,nextinvert.length-1)
-    //         }
+	if (Number.isInteger(movieframe) && nextinvert != undefined){
+		nextinvert = chooseArrayElement(nextinvert,movieframe,nextinvert.length-1)
+	}
     if (nextinvert != "" && nextinvert != undefined){
         objFilterSingleFrame.invert = nextinvert
     }
 
     var nextopacity = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.opacity,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextopacity = chooseArrayElement(nextopacity,movieframe,nextopacity.length-1)
-    //         }
+	if (Number.isInteger(movieframe) && nextopacity != undefined){
+		nextopacity = chooseArrayElement(nextopacity,movieframe,nextopacity.length-1)
+	}
     if (nextopacity != "" && nextopacity != undefined){
         objFilterSingleFrame.opacity = nextopacity
     }
     var nextsaturate = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.saturate,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextsaturate = chooseArrayElement(nextsaturate,movieframe,nextsaturate.length-1)
-    //         }
+	if (Number.isInteger(movieframe) && nextsaturate != undefined){
+		nextsaturate = chooseArrayElement(nextsaturate,movieframe,nextsaturate.length-1)
+	}
 
     if (nextsaturate != "" && nextsaturate != undefined){
         objFilterSingleFrame.saturate = nextsaturate
     }
 
     var nextsepia = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.sepia,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextsepia = chooseArrayElement(nextsepia,movieframe,nextsepia.length-1)
-    //         }
+    if (Number.isInteger(movieframe) && nextsepia!= undefined){
+            nextsepia = chooseArrayElement(nextsepia,movieframe,nextsepia.length-1)
+        }
 
     if (nextsepia != "" && nextsepia != undefined){
         objFilterSingleFrame.sepia = nextsepia
@@ -1222,77 +1222,77 @@ if (typeof(IMAGES[taskscreen][classlabel].IMAGEFILTERS) != "undefined"){
         saturate: 100, sepia: 0}
     
     var nextblur = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextblur = chooseArrayElement(nextblur,movieframe,nextblur.length-1)
-    //         }
+	if (Number.isInteger(movieframe) && nextblur != undefined){
+		nextblur = chooseArrayElement(nextblur,movieframe,nextblur.length-1)
+	}
     if (nextblur != "" && nextblur != undefined){
         imgFilterSingleFrame.blur = nextblur
     }
 
     var nextbrightness = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.brightness,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextbrightness = chooseArrayElement(nextbrightness,movieframe,nextbrightness.length-1)
-    //         }
+	if (Number.isInteger(movieframe) && nextbrightness != undefined){
+		nextbrightness = chooseArrayElement(nextbrightness,movieframe,nextbrightness.length-1)
+	}
 
     if (nextbrightness != "" && nextbrightness != undefined){
         imgFilterSingleFrame.brightness = nextbrightness 
     }
 
     var nextcontrast = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.contrast,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextcontrast = chooseArrayElement(nextcontrast,movieframe,nextcontrast.length-1)
-    //         }
+	if (Number.isInteger(movieframe) && nextcontrast != undefined){
+		nextcontrast = chooseArrayElement(nextcontrast,movieframe,nextcontrast.length-1)
+	}
 
     if (nextcontrast != "" && nextcontrast != undefined){
         imgFilterSingleFrame.contrast = nextcontrast
     }
 
     var nextgrayscale = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.grayscale,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextgrayscale = chooseArrayElement(nextgrayscale,movieframe,nextgrayscale.length-1)
-    //         }
+	if (Number.isInteger(movieframe) && nextgrayscale != undefined){
+		nextgrayscale = chooseArrayElement(nextgrayscale,movieframe,nextgrayscale.length-1)
+	}
 
     if (nextgrayscale != "" && nextgrayscale != undefined){
         imgFilterSingleFrame.grayscale = nextgrayscale
     }
 
     var nexthuerotate = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.huerotate,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nexthuerotate = chooseArrayElement(nexthuerotate,movieframe,nexthuerotate.length-1)
-    //         }
+	if (Number.isInteger(movieframe) && nexthuerotate != undefined){
+		nexthuerotate = chooseArrayElement(nexthuerotate,movieframe,nexthuerotate.length-1)
+	}
 
     if (nexthuerotate != "" && nexthuerotate != undefined){
         imgFilterSingleFrame.huerotate = nexthuerotate
     }
             
     var nextinvert = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.invert,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextinvert = chooseArrayElement(nextinvert,movieframe,nextinvert.length-1)
-    //         }
+	if (Number.isInteger(movieframe) && nextinvert != undefined){
+		nextinvert = chooseArrayElement(nextinvert,movieframe,nextinvert.length-1)
+	}
     if (nextinvert != "" && nextinvert != undefined){
         imgFilterSingleFrame.invert = nextinvert
     }
 
     var nextopacity = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.opacity,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextopacity = chooseArrayElement(nextopacity,movieframe,nextopacity.length-1)
-    //         }
+	if (Number.isInteger(movieframe) && nextopacity != undefined){
+		nextopacity = chooseArrayElement(nextopacity,movieframe,nextopacity.length-1)
+	}
     if (nextopacity != "" && nextopacity != undefined){
         imgFilterSingleFrame.opacity = nextopacity
     }
     var nextsaturate = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.saturate,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextsaturate = chooseArrayElement(nextsaturate,movieframe,nextsaturate.length-1)
-    //         }
+	if (Number.isInteger(movieframe) && nextsaturate != undefined){
+		nextsaturate = chooseArrayElement(nextsaturate,movieframe,nextsaturate.length-1)
+	}
 
     if (nextsaturate != "" && nextsaturate != undefined){
         imgFilterSingleFrame.saturate = nextsaturate
     }
 
     var nextsepia = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.sepia,index,0)
-    //         if (Number.isInteger(movieframe)){
-    //             nextsepia = chooseArrayElement(nextsepia,movieframe,nextsepia.length-1)
-    //         }
+	if (Number.isInteger(movieframe) && nextsepia!= undefined){
+		nextsepia = chooseArrayElement(nextsepia,movieframe,nextsepia.length-1)
+	}
 
     if (nextsepia != "" && nextsepia != undefined){
         imgFilterSingleFrame.sepia = nextsepia
@@ -1300,9 +1300,10 @@ if (typeof(IMAGES[taskscreen][classlabel].IMAGEFILTERS) != "undefined"){
 
     var imgFilterstr = 'blur(' + imgFilterSingleFrame.blur + 'px) ' + 'brightness(' + imgFilterSingleFrame.brightness + '%) ' + 
     'contrast(' + imgFilterSingleFrame.contrast + '%) ' + 'grayscale(' + imgFilterSingleFrame.grayscale + '%) ' + 
-    'hue-rotate(' + objFilterSingleFrame.huerotate + 'deg) ' + 'invert(' + imgFilterSingleFrame.invert + '%) ' + 
+    'hue-rotate(' + imgFilterSingleFrame.huerotate + 'deg) ' + 'invert(' + imgFilterSingleFrame.invert + '%) ' + 
     'opacity(' + imgFilterSingleFrame.opacity + '%) ' + 'saturate(' + imgFilterSingleFrame.saturate + '%) ' +
     'sepia(' + imgFilterSingleFrame.sepia + '%)'
+
 }//IF IMAGEFILTERS defined
 
     return [objFilterstr,imgFilterstr]

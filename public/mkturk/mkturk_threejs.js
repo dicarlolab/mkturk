@@ -376,30 +376,47 @@ async function addToScene(taskscreen){
                 if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS.blur[i])){
                     IMAGES[taskscreen][classlabel].OBJECTFILTERS.blur[i] =
                         interpParam(IMAGES[taskscreen][classlabel].OBJECTFILTERS.blur[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].OBJECTFILTERS.blur[i].length
                 }
                 if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS.brightness[i])){
                     IMAGES[taskscreen][classlabel].OBJECTFILTERS.brightness[i] =
                         interpParam(IMAGES[taskscreen][classlabel].OBJECTFILTERS.brightness[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].OBJECTFILTERS.brightness[i].length
                 }
                 if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS.contrast[i])){
                     IMAGES[taskscreen][classlabel].OBJECTFILTERS.contrast[i] =
                         interpParam(IMAGES[taskscreen][classlabel].OBJECTFILTERS.contrast[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].OBJECTFILTERS.contrast[i].length
                 }
                 if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS.grayscale[i])){
                     IMAGES[taskscreen][classlabel].OBJECTFILTERS.grayscale[i] =
                         interpParam(IMAGES[taskscreen][classlabel].OBJECTFILTERS.grayscale[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].OBJECTFILTERS.grayscale[i].length
                 }
                 if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS.huerotate[i])){
                     IMAGES[taskscreen][classlabel].OBJECTFILTERS.huerotate[i] =
                         interpParam(IMAGES[taskscreen][classlabel].OBJECTFILTERS.huerotate[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].OBJECTFILTERS.huerotate[i].length
                 }
                 if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS.invert[i])){
                     IMAGES[taskscreen][classlabel].OBJECTFILTERS.invert[i] =
                         interpParam(IMAGES[taskscreen][classlabel].OBJECTFILTERS.invert[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].OBJECTFILTERS.invert[i].length
                 }
                 if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS.opacity[i])){
-                    IMAGES[taskscreen][classlabel].OBJECTFILTERS.blur[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].OBJECTFILTERS.blur[i],"continuous",durationMS,framerate)
+                    IMAGES[taskscreen][classlabel].OBJECTFILTERS.opacity[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].OBJECTFILTERS.opacity[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].OBJECTFILTERS.opacity[i].length
+                }
+                if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS.saturate[i])){
+                    IMAGES[taskscreen][classlabel].OBJECTFILTERS.saturate[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].OBJECTFILTERS.saturate[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].OBJECTFILTERS.saturate[i].length
+                }
+                if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS.sepia[i])){
+                    IMAGES[taskscreen][classlabel].OBJECTFILTERS.sepia[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].OBJECTFILTERS.sepia[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].OBJECTFILTERS.sepia[i].length
                 }
             } // n images
         } // if SAMPLE
@@ -419,7 +436,9 @@ async function addToScene(taskscreen){
                 interpParam(imind,"binary",durationMS,framerate)
 
             for (var j = 0; j<= IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].length-1; j++){
+            	if (IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j] !== ""){
                 IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j] = Math.round(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j])
+            	}
             }//FOR j img indices, round
 
             if (!IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].every( (val, i, arr) => val === arr[0])){
@@ -432,30 +451,47 @@ async function addToScene(taskscreen){
                 if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur[i])){
                     IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur[i] =
                         interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur[i].length
                 }
                 if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.brightness[i])){
                     IMAGES[taskscreen][classlabel].IMAGEFILTERS.brightness[i] =
                         interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.brightness[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.brightness[i].length
                 }
                 if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.contrast[i])){
                     IMAGES[taskscreen][classlabel].IMAGEFILTERS.contrast[i] =
                         interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.contrast[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.contrast[i].length
                 }
                 if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.grayscale[i])){
                     IMAGES[taskscreen][classlabel].IMAGEFILTERS.grayscale[i] =
                         interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.grayscale[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.grayscale[i].length
                 }
                 if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.huerotate[i])){
                     IMAGES[taskscreen][classlabel].IMAGEFILTERS.huerotate[i] =
                         interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.huerotate[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.huerotate[i].length
                 }
                 if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.invert[i])){
                     IMAGES[taskscreen][classlabel].IMAGEFILTERS.invert[i] =
                         interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.invert[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.invert[i].length
                 }
                 if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.opacity[i])){
-                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur[i],"continuous",durationMS,framerate)
+                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.opacity[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.opacity[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.opacity[i].length
+                }
+                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.saturate[i])){
+                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.saturate[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.saturate[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.saturate[i].length
+                }
+                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.sepia[i])){
+                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.sepia[i] =
+                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.sepia[i],"continuous",durationMS,framerate)
+                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.sepia[i].length
                 }
             }// if background image filter exists
         }//FOR i images
@@ -865,36 +901,40 @@ function interpParam(vec,type,durationMS,framerate){
     var tseq = range(0,dur,Math.round(1000/framerate)/1000)
     var vec_flattened = Array(tseq.length).fill("")
 
-    if (type == "binary"){vec[vec.length] = 0}//pad to get correct # of segments for step variables
-    var nseg = vec.length-1
+    if (vec.every((val)=> val !=="")){
+    	
+		if (type == "binary"){vec[vec.length] = 0}//pad to get correct # of segments for step variables
+		var nseg = vec.length-1
 
-    if (nseg <= 0){
-        console.log("for movies provide a vector with length >=2")
-        return false
-    }//IF vec.length<2, return
+		if (nseg <= 0){
+			console.log("for movies provide a vector with length >=2")
+			return false
+		}//IF vec.length<2, return
 
-	for (var i=0; i <= nseg; i++){
-		var p1 = [ i*dur/nseg, vec[i] ]
-		var p2 = [ (i+1)*dur/nseg, vec[i+1] ] //line
+		for (var i=0; i <= nseg; i++){
+			var p1 = [ i*dur/nseg, vec[i] ]
+			var p2 = [ (i+1)*dur/nseg, vec[i+1] ] //line
+			if (type == "binary"){
+				p2 = [ (i+1)*dur/nseg, vec[i] ] //constant
+			}//ELSEIF binary
+			var [slope,intercept] = findLinEqwithTwopts(p1,p2)
+
+			tseq.forEach((t,j) => {
+				if ( t>=p1[0]  && t<=p2[0]){
+					vec_flattened[j] = slope * t + intercept
+				}//IF time falls within segment
+			})//tseq.forEACH
+		}//FOR i vals
+
+		if (isNaN(vec_flattened[vec_flattened.length-1])){
+			vec_flattened[vec_flattened.length-1] = vec[vec.length-1]
+		}
+
 		if (type == "binary"){
-			p2 = [ (i+1)*dur/nseg, vec[i] ] //constant
-		}//ELSEIF binary
-		var [slope,intercept] = findLinEqwithTwopts(p1,p2)
+			vec_flattened[vec_flattened.length-1] = vec[vec.length-2]
+		}
+    } 
 
-		tseq.forEach((t,j) => {
-			if ( t>=p1[0]  && t<=p2[0]){
-				vec_flattened[j] = slope * t + intercept
-			}//IF time falls within segment
-		})//tseq.forEACH
-    }//FOR i vals
-
-    if (isNaN(vec_flattened[vec_flattened.length-1])){
-        vec_flattened[vec_flattened.length-1] = vec[vec.length-1]
-    }
-
-    if (type == "binary"){
-        vec_flattened[vec_flattened.length-1] = vec[vec.length-2]
-    }
     return vec_flattened
 }//FUNCTION interpParam
 
