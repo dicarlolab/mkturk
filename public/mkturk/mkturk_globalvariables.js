@@ -128,6 +128,7 @@ FLAGS.firestorecreatedoc = 0
 FLAGS.firestorelastsavedtrial = 0
 FLAGS.firestoretimeron = 0
 FLAGS.stressTest = 0
+FLAGS.gridPoints = 0
 FLAGS.RFIDGeneratorCreated = 0
 FLAGS.automatortext = ''
 FLAGS.trackeye = 0
