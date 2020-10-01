@@ -78,6 +78,11 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 					else {
 						updated3d = 0
 					}//ELSE hide 3D when plotting 2D elements like buttons and not keeping (overlaying) sample/test
+					
+					if (taskscreen=="Touchfix" || taskscreen=="Sample"){
+						//Overlay fixation dot
+						renderShape2D("FixationDot",gr[f],OFFSCREENCANVAS)
+					}//IF
 				}//IF !Offscreen
 			}//FOR s screens within frame
 
@@ -149,10 +154,14 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 					//------------------- DISPLAY THE FRAME 3D ---------------------//
 					if (taskscreen=="Sample" || taskscreen=="Test"){
 						render3D(taskscreen,s,f,gr,fr,sc,ob,id)
-				} //IF sample || test
-				else {
-					updated3d = 0
-				}				
+					} //IF sample || test
+					else {
+						updated3d = 0
+					}
+					if (taskscreen=="Touchfix" || taskscreen=="Sample"){
+						//Overlay fixation dot
+						renderShape2D("FixationDot",gr[f],OFFSCREENCANVAS)
+					}//IF
 				}//FOR s screens
 			//}
 			}//IF 2D offscreenAvailable, pre-render next frame
@@ -226,11 +235,11 @@ function render3D(taskscreen,s,f,gr,fr,sc,ob,id){
 }//FUNCTION render3D
 
 async function render2D(taskscreen,s,f,gr,fr,sc,ob,id,canvasobj){
-	if (FLAGS.savedata == 0 && s==0 && FLAGS.gridPoints == 1){
+	if (FLAGS.savedata == 0 && s==0 && FLAGS.underlayGridPoints == 1){
 		renderBlankWithGridMarkers(
 			ENV.XGridCenter,ENV.YGridCenter, 
 			CURRTRIAL.FixationGridIndex,CURRTRIAL.samplegridindex,TASK.TestGridIndex, TASK.ChoiceGridIndex,
-			ENV.FixationRadius,ENV.SampleFixationRadius,ENV.ChoiceRadius,
+			ENV.FixationRadius,ENV.ChoiceRadius,
 			ENV.CanvasRatio,canvasobj);
 	}//IF !savedata, underlay grid
 	
@@ -303,12 +312,6 @@ function renderImage2D(im,sc,ob,id,fr,gr,imgFilterSingleFrame,canvasobj){
 //XX hidetestdistractors needs to go somewhere
 
 function renderShape2D(sc,gr,canvasobj){
-	//0: Blank out screen
-	if (FLAGS.savedata == 1){
-		renderBlank(canvasobj,TASK.BackgroundColor2D)
-	}//ELSEIF savingdata
-
-	//1: Plot shape
 	switch (sc) {
 	case 'Blank':
 		renderBlank(canvasobj,TASK.BackgroundColor2D)
@@ -320,6 +323,14 @@ function renderShape2D(sc,gr,canvasobj){
 		else if (TASK.SameDifferent > 0){
 			bufferFixationUsingTriangle(ENV.ChoiceColor,gr,ENV.FixationRadius,canvasobj);
 		}//IF same-different
+		break
+	case 'FixationDot':
+		if (ENV.FixationDotRadius > 0){
+			renderSquareOnCanvas(ENV.FixationDotColor, gr, 2*ENV.FixationDotRadius, canvasobj);
+		}
+		if (ENV.FixationWindowRadius > 0 && FLAGS.savedata == 0 && FLAGS.underlayGridPoints == 1){
+				renderFixationWindow(ENV.XGridCenter,ENV.YGridCenter,gr,ENV.FixationWindowRadius,ENV.CanvasRatio,canvasobj);
+		}//IF !savedata, overlay fixation window
 		break
 	case 'Choice':
 		return bufferChoiceUsingCircleSquare(ENV.ChoiceColor,ENV.ChoiceRadius,gr,canvasobj);
@@ -391,7 +402,7 @@ function renderDotOnCanvas(color, gridindex, dot_pixelradius, canvasobj){
 	return [xbound, ybound]
 }//FUNCTION renderDotOnCanvas
 
-function getSampleFixationBoundingBox(gridindex,rad){
+function getFixationWindowBoundingBox(gridindex,rad){
 	var xcent = ENV.XGridCenter[gridindex]
 	var ycent = ENV.YGridCenter[gridindex]
 
@@ -405,7 +416,7 @@ function getSampleFixationBoundingBox(gridindex,rad){
 	ybound[1]=ybound[1]+CANVAS.offsettop;
 
 	return [xbound,ybound]
-}//FUNCTION getSampleFixationBoundingBox
+}//FUNCTION getFixationWindowBoundingBox
 
 function renderSquareOnCanvas(color, gridindex, square_pixelwidth, canvasobj){
 	// Draw Square
@@ -469,8 +480,20 @@ function renderBlank(canvasobj,bkgdcolor){
 	// context.clearRect(0,0,canvasobj.width,canvasobj.height);
 }//FUNCTION renderBlank
 
-function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,choicegridindex,
-				fixationradius,samplefixationradius,choiceradius,canvasratio,canvasobj)
+function renderFixationWindow(gridx,gridy,fixationgridindex,fixationwindowradius,canvasratio,canvasobj){
+	//---- Fixation Window Bounding Box (yellow)
+	var wd = 2*fixationwindowradius/canvasratio
+	var xcent = gridx[fixationgridindex]/canvasratio
+	var ycent = gridy[fixationgridindex]/canvasratio
+	context.strokeStyle="yellow"
+	context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
+
+	var displaycoord = [(xcent-wd/2)*canvasratio,(ycent-wd/2)*canvasratio,
+						(xcent+wd/2)*canvasratio,(ycent+wd/2)*canvasratio]
+	displayPhysicalSize(displaycoord,canvasobj)
+}
+
+function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridindex,testgridindex,choicegridindex,fixationradius,choiceradius, canvasratio,canvasobj)
 {
 	var outofbounds_str = ''
 	var context=canvasobj.getContext('2d');
@@ -492,7 +515,7 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 		displayGridCoordinate(i,[gridx[i],gridy[i]],canvasobj)
 	}
 
-	//Fixation Image Bounding Box (white)
+	//---- Fixation Image Bounding Box (white)
 	var wd = 2*fixationradius/ENV.CanvasRatio
 	var xcent = gridx[fixationgridindex]/ENV.CanvasRatio
 	var ycent = gridy[fixationgridindex]/ENV.CanvasRatio
@@ -507,22 +530,7 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 	}
 	displayPhysicalSize(displaycoord,canvasobj)
 
-	//Sample Fixation Bounding Box (yellow)
-	var wd = 2*samplefixationradius/ENV.CanvasRatio
-	var xcent = gridx[samplegridindex]/ENV.CanvasRatio
-	var ycent = gridy[samplegridindex]/ENV.CanvasRatio
-	context.strokeStyle="yellow"
-	context.strokeRect(xcent-wd/2,ycent-wd/2,wd,wd)
-
-	var displaycoord = [(xcent-wd/2)*ENV.CanvasRatio,(ycent-wd/2)*ENV.CanvasRatio,
-						(xcent+wd/2)*ENV.CanvasRatio,(ycent+wd/2)*ENV.CanvasRatio]
-	var outofbounds=checkDisplayBounds(displaycoord)
-	if (outofbounds == 1){
-		outofbounds_str = outofbounds_str + "<br>" + "Sample Fixation Window is out of bounds"
-	}
-	displayPhysicalSize(displaycoord,canvasobj)
-
-	//Choice Image Bounding Box(es) (red)
+	//---- Choice Image Bounding Box(es) (red)
 	if (TASK.SameDifferent > 0){
 		for (var i = 0; i <= choicegridindex.length-1; i++){
 			var wd = 2*choiceradius/ENV.CanvasRatio
@@ -539,7 +547,7 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 			}
 			displayPhysicalSize(displaycoord,canvasobj)
 		}
-	} //IF same-different choice screen
+	}//IF same-different choice screen
 
 	if (VISIBLECANVASWEBGL.width > 4096 || VISIBLECANVASWEBGL.height > 4096){
 		outofbounds_str = outofbounds_str + "Canvas may be too large for webgl limit of 4096 pixels in either dimension -- 3d rendering may not be accurate! Consider using a smaller display size."
@@ -575,10 +583,10 @@ async function bufferFixationUsingImage(image, gridindex, sample_wdpixels, sampl
 	boundingBoxesFixation['y']=[]
 	
 	if (typeof(image)!= "undefined"){
-	funcreturn = await renderImageOnCanvas(image, gridindex, sample_wdpixels, sample_htpixels, canvasobj); 
-	boundingBoxesFixation.x.push(funcreturn[0]);
-	boundingBoxesFixation.y.push(funcreturn[1]);
-	}
+		funcreturn = await renderImageOnCanvas(image, gridindex, sample_wdpixels, sample_htpixels, canvasobj);
+		boundingBoxesFixation.x.push(funcreturn[0]);
+		boundingBoxesFixation.y.push(funcreturn[1]);
+	}//IF image
 }//FUNCTION bufferFixationUsingImage
 
 async function bufferFixationUsingDot(color, gridindex, dot_pixelradius, canvasobj){
@@ -595,10 +603,9 @@ async function bufferFixationUsingTriangle(color, gridindex, dot_pixelradius, ca
 	boundingBoxesFixation['y']=[]
 
 	funcreturn = renderTriangleOnCanvas(color, gridindex, 2*dot_pixelradius, canvasobj);
-	boundingBoxesFixation.x.push(funcreturn[0]);
-	boundingBoxesFixation.y.push(funcreturn[1]);
+	boundingBoxesFixation.x[0] = funcreturn[0];
+	boundingBoxesFixation.y[0] = funcreturn[1];
 }//FUNCTION bufferFixationUsingTriangle
-
 
 function checkDisplayBounds(displayobject_coord){
 	var outofbounds=0

@@ -38,25 +38,26 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 			}
 
 			//================== 1-GET XYT & CHOSEN BOX ==================//
-			var touchcxyt = [-1, -1, -1, -1]
+			//RECOVER X,Y coordinates from eye, touch, or click
+			if (touchevent.type == "touchstart" || touchevent.type == "touchmove" || touchevent.type == "eyestart" || touchevent.type == "eyemove"){
+				if (FLAGS.trackeye > 0){
+					var x = touchevent.x_val 
+					var y = touchevent.y_val
+				} //IF eye
+				else {
+					var x = touchevent.targetTouches[0].pageX;
+					var y = touchevent.targetTouches[0].pageY;
+				} //ELSE touch
+			}//IF touchstart/move, eyestart/move
+			else if (touchevent.type == "mousedown" || touchevent.type == "mousemove"){
+				var x = touchevent.clientX
+				var y = touchevent.clientY
+			} //IF mousedown/move
+			var touchcxyt = [-1, x, y, Date.now() - ENV.CurrentDate.valueOf()]
+
+			//CHECK if in box
 			if (FLAGS.waitingforTouches > 0 && touchevent.type != "touchend" && touchevent.type != "mouseup"){
 				var chosenbox = -1
-
-				//RECOVER X,Y coordinates from eye, touch, or click
-				if (touchevent.type == "touchstart" || touchevent.type == "touchmove" || touchevent.type == "eyestart" || touchevent.type == "eyemove"){
-					if (FLAGS.trackeye > 0){
-						var x = touchevent.x_val 
-						var y = touchevent.y_val
-					} //IF eye
-					else {
-						var x = touchevent.targetTouches[0].pageX;
-						var y = touchevent.targetTouches[0].pageY;
-					} //ELSE touch
-				}//IF touchstart/move, eyestart/move
-				else if (touchevent.type == "mousedown" || touchevent.type == "mousemove"){
-					var x = touchevent.clientX
-					var y = touchevent.clientY
-				} //IF mousedown/move
 
 				//RECOVER BOX, if any
 				for (var q=0; q<=boundingBoxes.x.length-1; q++){
@@ -65,9 +66,7 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 						chosenbox=q
 					}//if in bounding box
 				}//for q boxes
-
-				//Add timestamp
-				var touchcxyt = [chosenbox,x,y,Date.now() - ENV.CurrentDate.valueOf()];
+				touchcxyt[0] = chosenbox
 
 				//Accumulate cxyt in box for greater eyetracker accuracy
 				if (chosenbox != -1){
@@ -83,7 +82,6 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 			 		|| (TASK.DragtoRespond==1) //drag in
 			 	))
 			 	{
-
 				//IF clicked outside box
 				if (TASK.DragtoRespond==0 && chosenbox == -1){
 					if (punishOutsideTouch){
@@ -108,6 +106,12 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 					}
 					//START TIMER touchduration milliseconds
 					if (touchduration > 0){
+						if (touchTimer != null) {
+							window.clearTimeout(touchTimer); 
+							touchTimer = null;
+							console.log("HAD TO DELETE TIMER")
+						}
+
 						touchTimer = setTimeout(function(){
 							FLAGS.waitingforTouches--
 							FLAGS.acquiredTouch = 0
@@ -185,7 +189,6 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 	waitforEvent = waitforeventGenerator(); // start async function
 	FLAGS.touchGeneratorCreated = 1
 	CURRTRIAL.cxyt = []
-	// console.log('GENERATOR CREATED waiting for ntouches',FLAGS.waitingforTouches)
 	waitforEvent.next(); //move out of default state
 	return p;
 }//FUNCTION hold_promise(touchduration,boundingBoxes,punishOutsideTouch)
@@ -202,7 +205,6 @@ function touchstart_listener(event){
 		// console.log("IGNORING TOUCH EVENT: no active touch generators")
 	} //if no click generator created
 	else {
-		// console.log('touchstart_listener called')
 		waitforEvent.next(event)
 	}
 } //touchstart_listener
@@ -300,16 +302,15 @@ function stressTest_listener(event){
 
 function gridPoints_listener(event){
 	event.preventDefault()
-	console.log("Show Grid Points. This might delay rendering.");
-	// FLAGS.purge=1
-	// purgeTrackingVariables()
-	// FLAGS.purge=0
+	console.log("Show Grid Points as underlay. This might delay rendering.");
 	
-	if (FLAGS.gridPoints == 0){
-		FLAGS.gridPoints = 1
+	if (FLAGS.underlayGridPoints == 0){
+		FLAGS.underlayGridPoints = 1
+		event.currentTarget.innerHTML = "<font color = red>Grid Points</font>"
 	}
-	else if (FLAGS.gridPoints == 1){
-		FLAGS.gridPoints = 0
+	else if (FLAGS.underlayGridPoints == 1){
+		FLAGS.underlayGridPoints = 0
+		event.currentTarget.innerHTML = "<font color = black>Grid Points</font>"
 	}
 	return
 }
