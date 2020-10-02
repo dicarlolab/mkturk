@@ -148,11 +148,67 @@ $ nvm use 10</code></pre>
 									are quite cumbersome when having to use Firestore and Google Cloud Storage on separate windows or
 									tabs. Thus, we include a webapp called MkFiles that centralizes all data viewing, editing and
 									updating operations. To build this webapp, run the following sequence of commands in the terminal.
-									<pre><code>$ cd ~/mkturk/src/mkfiles
+
+									<ol>
+										<li>Navigate to <a href="console.firebase.google.com">Firebase Console</a> and click 
+											<span class="icon solid fa fa-cog"></span> icon on the upper left hand corner. Doing so should
+											reveal <b>Firebase SDK snippet</b>. Toggle 'Config' and copy the the <code>firebaseConfig</code>
+											object.
+										</li>
+										<li>Open <code>~/mkturk/src/mkfiles/src/main.ts</code>
+											and replace the existing <code>firebaseConfig</code> object with the one you just copied.
+											Save and exit.
+										</li>
+										<li>Run the following code snippet
+											<pre><code>$ cd ~/mkturk/src/mkfiles
 $ npm install
 $ npx webpack</code></pre>
+										</li>
+									</ol>
+
 									At this point, navigate to <code>~/mkturk/public/mkfiles</code> and check to see that
 									<code>mkfiles.js</code> was added.
+								</p>
+
+								<h3><b>3. Run MkTurk</b></h3>
+								<h4>Initialize Firebase</h4>
+								<p>
+									At this point you are ready to initialize <b>Firebase</b>.
+									<ol>
+										<li>Log into Firebase using your Google account by running. Follow the prompt on your terminal.
+											<br />
+											<code>$ firebase login</code>
+										</li>
+										<li>Test that the CLI is properly installed and that the project you created is associated
+											with your Google account. Run the following command:
+											<br />
+											<code>$ firebase projects:list</code>
+										</li>
+										<li>If the above commands were successful you can now initialize your Firebase project.
+											Run the following commands:
+											<pre><code>$ cd ~/mkturk
+$ firebase init</code></pre> You should see a prompt as shown in the following image.
+											<span class="image fit"><img src="images/firebase-init-prompt.png"></span>
+											Make sure to toggle <b>Firestore, Functions, Hosting, Storage</b> and <b>Remote Config</b>
+											and continue with the rest of the prompt.
+										</li>
+										<li>
+											Congrats on getting this far! You are almost done. Make sure you are still in the root
+											of the project folder (i.e <code>~/mkturk</code>) and run the following command:
+											<br />
+											<code>$ firebase deploy</code>
+											<br />
+											You should now be able to direct to <b>your-project-id.firebaseapp.com/mkturk</b> or
+											<b>your-project-id.web.app/mkturk</b> and start using MkTurk!
+											<br /><br />
+											If you would like to test it locally before deploying to the web, you can always
+											<br />
+											<code>$ firebase deploy</code>
+											<br />
+											and direct to <b>localhost:5000/mkturk </b>
+										</li>
+									</ol>
+
 								</p>
 							</section>
 
