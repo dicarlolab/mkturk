@@ -40,7 +40,19 @@
 							<section id="content" class="main">
 								<span class="image main"><img src="images/pic04.jpg" alt="" /></span>
 								<bold><h2><bold>MkTurk Install & Setup Guide</bold></h2></bold>
-								<h3><b>1. Setup Firebase</b></h3>
+
+								<div>
+									<h3>Table of Contents</h3>
+									<ol>
+										<li><a href="#step-1">Setup Firebase Web App Platform</a></li>
+										<li><a href="#step-2">Setup MkTurk</a></li>
+										<li><a href="#step-3">Serve MkTurk web app using Firebase Hosting</a></li>
+										<li><a href="#step-4">Initialize Firestore Database</a></li>
+										<li><a href="#step-5">Read the Guide</a></li>
+									</ol>
+								</div>
+
+								<h3><a name="step-1"><b>1. Setup Firebase Web App Platform</b></a></h3>
 									<p>
 										MkTurk uses Google Firebase for database, storage and backend service needs.
 										Therefore it is imperative that Firebase is setup correctly.
@@ -128,13 +140,25 @@ $ nvm use 10</code></pre>
 											and you will be taken through three steps to complete the transfer.
 										</li>
 										<li>
-											In "Select source", 
+											In "Select source", make sure <b>Google Cloud Storage Bucket</b> is toggled
+											and type "mkturkinit" in the field as shown in the image and click <b>Continue</b>.
+											<span class="image fit"><img src="images/data-transfer-src.png" alt=""></span>
+										</li>
+										<li>
+											In "Select Destination", specify your Storage bucket. Make sure that a storage
+											bucket is specified and not a bucket preceded by "staging." Click <b>Select</b>
+											and continue to the next step.
+											<span class="image"><img src="images/data-transfer-dest.png"></span>
+										</li>
+										<li>
+											Here you can specify when to execute the data transfer. You can specify
+											"immediately, one time" and proceed.
 										</li>
 									</ol>
 								</p>
 
 
-								<h3><b>2. Setup MkTurk</b></h3>
+								<h3><a name="step-2"><b>2. Setup MkTurk</b></a></h3>
 								<h4>Clone MkTurk Repository</h4>
 								<p>To clone IssaLab's distribution of MkTurk, run:
 									<br />
@@ -170,7 +194,7 @@ $ npx webpack</code></pre>
 									<code>mkfiles.js</code> was added.
 								</p>
 
-								<h3><b>3. Run MkTurk</b></h3>
+								<h3><a name="step-3"><b>3. Serve MkTurk web app using Firebase Hosting</b></a></h3>
 								<h4>Initialize Firebase</h4>
 								<p>
 									At this point you are ready to initialize <b>Firebase</b>.
@@ -203,13 +227,23 @@ $ firebase init</code></pre> You should see a prompt as shown in the following i
 											<br /><br />
 											If you would like to test it locally before deploying to the web, you can always
 											<br />
-											<code>$ firebase deploy</code>
+											<code>$ firebase serve</code>
 											<br />
-											and direct to <b>localhost:5000/mkturk </b>
+											and direct to <b>localhost:5000/</b>
 										</li>
 									</ol>
-
 								</p>
+
+								<h3><a name="step-4"><b>4. Initialize Firestore Database</b></a></h3>
+								<p>
+									At this point you are almost ready to start using <code>MkTurk</code>. The final step
+									requires that you initialize Firestore the way that we have setup. Direct to 
+									<b>localhost:5000/initfirestore</b> and follow the prompt on the screen. Once you click
+									"Initialize Firestore" and Firestore is correctly initialized, you should see additional
+									messages on the page. Follow instructions on the page. After you have done so, you can
+									nagivate to <b>localhost:5000/mkturk</b> and start using <code>MkTurk</code>.
+								</p>
+
 							</section>
 
 					</div>

@@ -959,9 +959,9 @@ const data = [
 async function addData() {
 
   data.forEach(async doc => {
-    await db.collection('test').doc(doc.docname).set(doc);
+    await db.collection('devices').doc(doc.docname).set(doc);
   });
-  db.collection('test').doc('hectoro').set(mkturkdata)
+  db.collection('mkturkdata').doc('2020-10-02T05:11:23_Hectoro_task').set(mkturkdata)
   .then(() => {
     console.log('Done initializing Firestore collections and uploading data');
     let successDOM = document.createElement('p');
