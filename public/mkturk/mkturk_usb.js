@@ -280,23 +280,6 @@ serial.Port.prototype.onReceive = data => {
 
 				var event_xytt = {x_val: xy[0], y_val: xy[1], time: Date.now(), type: "undefined"}
 				waitforEvent.next(event_xytt) //send to hold_promise generator
-
-				// Plot the point on the screen if hold generator is on & in practice mode
-				if (FLAGS.savedata == 0){
-					//IF out-of-bounds, draw on border
-					if (typeof(xyplot) != "undefined"){
-						renderDotOnCanvas('blue', [ xyplot[0], xyplot[1] ], 3, EYETRACKERCANVAS)					
-					}
-					xyplot = [xy[0] - CANVAS.offsetleft, xy[1]-CANVAS.offsettop]
-					if ( xyplot[0] < 0 ){ xyplot[0] = 0+1}
-					else if ( xyplot[0] > EYETRACKERCANVAS.clientWidth ){ xyplot[0] = EYETRACKERCANVAS.clientWidth -1}
-
-					if ( xyplot[1] < 0 ){ xyplot[1] = 0+1 }
-					else if ( xyplot[1] > EYETRACKERCANVAS.clientHeight ){ xyplot[1] = EYETRACKERCANVAS.clientHeight -1}
-
-					//preview dots
-					renderDotOnCanvas('yellow', [ xyplot[0], xyplot[1] ], 3, EYETRACKERCANVAS)
-				}
 			}//if generated created
 
 		 // 	var eyedatalen = Object.keys(EVENTS['timeseries']['EyeData']).length

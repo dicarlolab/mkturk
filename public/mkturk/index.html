@@ -128,10 +128,10 @@ if (typeof(navigator.bluetooth) == "object"){
 <!-- ************* BODY *************** -->
 <body bgcolor=#7F7F7F>
 <div id="canvasdiv" style="position:relative; width:100vw; height:100vh">
-    <button class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--accent" id="googlesignin" style="z-index: 102; position: absolute; top: 0%; left: 92%">
+    <button class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--accent" id="googlesignin" style="z-index: 104; position: absolute; top: 0%; left: 92%">
       <i class="material-icons">person</i>
     </button>
-    <button class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--accent" id="reloadpage" style="visibility:hidden; z-index: 102; position: absolute; top: 0%; left: 92%">
+    <button class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--accent" id="reloadpage" style="visibility:hidden; z-index: 104; position: absolute; top: 0%; left: 92%">
       <i class="material-icons">refresh</i>
     </button>
 
@@ -170,26 +170,26 @@ if (typeof(navigator.bluetooth) == "object"){
 
 	<p id="headsuptextdevices" style="z-index:101; position: absolute; left: 50%; top: 1px; height: 40%; width: 40%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;">No devices connected</p>
 
-	<p id="imageloadingtext" style="z-index:104; position: absolute; left: 1px; top: 1px; height: 5%; width: 100%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
+	<p id="imageloadingtext" style="z-index:101; position: absolute; left: 1px; top: 1px; height: 5%; width: 100%; visibility:hidden; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
 
   <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="doneEditingParams" style="visibility:hidden; z-index: 102; font-size: 25px; position: absolute; top: 5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
 	Done Editing Params
    </button>
 
-  <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="doneTestingTask" style="visibility:hidden; z-index: 102; font-size: 25px; position: absolute; top: 12.5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
-	Done Practice
+  <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="doneTestingTask" style="visibility:hidden; z-index: 104; font-size: 25px; position: absolute; top: 0.5%; left: 2%; height: 50px; width: 140px; border-radius: 20px">
+	Done
    </button>
 
-  <button class="mdl-button mdl-js-button mdl-button--raised" id="stressTest" style="visibility:hidden; background-color:white; z-index: 102; font-size: 25px; position: absolute; top: 20%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
-	Stress Test
+  <button class="mdl-button mdl-js-button mdl-button--raised" id="stressTest" style="visibility:hidden; background-color:white; z-index: 104; font-size: 25px; position: absolute; top: 5%; right: 0.5%; height: 50px; width: 50px; border-radius: 20px">
+	S
+   </button>
+
+   <button class="mdl-button mdl-js-button mdl-button--raised" id="gridPoints" style="visibility:hidden; background-color:white; z-index: 104; font-size: 25px; position: absolute; top: 10%; right: 0.5%; height: 50px; width: 50px; border-radius: 20px">
+    G
    </button>
 
   <button class="mdl-button mdl-js-button mdl-button--raised" id="preemptRFID" style="visibility:hidden; background-color:red; z-index: 102; font-size: 25px; position: absolute; top: 20%; left: 5%; height: 75px; width: 200px; border-radius: 20px">
 	Preempt RFID
-   </button>
-
-   <button class="mdl-button mdl-js-button mdl-button--raised" id="gridPoints" style="visibility:hidden; background-color:white; z-index: 102; font-size: 25px; position: absolute; top: 5%; left: 50%; height: 75px; width: 200px; border-radius: 20px">
-	Grid Points
    </button>
 
 	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
@@ -645,8 +645,6 @@ function skipHardwareDevice(event){
 
 	document.querySelector("button[id=doneTestingTask]").style.display = "block"
 	document.querySelector("button[id=doneTestingTask]").style.visibility = "visible"
-	document.querySelector("button[id=stressTest]").style.display = "block"
-	document.querySelector("button[id=stressTest]").style.visibility = "visible"
 	document.querySelector("button[id=gridPoints]").style.display = "block"
 	document.querySelector("button[id=gridPoints]").style.visibility = "visible"
 
@@ -1353,6 +1351,9 @@ if (typeof(teston) == "undefined"){
         EVENTS["timeseries"]["FrameNum"][Object.keys(EVENTS["timeseries"]["FrameNum"]).length-1][1] = CURRTRIAL.samplestarttime_string
         EVENTS["timeseries"]["TSequenceDesired"][Object.keys(EVENTS["timeseries"]["TSequenceDesired"]).length-1][1] = CURRTRIAL.samplestarttime_string
         EVENTS["timeseries"]["TSequenceActual"][Object.keys(EVENTS["timeseries"]["TSequenceActual"]).length-1][1] = CURRTRIAL.samplestarttime_string
+        if (FLAGS.savedata == 0){
+            updateImageLoadingAndDisplayText(' ') //displays frame tactual - tdesired
+        }
 
 		audiocontext.suspend()
 
@@ -1613,7 +1614,7 @@ if (typeof(teston) == "undefined"){
 	}//IF track eye
 	
 	//clear tracker canvas at end of trial
-	if (FLAGS.savedata == 0){
+	if (FLAGS.savedata == 0  || CURRTRIAL.num <= 1){
 		EYETRACKERCANVAS.getContext('2d').clearRect(0,0,EYETRACKERCANVAS.width,EYETRACKERCANVAS.height)
 	}//IF practice screen
 

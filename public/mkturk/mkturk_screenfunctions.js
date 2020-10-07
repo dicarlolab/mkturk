@@ -558,7 +558,6 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 	}
 
 	displayoutofboundsstr = outofbounds_str
-	updateImageLoadingAndDisplayText(' ')
 }//FUNCTION renderBlankwithGridMarkers
 
 function renderReward(canvasobj){
