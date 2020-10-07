@@ -65,7 +65,6 @@ function loadGoogleCharts() {
         dataPerformance = new google.visualization.DataTable()
         dataCumulative = new google.visualization.DataTable()
         dataXYPos = new google.visualization.DataTable()
-        dataReactionTime = new google.visualization.DataTable()
         dataReward = new google.visualization.DataTable()
         dataChoice = new google.visualization.DataTable()
         dataObjPerf = new google.visualization.DataTable()
@@ -117,7 +116,6 @@ function loadGoogleCharts() {
         dashboard2.bind(livesliderTime, livearea)
 
         livescatter = new google.visualization.ComboChart(document.getElementById('scatter_div'));
-        livereactiontime = new google.visualization.Histogram(document.getElementById('reactiontime_div'));
         livereward = new google.visualization.ColumnChart(document.getElementById('reward_div'));
         livechoice = new google.visualization.ColumnChart(document.getElementById('choice_div'));
         liveobjperf = new google.visualization.ColumnChart(document.getElementById('objectPerf_div'));
@@ -310,8 +308,6 @@ function initializeChartData() {
     dataCumulative.removeColumns(0, dataCumulative.getNumberOfColumns());
     dataXYPos.removeRows(0, dataXYPos.getNumberOfRows());
     dataXYPos.removeColumns(0, dataXYPos.getNumberOfColumns());
-    dataReactionTime.removeRows(0, dataReactionTime.getNumberOfRows());
-    dataReactionTime.removeColumns(0, dataReactionTime.getNumberOfColumns());
     dataReward.removeRows(0, dataReward.getNumberOfRows());
     dataReward.removeColumns(0, dataReward.getNumberOfColumns());
     dataChoice.removeRows(0, dataChoice.getNumberOfRows());
@@ -333,9 +329,6 @@ function initializeChartData() {
 
     dataWeight.addColumn('datetime','time')
     dataWeight.addColumn('number','WeightReads')
-
-    dataReactionTime.addColumn('string','success')
-    dataReactionTime.addColumn('number','durationMS')
 
 	//dataXYPos for 2 test choices
 	// 0: x
@@ -459,6 +452,7 @@ function toVitals() {
     var ncorrect = 0;
     for (var i = 0; i <= file.data.CorrectItem.length - 1; i++) {
         if (file.data.CorrectItem[i] == file.data.Response[i]) {
+            // | file.data.RewardStage==0){
             ncorrect++;
         }
     }
@@ -481,7 +475,6 @@ function toVitals() {
 function toPerformanceData() {
     dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
     dataCumulative.removeRows(0,dataCumulative.getNumberOfRows());
-    dataReactionTime.removeRows(0,dataReactionTime.getNumberOfRows());
     dataXYPos.removeRows(0,dataXYPos.getNumberOfRows());
 
     //Create the data table
@@ -497,13 +490,12 @@ function toPerformanceData() {
     var xpos = []
     var ypos = []
     var touchevent = []
-    var rt = []
 
     for (var i = 0; i <= file.data.CorrectItem.length - 1; i++) {
         if (file.data.CorrectItem[i] == file.data.Response[i]) {
+            // | file.data.RewardStage==0){
             ydata[i] = 1;
-        }
-        else {
+        } else {
             ydata[i] = 0;
         }
         xdata[i] = i;
@@ -517,35 +509,6 @@ function toPerformanceData() {
         }
     }//FOR i trials
 
-//------ Reaction Time
-    for (var i=0; i<=file.data.NReward.length-1; i++){
-        if (file.data.RewardStage==0){
-            //file.data.StartTime & file.data.FixationXYT
-            rt[i] = file.data.FixationXYT[2][i] - file.data.StartTime[i]
-            dataReactionTime.addRows([[ file.data.FixationTouchEvent[i], rt[i] ]])
-        }//IF RewardStage==0
-        else if (file.data.NRSVP > 0){
-            // file.data.SampleStartTime && file.data.SampleFixationXYT
-            rt[i] = file.data.SampleFixationXYT[2][i] - file.data.SampleStartTime[i]
-            dataReactionTime.addRows([[ file.data.SampleFixationTouchEvent[i], rt[i] ]])
-        }
-        else {
-            // file.data.SampleStartTime && file.data.ResponseXYT
-            rt[i] = file.data.ResponseXYT[2][i] - file.data.SampleStartTime[i]
-            if (file.data.Response[i] == -1){
-                dataReactionTime.addRows([[ "timeout", file.data.ChoiceTimeOut ]])
-            }//IF choiceTimeOut
-            else if (file.data.CorrectItem[i] == file.data.Response[i]){
-                dataReactionTime.addRows([[ "correct", rt[i] ]])
-            }//IF correct
-            else{
-                dataReactionTime.addRows([[ "wrong", rt[i] ]])
-            }
-        }
-    }//FOR i NReward
-
-console.log(rt)
-//------ Touch XY
     // Store fixation in odd indices and choice in even
     // All touchevents. touchevent has a length that is twice the length of file.data.FixationXYT or file.data.ResponseXYT 
     if (typeof file.data.ResponseXYT != "undefined" && Object.keys(file.data.ResponseXYT).length > 0 && file.data.ResponseXYT[0].length > 0) {
@@ -815,12 +778,12 @@ console.log(rt)
             }// if even else odd
         } // if xpos
 
-        mean_xpos_Fix = xpos_Fix.reduce(function(a,b){return a+b},0)/xpos_Fix.length
-        mean_ypos_Fix = ypos_Fix.reduce(function(a,b){return a+b},0)/ypos_Fix.length
-        dist_xpos_Fix = xpos_Fix.map(function(a){return Math.pow(Math.abs(a-mean_xpos_Fix),2)})
-        dist_ypos_Fix = ypos_Fix.map(function(a){return Math.pow(Math.abs(a-mean_ypos_Fix),2)})
-        std_Fix = dist_xpos_Fix.map(function(a,i){return Math.sqrt(a+dist_ypos_Fix[i])}).reduce(function(a,b){return a+b},0)/dist_xpos_Fix.length
-        vitals.std_Fix = std_Fix            
+         mean_xpos_Fix = xpos_Fix.reduce(function(a,b){return a+b},0)/xpos_Fix.length
+         mean_ypos_Fix = ypos_Fix.reduce(function(a,b){return a+b},0)/ypos_Fix.length
+         dist_xpos_Fix = xpos_Fix.map(function(a){return Math.pow(Math.abs(a-mean_xpos_Fix),2)})
+         dist_ypos_Fix = ypos_Fix.map(function(a){return Math.pow(Math.abs(a-mean_ypos_Fix),2)})
+         std_Fix = dist_xpos_Fix.map(function(a,i){return Math.sqrt(a+dist_ypos_Fix[i])}).reduce(function(a,b){return a+b},0)/dist_xpos_Fix.length
+         vitals.std_Fix = std_Fix            
 
         var std_T = []
         for (var j=0; j<=file.data.TestGridIndex.length-1;j++){                 
@@ -849,7 +812,7 @@ console.log(rt)
         var tend = file.data.ResponseXYT[2][file.data.ResponseXYT[2].length - 1]
     }
 
-//------- RFID
+    //Process RFID
     var ntrials = ydata.length
     var nreads = Object.keys(file.data.RFIDTag).length
     nRFID = Array(ntrials).fill(0)
@@ -869,8 +832,6 @@ console.log(rt)
 		nRFID[i] = nRFID[i] + nRFID[i-1]
 	}
     
-
-//------ WEIGHT
     for (var i = 0; i <= ydata.length - 1; i++){
         var tfix = file.data.FixationXYT[2][i]//in milliseconds
         if (tfix < 0){
@@ -957,71 +918,77 @@ function toChoiceData() {
      dataChoice.removeRows(0,dataChoice.getNumberOfRows());
 
     if (file.data.RewardStage !=0){ //Non-fixation task 
-        var possibleResp = Array.apply(null,Array(file.data.ObjectGridIndex.length)).map(Number.prototype.valueOf,0);
-       
-        if (file.data.ObjectGridIndex.length !=0 && (file.data.NTrialsPerBagBlock == undefined || file.data.NTrialsPerBagBlock <1000)){ //Stimulus Response Task 
-            let objgridindex = [...file.data.ObjectGridIndex]
-            objgridindex.sort(function (a,b) {return a-b})
-            var allind = []
-            for (var i = 0; i<=objgridindex.length-1;i++){
-                allind[i] = file.data.ObjectGridIndex.indexOf(objgridindex[i])
-            }
+    var possibleResp = Array.apply(null,Array(file.data.ObjectGridIndex.length)).map(Number.prototype.valueOf,0);
+   
 
-            for (var i = 0; i <= objgridindex.length - 1; i++) {
-                dataChoice.addRow([file.data.ImageBagsSample[allind[i]].split("/")[5],0]);
-                possibleResp[i] = i
-            }//FOR i objectgrid
-        }else{
-            for (var i = 0; i <= file.data.TestGridIndex.length - 1; i++) {
-                dataChoice.addRow(['choice' + (i + 1), 0]);
-                possibleResp[i] = i
-            }//FOR i testgrid
-        }//IF
+    if (file.data.ObjectGridIndex.length !=0 && (file.data.NTrialsPerBagBlock == undefined || file.data.NTrialsPerBagBlock <1000)){ //Stimulus Response Task 
+        let objgridindex = [...file.data.ObjectGridIndex]
+        objgridindex.sort(function (a,b) {return a-b})
+        var allind = []
+        for (var i = 0; i<=objgridindex.length-1;i++){
+            allind[i] = file.data.ObjectGridIndex.indexOf(objgridindex[i])
+        }
 
-        var NdiffChoice = Array.apply(null, Array(possibleResp.length)).map(Number.prototype.valueOf, 0);
-        var NallChoice = 0
-
-        for (var i = 0; i <= file.data.Response.length - 1; i++) {
-            if (file.data.Response[i] != -1){
-                NallChoice++
-            }
-            for (var j = 0; j <= possibleResp.length - 1; j++) {
-                if (file.data.Response[i] == possibleResp[j] && file.data.Response[i]!=-1) {
-                    NdiffChoice[j]++
-                }
-                dataChoice.setValue(j, 1, NdiffChoice[j] / NallChoice)
-            }
+        for (var i = 0; i <= objgridindex.length - 1; i++) {
+        dataChoice.addRow([file.data.ImageBagsSample[allind[i]].split("/")[5],0]);
+        possibleResp[i] = i
 
         }
-    }//IF RewardStage == 1
+    }else{
+        for (var i = 0; i <= file.data.TestGridIndex.length - 1; i++) {
+        dataChoice.addRow(['choice' + (i + 1), 0]);
+        possibleResp[i] = i
+    }
+    }
+
+
+    var NdiffChoice = Array.apply(null, Array(possibleResp.length)).map(Number.prototype.valueOf, 0);
+    var NallChoice = 0
+
+    for (var i = 0; i <= file.data.Response.length - 1; i++) {
+        if (file.data.Response[i] != -1){
+            NallChoice++
+        }
+        for (var j = 0; j <= possibleResp.length - 1; j++) {
+            if (file.data.Response[i] == possibleResp[j] && file.data.Response[i]!=-1) {
+                NdiffChoice[j]++
+            }
+            dataChoice.setValue(j, 1, NdiffChoice[j] / NallChoice)
+        }
+
+    }
+    }
     else{ //Fixation Task 
         dataChoice.addRow(['outside Fix',0]);
         dataChoice.addRow(['inside Fix',0]);
 
-        var NdiffChoice = Array.apply(null, Array(2)).map(Number.prototype.valueOf, 0);
-        var NallChoice = 0
-        var ydata = []
 
-        for (var i = 0; i <= file.data.CorrectItem.length - 1; i++) {
+    var NdiffChoice = Array.apply(null, Array(2)).map(Number.prototype.valueOf, 0);
+    var NallChoice = 0
 
-            if (file.data.CorrectItem[i] == file.data.Response[i]) {
-                ydata[i] = 1;
-            } else {
-                ydata[i] = 0;
+    var ydata = []
+
+    for (var i = 0; i <= file.data.CorrectItem.length - 1; i++) {
+
+        if (file.data.CorrectItem[i] == file.data.Response[i]) {
+            ydata[i] = 1;
+        } else {
+            ydata[i] = 0;
+        }
+    }
+
+    for (var i = 0; i <= ydata.length - 1; i++) {
+            NallChoice++
+
+        for (var j=0;j<=1;j++){
+            if (ydata[i]==j){
+                NdiffChoice[j]++
             }
-        }//FOR i correctItem
-
-        for (var i = 0; i <= ydata.length - 1; i++) {
-                NallChoice++
-
-            for (var j=0;j<=1;j++){
-                if (ydata[i]==j){
-                    NdiffChoice[j]++
-                }
-                dataChoice.setValue(j,1,NdiffChoice[j]/NallChoice)
-            }
-        }//FOR i
-    }//ELSE rewardstage==0
+            dataChoice.setValue(j,1,NdiffChoice[j]/NallChoice)
+        }
+           
+        }
+    }
 }//FUNCTION toChoiceData()
     
 
@@ -1080,7 +1047,6 @@ function updatePlots() {
     drawWeight()
     drawObjPerfBar()
     drawScatter()
-    drawReactionTimeHistogram()
     drawChoiceBar()
     drawReward()
     file.datahasChanged = false
@@ -1118,7 +1084,7 @@ function addTouchSDText(){
 // Synchronous
 function showTaskText(){
 	//add object metadata
-	var taskname = file.data.Task
+	var taskname = file.data.task
 
 	var textobj = document.getElementById("tasktext");
 	textobj.innerHTML = 
@@ -1227,11 +1193,6 @@ function drawObjPerfBar() {
     liveobjperf.draw(dataObjPerf, objPerfBarOptions)   
 }//FUNCTION drawObjPerfBar
 
-//Synchronous
-function drawReactionTimeHistogram(){
-    livereactiontime.draw(dataReactionTime, reactionTimeHistogramOptions)
-}//FUNCTION drawReactionTimeHistogram
-
 // Synchronous
 function drawScatter() {
     scatterOptions.series = []
@@ -1305,12 +1266,12 @@ function drawReward() {
 	<!--Div that will hold the area chart-->
 	<div id="filtertime_div"></div>
 </div>
-<div id="scatter_div"></div> </div>
-<div id='reactiontime_div'></div> </div>
-<div id='choice_div'></div> </div>
-<div id='objectPerf_div'></div> </div>
-<div id='reward_div'></div></div>
+
 <div id= 'weight_div'></div> </div>
+<div id='objectPerf_div'></div> </div>
+<div id="scatter_div"></div> </div>
+<div id='choice_div'></div> </div>
+<div id='reward_div'></div></div>
 <pre id="tasktext" style="position: absolute; left: 1px; width: 100%; font-size: 18px; color: black; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;"></pre>
 <script type="text/javascript">
 var file = {
@@ -1348,7 +1309,6 @@ var vitals = {
 
 var dataPerformance = null; 
 var dataCumulative = null;
-var dataReactionTime = null;
 var dataXYPos = null;
 var dataReward = null;
 var dataChoice = null;

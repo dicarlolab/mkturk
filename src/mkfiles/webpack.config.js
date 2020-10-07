@@ -4,7 +4,7 @@ module.exports = {
   entry: path.resolve(__dirname, "src") + "/main.ts",
   output: {
     filename: "mkfiles.js",
-    path: path.resolve(__dirname, "../public/mkfiles")
+    path: path.resolve(__dirname, "../../public/mkfiles")
   },
   module: {
     rules: [

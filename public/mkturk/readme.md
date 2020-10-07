@@ -23,8 +23,6 @@ CurrentAutomatorStage: index of current training stage of automator.
 
 DragtoRespond: Flag tht specifies whether a continuous move (drag) into a choice box is allowed (DragtoRespond=1) versus a discrete click in the box (DragtoRespond=0). Defaults to 0 (click to respond) if not provided.
 
-FixationDotSizeInches: Width of fixation dot. Generally smaller than Fixation(Sample)SizeInches. If >0, overlays small fixation square on both fixation & sample screens.
-
 FixationDuration: How long subject has to hold fixation touch in milliseconds for a successful fixation to register.
 
 FixationGridIndex: Index on the grid where the fixation image will appear. If FixationGridIncex<0, then fixation image is presented at a randomly selected grid point and the fixation position is redrawn every FixationTimeOut milliseconds. FixationMove > 0 can be used to train subjects to touch different screen locations or to calibrate an eyetrackers.
@@ -36,8 +34,6 @@ FixationSizeInches: Size of fixation dot or image (ie FixationUsesSample=1) in p
 FixationTimeOut: Time in milliseconds that subject has to acquire fixation before fixation dot or image extinguishes. If fixation times out, then it is just re-displayed (flashes) and no reward or punishment is administered (ie, trial is aborted)
 
 FixationUsesSample: FixationUsesSample=0, a fixation circle is shown for subject to touch; FixationUsesSample=1, sample image is shown as the fixation image. This allows implementation of a trianing strategy where the subject has to engage the sample image nfixations number of times before the choice screen.
-
-FixationWindowInches: Width of box within which subject has to hold fixation during fixation screen and sample screen (if RSVP task). If <=0, then defaults to display element's size for the bounding box (eg, bounding box of fixation dot or sample image/object)
 
 GridScale (deprecated, replaced by GridSpacingInches): Determines intergridpoint spacing. Can think of this as the resolution of grid. gridscale=1 means intergridpoint spacing is equal to the width of the sample image. Finer grid resolutions (gridscale<1) can be used for more precise sample positioning.
 
@@ -100,6 +96,8 @@ SampleGridIndex: Index on grid where sample image appears. SampleGridIndex=4 cen
 SamplingStrategy: Determines how sample images are drawn: uniform_with_replacement, uniform_without_replacement, sequential
 
 SampleOFF: Duration in milliseconds that a gray screen is presented after the sample image before the response screen. This implements the delay in a DMS task. SampleOFF=0, leads to no delay
+
+SampleFixationSizeInches: Width of box within which subject has to hold fixation during sample screen. If 0, then subject does not have to hold fixation on the sample image.
 
 SampleSizeInches (deprecated, now specified in scene param file): Size of sample image in physical inches on the screen. sampleSizeInches = 0.834444 displays a 256 x 256 image on 256 x 256 screen pixels on the google pixel c screen (i.e. no up or down sampling/resizing/filtering of the image)
 

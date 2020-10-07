@@ -35,10 +35,8 @@ ENV.CanvasRatio = 1
 ENV.DevicePixelRatio = 1
 ENV.ThreeJSRenderRatio = 3.5
 ENV.FixationRadius = 0
-ENV.FixationWindowRadius = 0
 ENV.FixationColor = ''
-ENV.FixationDotRadius = 0
-ENV.FixationDotColor = 'white'
+ENV.SampleFixationRadius = 0
 ENV.ChoiceRadius = 0
 ENV.ChoiceColor = 'white'
 ENV.XGridCenter = []
@@ -130,7 +128,6 @@ FLAGS.firestorecreatedoc = 0
 FLAGS.firestorelastsavedtrial = 0
 FLAGS.firestoretimeron = 0
 FLAGS.stressTest = 0
-FLAGS.underlayGridPoints = 0
 FLAGS.RFIDGeneratorCreated = 0
 FLAGS.automatortext = ''
 FLAGS.trackeye = 0
@@ -264,7 +261,7 @@ var sounds = {
 	serial: [0,1,2,3,4],
 	buffer: [],
 }
-var boundingBoxesFixation={x: [], y: []}; //where the fixation touch targets are on the canvas
+var boundingBoxesFixation={}; //where the fixation touch targets are on the canvas
 var boundingBoxesSampleFixation={x: [], y: []}
 var boundingBoxesChoice={x: [], y: []}; //where the choice touch targets are on the canvas
 var waitforClick; //variable to hold generator
@@ -336,8 +333,6 @@ function purgeTrackingVariables(){
 		// purge requested by user at beginning of trial during fixation (most likely) 
 		CURRTRIAL.num = 0
 		EVENTS.trialnum = 0
-		CURRTRIAL.starttime=Date.now() - ENV.CurrentDate.valueOf();
-		logEVENTS("StartTime",CURRTRIAL.starttime,"trialseries")
 	}
 	else{
 		// purge requested by automator at end of trial

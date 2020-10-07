@@ -235,7 +235,6 @@ async get_next_trial(){
 	// Get image from imagebag
 	if (typeof(sample_filename) != "undefined"){
 		var sample_image = []
-		sample_image = []
 		if (Array.isArray(sample_filename)){
 			for (var i = 0; i <sample_filename.length;i++){
 				if (sample_filename[i] !=""){
