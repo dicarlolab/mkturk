@@ -41,18 +41,36 @@
 								<span class="image main"><img src="images/pic04.jpg" alt="" /></span>
 								<bold><h2><bold>MkTurk Install & Setup Guide</bold></h2></bold>
 
-								<div>
+								<div style="margin-bottom: 70px;">
 									<h3>Table of Contents</h3>
 									<ol>
-										<li><a href="#step-1">Setup Firebase Web App Platform</a></li>
-										<li><a href="#step-2">Setup MkTurk</a></li>
-										<li><a href="#step-3">Serve MkTurk web app using Firebase Hosting</a></li>
+										<li><a href="#step-1">Setup Firebase Web App Platform</a>
+											<ul style="margin: 0px;">
+												<li>Create a Firebase Project</li>
+												<li>Add a Webapp</li>
+												<li>Setup Local Node Environment</li>
+												<li>Install Firebase CLI</li>
+												<li>Install Google Cloud SDK</li>
+												<li>Import Google Cloud Storage Files</li>
+											</ul>
+										</li>
+										<li><a href="#step-2">Setup MkTurk</a>
+											<ul style="margin: 0px">
+												<li>Clone MkTurk Repository</li>
+												<li>Install Modules (recommended)</li>
+											</ul>
+										</li>
+										<li><a href="#step-3">Serve MkTurk web app using Firebase Hosting</a>
+											<ul style="margin: 0px;">
+												<li>Initialize Firebase on Local Environment</li>
+											</ul>
+										</li>
 										<li><a href="#step-4">Initialize Firestore Database</a></li>
 										<li><a href="#step-5">Read the Guide</a></li>
 									</ol>
 								</div>
 
-								<h3><a name="step-1"><b>1. Setup Firebase Web App Platform</b></a></h3>
+								<h3><a name="step-1" style="padding-top: 70px; margin-top: -70px;"><b>1. Setup Firebase Web App Platform</b></a></h3>
 									<p>
 										MkTurk uses Google Firebase for database, storage and backend service needs.
 										Therefore it is imperative that Firebase is setup correctly.
@@ -80,7 +98,7 @@
 										on the Firebase project landing page.
 									</p>
 								
-								<h4>Install Firebase CLI & Google Cloud SDK</h4>
+								<h4>Setup Local Node Environment</h4>
 									<p>
 										Before continuing to install Firebase CLI, make sure that you have <code>nvm</code>,
 										<code>node</code> and <code>npm</code> installed as you will need a local Node environment
@@ -158,14 +176,14 @@ $ nvm use 10</code></pre>
 								</p>
 
 
-								<h3><a name="step-2"><b>2. Setup MkTurk</b></a></h3>
+								<h3><a name="step-2" style="padding-top: 70px; margin-top: -70px;"><b>2. Setup MkTurk</b></a></h3>
 								<h4>Clone MkTurk Repository</h4>
 								<p>To clone IssaLab's distribution of MkTurk, run:
 									<br />
 									<code>$ git clone https://github.com/issalab/mkturk.git</code>
 								</p>
 
-								<h4>Install Modules (Optional)</h4>
+								<h4>Install Modules (recommended)</h4>
 								<p>
 									Simply running MkTurk does not require additional module installations. However, you may
 									come to realize that updating, viewing and managing parameter files, images, scenes and datafiles
@@ -194,7 +212,7 @@ $ npx webpack</code></pre>
 									<code>mkfiles.js</code> was added.
 								</p>
 
-								<h3><a name="step-3"><b>3. Serve MkTurk web app using Firebase Hosting</b></a></h3>
+								<h3><a name="step-3" style="padding-top: 70px; margin-top: -70px;"><b>3. Serve MkTurk web app using Firebase Hosting</b></a></h3>
 								<h4>Initialize Firebase</h4>
 								<p>
 									At this point you are ready to initialize <b>Firebase</b>.
@@ -234,7 +252,7 @@ $ firebase init</code></pre> You should see a prompt as shown in the following i
 									</ol>
 								</p>
 
-								<h3><a name="step-4"><b>4. Initialize Firestore Database</b></a></h3>
+								<h3><a name="step-4" style="padding-top: 70px; margin-top: -70px;"><b>4. Initialize Firestore Database</b></a></h3>
 								<p>
 									At this point you are almost ready to start using <code>MkTurk</code>. The final step
 									requires that you initialize Firestore the way that we have setup. Direct to 
@@ -242,6 +260,11 @@ $ firebase init</code></pre> You should see a prompt as shown in the following i
 									"Initialize Firestore" and Firestore is correctly initialized, you should see additional
 									messages on the page. Follow instructions on the page. After you have done so, you can
 									nagivate to <b>localhost:5000/mkturk</b> and start using <code>MkTurk</code>.
+								</p>
+
+								<h3><a name="step-5"><b>5. Read the MkTurk Guide!</b></a></h3>
+								<p>
+									Read the MkTurk <a href="features.html">guide</a> to learn more.
 								</p>
 
 							</section>
