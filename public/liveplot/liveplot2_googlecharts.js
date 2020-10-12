@@ -113,6 +113,19 @@ var objPerfBarOptions={
 	
 }
 
+//======== ReactionTime Histogram =======//
+var reactionTimeHistogramOptions = {
+	width: 900,
+	height: 300,
+	title: 'Reaction Time (ms)',
+	animation: {
+		duration: 500,
+		easing: 'linear',
+		startup: true,
+	},
+	legend: { position: 'none' }
+};
+
 //======== Touch ScatterPlot =======// 
 var scatterOptions = {
 	pointSize: 1,
