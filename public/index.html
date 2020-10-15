@@ -1,75 +1,248 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport">
-    <meta content="width=device-width, initial-scale=1">
-    <meta http-equiv="Content-Type">
-    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
-    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
-    <link rel="stylesheet" href="index.css">
-  </head>
+<!DOCTYPE HTML>
+<!--
+	Stellar by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>MkTurk</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+		<link href="https://unpkg.com/tabulator-tables@4.8.2/dist/css/tabulator.min.css" rel="stylesheet">
+		<script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.8.2/dist/js/tabulator.min.js"></script>
+	</head>
+	<body class="is-preload">
 
-  <body style="background-color: #3C6487;">
+		<!-- Wrapper -->
+			<div id="wrapper">
 
-    <div class="mdl-layout mdl-js-layout">
+				<!-- Header -->
+					<header id="header" class="alt">
+						<span class="logo"><img src="images/logo.svg" alt="" /></span>
+						<h1>MkTurk</h1>
+						<p>A purely web-based psychophysics tool
+							<br />
+							for neuroscience and psychology
+						</p>
+						<!-- <h2>
+							Try MkTurk Now!
+						</h2> -->
+						<a href="#" class="button">Try MkTurk Now!</a>
+						<ul class="icons" style="padding-top: 10px; margin: 0px;">
+							<li><a href="https://github.com/issalab/mkturk" class="icon brands fa-github alt"><span class="label">GitHub</span></a></li>
+						</ul>
+					</header>
 
-      <main class="mdl-layout__content">
-        <div class="page-content mdl-grid">
+				<!-- Nav -->
+					<nav id="nav">
+						<ul>
+							<li><a href="#intro" class="active">Introduction</a></li>
+							<li><a href="#capabilities">Core Capabilities</a></li>
+							<li><a href="installation.html">Get Started</a></li>
+							<li><a href="features.html">Guide</a></li>
+						</ul>
+					</nav>
 
-          <div class="mdl-cell mdl-cell--3-col-desktop mdl-cell--2-col-tablet mdl-cell--1-col-phone"></div>
-          <div class="mdl-cell mdl-cell--6-col-desktop mdl-cell--4-col-tablet mdl-cell--2-col-phone">
-            <img src="mkturklogo192.png" alt="mkturklogo192.png" style="margin-left: auto; margin-right: auto; display: block;">
-          </div>
-          <div class="mdl-cell mdl-cell--3-col-desktop mdl-cell--2-col-tablet mdl-cell--1-col-phone"></div>
+				<!-- Main -->
+					<div id="main">
 
-          <div class="mdl-cell mdl-cell--3-col-desktop mdl-cell--2-col-tablet mdl-cell--1-col-phone"></div>
-          <div class="mdl-cell mdl-cell--6-col-desktop mdl-cell--4-col-tablet mdl-cell--2-col-phone">
-            <a href="https://mkturk.com/liveplot" id="liveplot2-link">LIVEPLOT</a>
-          </div>
-          <div class="mdl-cell mdl-cell--3-col-desktop mdl-cell--2-col-tablet mdl-cell--1-col-phone"></div>
+						<!-- Introduction -->
+							<section id="intro" class="main">
+								<div class="spotlight">
+									<div class="content">
+										<header class="major">
+											<h2>Concept</h2>
+										</header>
+										<h3><i>Write once, deploy anywhere</i></h3>
+										<p>
+											MkTurk was conceived out of the idea that neuroscience & psychology experiments should be
+											widely disseminable. Operationaly, an experiment should only be written once and then the
+											code on any species of choice, biological or artificial. To make this a reality, the 
+											<b>primary innovation of MkTurk is to use a webapp for its software and a webUSB-connected
+											arduino for interfacing external hardware.</b> This minimalist combination is capable of
+											frame-rate visual psychophysics on any operating system that supports the Chrome browser
+											and any device with a standard USB-C port.
+										</p>
+										<ul class="actions">
+											<li><a href="features.html" class="button">Learn More</a></li>
+										</ul>
+									</div>
+									<span class="image" style="border-radius: 0%; border: 0px;"><img src="images/20200924_124653.png" alt="" style="border-radius: 0%; "/></span>
+									
+									
+								</div>
+							</section>
 
-          <div class="mdl-cell mdl-cell--3-col-desktop mdl-cell--2-col-tablet mdl-cell--1-col-phone"></div>
-          <div class="mdl-cell mdl-cell--6-col-desktop mdl-cell--4-col-tablet mdl-cell--2-col-phone">
-            <a href="https://mkturk.com/fireplace" id="fireplace-link">FIREPLACE</a>
-          </div>
-          <div class="mdl-cell mdl-cell--3-col-desktop mdl-cell--2-col-tablet mdl-cell--1-col-phone"></div>
+						<!-- Example Section -->
+							<section id="examples" class="main special" style="padding-top: 0em; border-top: 0px;">
+								<!-- <header class="major">
+									<h2>Examples</h2>
+								</header> -->
+								<div class="row">
+									<div class="col-6 col-12-medium">
+										<span class="image fit"><a href="#"><img src="images/m2s.gif" alt="" /></a></span>
+										<h3>Match-to-Sample</h3>
+									</div>
+									<div class="col-6 col-12-medium">
+										<span class="image fit"><a href="#"><img src="images/eyetracking.gif" alt="" /></a></span>
+										<h3>Eyetracking</h3>
+									</div>
+									<div class="col-6 col-12-medium">
+										<span class="image fit"><a href="#"><img src="images/3d-animation-sequence.gif" alt="" /></a></span>
+										<h3>3D Animation Sequence</h3>
+									</div>
+									<div class="col-6 col-12-medium">
+										<span class="image fit"><a href="#"><img src="images/filter-movie.gif" alt="" /></a></span>
+										<h3>Image Filter Sequence</h3>
+									</div>
+								</div>
+								<!-- <footer class="major">
+									<ul class="actions special">
+										<li><a href="generic.html" class="button">Learn More</a></li>
+									</ul>
+								</footer> -->
+							</section>
 
-          <div class="mdl-cell mdl-cell--3-col-desktop mdl-cell--2-col-tablet mdl-cell--1-col-phone"></div>
-          <div class="mdl-cell mdl-cell--6-col-desktop mdl-cell--4-col-tablet mdl-cell--2-col-phone">
-            <a href="https://mkturk.com/mkturk" id="mkturk-link">MKTURK</a>
-          </div>
-          <div class="mdl-cell mdl-cell--3-col-desktop mdl-cell--2-col-tablet mdl-cell--1-col-phone"></div>
+						<!-- Capabilities Section -->
+							<section id="capabilities" class="main special">
+								<header class="major">
+									<h2>Core Capabilities</h2>
+								</header>
+								<ul class="features">
+									<li>
+										<span class="icon solid major style1 fa-expand-arrows-alt"></span>
+										<h3>Cross-Platform & Cross-Device</h3>
+										<p>Runs on MacOS, Windows, Linux, Android, iOS 
+											<br />	
+											Desktop, Phone and Tablet
+										</p>
+									</li>
+									<li>
+										<span class="icon solid major style3 fa-cube"></span>
+										<h3>3D Rendering</h3>
+										<p>
+											Realtime 3D scene rendering through <a href="https://threejs.org/">three.js</a>
+										</p>
+									</li>
+									<li>
+										<span class="icon major style5 fa-eye"></span>
+										<h3>Eye-tracking</h3>
+										<p>
+											Eye-tracking @ 90 Hz through <a href="http://www.arringtonresearch.com/">Arrington</a>
+										</p>
+									</li>
+									<li>
+										<span class="icon major solid style2 fa-cloud"></span>
+										<h3>Cloud Storage</h3>
+										<p>
+											Cloud storage through 
+											<a href="https://cloud.google.com/storage">Google Cloud Storage</a>,
+											<a href="https://firebase.google.com/docs/firestore">Firestore</a>,
+											& <a href="https://cloud.google.com/bigquery">BigQuery</a>.
+										</p>
+									</li>
 
-          <div class="mdl-cell mdl-cell--3-col-desktop mdl-cell--2-col-tablet mdl-cell--1-col-phone"></div>
-          <div class="mdl-cell mdl-cell--6-col-desktop mdl-cell--4-col-tablet mdl-cell--2-col-phone" id="mkfiles-link-div">
-            <a href="https://mkturk.com/mkfiles" id="mkfiles-link">MKFILES</a>
-          </div>
-          <div class="mdl-cell mdl-cell--3-col-desktop mdl-cell--2-col-tablet mdl-cell--1-col-phone"></div>
+									<li>
+										<span class="icon major style4 brands fa-bluetooth-b"></span>
+										<h3>WebBluetooth & WebUSB</h3>
+										<p>
+											<a href="webbluetoothcg.github.io/web-bluetooth/">Web Bluetooth</a>
+											& <a href="https://bit.ly/3jD1o9k">webUSB</a> interface to external devices
+										</p>
+									</li>
 
+									<li>
+										<span class="icon major style1 brands fa-amazon"></span>
+										<h3>Amazon MTurk</h3>
+										<p>
+											Human psychophysics through <a href="https://www.mturk.com/">Amazon MTurk</a>
+										</p>
+									</li>
 
-          <div class="mdl-cell mdl-cell--3-col-desktop mdl-cell--2-col-tablet mdl-cell--1-col-phone"></div>
-          <div class="mdl-cell mdl-cell--6-col-desktop mdl-cell--4-col-tablet mdl-cell--2-col-phone">
-            <a href="https://mkturk.com/mkcolony" id="mkcolony-link">MKCOLONY</a>
-          </div>
-          <div class="mdl-cell mdl-cell--3-col-desktop mdl-cell--2-col-tablet mdl-cell--1-col-phone"></div>
+									<li>
+										<span class="icon major style3 brands fa-connectdevelop"></span>
+										<h3>ONNX</h3>
+										<p>
+											Model psychophysics through <a href="https://www.onnx.ai/">ONNX</a> (coming soon!)
+										</p>
+									</li>
+								</ul>
+							</section>
 
+						<!-- Second Section -->
+							<section id="comparison" class="main special">
+								<header class="major">
+									<h2>Web-based Systems for Experiments</h2>
+								</header>
+								<div id="comparison-table"></div>
+							</section>
 
-          <div class="mdl-cell mdl-cell--3-col-desktop mdl-cell--2-col-tablet mdl-cell--1-col-phone"></div>
-          <div class="mdl-cell mdl-cell--6-col-desktop mdl-cell--4-col-tablet mdl-cell--2-col-phone">
-            <a href="https://mkturk.com/mkscale" id="mkscale-link">MKSCALE</a>
-          </div>
-          <div class="mdl-cell mdl-cell--3-col-desktop mdl-cell--2-col-tablet mdl-cell--1-col-phone"></div>
+							
 
+						<!-- Get Started -->
+							<!-- <section id="cta" class="main special">
+								<header class="major">
+									<h2>Congue imperdiet</h2>
+									<p>Donec imperdiet consequat consequat. Suspendisse feugiat congue<br />
+									posuere. Nulla massa urna, fermentum eget quam aliquet.</p>
+								</header>
+								<footer class="major">
+									<ul class="actions special">
+										<li><a href="generic.html" class="button primary">Get Started</a></li>
+										<li><a href="generic.html" class="button">Learn More</a></li>
+									</ul>
+								</footer>
+							</section> -->
 
-        </div> <!-- page-content -->
-      </main> <!-- mdl-layout__content-->
+					</div>
 
-    </div> <!-- mdl-layout mdl-js-layout -->
+				<!-- Footer -->
+					<footer id="footer">
+						<section>
+							<h2>Issa Lab @ Columbia</h2>
+							<p>
+								Our lab works at the interface of biological and computational sciences closing the loop between
+								theory and experiment. Computational principles guide our experiments into the underlying
+								biology, and through biological insights, we aim to inspire next generation models. Our experiments
+								use advanced tools for observing and perturbing neural activity during visual behavior. The lab is
+								part of the world-class, interdisciplinary research community that forms the Zuckerman Mind Brain
+								Behavior Institute at Columbia.
+							</p>
+							<ul class="actions">
+								<li><a href="https://issalab.neuroscience.columbia.edu/home" class="button">Learn More</a></li>
+							</ul>
+						</section>
+						<section>
+							<h2>Contact Us</h2>
+							<dl class="alt">
+								<dt>Address</dt>
+								<dd>3227 Broadway &bull; New York, NY 10027</dd>
+								<dt>Phone</dt>
+								<dd>212.853.1164</dd>
+								<dt>Email</dt>
+								<dd><a href="mailto:elias.issa@columbia.edu">elias.issa@columbia.edu</a></dd>
+							</dl>
+							<ul class="icons">
+								<li><a href="https://github.com/issalab/" class="icon brands fa-github alt"><span class="label">GitHub</span></a></li>
+							</ul>
+						</section>
+						<p class="copyright">&copy; IssaLab. Made: <a href="https://hectorcho.com">Hector Cho</a> Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
+					</footer>
 
-   
+			</div>
 
-  </body>
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+			<script src="assets/js/comparison-table.js"></script>
+
+	</body>
 </html>

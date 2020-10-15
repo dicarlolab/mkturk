@@ -1,0 +1,278 @@
+<!DOCTYPE HTML>
+<!--
+	Stellar by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Guide - MkTurk</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header">
+						<h1>Guide</h1>
+						<p>Explore what you can achieve with MkTurk</p>
+					</header>
+
+					<nav id="nav">
+						<ul>
+							<li><a href="index.html#intro">Introduction</a></li>
+							<li><a href="index.html#capabilities">Core Capabilities</a></li>
+							<li><a href="installation.html">Get Started</a></li>
+							<li><a href="features.html" class="active">Guide</a></li>
+						</ul>
+					</nav>
+
+				<!-- Main -->
+					<div id="main">
+
+						<!-- Content -->
+							<section id="content" class="main">
+								
+								<span class="image main"><img src="images/pic04.jpg" alt="" ></span>
+
+								<div class="row">
+									<div class="col-3 col-12-medium">
+										<h3>Table of Contents</h3>
+										<ol>
+											<li><a href="#scene-composition">3D Scene Composition</a></li>
+											<li><a href="#img-filtering">2D Image Filtering</a></li>
+											<li><a href="#display">Visual Display</a></li>
+											<li><a href="#rendering">Double Buffered Rendering</a></li>
+											<li><a href="#cross-device">Consistent Image Display Across Devices</a></li>
+											<li><a href="#tasks">Task Specification</a></li>
+											<li><a href="#scenes">Scene Specification</a></li>
+											<li><a href="#automator">Automator</a></li>
+											<li><a href="#cloud-storage">Cloud Data Storage</a></li>
+											<li><a href="#cloud-databasing">Cloud Databasing</a></li>
+											<li><a href="#realtime-plots">Data Plots in Near Realtime</a></li>
+											<li><a href="#client-mirroring">Client Mirroring in Realtime</a></li>
+											<li><a href="#web-usb">webUSB Communication</a></li>
+											<li><a href="#eye-tracking">Eye Tracking</a></li>
+											<li><a href="#hardware">Recommended Hardware</a></li>
+											<li><a href="#arduino-shield">Arduino Shield</a></li>
+										</ol>
+									</div>
+
+									<div class="col-9 col-12-medium">
+										<h3><a name="scene-composition">3D Scene Composition</a></h3>
+										<p style="margin: 0px">
+											A scene is composed of two layers:
+											<ul style="margin: 0px;">
+												<li>Background 2D Image</li>
+												<li>Foreground 3D rendered object or scene</li>
+											</ul>
+											Background 2D images are rendered directly to offscreen canvas while foreground 3D
+											content is first rendered on a webGL canvas then transferred to the offscreen 2D canvas.
+										</p>
+
+										<h3><a name="img-filtering">2D Image Filtering</a></h3>
+										<p>
+											As a post-processing step, 
+											<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/filter">image filtering</a>
+											can be independently applied to 2D image & 3D scene layers. Included filters:
+											<b>brightness, contrast, blur, hue rotate, reverse contrast, grayscale, sepia tone</b>.
+										</p>
+
+										<h3><a name="display">Visual Display</a></h3>
+										<p>
+											Advances in display hardware (retina display) and software (Javascript Canvas) 
+											improved the speed and precision of image display in the browser. Notably:
+											<ul>
+												<li>Timing: <code>window.requestAnimationFrame()</code> displays canvas content
+													locked to the next screen refresh tanks in part to improved timing precision
+													from the <code>performance.now()</code> function.
+												</li>
+												<li>Resolution: retinal displays and in particular those on tablets and
+													smartphones are pushing dpi to new levels from >200 on tablets up to 500 dpi
+													on the newest Google Pixel phones. This allows greater detail in image content.
+													Alternatively, this allows viewers to be positioned much closer to the screen,
+													reducing space requirements, while still delivering rich content.
+												</li>
+											</ul>
+										</p>
+
+										<h3><a name="rendering">Double Buffered Rendering</a></h3>
+										<p>
+											An invisible, <code>OffscreenCanvas</code> is used for fast double buffered rendering 
+											of 2D & 3D content while the current frame is displayed on the visible, 
+											onscreen <code>Canvas</code>. When rendering is complete, the fully rendered 
+											<code>OffscreenCanvas</code> content is simply committed to the visible onscreen 
+											<code>Canvas</code> as a no copy bitmap saving memory.
+										</p>
+
+										<h3><a name="cross-device">Consistent Image Display Across Devices</a></h3>
+										<p>
+											To ensure that an image is displayed at the same size in inches across devices, 
+											MkTurk detects the device based on a hardware fingerprint and looks up it’s 
+											display pixel density per inches to convert from screen pixels to physical 
+											inches (*requires device database).
+										</p>
+
+										<h3><a name="tasks">Task Specification</a></h3>
+										<p>
+											A single JSON file contains the user-controlled task settings (~50 parameters).
+											Here the user specifies which scenes to render and whether the subject should
+											do a <b>fixation, stimulus-response, match-to-sample, or same-different task</b>.
+										</p>
+
+										<h3><a name="scenes">Scene Specification</a></h3>
+										<p>
+											The task parameter file points to the paths for the scene rendering parameter files.
+											The scene params file is composed of <b>camera, lights, objects, object filters,
+											images and image filters</b> as a JSON object. An integrated smart JSON editor in
+											<code>MkFiles</code> allows the user to add various elements (eg, lights, objects)
+											starting from stored templates. All parameters such as lighting direction, object
+											position and filter strength can be animated by entering an array for a movie sequence
+											instead of a fixed scalar for each stimulus.
+										</p>
+
+										<h3><a name="automator">Automator</a></h3>
+										<p>
+											A training curriculum can be made by simply concatenating the parameter files
+											of each task stage into a single JSON file. The automator will automatically
+											move to the next task stage when the specified performance criteria are met
+											(eg, 75% accuracy for a period of at least 1000 trials).
+										</p>
+
+										<h3><a name="cloud-storage">Cloud Data Storage</a></h3>
+										<p>
+											Data generated by a task in <code>MkTurk</code> are stored in a single human
+											readable JSON file in cloud storage. All scene rendering parameters are stored
+											along with task parameters and the task event data. A temporal hierarchy informs
+											where arious event streams are piped -- < 10Hz: data sampled at timescales of
+											seconds such as trial events (user choices and their timing) are stored in
+											the cloud JSON file as well as Cloud Firestore; >10Hz: high frequency timeseries
+											such as eye traces are piped to BigQuery tables.
+										</p>
+
+										<h3><a name="cloud-databasing">Cloud Databasing</a></h3>
+										<p>
+											Databasing supplements Cloud Storage for ease of querying whether in Cloud
+											Firestore, a NoSQL JSON database, or BigQuery, a SQL-esque table database.
+										</p>
+
+										<h3><a name="realtime-plots">Data Plots in Near Realtime</a></h3>
+										<p>
+											Performance data can be visualized using either Fireplace or Liveplot
+											plotting interfaces; plots are updated in near realtime every few seconds
+											as new data arrive. Fireplace plots trial-averaged performance measures
+											(accuracy, # of trials) across all agents and sessions by querying the
+											Cloud Firestore database. For in-depth analysis of a single agent in a
+											session, Liveplot loads the raw JSON from Cloud Storage, plotting per-trial
+											responses (touch locations, times).
+										</p>
+
+										<h3><a name="client-mirroring">Client Mirroring in Realtime</a></h3>
+										<p>
+											Uses Firebase Realtime Database and integrated directly into Liveplot.
+											Coming Soon!
+										</p>
+
+										<h3><a name="web-usb">webUSB Communication</a></h3>
+										<p>
+											Chrome's <a href="https://bit.ly/3jD1o9k">webUSB API</a> makes it possible
+											to establish fast, secure connections with external devices directly from
+											a client-side web browser. <code>MkTurk</code> currently leverages webUSB
+											for two-way serial communication with 
+											<a href="https://github.com/webusb/arduino">Arduino</a> microcontrollers.
+											The Arduino's digital and analog I/Os are interfaced with sensors (photodiode)
+											and devices (eye tracker).
+										</p>
+
+										<h3><a name="eye-tracking">Eye Tracking</a></h3>
+										<p>
+											Data frm an eye tracker are piped over serial to the Arduino and then
+											from the Arduino to the browser using serial over webUSB. Currently, pupil
+											position, size, and aspect ratio can be transmitted at 90Hz. 
+										</p>
+
+										<h3><a name="hardware">Recommended Hardware</a></h3>
+										<p>
+											<ul>
+												<li>Touchscreen - <a>Google Pixel C</a> or <a>Google Pixel 4 XL</a></li>
+												<li>Pump - <a>Takasago SDMP306D</a> or <a>TCS Micropumps D250S-L</a></li>
+												<li>Microcontroller - <a>Arduino Leonardo</a></li>
+												<li>USB Battery Pack - <a>Yoobao 20000 mAh Battery</a></li>
+												<li>Bluetooth Scale - <a>Motif Mentor</a></li>
+											</ul>
+										</p>
+
+										<h3><a name="arduino-shield">Arduino Shield</a></h3>
+										<p>
+											We've designed a custom shield for the Arduino Leonardo that breaks out
+											two software serial lines as well as four (x2) analog input lines. The
+											analog inputs can be used to receive photodiode signals for keeping track
+											of when frames rendered on the physical screen. The software serial ports
+											are useful for receiving eye tracker signals or RFID signals.
+										</p>
+
+										<h3><a href="installation.html">Get Started</a></h3>
+										<p>
+											To get MkTurk, visit our <a href="installation.html">Get Started</a> page.
+										</p>
+
+										
+									</div>
+								</div>
+								
+							</section>
+
+							
+					</div>
+
+				<!-- Footer -->
+				<footer id="footer">
+					<section>
+						<h2>Issa Lab @ Columbia</h2>
+						<p>
+							Our lab works at the interface of biological and computational sciences closing the loop between
+							theory and experiment. Computational principles guide our experiments into the underlying
+							biology, and through biological insights, we aim to inspire next generation models. Our experiments
+							use advanced tools for observing and perturbing neural activity during visual behavior. The lab is
+							part of the world-class, interdisciplinary research community that forms the Zuckerman Mind Brain
+							Behavior Institute at Columbia.
+						</p>
+						<ul class="actions">
+							<li><a href="https://issalab.neuroscience.columbia.edu/home" class="button">Learn More</a></li>
+						</ul>
+					</section>
+					<section>
+						<h2>Contact Us</h2>
+						<dl class="alt">
+							<dt>Address</dt>
+							<dd>3227 Broadway &bull; New York, NY 10027</dd>
+							<dt>Phone</dt>
+							<dd>212.853.1164</dd>
+							<dt>Email</dt>
+							<dd><a href="mailto:elias.issa@columbia.edu">elias.issa@columbia.edu</a></dd>
+						</dl>
+						<ul class="icons">
+							<li><a href="https://github.com/issalab/" class="icon brands fa-github alt"><span class="label">GitHub</span></a></li>
+						</ul>
+					</section>
+					<p class="copyright">&copy; IssaLab. Made: <a href="https://hectorcho.com">Hector Cho</a> Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
+				</footer>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>

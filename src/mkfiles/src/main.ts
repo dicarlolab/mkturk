@@ -73,6 +73,15 @@ let marmosetsLink =
     document.querySelector("#quick-link-marmosets") as HTMLElement;
 
 
+window.addEventListener('load', (evt: Event) => {
+  evt.preventDefault();
+
+  isRoot = false;
+  qryLocSelc.value = "mkturkfiles";
+  qryLocSelc.dispatchEvent(new Event("change"));
+  mkf.listStorageFiles(storageRef.child("mkturkfiles"));
+});
+
 
 marmosetsLink.addEventListener("click", (ev: Event) => {
   ev.preventDefault();

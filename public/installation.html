@@ -1,0 +1,319 @@
+<!DOCTYPE HTML>
+<!--
+	Stellar by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Installation - MkTurk</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header">
+						<h1>MkTurk</h1>
+						<p>Get Started!</p>
+					</header>
+
+					<nav id="nav">
+						<ul>
+							<li><a href="index.html#intro">Introduction</a></li>
+							<li><a href="index.html#capabilities">Core Capabilities</a></li>
+							<li><a href="installation.html" class="active">Get Started</a></li>
+							<li><a href="features.html">Guide</a></li>
+						</ul>
+					</nav>
+
+				<!-- Main -->
+					<div id="main">
+
+
+						<!-- Content -->
+							<section id="content" class="main">
+								<span class="image main"><img src="images/pic04.jpg" alt="" /></span>
+								<bold><h2><bold>MkTurk Install & Setup Guide</bold></h2></bold>
+
+								<div style="margin-bottom: 70px;">
+									<h3>Table of Contents</h3>
+									<ol>
+										<li><a href="#step-1">Setup Firebase Web App Platform</a>
+											<ul style="margin: 0px;">
+												<li>Create a Firebase Project</li>
+												<li>Add a Webapp</li>
+												<li>Setup Local Node Environment</li>
+												<li>Install Firebase CLI</li>
+												<li>Install Google Cloud SDK</li>
+												<li>Import Google Cloud Storage Files</li>
+											</ul>
+										</li>
+										<li><a href="#step-2">Setup MkTurk</a>
+											<ul style="margin: 0px">
+												<li>Clone MkTurk Repository</li>
+												<li>Install Modules (recommended)</li>
+											</ul>
+										</li>
+										<li><a href="#step-3">Serve MkTurk web app using Firebase Hosting</a>
+											<ul style="margin: 0px;">
+												<li>Initialize Firebase on Local Environment</li>
+											</ul>
+										</li>
+										<li><a href="#step-4">Initialize Firestore Database</a></li>
+										<li><a href="#step-5">Read the Guide</a></li>
+									</ol>
+								</div>
+
+								<h3><a name="step-1" style="padding-top: 70px; margin-top: -70px;"><b>1. Setup Firebase Web App Platform</b></a></h3>
+									<p>
+										MkTurk uses Google Firebase for database, storage and backend service needs.
+										Therefore it is imperative that Firebase is setup correctly.
+										In this section, we will guide you through the steps of getting
+										Firebase up and running!
+									</p>
+								
+								<h4>Create a Firebase Project</h4>
+									<p>
+										Navigate to <a href="#">Google Firebase</a>, then click <bold>Add project</bold>.
+										After following the prompt, you will have created a new project. You can enable
+										or disable Google Analytics but for simplicity, you can disable it now and always
+										enable it later.
+									</p>
+									<span class="image fit"><img src="images/firebase-add-webapp.png" alt=""></span>
+									<p>
+										Once you click, you will be guided through another set of configuration prompt.
+										Name your app as 'mkturk' and check the box to setup <b>Firebase Hosting</b>.
+									</p>
+
+								<h4>Add a Webapp</h4>
+									<p>
+										Now that you've created a Firebase project, you need to add a Webapp since MkTurk
+										is a web-based software. Click on the Web icon (pointed by the red arrow in the image below)
+										on the Firebase project landing page.
+									</p>
+								
+								<h4>Setup Local Node Environment</h4>
+									<p>
+										Before continuing to install Firebase CLI, make sure that you have <code>nvm</code>,
+										<code>node</code> and <code>npm</code> installed as you will need a local Node environment
+										to install and use <b>Firebase</b>, <b>gsutil</b> and <b>gcloud</b> CLIs. The following guide
+										has been adapted for MacOS and Linux users.																			
+									</p>
+									<p>
+										The recommended way to install Node environment is through the use of <code>nvm</code>
+										('Node Version Manager'). You can think of <code>nvm</code> as a <code>conda</code> for
+										Node that allows you to install, setup and manage multiple versions of Node.
+									</p>
+									<p>
+										To check if you have a working installation of nvm, open up your terminal and run:
+										<br />
+										<code>$ command -v nvm</code>
+										<br />
+										If you have <code>nvm</code>, the above command should output
+										<br />
+										<code>nvm</code>
+										<br /><br />
+										If you do not have <code>nvm</code>, please visit 
+										<a href="https://github.com/nvm-sh/nvm">nvm for MacOS/Linux</a> and follow their installation steps.
+									</p>
+									<p style="border-top: 2px dotted grey;">
+										Now that you have installed <code>nvm</code>, install the latest Node v10 by running
+										<pre><code>$ nvm install 10
+$ nvm use 10</code></pre>
+										At this point, you have successfully installed <code>nvm</code>, <code>node</code> and <code>npm</code>
+									</p>
+
+								<h4>Installing Firebase CLI</h4>
+								<p>
+									Run
+									<br />
+									<code>$ npm install -g firebase-tools</code>
+								</p>
+
+								<h4>Installing Google Cloud SDK</h4>
+								<p>Follow this <a href="https://cloud.google.com/storage/docs/gsutil_install">guide</a> from Google</p>
+
+
+								<h4>Import Google Cloud Storage Files</h4>
+								<p>
+									For MkTurk to work out of the box, it is necessary that you have the directory structure
+									and names that we currently have in place. To get you started, we have created a public
+									Google Cloud Storage Bucket that you can import into your project.
+
+									<ol>
+										<li>Navigate to Google Cloud Platform's 
+											<a href="https://console.google.com/transfer">Data Transfer</a> console.
+										</li>
+										<li>
+											On the left sidebar, locate the tab named "Transfer Service | cloud" and click.
+										</li>
+										<li>
+											Once on the page named "Transfer Service for cloud data", press "Create Transfer Job"
+											and you will be taken through three steps to complete the transfer.
+										</li>
+										<li>
+											In "Select source", make sure <b>Google Cloud Storage Bucket</b> is toggled
+											and type "mkturkinit" in the field as shown in the image and click <b>Continue</b>.
+											<span class="image fit"><img src="images/data-transfer-src.png" alt=""></span>
+										</li>
+										<li>
+											In "Select Destination", specify your Storage bucket. Make sure that a storage
+											bucket is specified and not a bucket preceded by "staging." Click <b>Select</b>
+											and continue to the next step.
+											<span class="image"><img src="images/data-transfer-dest.png"></span>
+										</li>
+										<li>
+											Here you can specify when to execute the data transfer. You can specify
+											"immediately, one time" and proceed.
+										</li>
+									</ol>
+								</p>
+
+
+								<h3><a name="step-2" style="padding-top: 70px; margin-top: -70px;"><b>2. Setup MkTurk</b></a></h3>
+								<h4>Clone MkTurk Repository</h4>
+								<p>To clone IssaLab's distribution of MkTurk, run:
+									<br />
+									<code>$ git clone https://github.com/issalab/mkturk.git</code>
+								</p>
+
+								<h4>Install Modules (recommended)</h4>
+								<p>
+									Simply running MkTurk does not require additional module installations. However, you may
+									come to realize that updating, viewing and managing parameter files, images, scenes and datafiles
+									are quite cumbersome when having to use Firestore and Google Cloud Storage on separate windows or
+									tabs. Thus, we include a webapp called MkFiles that centralizes all data viewing, editing and
+									updating operations. To build this webapp, run the following sequence of commands in the terminal.
+
+									<ol>
+										<li>Navigate to <a href="console.firebase.google.com">Firebase Console</a> and click 
+											<span class="icon solid fa fa-cog"></span> icon on the upper left hand corner. Doing so should
+											reveal <b>Firebase SDK snippet</b>. Toggle 'Config' and copy the the <code>firebaseConfig</code>
+											object.
+										</li>
+										<li>Open <code>~/mkturk/src/mkfiles/src/main.ts</code>
+											and replace the existing <code>firebaseConfig</code> object with the one you just copied.
+											Save and exit.
+										</li>
+										<li>Run the following code snippet
+											<pre><code>$ cd ~/mkturk/src/mkfiles
+$ npm install
+$ npx webpack</code></pre>
+										</li>
+									</ol>
+
+									At this point, navigate to <code>~/mkturk/public/mkfiles</code> and check to see that
+									<code>mkfiles.js</code> was added.
+								</p>
+
+								<h3><a name="step-3" style="padding-top: 70px; margin-top: -70px;"><b>3. Serve MkTurk web app using Firebase Hosting</b></a></h3>
+								<h4>Initialize Firebase</h4>
+								<p>
+									At this point you are ready to initialize <b>Firebase</b>.
+									<ol>
+										<li>Log into Firebase using your Google account by running. Follow the prompt on your terminal.
+											<br />
+											<code>$ firebase login</code>
+										</li>
+										<li>Test that the CLI is properly installed and that the project you created is associated
+											with your Google account. Run the following command:
+											<br />
+											<code>$ firebase projects:list</code>
+										</li>
+										<li>If the above commands were successful you can now initialize your Firebase project.
+											Run the following commands:
+											<pre><code>$ cd ~/mkturk
+$ firebase init</code></pre> You should see a prompt as shown in the following image.
+											<span class="image fit"><img src="images/firebase-init-prompt.png"></span>
+											Make sure to toggle <b>Firestore, Functions, Hosting, Storage</b> and <b>Remote Config</b>
+											and continue with the rest of the prompt.
+										</li>
+										<li>
+											Congrats on getting this far! You are almost done. Make sure you are still in the root
+											of the project folder (i.e <code>~/mkturk</code>) and run the following command:
+											<br />
+											<code>$ firebase deploy</code>
+											<br />
+											You should now be able to direct to <b>your-project-id.firebaseapp.com/mkturk</b> or
+											<b>your-project-id.web.app/mkturk</b> and start using MkTurk!
+											<br /><br />
+											If you would like to test it locally before deploying to the web, you can always
+											<br />
+											<code>$ firebase serve</code>
+											<br />
+											and direct to <b>localhost:5000/</b>
+										</li>
+									</ol>
+								</p>
+
+								<h3><a name="step-4" style="padding-top: 70px; margin-top: -70px;"><b>4. Initialize Firestore Database</b></a></h3>
+								<p>
+									At this point you are almost ready to start using <code>MkTurk</code>. The final step
+									requires that you initialize Firestore the way that we have setup. Direct to 
+									<b>localhost:5000/initfirestore</b> and follow the prompt on the screen. Once you click
+									"Initialize Firestore" and Firestore is correctly initialized, you should see additional
+									messages on the page. Follow instructions on the page. After you have done so, you can
+									nagivate to <b>localhost:5000/mkturk</b> and start using <code>MkTurk</code>.
+								</p>
+
+								<h3><a name="step-5"><b>5. Read the MkTurk Guide!</b></a></h3>
+								<p>
+									Read the MkTurk <a href="features.html">guide</a> to learn more.
+								</p>
+
+							</section>
+
+					</div>
+
+				<!-- Footer -->
+				<footer id="footer">
+					<section>
+						<h2>Issa Lab @ Columbia</h2>
+						<p>
+							Our lab works at the interface of biological and computational sciences closing the loop between
+							theory and experiment. Computational principles guide our experiments into the underlying
+							biology, and through biological insights, we aim to inspire next generation models. Our experiments
+							use advanced tools for observing and perturbing neural activity during visual behavior. The lab is
+							part of the world-class, interdisciplinary research community that forms the Zuckerman Mind Brain
+							Behavior Institute at Columbia.
+						</p>
+						<ul class="actions">
+							<li><a href="https://issalab.neuroscience.columbia.edu/home" class="button">Learn More</a></li>
+						</ul>
+					</section>
+					<section>
+						<h2>Contact Us</h2>
+						<dl class="alt">
+							<dt>Address</dt>
+							<dd>3227 Broadway &bull; New York, NY 10027</dd>
+							<dt>Phone</dt>
+							<dd>212.853.1164</dd>
+							<dt>Email</dt>
+							<dd><a href="mailto:elias.issa@columbia.edu">elias.issa@columbia.edu</a></dd>
+						</dl>
+						<ul class="icons">
+							<li><a href="https://github.com/issalab/" class="icon brands fa-github alt"><span class="label">GitHub</span></a></li>
+						</ul>
+					</section>
+					<p class="copyright">&copy; IssaLab. Made: <a href="https://hectorcho.com">Hector Cho</a> Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
+				</footer>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>
