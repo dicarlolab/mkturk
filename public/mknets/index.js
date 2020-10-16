@@ -1,22 +1,20 @@
 CLASSES = {
   0: 'class0',
   1: 'class1',
-  2: 'class2',
-  3: 'class3',
-  4: 'class4',
+  2: 'class2'
 };
 
 const MODEL_PATH =
-    'https://storage.googleapis.com/mkturkinit/mkturkfiles/model.json';
+    'https://storage.googleapis.com/mkturkinit/mkturkfiles/mknets/custom_model/model.json';
 
-const IMAGE_SIZE = 192;
-const TOPK_PREDICTIONS = 5;
+const IMAGE_SIZE = 224;
+const TOPK_PREDICTIONS = 3;
 
 let my_model;
 const demo = async () => {
   status('Loading model...');
 
-  my_model = await tf.loadLayersModel(MODEL_PATH);
+  my_model = await tf.loadGraphModel(MODEL_PATH);
 
   // Warmup the model. This isn't necessary, but makes the first prediction
   // faster. Call `dispose` to release the WebGL memory allocated for the return
@@ -26,7 +24,7 @@ const demo = async () => {
   status('');
 
   // Make a prediction through the locally hosted cat.jpg.
-  const catElement = document.getElementById('cat');
+  const catElement = document.getElementById('camel');
   if (catElement.complete && catElement.naturalHeight !== 0) {
     predict(catElement);
     catElement.style.display = '';
@@ -67,7 +65,7 @@ async function predict(imgElement) {
 
     startTime2 = performance.now();
     // Make a prediction through my_model.
-    return my_model.predict(batched);
+    return my_model.execute(batched);
   });
 
   // Convert logits to probabilities and class names.
