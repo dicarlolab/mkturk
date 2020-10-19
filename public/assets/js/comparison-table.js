@@ -1,10 +1,10 @@
 let tabledata = [
-  {id: 1, name: 'PsychToolbox', lang: 'Matlab', open_src: false, apple: 'limited', win: 'limited', unix: true, ios: false, android: false, three_dim: true, amzn: false},
-  {id: 2, name: 'MWorks', lang: 'C++', open_src: true, apple: true, win: false, unix: false, ios:true, android: false, three_dim: false, amzn: false},
-  {id: 3, name: 'Vision Egg', lang: 'Python', open_src: true, apple: true, win: true, unix: true, ios:false, android: false, three_dim: true, amzn: false},
-  {id: 4, name: 'PsychoPy', lang: 'Python', open_src: true, apple: true, win: true, unix: true, ios:false, android: false, three_dim: true, amzn: false},
-  {id: 5, name: 'PsychoJS', lang: 'Javascript', open_src: true, apple: true, win: true, unix: true, ios: 'limited', android: true, three_dim: false, amzn: true},
-  {id: 6, name: 'MkTurk', lang: 'Javascript', open_src: true, apple: true, win: true, unix: true, ios: 'limited', android: true, three_dim: true, amzn: true}
+  {id: 1, name: 'PsychToolbox', url: 'http://psychtoolbox.org/overview.html', lang: 'Matlab', open_src: false, apple: 'limited', win: 'limited', unix: true, ios: false, android: false, three_dim: true, amzn: false},
+  {id: 2, name: 'MWorks', url: 'https://mworks.github.io/', lang: 'C++', open_src: true, apple: true, win: false, unix: false, ios:true, android: false, three_dim: false, amzn: false},
+  {id: 3, name: 'Vision Egg', url: 'http://visionegg.org/', lang: 'Python', open_src: true, apple: true, win: true, unix: true, ios:false, android: false, three_dim: true, amzn: false},
+  {id: 4, name: 'PsychoPy', url: 'https://www.psychopy.org/', lang: 'Python', open_src: true, apple: true, win: true, unix: true, ios:false, android: false, three_dim: true, amzn: false},
+  {id: 5, name: 'PsychoJS', url: 'https://github.com/psychopy/psychojs', lang: 'Javascript', open_src: true, apple: true, win: true, unix: true, ios: 'limited', android: true, three_dim: false, amzn: true},
+  {id: 6, name: 'MkTurk', url: 'https://mkturk.com/index.html',lang: 'Javascript', open_src: true, apple: true, win: true, unix: true, ios: 'limited', android: true, three_dim: true, amzn: true}
 ];
 
 let fn = function(cell, formatterParams, onRendered) {
@@ -17,11 +17,15 @@ let fn = function(cell, formatterParams, onRendered) {
   }
 }
 
+let linkFormatter = function(cell) {
+  return 
+}
+
 let table = new Tabulator('#comparison-table', {
   data: tabledata,
   layout: "fitColumns",
   columns: [
-    {title: 'Name', field: 'name'},
+    {title: 'Name', field: 'name', formatter: 'link', formatterParams: {urlField: 'url'}},
     {title: 'Language', field: 'lang'},
     {title: 'Open Source', field: 'open_src', formatter: fn, hozAlign: 'center'},
     {title: 'MacOS', field: 'apple', formatter: fn, hozAlign: 'center'},
