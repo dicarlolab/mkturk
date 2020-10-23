@@ -16,53 +16,49 @@ const rtdb = firebase.database();
 
 let agent = 'Sausage';
 let agentRef = rtdb.ref('agents/' + agent);
+let dataRef = rtdb.ref('data/' + agent);
 
 let genBtn = document.querySelector('#gen-btn') as HTMLButtonElement;
+let trialBtn = document.querySelector('#trial-btn') as HTMLButtonElement;
+
+let trialActive = false;
+
+trialBtn.addEventListener('click', evt => {
+  evt.preventDefault();
+  if (trialActive == false) {
+    trialActive = true;
+  } else if (trialActive == true) {
+    trialActive = false;
+  }
+});
 
 function getRandomInt(max: number) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
-function* sendData() {
-  
-  while (true) {
-    let data = {
+genBtn.addEventListener('click', async evt => {
+  evt.preventDefault();
+  let agentActive = await agentRef.once('value').then(sns => {
+    return sns.val();
+  });
+
+  console.log('trialActive', trialActive);
+
+  if (trialActive && agentActive) {
+    dataRef.set({
       x: getRandomInt(255),
-      y: getRandomInt(255)
-    };
-
-    yield data;
+      y: getRandomInt(255),
+      meta: getRandomInt(10)
+    });
+  } else if (!trialActive && agentActive) {
+    dataRef.set({
+      x: getRandomInt(255),
+      y: getRandomInt(255),
+      meta: -1
+    });
+  } else {
+    console.log('Not sending data to Realtime DB');
+    console.log('x:', getRandomInt(255), 'y:', getRandomInt(255), 'meta:', -1);
   }
-}
-
-const gen = sendData();
-
-genBtn.addEventListener('click', evt => {
-  console.log(gen.next().value);
+  
 });
-
-// agentRef.on('value', snapshot => {
-//   console.log(snapshot.val());
-//   let intervalID;
-//   if (snapshot.val() == 'active') {
-//     console.log('nay');
-//     intervalID = setInterval(sayHello, 1000);
-//   } else if (snapshot.val() == 'inactive') {
-//     console.log('what');
-//     clearInterval(intervalID);
-//   }
-// });
-
-
-// agentRef.on('value', async snapshot => {
-//   console.log(snapshot.val());
-//   do {
-//     await rtdb.ref('data/' + agent).set({
-//       x: getRandomInt(255),
-//       y: getRandomInt(255)
-//     }).catch(error => {
-//       console.error('ERROR:', error);
-//     });
-//   } while(snapshot.val() == 'active')
-//   rtdb.ref('data/' + agent).onDisconnect().
-// });

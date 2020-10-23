@@ -14,35 +14,36 @@ firebase.initializeApp(firebaseConfig);
 
 const rtdb = firebase.database();
 
-let runBtn = document.querySelector('#run-btn') as HTMLButtonElement;
+let activeBtn = document.querySelector('#run-btn') as HTMLButtonElement;
 let inactiveBtn = document.querySelector('#inactive-btn') as HTMLButtonElement;
-let offBtn = document.querySelector('#off-btn') as HTMLButtonElement;
 
-runBtn.addEventListener('click', evt => {
+let agent = 'Sausage';
+let agentsRef = rtdb.ref('agents/');
+let dataRef = rtdb.ref('data/' + agent);
+
+activeBtn.addEventListener('click', evt => {
   evt.preventDefault();
-  rtdb.ref('agents').set({
-    Sausage: 'active'
-  }).catch(err => {
-    console.error(err);
-  });
+  let obj: any = {};
+  obj[agent] = true;
+  agentsRef.set(obj);
 });
 
 inactiveBtn.addEventListener('click', evt => {
   evt.preventDefault();
-  rtdb.ref('agents').set({
-    Sausage: 'inactive'
-  }).catch(err => {
-    console.error(err);
-  });
+  let obj: any = {};
+  obj[agent] = false;
+  agentsRef.set(obj);
 });
 
-offBtn.addEventListener('click', evt => {
-  evt.preventDefault();
-  rtdb.ref('data/Sausage').off();
-})
-
-rtdb.ref('data/Sausage').on('value', snapshot => {
-  console.log('Data', snapshot.val());
+window.addEventListener('data_arrived', (evt: CustomEventInit) => {
+  console.log(evt.detail)
 });
+
+dataRef.on('value', snapshot => {
+  let event = new CustomEvent('data_arrived', { detail: snapshot.val() });
+  window.dispatchEvent(event);
+});
+
+
 
 
