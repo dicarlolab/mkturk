@@ -1,7 +1,7 @@
 {
-  "name": "mkcolony",
+  "name": "liveplot2",
   "version": "1.0.0",
-  "description": "Colony management, logging and displaying solution. Part of the Mkturk software suite.",
+  "description": "New version of Liveplot",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -27,12 +27,12 @@
     "@types/jsoneditor": "^8.6.0",
     "@types/lodash.clonedeep": "^4.5.6",
     "@types/tabulator-tables": "^4.8.0",
-    "danfojs-node": "^0.1.5",
     "firebase": "^7.24.0",
     "firebase-admin": "^9.3.0",
     "jsoneditor": "^9.1.1",
     "lodash.clonedeep": "^4.5.0",
     "package.json": "^2.0.1",
-    "tabulator-tables": "^4.8.2"
+    "tabulator-tables": "^4.8.2",
+    "tslib": "^2.0.3"
   }
 }
