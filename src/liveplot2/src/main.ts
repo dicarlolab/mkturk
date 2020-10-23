@@ -92,6 +92,12 @@ async function populateDropdownMenu() {
 
 populateDropdownMenu();
 
+
+async function loadAndRenderEditor(filePath: string) {
+  let dataFile = utils.getStorageFile(filePath);
+  
+}
+
 let provider = new firebase.auth.GoogleAuthProvider();
 provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
 firebase.auth().getRedirectResult().then(function(result) {

@@ -2,7 +2,8 @@ const path = require('path');
 
 module.exports = {
   entry: {
-    main: path.resolve(__dirname, "src") + "/main.ts",
+    index: path.resolve(__dirname, "src") + "/index.html",
+    main: path.resolve(__dirname, "src") + "/main.ts"
   },
   output: {
     path: path.resolve(__dirname, "../../public/liveplot2"),
@@ -15,6 +16,11 @@ module.exports = {
         test: /\.tsx?$/,
         loader: 'ts-loader',
         exclude: /node_modules/,
+        include: path.resolve(__dirname, "src")
+      },
+      {
+        test: /\.html/,
+        loader: 'file-loader',
         include: path.resolve(__dirname, "src")
       }
     ]
