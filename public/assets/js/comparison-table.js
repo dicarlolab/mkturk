@@ -1,10 +1,11 @@
 let tabledata = [
-  {id: 1, name: 'PsychToolbox', url: 'http://psychtoolbox.org/overview.html', lang: 'Matlab', open_src: false, apple: 'limited', win: 'limited', unix: true, ios: false, android: false, three_dim: true, amzn: false},
+  {id: 1, name: 'PsychToolbox', url: 'http://psychtoolbox.org/overview.html', lang: 'MATLAB', open_src: false, apple: 'limited', win: 'limited', unix: true, ios: false, android: false, three_dim: true, amzn: false},
   {id: 2, name: 'MWorks', url: 'https://mworks.github.io/', lang: 'C++', open_src: true, apple: true, win: false, unix: false, ios:true, android: false, three_dim: false, amzn: false},
-  {id: 3, name: 'Vision Egg', url: 'http://visionegg.org/', lang: 'Python', open_src: true, apple: true, win: true, unix: true, ios:false, android: false, three_dim: true, amzn: false},
-  {id: 4, name: 'PsychoPy', url: 'https://www.psychopy.org/', lang: 'Python', open_src: true, apple: true, win: true, unix: true, ios:false, android: false, three_dim: true, amzn: false},
-  {id: 5, name: 'PsychoJS', url: 'https://github.com/psychopy/psychojs', lang: 'Javascript', open_src: true, apple: true, win: true, unix: true, ios: 'limited', android: true, three_dim: false, amzn: true},
-  {id: 6, name: 'MkTurk', url: 'https://mkturk.com/index.html',lang: 'Javascript', open_src: true, apple: true, win: true, unix: true, ios: 'limited', android: true, three_dim: true, amzn: true}
+  {id: 3, name: 'MonkeyLogic', url: 'https://https://monkeylogic.nimh.nih.gov/index.html/', lang: 'MATLAB', open_src: true, apple: false, win: true, unix: false, ios: false, android: false, three_dim: false, amzn: false},
+  {id: 4, name: 'Vision Egg', url: 'http://visionegg.org/', lang: 'Python', open_src: true, apple: true, win: true, unix: true, ios:false, android: false, three_dim: true, amzn: false},
+  {id: 5, name: 'PsychoPy', url: 'https://www.psychopy.org/', lang: 'Python', open_src: true, apple: true, win: true, unix: true, ios:false, android: false, three_dim: true, amzn: false},
+  {id: 6, name: 'PsychoJS', url: 'https://github.com/psychopy/psychojs', lang: 'Javascript', open_src: true, apple: true, win: true, unix: true, ios: 'limited', android: true, three_dim: false, amzn: true},
+  {id: 7, name: 'MkTurk', url: 'https://mkturk.com/index.html',lang: 'Javascript', open_src: true, apple: true, win: true, unix: true, ios: 'limited', android: true, three_dim: true, amzn: true}
 ];
 
 let fn = function(cell, formatterParams, onRendered) {

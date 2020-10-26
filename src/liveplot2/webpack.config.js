@@ -1,10 +1,22 @@
 const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
+  mode: 'development',
   entry: {
-    index: path.resolve(__dirname, "src") + "/index.html",
-    main: path.resolve(__dirname, "src") + "/main.ts"
+    main: ['./src/main.ts', './src/utils.ts']
   },
+  plugins: [
+    new CleanWebpackPlugin({
+      cleanStaleWebpackAssets: false
+    }),
+    new HtmlWebpackPlugin({
+      title: 'Liveplot2',
+      template: './src/index.html'
+    })
+  ],
   output: {
     path: path.resolve(__dirname, "../../public/liveplot2"),
     filename: '[name].js',
@@ -19,14 +31,19 @@ module.exports = {
         include: path.resolve(__dirname, "src")
       },
       {
-        test: /\.html/,
-        loader: 'file-loader',
-        include: path.resolve(__dirname, "src")
+        test: /\.css$/i,
+        use: ['style-loader', 'css-loader'],
+        include: path.resolve(__dirname, 'src')
       }
     ]
   },
   resolve: {
     extensions: [".tsx", ".ts", ".js"]
   },
-  devtool: 'source-map'
+  devtool: 'inline-source-map',
+  optimization: {
+    splitChunks: {
+      chunks: 'all'
+    }
+  }
 };

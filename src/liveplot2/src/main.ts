@@ -1,3 +1,4 @@
+import './styles.css';
 import firebase from 'firebase/app';
 import 'firebase/storage';
 import 'firebase/database';
@@ -25,7 +26,7 @@ const dataRef = storageRef.child(DATA_PATH);
 const PARAM_PATH = 'mkturkfiles/parameterfiles/subjects/';
 const paramRef = storageRef.child(PARAM_PATH);
 
-const fileListSelector = (
+let fileListSelector = (
   document.querySelector('#file-list') as HTMLSelectElement
 );
 
@@ -36,6 +37,7 @@ fileListSelector.addEventListener('change', evt => {
   file.name = file.fileList[parseInt(fileListSelector.value)].fullpath;
   file.fileChanged = true;
   console.log('file name:', file.name);
+  console.log('file path', file.path);
 });
 
 let file: any = {
@@ -50,6 +52,7 @@ let file: any = {
   fileChanged: false
 };
 
+console.log('hello hector');
 
 
 async function populateDropdownMenu() {
@@ -95,7 +98,6 @@ populateDropdownMenu();
 
 async function loadAndRenderEditor(filePath: string) {
   let dataFile = utils.getStorageFile(filePath);
-  
 }
 
 let provider = new firebase.auth.GoogleAuthProvider();

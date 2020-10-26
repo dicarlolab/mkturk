@@ -2,9 +2,11 @@
   "name": "liveplot2",
   "version": "1.0.0",
   "description": "New version of Liveplot",
-  "main": "index.js",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "webpack --watch",
+    "build": "webpack"
   },
   "repository": {
     "type": "git",
@@ -17,7 +19,13 @@
   },
   "homepage": "https://github.com/issalab/mkturk#readme",
   "devDependencies": {
+    "clean-webpack-plugin": "^3.0.0",
+    "css-loader": "^5.0.0",
+    "extract-text-webpack-plugin": "^3.0.2",
     "file-loader": "^6.1.1",
+    "html-webpack-plugin": "^5.0.0-alpha.6",
+    "mini-css-extract-plugin": "^1.2.0",
+    "style-loader": "^2.0.0",
     "ts-loader": "^8.0.6",
     "typescript": "^4.0.3",
     "webpack": "^5.2.0",
