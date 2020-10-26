@@ -1,12 +1,13 @@
 {
   "name": "liveplot2",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "New version of Liveplot",
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "webpack --watch --config webpack.devel.config.js",
     "watch": "webpack --watch",
-    "build": "webpack"
+    "build": "webpack --config webpack.prod.config.js"
   },
   "repository": {
     "type": "git",
@@ -25,6 +26,7 @@
     "file-loader": "^6.1.1",
     "html-webpack-plugin": "^5.0.0-alpha.6",
     "mini-css-extract-plugin": "^1.2.0",
+    "source-map-loader": "^1.1.1",
     "style-loader": "^2.0.0",
     "ts-loader": "^8.0.6",
     "typescript": "^4.0.3",
