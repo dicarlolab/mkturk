@@ -1,7 +1,5 @@
- import './styles.css'
+import './styles.css'
 import firebase from 'firebase/app';
-import 'firebase/storage';
-import 'firebase/database';
 import 'firebase/auth';
 
 const firebaseConfig = {
@@ -16,89 +14,91 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 import { Utils } from './utils';
+import { Liveplot } from './liveplot';
 
-const storage = firebase.storage();
-const storageRef = storage.ref();
-const utils = new Utils();
+const lp = new Liveplot();
 
-const DATA_PATH = 'mkturkfiles/datafiles/';
-const dataRef = storageRef.child(DATA_PATH);
-const PARAM_PATH = 'mkturkfiles/parameterfiles/subjects/';
-const paramRef = storageRef.child(PARAM_PATH);
 
 let fileListSelector = (
   document.querySelector('#file-list') as HTMLSelectElement
 );
 
-fileListSelector.addEventListener('change', evt => {
-  evt.preventDefault();
-  evt.stopPropagation();
-  console.log('New File!');
-  file.name = file.fileList[parseInt(fileListSelector.value)].fullpath;
-  file.fileChanged = true;
-  console.log('file name:', file.name);
-  console.log('file path', file.path);
-});
+lp.fileSelectionChangedListener(fileListSelector);
 
-let file: any = {
-  path: DATA_PATH,
-  list: [],
-  fileList: [],
-  name: '',
-  data: null,
-  ver: null,
-  date: null,
-  dateChanged: false,
-  fileChanged: false
-};
-
-console.log('hello hector');
+lp.populateFileList(fileListSelector);
 
 
-async function populateDropdownMenu() {
-  try {
-    let fileList = await utils.getFileList(file.path);
+
+
+// fileListSelector.addEventListener('change', evt => {
+//   evt.preventDefault();
+//   evt.stopPropagation();
+//   console.log('New File!');
+//   file.name = file.fileList[parseInt(fileListSelector.value)].fullpath;
+//   file.fileChanged = true;
+//   console.log('file name:', file.name);
+//   console.log('file path', file.path);
+// });
+
+// let file: any = {
+//   path: DATA_PATH,
+//   list: [],
+//   fileList: [],
+//   name: '',
+//   data: null,
+//   ver: null,
+//   date: null,
+//   dateChanged: false,
+//   fileChanged: false
+// };
+
+// console.log('hello hector');
+
+
+// async function populateDropdownMenu() {
+//   try {
+//     let fileList = await utils.getFileList(file.path);
     
 
-    fileList.sort((a: any, b: any) => {
-      let nameA = a.name.toUpperCase();
-      let nameB = b.name.toUpperCase();
+//     fileList.sort((a: any, b: any) => {
+//       let nameA = a.name.toUpperCase();
+//       let nameB = b.name.toUpperCase();
 
-      if (nameA > nameB) {
-        return -1;
-      }
+//       if (nameA > nameB) {
+//         return -1;
+//       }
 
-      if (nameA < nameB) {
-        return 1;
-      }
+//       if (nameA < nameB) {
+//         return 1;
+//       }
 
-      return 0;
-    });
+//       return 0;
+//     });
 
-    file.fileList = fileList;
+//     file.fileList = fileList;
     
 
-    for (let i = 0; i < fileList.length; i++) {
-      let opt = document.createElement('option');
-      opt.value = i.toString();
-      opt.innerHTML = fileList[i].name;
-      fileListSelector.appendChild(opt);
-    }
+//     for (let i = 0; i < fileList.length; i++) {
+//       let opt = document.createElement('option');
+//       opt.value = i.toString();
+//       opt.innerHTML = fileList[i].name;
+//       fileListSelector.appendChild(opt);
+//     }
     
-    file.name = file.fileList[0].fullpath;
-    file.fileChanged = true;
+//     file.name = file.fileList[0].fullpath;
+//     file.fileChanged = true;
   
-  } catch (error) {
-    console.error('ERROR #file-list:', error);
-  }
-}
+//   } catch (error) {
+//     console.error('ERROR #file-list:', error);
+//   }
+// }
 
-populateDropdownMenu();
+// populateDropdownMenu();
 
 
-async function loadAndRenderEditor(filePath: string) {
-  let dataFile = utils.getStorageFile(filePath);
-}
+// async function loadAndRenderEditor(filePath: string) {
+//   let dataFile = utils.getStorageFile(filePath);
+// }
 
 let provider = new firebase.auth.GoogleAuthProvider();
 provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
