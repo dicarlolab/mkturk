@@ -39,6 +39,7 @@
 
     <link rel="shortcut icon" href="images/favicon.png">
 
+
     <!-- SEO: If your mobile URL is different from the desktop URL, add a canonical link to the desktop page https://developers.google.com/webmasters/smartphone-sites/feature-phones -->
     <!--
     <link rel="canonical" href="http://www.example.com/">
@@ -48,6 +49,9 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
     <!-- <link rel="stylesheet" href="styles.css"> -->
+
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
     
   </head>
   <body class="mdl-demo mdl-color--grey-100 mdl-color-text--grey-700 mdl-base">
@@ -90,6 +94,10 @@
             <div class="mdl-demo mdl-card mdl-cell mdl-cell--12-col" style="min-height: 0px;">
               <div class="mdl-card__supporting-text">
                 <h3>Performance</h3>
+                <div id="performance-dashboard">
+                  <div id="performance-plot"></div>
+                  <div id="performance-filter"></div>
+                </div>
               </div>
             </div>
           </section>
@@ -98,6 +106,10 @@
             <div class="mdl-demo mdl-card mdl-cell mdl-cell--12-col" style="min-height: 0px;">
               <div class="mdl-card__supporting-text">
                 <h3>Trial</h3>
+                <div id="trial-dashboard">
+                  <div id="trial-plot"></div>
+                  <div id="trial-filter"></div>
+                </div>
               </div>
             </div>
           </section>
@@ -106,6 +118,7 @@
             <div class="mdl-demo mdl-card mdl-cell mdl-cell--12-col" style="min-height: 0px;">
               <div class="mdl-card__supporting-text">
                 <h3>Screen Plot</h3>
+                <div id="screen-mirror"></div>
               </div>
             </div>
           </section>
@@ -114,6 +127,7 @@
             <div class="mdl-demo mdl-card mdl-cell mdl-cell--12-col" style="min-height: 0px;">
               <div class="mdl-card__supporting-text">
                 <h3>Reaction Time</h3>
+                <div id="reaction-plot"></div>
               </div>
             </div>
           </section>
@@ -122,6 +136,7 @@
             <div class="mdl-demo mdl-card mdl-cell mdl-cell--12-col" style="min-height: 0px;">
               <div class="mdl-card__supporting-text">
                 <h3>Choice Bias</h3>
+                <div id="bias-plot"></div>
               </div>
             </div>
           </section>
@@ -130,6 +145,7 @@
             <div class="mdl-demo mdl-card mdl-cell mdl-cell--12-col" style="min-height: 0px;">
               <div class="mdl-card__supporting-text">
                 <h3>Object Performance</h3>
+                <div id="object-performance-plot"></div>
               </div>
             </div>
           </section>
@@ -138,6 +154,7 @@
             <div class="mdl-demo mdl-card mdl-cell mdl-cell--12-col" style="min-height: 0px;">
               <div class="mdl-card__supporting-text">
                 <h3>Reward Amount</h3>
+                <div id="reward-plot"></div>
               </div>
             </div>
           </section>
@@ -145,7 +162,7 @@
           <section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp">
             <div class="mdl-demo mdl-card mdl-cell mdl-cell--12-col" style="min-height: 0px;">
               <div class="mdl-card__supporting-text">
-                <h3>JSON Editor</h3>
+                <div id="editor"></div>
               </div>
             </div>
           </section>

@@ -1,6 +1,8 @@
 import firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/storage';
+import JSONEditor from 'jsoneditor';
+import 'jsoneditor/dist/jsoneditor.css'
 import { Utils } from './utils';
 
 const storage = firebase.storage();
@@ -14,8 +16,13 @@ const utils = new Utils;
 
 export class Liveplot {
   public file: any;
+  public editor: JSONEditor;
+  private perfDataTable: google.visualization.DataTable;
+  // private hello: google.visualization.lineop
 
   constructor() {
+    google.charts.load('current', { packages: ['corechart', 'controls'] });
+
     this.file = {
       path: DATA_PATH,
       list: [],
@@ -26,17 +33,7 @@ export class Liveplot {
       dateChanged: false,
       fileChanged: false
     };
-
-
   }
-
-  // public fileSelectionChanged(evt: Event) {
-  //   evt.preventDefault();
-  //   evt.stopPropagation;
-  //   console.log('New File!');
-  //   this.file.name = this.fileList[parseInt()]
-
-  // }
 
   public fileSelectionChangedListener(elem: HTMLSelectElement) {
     elem.addEventListener('input', (evt: Event) => {
@@ -75,17 +72,73 @@ export class Liveplot {
         opt.value = i.toString();
         opt.innerHTML = fileList[i].name;
         elem.appendChild(opt);
-        elem.dispatchEvent(new Event('input'));
       }
 
       this.file.name = this.file.fileList[0].fullpath;
       this.file.fileChanged = true;
-    
+      this.file.data = (
+        this.flattenData(await utils.getStorageFile(this.file.name))
+      );
+
+      this.loadDataToEditor(this.file.data);
+
     } catch (error) {
       console.error('ERROR #file-list:', error);
     }
 
 
+  }
+
+  private flattenData(data: any) {
+
+    let tmp: any = {};
+
+    for (let outerKey in data) {
+      if (data.hasOwnProperty(outerKey)) {
+        for (let innerKey in data[outerKey]) {
+          if (data[outerKey].hasOwnProperty(innerKey)) {
+            tmp[innerKey] = data[outerKey][innerKey];
+          }
+        }
+      }
+    }
+
+    return tmp;
+  }
+
+  public setupEditor(elem: HTMLDivElement) {
+    this.editor = new JSONEditor(elem);
+  }
+
+  private loadDataToEditor(data: any) {
+    this.editor.set(data);
+  }
+
+  private setupCharts() {
+    let lineOptions = {
+      width: 900,
+      height: 400,
+      hAxis: {
+        title: 'Trial#'
+      },
+      vAxis: {
+        title: 'Correct (%)',
+        viewWindow: {
+          min: 0,
+          max: 1.0
+        }
+      },
+      title: 'Subject 1',
+      animation: {
+        duration: 500,
+        easing: 'linear',
+        startup: true
+      },
+      series: {
+        0: { color: '#43459d' },
+        1: { color: '#e2431e' }
+      }
+    };
   }
 
 }

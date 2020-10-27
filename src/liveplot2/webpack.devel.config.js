@@ -32,9 +32,14 @@ module.exports = {
       {
         test: /\.css$/i,
         use: ['style-loader', 'css-loader'],
-        exclude: /node_modules/,
-        include: path.resolve(__dirname, 'src'),
+        include: [path.resolve(__dirname, 'src'), path.resolve(__dirname, 'node_modules/jsoneditor/dist')],
         sideEffects: true
+      },
+      {
+        test: /\.(png|svg|jpg|gif)$/,
+        use: [
+          'file-loader',
+        ],
       },
       {
         test: /\.tsx?$/,

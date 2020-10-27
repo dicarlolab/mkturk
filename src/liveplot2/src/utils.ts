@@ -49,4 +49,23 @@ export class Utils {
     let file = await response.json();
     return file;
   }
+
+  public smooth(data: any[], n: number) {
+    let smoothedData = [];
+    for (let i = 0; i < data.length; i++) {
+      if (i < n - 1) {
+        let tmp = data.slice(0, i + 1);
+        smoothedData[i] = tmp.reduce((a: any, b: any) => {
+          return a + b;
+        });
+        smoothedData[i] /= (i + 1);
+      } else {
+        let tmp = data.slice(i - n + 1, i + 1);
+        smoothedData[i] = tmp.reduce((a: number, b: number) => {
+          return a + b;
+        });
+        smoothedData[i] /= n;
+      }
+    }
+  }
 }

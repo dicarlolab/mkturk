@@ -18,13 +18,16 @@ import { Liveplot } from './liveplot';
 
 const lp = new Liveplot();
 
-
 let fileListSelector = (
   document.querySelector('#file-list') as HTMLSelectElement
 );
 
-lp.fileSelectionChangedListener(fileListSelector);
+let editorDiv = (
+  document.querySelector('#editor') as HTMLDivElement
+);
 
+lp.setupEditor(editorDiv);
+lp.fileSelectionChangedListener(fileListSelector);
 lp.populateFileList(fileListSelector);
 
 
