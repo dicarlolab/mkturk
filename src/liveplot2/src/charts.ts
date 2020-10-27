@@ -344,19 +344,21 @@ export class Charts {
       this.xyPosDataTable.addColumn('number', 'Same');
       this.xyPosDataTable.addColumn('number', 'Different');
     }
+
+    this.xyPosDataTable.addColumn('number', 'Fix_Reward');
+    this.xyPosDataTable.addColumn('number', 'Fix_Punish');
+    this.xyPosDataTable.addColumn('number', 'Target_Reward');
+    this.xyPosDataTable.addColumn('number', 'Target_Punish');
     
-    this.xyPosDataTable.addColumn('number', 'xpos');
-    this.xyPosDataTable.addColumn('number', 'xpos');
-    this.xyPosDataTable.addColumn('number', 'xpos');
-    this.xyPosDataTable.addColumn('number', 'xpos');
-    this.xyPosDataTable.addColumn('number', 'xpos');
-    this.xyPosDataTable.addColumn('number', 'xpos');
-    this.xyPosDataTable.addColumn('number', 'xpos');
-    this.xyPosDataTable.addColumn('number', 'xpos');
-    
+    this.rewardDataTable.addColumn('string', 'reard size');
+    this.rewardDataTable.addColumn('number', 'nrewards');
 
+    this.choiceDataTable.addColumn('string', 'choice');
+    this.choiceDataTable.addColumn('number', '# of responses');
 
-
+    this.objPerfDataTable.addColumn('string', 'object');
+    this.objPerfDataTable.addColumn('number', 'performance');
+    this.updatePlots();
 
   }
 

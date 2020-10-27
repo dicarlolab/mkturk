@@ -77,11 +77,9 @@ export class Liveplot {
 
       this.file.name = this.file.fileList[0].fullpath;
       this.file.fileChanged = true;
-      this.file.data = (
-        this.flattenData(await utils.getStorageFile(this.file.name))
-      );
-      this.processData(this.file.data);
-
+      let rawStorageFile = await utils.getStorageFile(this.file.name);
+      
+      this.processData(rawStorageFile);
       this.loadDataToEditor(this.file.data);
 
     } catch (error) {
@@ -110,6 +108,8 @@ export class Liveplot {
 
   private async processData(data: any) {
 
+    this.file.data = this.flattenData(data);
+
     let metadata = await utils.getStorageFileMetadata(this.file.name);
     console.log('Success! Loaded File Size:', metadata.size / 1000, 'KB');
     this.file.ver = metadata.generation;
@@ -121,8 +121,11 @@ export class Liveplot {
 
     if (this.file.fileChanged) {
       this.charts.initializeChartData(this.file);
+      this.file.fileChanged = false;
     } else if (this.file.dataChanged) {
       this.charts.updatePlots();
+      this.file.dataChanged = false;
+      this.checkFileStatus();
     }
   }
 
@@ -133,5 +136,33 @@ export class Liveplot {
   private loadDataToEditor(data: any) {
     this.editor.set(data);
   }
+
+  private async checkFileStatus() {
+    try {
+      let metadata = await utils.getStorageFileMetadata(this.file.name);
+
+      if (this.file.ver != metadata.generation) {
+        this.file.ver = metadata.generation;
+        this.file.dateSaved = new Date(metadata.updated);
+        this.file.dataChanged = true;
+        console.log('File was updated ver=' + this.file.ver)
+      } else {
+        this.file.dataChanged = false;
+      }
+
+      if (this.file.fileChanged == true || this.file.dataChanged == true) {
+        // loadDatafromFirebase(this.file.name)
+      } else {
+        setTimeout(() => {
+          this.checkFileStatus()
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('checkFileStatus Error:', error);
+    }
+  
+    return false; // why needed
+  
+  } 
 
 }
