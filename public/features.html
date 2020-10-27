@@ -38,7 +38,7 @@
 						<!-- Content -->
 							<section id="content" class="main">
 								
-								<span class="image main"><img src="images/pic04.jpg" alt="" ></span>
+								<!-- <span class="image main"><img src="images/pic04.jpg" alt="" ></span> -->
 
 								<div class="row">
 									<div class="col-3 col-12-medium">
@@ -74,6 +74,9 @@
 											Background 2D images are rendered directly to offscreen canvas while foreground 3D
 											content is first rendered on a webGL canvas then transferred to the offscreen 2D canvas.
 										</p>
+										<span class="image fit" style="border-radius: 0%; border: 0px;">
+											<img src="images/guide/opening-movie.gif" alt="" style="border-radius: 0%; "/>
+										</span>
 
 										<h3><a name="img-filtering">2D Image Filtering</a></h3>
 										<p>
@@ -82,6 +85,13 @@
 											can be independently applied to 2D image & 3D scene layers. Included filters:
 											<b>brightness, contrast, blur, hue rotate, reverse contrast, grayscale, sepia tone</b>.
 										</p>
+										<span class="image fit" style="border-radius: 0%; border: 0px;">
+											<img src="images/guide/image-filter-mkfiles.png" alt="" style="border-radius: 0%; "/>
+										</span>
+
+										<span class="image fit" style="border-radius: 0%; border: 0px;">
+											<img src="images/guide/img-filter-examples.png" alt="" style="border-radius: 0%; "/>
+										</span>
 
 										<h3><a name="display">Visual Display</a></h3>
 										<p>
@@ -117,6 +127,9 @@
 											display pixel density per inches to convert from screen pixels to physical 
 											inches (*requires device database).
 										</p>
+										<span class="image fit" style="border-radius: 0%; border: 0px;">
+											<img src="images/guide/cross-device.jpg" alt="" style="border-radius: 0%; "/>
+										</span>
 
 										<h3><a name="tasks">Task Specification</a></h3>
 										<p>
@@ -124,6 +137,9 @@
 											Here the user specifies which scenes to render and whether the subject should
 											do a <b>fixation, stimulus-response, match-to-sample, or same-different task</b>.
 										</p>
+										<span class="image fit" style="border-radius: 0%; border: 0px;">
+											<img src="images/guide/agent-params.png" alt="" style="border-radius: 0%; "/>
+										</span>
 
 										<h3><a name="scenes">Scene Specification</a></h3>
 										<p>
@@ -135,6 +151,9 @@
 											position and filter strength can be animated by entering an array for a movie sequence
 											instead of a fixed scalar for each stimulus.
 										</p>
+										<span class="image fit" style="border-radius: 0%; border: 0px;">
+											<img src="images/guide/scene-specs.png" alt="" style="border-radius: 0%; "/>
+										</span>
 
 										<h3><a name="automator">Automator</a></h3>
 										<p>
@@ -143,6 +162,9 @@
 											move to the next task stage when the specified performance criteria are met
 											(eg, 75% accuracy for a period of at least 1000 trials).
 										</p>
+										<span class="image fit" style="border-radius: 0%; border: 0px;">
+											<img src="images/guide/automator.png" alt="" style="border-radius: 0%; "/>
+										</span>
 
 										<h3><a name="cloud-storage">Cloud Data Storage</a></h3>
 										<p>
@@ -171,6 +193,9 @@
 											session, Liveplot loads the raw JSON from Cloud Storage, plotting per-trial
 											responses (touch locations, times).
 										</p>
+										<span class="image fit" style="border-radius: 0%; border: 0px;">
+											<img src="images/guide/liveplot-touch.gif" alt="" style="border-radius: 0%; "/>
+										</span>
 
 										<h3><a name="client-mirroring">Client Mirroring in Realtime</a></h3>
 										<p>
@@ -191,10 +216,14 @@
 
 										<h3><a name="eye-tracking">Eye Tracking</a></h3>
 										<p>
-											Data frm an eye tracker are piped over serial to the Arduino and then
+											Data from an eye tracker are piped over serial to the Arduino and then
 											from the Arduino to the browser using serial over webUSB. Currently, pupil
 											position, size, and aspect ratio can be transmitted at 90Hz. 
 										</p>
+										<span class="image fit" style="border-radius: 0%; border: 0px;">
+											<img src="images/guide/eye-tracking-sys-diagram.png" alt="" style="border-radius: 0%; "/>
+										</span>
+
 
 										<h3><a name="hardware">Recommended Hardware</a></h3>
 										<p>
@@ -215,6 +244,9 @@
 											of when frames rendered on the physical screen. The software serial ports
 											are useful for receiving eye tracker signals or RFID signals.
 										</p>
+										<span class="image fit" style="border-radius: 0%; border: 0px;">
+											<img src="images/guide/arduino-shield.png" alt="" style="border-radius: 0%; "/>
+										</span>
 
 										<h3><a href="installation.html">Get Started</a></h3>
 										<p>
@@ -235,12 +267,10 @@
 					<section>
 						<h2>Issa Lab @ Columbia</h2>
 						<p>
-							Our lab works at the interface of biological and computational sciences closing the loop between
-							theory and experiment. Computational principles guide our experiments into the underlying
-							biology, and through biological insights, we aim to inspire next generation models. Our experiments
-							use advanced tools for observing and perturbing neural activity during visual behavior. The lab is
-							part of the world-class, interdisciplinary research community that forms the Zuckerman Mind Brain
-							Behavior Institute at Columbia.
+							Our lab works at the interface of biological and computational sciences
+							closing the loop between theory and experiment. The lab is part of the
+							world-class, interdisciplinary research community in the Zuckerman
+							Mind Brain Behavior Institute at Columbia.
 						</p>
 						<ul class="actions">
 							<li><a href="https://issalab.neuroscience.columbia.edu/home" class="button">Learn More</a></li>
