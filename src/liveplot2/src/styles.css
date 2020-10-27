@@ -236,3 +236,21 @@ html, body {
 .mdl-demo .mdl-menu__container {
   z-index: 99;
 }
+
+.dashboard {
+  min-height: 500px;
+  height: 500px;
+}
+
+.dashboard-plot {
+  height: 80%;
+}
+
+.dashboard-filter {
+  height: 20%;
+}
+
+.bar-plot {
+  min-height: 300px;
+  height: 300px;
+}

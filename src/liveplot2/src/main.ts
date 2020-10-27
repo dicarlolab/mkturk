@@ -13,10 +13,7 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 
-import { Utils } from './utils';
 import { Liveplot } from './liveplot';
-
-const lp = new Liveplot();
 
 let fileListSelector = (
   document.querySelector('#file-list') as HTMLSelectElement
@@ -26,9 +23,27 @@ let editorDiv = (
   document.querySelector('#editor') as HTMLDivElement
 );
 
+let elemObj = {
+  perfDiv: document.querySelector('#performance-dashboard') as HTMLDivElement,
+  perfPlot: document.querySelector('#performance-plot') as HTMLDivElement,
+  perfFilter: document.querySelector('#performance-filter') as HTMLDivElement,
+  trialDiv: document.querySelector('#trial-dashboard') as HTMLDivElement,
+  trialPlot: document.querySelector('#trial-plot') as HTMLDivElement,
+  trialFilter: document.querySelector('#trial-filter') as HTMLDivElement,
+  screenPlot: document.querySelector('#screen-plot') as HTMLDivElement,
+  rxnPlot: document.querySelector('#reaction-plot') as HTMLDivElement,
+  choicePlot: document.querySelector('#choice-plot') as HTMLDivElement,
+  objPerfPlot: document.querySelector('#obj-perf-plot') as HTMLDivElement,
+  rewardPlot: document.querySelector('#reward-plot') as HTMLDivElement,
+};
+
+const lp = new Liveplot(elemObj);
 lp.setupEditor(editorDiv);
 lp.fileSelectionChangedListener(fileListSelector);
 lp.populateFileList(fileListSelector);
+
+
+
 
 
 

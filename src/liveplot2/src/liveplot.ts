@@ -4,6 +4,7 @@ import 'firebase/storage';
 import JSONEditor from 'jsoneditor';
 import 'jsoneditor/dist/jsoneditor.css'
 import { Utils } from './utils';
+import { Charts } from './charts';
 
 const storage = firebase.storage();
 const stroageRef = storage.ref();
@@ -17,11 +18,9 @@ const utils = new Utils;
 export class Liveplot {
   public file: any;
   public editor: JSONEditor;
-  private perfDataTable: google.visualization.DataTable;
-  // private hello: google.visualization.lineop
+  public charts: Charts;
 
-  constructor() {
-    google.charts.load('current', { packages: ['corechart', 'controls'] });
+  constructor(elemObj: any) {
 
     this.file = {
       path: DATA_PATH,
@@ -30,9 +29,11 @@ export class Liveplot {
       data: null,
       ver: null,
       date: null,
-      dateChanged: false,
+      dataChanged: false,
       fileChanged: false
     };
+
+    this.charts = new Charts(elemObj);
   }
 
   public fileSelectionChangedListener(elem: HTMLSelectElement) {
@@ -79,6 +80,7 @@ export class Liveplot {
       this.file.data = (
         this.flattenData(await utils.getStorageFile(this.file.name))
       );
+      this.processData(this.file.data);
 
       this.loadDataToEditor(this.file.data);
 
@@ -106,39 +108,30 @@ export class Liveplot {
     return tmp;
   }
 
+  private async processData(data: any) {
+
+    let metadata = await utils.getStorageFileMetadata(this.file.name);
+    console.log('Success! Loaded File Size:', metadata.size / 1000, 'KB');
+    this.file.ver = metadata.generation;
+    this.file.dateSaved = new Date(metadata.updated);
+
+    // this.file.data.CurrentDate = (
+    //   new Date(this.file.data.CurrentDate).valueOf()
+    // );
+
+    if (this.file.fileChanged) {
+      this.charts.initializeChartData(this.file);
+    } else if (this.file.dataChanged) {
+      this.charts.updatePlots();
+    }
+  }
+
   public setupEditor(elem: HTMLDivElement) {
     this.editor = new JSONEditor(elem);
   }
 
   private loadDataToEditor(data: any) {
     this.editor.set(data);
-  }
-
-  private setupCharts() {
-    let lineOptions = {
-      width: 900,
-      height: 400,
-      hAxis: {
-        title: 'Trial#'
-      },
-      vAxis: {
-        title: 'Correct (%)',
-        viewWindow: {
-          min: 0,
-          max: 1.0
-        }
-      },
-      title: 'Subject 1',
-      animation: {
-        duration: 500,
-        easing: 'linear',
-        startup: true
-      },
-      series: {
-        0: { color: '#43459d' },
-        1: { color: '#e2431e' }
-      }
-    };
   }
 
 }

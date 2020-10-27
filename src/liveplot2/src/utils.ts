@@ -50,6 +50,12 @@ export class Utils {
     return file;
   }
 
+  public async getStorageFileMetadata(path: string) {
+    let fileRef = storageRef.child(path);
+    let metadata = await fileRef.getMetadata();
+    return metadata;
+  }
+
   public smooth(data: any[], n: number) {
     let smoothedData = [];
     for (let i = 0; i < data.length; i++) {
