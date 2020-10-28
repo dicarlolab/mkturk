@@ -52,8 +52,9 @@
 
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 
+    <p></p>
     
-  <script defer src="vendors-node_modules_firebase_app_dist_index_cjs_js-node_modules_firebase_auth_dist_index_esm-f4c035.bundle.js"></script><script defer src="main.bundle.js"></script></head>
+  <script defer src="vendors-node_modules_firebase_app_dist_index_esm_js-node_modules_firebase_auth_dist_index_esm-6ddb3d.bundle.js"></script><script defer src="main.bundle.js"></script></head>
   <body class="mdl-demo mdl-color--grey-100 mdl-color-text--grey-700 mdl-base">
     <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
       <header class="mdl-layout__header mdl-layout__header--scroll mdl-color--primary">
@@ -94,6 +95,16 @@
             <div class="mdl-demo mdl-card mdl-cell mdl-cell--12-col" style="min-height: 0px;">
               <div class="mdl-card__supporting-text">
                 <h3>Performance</h3>
+                <div id="vitals-text" style="height: auto;">
+                  <!-- <p id="performance-vitals">Performance Vital</p>
+                  <p id="rfid-vitals">RFID Vital</p>
+                  <p id="battery-vitals">Battery Vital</p>
+                  <p id="trial-vitals">Trial Vital</p> -->
+                  <span class="vital-span" id="performance-vitals"></span>
+                  <span class="vital-span" id="rfid-vitals"></span>
+                  <span class="vital-span" id="battery-vitals"></span>
+                  <span class="vital-span" id="trial-vitals"></span>
+                </div>
                 <div class="dashboard" id="performance-dashboard">
                   <div class="dashboard-plot" id="performance-plot"></div>
                   <div class="dashboard-filter" id="performance-filter"></div>

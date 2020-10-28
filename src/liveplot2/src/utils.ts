@@ -21,7 +21,7 @@ export class Utils {
       files = [...files, ...subFileList];
     }
 
-    for (let i = 0; i < fileList.items.length - 1; i++) {
+    for (let i = 0; i < fileList.items.length; i++) {
       if (typeof(ext) == 'string') {
         if (fileList.items[i].name.endsWith(ext)) { // if file extension is correct
           files.push({

@@ -42,8 +42,9 @@ export class Liveplot {
       evt.preventDefault();
       this.file.name = this.file.fileList[parseInt(elem.value)].fullpath;
       this.file.fileChanged = true;
-      console.log('file name:', this.file.name);
-      console.log('file path:', this.file.path);
+      // console.log('file changed', this.file.fileChanged);
+      // console.log('file name:', this.file.name);
+      // console.log('file path:', this.file.path);
     });
   }
 
@@ -80,7 +81,6 @@ export class Liveplot {
       let rawStorageFile = await utils.getStorageFile(this.file.name);
       
       this.processData(rawStorageFile);
-      this.loadDataToEditor(this.file.data);
 
     } catch (error) {
       console.error('ERROR #file-list:', error);
@@ -109,6 +109,7 @@ export class Liveplot {
   private async processData(data: any) {
 
     this.file.data = this.flattenData(data);
+    this.loadDataToEditor(this.file.data);
 
     let metadata = await utils.getStorageFileMetadata(this.file.name);
     console.log('Success! Loaded File Size:', metadata.size / 1000, 'KB');
@@ -121,9 +122,11 @@ export class Liveplot {
 
     if (this.file.fileChanged) {
       this.charts.initializeChartData(this.file);
+      this.checkFileStatus();
       this.file.fileChanged = false;
+      this.file.dataChanged = false;
     } else if (this.file.dataChanged) {
-      this.charts.updatePlots();
+      this.charts.updatePlots(this.file);
       this.file.dataChanged = false;
       this.checkFileStatus();
     }
@@ -134,7 +137,11 @@ export class Liveplot {
   }
 
   private loadDataToEditor(data: any) {
-    this.editor.set(data);
+    if (this.file.fileChanged) {
+      this.editor.set(data);
+    } else {
+      this.editor.update(data);
+    }
   }
 
   private async checkFileStatus() {
@@ -151,7 +158,8 @@ export class Liveplot {
       }
 
       if (this.file.fileChanged == true || this.file.dataChanged == true) {
-        // loadDatafromFirebase(this.file.name)
+        let rawStorageFile = await utils.getStorageFile(this.file.name);
+        this.processData(rawStorageFile);
       } else {
         setTimeout(() => {
           this.checkFileStatus()

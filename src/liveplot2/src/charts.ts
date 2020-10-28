@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 const colorMapJet = [
   '#00008F','#00009F','#0000AF','#0000BF',
   '#0000CF','#0000DF','#0000EF','#0000FF',
@@ -16,6 +18,8 @@ const colorMapJet = [
   '#EF0000','#DF0000','#CF0000','#BF0000',
   '#AF0000','#9F0000','#8F0000','#800000'
 ];
+
+
 
 
 
@@ -62,14 +66,29 @@ export class Charts {
   public objPerfPlot: google.visualization.ColumnChart;
   public objPerfPlotOptions: google.visualization.ColumnChartOptions;
 
+  private vitals: any;
+
 
   constructor(elemObj: any) {
     this.elemObject = elemObj;
     this.setupCharts();
-    
-    
-    console.log(elemObj);
 
+    this.vitals = {
+      subject: null,
+      pctCorrect: 0,
+      trials: 0,
+      time: 0,
+      batteryLeft: 0,
+      batteryUsed: 0,
+      rewardEstimate: 0,
+      automator: '',
+      automatorStage: 0,
+      automatorStageName: '',
+      numReward: 0,
+      rfidTag: '',
+      rfidTime: 0,
+      tagCount: {}
+    }
   }
 
   public setupDataTables() {
@@ -358,11 +377,234 @@ export class Charts {
 
     this.objPerfDataTable.addColumn('string', 'object');
     this.objPerfDataTable.addColumn('number', 'performance');
-    this.updatePlots();
+    this.updatePlots(file);
 
   }
 
-  public updatePlots() {
+  public updatePlots(file: any) {
+    console.log('plot updated');
+    this.loadVitals(file);
+    this.loadVitalsText(file);
+    console.log('vitals', this.vitals);
+    this.loadPerformanceData(file);
+
+  }
+
+  private loadVitals(file: any) {
+    this.vitals.subject = file.data.Subject;
+    this.vitals.trials = file.data.Response.length;
+    
+    // Convert milliseconds to minutes
+    let startTime = file.data.StartTime;
+    this.vitals.time = (
+      _.round(_.round(_.toNumber(_.last(startTime)) - startTime[0]) / 60000)
+    );
+
+    /**
+     * RFID Processing
+     * Only supports current data format
+     * file.data.RFIDTag = {
+     *   0: [0, 2020-10-27T19:19:19.999Z, 00782A7E88A4],
+     *   1: [],
+     *   ...
+     * };
+     */
+    let rfidTag = file.data.RFIDTag;
+    if (!_.isUndefined(rfidTag) && _.size(rfidTag) > 0) {
+      this.vitals.rfidTag = rfidTag[_.size(rfidTag) - 1][2];
+      this.vitals.rfidTime = (
+        new Date(rfidTag[_.size(rfidTag) - 1][1]).toLocaleTimeString('en-US')
+      );
+    } else {
+      this.vitals.rfidTag = null;
+      this.vitals.rfidTime = null;
+    }
+
+    // Automator, AutomatorStage, AutomatorStageName
+    if (_.isUndefined(file.data.Automator)) {
+      this.vitals.automator = null;
+    } else {
+      this.vitals.automator = file.data.Automator;
+    }
+
+    if (_.isUndefined(file.data.CurrentAutomatorStage)) {
+      this.vitals.automatorStage = null;
+    } else {
+      this.vitals.automatorStage = file.data.CurrentAutomatorStage;
+    }
+
+    if (_.isUndefined(file.data.CurrentAutomatorStageName)) {
+      this.vitals.automatorStageName = null;
+    } else {
+      this.vitals.automatorStageName = file.data.CurrentAutomatorStageName;
+    }
+
+    // Battery, only supports current data format
+    let battery = file.data.Battery;
+    if (!_.isUndefined(battery) && _.size(battery) > 0) {
+      this.vitals.batteryLeft = _.round(battery[_.size(battery) - 1][2] * 100);
+      this.vitals.batteryUsed = (
+        _.round(battery[0][2] * 100 - this.vitals.batteryLeft)
+      );
+    } else {
+      this.vitals.batteryLeft = null;
+      this.vitals.batteryUsed = null;
+    }
+
+    // Performance
+    let numCorrect = 0;
+    for (let i = 0; i < _.size(file.data.CorrectItem); i++) {
+      if (file.data.CorrectItem[i] == file.data.Response[i]) {
+        numCorrect++;
+      }
+    }
+    
+    this.vitals.numCorrect = numCorrect;
+    this.vitals.pctCorrect = (
+      _.round(100 * numCorrect / file.data.Response.length)
+    );
+
+    if (!_.isUndefined(file.data.NReward)) {
+      this.vitals.numReward = (
+        file.data.NReward.reduce((a: number, b: number) => { 
+          return a + b;
+        }, 0)
+      );
+    }
+
+    this.vitals.rewardEstimate = 0;
+    if (!_.isUndefined(file.data.RewardPer1000Trials)) {
+      this.vitals.rewardEstimate = (
+        _.round(file.data.RewardPer1000Trials * this.vitals.numReward / 1000)
+      );
+    }
+
+  }
+
+  private loadVitalsText(file: any) {
+    this.elemObject.perfVitals.innerHTML = (
+      `${this.vitals.subject}: ${this.vitals.pctCorrect}% (n = ${this.vitals.numCorrect} out of ${this.vitals.trials}, r=${this.vitals.numReward}=${this.vitals.rewardEstimate}mL, ${this.vitals.time} mins)` 
+    );
+
+    // TODO: add this.vitals.tagCount data
+    this.elemObject.rfidVitals.innerHTML = (
+      `RFID: ${this.vitals.rfidTag} (${this.vitals.rfidTime})`
+    );
+    console.log(this.vitals.rfidTag, this.vitals.rfidTime);
+
+    this.elemObject.batteryVitals.innerHTML = (
+      `Battery: ${this.vitals.batteryLeft}% (-${this.vitals.batteryUsed}%)`
+    );
+
+    this.elemObject.trialVitals.innerHTML = (
+      `Last Trial: ${file.dateSaved.toLocaleTimeString('en-US')}`
+    );
+  }
+
+  private loadPerformanceData(file: any) {
+    this.perfDataTable.removeRows(
+      0, this.perfDataTable.getNumberOfRows()
+    );
+    this.cumulDataTable
+      .removeRows(0, this.cumulDataTable.getNumberOfRows());
+    this.rxnTimeDataTable
+      .removeRows(0, this.rxnTimeDataTable.getNumberOfRows());
+    this.xyPosDataTable
+      .removeRows(0, this.xyPosDataTable.getNumberOfRows());
+
+    // Create Data Table
+    let xData = [];
+    let yData: number[] = [];
+    let yDataSmall = []; // keeps 5 recent
+    let yDataLarge = []; // keeps 100 recent
+    let numTotal = [];
+    let numCorrect: number[] = [];
+    let tCurrent = [];
+    let numRFID = [];
+    let xPos = [];
+    let yPos = [];
+    let touchevent: any[][] = [];
+    let rt = [];
+
+    // performance
+    for (let i = 0; i < file.data.CorrectItem.length; i++) {
+      if (file.data.CorrectItem[i] == file.data.Response[i]) {
+        yData[i] = 1; // correct
+      } else {
+        yData[i] = 0; // incorrect
+      }
+
+      xData[i] = i;
+
+      // Cumulative trials & correct trials
+      numTotal[i] = xData.length;
+      if (i > 0) {
+        numCorrect[i] = numCorrect[i - 1] + yData[i];
+      } else if (i == 0) {
+        numCorrect[i] == yData[i];
+      }
+    }
+
+    for (let i = 0; i < file.data.NReward.length; i++) {
+      if (file.data.RewardStage == 0) {
+        rt[i] = file.data.FixationXYT[2][i] - file.data.StartTime[i];
+        this.rxnTimeDataTable.addRows(
+          [[file.data.FixationTouchEvent[i], rt[i]]]
+        );
+      } else if (file.data.NRSVP > 0) {
+        rt[i] = file.data.SampleFixationXYT[2][i] - file.data.SampleStartTime[i];
+        this.rxnTimeDataTable.addRows(
+          [[file.data.SampleFixationTouchEvent[i], rt[i]]]
+        );
+      } else {
+        rt[i] = file.data.ResponseXYT[2][i] - file.data.SampleStartTime[i];
+        if (file.data.Response[i] == -1) {
+          this.rxnTimeDataTable.addRows(
+            [['timeout', file.data.ChoiceTimeOut]]
+          );
+        } else if (file.data.CorrectItem[i] == file.data.Response[i]) {
+          this.rxnTimeDataTable.addRows(
+            [['correct', rt[i]]]
+          );
+        } else {
+          this.rxnTimeDataTable.addRows(
+            [['wrong', rt[i]]]
+          );
+        }
+      }
+    }
+
+    console.log(rt);
+
+    /**
+     * Touch XY
+     * Store fixation in odd indices and choice in even
+     * All touchevents. touchevent has a length that is twice the length
+     * of file.data.FixationXYT or file.data.ResponseXYT
+     */
+    if (
+      !_.isUndefined(file.data.ResponseXYT) 
+      && _.size(file.data.ResponseXYT) > 0
+      && _.size(file.data.ResponseXYT[0]) > 0
+    ) {
+      for (let i = 0; i < _.size(file.data.ResponseXYT[0]) * 2; i += 2) {
+        touchevent[i] = [];
+        touchevent[i + 1] = [];
+        touchevent[i][0] = file.data.FixationXYT[0][i / 2];
+        touchevent[i + 1][0] = file.data.ResponseXYT[0][i / 2];
+        touchevent[i][1] = file.data.FixationXYT[1][i / 2];
+        touchevent[i + 1][1] = file.data.ResponseXYT[1][i / 2];
+      }
+    } else {
+      for (let i = 0; i < _.size(file.data.ResponseXYT[0]) * 2; i += 2) {
+        touchevent[i] = [];
+        touchevent[i + 1] = [];
+        touchevent[i][0] = file.data.FixationXYT[0][i / 2];
+        touchevent[i + 1][0] = file.data.FixationXYT[0][i / 2];
+        touchevent[i][1] = file.data.FixationXYT[1][i / 2];
+        touchevent[i + 1][1] = file.data.FixationXYT[1][i / 2];
+      }
+    }
 
   }
 

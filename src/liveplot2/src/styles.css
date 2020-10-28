@@ -254,3 +254,9 @@ html, body {
   min-height: 300px;
   height: 300px;
 }
+
+.vital-span {
+  display: block;
+  font-weight: bold;
+  font-size: 1.125rem;
+}
