@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import _, { first, sample } from 'lodash';
 
 const colorMapJet = [
   '#00008F','#00009F','#0000AF','#0000BF',
@@ -606,6 +606,138 @@ export class Charts {
       }
     }
 
+    // Sample & Test Boxes -- Draw them as a bounding box in the touch plot
+    let numColumnXYPos = this.xyPosDataTable.getNumberOfColumns();
+    let sampleWidth = this.getSampleWidth(file.data);
+    let sampleHeight = sampleWidth;
+    let testWidth = this.getTestWidth(file.data);
+    let testHeight = testWidth;
+
+    // Fixation & Choice Boxes
+    let fixationWidth = this.getFixationWidth(file.data, sampleWidth);
+    let fixationHeight = fixationWidth;
+    let choiceWidth = this.getChoiceWidth(file.data);
+    let choiceHeight = choiceWidth;
+
+    /** 
+     * NOTE for positioning elements:
+     * grid x, y is offset || fixation & response x, y is not
+    */
+
+    // FIXATION
+    let numDisplayElems = 1;
+    let xyPosArray = [];
+    let fixXCoord;
+    let fixYCoord;
+    let maxFixationGridIndex = _.max(file.data.FixationGridIndex);
+    if (_.isNumber(maxFixationGridIndex)) {
+      fixXCoord = file.data.XGridCenter[maxFixationGridIndex];
+      fixYCoord = (
+        file.data.ViewportPixels[1] 
+        - (file.data.YGridCenter[maxFixationGridIndex] + file.data.offsettop)
+      );
+    }
+
+  }
+
+  private getSampleWidth(fileData: any) {
+    let sampleWidth = 0;
+    if (_.size(fileData.SampleScenes[0].imageidx.length) > 0) {
+      if (_.isArray(fileData.SampleScenes[0].IMAGES.sizeInches)) {
+        let maxSizeInches = _.max(fileData.SampleScenes[0].IMAGES.sizeInches);
+        if (_.isNumber(maxSizeInches)) {
+          sampleWidth = maxSizeInches * fileData.ViewportPPI;
+        }
+      } else {
+        console.error(
+          'SampleScenes[0].IMAGES.sizeInches is not an array. Please fix!'
+        );
+        sampleWidth = (
+          fileData.SampleScenes[0].IMAGES.sizeInches * fileData.ViewportPPI
+        );
+      }
+    } else {
+      let firstKey = _.findKey(fileData.SampleScenes[0].OBJECTS);
+      if (_.isString(firstKey)) {
+        let maxSizeInches = (
+          _.max(fileData.SampleScenes[0].OBJECTS[firstKey].sizeInches)
+        );
+        if (_.isNumber(maxSizeInches)) {
+          sampleWidth = maxSizeInches * fileData.ViewportPPI;
+        } 
+      } else {
+        console.error(
+          'firstKey of SampleScenes[0].OBJECTS is not of type string'
+        );
+      }  
+    }
+    return sampleWidth;
+  }
+
+  private getTestWidth(fileData: any) {
+    let testWidth = 0;
+
+    if (fileData.TestScenes[0].IMAGES.imageidx.length > 0) {
+      if (_.isArray(fileData.TestScenes[0].IMAGES.sizeInches)) {
+        let maxSizeInches = _.max(fileData.TestScenes[0].IMAGES.sizeInches);
+        if (_.isNumber(maxSizeInches)) {
+          testWidth = maxSizeInches * fileData.ViewportPPI;
+        } else {
+          console.error(
+            'TestScenes[0].IMAGES.sizeInches is not of type number'
+          );
+        }
+      } else {
+        console.error(
+          'TestScenes[0].IMAGES.sizeInches is not an array. Please fix!'
+        );
+        testWidth = (
+          fileData.TestScenes[0].IMAGES.sizeInches * fileData.ViewportPPI
+        );
+      }
+    } else {
+      let firstKey = _.findKey(fileData.TestScenes[0].OBJECTS);
+      if (_.isString(firstKey)) {
+        let maxSizeInches = (
+          _.max(fileData.TestScenes[0].OBJECTS[firstKey].sizeInches)
+        );
+        if (_.isNumber(maxSizeInches)) {
+          testWidth = maxSizeInches * fileData.ViewportPPI;
+        } else {
+          console.error(
+            'firstKey of TestScenes[0].OBJECTS is not of type string'
+          );
+        }
+      }
+    }
+
+    if (!_.isUndefined(fileData.NRSVP) && fileData.NRSVP > 0) {
+      testWidth = fileData.SampleFixationSizeInches * fileData.ViewportPPI;
+    }
+
+    return testWidth;
+  }
+
+  private getFixationWidth(fileData: any, sampleWidth: number) {
+    let fixationWidth = 0;
+
+    if (fileData.FixationUsesSample <= 0) {
+      fixationWidth = fileData.FixationSizeInches * fileData.ViewportPPI;
+    } else {
+      fixationWidth = sampleWidth;
+    }
+    return fixationWidth;
+  }
+
+  private getChoiceWidth(fileData: any) {
+    let choiceWidth = 0;
+    if (
+      !_.isUndefined(fileData.SameDifferent)
+      && fileData.SameDifferent > 0
+    ) {
+      choiceWidth = fileData.ChoiceSizeInches * fileData.ViewportPPI;
+    }
+    return choiceWidth;
   }
 
   private formatDate(data: google.visualization.DataTable, colIdx: number): void {
