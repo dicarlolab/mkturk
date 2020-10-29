@@ -5,18 +5,20 @@ import JSONEditor from 'jsoneditor';
 import 'jsoneditor/dist/jsoneditor.css'
 import { Utils } from './utils';
 import { Charts } from './charts';
+import { FileType, LiveplotDataType } from './types';
 
 const storage = firebase.storage();
-const stroageRef = storage.ref();
+const storageRef = storage.ref();
 
 const DATA_PATH = 'mkturkfiles/datafiles/'
-const DATA_REF = stroageRef.child(DATA_PATH);
+const DATA_REF = storageRef.child(DATA_PATH);
 const PARAM_PATH = 'mkturkfiles/parameterfiles/subjects/';
-const PARAM_REF = stroageRef.child(PARAM_PATH);
+const PARAM_REF = storageRef.child(PARAM_PATH);
 const utils = new Utils;
 
 export class Liveplot {
-  public file: any;
+  public file: FileType;
+
   public editor: JSONEditor;
   public charts: Charts;
 
@@ -26,11 +28,10 @@ export class Liveplot {
       path: DATA_PATH,
       list: [],
       name: '',
-      data: null,
       ver: null,
       date: null,
       dataChanged: false,
-      fileChanged: false
+      fileChanged: false,
     };
 
     this.charts = new Charts(elemObj);
@@ -40,7 +41,7 @@ export class Liveplot {
     elem.addEventListener('input', (evt: Event) => {
       evt.stopPropagation();
       evt.preventDefault();
-      this.file.name = this.file.fileList[parseInt(elem.value)].fullpath;
+      this.file.name = this.file.list[parseInt(elem.value)].fullpath;
       this.file.fileChanged = true;
       // console.log('file changed', this.file.fileChanged);
       // console.log('file name:', this.file.name);
@@ -67,7 +68,7 @@ export class Liveplot {
         return 0;
       });
 
-      this.file.fileList = fileList;
+      this.file.list = fileList;
 
       for (let i = 0; i < fileList.length; i++) {
         let opt = document.createElement('option');
@@ -76,7 +77,7 @@ export class Liveplot {
         elem.appendChild(opt);
       }
 
-      this.file.name = this.file.fileList[0].fullpath;
+      this.file.name = this.file.list[0].fullpath;
       this.file.fileChanged = true;
       let rawStorageFile = await utils.getStorageFile(this.file.name);
       
@@ -110,6 +111,7 @@ export class Liveplot {
 
     this.file.data = this.flattenData(data);
     this.loadDataToEditor(this.file.data);
+    console.log(this.file.data);
 
     let metadata = await utils.getStorageFileMetadata(this.file.name);
     console.log('Success! Loaded File Size:', metadata.size / 1000, 'KB');

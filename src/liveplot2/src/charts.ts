@@ -1,6 +1,5 @@
-import _, { first, sample } from 'lodash';
-import './types';
-import { LiveplotData } from './types';
+import _ from 'lodash';
+import { FileType, LiveplotDataType } from './types';
 
 const colorMapJet = [
   '#00008F','#00009F','#0000AF','#0000BF',
@@ -20,10 +19,6 @@ const colorMapJet = [
   '#EF0000','#DF0000','#CF0000','#BF0000',
   '#AF0000','#9F0000','#8F0000','#800000'
 ];
-
-
-
-
 
 export class Charts {
 
@@ -289,7 +284,7 @@ export class Charts {
 
   }
 
-  public initializeChartData(file: any) {
+  public initializeChartData(file: FileType) {
     // Remove rows and columns
     // console.log(this.perfDataTable);
     this.perfDataTable
@@ -357,11 +352,11 @@ export class Charts {
     this.xyPosDataTable.addColumn('number', 'Fixation');
     this.xyPosDataTable.addColumn('number', 'Sample');
 
-    if (file.data.SameDifferent <= 0) {
-      for (let i = 0; i < file.data.TestGridIndex.length; i++) {
+    if (file.data!.SameDifferent <= 0) {
+      for (let i = 0; i < file.data!.TestGridIndex.length; i++) {
         this.xyPosDataTable.addColumn('number', 'Test' + (i + 1));
       }
-    } else if (file.data.SameDiffernt > 0) {
+    } else if (file.data!.SameDifferent > 0) {
       this.xyPosDataTable.addColumn('number', 'Same');
       this.xyPosDataTable.addColumn('number', 'Different');
     }
@@ -383,7 +378,7 @@ export class Charts {
 
   }
 
-  public updatePlots(file: any) {
+  public updatePlots(file: FileType) {
     console.log('plot updated');
     this.loadVitals(file);
     this.loadVitalsText(file);
@@ -392,12 +387,19 @@ export class Charts {
 
   }
 
-  private loadVitals(file: any) {
-    this.vitals.subject = file.data.Subject;
-    this.vitals.trials = file.data.Response.length;
+  private loadVitals(file: FileType) {
+    let data;
+    if (!_.isUndefined(file.data)) {
+      data = file.data;
+    } else {
+      throw 'file.data is Undefined';
+    }
+
+    this.vitals.subject = data.Subject;
+    this.vitals.trials = data.Response.length;
     
     // Convert milliseconds to minutes
-    let startTime = file.data.StartTime;
+    let startTime = data.StartTime;
     this.vitals.time = (
       _.round(_.round(_.toNumber(_.last(startTime)) - startTime[0]) / 60000)
     );
@@ -411,7 +413,7 @@ export class Charts {
      *   ...
      * };
      */
-    let rfidTag = file.data.RFIDTag;
+    let rfidTag = data.RFIDTag;
     if (!_.isUndefined(rfidTag) && _.size(rfidTag) > 0) {
       this.vitals.rfidTag = rfidTag[_.size(rfidTag) - 1][2];
       this.vitals.rfidTime = (
@@ -423,26 +425,26 @@ export class Charts {
     }
 
     // Automator, AutomatorStage, AutomatorStageName
-    if (_.isUndefined(file.data.Automator)) {
+    if (_.isUndefined(data.Automator)) {
       this.vitals.automator = null;
     } else {
       this.vitals.automator = file.data.Automator;
     }
 
-    if (_.isUndefined(file.data.CurrentAutomatorStage)) {
+    if (_.isUndefined(data.CurrentAutomatorStage)) {
       this.vitals.automatorStage = null;
     } else {
-      this.vitals.automatorStage = file.data.CurrentAutomatorStage;
+      this.vitals.automatorStage = data.CurrentAutomatorStage;
     }
 
-    if (_.isUndefined(file.data.CurrentAutomatorStageName)) {
+    if (_.isUndefined(data.CurrentAutomatorStageName)) {
       this.vitals.automatorStageName = null;
     } else {
-      this.vitals.automatorStageName = file.data.CurrentAutomatorStageName;
+      this.vitals.automatorStageName = data.CurrentAutomatorStageName;
     }
 
     // Battery, only supports current data format
-    let battery = file.data.Battery;
+    let battery = data.Battery;
     if (!_.isUndefined(battery) && _.size(battery) > 0) {
       this.vitals.batteryLeft = _.round(battery[_.size(battery) - 1][2] * 100);
       this.vitals.batteryUsed = (
@@ -455,35 +457,35 @@ export class Charts {
 
     // Performance
     let numCorrect = 0;
-    for (let i = 0; i < _.size(file.data.CorrectItem); i++) {
-      if (file.data.CorrectItem[i] == file.data.Response[i]) {
+    for (let i = 0; i < _.size(data.CorrectItem); i++) {
+      if (data.CorrectItem[i] == data.Response[i]) {
         numCorrect++;
       }
     }
     
     this.vitals.numCorrect = numCorrect;
     this.vitals.pctCorrect = (
-      _.round(100 * numCorrect / file.data.Response.length)
+      _.round(100 * numCorrect / data.Response.length)
     );
 
-    if (!_.isUndefined(file.data.NReward)) {
+    if (!_.isUndefined(data.NReward)) {
       this.vitals.numReward = (
-        file.data.NReward.reduce((a: number, b: number) => { 
+        data.NReward.reduce((a: number, b: number) => { 
           return a + b;
         }, 0)
       );
     }
 
     this.vitals.rewardEstimate = 0;
-    if (!_.isUndefined(file.data.RewardPer1000Trials)) {
+    if (!_.isUndefined(data.RewardPer1000Trials)) {
       this.vitals.rewardEstimate = (
-        _.round(file.data.RewardPer1000Trials * this.vitals.numReward / 1000)
+        _.round(data.RewardPer1000Trials * this.vitals.numReward / 1000)
       );
     }
 
   }
 
-  private loadVitalsText(file: any) {
+  private loadVitalsText(file: FileType) {
     this.elemObject.perfVitals.innerHTML = (
       `${this.vitals.subject}: ${this.vitals.pctCorrect}% (n = ${this.vitals.numCorrect} out of ${this.vitals.trials}, r=${this.vitals.numReward}=${this.vitals.rewardEstimate}mL, ${this.vitals.time} mins)` 
     );
@@ -499,11 +501,19 @@ export class Charts {
     );
 
     this.elemObject.trialVitals.innerHTML = (
-      `Last Trial: ${file.dateSaved.toLocaleTimeString('en-US')}`
+      `Last Trial: ${file.dateSaved!.toLocaleTimeString('en-US')}`
     );
   }
 
-  private loadPerformanceData(file: any) {
+  private loadPerformanceData(file: FileType) {
+    // Typechecking file.data
+    let data;
+    if (!_.isUndefined(file.data)) {
+      data = file.data;
+    } else {
+      throw 'file.data is Undefined';
+    }
+
     this.perfDataTable.removeRows(
       0, this.perfDataTable.getNumberOfRows()
     );
@@ -529,8 +539,8 @@ export class Charts {
     let rt = [];
 
     // performance
-    for (let i = 0; i < file.data.CorrectItem.length; i++) {
-      if (file.data.CorrectItem[i] == file.data.Response[i]) {
+    for (let i = 0; i < data.CorrectItem.length; i++) {
+      if (data.CorrectItem[i] == data.Response[i]) {
         yData[i] = 1; // correct
       } else {
         yData[i] = 0; // incorrect
@@ -547,24 +557,24 @@ export class Charts {
       }
     }
 
-    for (let i = 0; i < file.data.NReward.length; i++) {
-      if (file.data.RewardStage == 0) {
-        rt[i] = file.data.FixationXYT[2][i] - file.data.StartTime[i];
+    for (let i = 0; i < data.NReward.length; i++) {
+      if (data.RewardStage == 0) {
+        rt[i] = data.FixationXYT[2][i] - data.StartTime[i];
         this.rxnTimeDataTable.addRows(
           [[file.data.FixationTouchEvent[i], rt[i]]]
         );
-      } else if (file.data.NRSVP > 0) {
-        rt[i] = file.data.SampleFixationXYT[2][i] - file.data.SampleStartTime[i];
+      } else if (data.NRSVP > 0) {
+        rt[i] = data.SampleFixationXYT[2][i] - data.SampleStartTime[i];
         this.rxnTimeDataTable.addRows(
-          [[file.data.SampleFixationTouchEvent[i], rt[i]]]
+          [[data.SampleFixationTouchEvent![i], rt[i]]]
         );
       } else {
-        rt[i] = file.data.ResponseXYT[2][i] - file.data.SampleStartTime[i];
-        if (file.data.Response[i] == -1) {
+        rt[i] = data.ResponseXYT[2][i] - data.SampleStartTime[i];
+        if (data.Response[i] == -1) {
           this.rxnTimeDataTable.addRows(
-            [['timeout', file.data.ChoiceTimeOut]]
+            [['timeout', data.ChoiceTimeOut]]
           );
-        } else if (file.data.CorrectItem[i] == file.data.Response[i]) {
+        } else if (data.CorrectItem[i] == data.Response[i]) {
           this.rxnTimeDataTable.addRows(
             [['correct', rt[i]]]
           );
@@ -585,11 +595,11 @@ export class Charts {
      * of file.data.FixationXYT or file.data.ResponseXYT
      */
     if (
-      !_.isUndefined(file.data.ResponseXYT) 
-      && _.size(file.data.ResponseXYT) > 0
+      !_.isUndefined(data.ResponseXYT) 
+      && _.size(data.ResponseXYT) > 0
       && _.size(file.data.ResponseXYT[0]) > 0
     ) {
-      for (let i = 0; i < _.size(file.data.ResponseXYT[0]) * 2; i += 2) {
+      for (let i = 0; i < _.size(data.ResponseXYT[0]) * 2; i += 2) {
         touchevent[i] = [];
         touchevent[i + 1] = [];
         touchevent[i][0] = file.data.FixationXYT[0][i / 2];
@@ -598,7 +608,7 @@ export class Charts {
         touchevent[i + 1][1] = file.data.ResponseXYT[1][i / 2];
       }
     } else {
-      for (let i = 0; i < _.size(file.data.ResponseXYT[0]) * 2; i += 2) {
+      for (let i = 0; i < _.size(data.ResponseXYT[0]) * 2; i += 2) {
         touchevent[i] = [];
         touchevent[i + 1] = [];
         touchevent[i][0] = file.data.FixationXYT[0][i / 2];
@@ -648,9 +658,11 @@ export class Charts {
 
   }
 
-  private getSampleWidth(fileData: any) {
+  // TODO: deal with case where SampleScenes[0].OBJECTS[firstKey].sizeInches is an
+  // Array of arrays -- i.e. scene movie
+  private getSampleWidth(fileData: LiveplotDataType) {
     let sampleWidth = 0;
-    if (_.size(fileData.SampleScenes[0].imageidx.length) > 0) {
+    if (_.size(fileData.SampleScenes[0].IMAGES.imageidx) > 0) {
       if (_.isArray(fileData.SampleScenes[0].IMAGES.sizeInches)) {
         let maxSizeInches = _.max(fileData.SampleScenes[0].IMAGES.sizeInches);
         if (_.isNumber(maxSizeInches)) {
