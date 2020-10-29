@@ -1,4 +1,6 @@
 import _, { first, sample } from 'lodash';
+import './types';
+import { LiveplotData } from './types';
 
 const colorMapJet = [
   '#00008F','#00009F','#0000AF','#0000BF',
@@ -628,7 +630,7 @@ export class Charts {
     let numDisplayElems = 1;
     let xyPosArray = [];
     let fixXCoord;
-    let fixYCoord;
+    let fixYCoord: number;
     let maxFixationGridIndex = _.max(file.data.FixationGridIndex);
     if (_.isNumber(maxFixationGridIndex)) {
       fixXCoord = file.data.XGridCenter[maxFixationGridIndex];
@@ -636,7 +638,13 @@ export class Charts {
         file.data.ViewportPixels[1] 
         - (file.data.YGridCenter[maxFixationGridIndex] + file.data.offsettop)
       );
+
+      let arr: any = [];
+      arr[0] = fixXCoord - fixationWidth / 2;
+      arr[numDisplayElems] = fixYCoord - fixationHeight / 2;
     }
+
+
 
   }
 
