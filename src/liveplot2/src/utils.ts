@@ -73,6 +73,7 @@ export class Utils {
         smoothedData[i] /= n;
       }
     }
+    return smoothedData;
   }
 
   public calcDistance(a: number, b: number) {

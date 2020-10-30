@@ -80,6 +80,7 @@ export class Liveplot {
       this.file.name = this.file.list[0].fullpath;
       this.file.fileChanged = true;
       let rawStorageFile = await utils.getStorageFile(this.file.name);
+      console.log('rawFile', rawStorageFile);
       
       this.processData(rawStorageFile);
 
@@ -111,7 +112,7 @@ export class Liveplot {
 
     this.file.data = this.flattenData(data);
     this.loadDataToEditor(this.file.data);
-    console.log(this.file.data);
+    // console.log(this.file.data);
 
     let metadata = await utils.getStorageFileMetadata(this.file.name);
     console.log('Success! Loaded File Size:', metadata.size / 1000, 'KB');
@@ -161,6 +162,7 @@ export class Liveplot {
 
       if (this.file.fileChanged == true || this.file.dataChanged == true) {
         let rawStorageFile = await utils.getStorageFile(this.file.name);
+        // console.log('rawFile', rawStorageFile);
         this.processData(rawStorageFile);
       } else {
         setTimeout(() => {

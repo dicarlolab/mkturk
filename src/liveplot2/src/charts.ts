@@ -383,11 +383,22 @@ export class Charts {
   }
 
   public updatePlots(file: FileType) {
+    let fileData: LiveplotDataType;
+    if (!_.isUndefined(file.data)) {
+      fileData = file.data;
+    } else {
+      throw 'file.data is Undefined'
+    }
+
     console.log('plot updated');
     this.loadVitals(file);
     this.loadVitalsText(file);
-    console.log('vitals', this.vitals);
+    // console.log('vitals', this.vitals);
     this.loadPerformanceData(file);
+    this.loadObjPerfData(fileData);
+    this.loadChoiceData(fileData);
+    this.loadRewardData(fileData);
+    this.drawLine(file);
 
   }
 
@@ -498,7 +509,6 @@ export class Charts {
     this.elemObject.rfidVitals.innerHTML = (
       `RFID: ${this.vitals.rfidTag} (${this.vitals.rfidTime})`
     );
-    console.log(this.vitals.rfidTag, this.vitals.rfidTime);
 
     this.elemObject.batteryVitals.innerHTML = (
       `Battery: ${this.vitals.batteryLeft}% (-${this.vitals.batteryUsed}%)`
@@ -734,7 +744,7 @@ export class Charts {
     let testY: number[] = [];
 
     if (data.RewardStage != 0) {
-      for (let i = 0; i <= _.size(data.TestGridIndex); i++) {
+      for (let i = 0; i < _.size(data.TestGridIndex); i++) {
         // If Same-Different, only show the first test
         if (data.SameDifferent > 0 || data.NRSVP > 0) {
           break;
@@ -903,23 +913,121 @@ export class Charts {
 
             testXPos.push(testXPosArr);
             testYPos.push(testYPosArr);
+          }
 
-            if (yData[yDataIndex] == 1) {
-              arr[numDisplayElems + 3] = yPos;
-              this.xyPosDataTable.addRows([arr]);
-            } else {
-              arr[numDisplayElems + 4] = yPos;
-              this.xyPosDataTable.addRows([arr]);
-            }
+          if (yData[yDataIndex] == 1) {
+            arr[numDisplayElems + 3] = yPos;
+            this.xyPosDataTable.addRows([arr]);
+          } else {
+            arr[numDisplayElems + 4] = yPos;
+            this.xyPosDataTable.addRows([arr]);
           }
         }
       }
 
       let meanFixXPos = _.mean(fixXPos);
       let meanFixYPos = _.mean(fixYPos);
+      let distFixXPos = fixXPos.map((a: number) => {
+        return Math.pow(Math.abs(a - meanFixXPos), 2);
+      });
+      let distFixYPos = fixYPos.map((a: number) => {
+        return Math.pow(Math.abs(a - meanFixYPos), 2);
+      });
+      let stdevFix = distFixXPos.map((a: number, idx: number) => {
+        return Math.sqrt(a + distFixYPos[i]);
+      }).reduce((a: number, b: number) => {
+        return a + b;
+      }, 0) / _.size(distFixXPos);
+      this.vitals.stdevFix = stdevFix;
 
-      
+      let stdevTest: number[] = [];
+      for (let j = 0; j < _.size(data.TestGridIndex); j++) {
+        let allTestXPos = testXPos.map((a: number[]) => {
+          return a[j];
+        }).filter((a: number) => {
+          return a != 0;
+        });
+
+        let meanTestXPos = allTestXPos.reduce((a: number, b: number) => {
+          return a + b;
+        }, 0) / _.size(allTestXPos);
+
+        let distTestXPos = allTestXPos.map((a: number) => {
+          return Math.pow(Math.abs(a - meanTestXPos), 2);
+        });
+
+        let allTestYPos = testYPos.map((a: number[]) => {
+          return a[j];
+        }).filter((a: number) => {
+          return a != 0;
+        });
+
+        let meanTestYPos = allTestYPos.reduce((a: number, b: number) => {
+          return a + b;
+        }, 0) / _.size(allTestYPos);
+
+        let distTestYPos = allTestYPos.map((a: number) => {
+          return Math.pow(Math.abs(a - meanTestYPos), 2);
+        });
+
+        stdevTest.push(
+          distTestXPos.map((a: number, i: number) => {
+            return Math.sqrt(a + distTestYPos[i]);
+          }).reduce((a: number, b: number) => {
+            return a + b;
+          }, 0) / _.size(allTestXPos)
+        );
+      }
+      this.vitals.stdevTest = stdevTest;
     }
+
+    yDataSmall = utils.smooth(yData, 5);
+    yDataLarge = utils.smooth(yData, 100);
+
+    // Calculate timeEnd
+    let timeEnd: number;
+    if (
+      _.isUndefined(data.ResponseXYT)
+      || _.size(data.ResponseXYT) < 1
+      || _.isUndefined(data.ResponseXYT[2][_.size(data.ResponseXYT[2]) -1])
+    ) {
+      timeEnd = data.FixationXYT[2][_.size(data.FixationXYT[2]) - 1];
+    } else {
+      timeEnd = data.ResponseXYT[2][_.size(data.ResponseXYT[2]) - 1];
+    }
+
+    // RFID
+    let numTrials = _.size(yData);
+    let numReads = _.size(data.RFIDTag);
+    numRFID = _.fill(Array(numTrials), 0);
+    this.vitals.tagCount = {};
+
+    for (let i = 0; i < numReads; i++) {
+      if (_.isUndefined(this.vitals.tagCount[data.RFIDTag[i][2]])) {
+        this.vitals.tagCount[data.RFIDTag[i][2]] = 0;
+      }
+      this.vitals.tagCount[data.RFIDTag[i][2]] += 1;
+      numRFID[data.RFIDTag[i][0]] += 1;
+    }
+
+    for (let i = 1; i < _.size(numRFID); i++) {
+      numRFID[i] = numRFID[i] + numRFID[i - 1];
+    }
+
+    // Adding rest of the data
+    for (let i = 0; i < _.size(yData); i++) {
+      let timeFix = data.FixationXYT[2][i] // in milliseconds
+      if (timeFix < 0) {
+        continue;
+      }
+
+      let t = file.dateSaved!;
+      t.setTime(t.getTime() - (timeEnd - timeFix));
+
+      this.perfDataTable.addRows([[xData[i], yDataSmall[i], yDataLarge[i]]]);
+      this.cumulDataTable.addRows([[t, numTotal[i], numCorrect[i], numRFID[i]]]);
+    }
+    this.formatDate(this.cumulDataTable, 0);
   }
 
   private generateAndAddRowData(
@@ -941,7 +1049,6 @@ export class Charts {
   // TODO: deal with case where SampleScenes[0].OBJECTS[firstKey].sizeInches is an
   // Array of arrays -- i.e. scene movie
   private getSampleWidth(fileData: LiveplotDataType) {
-    console.log('getSampleWidth');
     let sampleWidth = 0;
     if (_.size(fileData.SampleScenes[0].IMAGES.imageidx) > 0) {
       if (_.isArray(fileData.SampleScenes[0].IMAGES.sizeInches)) {
@@ -1087,9 +1194,117 @@ export class Charts {
       
       if (
         _.size(data.ObjectGridIndex) != 0
-        && (_.isUndefined(data.NTrialsPerBagBlock) || data.NTrialsPerBagBlock < 1000)
+        && (_.isUndefined(data.NTrialsPerBagBlock) 
+        || data.NTrialsPerBagBlock < 1000)
       ) {
-        
+        let objGridIndex = _.cloneDeep(data.ObjectGridIndex);
+        objGridIndex.sort((a: number, b: number) => {
+          return a - b;
+        });
+        let allind = [];
+        for (let i = 0; i < _.size(objGridIndex); i++) {
+          allind.push(_.findIndex(data.ObjectGridIndex, objGridIndex[i]));
+          this.choiceDataTable.addRow(
+            [data.ImageBagsSample[allind[i]].split('/')[5], 0]
+          );
+          possibleResp.push(i);
+        }
+      } else {
+        for (let i = 0; i < _.size(data.TestGridIndex); i++) {
+          this.choiceDataTable.addRow(['choice' + (i + 1), 0]);
+          possibleResp.push(i);
+        }
+      }
+
+      let NDiffChoice = _.fill(Array(_.size(possibleResp)), 0);
+      let NAllChoice = 0;
+
+      for (let i = 0; i < _.size(data.Response); i++) {
+        if (data.Response[i] != -1) {
+          NAllChoice++;
+        }
+
+        for (let j = 0; j < _.size(possibleResp); j++) {
+          if (data.Response[i] == possibleResp[j] && data.Response[i] != -1) {
+            NDiffChoice[j]++;
+          }
+          this.choiceDataTable.setValue(j, 1, NDiffChoice[j] / NAllChoice);
+        }
+      }
+    } else {
+      this.choiceDataTable.addRow(['outside Fix', 0]);
+      this.choiceDataTable.addRow(['inside Fix', 0]);
+
+      let NDiffChoice = _.fill(Array(2), 0);
+      let NAllChoice = 0;
+      let yData = [];
+
+      for (let i = 0; i < _.size(data.CorrectItem); i++) {
+        if (data.CorrectItem[i] == data.Response[i]) {
+          yData.push(1);
+        } else {
+          yData.push(0);
+        }
+      }
+
+      for (let i = 0; i < _.size(yData); i++) {
+        NAllChoice++;
+
+        for (let j = 0; j < 2; j++) {
+          if (yData[i] == j) {
+            NDiffChoice[j] += 1;
+          }
+          this.choiceDataTable.setValue(j, 1, NDiffChoice[j] / NAllChoice);
+        }
+      }
+    }
+  }
+
+  private loadRewardData(data: LiveplotDataType) {
+    this.rewardDataTable.removeRows(0, this.rewardDataTable.getNumberOfRows());
+    let NRewardMax = [];
+    for (let i = 0; i < data.NRewardMax; i++) {
+      NRewardMax.push(i.toString());
+    }
+    NRewardMax.unshift('-1');
+
+    for (let i = 0; i < _.size(NRewardMax); i++) {
+      this.rewardDataTable.addRow([NRewardMax[i], 0]);
+    }
+
+    let NDiffReward = _.fill(Array(_.size(NRewardMax)), 0);
+
+    for (let i = 0; i < _.size(data.NReward); i++) {
+      if (data.Response[i] == -1) {
+        NDiffReward[0]++;
+        this.rewardDataTable.setValue(
+          0, 1, NDiffReward[0] / _.size(data.NReward)
+        );
+      } else {
+        for (let j = 1; j < _.size(NRewardMax); j++) {
+          if (data.NReward[i].toString() == NRewardMax[j]) {
+            NDiffReward[j]++;
+          }
+          this.rewardDataTable.setValue(
+            j, 1, NDiffReward[j] / _.size(data.NReward)
+          );
+        }
+      }
+    }
+  }
+
+  private drawLine(file: FileType) {
+    let numRows = this.perfDataTable.getNumberOfRows();
+    let perfFilterState: any = this.perfFilter.getState();
+
+    // updating perfFilter
+    if (file.dataChanged && !file.fileChanged) {
+      if (numRows <= 100) {
+        // expand window size automatically up to 100
+        perfFilterState.range.start = 0;
+        perfFilterState.range.end = numRows;   
+      } else {
+        let dTrials = numRows - num
       }
     }
   }

@@ -171,7 +171,7 @@ export interface LiveplotDataType {
   ResponseXYT: Record<number, number[]>,
   NReward: number[],
   Battery: Record<number, any[]>,
-  RFIDTag?: Record<number, any[]>,
+  RFIDTag: Record<number, any[]>,
   Weight?: any;
 }
 

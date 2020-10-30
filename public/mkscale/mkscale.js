@@ -529,9 +529,9 @@ entryForm.addEventListener('submit', async (ev) => {
   if (entrySelector.value != 'mkscale') {
     name = entrySelector.value;
 
-    let path = 'mkturkfiles/mkdailydatatest/' + name + '.json';
+    let path = 'mkturkfiles/mkdailydata/' + name + '.json';
     let storageFile = await getStorageFile(path);
-    let firestoreDoc = await getDocumentData('mkdailydatatest', name);
+    let firestoreDoc = await getDocumentData('mkdailydata', name);
 
     let tmp = {};
     tmp.weight = Number(wt);
@@ -558,24 +558,24 @@ entryForm.addEventListener('submit', async (ev) => {
       }
     }
 
-    await db.collection('mkdailydatatest').doc(name).set(firestoreDoc).then(async () => {
-      console.log(name, 'weight uploaded to firestore/mkdailydatatest');
+    await db.collection('mkdailydata').doc(name).set(firestoreDoc).then(async () => {
+      console.log(name, 'weight uploaded to firestore/mkdailydata');
       storageFile = new Blob(
         [JSON.stringify(storageFile, Object.keys(storageFile).sort(), 1)]
       );
       let fileRef = storage.ref().child(path);
       await fileRef.put(storageFile, {contentType: 'application/json'}).then(() => {
-        console.log(name, 'weight uploaded to mkturkfiles/mkdailydatatest');
+        console.log(name, 'weight uploaded to mkturkfiles/mkdailydata');
         editor.destroy();
         tmp.timestamp = tmp.timestamp.toJSON();
         editor = new JSONEditor(editorContainer, {}, tmp);
         alert('Weight Successfully Uploaded/Updated');
       }).catch(e => {
-        console.error('Error uploading weight to mkturkfiles/mkdailydatatest', e);
+        console.error('Error uploading weight to mkturkfiles/mkdailydata', e);
         alert('Error Uploading file to GCS');
       });
     }).catch(e => {
-      console.error('Error uploading weight to firestore/mkdailydatatest', e);
+      console.error('Error uploading weight to firestore/mkdailydata', e);
       alert('Error updating Firestore doc');
     });
 
