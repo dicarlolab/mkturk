@@ -1,5 +1,6 @@
-import _ from 'lodash';
+import _, { sample } from 'lodash';
 import { FileType, LiveplotDataType } from './types';
+import { Utils } from './utils';
 
 const colorMapJet = [
   '#00008F','#00009F','#0000AF','#0000BF',
@@ -19,6 +20,9 @@ const colorMapJet = [
   '#EF0000','#DF0000','#CF0000','#BF0000',
   '#AF0000','#9F0000','#8F0000','#800000'
 ];
+
+const utils = new Utils();
+
 
 export class Charts {
 
@@ -533,9 +537,9 @@ export class Charts {
     let numCorrect: number[] = [];
     let tCurrent = [];
     let numRFID = [];
-    let xPos = [];
-    let yPos = [];
-    let touchevent: any[][] = [];
+    let xPos: number;
+    let yPos: number;
+    let touchevent: number[][] = [];
     let rt = [];
 
     // performance
@@ -566,7 +570,7 @@ export class Charts {
       } else if (data.NRSVP > 0) {
         rt[i] = data.SampleFixationXYT[2][i] - data.SampleStartTime[i];
         this.rxnTimeDataTable.addRows(
-          [[data.SampleFixationTouchEvent![i], rt[i]]]
+          [[data.SampleFixationTouchEvent[i], rt[i]]]
         );
       } else {
         rt[i] = data.ResponseXYT[2][i] - data.SampleStartTime[i];
@@ -639,28 +643,305 @@ export class Charts {
     // FIXATION
     let numDisplayElems = 1;
     let xyPosArray = [];
-    let fixXCoord;
-    let fixYCoord: number;
+    let fixX: number;
+    let fixY: number;
     let maxFixationGridIndex = _.max(file.data.FixationGridIndex);
     if (_.isNumber(maxFixationGridIndex)) {
-      fixXCoord = file.data.XGridCenter[maxFixationGridIndex];
-      fixYCoord = (
+      fixX = file.data.XGridCenter[maxFixationGridIndex];
+      fixY = (
         file.data.ViewportPixels[1] 
         - (file.data.YGridCenter[maxFixationGridIndex] + file.data.offsettop)
       );
-
-      let arr: any = [];
-      arr[0] = fixXCoord - fixationWidth / 2;
-      arr[numDisplayElems] = fixYCoord - fixationHeight / 2;
+    } else {
+      throw 'data.FixationGridIndex is not of type number[]';
     }
 
+    this.generateAndAddRowData(
+      this.xyPosDataTable,
+      numColumnXYPos,
+      { 0: fixX - fixationWidth / 2, 1: fixY - fixationHeight / 2 }
+    );
+    this.generateAndAddRowData(
+      this.xyPosDataTable,
+      numColumnXYPos,
+      { 0: fixX + fixationWidth / 2, 1: fixY - fixationHeight / 2}
+    );
+    this.generateAndAddRowData(
+      this.xyPosDataTable,
+      numColumnXYPos,
+      { 0: fixX + fixationWidth / 2, 1: fixY + fixationHeight / 2}
+    );
+    this.generateAndAddRowData(
+      this.xyPosDataTable,
+      numColumnXYPos,
+      { 0: fixX - fixationWidth / 2, 1: fixY + fixationHeight / 2}
+    );
+    this.generateAndAddRowData(
+      this.xyPosDataTable,
+      numColumnXYPos,
+      { 0: fixX - fixationWidth / 2, 1: fixY - fixationHeight / 2}
+    );
 
+    // SAMPLE
+    numDisplayElems = 2;
+    let sampleX: number;
+    let sampleY: number;
+    let maxSampleGridIndex = _.max(data.SampleGridIndex);
 
+    if (data.RewardStage > 0) {
+      if (_.isNumber(maxSampleGridIndex)) {
+        sampleX = data.XGridCenter[maxSampleGridIndex];
+        sampleY = (
+          data.ViewportPixels[1]
+          - (data.YGridCenter[maxSampleGridIndex] + data.offsettop)
+        );
+      } else {
+        throw 'data.SampleGridIndex is not of type number[]';
+      }
+    } else {
+      sampleX = fixX;
+      sampleY = fixY;
+    }
+
+    this.generateAndAddRowData(
+      this.xyPosDataTable,
+      numColumnXYPos,
+      { 0: sampleX - sampleWidth, 2: sampleY - sampleHeight }
+    );
+    this.generateAndAddRowData(
+      this.xyPosDataTable,
+      numColumnXYPos,
+      { 0: sampleX + sampleWidth, 2: sampleY - sampleHeight }
+    );
+    this.generateAndAddRowData(
+      this.xyPosDataTable,
+      numColumnXYPos,
+      { 0: sampleX + sampleWidth, 2: sampleY + sampleHeight }
+    );
+    this.generateAndAddRowData(
+      this.xyPosDataTable,
+      numColumnXYPos,
+      { 0: sampleX - sampleWidth, 2: sampleY + sampleHeight }
+    );
+    this.generateAndAddRowData(
+      this.xyPosDataTable,
+      numColumnXYPos,
+      { 0: sampleX - sampleWidth, 2: sampleY - sampleHeight }
+    );
+
+    // TEST:
+    let testX: number[] = [];
+    let testY: number[] = [];
+
+    if (data.RewardStage != 0) {
+      for (let i = 0; i <= _.size(data.TestGridIndex); i++) {
+        // If Same-Different, only show the first test
+        if (data.SameDifferent > 0 || data.NRSVP > 0) {
+          break;
+        }
+
+        numDisplayElems++;
+        if (data.NRSVP > 0) {
+          testX.push(data.XGridCenter[maxSampleGridIndex!]);
+          testY.push(
+            data.ViewportPixels[1]
+            - (data.YGridCenter[maxSampleGridIndex!] + data.offsettop)
+          );
+        } else {
+          testX.push(data.XGridCenter[data.TestGridIndex[i]]);
+          testY.push(
+            data.ViewportPixels[1]
+            - (data.YGridCenter[data.TestGridIndex[i]] + data.offsettop)
+          );
+        }
+
+        this.generateAndAddRowData(
+          this.xyPosDataTable,
+          numColumnXYPos,
+          { 
+            0: testX[i] - testWidth / 2,
+            [numDisplayElems]: testY[i] - testHeight / 2
+          }
+        );
+        this.generateAndAddRowData(
+          this.xyPosDataTable,
+          numColumnXYPos,
+          { 
+            0: testX[i] + testWidth / 2,
+            [numDisplayElems]: testY[i] - testHeight / 2
+          }
+        );
+        this.generateAndAddRowData(
+          this.xyPosDataTable,
+          numColumnXYPos,
+          { 
+            0: testX[i] + testWidth / 2,
+            [numDisplayElems]: testY[i] + testHeight / 2
+          }
+        );
+        this.generateAndAddRowData(
+          this.xyPosDataTable,
+          numColumnXYPos,
+          { 
+            0: testX[i] - testWidth / 2,
+            [numDisplayElems]: testY[i] + testHeight / 2
+          }
+        );
+        this.generateAndAddRowData(
+          this.xyPosDataTable,
+          numColumnXYPos,
+          { 
+            0: testX[i] - testWidth / 2,
+            [numDisplayElems]: testY[i] - testHeight / 2
+          }
+        );
+      } 
+    }
+
+    // CHOICE:
+    let choiceX: number[] = [];
+    let choiceY: number[] = [];
+
+    if (data.RewardStage != 0 && data.SameDifferent > 0) {
+      for (let i = 0; i < _.size(data.ChoiceGridIndex); i++) {
+        numDisplayElems++;
+        choiceX.push(data.XGridCenter[data.ChoiceGridIndex[i]]);
+        choiceY.push(
+          data.ViewportPixels[1]
+          - (data.YGridCenter[data.ChoiceGridIndex[i]] + data.offsettop)
+        );
+
+        this.generateAndAddRowData(
+          this.xyPosDataTable,
+          numColumnXYPos,
+          {
+            0: choiceX[i] - choiceWidth / 2,
+            [numDisplayElems]: choiceY[i] - choiceHeight / 2
+          }
+        );
+        this.generateAndAddRowData(
+          this.xyPosDataTable,
+          numColumnXYPos,
+          {
+            0: choiceX[i] + choiceWidth / 2,
+            [numDisplayElems]: choiceY[i] - choiceHeight / 2
+          }
+        );
+        this.generateAndAddRowData(
+          this.xyPosDataTable,
+          numColumnXYPos,
+          {
+            0: choiceX[i] + choiceWidth / 2,
+            [numDisplayElems]: choiceY[i] + choiceHeight / 2
+          }
+        );
+        this.generateAndAddRowData(
+          this.xyPosDataTable,
+          numColumnXYPos,
+          {
+            0: choiceX[i] - choiceWidth / 2,
+            [numDisplayElems]: choiceY[i] + choiceHeight / 2
+          }
+        );
+        this.generateAndAddRowData(
+          this.xyPosDataTable,
+          numColumnXYPos,
+          {
+            0: choiceX[i] - choiceWidth / 2,
+            [numDisplayElems]: choiceY[i] - choiceHeight / 2
+          }
+        );
+
+      }
+    }
+
+    let fixXPos: number[] = [];
+    let fixYPos: number[] = [];
+    let testXPos: number[][] = [];
+    let testYPos: number[][] = [];
+    let numTarget = [0, 0];
+
+    for (let i = 0; i < touchevent.length; i++) {
+      xPos = touchevent[i][0];
+      yPos = data.ViewportPixels[1] - touchevent[i][1];
+
+      let yDataIndex: number;
+      if (i % 2 == 0) {
+        yDataIndex = i / 2;
+      } else {
+        yDataIndex = (i - 1) / 2;
+      }
+
+      if (xPos != -1) {
+        let arr = new Array(numColumnXYPos);
+        arr[0] = xPos;
+
+        if (i % 2 == 0) {
+          fixXPos.push(xPos);
+          fixYPos.push(yPos);
+
+          if (yData[yDataIndex] == 1) {
+            arr[numDisplayElems + 1] = yPos;
+            this.xyPosDataTable.addRows([arr]);
+          } else {
+            arr[numDisplayElems + 2] = yPos;
+            this.xyPosDataTable.addRows([arr]);
+          }
+        } else {
+          let testXPosArr: number[] = [];
+          let testYPosArr: number[] = [];
+          
+          for (let j = 0; j < _.size(data.TestGridIndex); j++) {
+            if (data.Response[yDataIndex] == j) {
+              testXPosArr.push(xPos);
+              testYPosArr.push(yPos);
+              numTarget[j] += 1;
+            } else {
+              testXPosArr.push(0);
+              testYPosArr.push(0);
+            }
+
+            testXPos.push(testXPosArr);
+            testYPos.push(testYPosArr);
+
+            if (yData[yDataIndex] == 1) {
+              arr[numDisplayElems + 3] = yPos;
+              this.xyPosDataTable.addRows([arr]);
+            } else {
+              arr[numDisplayElems + 4] = yPos;
+              this.xyPosDataTable.addRows([arr]);
+            }
+          }
+        }
+      }
+
+      let meanFixXPos = _.mean(fixXPos);
+      let meanFixYPos = _.mean(fixYPos);
+
+      
+    }
+  }
+
+  private generateAndAddRowData(
+    target: google.visualization.DataTable, 
+    numColumns: number, 
+    data: Record<number, number>
+  ) {
+    let arr = [];
+    for (let i = 0; i < numColumns; i++) {
+      if (_.has(data, i)) {
+        arr.push(data[i]);
+      } else {
+        arr.push(null);
+      }
+    }
+    target.addRows([arr]);
   }
 
   // TODO: deal with case where SampleScenes[0].OBJECTS[firstKey].sizeInches is an
   // Array of arrays -- i.e. scene movie
   private getSampleWidth(fileData: LiveplotDataType) {
+    console.log('getSampleWidth');
     let sampleWidth = 0;
     if (_.size(fileData.SampleScenes[0].IMAGES.imageidx) > 0) {
       if (_.isArray(fileData.SampleScenes[0].IMAGES.sizeInches)) {
@@ -694,7 +975,7 @@ export class Charts {
     return sampleWidth;
   }
 
-  private getTestWidth(fileData: any) {
+  private getTestWidth(fileData: LiveplotDataType) {
     let testWidth = 0;
 
     if (fileData.TestScenes[0].IMAGES.imageidx.length > 0) {
@@ -738,7 +1019,7 @@ export class Charts {
     return testWidth;
   }
 
-  private getFixationWidth(fileData: any, sampleWidth: number) {
+  private getFixationWidth(fileData: LiveplotDataType, sampleWidth: number) {
     let fixationWidth = 0;
 
     if (fileData.FixationUsesSample <= 0) {
@@ -749,7 +1030,7 @@ export class Charts {
     return fixationWidth;
   }
 
-  private getChoiceWidth(fileData: any) {
+  private getChoiceWidth(fileData: LiveplotDataType) {
     let choiceWidth = 0;
     if (
       !_.isUndefined(fileData.SameDifferent)
@@ -758,6 +1039,32 @@ export class Charts {
       choiceWidth = fileData.ChoiceSizeInches * fileData.ViewportPPI;
     }
     return choiceWidth;
+  }
+
+  private loadObjPerfData(data: LiveplotDataType) {
+    this.objPerfDataTable.removeRows(
+      0, this.objPerfDataTable.getNumberOfRows()
+    );
+  
+    let lenSampleObj: number;
+    if (data.RewardStage == 1) {
+      let sampleObj = [];
+      if (data.NTrialsPerBagBlock > 5000) {
+        sampleObj.push(data.ImageBagsSample[0].split('/')[5]);
+        this.objPerfDataTable.addRow([sampleObj[0], 0]);
+        lenSampleObj = 1;
+      } else {
+        for (let i = 0; i < _.size(data.ImageBagsSample); i++) {
+          sampleObj.push(data.ImageBagsSample[i].split('/')[5]);
+          this.objPerfDataTable.addRow([sampleObj[i], 0]);
+        }
+        lenSampleObj = _.size(sampleObj);
+      }
+
+      let nDiffObjPerf 
+    }
+
+
   }
 
   private formatDate(data: google.visualization.DataTable, colIdx: number): void {

@@ -74,4 +74,8 @@ export class Utils {
       }
     }
   }
+
+  public calcDistance(a: number, b: number) {
+    return Math.pow(Math.abs(a - b), 2);
+  }
 }

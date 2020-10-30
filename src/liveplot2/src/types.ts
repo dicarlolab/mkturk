@@ -165,7 +165,7 @@ export interface LiveplotDataType {
   Response: number[],
   TSequenceDesiredClip: Record<number, number[]>,
   TSequenceActualClip: Record<number, number[]>,
-  SampleFixationTouchEvent?: any[],
+  SampleFixationTouchEvent: any[],
   SampleFixationXYT: any,
   ResponseTouchEvent: string[],
   ResponseXYT: Record<number, number[]>,
