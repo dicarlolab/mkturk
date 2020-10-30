@@ -1061,10 +1061,37 @@ export class Charts {
         lenSampleObj = _.size(sampleObj);
       }
 
-      let nDiffObjPerf 
+      let NDiffObjPerf = _.fill(Array(lenSampleObj), 0);
+      let NDiffObj = _.fill(Array(lenSampleObj), 0);
+      for (let i = 0; i < _.size(data.Sample[0]); i++) { // For i trials
+        for (let j = 0; j < lenSampleObj; j++) {
+          // If sample was that object
+          if (data.SampleBagIdx[data.Sample[0][i]] == j) {
+            NDiffObj[j] += 1;
+            // If correct
+            if (data.Response[i] == data.CorrectItem[i]) {
+              NDiffObjPerf[j] += 1;
+            }
+          }
+          this.objPerfDataTable.setValue(j, 1, NDiffObjPerf[j] / NDiffObj[j]);
+        }
+      }
     }
+  }
 
-
+  private loadChoiceData(data: LiveplotDataType) {
+    this.choiceDataTable.removeRows(0, this.choiceDataTable.getNumberOfRows());
+    
+    if (data.RewardStage != 0) {
+      let possibleResp = _.fill(Array(_.size(data.ObjectGridIndex)), 0);
+      
+      if (
+        _.size(data.ObjectGridIndex) != 0
+        && (_.isUndefined(data.NTrialsPerBagBlock) || data.NTrialsPerBagBlock < 1000)
+      ) {
+        
+      }
+    }
   }
 
   private formatDate(data: google.visualization.DataTable, colIdx: number): void {
