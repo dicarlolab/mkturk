@@ -1,6 +1,7 @@
 import firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/storage';
+import 'firebase/database';
 import JSONEditor from 'jsoneditor';
 import 'jsoneditor/dist/jsoneditor.css'
 import { Utils } from './utils';
@@ -9,6 +10,7 @@ import { FileType, LiveplotDataType } from './types';
 
 const storage = firebase.storage();
 const storageRef = storage.ref();
+const rtdb = firebase.database();
 
 const DATA_PATH = 'mkturkfiles/datafiles/'
 const DATA_REF = storageRef.child(DATA_PATH);
@@ -18,11 +20,13 @@ const utils = new Utils;
 
 export class Liveplot {
   public file: FileType;
-
+  public elemObjs: any;
   public editor: JSONEditor;
   public charts: Charts;
 
   constructor(elemObj: any) {
+    this.elemObjs = elemObj;
+    
 
     this.file = {
       path: DATA_PATH,
@@ -35,6 +39,7 @@ export class Liveplot {
     };
 
     this.charts = new Charts(elemObj);
+    this.requestRealtimeBtnAction()
   }
 
   public fileSelectionChangedListener(elem: HTMLSelectElement) {
@@ -46,6 +51,28 @@ export class Liveplot {
       // console.log('file changed', this.file.fileChanged);
       // console.log('file name:', this.file.name);
       // console.log('file path:', this.file.path);
+    });
+  }
+
+  public requestRealtimeBtnAction() {
+    let realtimeBtn = this.elemObjs.realtimeBtn;
+    realtimeBtn.addEventListener('click', async (evt: Event) => {
+      let agent = this.file.data?.Agent!;
+      let agentRef = rtdb.ref('agents/' + agent);
+      let agentActive = await agentRef.once('value', sns => {
+        return sns.val();
+      });
+      if (agentActive) {
+        let obj: any = {};
+        obj[agent] = false;
+        realtimeBtn.innerHTML = 'Request Realtime';
+        agentRef.set(obj);
+      } else {
+        let obj: any = {};
+        obj[agent] = true;
+        realtimeBtn.innerHTML = 'Deactivate Realtime';
+        agentRef.set(obj);
+      }
     });
   }
 
@@ -118,6 +145,7 @@ export class Liveplot {
     console.log('Success! Loaded File Size:', metadata.size / 1000, 'KB');
     this.file.ver = metadata.generation;
     this.file.dateSaved = new Date(metadata.updated);
+    console.log(this.file.dateSaved);
 
     // this.file.data.CurrentDate = (
     //   new Date(this.file.data.CurrentDate).valueOf()
@@ -154,6 +182,7 @@ export class Liveplot {
       if (this.file.ver != metadata.generation) {
         this.file.ver = metadata.generation;
         this.file.dateSaved = new Date(metadata.updated);
+        console.log(this.file.dateSaved);
         this.file.dataChanged = true;
         console.log('File was updated ver=' + this.file.ver)
       } else {

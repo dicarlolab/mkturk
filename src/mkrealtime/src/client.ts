@@ -17,7 +17,7 @@ const rtdb = firebase.database();
 let activeBtn = document.querySelector('#run-btn') as HTMLButtonElement;
 let inactiveBtn = document.querySelector('#inactive-btn') as HTMLButtonElement;
 
-let agent = 'Sausage';
+let agent = 'Hectoro';
 let agentsRef = rtdb.ref('agents/');
 let dataRef = rtdb.ref('data/' + agent);
 
@@ -37,6 +37,9 @@ inactiveBtn.addEventListener('click', evt => {
 
 window.addEventListener('data_arrived', (evt: CustomEventInit) => {
   console.log(evt.detail)
+  let ts = new Date(evt.detail.timestamp).getTime();
+  let diff = Date.now() - ts;
+  console.log('Diff', diff);
 });
 
 dataRef.on('value', snapshot => {

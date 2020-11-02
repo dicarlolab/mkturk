@@ -68,6 +68,18 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 				}//for q boxes
 				touchcxyt[0] = chosenbox
 
+				if (FLAGS.rtdbAgentActive == true) {
+					console.log('rtdbAgentActive', FLAGS.rtdbAgentActive);
+					let metaStr = chosenbox >= 0 ? 1 : 0;
+					FLAGS.rtdbDataRef.set({
+						x: x - CANVAS.offsetleft,
+						y: y - CANVAS.offsettop,
+						meta: metaStr,
+						timestamp: new Date().toJSON()
+					});
+					console.log('rtdb SENT');
+				}
+
 				//Accumulate cxyt in box for greater eyetracker accuracy
 				if (chosenbox != -1){
 					CURRTRIAL.cxyt.push(touchcxyt) //also accumulate for current trial			

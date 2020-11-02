@@ -38,7 +38,12 @@ let elemObj = {
   perfVitals: document.querySelector('#performance-vitals') as HTMLSpanElement,
   rfidVitals: document.querySelector('#rfid-vitals') as HTMLSpanElement,
   batteryVitals: document.querySelector('#battery-vitals') as HTMLSpanElement,
-  trialVitals: document.querySelector('#trial-vitals') as HTMLSpanElement
+  trialVitals: document.querySelector('#trial-vitals') as HTMLSpanElement,
+  fixStdev: document.querySelector('#fixation-stdev') as HTMLSpanElement,
+  tarZeroStdev: document.querySelector('#target0-stdev') as HTMLSpanElement,
+  tarOneStdev: document.querySelector('#target1-stdev') as HTMLSpanElement,
+  sdTextDiv: document.querySelector('#touch-sd-text') as HTMLDivElement,
+  realtimeBtn: document.querySelector('#request-realtime') as HTMLButtonElement
 };
 
 const lp = new Liveplot(elemObj);

@@ -68,6 +68,7 @@ export class Charts {
   public objPerfPlotOptions: google.visualization.ColumnChartOptions;
 
   private vitals: any;
+  private nTrials: number;
 
 
   constructor(elemObj: any) {
@@ -156,7 +157,6 @@ export class Charts {
       height: this.elemObject.perfPlot.clientHeight,
       hAxis: { title: 'Trial#' },
       vAxis: { title: 'Correct (%)', viewWindow: { min: 0, max: 1.0 } },
-      title: 'Subject 1',
       animation: {
         duration: 500,
         easing: 'linear',
@@ -398,7 +398,14 @@ export class Charts {
     this.loadObjPerfData(fileData);
     this.loadChoiceData(fileData);
     this.loadRewardData(fileData);
-    this.drawLine(file);
+    this.drawPerformancePlot(file);
+    this.drawTrialPlot(file);
+    this.drawObjPerfPlot();
+    this.drawRxnTimePlot();
+    this.drawChoicePlot();
+    this.drawRewardPlot();
+    this.loadTouchSDText();
+    this.drawScreenPlot(fileData);
 
   }
 
@@ -519,6 +526,13 @@ export class Charts {
     );
   }
 
+  private loadTouchSDText() {
+    this.screenPlotOptions.title = `Touch Locations -- standard dev: \n Fixation: ${Math.round(this.vitals.stdevFix * 10) / 10} pixels`;
+    for (let i = 0; i < this.vitals.stdevTest.length; i++) {
+      this.screenPlotOptions.title = this.screenPlotOptions.title + `\n Target ${i}: ${Math.round(this.vitals.stdevTest[i] * 10) / 10}`; 
+    }
+  }
+
   private loadPerformanceData(file: FileType) {
     // Typechecking file.data
     let data;
@@ -567,7 +581,7 @@ export class Charts {
       if (i > 0) {
         numCorrect[i] = numCorrect[i - 1] + yData[i];
       } else if (i == 0) {
-        numCorrect[i] == yData[i];
+        numCorrect[i] = yData[i];
       }
     }
 
@@ -652,7 +666,7 @@ export class Charts {
 
     // FIXATION
     let numDisplayElems = 1;
-    let xyPosArray = [];
+    // let xyPosArray = [];
     let fixX: number;
     let fixY: number;
     let maxFixationGridIndex = _.max(file.data.FixationGridIndex);
@@ -716,27 +730,27 @@ export class Charts {
     this.generateAndAddRowData(
       this.xyPosDataTable,
       numColumnXYPos,
-      { 0: sampleX - sampleWidth, 2: sampleY - sampleHeight }
+      { 0: sampleX - sampleWidth / 2, 2: sampleY - sampleHeight / 2 }
     );
     this.generateAndAddRowData(
       this.xyPosDataTable,
       numColumnXYPos,
-      { 0: sampleX + sampleWidth, 2: sampleY - sampleHeight }
+      { 0: sampleX + sampleWidth / 2, 2: sampleY - sampleHeight/ 2 }
     );
     this.generateAndAddRowData(
       this.xyPosDataTable,
       numColumnXYPos,
-      { 0: sampleX + sampleWidth, 2: sampleY + sampleHeight }
+      { 0: sampleX + sampleWidth / 2, 2: sampleY + sampleHeight / 2 }
     );
     this.generateAndAddRowData(
       this.xyPosDataTable,
       numColumnXYPos,
-      { 0: sampleX - sampleWidth, 2: sampleY + sampleHeight }
+      { 0: sampleX - sampleWidth / 2, 2: sampleY + sampleHeight/ 2 }
     );
     this.generateAndAddRowData(
       this.xyPosDataTable,
       numColumnXYPos,
-      { 0: sampleX - sampleWidth, 2: sampleY - sampleHeight }
+      { 0: sampleX - sampleWidth / 2, 2: sampleY - sampleHeight / 2 }
     );
 
     // TEST:
@@ -934,7 +948,7 @@ export class Charts {
         return Math.pow(Math.abs(a - meanFixYPos), 2);
       });
       let stdevFix = distFixXPos.map((a: number, idx: number) => {
-        return Math.sqrt(a + distFixYPos[i]);
+        return Math.sqrt(a + distFixYPos[idx]);
       }).reduce((a: number, b: number) => {
         return a + b;
       }, 0) / _.size(distFixXPos);
@@ -1021,7 +1035,7 @@ export class Charts {
         continue;
       }
 
-      let t = file.dateSaved!;
+      let t = new Date(file.dateSaved!);
       t.setTime(t.getTime() - (timeEnd - timeFix));
 
       this.perfDataTable.addRows([[xData[i], yDataSmall[i], yDataLarge[i]]]);
@@ -1190,7 +1204,8 @@ export class Charts {
     this.choiceDataTable.removeRows(0, this.choiceDataTable.getNumberOfRows());
     
     if (data.RewardStage != 0) {
-      let possibleResp = _.fill(Array(_.size(data.ObjectGridIndex)), 0);
+      // let possibleResp = _.fill(Array(_.size(data.ObjectGridIndex)), 0);
+      let possibleResp = [];
       
       if (
         _.size(data.ObjectGridIndex) != 0
@@ -1203,7 +1218,8 @@ export class Charts {
         });
         let allind = [];
         for (let i = 0; i < _.size(objGridIndex); i++) {
-          allind.push(_.findIndex(data.ObjectGridIndex, objGridIndex[i]));
+          // allind.push(_.findIndex(data.ObjectGridIndex, objGridIndex[i]));
+          allind.push(data.ObjectGridIndex.indexOf(objGridIndex[i]));
           this.choiceDataTable.addRow(
             [data.ImageBagsSample[allind[i]].split('/')[5], 0]
           );
@@ -1293,8 +1309,9 @@ export class Charts {
     }
   }
 
-  private drawLine(file: FileType) {
+  private drawPerformancePlot(file: FileType) {
     let numRows = this.perfDataTable.getNumberOfRows();
+    this.nTrials = numRows;
     let perfFilterState: any = this.perfFilter.getState();
 
     // updating perfFilter
@@ -1304,9 +1321,115 @@ export class Charts {
         perfFilterState.range.start = 0;
         perfFilterState.range.end = numRows;   
       } else {
-        let dTrials = numRows - num
+        let dTrials = numRows - _.size(file.data?.FixationGridIndex);
+        console.log('dtrials', dTrials);
+        perfFilterState.range.start = numRows - 100;
+        perfFilterState.range.end = numRows;
+      }
+    } else if (file.fileChanged) {
+      let dSlider = 100;
+      perfFilterState.range.start = numRows - dSlider;
+      perfFilterState.range.end = numRows;
+      if (perfFilterState.range.start < 0) {
+        perfFilterState.range.start = 0;
       }
     }
+
+    this.perfPlot.setOptions(this.perfPlotOptions);
+    this.perfFilter.setState({
+      range: {
+        start: perfFilterState.range.start,
+        end: perfFilterState.range.end
+      }
+    });
+    this.perfDashboard.draw(this.perfDataTable);
+  }
+
+  private drawTrialPlot(file: FileType) {
+    let trialFilterState: any = this.trialFilter.getState();
+    let tmin = new Date(this.cumulDataTable.getColumnRange(0).min);
+    let tmax = new Date(this.cumulDataTable.getColumnRange(0).max);
+
+    if (file.dataChanged || file.fileChanged) {
+      trialFilterState.range.start = tmin;
+      trialFilterState.range.end = tmax;
+    }
+
+    this.trialFilter.setState({
+      range: {
+        start: trialFilterState.range.start,
+        end: trialFilterState.range.end
+      }
+    });
+    this.trialPlot.setOptions(this.trialPlotOptions);
+    this.trialDashboard.draw(this.cumulDataTable);
+  }
+
+  private drawObjPerfPlot() {
+    this.objPerfPlot.draw(this.objPerfDataTable, this.objPerfPlotOptions);
+  }
+
+  private drawRxnTimePlot() {
+    this.rxnPlot.draw(this.rxnTimeDataTable, this.rxnPlotOptions);
+  }
+
+  private drawChoicePlot() {
+    this.choicePlot.draw(this.choiceDataTable, this.choicePlotOptions);
+  }
+
+  private drawRewardPlot() {
+    this.rewardPlot.draw(this.rewardDataTable, this.rewardPlotOptions);
+  }
+
+  private drawScreenPlot(data: LiveplotDataType) {
+    this.screenPlotOptions.series = [];
+    for (let i = 0; i < this.xyPosDataTable.getNumberOfColumns(); i++) {
+      if (this.xyPosDataTable.getColumnLabel(i) == 'Fixation') {
+        this.screenPlotOptions.series[i - 1] = { type: 'line', color: 'gray' };
+      } else if (this.xyPosDataTable.getColumnLabel(i) == 'Sample') {
+        this.screenPlotOptions.series[i - 1] = (
+          { type: 'line', color: 'black' }
+        );
+      } else if (this.xyPosDataTable.getColumnLabel(i) == 'Same') {
+        this.screenPlotOptions.series[i - 1] = (
+          { type: 'line', color: 'green' }
+        );
+      } else if (this.xyPosDataTable.getColumnLabel(i) == 'Different') {
+        this.screenPlotOptions.series[i - 1] = (
+          { type: 'line', color: 'red' }
+        );
+      } else if (this.xyPosDataTable.getColumnLabel(i) == 'Fix_Reward') {
+        this.screenPlotOptions.series[i - 1] = { color: 'blue' };
+      } else if (this.xyPosDataTable.getColumnLabel(i) == 'Fix_Punish') {
+        this.screenPlotOptions.series[i - 1] = { color: 'red' };
+      } else if (this.xyPosDataTable.getColumnLabel(i) == 'Target_Reward') {
+        this.screenPlotOptions.series[i - 1] = { color: 'green' };
+      } else if (this.xyPosDataTable.getColumnLabel(i) == 'Target_Punish') {
+        this.screenPlotOptions.series[i - 1] = { color: 'black' };
+      } else if (this.xyPosDataTable.getColumnLabel(i).includes('Test')) {
+        this.screenPlotOptions.series[i - 1] = (
+          { type: 'line', color: 'black' }
+        );
+      }
+    }
+
+    this.screenPlotOptions.height = data.workspace[3] * data.CanvasRatio;
+    this.screenPlotOptions.width = data.workspace[2] * data.CanvasRatio;
+    this.screenPlotOptions.hAxis = {
+      title: 'X position (px)',
+      viewWindow: {
+        min: 0,
+        max: data.workspace[2] * data.CanvasRatio
+      }
+    };
+    this.screenPlotOptions.vAxis = {
+      title: 'Y position (px)',
+      viewWindow: {
+        min: 0,
+        max: data.workspace[3] * data.CanvasRatio
+      }
+    };
+    this.screenPlot.draw(this.xyPosDataTable, this.screenPlotOptions);
   }
 
   private formatDate(data: google.visualization.DataTable, colIdx: number): void {

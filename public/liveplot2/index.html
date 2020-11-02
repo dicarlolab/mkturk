@@ -129,7 +129,14 @@
             <div class="mdl-demo mdl-card mdl-cell mdl-cell--12-col" style="min-height: 0px;">
               <div class="mdl-card__supporting-text">
                 <h3>Screen Plot</h3>
-                <div id="screen-plot" style="min-height: 800px; height: 800px"></div>
+                <button id="request-realtime">Request Realtime</button>
+                <!-- <div id="touch-sd-text" style="height: auto;">
+                  <span class="vital-span">Touch Locations -- standard dev:</span>
+                  <span class="vital-span" id="fixation-stdev"></span>
+                  <span class="vital-span" id="target0-stdev"></span>
+                  <span class="vital-span" id="target1-stdev"></span>
+                </div> -->
+                <div id="screen-plot" style="min-height: 900px; height: 900px"></div>
               </div>
             </div>
           </section>
@@ -163,10 +170,10 @@
 
           <section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp">
             <div class="mdl-demo mdl-card mdl-cell mdl-cell--12-col" style="min-height: 0px;">
-              
+              <div class="mdl-card__supporting-text">
                 <h3>Reward Amount</h3>
                 <div class="bar-plot" id="reward-plot"></div>
-              
+              </div>
             </div>
           </section>
 
