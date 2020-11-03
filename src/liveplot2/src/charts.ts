@@ -376,14 +376,20 @@ export class Charts {
     this.xyPosDataTable.addColumn('number', 'xpos');
     this.xyPosDataTable.addColumn('number', 'Fixation');
     this.xyPosDataTable.addColumn('number', 'Sample');
+    this.realtimeDataTable.addColumn('number', 'globalX');
+    this.realtimeDataTable.addColumn('number', 'fixY');
+    this.realtimeDataTable.addColumn('number', 'sampleY');
 
     if (file.data!.SameDifferent <= 0) {
       for (let i = 0; i < file.data!.TestGridIndex.length; i++) {
         this.xyPosDataTable.addColumn('number', 'Test' + (i + 1));
+        this.realtimeDataTable.addColumn('number', `testY${i+1}`);
       }
     } else if (file.data!.SameDifferent > 0) {
       this.xyPosDataTable.addColumn('number', 'Same');
       this.xyPosDataTable.addColumn('number', 'Different');
+      this.realtimeDataTable.addColumn('number', 'sameY');
+      this.realtimeDataTable.addColumn('number', 'differentY');
     }
 
     this.xyPosDataTable.addColumn('number', 'Fix_Reward');
@@ -391,9 +397,7 @@ export class Charts {
     this.xyPosDataTable.addColumn('number', 'Target_Reward');
     this.xyPosDataTable.addColumn('number', 'Target_Punish');
 
-    this.realtimeDataTable.addColumn('number', 'x');
-    this.realtimeDataTable.addColumn('number', 'y');
-    // this.realtimeDataTable.addColumn('string', 'meta');
+    this.realtimeDataTable.addColumn('number', 'curY');
     
     this.rewardDataTable.addColumn('string', 'reard size');
     this.rewardDataTable.addColumn('number', 'nrewards');
@@ -681,6 +685,7 @@ export class Charts {
 
     // Sample & Test Boxes -- Draw them as a bounding box in the touch plot
     let numColumnXYPos = this.xyPosDataTable.getNumberOfColumns();
+    let numColRealtime = this.realtimeDataTable.getNumberOfColumns();
     let sampleWidth = this.getSampleWidth(file.data);
     let sampleHeight = sampleWidth;
     let testWidth = this.getTestWidth(file.data);
@@ -739,6 +744,12 @@ export class Charts {
       { 0: fixX - fixationWidth / 2, 1: fixY - fixationHeight / 2}
     );
 
+    this.generateAndAddRowData(
+      this.realtimeDataTable,
+      numColRealtime,
+      { 0: fixX, 1: fixY }
+    );
+
     // SAMPLE
     numDisplayElems = 2;
     let sampleX: number;
@@ -784,6 +795,11 @@ export class Charts {
       this.xyPosDataTable,
       numColumnXYPos,
       { 0: sampleX - sampleWidth / 2, 2: sampleY - sampleHeight / 2 }
+    );
+    this.generateAndAddRowData(
+      this.realtimeDataTable,
+      numColRealtime,
+      { 0: sampleX, 2: sampleY }
     );
 
     // TEST:
@@ -852,6 +868,11 @@ export class Charts {
             [numDisplayElems]: testY[i] - testHeight / 2
           }
         );
+        this.generateAndAddRowData(
+          this.realtimeDataTable,
+          numColRealtime,
+          { 0: testX[i], [numDisplayElems]: testY[i] }
+        );
       } 
     }
 
@@ -908,7 +929,11 @@ export class Charts {
             [numDisplayElems]: choiceY[i] - choiceHeight / 2
           }
         );
-
+        this.generateAndAddRowData(
+          this.realtimeDataTable,
+          numColRealtime,
+          { 0: choiceX[i], [numDisplayElems]: choiceY[i]}
+        );
       }
     }
 
@@ -1415,27 +1440,36 @@ export class Charts {
   }
 
   private drawRealtimePlot(data: LiveplotDataType) {
-    this.realtimePlotOptions.height = data.workspace[3] * data.CanvasRatio;
-    this.realtimePlotOptions.width = data.workspace[2] * data.CanvasRatio;
+    this.realtimePlotOptions.height = data.ViewportPixels[1];
+    this.realtimePlotOptions.width = data.ViewportPixels[0];
+    this.realtimePlotOptions.legend = { position: 'top' };
     this.realtimePlotOptions.hAxis = {
       title: 'X position (px)',
       viewWindow: {
         min: 0,
-        max: data.workspace[2] * data.CanvasRatio
+        max: data.ViewportPixels[0]
       }
     };
     this.realtimePlotOptions.vAxis = {
+      direction: -1,
       title: 'Y position (px)',
       viewWindow: {
         min: 0,
-        max: data.workspace[3] * data.CanvasRatio
+        max: data.ViewportPixels[1]
       }
     };
-    this.realtimeDataTable.addRow([0, 0]);
+    let numCol = this.realtimeDataTable.getNumberOfColumns();
+    this.generateAndAddRowData(
+      this.realtimeDataTable,
+      numCol,
+      {0: 0, [numCol - 1]: 0}
+    );
+    let numRows = this.realtimeDataTable.getNumberOfRows();
     window.addEventListener('data_arrived', (evt: CustomEventInit) => {
-      this.realtimeDataTable.setValue(0, 0, evt.detail.x);
-      let y = data.workspace[3] * data.CanvasRatio - evt.detail.y;
-      this.realtimeDataTable.setValue(0, 1, y);
+      // this.realtimeDataTable.setValue(0, 0, evt.detail.x);
+      // this.realtimeDataTable.setValue(0, 1, evt.detail.y);
+      this.realtimeDataTable.setValue(numRows - 1, 0, evt.detail.x);
+      this.realtimeDataTable.setValue(numRows - 1, numCol - 1, evt.detail.y);
       this.realtimePlot.draw(this.realtimeDataTable, this.realtimePlotOptions);
     });
   }
@@ -1473,20 +1507,20 @@ export class Charts {
       }
     }
 
-    this.screenPlotOptions.height = data.workspace[3] * data.CanvasRatio;
-    this.screenPlotOptions.width = data.workspace[2] * data.CanvasRatio;
+    this.screenPlotOptions.height = data.ViewportPixels[1];
+    this.screenPlotOptions.width = data.ViewportPixels[0];
     this.screenPlotOptions.hAxis = {
       title: 'X position (px)',
       viewWindow: {
         min: 0,
-        max: data.workspace[2] * data.CanvasRatio
+        max: data.ViewportPixels[0]
       }
     };
     this.screenPlotOptions.vAxis = {
       title: 'Y position (px)',
       viewWindow: {
         min: 0,
-        max: data.workspace[3] * data.CanvasRatio
+        max: data.ViewportPixels[1]
       }
     };
     this.screenPlot.draw(this.xyPosDataTable, this.screenPlotOptions);

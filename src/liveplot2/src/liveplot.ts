@@ -69,13 +69,6 @@ export class Liveplot {
       let agentConnectionsRef = rtdb.ref(`agents/${agent}/numConnections`);
       if (this.streamActive) {
         realtimeBtn.innerHTML = 'Request Realtime Stream';
-        // numActiveListenerRef.once('value', sns => {
-        //   let obj: any = {};
-        //   obj[agent] = sns.val() - 1;
-        //   AGENTS_REF.set(obj);
-        //   rtdb.ref('data/' + agent).off();
-        //   this.streamActive = false;
-        // });
         agentConnectionsRef.once('value', sns => {
           let obj = {
             numConnections: sns.val() - 1
@@ -99,18 +92,6 @@ export class Liveplot {
           });
           this.streamActive = true;
         });
-        // numActiveListenerRef.once('value', sns => {
-        //   let obj: any = {};
-        //   obj[agent] = sns.val().numConnections + 1;
-        //   AGENTS_REF.set(obj);
-        //   rtdb.ref('data/' + agent).on('value', snapshot => {
-        //     let event = (
-        //       new CustomEvent('data_arrived', { detail: snapshot.val() })
-        //     );
-        //     window.dispatchEvent(event);
-        //   });
-        //   this.streamActive = true;
-        // });
       }
     });
   }
