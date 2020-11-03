@@ -1,4 +1,5 @@
 import _, { sample } from 'lodash';
+import { Liveplot } from './liveplot';
 import { FileType, LiveplotDataType } from './types';
 import { Utils } from './utils';
 
@@ -34,6 +35,7 @@ export class Charts {
   public rewardDataTable: google.visualization.DataTable;
   public choiceDataTable: google.visualization.DataTable;
   public objPerfDataTable: google.visualization.DataTable;
+  public realtimeDataTable: google.visualization.DataTable;
 
   public perfDashboard: google.visualization.Dashboard;
   public trialDashboard: google.visualization.Dashboard;
@@ -55,6 +57,10 @@ export class Charts {
   public screenPlot: google.visualization.ComboChart;
   public screenPlotOptions: google.visualization.ComboChartOptions;
 
+  public realtimePlot: google.visualization.ComboChart;
+  public realtimePlotOptions: google.visualization.ComboChartOptions;
+  public realtimePlotActive: boolean;
+
   public rxnPlot: google.visualization.Histogram;
   public rxnPlotOptions: google.visualization.HistogramOptions;
 
@@ -73,6 +79,7 @@ export class Charts {
 
   constructor(elemObj: any) {
     this.elemObject = elemObj;
+    this.realtimePlotActive = false;
     this.setupCharts();
 
     this.vitals = {
@@ -101,6 +108,7 @@ export class Charts {
     this.rewardDataTable = new google.visualization.DataTable();
     this.choiceDataTable = new google.visualization.DataTable();
     this.objPerfDataTable = new google.visualization.DataTable();
+    this.realtimeDataTable = new google.visualization.DataTable();
 
   }
 
@@ -134,6 +142,9 @@ export class Charts {
 
     this.screenPlot = (
       new google.visualization.ComboChart(this.elemObject.screenPlot)
+    );
+    this.realtimePlot = (
+      new google.visualization.ComboChart(this.elemObject.realtimePlot)
     );
     this.rxnPlot = (
       new google.visualization.Histogram(this.elemObject.rxnPlot)
@@ -251,6 +262,10 @@ export class Charts {
       seriesType: 'scatter',
       pointSize: 1
     };
+    this.realtimePlotOptions = {
+      seriesType: 'scatter',
+      pointSize: 1
+    };
     this.rxnPlotOptions = {
       width: this.elemObject.rxnPlot.clientWidth,
       height: this.elemObject.rxnPlot.clientHeight,
@@ -288,7 +303,7 @@ export class Charts {
 
   }
 
-  public initializeChartData(file: FileType) {
+  public initializeChartData(file: FileType, plotOptions: any) {
     // Remove rows and columns
     // console.log(this.perfDataTable);
     this.perfDataTable
@@ -305,6 +320,12 @@ export class Charts {
       .removeRows(0, this.xyPosDataTable.getNumberOfRows());
     this.xyPosDataTable
       .removeColumns(0, this.xyPosDataTable.getNumberOfColumns());
+
+    this.realtimeDataTable
+      .removeRows(0, this.realtimeDataTable.getNumberOfRows());
+    this.realtimeDataTable
+      .removeColumns(0, this.realtimeDataTable.getNumberOfColumns());
+    this.realtimePlotActive = false;
 
     this.rxnTimeDataTable
       .removeRows(0, this.rxnTimeDataTable.getNumberOfRows());
@@ -369,6 +390,10 @@ export class Charts {
     this.xyPosDataTable.addColumn('number', 'Fix_Punish');
     this.xyPosDataTable.addColumn('number', 'Target_Reward');
     this.xyPosDataTable.addColumn('number', 'Target_Punish');
+
+    this.realtimeDataTable.addColumn('number', 'x');
+    this.realtimeDataTable.addColumn('number', 'y');
+    // this.realtimeDataTable.addColumn('string', 'meta');
     
     this.rewardDataTable.addColumn('string', 'reard size');
     this.rewardDataTable.addColumn('number', 'nrewards');
@@ -378,16 +403,24 @@ export class Charts {
 
     this.objPerfDataTable.addColumn('string', 'object');
     this.objPerfDataTable.addColumn('number', 'performance');
-    this.updatePlots(file);
+    this.updatePlots(file, plotOptions);
 
   }
 
-  public updatePlots(file: FileType) {
+  public updatePlots(file: FileType, plotOptions: any) {
     let fileData: LiveplotDataType;
     if (!_.isUndefined(file.data)) {
       fileData = file.data;
     } else {
       throw 'file.data is Undefined'
+    }
+
+    let streamActive = plotOptions.streamActive;
+    console.log('streamActive (charts.ts)', streamActive);
+    if (streamActive && !this.realtimePlotActive) {
+      console.log('hello');
+      this.drawRealtimePlot(fileData);
+      this.realtimePlotActive = true;
     }
 
     console.log('plot updated');
@@ -405,7 +438,7 @@ export class Charts {
     this.drawChoicePlot();
     this.drawRewardPlot();
     this.loadTouchSDText();
-    this.drawScreenPlot(fileData);
+    this.drawScreenPlot(fileData, streamActive);
 
   }
 
@@ -1381,7 +1414,34 @@ export class Charts {
     this.rewardPlot.draw(this.rewardDataTable, this.rewardPlotOptions);
   }
 
-  private drawScreenPlot(data: LiveplotDataType) {
+  private drawRealtimePlot(data: LiveplotDataType) {
+    this.realtimePlotOptions.height = data.workspace[3] * data.CanvasRatio;
+    this.realtimePlotOptions.width = data.workspace[2] * data.CanvasRatio;
+    this.realtimePlotOptions.hAxis = {
+      title: 'X position (px)',
+      viewWindow: {
+        min: 0,
+        max: data.workspace[2] * data.CanvasRatio
+      }
+    };
+    this.realtimePlotOptions.vAxis = {
+      title: 'Y position (px)',
+      viewWindow: {
+        min: 0,
+        max: data.workspace[3] * data.CanvasRatio
+      }
+    };
+    this.realtimeDataTable.addRow([0, 0]);
+    window.addEventListener('data_arrived', (evt: CustomEventInit) => {
+      this.realtimeDataTable.setValue(0, 0, evt.detail.x);
+      let y = data.workspace[3] * data.CanvasRatio - evt.detail.y;
+      this.realtimeDataTable.setValue(0, 1, y);
+      this.realtimePlot.draw(this.realtimeDataTable, this.realtimePlotOptions);
+    });
+  }
+
+  private drawScreenPlot(data: LiveplotDataType, screenActive: boolean) {
+
     this.screenPlotOptions.series = [];
     for (let i = 0; i < this.xyPosDataTable.getNumberOfColumns(); i++) {
       if (this.xyPosDataTable.getColumnLabel(i) == 'Fixation') {

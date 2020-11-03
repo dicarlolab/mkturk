@@ -31,6 +31,7 @@ let elemObj = {
   trialPlot: document.querySelector('#trial-plot') as HTMLDivElement,
   trialFilter: document.querySelector('#trial-filter') as HTMLDivElement,
   screenPlot: document.querySelector('#screen-plot') as HTMLDivElement,
+  realtimePlot: document.querySelector('#realtime-plot') as HTMLDivElement,
   rxnPlot: document.querySelector('#reaction-plot') as HTMLDivElement,
   choicePlot: document.querySelector('#choice-plot') as HTMLDivElement,
   objPerfPlot: document.querySelector('#obj-perf-plot') as HTMLDivElement,
@@ -43,7 +44,7 @@ let elemObj = {
   tarZeroStdev: document.querySelector('#target0-stdev') as HTMLSpanElement,
   tarOneStdev: document.querySelector('#target1-stdev') as HTMLSpanElement,
   sdTextDiv: document.querySelector('#touch-sd-text') as HTMLDivElement,
-  realtimeBtn: document.querySelector('#request-realtime') as HTMLButtonElement
+  realtimeBtn: document.querySelector('#request-realtime') as HTMLButtonElement,
 };
 
 const lp = new Liveplot(elemObj);

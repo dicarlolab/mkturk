@@ -16,6 +16,7 @@ const DATA_PATH = 'mkturkfiles/datafiles/'
 const DATA_REF = storageRef.child(DATA_PATH);
 const PARAM_PATH = 'mkturkfiles/parameterfiles/subjects/';
 const PARAM_REF = storageRef.child(PARAM_PATH);
+const AGENTS_REF = rtdb.ref('agents/');
 const utils = new Utils;
 
 export class Liveplot {
@@ -23,11 +24,10 @@ export class Liveplot {
   public elemObjs: any;
   public editor: JSONEditor;
   public charts: Charts;
+  public streamActive: boolean;
 
   constructor(elemObj: any) {
     this.elemObjs = elemObj;
-    
-
     this.file = {
       path: DATA_PATH,
       list: [],
@@ -37,41 +37,80 @@ export class Liveplot {
       dataChanged: false,
       fileChanged: false,
     };
-
     this.charts = new Charts(elemObj);
-    this.requestRealtimeBtnAction()
+    this.streamActive = false;
+    this.requestRealtimeBtnAction();
   }
 
   public fileSelectionChangedListener(elem: HTMLSelectElement) {
     elem.addEventListener('input', (evt: Event) => {
       evt.stopPropagation();
       evt.preventDefault();
+      if (this.streamActive) {
+        let numActiveListenerRef = rtdb.ref('agents/' + this.file.data?.Agent);
+        numActiveListenerRef.once('value', sns => {
+          let obj: any = {};
+          obj[this.file.data?.Agent!] = sns.val() - 1;
+          AGENTS_REF.set(obj); 
+        });
+        this.streamActive = false;
+      }
       this.file.name = this.file.list[parseInt(elem.value)].fullpath;
       this.file.fileChanged = true;
-      // console.log('file changed', this.file.fileChanged);
-      // console.log('file name:', this.file.name);
-      // console.log('file path:', this.file.path);
     });
   }
 
   public requestRealtimeBtnAction() {
     let realtimeBtn = this.elemObjs.realtimeBtn;
     realtimeBtn.addEventListener('click', async (evt: Event) => {
+      evt.stopPropagation();
+      evt.preventDefault();
       let agent = this.file.data?.Agent!;
-      let agentRef = rtdb.ref('agents/' + agent);
-      let agentActive = await agentRef.once('value', sns => {
-        return sns.val();
-      });
-      if (agentActive) {
-        let obj: any = {};
-        obj[agent] = false;
-        realtimeBtn.innerHTML = 'Request Realtime';
-        agentRef.set(obj);
+      let agentConnectionsRef = rtdb.ref(`agents/${agent}/numConnections`);
+      if (this.streamActive) {
+        realtimeBtn.innerHTML = 'Request Realtime Stream';
+        // numActiveListenerRef.once('value', sns => {
+        //   let obj: any = {};
+        //   obj[agent] = sns.val() - 1;
+        //   AGENTS_REF.set(obj);
+        //   rtdb.ref('data/' + agent).off();
+        //   this.streamActive = false;
+        // });
+        agentConnectionsRef.once('value', sns => {
+          let obj = {
+            numConnections: sns.val() - 1
+          };
+          rtdb.ref(`agents/${agent}`).set(obj);
+          rtdb.ref(`data/${agent}`).off();
+          this.streamActive = false;
+        });
       } else {
-        let obj: any = {};
-        obj[agent] = true;
-        realtimeBtn.innerHTML = 'Deactivate Realtime';
-        agentRef.set(obj);
+        realtimeBtn.innerHTML = 'Deactivate Realtime Stream';
+        agentConnectionsRef.once('value', sns => {
+          let obj = {
+            numConnections: sns.val() + 1
+          };
+          rtdb.ref(`agents/${agent}`).set(obj);
+          rtdb.ref(`data/${agent}`).on('value', snapshot => {
+            let event = (
+              new CustomEvent('data_arrived', { detail: snapshot.val() })
+            );
+            window.dispatchEvent(event);
+          });
+          this.streamActive = true;
+        });
+        // numActiveListenerRef.once('value', sns => {
+        //   let obj: any = {};
+        //   obj[agent] = sns.val().numConnections + 1;
+        //   AGENTS_REF.set(obj);
+        //   rtdb.ref('data/' + agent).on('value', snapshot => {
+        //     let event = (
+        //       new CustomEvent('data_arrived', { detail: snapshot.val() })
+        //     );
+        //     window.dispatchEvent(event);
+        //   });
+        //   this.streamActive = true;
+        // });
       }
     });
   }
@@ -152,12 +191,12 @@ export class Liveplot {
     // );
 
     if (this.file.fileChanged) {
-      this.charts.initializeChartData(this.file);
+      this.charts.initializeChartData(this.file, {streamActive: this.streamActive});
       this.checkFileStatus();
       this.file.fileChanged = false;
       this.file.dataChanged = false;
     } else if (this.file.dataChanged) {
-      this.charts.updatePlots(this.file);
+      this.charts.updatePlots(this.file, {streamActive: this.streamActive});
       this.file.dataChanged = false;
       this.checkFileStatus();
     }

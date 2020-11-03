@@ -68,8 +68,8 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 				}//for q boxes
 				touchcxyt[0] = chosenbox
 
-				if (FLAGS.rtdbAgentActive == true) {
-					console.log('rtdbAgentActive', FLAGS.rtdbAgentActive);
+				if (FLAGS.rtdbAgentNumConnections > 0) {
+					console.log('rtdbAgentActive', FLAGS.rtdbAgentNumConnections);
 					let metaStr = chosenbox >= 0 ? 1 : 0;
 					FLAGS.rtdbDataRef.set({
 						x: x - CANVAS.offsetleft,
@@ -77,6 +77,12 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 						meta: metaStr,
 						timestamp: new Date().toJSON()
 					});
+					// FLAGS.rtdbDataRef.set({
+					// 	x: -x + CANVAS.offsetleft,
+					// 	y: -y + CANVAS.offsettop,
+					// 	meta: metaStr,
+					// 	timestamp: new Date().toJSON()
+					// });
 					console.log('rtdb SENT');
 				}
 
