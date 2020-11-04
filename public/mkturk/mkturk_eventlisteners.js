@@ -73,7 +73,7 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 					let metaStr = chosenbox >= 0 ? 1 : 0;
 					FLAGS.rtdbDataRef.set({
 						x: x - CANVAS.offsetleft,
-						y: y - CANVAS.offsettop,
+						y: ENV.ViewportPixels[1] - y,
 						meta: metaStr,
 						timestamp: new Date().toJSON()
 					});
