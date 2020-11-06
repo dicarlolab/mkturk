@@ -1618,7 +1618,7 @@ export class Charts {
         ctx?.beginPath();
         let x = _.floor(evt.detail.x);
         let y = _.floor(cvs.height - evt.detail.y);
-        ctx?.arc(x, y, 3, 0, Math.PI * 2, true);
+        ctx?.arc(x, y, 2, 0, Math.PI * 2, true);
         ctx?.fill();
         history.push([x, y]);
       });
