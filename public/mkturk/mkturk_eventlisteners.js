@@ -201,7 +201,15 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 			//================== (END) 4-END HOLD prematurely ==================//
 
 		}//WHILE events
-
+		if (FLAGS.rtdbAgentNumConnections > 0) {
+			let metaStr = 2;
+			FLAGS.rtdbDataRef.set({
+				x: -1,
+				y: -1,
+				meta: metaStr,
+				timestamp: new Date().toJSON()
+			});
+		}
 		if (FLAGS.trackeye){
 			//Median x,y = final eye position estimate
 			var xs = []

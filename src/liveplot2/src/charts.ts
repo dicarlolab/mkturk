@@ -324,6 +324,8 @@ export class Charts {
       .removeColumns(0, this.realtimeDataTable.getNumberOfColumns());
     this.realtimePlotActive = false;
     this.realtimeRowDataAdded = false;
+    this.rtData['test'] = [];
+    this.rtData['choice'] = [];
 
     this.rxnTimeDataTable
       .removeRows(0, this.rxnTimeDataTable.getNumberOfRows());
@@ -418,16 +420,6 @@ export class Charts {
     } else {
       throw 'file.data is Undefined'
     }
-
-    let streamActive = plotOptions.streamActive;
-    console.log('streamActive (charts.ts)', streamActive);
-    if (streamActive && !this.realtimePlotActive) {
-      console.log('hello');
-      // this.drawRealtimePlot(fileData);
-      this.drawRealtimePlot2(fileData);
-      this.realtimePlotActive = true;
-    }
-
     console.log('plot updated');
     this.loadVitals(file);
     this.loadVitalsText(file);
@@ -443,7 +435,13 @@ export class Charts {
     this.drawChoicePlot();
     this.drawRewardPlot();
     this.loadTouchSDText();
+    let streamActive = plotOptions.streamActive;
     this.drawScreenPlot(fileData, streamActive);
+    if (streamActive && !this.realtimePlotActive) {
+      console.log('hello');
+      this.drawRealtimePlot2(fileData);
+      this.realtimePlotActive = true;
+    }
 
   }
 
@@ -719,7 +717,7 @@ export class Charts {
         file.data.ViewportPixels[1] 
         - (file.data.YGridCenter[maxFixationGridIndex] + file.data.offsettop)
       );
-      console.log('fixY', fixY);
+      // console.log('fixY', fixY);
     } else {
       throw 'data.FixationGridIndex is not of type number[]';
     }
@@ -818,7 +816,6 @@ export class Charts {
     // TEST:
     let testX: number[] = [];
     let testY: number[] = [];
-    this.rtData['test'] = [];
 
     if (data.RewardStage != 0) {
       for (let i = 0; i < _.size(data.TestGridIndex); i++) {
@@ -884,14 +881,13 @@ export class Charts {
         );
 
         if (!this.realtimeRowDataAdded && !this.realtimePlotActive) {
-          this.rtData['test'].push(
-            {
+          let tmp = {
               x: testX[i],
               y: testY[i],
               width: testWidth,
               height: testHeight
-            }
-          );
+          }
+          this.rtData['test'].push(tmp);
         }
       } 
     }
@@ -899,7 +895,6 @@ export class Charts {
     // CHOICE:
     let choiceX: number[] = [];
     let choiceY: number[] = [];
-    this.rtData['choice'] = [];
 
     if (data.RewardStage != 0 && data.SameDifferent > 0) {
       for (let i = 0; i < _.size(data.ChoiceGridIndex); i++) {
@@ -1535,15 +1530,8 @@ export class Charts {
     });
   }
 
-
-  private drawRealtimePlot2(data: LiveplotDataType) {
-    let cvs = document.querySelector('#realtime-canvas') as HTMLCanvasElement;
-    cvs.width = data.workspace[2] * data.CanvasRatio;
-    cvs.height = data.ViewportPixels[1] - data.offsettop;
-    let ctx = cvs.getContext('2d');
-    
+  private drawStaticElements(cvs: HTMLCanvasElement, ctx: CanvasRenderingContext2D | null, data: LiveplotDataType) {
     if (ctx) {
-      // Setup Canvas
       ctx.fillStyle = 'gray';
       ctx.fillRect(
         0, 
@@ -1565,7 +1553,7 @@ export class Charts {
         );
         ctx.stroke();
       }
-      
+    
       // Sample
       ctx.beginPath();
       ctx.rect(
@@ -1578,6 +1566,7 @@ export class Charts {
 
       // Test
       for (let i = 0; i < _.size(this.rtData['test']); i++) {
+        console.log('test');
         ctx.beginPath();
         ctx.rect(
           this.rtData['test'][i].x - this.rtData['test'][i].width / 2,
@@ -1599,30 +1588,105 @@ export class Charts {
         );
         ctx.stroke();
       }
-
-      let history: number[][] = [];
-
-      window.addEventListener('data_arrived', (evt: CustomEventInit) => {
-        // if (_.size(history) > 50) {
-        //   let remove = history.pop();
-        //   ctx!.fillStyle = 'gray';
-        //   ctx?.beginPath();
-        //   ctx?.arc(remove![0], remove![1], 3, 0, Math.PI * 2, true);
-        //   ctx?.fill();
-        // }
-        if (evt.detail.meta == 1) {
-          ctx!.fillStyle = 'green';
-        } else {
-          ctx!.fillStyle = 'red';
-        }
-        ctx?.beginPath();
-        let x = _.floor(evt.detail.x);
-        let y = _.floor(cvs.height - evt.detail.y);
-        ctx?.arc(x, y, 2, 0, Math.PI * 2, true);
-        ctx?.fill();
-        history.push([x, y]);
-      });
     }
+  }
+
+
+  private drawRealtimePlot2(data: LiveplotDataType) {
+    let cvs = document.querySelector('#realtime-canvas') as HTMLCanvasElement;
+    cvs.width = data.workspace[2] * data.CanvasRatio;
+    cvs.height = data.ViewportPixels[1] - data.offsettop;
+    let ctx = cvs.getContext('2d') as CanvasRenderingContext2D;
+    this.drawStaticElements(cvs, ctx, data);
+    window.addEventListener('data_arrived', (evt: CustomEventInit) => {
+      // if (_.size(history) > 50) {
+      //   let remove = history.pop();
+      //   ctx!.fillStyle = 'gray';
+      //   ctx?.beginPath();
+      //   ctx?.arc(remove![0], remove![1], 3, 0, Math.PI * 2, true);
+      //   ctx?.fill();
+      // }
+
+      if (evt.detail.meta == 2) {
+        this.drawStaticElements(cvs, ctx, data);
+      }
+
+      if (evt.detail.meta == 1) {
+        ctx.fillStyle = 'green';
+      } else if (evt.detail.meta == 0) {
+        ctx.fillStyle = 'red';
+      }
+
+      ctx?.beginPath();
+      let x = _.floor(evt.detail.x);
+      let y = _.floor(cvs.height - evt.detail.y);
+      ctx?.arc(x, y, 2, 0, Math.PI * 2, true);
+      ctx?.fill();
+    });
+
+
+    
+    // if (ctx) {
+    //   // Setup Canvas
+    //   ctx.fillStyle = 'gray';
+    //   ctx.fillRect(
+    //     0, 
+    //     0, 
+    //     data.workspace[2] * data.CanvasRatio,
+    //     data.ViewportPixels[1] - data.offsettop
+    //   );
+
+    //   // Fixation
+    //   if (data.FixationUsesSample < 1) {
+    //     ctx.beginPath();
+    //     ctx.arc(
+    //       this.rtData.fixation.x,
+    //       cvs.height - this.rtData.fixation.y,
+    //       this.rtData.fixation.width / 2,
+    //       0,
+    //       Math.PI * 2,
+    //       true
+    //     );
+    //     ctx.stroke();
+    //   }
+      
+    //   // Sample
+    //   ctx.beginPath();
+    //   ctx.rect(
+    //     this.rtData.sample.x - this.rtData.sample.width / 2,
+    //     cvs.height - (this.rtData.sample.y + this.rtData.sample.height / 2),
+    //     this.rtData.sample.width,
+    //     this.rtData.sample.height
+    //   );
+    //   ctx.stroke();
+
+    //   // Test
+    //   for (let i = 0; i < _.size(this.rtData['test']); i++) {
+    //     console.log('test');
+    //     ctx.beginPath();
+    //     ctx.rect(
+    //       this.rtData['test'][i].x - this.rtData['test'][i].width / 2,
+    //       cvs.height - (this.rtData['test'][i].y + this.rtData['test'][i].height / 2),
+    //       this.rtData['test'][i].width,
+    //       this.rtData['test'][i].height
+    //     );
+    //     ctx.stroke();
+    //   }
+
+    //   // Choice
+    //   for (let i = 0; i < _.size(this.rtData['choice']); i++) {
+    //     ctx.beginPath();
+    //     ctx.rect(
+    //       this.rtData['choice'][i].x - this.rtData['choice'][i].width / 2,
+    //       cvs.height - (this.rtData['choice'][i].y + this.rtData['choice'][i].height / 2),
+    //       this.rtData['choice'][i].width,
+    //       this.rtData['choice'][i].height
+    //     );
+    //     ctx.stroke();
+    //   }
+
+      
+    
     
   }
 

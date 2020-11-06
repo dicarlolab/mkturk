@@ -222,9 +222,7 @@ export class Liveplot {
     } catch (error) {
       console.error('checkFileStatus Error:', error);
     }
-  
     return false; // why needed
-  
   } 
 
 }
