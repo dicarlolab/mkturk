@@ -3,7 +3,8 @@ import 'firebase/firestore';
 import 'firebase/storage';
 import 'firebase/database';
 import JSONEditor from 'jsoneditor';
-import 'jsoneditor/dist/jsoneditor.css'
+// import 'jsoneditor/dist/jsoneditor.css'
+// import './jsoneditor.css';
 import { Utils } from './utils';
 import { Charts } from './charts';
 import { FileType, LiveplotDataType } from './types';
