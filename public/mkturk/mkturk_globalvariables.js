@@ -134,6 +134,7 @@ FLAGS.underlayGridPoints = 0
 FLAGS.RFIDGeneratorCreated = 0
 FLAGS.automatortext = ''
 FLAGS.trackeye = 0
+FLAGS.rtdbAgentNumConnections = null;
 
 var CANVAS = {}; 
 var CANVAS = {

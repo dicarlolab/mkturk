@@ -48,6 +48,7 @@ if (typeof(navigator.bluetooth) == "object"){
 <script src="/__/firebase/7.3.0/firebase-auth.js"></script>
 <script src="/__/firebase/7.3.0/firebase-firestore.js"></script>
 <script src="/__/firebase/7.3.0/firebase-storage.js"></script>
+<script src="/__/firebase/7.3.0/firebase-database.js"></script>
 <script src="/__/firebase/7.3.0/firebase-functions.js"></script>
 <script src="/__/firebase/init.js"></script>
 
@@ -59,7 +60,10 @@ if (typeof(navigator.bluetooth) == "object"){
   var db = firebase.firestore();
 
   //Initialize Cloud Storage
-  var storage = firebase.storage();
+	var storage = firebase.storage();
+	
+	// Initialize Realtime DB
+	const rtdb = firebase.database();
 
  var functions = firebase.functions();
  let bqInsertEyeData = functions.httpsCallable("bqInsertEyeData")
@@ -248,6 +252,7 @@ if (typeof(navigator.usb) == "object"){ ENV.WebUSBAvailable = 1 }
 if (typeof(navigator.bluetooth) == "object"){ ENV.WebBluetoothAvailable = 1 }
 if (typeof(navigator.getBattery) == "function"){ ENV.BatteryAPIAvailable = 1 }
 if (typeof(OffscreenCanvas) == "function"){ ENV.OffscreenCanvasAvailable = 1 }
+// ENV.OffscreenCanvasAvailable = 0;
 
 // Button callbacks for inline connection to arduino device
 document.querySelector("button[id=googlesignin]").style.display = "block"
@@ -509,6 +514,11 @@ function skipHardwareDevice(event){
 
 	ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.json";
 	await loadParametersfromFirebase(ENV.ParamFileName)
+	
+	let rtdbAgentRef = rtdb.ref('agents/' + ENV.Subject);
+	let rtdbAgentConnectionRef = rtdb.ref(`agents/${ENV.Subject}/numConnections`);
+	FLAGS.rtdbDataRef = rtdb.ref('data/' + ENV.Subject);
+
 	//================== (END) AWAIT LOAD SUBJECT PARAMS ==================//
 
 
@@ -1662,6 +1672,10 @@ if (typeof(teston) == "undefined"){
 		updateEventDataonFirestore(EVENTS);
 		FLAGS.need2loadParameters = 1
 	} //if new day, start new file or reached 1000 trials 
+
+	rtdbAgentConnectionRef.once('value').then(sns => {
+		FLAGS.rtdbAgentNumConnections = sns.val();
+	});
 
 	if (TASK.Agent == "SaveImages" && CURRTRIAL.num >= TQS.samplebag_indices.length-1){
 		return
