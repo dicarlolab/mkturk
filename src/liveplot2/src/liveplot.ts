@@ -92,7 +92,7 @@ export class Liveplot {
         let agentClientKey = rtdb.ref(`agents/${agent}`).push().key;
         this.agentClientRef = rtdb.ref(`agents/${agent}/${agentClientKey}`);
         if (_.isString(agentClientKey)) {
-          rtdb.ref(`agents/${agent}`).set({
+          rtdb.ref(`agents/${agent}`).update({
             [agentClientKey]: true
           });
         }
