@@ -70,12 +70,14 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 
 				if (FLAGS.rtdbAgentNumConnections > 0) {
 					let metaStr = chosenbox >= 0 ? 1 : 0;
-					FLAGS.rtdbDataRef.set({
-						x: x - CANVAS.offsetleft,
-						y: ENV.ViewportPixels[1] - y,
-						meta: metaStr,
-						timestamp: new Date().toJSON()
-					});
+					if (!isNaN(x) && !isNaN(y)) {
+						FLAGS.rtdbDataRef.set({
+							x: x - CANVAS.offsetleft,
+							y: ENV.ViewportPixels[1] - y,
+							meta: metaStr,
+							timestamp: new Date().toJSON()
+						});	
+					}
 				}
 
 				//Accumulate cxyt in box for greater eyetracker accuracy

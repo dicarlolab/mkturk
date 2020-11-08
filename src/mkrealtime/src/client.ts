@@ -1,5 +1,6 @@
 import firebase from 'firebase/app';
 import 'firebase/database';
+import _ from 'lodash';
 
 const firebaseConfig = {
   apiKey: "AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",
@@ -48,5 +49,13 @@ dataRef.on('value', snapshot => {
 });
 
 
+let eliasoRef = rtdb.ref('agents/Eliaso');
+let newKey = eliasoRef.child('adfad').push().key;
+console.log(newKey);
 
+
+// eliasoRef.set({
+//   x: 0,
+//   y: 2
+// });
 
