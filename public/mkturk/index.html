@@ -1673,8 +1673,12 @@ if (typeof(teston) == "undefined"){
 		FLAGS.need2loadParameters = 1
 	} //if new day, start new file or reached 1000 trials 
 
-	rtdbAgentConnectionRef.once('value').then(sns => {
-		FLAGS.rtdbAgentNumConnections = sns.val();
+	rtdbAgentRef.once('value').then(snap => {
+		try {
+			FLAGS.rtdbAgentNumConnections = Object.keys(snap.val()).length;
+		} catch (err) {
+			console.error(`rtdbAgentRef most likely not yet instantiated: ${err}`);
+		}
 	});
 
 	if (TASK.Agent == "SaveImages" && CURRTRIAL.num >= TQS.samplebag_indices.length-1){

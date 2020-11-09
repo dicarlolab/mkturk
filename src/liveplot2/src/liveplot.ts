@@ -3,6 +3,7 @@ import 'firebase/firestore';
 import 'firebase/storage';
 import 'firebase/database';
 import JSONEditor from 'jsoneditor';
+import _ from 'lodash';
 // import 'jsoneditor/dist/jsoneditor.css'
 // import './jsoneditor.css';
 import { Utils } from './utils';
@@ -26,6 +27,7 @@ export class Liveplot {
   public editor: JSONEditor;
   public charts: Charts;
   public streamActive: boolean;
+  public agentClientRef: firebase.database.Reference;
 
   constructor(elemObj: any) {
     this.elemObjs = elemObj;
@@ -41,6 +43,7 @@ export class Liveplot {
     this.charts = new Charts(elemObj);
     this.streamActive = false;
     this.requestRealtimeBtnAction();
+    this.onDisconnectAction();
   }
 
   public fileSelectionChangedListener(elem: HTMLSelectElement) {
@@ -48,16 +51,23 @@ export class Liveplot {
       evt.stopPropagation();
       evt.preventDefault();
       if (this.streamActive) {
-        let numActiveListenerRef = rtdb.ref('agents/' + this.file.data?.Agent);
-        numActiveListenerRef.once('value', sns => {
-          let obj: any = {};
-          obj[this.file.data?.Agent!] = sns.val() - 1;
-          AGENTS_REF.set(obj); 
+        let agent = this.file.data?.Agent!;
+        rtdb.ref(`data/${agent}`).off();
+        this.agentClientRef.remove(err => {
+          if (err) {
+            console.error(`Error Removing agentClientRef: ${err}`);
+          }
         });
         this.streamActive = false;
       }
       this.file.name = this.file.list[parseInt(elem.value)].fullpath;
       this.file.fileChanged = true;
+    });
+  }
+
+  public onDisconnectAction() {
+    window.addEventListener('unload', (evt: Event) => {
+      this.agentClientRef.onDisconnect().remove();
     });
   }
 
@@ -67,32 +77,32 @@ export class Liveplot {
       evt.stopPropagation();
       evt.preventDefault();
       let agent = this.file.data?.Agent!;
-      let agentConnectionsRef = rtdb.ref(`agents/${agent}/numConnections`);
       if (this.streamActive) {
         realtimeBtn.innerHTML = 'Request Realtime Stream';
-        agentConnectionsRef.once('value', sns => {
-          let obj = {
-            numConnections: sns.val() - 1
-          };
-          rtdb.ref(`agents/${agent}`).set(obj);
-          rtdb.ref(`data/${agent}`).off();
-          this.streamActive = false;
+        rtdb.ref(`data/${agent}`).off();
+        this.agentClientRef.remove(err => {
+          if (err) {
+            console.error(`Error Removing agentClientRef: ${err}`);
+          }
         });
+        rtdb.ref(`data/${agent}`).off();
+        this.streamActive = false;
       } else {
         realtimeBtn.innerHTML = 'Deactivate Realtime Stream';
-        agentConnectionsRef.once('value', sns => {
-          let obj = {
-            numConnections: sns.val() + 1
-          };
-          rtdb.ref(`agents/${agent}`).set(obj);
-          rtdb.ref(`data/${agent}`).on('value', snapshot => {
-            let event = (
-              new CustomEvent('data_arrived', { detail: snapshot.val() })
-            );
-            window.dispatchEvent(event);
+        let agentClientKey = rtdb.ref(`agents/${agent}`).push().key;
+        this.agentClientRef = rtdb.ref(`agents/${agent}/${agentClientKey}`);
+        if (_.isString(agentClientKey)) {
+          rtdb.ref(`agents/${agent}`).update({
+            [agentClientKey]: true
           });
-          this.streamActive = true;
+        }
+        rtdb.ref(`data/${agent}`).on('value', snap => {
+          let event = (
+            new CustomEvent('data_arrived', { detail: snap.val() })
+          );
+          window.dispatchEvent(event);
         });
+        this.streamActive = true;
       }
     });
   }
