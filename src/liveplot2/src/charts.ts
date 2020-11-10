@@ -1542,6 +1542,7 @@ export class Charts {
 
       // Fixation
       if (data.FixationUsesSample < 1) {
+        ctx.strokeStyle = '#0000FF';
         ctx.beginPath();
         ctx.arc(
           this.rtData.fixation.x,
@@ -1555,6 +1556,7 @@ export class Charts {
       }
     
       // Sample
+      ctx.strokeStyle = '#000000'; // black
       ctx.beginPath();
       ctx.rect(
         this.rtData.sample.x - this.rtData.sample.width / 2,
@@ -1588,6 +1590,19 @@ export class Charts {
         );
         ctx.stroke();
       }
+
+      let fixWinSz = data.FixationWindowSizeInches;
+
+      if (_.isNumber(fixWinSz) && fixWinSz > 0) {
+        ctx.strokeStyle = '#FFFF00'; // yellow
+        ctx.strokeRect(
+          this.rtData.fixation.x - _.floor(fixWinSz / 2 * data.ViewportPPI),
+          cvs.height 
+          - (this.rtData.fixation.y + _.floor(fixWinSz / 2 * data.ViewportPPI)),
+          _.floor(fixWinSz * data.ViewportPPI),
+          _.floor(fixWinSz * data.ViewportPPI)
+        );
+      }
     }
   }
 
@@ -1599,13 +1614,6 @@ export class Charts {
     let ctx = cvs.getContext('2d') as CanvasRenderingContext2D;
     this.drawStaticElements(cvs, ctx, data);
     window.addEventListener('data_arrived', (evt: CustomEventInit) => {
-      // if (_.size(history) > 50) {
-      //   let remove = history.pop();
-      //   ctx!.fillStyle = 'gray';
-      //   ctx?.beginPath();
-      //   ctx?.arc(remove![0], remove![1], 3, 0, Math.PI * 2, true);
-      //   ctx?.fill();
-      // }
 
       if (evt.detail.meta == 2) {
         this.drawStaticElements(cvs, ctx, data);
