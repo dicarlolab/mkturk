@@ -173,6 +173,7 @@ export interface LiveplotDataType {
   Battery: Record<number, any[]>,
   RFIDTag: Record<number, any[]>,
   Weight?: any;
+  FixationWindowSizeInches?: number
 }
 
 interface Eye {
