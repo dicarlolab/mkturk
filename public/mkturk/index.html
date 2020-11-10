@@ -1677,6 +1677,7 @@ if (typeof(teston) == "undefined"){
 		try {
 			FLAGS.rtdbAgentNumConnections = Object.keys(snap.val()).length;
 		} catch (err) {
+			FLAGS.rtdbAgentNumConnections = 0;
 			console.error(`rtdbAgentRef most likely not yet instantiated: ${err}`);
 		}
 	});

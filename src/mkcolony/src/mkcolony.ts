@@ -118,9 +118,9 @@ export class Mkcolony {
       };
 
       if (agentData) {
-        agentData.timestamp.forEach((item: any, idx: number) => {
-          agentData!.timestamp[idx] = item!.toDate();
-          if (agentData!.timestamp[idx].getMonth() == month) {
+        agentData.date.forEach((item: any, idx: number) => {
+          agentData!.date[idx] = item!.toDate();
+          if (agentData!.date[idx].getMonth() == month) {
             try {
               agentData!.time_on[idx] = agentData!.time_on[idx].toDate().toLocaleTimeString('en-US', timeOption);
             } catch {
@@ -134,6 +134,7 @@ export class Mkcolony {
             }
 
             let tmp = {
+              date: agentData!.date[idx],
               timestamp: agentData!.timestamp[idx],
               time_off: agentData!.time_off[idx],
               time_on: agentData!.time_on[idx],
@@ -157,7 +158,7 @@ export class Mkcolony {
         ],
         layout: 'fitColumns',
         columns: [
-          {title: 'Date', field: 'timestamp', formatter: timestampFormatter},
+          {title: 'Date', field: 'date', formatter: timestampFormatter},
           {title: 'Weight', field: 'weight'},
           {title: 'Reward (mL)', field: 'reward'},
           {title: 'Supplement (mL)', field: 'supplement'},
@@ -1139,8 +1140,8 @@ export class Mkcolony {
       // concatenating marmoset data and mkdailydata
       if (idx >= 0) {
         let fluidTmp = utils.mergeTwoNumberArrays(row.reward, row.supplement);
-        let fluidObj = utils.createContinuousArray(fluidTmp, row.timestamp);
-        let weightObj = utils.createContinuousArray(row.weight, row.timestamp);
+        let fluidObj = utils.createContinuousArray(fluidTmp, row.date);
+        let weightObj = utils.createContinuousArray(row.weight, row.date);
         let vizDataRow: any = {};
         vizDataRow.fluid_dates = fluidObj.target;
         vizDataRow.fluid_values = fluidObj.reference;
@@ -1168,11 +1169,14 @@ export class Mkcolony {
     });
 
     this.vizData.forEach((row: any) => {
-      let opt = document.createElement('option');
-      opt.textContent = row.name;
-      opt.value = row.name;
-      this.agSlt.appendChild(opt);
-      this.logsheetAgentSelector.appendChild(opt);
+      let optA = document.createElement('option');
+      let optB = document.createElement('option');
+      optA.textContent = row.name;
+      optB.textContent = row.name;
+      optA.value = row.name;
+      optB.value = row.name;
+      this.agSlt.appendChild(optA);
+      this.logsheetAgentSelector.appendChild(optB);
 
       for (let key of Object.keys(row)) {
         if (key == 'fluid_dates') {
@@ -1310,7 +1314,13 @@ export class Mkcolony {
 
     function targetDateMutator(value: any, data: any, type: any, mutatorParams: any, cell?: Tabulator.CellComponent) {
       try {
-        let today = new Date();
+        console.log('targetdatemutatorvalue', value);
+        let today: Date;
+        if (value) {
+          today = new Date(value);  
+        } else {
+          today = new Date();
+        }
         return today.toLocaleDateString();
       } catch (err) {
         console.error(`Target Date Mutator Error: ${err}`);
@@ -1371,7 +1381,7 @@ export class Mkcolony {
       ],
       columns: [
         {title: 'Name', field: 'name'},
-        {title: 'Target Date', field: 'date', mutator: targetDateMutator, editor: true},
+        {title: 'Target Date', field: 'date', mutator: targetDateMutator, editor: true, editable: true},
         {title: 'Entry Today?', field: 'entry_today', mutator: entryTodayMutator, formatter: entryTodayFmt},
         {title: 'Weight', field: 'weight', editor: 'number'},
         {title: 'Reward (mL)', field: 'reward', editor: 'number'},
@@ -1409,12 +1419,16 @@ export class Mkcolony {
         tmp.implant_cleaned = row.implant_cleaned ? row.implant_cleaned : '';
         tmp.reward = row.reward ? row.reward : '';
         tmp.supplement = row.supplement ? row.supplement : '';
-        tmp.time_on = row.time_on ? new Date(now.toLocaleDateString() + ' ' + row.time_on) : '';
-        tmp.time_off = row.time_off ? new Date(now.toLocaleDateString() + ' ' + row.time_off) : '';
+        tmp.time_on = row.time_on ? new Date(row.date + ' ' + row.time_on) : '';
+        tmp.time_off = row.time_off ? new Date(row.date + ' ' + row.time_off) : '';
         tmp.comments = row.comments ? row.comments : '';
         tmp.initials = row.initials ? row.initials : '';
         if (utils.isNotEmptyObject(tmp)) {
           tmp.timestamp = new Date();
+          tmp.date = new Date(row.date);
+          if (utils.isSameDay(tmp.timestamp, tmp.date)) {
+            tmp.date = tmp.timestamp;
+          }
           toSubmit[row.name] = tmp;
         }
       }
@@ -1429,7 +1443,7 @@ export class Mkcolony {
   
           for (let key in toSubmit[agent]) {
             if (firestoreDoc !== undefined) {
-              if (key === 'time_on' || key === 'time_off' || key === 'timestamp') {
+              if (key === 'time_on' || key === 'time_off' || key === 'timestamp' || key === 'date') {
                 try {
                   storageFile[key].push(toSubmit[agent][key].toJSON());
                   firestoreDoc[key].push(firebase.firestore.Timestamp.fromDate(toSubmit[agent][key]));
