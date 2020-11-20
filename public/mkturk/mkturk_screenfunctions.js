@@ -899,9 +899,15 @@ function setupCanvasHeadsUp(){
 		//hide buttons for triggering pump
 		document.querySelector("button[id=pumpflush]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 		document.querySelector("button[id=pumptrigger]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+
+		document.getElementById("headsuptext").style.display = "none"
+		document.getElementById("headsuptextdevices").style.display = "none"
 	}
 	else{
 		canvasobj.style.display="block";
+
+		document.getElementById("headsuptext").style.height = 100*CANVAS.headsupfraction + "%"
+		document.getElementById("headsuptextdevices").style.height = 100*CANVAS.headsupfraction + "%"
 
 		//show buttons for triggering pump
 		document.querySelector("button[id=pumpflush]").style.display = "block"
