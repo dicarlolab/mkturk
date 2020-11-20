@@ -476,8 +476,7 @@ function renderTriangleOnCanvas(color, gridindex, square_pixelwidth, canvasobj){
 function renderBlank(canvasobj,bkgdcolor){
 	var context=canvasobj.getContext('2d');
 	context.fillStyle=bkgdcolor;
-	context.fillRect(0,100,canvasobj.width,canvasobj.height);
-	// context.clearRect(0,0,canvasobj.width,canvasobj.height);
+	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 }//FUNCTION renderBlank
 
 function renderFixationWindow(gridx,gridy,fixationgridindex,fixationwindowradius,canvasratio,canvasobj){
