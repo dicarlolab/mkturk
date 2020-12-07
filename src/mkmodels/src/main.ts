@@ -22,42 +22,15 @@ const modelUrl = 'https://tfhub.dev/google/tfjs-model/imagenet/mobilenet_v2_140_
 const model = await tf.loadGraphModel(modelUrl, {fromTFHub: true});
 const storage = firebase.storage();
 const storageRef = storage.ref();
-const tokenVarRef = storageRef.child('/mkturkfiles/imagebags/objectome/wrench/flarenut_spanner/Var6NoBkgdNoPos_Batch1')
+const tokenVarRef = storageRef.child('/mkturkfiles/imagebags/objectome/wrench/flarenut_spanner/Var6NoBkgdNoPos_Batch1');
 const imgHolder = document.querySelector('#img-holder') as HTMLDivElement;
-// console.log('hello');
 
-// tokenVarRef.listAll().then(res => {
-//   res.items.forEach(itemRef => {
-//     itemRef.getDownloadURL().then(url => {
-//       let tmpImg = document.createElement('img');
-//       tmpImg.crossOrigin = 'anonymous';
-//       tmpImg.src = url;
-//       tmpImg.width = 224;
-//       tmpImg.height = 224;
-//     });
-//   })
-// })
-
-// img = img.reshape([1, 224, 224, 3]);
-//         img = tf.cast(img, 'float32');
-//         let features = model.execute(img) as tf.Tensor;
 
 let trainDataArr: string[] = [];
 let trainDataFeatureArr: TensorContainerArray = [];
 let testDataArr = [];
 
 async function dothis() {
-  // await tokenVarRef.listAll().then(async res => {
-  //   await res.items.forEach(async itemRef => {
-  //     await itemRef.getDownloadURL().then(async url => {
-  //       // console.log('hello');
-  //       trainDataArr.push(url);
-  //       let features = await generateFeatureTensor(url);
-  //       console.log(features);
-  //       trainDataFeatureArr.push(features);
-  //     });
-  //   });
-  // });
 
   await tokenVarRef.listAll().then(async res => {
     for (let itemRef of res.items) {
@@ -65,7 +38,6 @@ async function dothis() {
         trainDataFeatureArr.push(await generateFeatureTensor(url));
       });
     }
-    return 0;
   });
 
   await trainModel();
@@ -126,15 +98,28 @@ async function trainModel() {
   const xs = tf.data.generator(dataGenerator);
   const ys = tf.data.generator(labelGenerator);
   const ds = tf.data.zip({xs, ys});
-  await xs.forEachAsync(e => console.log(e));
+  // await xs.forEachAsync(e => console.log(e));
+  return ds;
+}
+
+function buildModel() {
+  let model = tf.sequential();
+  model.add(tf.layers.conv1d({inputShape: [1, 1792], filters: 2, kernelSize: 1, kernelRegularizer: tf.regularizers.l2(), biasRegularizer: tf.regularizers.l2()}))
+  model.add(tf.layers.flatten());
+  model.compile({loss: 'hinge', optimizer: 'adam', metrics: ['accuracy']});
+  return model;
 }
 
 async function mainmain() {
   await dothis();
-  await trainModel();
+  let dataset = await trainModel();
+  let myModel = buildModel();
+  await myModel.fitDataset(dataset, {epochs: 4});
+
 }
 
 mainmain();
+
 
 
 
