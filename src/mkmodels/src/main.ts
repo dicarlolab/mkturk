@@ -25,9 +25,11 @@ const storageRef = storage.ref();
 const tokenVarRef = storageRef.child('/mkturkfiles/imagebags/objectome/wrench/flarenut_spanner/Var6NoBkgdNoPos_Batch1');
 const imgHolder = document.querySelector('#img-holder') as HTMLDivElement;
 
+console.log(tf.getBackend());
+
 
 let trainDataArr: string[] = [];
-let trainDataFeatureArr: TensorContainerArray = [];
+let trainDataFeatureArr: any = [];
 let testDataArr = [];
 
 async function dothis() {
@@ -40,7 +42,7 @@ async function dothis() {
     }
   });
 
-  await trainModel();
+  // await trainModel();
 }
 
 
@@ -58,16 +60,19 @@ function loadImage(url: string) {
   });
 }
 
-// img = img.reshape([1, 224, 224, 3]);
-//         img = tf.cast(img, 'float32');
-//         let features = model.execute(img) as tf.Tensor;
 
 const generateFeatureTensor = async (imgUrl: string) => {
   let image = await loadImage(imgUrl) as HTMLImageElement;
   let tmp = tf.browser.fromPixels(image);
   tmp = tmp.reshape([1, 224, 224, 3]);
   tmp = tf.cast(tmp, 'float32');
-  return model.execute(tmp) as tf.Tensor;
+  console.log('tmp', tmp)
+  // return model.execute(tmp) as tf.Tensor;
+  let features = model.execute(tmp) as tf.Tensor2D;
+  console.log('features', features);
+  features.print()
+  return features;
+
 }
 
 
@@ -79,8 +84,10 @@ function* dataGenerator() {
   const numelem = trainDataFeatureArr.length;
   let idx = 0;
   while (idx < numelem) {
+    yield tf.keep(trainDataFeatureArr[idx]);
+    // console.log(trainDataFeatureArr[idx]);
+    // yield {xs: trainDataFeatureArr[idx], ys: idx % 2};
     idx++;
-    yield trainDataFeatureArr[idx];
   }
 }
 
@@ -88,19 +95,19 @@ function* labelGenerator() {
   const numelem = trainDataFeatureArr.length;
   let idx = 0;
   while (idx < numelem) {
+    yield tf.tensor(idx % 2);
     idx++;
-    yield idx % 2;
   }
 }
 
-async function trainModel() {
-  console.log('hellohello');
-  const xs = tf.data.generator(dataGenerator);
-  const ys = tf.data.generator(labelGenerator);
-  const ds = tf.data.zip({xs, ys});
-  // await xs.forEachAsync(e => console.log(e));
-  return ds;
-}
+// async function trainModel() {
+//   console.log('hellohello');
+//   const ds = tf.data.generator(dataGenerator);
+//   // const ys = tf.data.generator(labelGenerator);
+//   // const ds = tf.data.zip({xs: xs, ys: ys});
+//   await ds.forEachAsync(e => console.log(e));
+//   return ds;
+// }
 
 function buildModel() {
   let model = tf.sequential();
@@ -112,9 +119,14 @@ function buildModel() {
 
 async function mainmain() {
   await dothis();
-  let dataset = await trainModel();
+  // let dataset = await trainModel();
+  const xs = tf.data.generator(dataGenerator);
+  const ys = tf.data.generator(labelGenerator)
+  const xyDataset = tf.data.zip({xs: xs, ys: ys}).batch(1);
+  await xyDataset.forEachAsync(e => console.log(e));
   let myModel = buildModel();
-  await myModel.fitDataset(dataset, {epochs: 4});
+  await myModel.fitDataset(xyDataset, {epochs: 4});
+  // await myModel.fit(xs, ys, {epochs: 4})
 
 }
 
