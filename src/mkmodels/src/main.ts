@@ -1,6 +1,4 @@
 import * as tf from '@tensorflow/tfjs';
-import { Imag, mod, Tensor, TensorContainer, TensorContainerArray, train } from '@tensorflow/tfjs';
-// import * as mobilenet from '@tensorflow-models/mobilenet';
 import firebase from 'firebase/app';
 import 'firebase/auth';
 
@@ -60,20 +58,35 @@ function loadImage(url: string) {
   });
 }
 
-
 const generateFeatureTensor = async (imgUrl: string) => {
   let image = await loadImage(imgUrl) as HTMLImageElement;
-  let tmp = tf.browser.fromPixels(image);
-  tmp = tmp.reshape([1, 224, 224, 3]);
-  tmp = tf.cast(tmp, 'float32');
-  console.log('tmp', tmp)
-  // return model.execute(tmp) as tf.Tensor;
-  let features = model.execute(tmp) as tf.Tensor2D;
-  console.log('features', features);
-  features.print()
-  return features;
+  let offset = tf.scalar(127.5);
+  let tensor = tf.browser.fromPixels(image)
+    .resizeNearestNeighbor([224, 224])
+    .toFloat()
+    .sub(offset)
+    .div(offset)
+    .expandDims();
 
+  let feature = model.execute(tensor) as tf.Tensor;
+  let featureArray = feature.arraySync();
+  let serializedFeature = JSON.stringify(featureArray);
+  // console.log('features', serializedFeature);
+  return serializedFeature;
 }
+
+// const generateFeatureTensor = async (imgUrl: string) => {
+//   let image = await loadImage(imgUrl) as HTMLImageElement;
+//   let tmp = tf.browser.fromPixels(image);
+//   tmp = tmp.reshape([1, 224, 224, 3]);
+//   tmp = tf.cast(tmp, 'float32');
+//   console.log('tmp', tmp)
+//   // return model.execute(tmp) as tf.Tensor;
+//   let features = model.execute(tmp) as tf.Tensor2D;
+//   console.log('features', features);
+//   features.print()
+//   return features;
+// }
 
 
 function* dataGenerator() {
@@ -84,10 +97,14 @@ function* dataGenerator() {
   const numelem = trainDataFeatureArr.length;
   let idx = 0;
   while (idx < numelem) {
-    yield tf.keep(trainDataFeatureArr[idx]);
+    let serializedFeature = trainDataFeatureArr[idx];
+    let featureArray = JSON.parse(serializedFeature);
+    let t = tf.tensor(featureArray);
+    idx++;
+    yield t;
     // console.log(trainDataFeatureArr[idx]);
     // yield {xs: trainDataFeatureArr[idx], ys: idx % 2};
-    idx++;
+    // idx++;
   }
 }
 
@@ -95,7 +112,7 @@ function* labelGenerator() {
   const numelem = trainDataFeatureArr.length;
   let idx = 0;
   while (idx < numelem) {
-    yield tf.tensor(idx % 2);
+    yield tf.scalar(idx % 2);
     idx++;
   }
 }
@@ -122,10 +139,15 @@ async function mainmain() {
   // let dataset = await trainModel();
   const xs = tf.data.generator(dataGenerator);
   const ys = tf.data.generator(labelGenerator)
-  const xyDataset = tf.data.zip({xs: xs, ys: ys}).batch(1);
+  const xyDataset = tf.data.zip({xs: xs, ys: ys}).batch(2);
   await xyDataset.forEachAsync(e => console.log(e));
   let myModel = buildModel();
-  await myModel.fitDataset(xyDataset, {epochs: 4});
+  console.log(tf.getBackend());
+
+  await myModel.fitDataset(xyDataset, {
+    epochs: 4,
+    callbacks: { onEpochEnd: (epoch, logs) => console.log(epoch, logs!.loss) }
+  });
   // await myModel.fit(xs, ys, {epochs: 4})
 
 }
