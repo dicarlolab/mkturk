@@ -1,4 +1,5 @@
 import * as tf from '@tensorflow/tfjs';
+import { train } from '@tensorflow/tfjs';
 import firebase from 'firebase/app';
 import 'firebase/auth';
 
@@ -15,13 +16,20 @@ firebase.initializeApp(firebaseConfig);
 
 import 'firebase/storage';
 
-// const model = await mobilenet.load();
 const modelUrl = 'https://tfhub.dev/google/tfjs-model/imagenet/mobilenet_v2_140_224/feature_vector/3/default/1';
 const model = await tf.loadGraphModel(modelUrl, {fromTFHub: true});
 const storage = firebase.storage();
 const storageRef = storage.ref();
 const tokenVarRef = storageRef.child('/mkturkfiles/imagebags/objectome/wrench/flarenut_spanner/Var6NoBkgdNoPos_Batch1');
 const imgHolder = document.querySelector('#img-holder') as HTMLDivElement;
+
+const someRef = storageRef.child('/mkturkfiles/mkmodels');
+await someRef.listAll().then(async res => {
+  console.log(res);
+  for (let ref of res.prefixes) {
+    console.log(ref);
+  }
+});
 
 console.log(tf.getBackend());
 
@@ -38,6 +46,10 @@ async function dothis() {
         trainDataFeatureArr.push(await generateFeatureTensor(url));
       });
     }
+    
+    // trainDataFeatureArr = tf.data.array(trainDataFeatureArr);
+    // console.log('traindatafeaturearr', trainDataFeatureArr);
+    // tf.keep(trainDataFeatureArr);
   });
 
   // await trainModel();
@@ -60,19 +72,38 @@ function loadImage(url: string) {
 
 const generateFeatureTensor = async (imgUrl: string) => {
   let image = await loadImage(imgUrl) as HTMLImageElement;
-  let offset = tf.scalar(127.5);
-  let tensor = tf.browser.fromPixels(image)
-    .resizeNearestNeighbor([224, 224])
-    .toFloat()
-    .sub(offset)
-    .div(offset)
-    .expandDims();
+  
+  return tf.tidy(() => {
+    let offset = tf.scalar(127.5);
+    let tensor = tf.browser.fromPixels(image)
+      .resizeNearestNeighbor([224, 224])
+      .toFloat()
+      .sub(offset)
+      .div(offset)
+      .expandDims();
+    
+    let feature = model.execute(tensor);
+    return feature;
+  });
+  // let tensor = tf.browser.fromPixels(image)
+  //   .resizeNearestNeighbor([224, 224])
+  //   .toFloat()
+  //   .sub(offset)
+  //   .div(offset)
+  //   .expandDims();
 
-  let feature = model.execute(tensor) as tf.Tensor;
-  let featureArray = feature.arraySync();
-  let serializedFeature = JSON.stringify(featureArray);
+  // console.log('image tensor', tensor);
+
+  // let feature = model.execute(tensor) as tf.Tensor;
+  // feature.print();
+  // tf.keep(feature);
+  // let featureArray = feature.array();
+  // let serializedFeature = JSON.stringify(featureArray);
   // console.log('features', serializedFeature);
-  return serializedFeature;
+  // return serializedFeature;
+  // console.log('features', featureArray);
+  // return featureArray;
+  // return feature;
 }
 
 // const generateFeatureTensor = async (imgUrl: string) => {
@@ -94,12 +125,19 @@ function* dataGenerator() {
   //   console.log('hello');
   //   yield trainDataFeatureArr[i];
   // }
+  // const numelem = trainDataFeatureArr.length;
   const numelem = trainDataFeatureArr.length;
   let idx = 0;
   while (idx < numelem) {
     let serializedFeature = trainDataFeatureArr[idx];
-    let featureArray = JSON.parse(serializedFeature);
-    let t = tf.tensor(featureArray);
+    // let t = tf.tensor(serializedFeature);
+    // console.log('t', t);
+    let t = serializedFeature.array();
+    console.log('t', t);
+    // let featureArray = JSON.parse(serializedFeature);
+    // let t = tf.tensor(featureArray);
+    // let t = tf.tensor(serializedFeature)
+    // console.log('dataGenFeatures', serializedFeature);
     idx++;
     yield t;
     // console.log(trainDataFeatureArr[idx]);
@@ -140,19 +178,19 @@ async function mainmain() {
   const xs = tf.data.generator(dataGenerator);
   const ys = tf.data.generator(labelGenerator)
   const xyDataset = tf.data.zip({xs: xs, ys: ys}).batch(2);
-  await xyDataset.forEachAsync(e => console.log(e));
+  // await xyDataset.forEachAsync(e => console.log(e));
   let myModel = buildModel();
   console.log(tf.getBackend());
 
   await myModel.fitDataset(xyDataset, {
-    epochs: 4,
+    epochs: 50,
     callbacks: { onEpochEnd: (epoch, logs) => console.log(epoch, logs!.loss) }
   });
   // await myModel.fit(xs, ys, {epochs: 4})
 
 }
 
-mainmain();
+await mainmain();
 
 
 
