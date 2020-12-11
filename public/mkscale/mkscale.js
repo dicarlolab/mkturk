@@ -543,6 +543,7 @@ entryForm.addEventListener('submit', async (ev) => {
     tmp.comments = notes ? notes : '';
     tmp.initials = initials ? initials : '';
     tmp.timestamp = new Date();
+    tmp.date = new Date();
 
     for (let key in tmp) {
       if (firestoreDoc !== undefined) {
@@ -568,6 +569,7 @@ entryForm.addEventListener('submit', async (ev) => {
         console.log(name, 'weight uploaded to mkturkfiles/mkdailydata');
         editor.destroy();
         tmp.timestamp = tmp.timestamp.toJSON();
+        tmp.date = tmp.date.toJSON();
         editor = new JSONEditor(editorContainer, {}, tmp);
         alert('Weight Successfully Uploaded/Updated');
       }).catch(e => {

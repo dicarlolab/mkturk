@@ -23,36 +23,84 @@ const storageRef = storage.ref();
 const tokenVarRef = storageRef.child('/mkturkfiles/imagebags/objectome/wrench/flarenut_spanner/Var6NoBkgdNoPos_Batch1');
 const imgHolder = document.querySelector('#img-holder') as HTMLDivElement;
 
-const someRef = storageRef.child('/mkturkfiles/mkmodels');
-await someRef.listAll().then(async res => {
-  console.log(res);
-  for (let ref of res.prefixes) {
-    console.log(ref);
-  }
-});
+// const someRef = storageRef.child('/mkturkfiles/mkmodels');
+// await someRef.listAll().then(async res => {
+//   console.log(res);
+//   for (let ref of res.prefixes) {
+//     console.log(ref);
+//   }
+// });
+
+async function loadUrl(ref: firebase.storage.Reference) {
+  return ref.listAll().then(result => {
+    return Promise.all(result.items.map(imgRef => imgRef.getDownloadURL()));
+  });
+}
+
+
+
 
 console.log(tf.getBackend());
 
-
 let trainDataArr: string[] = [];
 let trainDataFeatureArr: any = [];
-let testDataArr = [];
+let testDataArr: any[] = [];
+let trainDataObj: any = {};
+let testDataObj: any = {};
+let dataObj: any = {};
 
-async function dothis() {
+// loadUrl().then(hello => {
+//   console.log('hello', hello);
+//   testDataArr = hello;
+// });
 
-  await tokenVarRef.listAll().then(async res => {
-    for (let itemRef of res.items) {
-      await itemRef.getDownloadURL().then(async url => {
-        trainDataFeatureArr.push(await generateFeatureTensor(url));
-      });
-    }
+// async function dothis() {
+//   testDataArr = await loadUrl();
+//   console.log('testdataarr', testDataArr);
+//   testDataArr.forEach()
+
+  
+  
+
+//   await tokenVarRef.listAll().then(async res => {
+//     for (let itemRef of res.items) {
+//       await itemRef.getDownloadURL().then(async url => {
+//         trainDataFeatureArr.push(await generateFeatureTensor(url));
+//       });
+//     }
     
-    // trainDataFeatureArr = tf.data.array(trainDataFeatureArr);
-    // console.log('traindatafeaturearr', trainDataFeatureArr);
-    // tf.keep(trainDataFeatureArr);
+//     // trainDataFeatureArr = tf.data.array(trainDataFeatureArr);
+//     // console.log('traindatafeaturearr', trainDataFeatureArr);
+//     // tf.keep(trainDataFeatureArr);
+//   });
+
+//   // await trainModel();
+// }
+
+async function createFeatureDataset(ref: firebase.storage.Reference, dest: any) {
+  await ref.listAll().then(async result => {
+    dest['key'] = {};
+    dest[ref.name] = [];
+    for (let idx = 0; idx < result.prefixes.length; idx++) {
+      console.log('hello');
+      console.log('idx', idx);
+      dest['key'][result.prefixes[idx].name] = idx;
+      let urlArray = await loadUrl(result.prefixes[idx]);
+      for (let url of urlArray) {
+        dest[ref.name].push({xs: await generateFeatureTensor(url), ys: idx});
+      }
+    }
+    console.log(dest);
   });
 
-  // await trainModel();
+  // let urlArray = await loadUrl(ref);
+  // // urlArray.forEach(async url => {
+  // //   dest.push(generateFeatureTensor(url))
+  // // });
+  // // Promise.all(dest);
+  // for (let url of urlArray) {
+  //   dest.push(await generateFeatureTensor(url));
+  // }
 }
 
 
@@ -85,25 +133,6 @@ const generateFeatureTensor = async (imgUrl: string) => {
     let feature = model.execute(tensor);
     return feature;
   });
-  // let tensor = tf.browser.fromPixels(image)
-  //   .resizeNearestNeighbor([224, 224])
-  //   .toFloat()
-  //   .sub(offset)
-  //   .div(offset)
-  //   .expandDims();
-
-  // console.log('image tensor', tensor);
-
-  // let feature = model.execute(tensor) as tf.Tensor;
-  // feature.print();
-  // tf.keep(feature);
-  // let featureArray = feature.array();
-  // let serializedFeature = JSON.stringify(featureArray);
-  // console.log('features', serializedFeature);
-  // return serializedFeature;
-  // console.log('features', featureArray);
-  // return featureArray;
-  // return feature;
 }
 
 // const generateFeatureTensor = async (imgUrl: string) => {
@@ -117,6 +146,66 @@ const generateFeatureTensor = async (imgUrl: string) => {
 //   console.log('features', features);
 //   features.print()
 //   return features;
+// }
+
+function* trainDataGenerator() {
+  let numElem = dataObj.train.length;
+  let idx = 0;
+  while (idx < numElem) {
+    yield dataObj.train[idx].xs.array();
+    idx++;
+    // yield {
+    //   xs: dataObj.train[idx].xs.array(),
+    //   ys: tf.scalar(dataObj.train[idx].ys)
+    // };
+    // idx++;
+
+  }
+}
+
+function* testDataGenerator() {
+  let numElem = dataObj.test.length;
+  let idx = 0;
+  while (idx < numElem) {
+    yield dataObj.test[idx].xs.array();
+    idx++;
+    // yield {
+    //   xs: dataObj.train[idx].xs.array(),
+    //   ys: tf.scalar(dataObj.train[idx].ys)
+    // };
+    // idx++;
+
+  }
+}
+
+function* trainLabelGenerator() {
+  let numElem = dataObj.train.length;
+  let idx = 0;
+  while (idx < numElem) {
+    yield tf.scalar(dataObj.train[idx].ys);
+    idx++;
+  }
+}
+
+function* testLabelGenerator() {
+  let numElem = dataObj.test.length;
+  let idx = 0;
+  while (idx < numElem) {
+    yield tf.scalar(dataObj.test[idx].ys);
+    idx++;
+  }
+}
+
+// function *testDataGenerator() {
+//   let numElem = dataObj.test.length;
+//   let idx = 0;
+//   while (idx < numElem) {
+//     yield {
+//       xs: dataObj.test[idx].xs.array(),
+//       ys: tf.scalar(dataObj.test[idx].ys)
+//     };
+//     idx++;
+//   } 
 // }
 
 
@@ -168,24 +257,38 @@ function buildModel() {
   let model = tf.sequential();
   model.add(tf.layers.conv1d({inputShape: [1, 1792], filters: 2, kernelSize: 1, kernelRegularizer: tf.regularizers.l2(), biasRegularizer: tf.regularizers.l2()}))
   model.add(tf.layers.flatten());
-  model.compile({loss: 'hinge', optimizer: 'adam', metrics: ['accuracy']});
+  model.compile({loss: 'hinge', optimizer: 'adam', metrics: ['acc']});
   return model;
 }
 
 async function mainmain() {
-  await dothis();
+  // await dothis();
   // let dataset = await trainModel();
-  const xs = tf.data.generator(dataGenerator);
-  const ys = tf.data.generator(labelGenerator)
-  const xyDataset = tf.data.zip({xs: xs, ys: ys}).batch(2);
+  await createFeatureDataset(storageRef.child('mkturkfiles/mkmodels/train'), dataObj);
+  await createFeatureDataset(storageRef.child('mkturkfiles/mkmodels/test'), dataObj);
+  // const xs = tf.data.generator(dataGenerator);
+  // const ys = tf.data.generator(labelGenerator)
+  // const xyDataset = tf.data.zip({xs: xs, ys: ys}).batch(2);
+  let trainData = tf.data.generator(trainDataGenerator);
+  let trainLabel = tf.data.generator(trainLabelGenerator);
+  let testData = tf.data.generator(testDataGenerator);
+  let testLabel = tf.data.generator(testLabelGenerator);
+  let trainDataset = tf.data.zip({xs: trainData, ys: trainLabel}).shuffle(3).batch(2);
+  let testDataset = tf.data.zip({xs: testData, ys: testLabel}).shuffle(3).batch(2);
   // await xyDataset.forEachAsync(e => console.log(e));
   let myModel = buildModel();
   console.log(tf.getBackend());
 
-  await myModel.fitDataset(xyDataset, {
+  await myModel.fitDataset(trainDataset, {
     epochs: 50,
+    validationData: testDataset,
     callbacks: { onEpochEnd: (epoch, logs) => console.log(epoch, logs!.loss) }
+  }).then(info => {
+    console.log('Accuracy', info.history.acc);
+    console.log('Info', info);
   });
+
+  // myModel.evaluateDataset(testDataset, {batches: 2})
   // await myModel.fit(xs, ys, {epochs: 4})
 
 }
