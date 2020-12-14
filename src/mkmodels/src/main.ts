@@ -77,6 +77,40 @@ let dataObj: any = {};
 //   // await trainModel();
 // }
 
+// async function createFeatureDataset(ref: firebase.storage.Reference, dest: any) {
+//   await ref.listAll().then(async result => {
+//     dest['key'] = {};
+//     dest[ref.name] = [];
+//     for (let idx = 0; idx < result.prefixes.length; idx++) {
+//       console.log('hello');
+//       console.log('idx', idx);
+//       if (idx == 0) {
+//         dest['key'][result.prefixes[idx].name] = -1;
+//       } else {
+//         dest['key'][result.prefixes[idx].name] = idx;
+//       }
+//       let urlArray = await loadUrl(result.prefixes[idx]);
+//       for (let url of urlArray) {
+//         if (idx == 0) {
+//           dest[ref.name].push({xs: await generateFeatureTensor(url), ys: -1});
+//         } else {
+//           dest[ref.name].push({xs: await generateFeatureTensor(url), ys: idx});
+//         }
+//       }
+//     }
+//     console.log(dest);
+//   });
+
+//   // let urlArray = await loadUrl(ref);
+//   // // urlArray.forEach(async url => {
+//   // //   dest.push(generateFeatureTensor(url))
+//   // // });
+//   // // Promise.all(dest);
+//   // for (let url of urlArray) {
+//   //   dest.push(await generateFeatureTensor(url));
+//   // }
+// }
+
 async function createFeatureDataset(ref: firebase.storage.Reference, dest: any) {
   await ref.listAll().then(async result => {
     dest['key'] = {};
@@ -84,10 +118,22 @@ async function createFeatureDataset(ref: firebase.storage.Reference, dest: any) 
     for (let idx = 0; idx < result.prefixes.length; idx++) {
       console.log('hello');
       console.log('idx', idx);
-      dest['key'][result.prefixes[idx].name] = idx;
+      if (idx == 0) {
+        dest['key'][result.prefixes[idx].name] = -1;
+      } else {
+        dest['key'][result.prefixes[idx].name] = idx;
+      }
       let urlArray = await loadUrl(result.prefixes[idx]);
       for (let url of urlArray) {
-        dest[ref.name].push({xs: await generateFeatureTensor(url), ys: idx});
+        if (idx == 0) {
+          // dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.tensor([1, 0]).toFloat() });
+          // dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(0) });
+          dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(-1).toFloat() });
+
+        } else {
+          // dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(1) });
+          dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(1).toFloat() });
+        }
       }
     }
     console.log(dest);
@@ -152,7 +198,9 @@ function* trainDataGenerator() {
   let numElem = dataObj.train.length;
   let idx = 0;
   while (idx < numElem) {
-    yield dataObj.train[idx].xs.array();
+    let t = dataObj.train[idx].xs.array();
+    // console.log('trainData', t);
+    yield t;
     idx++;
     // yield {
     //   xs: dataObj.train[idx].xs.array(),
@@ -167,7 +215,9 @@ function* testDataGenerator() {
   let numElem = dataObj.test.length;
   let idx = 0;
   while (idx < numElem) {
-    yield dataObj.test[idx].xs.array();
+    let t = dataObj.test[idx].xs.array();
+    // console.log('testData', t);
+    yield t;
     idx++;
     // yield {
     //   xs: dataObj.train[idx].xs.array(),
@@ -182,7 +232,10 @@ function* trainLabelGenerator() {
   let numElem = dataObj.train.length;
   let idx = 0;
   while (idx < numElem) {
-    yield tf.scalar(dataObj.train[idx].ys);
+    let t = dataObj.train[idx].ys.array();
+    // console.log('trainLabel: ', t);
+    yield t;
+    // yield tf.scalar(dataObj.train[idx].ys);
     idx++;
   }
 }
@@ -191,7 +244,10 @@ function* testLabelGenerator() {
   let numElem = dataObj.test.length;
   let idx = 0;
   while (idx < numElem) {
-    yield tf.scalar(dataObj.test[idx].ys);
+    let t = dataObj.test[idx].ys.array();
+    // console.log('testLabel: ', t);
+    yield t;
+    // yield tf.scalar(dataObj.test[idx].ys);
     idx++;
   }
 }
@@ -255,9 +311,27 @@ function* labelGenerator() {
 
 function buildModel() {
   let model = tf.sequential();
-  model.add(tf.layers.conv1d({inputShape: [1, 1792], filters: 2, kernelSize: 1, kernelRegularizer: tf.regularizers.l2(), biasRegularizer: tf.regularizers.l2()}))
-  model.add(tf.layers.flatten());
-  model.compile({loss: 'hinge', optimizer: 'adam', metrics: ['acc']});
+  // model.add(tf.layers.conv1d({inputShape: [1, 1792], filters: 2, kernelSize: 1, kernelRegularizer: tf.regularizers.l2(), biasRegularizer: tf.regularizers.l2()}))
+  model.add(tf.layers.dense({
+    inputShape: [1, 1792],
+    units: 64,
+    activation: 'relu'
+  }));
+  
+  model.add(tf.layers.dense({units: 2, biasRegularizer: tf.regularizers.l2({l2: 0.0001}), useBias: true, kernelRegularizer: tf.regularizers.l2({l2: 0.0001}), activation: 'linear'}));
+  // model.add(tf.layers.dense({
+  //   units: 2,
+  //   // inputShape: [1, 1792],
+  //   kernelInitializer: 'varianceScaling',
+  //   activation: 'softmax'
+  // }));
+  model.compile({loss: 'hinge', optimizer: tf.train.adadelta(), metrics: ['accuracy']});
+  // model.compile({
+  //   optimizer: tf.train.adam(),
+  //   loss: 'sparseCategoricalCrossentropy',
+  //   metrics: ['accuracy']
+  // });
+  model.summary();
   return model;
 }
 
@@ -273,20 +347,43 @@ async function mainmain() {
   let trainLabel = tf.data.generator(trainLabelGenerator);
   let testData = tf.data.generator(testDataGenerator);
   let testLabel = tf.data.generator(testLabelGenerator);
-  let trainDataset = tf.data.zip({xs: trainData, ys: trainLabel}).shuffle(3).batch(2);
-  let testDataset = tf.data.zip({xs: testData, ys: testLabel}).shuffle(3).batch(2);
+  let trainDataset = tf.data.zip({xs: trainData, ys: trainLabel}).batch(1);
+  let testDataset = tf.data.zip({xs: testData, ys: testLabel}).batch(1);
   // await xyDataset.forEachAsync(e => console.log(e));
   let myModel = buildModel();
   console.log(tf.getBackend());
+  const beginMs = performance.now();
 
   await myModel.fitDataset(trainDataset, {
-    epochs: 50,
+    epochs: 10,
     validationData: testDataset,
-    callbacks: { onEpochEnd: (epoch, logs) => console.log(epoch, logs!.loss) }
+    callbacks: {
+      onEpochEnd: async (epoch, logs) => {
+        const secPerEpoch = 
+          (performance.now() - beginMs) / (1000 * (epoch + 1));
+        console.log('Training model ... Approximately ' + `${secPerEpoch.toFixed(4)} sec/epoch`);
+        const stuff = await testDataset.toArray();
+        console.log('stuff', stuff);
+      }
+    }
   }).then(info => {
     console.log('Accuracy', info.history.acc);
     console.log('Info', info);
   });
+
+  // console.log('test obj:', dataObj.test[1])
+  // // // let prediction = myModel.predict(dataObj.test[0].xs);
+  // let prediction = myModel.predict(dataObj.test[1].xs) as tf.Tensor2D;
+  // console.log(prediction.array());
+  for (let i = 0; i < dataObj.test.length; i++) {
+    let prediction = myModel.predict(dataObj.test[i].xs.expandDims(0)) as tf.Tensor;
+    console.log('True:', dataObj.test[i].ys.array());
+    prediction.print();
+    // let result = myModel.evaluate(dataObj.test[i].xs, tf.tensor(dataObj.test[i].ys)).toString();
+    // console.log('result', result);
+  }
+
+  
 
   // myModel.evaluateDataset(testDataset, {batches: 2})
   // await myModel.fit(xs, ys, {epochs: 4})
