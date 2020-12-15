@@ -18,6 +18,10 @@ import 'firebase/storage';
 
 const modelUrl = 'https://tfhub.dev/google/tfjs-model/imagenet/mobilenet_v2_140_224/feature_vector/3/default/1';
 const model = await tf.loadGraphModel(modelUrl, {fromTFHub: true});
+
+const resnetUrl = 'https://tfhub.dev/google/tfjs-model/imagenet/resnet_v2_50/feature_vector/3/default/1';
+const resnetModel = await tf.loadGraphModel(resnetUrl, {fromTFHub: true});
+
 const storage = firebase.storage();
 const storageRef = storage.ref();
 const tokenVarRef = storageRef.child('/mkturkfiles/imagebags/objectome/wrench/flarenut_spanner/Var6NoBkgdNoPos_Batch1');
@@ -116,7 +120,7 @@ async function createFeatureDataset(ref: firebase.storage.Reference, dest: any) 
     dest['key'] = {};
     dest[ref.name] = [];
     for (let idx = 0; idx < result.prefixes.length; idx++) {
-      console.log('hello');
+      // console.log('hello');
       console.log('idx', idx);
       if (idx == 0) {
         dest['key'][result.prefixes[idx].name] = -1;
@@ -128,11 +132,11 @@ async function createFeatureDataset(ref: firebase.storage.Reference, dest: any) 
         if (idx == 0) {
           // dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.tensor([1, 0]).toFloat() });
           // dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(0) });
-          dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(-1).toFloat() });
+          dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(-1) });
 
         } else {
           // dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(1) });
-          dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(1).toFloat() });
+          dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(1) });
         }
       }
     }
@@ -176,7 +180,8 @@ const generateFeatureTensor = async (imgUrl: string) => {
       .div(offset)
       .expandDims();
     
-    let feature = model.execute(tensor);
+    // let feature = model.execute(tensor);
+    let feature = resnetModel.execute(tensor);
     return feature;
   });
 }
@@ -198,9 +203,10 @@ function* trainDataGenerator() {
   let numElem = dataObj.train.length;
   let idx = 0;
   while (idx < numElem) {
-    let t = dataObj.train[idx].xs.array();
-    // console.log('trainData', t);
-    yield t;
+    // let t = dataObj.train[idx].xs.arraySync();
+    let tt = tf.batchNorm(dataObj.train[idx].xs, tf.scalar(0).toFloat(), tf.scalar(1).toFloat());
+    console.log('tt', tt.arraySync());
+    yield tt;
     idx++;
     // yield {
     //   xs: dataObj.train[idx].xs.array(),
@@ -215,8 +221,8 @@ function* testDataGenerator() {
   let numElem = dataObj.test.length;
   let idx = 0;
   while (idx < numElem) {
-    let t = dataObj.test[idx].xs.array();
-    // console.log('testData', t);
+    let t = dataObj.test[idx].xs.arraySync();
+    console.log('testData', t);
     yield t;
     idx++;
     // yield {
@@ -232,7 +238,7 @@ function* trainLabelGenerator() {
   let numElem = dataObj.train.length;
   let idx = 0;
   while (idx < numElem) {
-    let t = dataObj.train[idx].ys.array();
+    let t = dataObj.train[idx].ys.arraySync();
     // console.log('trainLabel: ', t);
     yield t;
     // yield tf.scalar(dataObj.train[idx].ys);
@@ -244,7 +250,7 @@ function* testLabelGenerator() {
   let numElem = dataObj.test.length;
   let idx = 0;
   while (idx < numElem) {
-    let t = dataObj.test[idx].ys.array();
+    let t = dataObj.test[idx].ys.arraySync();
     // console.log('testLabel: ', t);
     yield t;
     // yield tf.scalar(dataObj.test[idx].ys);
@@ -312,20 +318,20 @@ function* labelGenerator() {
 function buildModel() {
   let model = tf.sequential();
   // model.add(tf.layers.conv1d({inputShape: [1, 1792], filters: 2, kernelSize: 1, kernelRegularizer: tf.regularizers.l2(), biasRegularizer: tf.regularizers.l2()}))
-  model.add(tf.layers.dense({
-    inputShape: [1, 1792],
-    units: 64,
-    activation: 'relu'
-  }));
+  // model.add(tf.layers.dense({
+  //   inputShape: [1, 1792],
+  //   units: 64,
+  //   activation: 'relu'
+  // }));
   
-  model.add(tf.layers.dense({units: 2, biasRegularizer: tf.regularizers.l2({l2: 0.0001}), useBias: true, kernelRegularizer: tf.regularizers.l2({l2: 0.0001}), activation: 'linear'}));
+  model.add(tf.layers.dense({inputShape: [null, 2048], units: 2, useBias: true, kernelInitializer: 'randomNormal' ,kernelRegularizer: tf.regularizers.l2({l2: 0.0001}), activation: 'linear'}));
   // model.add(tf.layers.dense({
   //   units: 2,
   //   // inputShape: [1, 1792],
   //   kernelInitializer: 'varianceScaling',
   //   activation: 'softmax'
   // }));
-  model.compile({loss: 'hinge', optimizer: tf.train.adadelta(), metrics: ['accuracy']});
+  model.compile({loss: 'hinge', optimizer: tf.train.adam(0.001), metrics: ['accuracy']});
   // model.compile({
   //   optimizer: tf.train.adam(),
   //   loss: 'sparseCategoricalCrossentropy',
@@ -347,7 +353,7 @@ async function mainmain() {
   let trainLabel = tf.data.generator(trainLabelGenerator);
   let testData = tf.data.generator(testDataGenerator);
   let testLabel = tf.data.generator(testLabelGenerator);
-  let trainDataset = tf.data.zip({xs: trainData, ys: trainLabel}).batch(1);
+  let trainDataset = tf.data.zip({xs: trainData, ys: trainLabel}).shuffle(3).batch(2);
   let testDataset = tf.data.zip({xs: testData, ys: testLabel}).batch(1);
   // await xyDataset.forEachAsync(e => console.log(e));
   let myModel = buildModel();
@@ -355,15 +361,16 @@ async function mainmain() {
   const beginMs = performance.now();
 
   await myModel.fitDataset(trainDataset, {
-    epochs: 10,
-    validationData: testDataset,
+    epochs: 20,
+    // validationData: testDataset,
     callbacks: {
       onEpochEnd: async (epoch, logs) => {
         const secPerEpoch = 
           (performance.now() - beginMs) / (1000 * (epoch + 1));
         console.log('Training model ... Approximately ' + `${secPerEpoch.toFixed(4)} sec/epoch`);
-        const stuff = await testDataset.toArray();
-        console.log('stuff', stuff);
+        console.log('logs:', logs);
+        // const stuff = await testDataset.toArray();
+        // console.log('stuff', stuff);
       }
     }
   }).then(info => {
@@ -377,16 +384,43 @@ async function mainmain() {
   // console.log(prediction.array());
   for (let i = 0; i < dataObj.test.length; i++) {
     let prediction = myModel.predict(dataObj.test[i].xs.expandDims(0)) as tf.Tensor;
+    let argmax = tf.argMax(prediction);
+    console.log('argmax', argmax.dataSync());
     console.log('True:', dataObj.test[i].ys.array());
     prediction.print();
     // let result = myModel.evaluate(dataObj.test[i].xs, tf.tensor(dataObj.test[i].ys)).toString();
     // console.log('result', result);
   }
 
-  
+  let classifierObj: any = {};
+  classifierObj.pos = [];
+  classifierObj.neg = [];
 
-  // myModel.evaluateDataset(testDataset, {batches: 2})
-  // await myModel.fit(xs, ys, {epochs: 4})
+  for (let i = 0; i < dataObj.train.length; i++) {
+    if (dataObj.train[i].ys.dataSync() == 1) {
+      classifierObj.pos.push(dataObj.train[i].xs);
+    } else {
+      classifierObj.neg.push(dataObj.train[i].xs);
+    }
+  }
+
+  console.log('classifierObj.pos', classifierObj.pos);
+  console.log('classifierObj.neg', classifierObj.neg);
+
+  const avgLayer = tf.layers.average();
+  classifierObj.posActivation = avgLayer.apply(classifierObj.pos) as tf.Tensor;
+  classifierObj.negActivation = avgLayer.apply(classifierObj.neg) as tf.Tensor;
+
+  for (let i = 0; i < dataObj.test.length; i++) {
+    let distPos = classifierObj.posActivation.sub(dataObj.test[i].xs).norm('euclidean');
+    let distNeg = classifierObj.negActivation.sub(dataObj.test[i].xs).norm('euclidean');
+    console.log(`distPos = ${distPos}, distNeg = ${distNeg}`);
+    if (distPos < distNeg) {
+      console.log(`True Label: ${dataObj.test[i].ys.dataSync()[0]}; Predicted Label: 1`);
+    } else {
+      console.log(`True Label: ${dataObj.test[i].ys.dataSync()[0]}; Predicted Label: -1`);
+    }
+  }
 
 }
 
