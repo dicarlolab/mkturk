@@ -2,6 +2,7 @@ import * as tf from '@tensorflow/tfjs';
 import { train } from '@tensorflow/tfjs';
 import firebase from 'firebase/app';
 import 'firebase/auth';
+import { StandardScaler } from './data';
 
 const firebaseConfig = {
   apiKey: "AIzaSyA0fbv2VqE-AfF6V_nxSSXCEqaTlBlZnTI",
@@ -336,21 +337,8 @@ function* labelGenerator() {
 
 function buildModel() {
   let model = tf.sequential();
-  // model.add(tf.layers.conv1d({inputShape: [1, 1792], filters: 2, kernelSize: 1, kernelRegularizer: tf.regularizers.l2(), biasRegularizer: tf.regularizers.l2()}))
-  // model.add(tf.layers.dense({
-  //   inputShape: [1, 1792],
-  //   units: 64,
-  //   activation: 'relu'
-  // }));
-  
-  model.add(tf.layers.dense({inputShape: [2048], units: 2, useBias: true, kernelInitializer: 'randomNormal' ,kernelRegularizer: tf.regularizers.l2({l2: 0.0001})}));
+  model.add(tf.layers.dense({inputShape: [2048], units: 2, useBias: true, kernelInitializer: 'heNormal' ,kernelRegularizer: tf.regularizers.l2({l2: 0.0001})}));
   model.add(tf.layers.activation({activation: 'linear'}));
-  // model.add(tf.layers.dense({
-  //   units: 2,
-  //   // inputShape: [1, 1792],
-  //   kernelInitializer: 'varianceScaling',
-  //   activation: 'softmax'
-  // }));
   model.compile({loss: 'hinge', optimizer: tf.train.adadelta(), metrics: ['accuracy']});
   // model.compile({
   //   optimizer: tf.train.adam(),
@@ -377,55 +365,74 @@ async function mainmain() {
   // let testDataset = tf.data.zip({xs: testData, ys: testLabel}).batch(1);
   // await xyDataset.forEachAsync(e => console.log(e));
 
-  let xTrainTmp: any = tf.stack(dataObj.xTrain);
-  let xTrainMoments = tf.moments(xTrainTmp, 0);
-  let xTrainMean = xTrainMoments.mean.arraySync() as number[];
-  let xTrainVar = xTrainMoments.variance.arraySync() as number[];
-  let xTrainShape = xTrainTmp.shape;
+  // let xTrainTmp: any = tf.stack(dataObj.xTrain);
+  // let xTrainMoments = tf.moments(xTrainTmp, 0);
+  // let xTrainMean = xTrainMoments.mean.arraySync() as number[];
+  // let xTrainVar = xTrainMoments.variance.arraySync() as number[];
+  // let xTrainShape = xTrainTmp.shape;
 
-  console.log('xTrainMean:', xTrainMean);
-  console.log('xTrainVar', xTrainVar);
+  // console.log('xTrainMean:', xTrainMean);
+  // console.log('xTrainVar', xTrainVar);
 
-  xTrainTmp = tf.split(xTrainTmp, xTrainMoments.mean.size, 1);
-  for (let i = 0; i < xTrainTmp.length; i++) {
-    xTrainTmp[i] = tf.sub(xTrainTmp[i], tf.scalar(xTrainMean[i]));
-    xTrainTmp[i] = tf.div(xTrainTmp[i], tf.sqrt(tf.scalar(xTrainVar[i])));
-  }
-  console.log('at point 0:', xTrainTmp);
+  // xTrainTmp = tf.split(xTrainTmp, xTrainMoments.mean.size, 1);
+  // for (let i = 0; i < xTrainTmp.length; i++) {
+  //   xTrainTmp[i] = tf.sub(xTrainTmp[i], tf.scalar(xTrainMean[i]));
+  //   xTrainTmp[i] = tf.div(xTrainTmp[i], tf.sqrt(tf.scalar(xTrainVar[i])));
+  // }
+  // console.log('at point 0:', xTrainTmp);
   
-  xTrainTmp = tf.stack(xTrainTmp, 1).reshape(xTrainShape);
-  console.log('after stack:', xTrainTmp);
-  xTrainMoments = tf.moments(xTrainTmp, 0);
-  xTrainMean = xTrainMoments.mean.arraySync() as number[];
-  xTrainVar = xTrainMoments.variance.arraySync() as number[];
+  // xTrainTmp = tf.stack(xTrainTmp, 1).reshape(xTrainShape);
+  // console.log('after stack:', xTrainTmp);
+  // xTrainMoments = tf.moments(xTrainTmp, 0);
+  // xTrainMean = xTrainMoments.mean.arraySync() as number[];
+  // xTrainVar = xTrainMoments.variance.arraySync() as number[];
 
-  console.log('xTrainMean:', xTrainMean);
-  console.log('xTrainVar', xTrainVar);
-
-  
-  xTrainTmp = tf.unstack(xTrainTmp);
-  console.log('after unstack', xTrainTmp);
-  
+  // console.log('xTrainMean:', xTrainMean);
+  // console.log('xTrainVar', xTrainVar);
 
   
-  for (let i = 0; i < xTrainTmp.length; i++) {
-    console.log(xTrainTmp[i].arraySync());
-  }
+  // xTrainTmp = tf.unstack(xTrainTmp);
+  // console.log('after unstack', xTrainTmp);
+  
 
-  let xTrain = tf.data.array(xTrainTmp);
-  let yTrain = tf.data.array(dataObj.yTrain);
-  let trainDataset = tf.data.zip({xs: xTrain, ys: yTrain}).batch(1);
+  
+  // for (let i = 0; i < xTrainTmp.length; i++) {
+  //   console.log(xTrainTmp[i].arraySync());
+  // }
+
+  // let xTrain = tf.data.array(xTrainTmp);
+  // let yTrain = tf.data.array(dataObj.yTrain);
+  // let trainDataset = tf.data.zip({xs: xTrain, ys: yTrain}).batch(1);
   // let xTest = tf.data.array(dataObj.xTest);
   // let yTest = tf.data.array(dataObj.yTest);
   // let testDataset = tf.data.zip({xs: xTest, ys: yTest}).batch(2).shuffle(4);
+
+
+  let scaler = new StandardScaler();
+  scaler.fit(dataObj.xTrain);
+  console.log(scaler.mean, scaler.var);
+  dataObj.xTrain = scaler.transform(dataObj.xTrain);
+  console.log('sanity check:', scaler.sanityCheck(dataObj.xTrain));
+  dataObj.xTest = scaler.transform(dataObj.xTest);
+  console.log('sanity_check test:', scaler.sanityCheck(dataObj.xTest));
+  console.log(dataObj.xTest);
+
+  let xTrain = tf.data.array(dataObj.xTrain);
+  let yTrain = tf.data.array(dataObj.yTrain);
+  let xTest = tf.data.array(dataObj.xTest);
+  let yTest = tf.data.array(dataObj.yTest);
+  let trainDataset = tf.data.zip({xs: xTrain, ys: yTrain}).batch(1).shuffle(4);
+  let testDataset = tf.data.zip({xs: xTest, ys: yTest}).batch(1).shuffle(4);
+
+
   let myModel = buildModel();
   console.log(tf.getBackend());
   const beginMs = performance.now();
   
 
   await myModel.fitDataset(trainDataset, {
-    epochs: 10,
-    // validationData: testDataset,
+    epochs: 100,
+    validationData: testDataset,
     callbacks: {
       onEpochEnd: async (epoch, logs) => {
         const secPerEpoch = 
