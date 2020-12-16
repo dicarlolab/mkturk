@@ -118,10 +118,12 @@ let dataObj: any = {};
 async function createFeatureDataset(ref: firebase.storage.Reference, dest: any) {
   await ref.listAll().then(async result => {
     dest['key'] = {};
-    dest[ref.name] = [];
+    let xArr = [];
+    let yArr = [];
+    
+
     for (let idx = 0; idx < result.prefixes.length; idx++) {
-      // console.log('hello');
-      console.log('idx', idx);
+      
       if (idx == 0) {
         dest['key'][result.prefixes[idx].name] = -1;
       } else {
@@ -132,13 +134,27 @@ async function createFeatureDataset(ref: firebase.storage.Reference, dest: any) 
         if (idx == 0) {
           // dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.tensor([1, 0]).toFloat() });
           // dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(0) });
-          dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(-1) });
+          // dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(-1) });
 
+          xArr.push(await generateFeatureTensor(url));
+          yArr.push(-1);
+          
         } else {
           // dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(1) });
-          dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(1) });
+          // dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(1) });
+          xArr.push(await generateFeatureTensor(url));
+          yArr.push(1);
         }
       }
+    }
+
+
+    if (ref.name == 'train') {
+      dest['xTrain'] = xArr;
+      dest['yTrain'] = yArr;
+    } else if (ref.name == 'test') {
+      dest['xTest'] = xArr;
+      dest['yTest'] = yArr;
     }
     console.log(dest);
   });
@@ -181,7 +197,10 @@ const generateFeatureTensor = async (imgUrl: string) => {
       .expandDims();
     
     // let feature = model.execute(tensor);
-    let feature = resnetModel.execute(tensor);
+    let feature = resnetModel.execute(tensor) as tf.Tensor;
+    feature = feature.reshape([2048]);
+    feature.print();
+    console.log('feature', feature);
     return feature;
   });
 }
@@ -203,10 +222,10 @@ function* trainDataGenerator() {
   let numElem = dataObj.train.length;
   let idx = 0;
   while (idx < numElem) {
-    // let t = dataObj.train[idx].xs.arraySync();
-    let tt = tf.batchNorm(dataObj.train[idx].xs, tf.scalar(0).toFloat(), tf.scalar(1).toFloat());
-    console.log('tt', tt.arraySync());
-    yield tt;
+    let t = dataObj.train[idx].xs.arraySync();
+    // let tt = tf.batchNorm(dataObj.train[idx].xs, tf.scalar(0).toFloat(), tf.scalar(1).toFloat());
+    // console.log('tt', tt.arraySync());
+    yield t;
     idx++;
     // yield {
     //   xs: dataObj.train[idx].xs.array(),
@@ -324,14 +343,15 @@ function buildModel() {
   //   activation: 'relu'
   // }));
   
-  model.add(tf.layers.dense({inputShape: [null, 2048], units: 2, useBias: true, kernelInitializer: 'randomNormal' ,kernelRegularizer: tf.regularizers.l2({l2: 0.0001}), activation: 'linear'}));
+  model.add(tf.layers.dense({inputShape: [2048], units: 2, useBias: true, kernelInitializer: 'randomNormal' ,kernelRegularizer: tf.regularizers.l2({l2: 0.0001})}));
+  model.add(tf.layers.activation({activation: 'linear'}));
   // model.add(tf.layers.dense({
   //   units: 2,
   //   // inputShape: [1, 1792],
   //   kernelInitializer: 'varianceScaling',
   //   activation: 'softmax'
   // }));
-  model.compile({loss: 'hinge', optimizer: tf.train.adam(0.001), metrics: ['accuracy']});
+  model.compile({loss: 'hinge', optimizer: tf.train.adadelta(), metrics: ['accuracy']});
   // model.compile({
   //   optimizer: tf.train.adam(),
   //   loss: 'sparseCategoricalCrossentropy',
@@ -349,19 +369,62 @@ async function mainmain() {
   // const xs = tf.data.generator(dataGenerator);
   // const ys = tf.data.generator(labelGenerator)
   // const xyDataset = tf.data.zip({xs: xs, ys: ys}).batch(2);
-  let trainData = tf.data.generator(trainDataGenerator);
-  let trainLabel = tf.data.generator(trainLabelGenerator);
-  let testData = tf.data.generator(testDataGenerator);
-  let testLabel = tf.data.generator(testLabelGenerator);
-  let trainDataset = tf.data.zip({xs: trainData, ys: trainLabel}).shuffle(3).batch(2);
-  let testDataset = tf.data.zip({xs: testData, ys: testLabel}).batch(1);
+  // let trainData = tf.data.generator(trainDataGenerator);
+  // let trainLabel = tf.data.generator(trainLabelGenerator);
+  // let testData = tf.data.generator(testDataGenerator);
+  // let testLabel = tf.data.generator(testLabelGenerator);
+  // let trainDataset = tf.data.zip({xs: trainData, ys: trainLabel}).batch(2);
+  // let testDataset = tf.data.zip({xs: testData, ys: testLabel}).batch(1);
   // await xyDataset.forEachAsync(e => console.log(e));
+
+  let xTrainTmp: any = tf.stack(dataObj.xTrain);
+  let xTrainMoments = tf.moments(xTrainTmp, 0);
+  let xTrainMean = xTrainMoments.mean.arraySync() as number[];
+  let xTrainVar = xTrainMoments.variance.arraySync() as number[];
+  let xTrainShape = xTrainTmp.shape;
+
+  console.log('xTrainMean:', xTrainMean);
+  console.log('xTrainVar', xTrainVar);
+
+  xTrainTmp = tf.split(xTrainTmp, xTrainMoments.mean.size, 1);
+  for (let i = 0; i < xTrainTmp.length; i++) {
+    xTrainTmp[i] = tf.sub(xTrainTmp[i], tf.scalar(xTrainMean[i]));
+    xTrainTmp[i] = tf.div(xTrainTmp[i], tf.sqrt(tf.scalar(xTrainVar[i])));
+  }
+  console.log('at point 0:', xTrainTmp);
+  
+  xTrainTmp = tf.stack(xTrainTmp, 1).reshape(xTrainShape);
+  console.log('after stack:', xTrainTmp);
+  xTrainMoments = tf.moments(xTrainTmp, 0);
+  xTrainMean = xTrainMoments.mean.arraySync() as number[];
+  xTrainVar = xTrainMoments.variance.arraySync() as number[];
+
+  console.log('xTrainMean:', xTrainMean);
+  console.log('xTrainVar', xTrainVar);
+
+  
+  xTrainTmp = tf.unstack(xTrainTmp);
+  console.log('after unstack', xTrainTmp);
+  
+
+  
+  for (let i = 0; i < xTrainTmp.length; i++) {
+    console.log(xTrainTmp[i].arraySync());
+  }
+
+  let xTrain = tf.data.array(xTrainTmp);
+  let yTrain = tf.data.array(dataObj.yTrain);
+  let trainDataset = tf.data.zip({xs: xTrain, ys: yTrain}).batch(1);
+  // let xTest = tf.data.array(dataObj.xTest);
+  // let yTest = tf.data.array(dataObj.yTest);
+  // let testDataset = tf.data.zip({xs: xTest, ys: yTest}).batch(2).shuffle(4);
   let myModel = buildModel();
   console.log(tf.getBackend());
   const beginMs = performance.now();
+  
 
   await myModel.fitDataset(trainDataset, {
-    epochs: 20,
+    epochs: 10,
     // validationData: testDataset,
     callbacks: {
       onEpochEnd: async (epoch, logs) => {
@@ -376,51 +439,62 @@ async function mainmain() {
   }).then(info => {
     console.log('Accuracy', info.history.acc);
     console.log('Info', info);
+    // kernel:
+    myModel.layers[0].getWeights()[0].print();
+
+    // bias:
+    myModel.layers[0].getWeights()[1].print();
   });
 
   // console.log('test obj:', dataObj.test[1])
   // // // let prediction = myModel.predict(dataObj.test[0].xs);
   // let prediction = myModel.predict(dataObj.test[1].xs) as tf.Tensor2D;
   // console.log(prediction.array());
-  for (let i = 0; i < dataObj.test.length; i++) {
-    let prediction = myModel.predict(dataObj.test[i].xs.expandDims(0)) as tf.Tensor;
-    let argmax = tf.argMax(prediction);
-    console.log('argmax', argmax.dataSync());
-    console.log('True:', dataObj.test[i].ys.array());
-    prediction.print();
-    // let result = myModel.evaluate(dataObj.test[i].xs, tf.tensor(dataObj.test[i].ys)).toString();
-    // console.log('result', result);
-  }
 
-  let classifierObj: any = {};
-  classifierObj.pos = [];
-  classifierObj.neg = [];
 
-  for (let i = 0; i < dataObj.train.length; i++) {
-    if (dataObj.train[i].ys.dataSync() == 1) {
-      classifierObj.pos.push(dataObj.train[i].xs);
-    } else {
-      classifierObj.neg.push(dataObj.train[i].xs);
-    }
-  }
+  // for (let i = 0; i < dataObj.test.length; i++) {
+  //   let inputToPred =  tf.expandDims(dataObj.test[i].xs, 0);
+  //   let prediction = myModel.predict(inputToPred) as tf.Tensor1D;
+  //   prediction.print();
 
-  console.log('classifierObj.pos', classifierObj.pos);
-  console.log('classifierObj.neg', classifierObj.neg);
+  //   // let prediction = myModel.predict(dataObj.test[i].xs.transpose()) as tf.Tensor;
+  //   // let argmax = tf.argMax(prediction);
+  //   // console.log('argmax', argmax.dataSync());
+  //   // console.log('True:', dataObj.test[i].ys.array());
+  //   // prediction.print();
+  //   // let result = myModel.evaluate(dataObj.test[i].xs, tf.tensor(dataObj.test[i].ys)).toString();
+  //   // console.log('result', result);
+  // }
 
-  const avgLayer = tf.layers.average();
-  classifierObj.posActivation = avgLayer.apply(classifierObj.pos) as tf.Tensor;
-  classifierObj.negActivation = avgLayer.apply(classifierObj.neg) as tf.Tensor;
+  // let classifierObj: any = {};
+  // classifierObj.pos = [];
+  // classifierObj.neg = [];
 
-  for (let i = 0; i < dataObj.test.length; i++) {
-    let distPos = classifierObj.posActivation.sub(dataObj.test[i].xs).norm('euclidean');
-    let distNeg = classifierObj.negActivation.sub(dataObj.test[i].xs).norm('euclidean');
-    console.log(`distPos = ${distPos}, distNeg = ${distNeg}`);
-    if (distPos < distNeg) {
-      console.log(`True Label: ${dataObj.test[i].ys.dataSync()[0]}; Predicted Label: 1`);
-    } else {
-      console.log(`True Label: ${dataObj.test[i].ys.dataSync()[0]}; Predicted Label: -1`);
-    }
-  }
+  // for (let i = 0; i < dataObj.train.length; i++) {
+  //   if (dataObj.train[i].ys.dataSync() == 1) {
+  //     classifierObj.pos.push(dataObj.train[i].xs);
+  //   } else {
+  //     classifierObj.neg.push(dataObj.train[i].xs);
+  //   }
+  // }
+
+  // console.log('classifierObj.pos', classifierObj.pos);
+  // console.log('classifierObj.neg', classifierObj.neg);
+
+  // const avgLayer = tf.layers.average();
+  // classifierObj.posActivation = avgLayer.apply(classifierObj.pos) as tf.Tensor;
+  // classifierObj.negActivation = avgLayer.apply(classifierObj.neg) as tf.Tensor;
+
+  // for (let i = 0; i < dataObj.test.length; i++) {
+  //   let distPos = classifierObj.posActivation.sub(dataObj.test[i].xs).norm('euclidean');
+  //   let distNeg = classifierObj.negActivation.sub(dataObj.test[i].xs).norm('euclidean');
+  //   console.log(`distPos = ${distPos}, distNeg = ${distNeg}`);
+  //   if (distPos < distNeg) {
+  //     console.log(`True Label: ${dataObj.test[i].ys.dataSync()[0]}; Predicted Label: 1`);
+  //   } else {
+  //     console.log(`True Label: ${dataObj.test[i].ys.dataSync()[0]}; Predicted Label: -1`);
+  //   }
+  // }
 
 }
 
