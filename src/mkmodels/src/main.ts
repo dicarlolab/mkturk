@@ -138,13 +138,15 @@ async function createFeatureDataset(ref: firebase.storage.Reference, dest: any) 
           // dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(-1) });
 
           xArr.push(await generateFeatureTensor(url));
-          yArr.push(-1);
+          yArr.push([1, 0]);
+          // yArr.push(-1);
           
         } else {
           // dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(1) });
           // dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(1) });
           xArr.push(await generateFeatureTensor(url));
-          yArr.push(1);
+          yArr.push([0, 1]);
+          // yArr.push(1);
         }
       }
     }
@@ -337,9 +339,19 @@ function* labelGenerator() {
 
 function buildModel() {
   let model = tf.sequential();
-  model.add(tf.layers.dense({inputShape: [2048], units: 2, useBias: true, kernelInitializer: 'heNormal' ,kernelRegularizer: tf.regularizers.l2({l2: 0.0001})}));
-  model.add(tf.layers.activation({activation: 'linear'}));
-  model.compile({loss: 'hinge', optimizer: tf.train.adadelta(), metrics: ['accuracy']});
+  model.add(tf.layers.dense({
+    units: 2,
+    inputShape: [2048],
+    activation: 'sigmoid'
+  }));
+  model.compile({
+    optimizer: tf.train.adam(),
+    loss: 'binaryCrossentropy',
+    metrics: ['accuracy']
+  });
+  // model.add(tf.layers.dense({inputShape: [2048], units: 2, useBias: true, kernelInitializer: 'heNormal' ,kernelRegularizer: tf.regularizers.l2({l2: 0.0001})}));
+  // model.add(tf.layers.activation({activation: 'linear'}));
+  // model.compile({loss: 'hinge', optimizer: tf.train.adadelta(), metrics: ['accuracy']});
   // model.compile({
   //   optimizer: tf.train.adam(),
   //   loss: 'sparseCategoricalCrossentropy',
@@ -408,14 +420,14 @@ async function mainmain() {
   // let testDataset = tf.data.zip({xs: xTest, ys: yTest}).batch(2).shuffle(4);
 
 
-  let scaler = new StandardScaler();
-  scaler.fit(dataObj.xTrain);
-  console.log(scaler.mean, scaler.var);
-  dataObj.xTrain = scaler.transform(dataObj.xTrain);
-  console.log('sanity check:', scaler.sanityCheck(dataObj.xTrain));
-  dataObj.xTest = scaler.transform(dataObj.xTest);
-  console.log('sanity_check test:', scaler.sanityCheck(dataObj.xTest));
-  console.log(dataObj.xTest);
+  // let scaler = new StandardScaler();
+  // scaler.fit(dataObj.xTrain);
+  // console.log(scaler.mean, scaler.var);
+  // dataObj.xTrain = scaler.transform(dataObj.xTrain);
+  // console.log('sanity check:', scaler.sanityCheck(dataObj.xTrain));
+  // dataObj.xTest = scaler.transform(dataObj.xTest);
+  // console.log('sanity_check test:', scaler.sanityCheck(dataObj.xTest));
+  // console.log(dataObj.xTest);
 
   let xTrain = tf.data.array(dataObj.xTrain);
   let yTrain = tf.data.array(dataObj.yTrain);
@@ -428,6 +440,28 @@ async function mainmain() {
   let myModel = buildModel();
   console.log(tf.getBackend());
   const beginMs = performance.now();
+  // let history: any;
+  // let history2: any;
+
+  // for (let i = 0; i < 160; i++) {
+  //   console.log('data:', dataObj.xTrain[i].expandDims(0));
+  //   console.log('ydata:', tf.tensor2d(dataObj.yTrain[i], [1,2]));
+  //   // let input = dataObj.xTrain[i].expandDims(0);
+  //   history = await myModel.trainOnBatch(dataObj.xTrain[i].expandDims(0), tf.tensor2d(dataObj.yTrain[i], [1,2]));
+  //   history2 = myModel.predictOnBatch(dataObj.xTrain[i].expandDims(0));
+  //   console.log(history);
+  //   console.log('train pred:', history2.dataSync());
+  // }
+
+  // let testAcc = [];
+  // let pred: any;
+  // for (let i = 0; i < 40; i++) {
+  //   pred = myModel.predictOnBatch(dataObj.xTest[i].expandDims(0));
+  //   console.log('test true label:', dataObj.yTest[i], 'test pred:', pred.dataSync());
+  // }
+
+
+
   
 
   await myModel.fitDataset(trainDataset, {
