@@ -862,7 +862,7 @@ function refreshCanvasSettings(TASK){
 		if (TASK.Species == "macaque" || TASK.Species == "human"){
 			CANVAS.headsupfraction=0;
 		}
-		else if (TASK.Species == "marmoset"){
+		else if (TASK.Species == "marmoset" || TASK.Species == 'model'){
 			CANVAS.headsupfraction=1/3-0.06;
 		}		
 	}

@@ -22,6 +22,8 @@ async function initThreeJS(scenedata) {
     renderer.domElement.style.width =  VISIBLECANVAS.clientWidth+ 'px'; //keeps CSS size unchanged
     renderer.domElement.style.height =  VISIBLECANVAS.clientHeight+ 'px'; //keeps CSS size unchanged
 
+    console.log(VISIBLECANVAS.clientWidth, VISIBLECANVAS.clientHeight);
+
     // init scene
     scene = {}
 
