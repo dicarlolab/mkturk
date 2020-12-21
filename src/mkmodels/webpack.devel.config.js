@@ -7,8 +7,8 @@ module.exports = {
   mode: 'development',
   entry: {
     main: [
-      path.resolve(__dirname, 'src/main.ts'),
-      path.resolve(__dirname, 'src/utils.ts'),
+      path.resolve(__dirname, 'src/mkmodels.ts'),
+      // path.resolve(__dirname, 'src/utils.ts'),
       // path.resolve(__dirname, 'src/index.js')
     ],
   },
@@ -19,10 +19,10 @@ module.exports = {
     new CleanWebpackPlugin({
       cleanStaleWebpackAssets: false
     }),
-    new HtmlWebpackPlugin({
-      title: 'MkModels',
-      template: './src/index.html'
-    }),
+    // new HtmlWebpackPlugin({
+    //   title: 'MkModels',
+    //   template: './src/index.html'
+    // }),
   ],
   output: {
     path: path.resolve(__dirname, "../../public/mkmodels"),

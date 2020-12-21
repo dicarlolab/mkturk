@@ -20,6 +20,7 @@ import 'firebase/storage';
 const modelUrl = 'https://tfhub.dev/google/tfjs-model/imagenet/mobilenet_v2_140_224/feature_vector/3/default/1';
 const model = await tf.loadGraphModel(modelUrl, {fromTFHub: true});
 
+
 const resnetUrl = 'https://tfhub.dev/google/tfjs-model/imagenet/resnet_v2_50/feature_vector/3/default/1';
 const resnetModel = await tf.loadGraphModel(resnetUrl, {fromTFHub: true});
 
@@ -433,7 +434,7 @@ async function mainmain() {
   let yTrain = tf.data.array(dataObj.yTrain);
   let xTest = tf.data.array(dataObj.xTest);
   let yTest = tf.data.array(dataObj.yTest);
-  let trainDataset = tf.data.zip({xs: xTrain, ys: yTrain}).batch(1).shuffle(4);
+  let trainDataset = tf.data.zip({xs: xTrain, ys: yTrain}).batch(4).shuffle(4);
   let testDataset = tf.data.zip({xs: xTest, ys: yTest}).batch(1).shuffle(4);
 
 
