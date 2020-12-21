@@ -40,7 +40,7 @@ if (typeof(navigator.bluetooth) == "object"){
 
 <script src="mkturk_installsettings.js"></script>
 
-<script src="main.bundle.js" type="text/javascript"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js" type="text/javascript"></script>
 
 <!-- Insert these scripts at the bottom of the HTML, but before you use any Firebase services -->
 <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
@@ -218,9 +218,17 @@ if (typeof(navigator.bluetooth) == "object"){
 <script src="mkturk_bigquery.js" type="text/javascript"></script>
 <script src="mkturk_threejs.js" type="text/javascript"></script>
 <script src="mkturk_eyetracker.js" type="text/javascript"></script>
+<script src="mkmodels.js" type="text/javascript"></script>
 
 <script>
+let dtt = new MkModels();
+(async() => {
+  console.log('before start');
 
+	await dtt.loadFeatureExtractor('https://tfhub.dev/google/tfjs-model/imagenet/resnet_v2_50/feature_vector/3/default/1');
+	// await dtt.loadFeatureExtractor('https://tfhub.dev/google/tfjs-model/imagenet/mobilenet_v2_140_224/feature_vector/3/default/1');
+  console.log('after start');
+})();
 //================== AUTHENTICATE GOOGLE ==================//
 // [START authstatelistener]
 var provider = new firebase.auth.GoogleAuthProvider();
@@ -667,8 +675,7 @@ function skipHardwareDevice(event){
 	CURRTRIAL.num = 0
 	EVENTS.trialnum = 0
 	FLAGS.savedata = 0 // test trials can be performed, but data won't be saved
-	let mkm = new MkModel();
-	console.log(mkm);
+	
 	// await mkmodels.loadFeatureExtractor('https://tfhub.dev/google/tfjs-model/imagenet/resnet_v2_50/feature_vector/3/default/1');
 
 // =========================================================================================================== // 
@@ -1184,7 +1191,11 @@ if (typeof(teston) == "undefined"){
 				let sy = (boundingBoxesFixation.y[0][1] + boundingBoxesFixation.y[0][0])/2 - 308;
 				sy = Math.floor(sy);
 				ctx.drawImage(VISIBLECANVAS, sx, sy, 616, 616, 0, 0, 224, 224);
-				let features = await mkmodels.generateFeatureTensor(cvs);
+				let tensor = dtt.normalizePixelValues(cvs);
+				let feature = dtt.featureExtractor.execute(tensor);
+				feature = feature.reshape([2048]);
+				feature.print();
+				console.log(CURRTRIAL.correctitem);
 				// let cvsData = cvs.toDataURL();
 				// storageRef.child('mkturkfiles/mkmodels/cvsdata.png').putString(cvsData, 'data_url');
 
