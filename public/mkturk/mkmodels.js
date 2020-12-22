@@ -2,6 +2,9 @@ class MkModels {
   constructor() {
     this.featureExtractor;
     this.model;
+    this.dataObj = {};
+    this.dataObj.xTrain = [];
+    this.dataObj.yTrain = [];
   }
 
   async loadFeatureExtractor(url) {
@@ -19,6 +22,36 @@ class MkModels {
         .expandDims()
     );
     return tensor;
+  }
+
+  // buildClassifier() {
+  //   this.model = tf.sequential();
+  //   this.model.add(tf.layers.dense({
+  //     units: 1,
+  //     inputShape: [2048],
+  //     activation: 'sigmoid'
+  //   }));
+  //   this.model.compile({
+  //     optimizer: tf.train.adam(),
+  //     loss: 'binaryCrossentropy',
+  //     metrics: ['accuracy']
+  //   });
+  //   this.model.summary();
+  // }
+
+  buildClassifier() {
+    this.model = tf.sequential();
+    this.model.add(tf.layers.dense({
+      units: 2,
+      inputShape: [2048],
+      activation: 'sigmoid'
+    }));
+    this.model.compile({
+      optimizer: tf.train.adam(),
+      loss: 'binaryCrossentropy',
+      metrics: ['accuracy']
+    });
+    this.model.summary();
   }
 
   

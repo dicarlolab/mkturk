@@ -139,14 +139,14 @@ async function createFeatureDataset(ref: firebase.storage.Reference, dest: any) 
           // dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(-1) });
 
           xArr.push(await generateFeatureTensor(url));
-          yArr.push([1, 0]);
+          yArr.push([0]);
           // yArr.push(-1);
           
         } else {
           // dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(1) });
           // dest[ref.name].push({xs: await generateFeatureTensor(url), ys: tf.scalar(1) });
           xArr.push(await generateFeatureTensor(url));
-          yArr.push([0, 1]);
+          yArr.push([1]);
           // yArr.push(1);
         }
       }
@@ -341,7 +341,7 @@ function* labelGenerator() {
 function buildModel() {
   let model = tf.sequential();
   model.add(tf.layers.dense({
-    units: 2,
+    units: 1,
     inputShape: [2048],
     activation: 'sigmoid'
   }));
