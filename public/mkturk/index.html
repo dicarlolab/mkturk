@@ -229,24 +229,22 @@ firebase.auth().getRedirectResult().then(function(result) {
   if (result.user) {
     // User just signed in. you can get the result.credential.
     ENV.ResearcherDisplayName = result.user.displayName;
-	ENV.ResearcherEmail = result.user.email;
-	ENV.ResearcherID = result.user.uid
+		ENV.ResearcherEmail = result.user.email;
+		ENV.ResearcherID = result.user.uid
 
-	console.log('Sign-In Redirect Result, USER ' + result.user.email + ' is signed in')
-	updateHeadsUpDisplay()
-  }
-  else if (firebase.auth().currentUser) {
+		console.log('Sign-In Redirect Result, USER ' + result.user.email + ' is signed in')
+		updateHeadsUpDisplay()
+  } else if (firebase.auth().currentUser) {
     // User already signed in.
-	ENV.ResearcherDisplayName = firebase.auth().currentUser.displayName;
-	ENV.ResearcherEmail = firebase.auth().currentUser.email;
-	ENV.ResearcherID = firebase.auth().currentUser.uid
+		ENV.ResearcherDisplayName = firebase.auth().currentUser.displayName;
+		ENV.ResearcherEmail = firebase.auth().currentUser.email;
+		ENV.ResearcherID = firebase.auth().currentUser.uid
 
-	console.log('Sign-In Redirect Result, USER ' + firebase.auth().currentUser.email + ' is signed in')
-	updateHeadsUpDisplay()		
-  }
-  else {
+		console.log('Sign-In Redirect Result, USER ' + firebase.auth().currentUser.email + ' is signed in')
+		updateHeadsUpDisplay()		
+  } else {
     // No user signed in, update your UI, show the redirect sign-in screen.
-	firebase.auth().signInWithRedirect(provider)
+		firebase.auth().signInWithRedirect(provider)
   }
 });
 //================== (end) AUTHENTICATE GOOGLE ==================//
@@ -1182,7 +1180,8 @@ if (typeof(teston) == "undefined"){
 
 		if (FLAGS.stressTest == 1){
 			if (TASK.Species == 'model') {
-				console.log('MODEL');
+				console.log('MODEL:', CURRTRIAL.num);
+				console.log('Model:',EVENTS['trialseries']['Response'].length);
 				let cvs = document.getElementById('model-canvas');
 				let ctx = cvs.getContext('2d');
 				ctx.clearRect(0, 0, cvs.width, cvs.height);
@@ -1190,13 +1189,13 @@ if (typeof(teston) == "undefined"){
 				var touchhold_return = {type: "theld"};
 				let sx = (boundingBoxesFixation.x[0][1] + boundingBoxesFixation.x[0][0]) - 308;
 				sx = Math.floor(sx);
-				let sy = (boundingBoxesFixation.y[0][1] + boundingBoxesFixation.y[0][0])/2 - 308;
+				let sy = (boundingBoxesFixation.y[0][1] + boundingBoxesFixation.y[0][0])/2 - 256;
 				sy = Math.floor(sy);
 				ctx.drawImage(VISIBLECANVAS, sx, sy, 616, 616, 0, 0, 224, 224);
 				let tensor = mkm.normalizePixelValues(cvs);
 				let feature = mkm.featureExtractor.execute(tensor);
 				feature = feature.reshape([2048]);
-				if (CURRTRIAL.num < TASK.TrainIdx) {
+				if (CURRTRIAL.num <= TASK.TrainIdx) {
 					mkm.dataObj.xTrain.push(feature);
 					// mkm.dataObj.yTrain.push([CURRTRIAL.correctitem]);
 					if (CURRTRIAL.correctitem == 0) {
@@ -1210,7 +1209,8 @@ if (typeof(teston) == "undefined"){
 					mkm.dataObj.yTest = CURRTRIAL.correctitem;
 				}
 
-				if (CURRTRIAL.num == TASK.TrainIdx - 1) {
+				if (CURRTRIAL.num == TASK.TrainIdx) {
+					console.log('xTrain len:', mkm.dataObj.xTrain.length);
 					let xTrain = tf.data.array(mkm.dataObj.xTrain);
 					let yTrain = tf.data.array(mkm.dataObj.yTrain);
 					let trainDataset = tf.data.zip({xs: xTrain, ys: yTrain}).batch(4).shuffle(4);
@@ -1230,9 +1230,9 @@ if (typeof(teston) == "undefined"){
 					});
 				}
 				
-				// let storageRef = storage.ref();
-				// let cvsData = cvs.toDataURL();
-				// storageRef.child('mkturkfiles/mkmodels/cvsdata.png').putString(cvsData, 'data_url');
+				let storageRef = storage.ref();
+				let cvsData = cvs.toDataURL();
+				storageRef.child('mkturkfiles/mkmodels/cvsdata.png').putString(cvsData, 'data_url');
 
 
 				var x = boundingBoxesFixation.x[0][0] + Math.round(Math.random()*(boundingBoxesFixation.x[0][1] - boundingBoxesFixation.x[0][0]))
@@ -1465,9 +1465,12 @@ if (typeof(teston) == "undefined"){
 				var x = 0;
 				var y = 0;
 
-				if (CURRTRIAL.num >= TASK.TrainIdx) {
+				if (CURRTRIAL.num > TASK.TrainIdx) {
 					let yPred = mkm.model.predict(mkm.dataObj.xTest.reshape([1, 2048]));
-					yPred.print();
+					yPred = yPred.reshape([2]).argMax(0);
+					yPred = yPred.dataSync();
+					currchoice = yPred[0];
+					console.log('Predicted yLabel:', currchoice);
 					console.log('True yLabel:', CURRTRIAL.correctitem);
 				}
 			} else {

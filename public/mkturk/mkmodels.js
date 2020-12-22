@@ -54,5 +54,5 @@ class MkModels {
     this.model.summary();
   }
 
-  
+
 }
