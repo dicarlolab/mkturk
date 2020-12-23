@@ -626,7 +626,7 @@ function skipHardwareDevice(event){
 	let mkm;
 	if (TASK.Species == 'model') {
 		mkm = new MkModels();
-		let fromTFHub = TASK.ModelURL.includes('tfhub');
+		let fromTFHub = TASK.ModelConfig.modelURL.includes('tfhub');
 		await mkm.loadFeatureExtractor(TASK.ModelConfig.modelURL, { fromTFHub: fromTFHub });
 		let cvs = document.getElementById('model-canvas');
 		mkm.bindCanvasElement(cvs);
