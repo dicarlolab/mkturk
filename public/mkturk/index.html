@@ -1474,12 +1474,20 @@ if (typeof(teston) == "undefined"){
 					if ((TASK.ModelConfig.saveImages == 1 && currchoice != CURRTRIAL.correctitem)) {
 						let storageRef = storage.ref();
 						let cvsData = mkm.cvs.toDataURL();
-						let path = 'mkturkfiles/mkmodels/' + TASK.Agent + '/_' + CURRTRIAL.num + '.png'; 
+						let path = (
+							'mkturkfiles/mkmodels/' + TASK.Agent + 
+							'/' + ENV.CurrentDate.toJSON() + '_' + 
+							CURRTRIAL.num + '_incorrect.png'
+						);
 						storageRef.child(path).putString(cvsData, 'data_url');
 					} else if (TASK.ModelConfig.saveImages == 2) {
 						let storageRef = storage.ref();
 						let cvsData = mkm.cvs.toDataURL();
-						let path = 'mkturkfiles/mkmodels/' + TASK.Agent + '/_' + CURRTRIAL.num + '.png'; 
+						let path = (
+							'mkturkfiles/mkmodels/' + TASK.Agent + 
+							'/' + ENV.CurrentDate.toJSON() + '_' + 
+							CURRTRIAL.num + '_all.png'
+						); 
 						storageRef.child(path).putString(cvsData, 'data_url');
 					}
 					
