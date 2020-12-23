@@ -1183,13 +1183,13 @@ if (typeof(teston) == "undefined"){
 
 		if (FLAGS.stressTest == 1){
 			if (TASK.Species == 'model') {
-				console.log('MODEL:', CURRTRIAL.num);
-				console.log('Model:',EVENTS['trialseries']['Response'].length);
+				// console.log('MODEL:', CURRTRIAL.num);
+				// console.log('Model:',EVENTS['trialseries']['Response'].length);
 				let ctx = mkm.cvs.getContext('2d');
 				ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
 				
 				var touchhold_return = {type: "theld"};
-				console.log('boundingBoxesFixation:', boundingBoxesFixation);
+				// console.log('boundingBoxesFixation:', boundingBoxesFixation);
 				let sxOffset = (
 					IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
 					* ENV.PhysicalPPI / ENV.ScreenRatio
