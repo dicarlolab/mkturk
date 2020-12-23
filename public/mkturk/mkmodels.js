@@ -5,10 +5,15 @@ class MkModels {
     this.dataObj = {};
     this.dataObj.xTrain = [];
     this.dataObj.yTrain = [];
+    this.cvs;
   }
 
-  async loadFeatureExtractor(url) {
-    this.featureExtractor = await tf.loadGraphModel(url, { fromTFHub: true });
+  bindCanvasElement(canvas) {
+    this.cvs = canvas;
+  } 
+
+  async loadFeatureExtractor(url, tfhub) {
+    this.featureExtractor = await tf.loadGraphModel(url, tfhub);
   }
 
   normalizePixelValues(canvas) {
@@ -24,31 +29,16 @@ class MkModels {
     return tensor;
   }
 
-  // buildClassifier() {
-  //   this.model = tf.sequential();
-  //   this.model.add(tf.layers.dense({
-  //     units: 1,
-  //     inputShape: [2048],
-  //     activation: 'sigmoid'
-  //   }));
-  //   this.model.compile({
-  //     optimizer: tf.train.adam(),
-  //     loss: 'binaryCrossentropy',
-  //     metrics: ['accuracy']
-  //   });
-  //   this.model.summary();
-  // }
-
-  buildClassifier() {
+  buildClassifier(config) {
     this.model = tf.sequential();
     this.model.add(tf.layers.dense({
-      units: 2,
-      inputShape: [2048],
-      activation: 'sigmoid'
+      units: config.outputUnits,
+      inputShape: [config.inputShape],
+      activation: config.activation
     }));
     this.model.compile({
       optimizer: tf.train.adam(),
-      loss: 'binaryCrossentropy',
+      loss: config.loss,
       metrics: ['accuracy']
     });
     this.model.summary();

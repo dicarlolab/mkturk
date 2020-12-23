@@ -985,11 +985,11 @@ function updateHeadsUpDisplay(){
 	var nreward = 0;
 
 	if (TASK.Species == 'model') {
-		if (CURRTRIAL.num > TASK.TrainIdx) {
-			for (let i = TASK.TrainIdx + 1; i < EVENTS['trialseries']['Response'].length; i++) {
+		if (CURRTRIAL.num > TASK.ModelConfig.trainIdx) {
+			for (let i = TASK.ModelConfig.trainIdx + 1; i < EVENTS['trialseries']['Response'].length; i++) {
 				if (EVENTS['trialseries']['Response'][i] == EVENTS['trialseries']['CorrectItem'][i]) {
 					ncorrect = ncorrect + 1;
-					let len = EVENTS['trialseries']['Response'].length - TASK.TrainIdx;
+					let len = EVENTS['trialseries']['Response'].length - TASK.ModelConfig.trainIdx - 1;
 					var pctcorrect = Math.round(100 * ncorrect / len);
 				}
 			}
@@ -1018,13 +1018,13 @@ function updateHeadsUpDisplay(){
 		if (TASK.Species == 'model') {
 			if (CURRTRIAL.num == 0) {
 
-			} else if (CURRTRIAL.num <= TASK.TrainIdx) {
-				console.log('screenfunc:', EVENTS['trialseries']['Response'].length, CURRTRIAL.num, TASK.TrainIdx);
+			} else if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
+				console.log('screenfunc:', EVENTS['trialseries']['Response'].length, CURRTRIAL.num, TASK.ModelConfig.trainIdx);
 				let tmp = EVENTS['trialseries']['Response'].length - 1;
 				textobj.innerHTML = (
 					'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail + "<br>" +
 					'Agent: ' + ENV.Subject + ", <font color=green><b>" + 
-					"TRAINING</b></font> "  + '(' + tmp + ' of ' + TASK.TrainIdx + ')' +"<br>" +
+					"TRAINING</b></font> "  + '(' + tmp + ' of ' + TASK.ModelConfig.trainIdx + ')' +"<br>" +
 					task1 + "<br>" + task2 + "<br>" + "<br>" +
 					"last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>" +
 					"last saved to firebase @ " + CURRTRIAL.lastFirebaseSave.toLocaleTimeString("en-US")
@@ -1033,7 +1033,7 @@ function updateHeadsUpDisplay(){
 				textobj.innerHTML = (
 					'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail + "<br>" +
 					'Agent: ' + ENV.Subject + ", <font color=green><b>" + pctcorrect  +
-					"%</b></font> " + "(" + ncorrect + " of " + (EVENTS['trialseries']['Response'].length - TASK.TrainIdx) + " trials)" +
+					"%</b></font> " + "(" + ncorrect + " of " + (EVENTS['trialseries']['Response'].length - TASK.ModelConfig.trainIdx - 1) + " trials)" +
 					"<br>" +
 					task1 + "<br>" + task2 + "<br>" + "<br>" +
 					"last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>" +

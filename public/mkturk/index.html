@@ -627,8 +627,10 @@ function skipHardwareDevice(event){
 	if (TASK.Species == 'model') {
 		mkm = new MkModels();
 		let fromTFHub = TASK.ModelURL.includes('tfhub');
-		await mkm.loadFeatureExtractor(TASK.ModelURL, { fromTFHub: fromTFHub });
-		mkm.buildClassifier();
+		await mkm.loadFeatureExtractor(TASK.ModelConfig.modelURL, { fromTFHub: fromTFHub });
+		let cvs = document.getElementById('model-canvas');
+		mkm.bindCanvasElement(cvs);
+		mkm.buildClassifier(TASK.ModelConfig);
 	}
 
 	// (END) LOAD MKMODELS //
@@ -1182,9 +1184,8 @@ if (typeof(teston) == "undefined"){
 			if (TASK.Species == 'model') {
 				console.log('MODEL:', CURRTRIAL.num);
 				console.log('Model:',EVENTS['trialseries']['Response'].length);
-				let cvs = document.getElementById('model-canvas');
-				let ctx = cvs.getContext('2d');
-				ctx.clearRect(0, 0, cvs.width, cvs.height);
+				let ctx = mkm.cvs.getContext('2d');
+				ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
 				
 				var touchhold_return = {type: "theld"};
 				let sx = (boundingBoxesFixation.x[0][1] + boundingBoxesFixation.x[0][0]) - 308;
@@ -1192,24 +1193,22 @@ if (typeof(teston) == "undefined"){
 				let sy = (boundingBoxesFixation.y[0][1] + boundingBoxesFixation.y[0][0])/2 - 256;
 				sy = Math.floor(sy);
 				ctx.drawImage(VISIBLECANVAS, sx, sy, 616, 616, 0, 0, 224, 224);
-				let tensor = mkm.normalizePixelValues(cvs);
+				let tensor = mkm.normalizePixelValues(mkm.cvs);
 				let feature = mkm.featureExtractor.execute(tensor);
 				feature = feature.reshape([2048]);
-				if (CURRTRIAL.num <= TASK.TrainIdx) {
+				if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
 					mkm.dataObj.xTrain.push(feature);
-					// mkm.dataObj.yTrain.push([CURRTRIAL.correctitem]);
 					if (CURRTRIAL.correctitem == 0) {
 						mkm.dataObj.yTrain.push([1, 0]);
 					} else if (CURRTRIAL.correctitem == 1) {
 						mkm.dataObj.yTrain.push([0, 1]);
 					}
-					
 				} else {
 					mkm.dataObj.xTest = feature;
 					mkm.dataObj.yTest = CURRTRIAL.correctitem;
 				}
 
-				if (CURRTRIAL.num == TASK.TrainIdx) {
+				if (CURRTRIAL.num == TASK.ModelConfig.trainIdx) {
 					console.log('xTrain len:', mkm.dataObj.xTrain.length);
 					let xTrain = tf.data.array(mkm.dataObj.xTrain);
 					let yTrain = tf.data.array(mkm.dataObj.yTrain);
@@ -1217,11 +1216,11 @@ if (typeof(teston) == "undefined"){
 
 					const beginMs = performance.now();
 					await mkm.model.fitDataset(trainDataset, {
-						epochs: 50,
+						epochs: TASK.ModelConfig.epochs,
 						callbacks: {
 							onEpochEnd: async(epoch, logs) => {
 								const secPerEpoch = (
-									(performance.now() - beginMs) / (1000 + epoch + 1)
+									(performance.now() - beginMs) / (1000 * (epoch + 1))
 								);
 								console.log('Training model ... Approx. ' + `${secPerEpoch.toFixed(4)} sec/epoch`);
 								console.log('logs:', logs);
@@ -1230,9 +1229,9 @@ if (typeof(teston) == "undefined"){
 					});
 				}
 				
-				let storageRef = storage.ref();
-				let cvsData = cvs.toDataURL();
-				storageRef.child('mkturkfiles/mkmodels/cvsdata.png').putString(cvsData, 'data_url');
+				// let storageRef = storage.ref();
+				// let cvsData = cvs.toDataURL();
+				// storageRef.child('mkturkfiles/mkmodels/cvsdata.png').putString(cvsData, 'data_url');
 
 
 				var x = boundingBoxesFixation.x[0][0] + Math.round(Math.random()*(boundingBoxesFixation.x[0][1] - boundingBoxesFixation.x[0][0]))
@@ -1460,18 +1459,30 @@ if (typeof(teston) == "undefined"){
 			var nchoices = boundingBoxesChoice3D.x.length;
 
 			if (TASK.Species == 'model') {
-				console.log('do model prediction');
 				var currchoice = 0;
 				var x = 0;
 				var y = 0;
 
-				if (CURRTRIAL.num > TASK.TrainIdx) {
+				if (CURRTRIAL.num > TASK.ModelConfig.trainIdx) {
+					console.log('do model prediction');
 					let yPred = mkm.model.predict(mkm.dataObj.xTest.reshape([1, 2048]));
+					yPred.print();
 					yPred = yPred.reshape([2]).argMax(0);
 					yPred = yPred.dataSync();
 					currchoice = yPred[0];
-					console.log('Predicted yLabel:', currchoice);
-					console.log('True yLabel:', CURRTRIAL.correctitem);
+					console.log('yPred:', currchoice, 'yTrue:', CURRTRIAL.correctitem);
+					if ((TASK.ModelConfig.saveImages == 1 && currchoice != CURRTRIAL.correctitem)) {
+						let storageRef = storage.ref();
+						let cvsData = mkm.cvs.toDataURL();
+						let path = 'mkturkfiles/mkmodels/' + TASK.Agent + '/_' + CURRTRIAL.num + '.png'; 
+						storageRef.child(path).putString(cvsData, 'data_url');
+					} else if (TASK.ModelConfig.saveImages == 2) {
+						let storageRef = storage.ref();
+						let cvsData = mkm.cvs.toDataURL();
+						let path = 'mkturkfiles/mkmodels/' + TASK.Agent + '/_' + CURRTRIAL.num + '.png'; 
+						storageRef.child(path).putString(cvsData, 'data_url');
+					}
+					
 				}
 			} else {
 				
