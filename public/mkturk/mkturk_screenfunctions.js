@@ -861,7 +861,7 @@ function refreshCanvasSettings(TASK){
 		if (TASK.Species == "macaque" || TASK.Species == "human"){
 			CANVAS.headsupfraction=0;
 		}
-		else if (TASK.Species == "marmoset"){
+		else if (TASK.Species == "marmoset" || TASK.Species == 'model'){
 			CANVAS.headsupfraction=1/3-0.06;
 		}		
 	}
@@ -988,14 +988,26 @@ function updateHeadsUpDisplay(){
 	// Overall performance
 	var ncorrect = 0;
 	var nreward = 0;
-	for (var i=0; i<=EVENTS['trialseries']['Response'].length-1; i++){
-		if (EVENTS['trialseries']['Response'][i] == EVENTS['trialseries']['CorrectItem'][i]){
-			ncorrect = ncorrect + 1
-			nreward = nreward + EVENTS['trialseries']['NReward'][i]
-		}
-	}//FOR i trials
 
-	var pctcorrect = Math.round(100 * ncorrect / EVENTS['trialseries']['Response'].length);
+	if (TASK.Species == 'model') {
+		if (CURRTRIAL.num > TASK.ModelConfig.trainIdx) {
+			for (let i = TASK.ModelConfig.trainIdx + 1; i < EVENTS['trialseries']['Response'].length; i++) {
+				if (EVENTS['trialseries']['Response'][i] == EVENTS['trialseries']['CorrectItem'][i]) {
+					ncorrect = ncorrect + 1;
+					let len = EVENTS['trialseries']['Response'].length - TASK.ModelConfig.trainIdx - 1;
+					var pctcorrect = Math.round(100 * ncorrect / len);
+				}
+			}
+		}
+	} else {
+		for (var i=0; i<=EVENTS['trialseries']['Response'].length-1; i++){
+			if (EVENTS['trialseries']['Response'][i] == EVENTS['trialseries']['CorrectItem'][i]){
+				ncorrect = ncorrect + 1;
+				nreward = nreward + EVENTS['trialseries']['NReward'][i];
+				var pctcorrect = Math.round(100 * ncorrect / EVENTS['trialseries']['Response'].length);
+			}
+		}//FOR i trials
+	}
 
 	// Task type
 	var task1 = "";
@@ -1008,17 +1020,47 @@ function updateHeadsUpDisplay(){
 		task2 = TASK.ImageBagsTest.length + "-categories in pool"
 	}
 	if (CANVAS.headsupfraction > 0){
-		textobj.innerHTML = 
-			'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail + "<br>"
-		+ 'Agent: ' + ENV.Subject + ", <font color=green><b>" + pctcorrect 
-		+ "%</b></font> " + "(" + ncorrect + " of " + EVENTS['trialseries']['Response'].length + " trials)" 
-		+ "<br>" + "NRewards=" + nreward + ", <font color=green><b>" 
-		+ Math.round(TASK.RewardPer1000Trials*nreward/1000) 
-		+ "mL</b></font> (" + Math.round(TASK.RewardPer1000Trials) 
-		+ " mL per 1000)" + "<br> " 
-		+ task1 + "<br>" + task2 + "<br>" + "<br>"
-		+ "last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>"
-		+ "last saved to firebase @ " + CURRTRIAL.lastFirebaseSave.toLocaleTimeString("en-US")
+		if (TASK.Species == 'model') {
+			if (CURRTRIAL.num == 0) {
+
+			} else if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
+				console.log('screenfunc:', EVENTS['trialseries']['Response'].length, CURRTRIAL.num, TASK.ModelConfig.trainIdx);
+				let tmp = EVENTS['trialseries']['Response'].length - 1;
+				textobj.innerHTML = (
+					'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail + "<br>" +
+					'Agent: ' + ENV.Subject + ", <font color=green><b>" + 
+					"TRAINING</b></font> "  + '(' + tmp + ' of ' + TASK.ModelConfig.trainIdx + ')' +"<br>" +
+					task1 + "<br>" + task2 + "<br>" + "<br>" +
+					"last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>" +
+					"last saved to firebase @ " + CURRTRIAL.lastFirebaseSave.toLocaleTimeString("en-US")
+				);
+			} else {
+				textobj.innerHTML = (
+					'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail + "<br>" +
+					'Agent: ' + ENV.Subject + ", <font color=green><b>" + pctcorrect  +
+					"%</b></font> " + "(" + ncorrect + " of " + (EVENTS['trialseries']['Response'].length - TASK.ModelConfig.trainIdx - 1) + " trials)" +
+					"<br>" +
+					task1 + "<br>" + task2 + "<br>" + "<br>" +
+					"last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>" +
+					"last saved to firebase @ " + CURRTRIAL.lastFirebaseSave.toLocaleTimeString("en-US")
+				);	
+			}
+
+		} else {
+			textobj.innerHTML = (
+				'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail + "<br>" +
+				'Agent: ' + ENV.Subject + ", <font color=green><b>" + pctcorrect  +
+				"%</b></font> " + "(" + ncorrect + " of " + EVENTS['trialseries']['Response'].length + " trials)" +
+				"<br>" + "NRewards=" + nreward + ", <font color=green><b>" +
+				Math.round(TASK.RewardPer1000Trials*nreward/1000) +
+				"mL</b></font> (" + Math.round(TASK.RewardPer1000Trials) +
+				" mL per 1000)" + "<br> " +
+				task1 + "<br>" + task2 + "<br>" + "<br>" +
+				"last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>" +
+				"last saved to firebase @ " + CURRTRIAL.lastFirebaseSave.toLocaleTimeString("en-US")
+			);	
+		}
+		
 
 		if (FLAGS.RFIDGeneratorCreated == 1){
 			textobj.innerHTML = textobj.innerHTML + "<br>"

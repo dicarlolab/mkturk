@@ -40,6 +40,8 @@ if (typeof(navigator.bluetooth) == "object"){
 
 <script src="mkturk_installsettings.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js" type="text/javascript"></script>
+
 <!-- Insert these scripts at the bottom of the HTML, but before you use any Firebase services -->
 <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
 <script src="/__/firebase/7.3.0/firebase-app.js"></script>
@@ -200,6 +202,7 @@ if (typeof(navigator.bluetooth) == "object"){
 	<canvas id="canvasvisible" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasvisiblewebgl" width="0" height="0" src="" style="visibility:hidden; z-index:3; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvaseyetracker" width="0" height="0" src="" style="z-index:4; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="model-canvas" width="224" height="224" style="z-index:0"></canvas>
 </div>
 
 <script src="mkturk_globalvariables.js"></script>
@@ -215,8 +218,9 @@ if (typeof(navigator.bluetooth) == "object"){
 <script src="mkturk_bigquery.js" type="text/javascript"></script>
 <script src="mkturk_threejs.js" type="text/javascript"></script>
 <script src="mkturk_eyetracker.js" type="text/javascript"></script>
-<script>
+<script src="mkmodels.js" type="text/javascript"></script>
 
+<script>
 //================== AUTHENTICATE GOOGLE ==================//
 // [START authstatelistener]
 var provider = new firebase.auth.GoogleAuthProvider();
@@ -225,24 +229,22 @@ firebase.auth().getRedirectResult().then(function(result) {
   if (result.user) {
     // User just signed in. you can get the result.credential.
     ENV.ResearcherDisplayName = result.user.displayName;
-	ENV.ResearcherEmail = result.user.email;
-	ENV.ResearcherID = result.user.uid
+		ENV.ResearcherEmail = result.user.email;
+		ENV.ResearcherID = result.user.uid
 
-	console.log('Sign-In Redirect Result, USER ' + result.user.email + ' is signed in')
-	updateHeadsUpDisplay()
-  }
-  else if (firebase.auth().currentUser) {
+		console.log('Sign-In Redirect Result, USER ' + result.user.email + ' is signed in')
+		updateHeadsUpDisplay()
+  } else if (firebase.auth().currentUser) {
     // User already signed in.
-	ENV.ResearcherDisplayName = firebase.auth().currentUser.displayName;
-	ENV.ResearcherEmail = firebase.auth().currentUser.email;
-	ENV.ResearcherID = firebase.auth().currentUser.uid
+		ENV.ResearcherDisplayName = firebase.auth().currentUser.displayName;
+		ENV.ResearcherEmail = firebase.auth().currentUser.email;
+		ENV.ResearcherID = firebase.auth().currentUser.uid
 
-	console.log('Sign-In Redirect Result, USER ' + firebase.auth().currentUser.email + ' is signed in')
-	updateHeadsUpDisplay()		
-  }
-  else {
+		console.log('Sign-In Redirect Result, USER ' + firebase.auth().currentUser.email + ' is signed in')
+		updateHeadsUpDisplay()		
+  } else {
     // No user signed in, update your UI, show the redirect sign-in screen.
-	firebase.auth().signInWithRedirect(provider)
+		firebase.auth().signInWithRedirect(provider)
   }
 });
 //================== (end) AUTHENTICATE GOOGLE ==================//
@@ -618,7 +620,20 @@ function skipHardwareDevice(event){
 		// return
 	 //  }//IF needsImageBagStr
   // }//IF !SaveImages
-  // //===================== (END) CHECK IF FIRST NEED TO SAVE OUT IMAGE BAGS =======================//
+	// //===================== (END) CHECK IF FIRST NEED TO SAVE OUT IMAGE BAGS =======================//
+	
+	// LOAD MKMODELS IF SPECIES = MODEL //
+	let mkm;
+	if (TASK.Species == 'model') {
+		mkm = new MkModels();
+		let fromTFHub = TASK.ModelConfig.modelURL.includes('tfhub');
+		await mkm.loadFeatureExtractor(TASK.ModelConfig.modelURL, { fromTFHub: fromTFHub });
+		let cvs = document.getElementById('model-canvas');
+		mkm.bindCanvasElement(cvs);
+		mkm.buildClassifier(TASK.ModelConfig);
+	}
+
+	// (END) LOAD MKMODELS //
 
 	//============= AWAIT READ SUBJECT PERFORMANCE HISTORY =============//
 	// Read performance history
@@ -662,7 +677,9 @@ function skipHardwareDevice(event){
 	FLAGS.need2loadScenes = 1
 	CURRTRIAL.num = 0
 	EVENTS.trialnum = 0
-  FLAGS.savedata = 0 // test trials can be performed, but data won't be saved
+	FLAGS.savedata = 0 // test trials can be performed, but data won't be saved
+	
+	// await mkmodels.loadFeatureExtractor('https://tfhub.dev/google/tfjs-model/imagenet/resnet_v2_50/feature_vector/3/default/1');
 
 // =========================================================================================================== // 
 // ============ MAIN LOOP ==================================================================================== // 
@@ -1137,7 +1154,7 @@ if (typeof(teston) == "undefined"){
 
 		//========= AWAIT SHOW FIXATION =========//
 		// todo: move to appropriate location
-		if (TASK.Species == 'marmoset'){
+		if (TASK.Species == 'marmoset' || TASK.Species == 'model'){
 			playSound(0)
 		}
 
@@ -1164,20 +1181,78 @@ if (typeof(teston) == "undefined"){
         }//alternative fixation windows
 
 		if (FLAGS.stressTest == 1){
-			var touchhold_return = {type: "theld"}
+			if (TASK.Species == 'model') {
+				console.log('MODEL:', CURRTRIAL.num);
+				console.log('Model:',EVENTS['trialseries']['Response'].length);
+				let ctx = mkm.cvs.getContext('2d');
+				ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
+				
+				var touchhold_return = {type: "theld"};
+				let sx = (boundingBoxesFixation.x[0][1] + boundingBoxesFixation.x[0][0]) - 308;
+				sx = Math.floor(sx);
+				let sy = (boundingBoxesFixation.y[0][1] + boundingBoxesFixation.y[0][0])/2 - 256;
+				sy = Math.floor(sy);
+				ctx.drawImage(VISIBLECANVAS, sx, sy, 616, 616, 0, 0, 224, 224);
+				let tensor = mkm.normalizePixelValues(mkm.cvs);
+				let feature = mkm.featureExtractor.execute(tensor);
+				feature = feature.reshape([2048]);
+				if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
+					mkm.dataObj.xTrain.push(feature);
+					if (CURRTRIAL.correctitem == 0) {
+						mkm.dataObj.yTrain.push([1, 0]);
+					} else if (CURRTRIAL.correctitem == 1) {
+						mkm.dataObj.yTrain.push([0, 1]);
+					}
+				} else {
+					mkm.dataObj.xTest = feature;
+					mkm.dataObj.yTest = CURRTRIAL.correctitem;
+				}
 
-			var x = boundingBoxesFixation.x[0][0] + Math.round(Math.random()*(boundingBoxesFixation.x[0][1] - boundingBoxesFixation.x[0][0]))
-			var y = boundingBoxesFixation.y[0][0] + Math.round(Math.random()*(boundingBoxesFixation.y[0][1] - boundingBoxesFixation.y[0][0]))
+				if (CURRTRIAL.num == TASK.ModelConfig.trainIdx) {
+					console.log('xTrain len:', mkm.dataObj.xTrain.length);
+					let xTrain = tf.data.array(mkm.dataObj.xTrain);
+					let yTrain = tf.data.array(mkm.dataObj.yTrain);
+					let trainDataset = tf.data.zip({xs: xTrain, ys: yTrain}).batch(4).shuffle(4);
 
-			touchhold_return.cxyt = [0,x,y,Date.now() - ENV.CurrentDate.valueOf()]
+					const beginMs = performance.now();
+					await mkm.model.fitDataset(trainDataset, {
+						epochs: TASK.ModelConfig.epochs,
+						callbacks: {
+							onEpochEnd: async(epoch, logs) => {
+								const secPerEpoch = (
+									(performance.now() - beginMs) / (1000 * (epoch + 1))
+								);
+								console.log('Training model ... Approx. ' + `${secPerEpoch.toFixed(4)} sec/epoch`);
+								console.log('logs:', logs);
+							}
+						}
+					});
+				}
+				
+				// let storageRef = storage.ref();
+				// let cvsData = cvs.toDataURL();
+				// storageRef.child('mkturkfiles/mkmodels/cvsdata.png').putString(cvsData, 'data_url');
 
-			FLAGS.waitingforTouches--
+
+				var x = boundingBoxesFixation.x[0][0] + Math.round(Math.random()*(boundingBoxesFixation.x[0][1] - boundingBoxesFixation.x[0][0]))
+				var y = boundingBoxesFixation.y[0][0] + Math.round(Math.random()*(boundingBoxesFixation.y[0][1] - boundingBoxesFixation.y[0][0]))
+				// console.log('boundingBoxesFixation:', boundingBoxesFixation);
+				// console.log('x:', x, 'y:', y);
+				touchhold_return.cxyt = [0,x,y,Date.now() - ENV.CurrentDate.valueOf()];
+				FLAGS.waitingforTouches--;
+			} else {
+				var touchhold_return = {type: "theld"}
+				var x = boundingBoxesFixation.x[0][0] + Math.round(Math.random()*(boundingBoxesFixation.x[0][1] - boundingBoxesFixation.x[0][0]))
+				var y = boundingBoxesFixation.y[0][0] + Math.round(Math.random()*(boundingBoxesFixation.y[0][1] - boundingBoxesFixation.y[0][0]))
+				touchhold_return.cxyt = [0,x,y,Date.now() - ENV.CurrentDate.valueOf()]
+				FLAGS.waitingforTouches--	
+			}
 		}//IF automated stress test
 		else {
-            FLAGS.acquiredTouch = 0;
-            var p1 = hold_promise(TASK.FixationDuration,boundingBoxesFixation,FLAGS.punishOutsideTouch)
-			var p2 = choiceTimeOut(TASK.FixationTimeOut)
-			var touchhold_return = await Promise.race([p1,p2])
+      FLAGS.acquiredTouch = 0;
+      var p1 = hold_promise(TASK.FixationDuration,boundingBoxesFixation,FLAGS.punishOutsideTouch);
+			var p2 = choiceTimeOut(TASK.FixationTimeOut);
+			var touchhold_return = await Promise.race([p1,p2]);
 		}//ELSE await fixation hold
 
 		if (FLAGS.movieplaying==1){
@@ -1381,39 +1456,73 @@ if (typeof(teston) == "undefined"){
 
 		if (FLAGS.stressTest == 1){
 			var race_return = {type: "theld"}
+			var nchoices = boundingBoxesChoice3D.x.length;
 
-			var nchoices = boundingBoxesChoice3D.x.length
-			// var currchoice = CURRTRIAL.correctitem
-			var hitrate = 0
-			if (TASK.Agent == "Youno"){
-				hitrate = 0.9
-			}
-			else if (TASK.Agent == "Eliaso"){
-				hitrate = 0.7
-			}
-			else if (TASK.Agent == "SaveImages"){
-				hitrate = 1.0
-			}
-			if (Math.random() < hitrate){
-				var currchoice = CURRTRIAL.correctitem
-			}
-			else {
-				var distractor_array = []
-				for (var i=0; i<=nchoices-1; i++){
-					if (i != CURRTRIAL.correctitem){
-						distractor_array.push(i)
+			if (TASK.Species == 'model') {
+				var currchoice = 0;
+				var x = 0;
+				var y = 0;
+
+				if (CURRTRIAL.num > TASK.ModelConfig.trainIdx) {
+					console.log('do model prediction');
+					let yPred = mkm.model.predict(mkm.dataObj.xTest.reshape([1, 2048]));
+					yPred.print();
+					yPred = yPred.reshape([2]).argMax(0);
+					yPred = yPred.dataSync();
+					currchoice = yPred[0];
+					console.log('yPred:', currchoice, 'yTrue:', CURRTRIAL.correctitem);
+					if ((TASK.ModelConfig.saveImages == 1 && currchoice != CURRTRIAL.correctitem)) {
+						let storageRef = storage.ref();
+						let cvsData = mkm.cvs.toDataURL();
+						let path = (
+							'mkturkfiles/mkmodels/' + TASK.Agent + 
+							'/' + ENV.CurrentDate.toJSON() + '_' + 
+							CURRTRIAL.num + '_incorrect.png'
+						);
+						storageRef.child(path).putString(cvsData, 'data_url');
+					} else if (TASK.ModelConfig.saveImages == 2) {
+						let storageRef = storage.ref();
+						let cvsData = mkm.cvs.toDataURL();
+						let path = (
+							'mkturkfiles/mkmodels/' + TASK.Agent + 
+							'/' + ENV.CurrentDate.toJSON() + '_' + 
+							CURRTRIAL.num + '_all.png'
+						); 
+						storageRef.child(path).putString(cvsData, 'data_url');
 					}
+					
 				}
-				distractor_array = shuffle(distractor_array)
-				var currchoice = distractor_array[0]
+			} else {
+				
+				var hitrate = 0;
+
+				if (TASK.Agent == 'Youno') {
+					hitrate = 0.9;
+				} else if (TASK.Agent == 'Eliaso') {
+					hitrate = 0.7;
+				} else if (TASK.Agent == 'SaveImages') {
+					hitrate = 1.0;
+				}
+
+				if (Math.random() < hitrate) {
+					var currchoice = CURRTRIAL.correctitem;
+				} else {
+					var distractor_array = [];
+					for (let i = 0; i < nchoices; i++) {
+						if (i != CURRTRIAL.correctitem) {
+							distractor_array.push(i);
+						}
+					}
+					distractor_array = shuffle(distractor_array);
+					var currchoice = distractor_array[0];
+				}
+
+				var x = boundingBoxesChoice3D.x[currchoice][0] + Math.round(Math.random()*(boundingBoxesChoice3D.x[currchoice][1] - boundingBoxesChoice3D.x[currchoice][0]))
+				var y = boundingBoxesChoice3D.y[currchoice][0] + Math.round(Math.random()*(boundingBoxesChoice3D.y[currchoice][1] - boundingBoxesChoice3D.y[currchoice][0]))
 			}
-
-			var x = boundingBoxesChoice3D.x[currchoice][0] + Math.round(Math.random()*(boundingBoxesChoice3D.x[currchoice][1] - boundingBoxesChoice3D.x[currchoice][0]))
-
-			var y = boundingBoxesChoice3D.y[currchoice][0] + Math.round(Math.random()*(boundingBoxesChoice3D.y[currchoice][1] - boundingBoxesChoice3D.y[currchoice][0]))
-
+			
+			
 			race_return.cxyt = [currchoice,x,y,Date.now() - ENV.CurrentDate.valueOf()]
-
 			FLAGS.waitingforTouches--
 		}//IF StressTest
 		else {
