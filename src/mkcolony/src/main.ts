@@ -26,6 +26,10 @@ auth.getRedirectResult().then(result => {
   // authenticated
   if (result.credential) {
     console.log('user authenticated', result.credential);
+  } else if (firebase.auth().currentUser) {
+    console.log('already signed in');
+    console.log('result:', result);
+    console.log(firebase.auth().currentUser);
   } else {
     // not yet authenticated
     let provider = new firebase.auth.GoogleAuthProvider();

@@ -227,6 +227,10 @@ if (typeof(navigator.bluetooth) == "object"){
 var provider = new firebase.auth.GoogleAuthProvider();
 provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
 firebase.auth().getRedirectResult().then(function(result) {
+	console.log('url:', window.location.href);
+	console.log('what:', window.location.search);
+	let thisUrl = window.location.href;
+	console.log(thisUrl.split('?MID=')[1]);
   if (result.user) {
     // User just signed in. you can get the result.credential.
     ENV.ResearcherDisplayName = result.user.displayName;
@@ -244,7 +248,7 @@ firebase.auth().getRedirectResult().then(function(result) {
 		console.log('Sign-In Redirect Result, USER ' + firebase.auth().currentUser.email + ' is signed in')
 		updateHeadsUpDisplay()		
   } else {
-    // No user signed in, update your UI, show the redirect sign-in screen.
+		// No user signed in, update your UI, show the redirect sign-in screen.
 		firebase.auth().signInWithRedirect(provider)
   }
 });
