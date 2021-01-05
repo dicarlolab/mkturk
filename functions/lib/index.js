@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.bqInsertDisplayTimes = exports.sayHello = exports.listAllUsers = exports.processMturkUser = exports.isMturkUser = exports.isLabMember = exports.detectDevice = exports.bqListDatasets = exports.listTables = exports.bqQuery = exports.bqInsertEyeData = void 0;
 const functions = require("firebase-functions");
 const bigquery_1 = require("@google-cloud/bigquery");
 const DeviceDetector = require("device-detector-js");
@@ -19,6 +20,7 @@ function insertHandler(err, apiResp) {
         }
     }
 }
+;
 ;
 ;
 const schema = {
@@ -155,20 +157,67 @@ exports.detectDevice = functions.https.onCall((userAgent) => {
         }
     });
 });
-exports.isLabMember = functions.https.onCall((idToken) => {
+exports.isLabMember = functions.https.onCall(async (idToken) => {
     return admin.auth().verifyIdToken(idToken).then((decodedToken) => {
         console.log('isLabMember?', decodedToken.labMember);
         return decodedToken.labMember;
-    }).catch(e => {
+    }).catch((e) => {
         console.error('Error decoding idToken', e);
     });
 });
+exports.isMturkUser = functions.https.onCall(async (idToken) => {
+    try {
+        let decodedToken = await admin.auth().verifyIdToken(idToken);
+        return decodedToken.mturkUser;
+    }
+    catch (error) {
+        console.error('[isMturkUser] Error decoding idToken:', error);
+    }
+});
+// export const decodeToken = functions.https.onCall(async (idToken: string) => {
+//   try {
+//     let decodedToken = await admin.auth().verifyIdToken(idToken);
+//     if (decodedToken) {
+//       return decodedToken;
+//     } else {
+//       return 0;
+//     }
+//   } catch (error) {
+//     console.error('[decodeToken] Error decoding idToken:', error);
+//   }
+// });
+exports.processMturkUser = functions.https.onCall(async (data) => {
+    const firestore = admin.firestore();
+    try {
+        let decodedToken = await admin.auth().verifyIdToken(data.token);
+        let userData = {
+            workerId: data.wid,
+            uid: decodedToken.uid,
+            name: decodedToken.name,
+            email: decodedToken.email,
+        };
+        let res = await firestore.collection('mturkusers').doc(data.wid).set(userData);
+        if (res) {
+            return { status: 'success' };
+        }
+        else {
+            return { status: 'failed' };
+        }
+    }
+    catch (error) {
+        console.error('[processMturkUser] Error:', error);
+        return { status: 'failed' };
+    }
+});
 exports.listAllUsers = functions.https.onCall(() => {
-    return admin.auth().listUsers(1000).then(listUserResult => {
+    return admin.auth().listUsers(1000).then((listUserResult) => {
         return listUserResult;
-    }).catch(e => {
+    }).catch((e) => {
         console.error('Error listing users', e);
     });
+});
+exports.sayHello = functions.https.onRequest((req, res) => {
+    res.send('Hello');
 });
 const displayTimeSchema = {
     'fields': [

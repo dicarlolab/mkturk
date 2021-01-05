@@ -49,6 +49,7 @@ auth.onAuthStateChanged(user => {
       if (idTokenResult.claims.labMember) {
         console.log('Authorized user', user);
         console.log('idTokenResult', idTokenResult);
+        console.log('idToken:', idTokenResult.token);
         mkcolony = new Mkcolony();
         mkcolony.init();
         // let ret = mkcolony.loadWtData(db.collection('marmosets'));

@@ -43,6 +43,11 @@ interface displayTimesData {
   t_actual: Array<number>
 };
 
+interface MturkUserData {
+  wid: string,
+  token: string
+};
+
 
 const schema = {
   "fields": [
@@ -186,23 +191,74 @@ export const detectDevice = functions.https.onCall((userAgent: any) => {
   });
 });
 
-export const isLabMember = functions.https.onCall((idToken: string) => {
+export const isLabMember = functions.https.onCall(async (idToken: string) => {
 
-  return admin.auth().verifyIdToken(idToken).then((decodedToken) => {
+  return admin.auth().verifyIdToken(idToken).then((decodedToken: any) => {
     console.log('isLabMember?', decodedToken.labMember);
     return decodedToken.labMember;
-  }).catch(e => {
+  }).catch((e: Error) => {
     console.error('Error decoding idToken', e);
   });
 
 });
 
+export const isMturkUser = functions.https.onCall(async (idToken: string) => {
+  try {
+    let decodedToken = await admin.auth().verifyIdToken(idToken);
+    return decodedToken.mturkUser;
+  } catch (error) {
+    console.error('[isMturkUser] Error decoding idToken:', error);
+  }
+});
+
+// export const decodeToken = functions.https.onCall(async (idToken: string) => {
+//   try {
+//     let decodedToken = await admin.auth().verifyIdToken(idToken);
+//     if (decodedToken) {
+//       return decodedToken;
+//     } else {
+//       return 0;
+//     }
+//   } catch (error) {
+//     console.error('[decodeToken] Error decoding idToken:', error);
+//   }
+
+// });
+
+export const processMturkUser = functions.https.onCall(async (data: MturkUserData) => {
+  const firestore = admin.firestore();
+  try {
+    let decodedToken = await admin.auth().verifyIdToken(data.token);
+    let userData = {
+      workerId: data.wid,
+      uid: decodedToken.uid,
+      name: decodedToken.name,
+      email: decodedToken.email,
+    };
+    let res = await firestore.collection('mturkusers').doc(data.wid).set(userData);
+    if (res) {
+      return { status: 'success' };
+    } else {
+      return { status: 'failed' };
+    }
+
+  } catch (error) {
+    console.error('[processMturkUser] Error:', error);
+    return { status: 'failed' };
+  }
+
+})
+
 export const listAllUsers = functions.https.onCall(() => {
-  return admin.auth().listUsers(1000).then(listUserResult => {
+  return admin.auth().listUsers(1000).then((listUserResult: any) => {
     return listUserResult;
-  }).catch(e => {
+  }).catch((e: any) => {
     console.error('Error listing users', e);
   });
+});
+
+export const sayHello = functions.https.onRequest((req, res) => {
+  res.send('Hello');
 });
 
 const displayTimeSchema = {
