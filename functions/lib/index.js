@@ -212,6 +212,8 @@ exports.processMturkUser = functions.https.onCall(async (data) => {
         let decodedToken = await admin.auth().verifyIdToken(data.token);
         let userData = {
             workerId: data.wid,
+            assignmentId: data.aid,
+            hitId: data.hid,
             uid: decodedToken.uid,
             name: decodedToken.name,
             email: decodedToken.email,
