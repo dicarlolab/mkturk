@@ -63,6 +63,7 @@ if (typeof(navigator.bluetooth) == "object"){
 
   //Initialize Cloud Storage
 	var storage = firebase.storage();
+	const storageRef = storage.ref();
 	
 	// Initialize Realtime DB
 	const rtdb = firebase.database();
@@ -226,6 +227,10 @@ if (typeof(navigator.bluetooth) == "object"){
 var provider = new firebase.auth.GoogleAuthProvider();
 provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
 firebase.auth().getRedirectResult().then(function(result) {
+	console.log('url:', window.location.href);
+	console.log('what:', window.location.search);
+	let thisUrl = window.location.href;
+	console.log(thisUrl.split('?MID=')[1]);
   if (result.user) {
     // User just signed in. you can get the result.credential.
     ENV.ResearcherDisplayName = result.user.displayName;
@@ -243,7 +248,7 @@ firebase.auth().getRedirectResult().then(function(result) {
 		console.log('Sign-In Redirect Result, USER ' + firebase.auth().currentUser.email + ' is signed in')
 		updateHeadsUpDisplay()		
   } else {
-    // No user signed in, update your UI, show the redirect sign-in screen.
+		// No user signed in, update your UI, show the redirect sign-in screen.
 		firebase.auth().signInWithRedirect(provider)
   }
 });
@@ -1182,17 +1187,42 @@ if (typeof(teston) == "undefined"){
 
 		if (FLAGS.stressTest == 1){
 			if (TASK.Species == 'model') {
-				console.log('MODEL:', CURRTRIAL.num);
-				console.log('Model:',EVENTS['trialseries']['Response'].length);
+				// console.log('MODEL:', CURRTRIAL.num);
+				// console.log('Model:',EVENTS['trialseries']['Response'].length);
 				let ctx = mkm.cvs.getContext('2d');
 				ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
 				
 				var touchhold_return = {type: "theld"};
-				let sx = (boundingBoxesFixation.x[0][1] + boundingBoxesFixation.x[0][0]) - 308;
-				sx = Math.floor(sx);
-				let sy = (boundingBoxesFixation.y[0][1] + boundingBoxesFixation.y[0][0])/2 - 256;
-				sy = Math.floor(sy);
-				ctx.drawImage(VISIBLECANVAS, sx, sy, 616, 616, 0, 0, 224, 224);
+				// console.log('boundingBoxesFixation:', boundingBoxesFixation);
+				let sxOffset = (
+					IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
+					* ENV.PhysicalPPI / ENV.ScreenRatio
+				);
+				let sx = (
+					boundingBoxesFixation.x[0][1]
+					+ boundingBoxesFixation.x[0][0]
+					- sxOffset
+				);
+				sx = Math.round(sx);
+
+				let syOffset = (
+					IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
+					* ENV.PhysicalPPI / ENV.ScreenRatio - ENV.FixationWindowRadius
+				);
+				let sy = (
+					(boundingBoxesFixation.y[0][1] + boundingBoxesFixation.y[0][0]) 
+					/ ENV.ScreenRatio 
+					- syOffset
+				);
+				sy = Math.round(sy);
+
+				let sHeight = Math.round(
+					IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
+					* ENV.PhysicalPPI
+				);
+				let sWidth = sHeight;
+				
+				ctx.drawImage(VISIBLECANVAS, sx, sy, sWidth, sHeight, 0, 0, 224, 224);
 				let tensor = mkm.normalizePixelValues(mkm.cvs);
 				let feature = mkm.featureExtractor.execute(tensor);
 				feature = feature.reshape([2048]);
@@ -1209,7 +1239,7 @@ if (typeof(teston) == "undefined"){
 				}
 
 				if (CURRTRIAL.num == TASK.ModelConfig.trainIdx) {
-					console.log('xTrain len:', mkm.dataObj.xTrain.length);
+					// console.log('xTrain len:', mkm.dataObj.xTrain.length);
 					let xTrain = tf.data.array(mkm.dataObj.xTrain);
 					let yTrain = tf.data.array(mkm.dataObj.yTrain);
 					let trainDataset = tf.data.zip({xs: xTrain, ys: yTrain}).batch(4).shuffle(4);
@@ -1236,8 +1266,6 @@ if (typeof(teston) == "undefined"){
 
 				var x = boundingBoxesFixation.x[0][0] + Math.round(Math.random()*(boundingBoxesFixation.x[0][1] - boundingBoxesFixation.x[0][0]))
 				var y = boundingBoxesFixation.y[0][0] + Math.round(Math.random()*(boundingBoxesFixation.y[0][1] - boundingBoxesFixation.y[0][0]))
-				// console.log('boundingBoxesFixation:', boundingBoxesFixation);
-				// console.log('x:', x, 'y:', y);
 				touchhold_return.cxyt = [0,x,y,Date.now() - ENV.CurrentDate.valueOf()];
 				FLAGS.waitingforTouches--;
 			} else {
@@ -1464,31 +1492,35 @@ if (typeof(teston) == "undefined"){
 				var y = 0;
 
 				if (CURRTRIAL.num > TASK.ModelConfig.trainIdx) {
-					console.log('do model prediction');
+					
 					let yPred = mkm.model.predict(mkm.dataObj.xTest.reshape([1, 2048]));
 					yPred.print();
 					yPred = yPred.reshape([2]).argMax(0);
 					yPred = yPred.dataSync();
 					currchoice = yPred[0];
 					console.log('yPred:', currchoice, 'yTrue:', CURRTRIAL.correctitem);
-					if ((TASK.ModelConfig.saveImages == 1 && currchoice != CURRTRIAL.correctitem)) {
-						let storageRef = storage.ref();
-						let cvsData = mkm.cvs.toDataURL();
-						let path = (
-							'mkturkfiles/mkmodels/' + TASK.Agent + 
-							'/' + ENV.CurrentDate.toJSON() + '_' + 
-							CURRTRIAL.num + '_incorrect.png'
-						);
-						storageRef.child(path).putString(cvsData, 'data_url');
+					if (TASK.ModelConfig.saveImages == 1) {
+						if (currchoice != CURRTRIAL.correctitem) {
+							let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
+							let cvsData = mkm.cvs.toDataURL();
+							let path = (
+								`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_incorrect.png`
+							);
+							mkmodelsRef.child(path).putString(cvsData, 'data_url');
+						}
 					} else if (TASK.ModelConfig.saveImages == 2) {
-						let storageRef = storage.ref();
+						let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
 						let cvsData = mkm.cvs.toDataURL();
-						let path = (
-							'mkturkfiles/mkmodels/' + TASK.Agent + 
-							'/' + ENV.CurrentDate.toJSON() + '_' + 
-							CURRTRIAL.num + '_all.png'
-						); 
-						storageRef.child(path).putString(cvsData, 'data_url');
+						if (currchoice != CURRTRIAL.correctitem) {
+							let path = (
+								`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_incorrect.png`
+							);
+						} else if (currchoice == CURRTRIAL.correctitem) {
+							let path = (
+								`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_correct.png`
+							);
+						}
+						mkmodelsRef.child(path).putString(cvsData, 'data_url');
 					}
 					
 				}

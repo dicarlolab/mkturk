@@ -26,6 +26,10 @@ auth.getRedirectResult().then(result => {
   // authenticated
   if (result.credential) {
     console.log('user authenticated', result.credential);
+  } else if (firebase.auth().currentUser) {
+    console.log('already signed in');
+    console.log('result:', result);
+    console.log(firebase.auth().currentUser);
   } else {
     // not yet authenticated
     let provider = new firebase.auth.GoogleAuthProvider();
@@ -45,6 +49,7 @@ auth.onAuthStateChanged(user => {
       if (idTokenResult.claims.labMember) {
         console.log('Authorized user', user);
         console.log('idTokenResult', idTokenResult);
+        console.log('idToken:', idTokenResult.token);
         mkcolony = new Mkcolony();
         mkcolony.init();
         // let ret = mkcolony.loadWtData(db.collection('marmosets'));

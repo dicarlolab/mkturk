@@ -1024,7 +1024,7 @@ function updateHeadsUpDisplay(){
 			if (CURRTRIAL.num == 0) {
 
 			} else if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
-				console.log('screenfunc:', EVENTS['trialseries']['Response'].length, CURRTRIAL.num, TASK.ModelConfig.trainIdx);
+				// console.log('screenfunc:', EVENTS['trialseries']['Response'].length, CURRTRIAL.num, TASK.ModelConfig.trainIdx);
 				let tmp = EVENTS['trialseries']['Response'].length - 1;
 				textobj.innerHTML = (
 					'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail + "<br>" +

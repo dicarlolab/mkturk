@@ -43,6 +43,11 @@ interface displayTimesData {
   t_actual: Array<number>
 };
 
+interface MturkUserData {
+  wid: string,
+  token: string
+};
+
 
 const schema = {
   "fields": [
@@ -186,23 +191,117 @@ export const detectDevice = functions.https.onCall((userAgent: any) => {
   });
 });
 
-export const isLabMember = functions.https.onCall((idToken: string) => {
+export const isLabMember = functions.https.onCall(async (idToken: string) => {
 
-  return admin.auth().verifyIdToken(idToken).then((decodedToken) => {
+  return admin.auth().verifyIdToken(idToken).then((decodedToken: any) => {
     console.log('isLabMember?', decodedToken.labMember);
     return decodedToken.labMember;
-  }).catch(e => {
+  }).catch((e: Error) => {
     console.error('Error decoding idToken', e);
   });
 
 });
 
+export const isMturkUser = functions.https.onCall(async (idToken: string) => {
+  try {
+    let decodedToken = await admin.auth().verifyIdToken(idToken);
+    return decodedToken.mturkUser;
+  } catch (error) {
+    console.error('[isMturkUser] Error decoding idToken:', error);
+  }
+});
+
+// export const decodeToken = functions.https.onCall(async (idToken: string) => {
+//   try {
+//     let decodedToken = await admin.auth().verifyIdToken(idToken);
+//     if (decodedToken) {
+//       return decodedToken;
+//     } else {
+//       return 0;
+//     }
+//   } catch (error) {
+//     console.error('[decodeToken] Error decoding idToken:', error);
+//   }
+
+// });
+
+export const processMturkUser = functions.https.onCall(async (data: MturkUserData) => {
+  const firestore = admin.firestore();
+  const bucket = admin.storage().bucket('mkturk-mturk');
+
+  const templatePath = (
+    await bucket.file('mkturkfiles/menu.json').download().then(value => {
+      let tmp = JSON.parse(value[0].toString('utf8'));
+      console.log(tmp);
+      return tmp.parameterfile;
+    })
+  );
+
+  console.log('templatePath:', templatePath);
+
+  let templateFile = (
+    await bucket.file(templatePath).download().then(value => {
+      return JSON.parse(value[0].toString('utf8'));
+    })
+  );
+
+  templateFile.Agent = data.wid;
+
+  const destArr = [
+    `mkturkfiles/parameterfiles/subjects/${data.wid}_params.json`,
+    `user_files/${data.wid}/${data.wid}_params.json`
+  ];
+
+  destArr.forEach(async dest => {
+    console.log('destpath:', dest);
+    let file = bucket.file(dest);
+    await file.save(JSON.stringify(templateFile, null, 2));
+  });
+
+
+  try {
+    let decodedToken = await admin.auth().verifyIdToken(data.token);
+    let userData = {
+      workerId: data.wid,
+      uid: decodedToken.uid,
+      name: decodedToken.name,
+      email: decodedToken.email,
+      task: templatePath
+    };
+    let res = await firestore.collection('mturkusers').doc(data.wid).set(userData);
+    if (res) {
+      return { status: 'success', message: '' };
+    } else {
+      return { status: 'failed', message: '[firestore set()]' };
+    }
+
+  } catch (error) {
+    console.error('[processMturkUser] Error:', error);
+    return { status: 'failed', message: '[processMturkUser]' };
+  }
+
+});
+
+export const copyParamFile = functions.https.onCall(async () => {
+  const storage = admin.storage().bucket('mkturk-mturk');
+  const file = storage.file('mkturkfiles/parameterfiles/params_storage/m2s_wrench_camel.json');
+  await file.copy('mkturkfiles/parameterfiles/subjects/Hectoro_params.json');
+  const fileData = await file.download().then(data => {
+    return JSON.parse(data[0].toString('utf8'));
+  });
+  return fileData;
+});
+
 export const listAllUsers = functions.https.onCall(() => {
-  return admin.auth().listUsers(1000).then(listUserResult => {
+  return admin.auth().listUsers(1000).then((listUserResult: any) => {
     return listUserResult;
-  }).catch(e => {
+  }).catch((e: any) => {
     console.error('Error listing users', e);
   });
+});
+
+export const sayHello = functions.https.onRequest((req, res) => {
+  res.send('Hello');
 });
 
 const displayTimeSchema = {
