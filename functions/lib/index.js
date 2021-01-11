@@ -23,6 +23,7 @@ function insertHandler(err, apiResp) {
 ;
 ;
 ;
+;
 const schema = {
     "fields": [
         {
@@ -174,63 +175,148 @@ exports.isMturkUser = functions.https.onCall(async (idToken) => {
         console.error('[isMturkUser] Error decoding idToken:', error);
     }
 });
-// export const decodeToken = functions.https.onCall(async (idToken: string) => {
-//   try {
-//     let decodedToken = await admin.auth().verifyIdToken(idToken);
-//     if (decodedToken) {
-//       return decodedToken;
-//     } else {
-//       return 0;
-//     }
-//   } catch (error) {
-//     console.error('[decodeToken] Error decoding idToken:', error);
-//   }
-// });
 exports.processMturkUser = functions.https.onCall(async (data) => {
+    class ProcessMTurkUserError extends Error {
+        constructor(message) {
+            super(message);
+            // see: typescriptlang.org/docs/handbook/release-notes/typescript-2-2.html
+            Object.setPrototypeOf(this, new.target.prototype); // restore prototype chain
+            this.name = ProcessMTurkUserError.name; // stack traces display correctly now 
+        }
+    }
     const firestore = admin.firestore();
     const bucket = admin.storage().bucket('mkturk-mturk');
-    const templatePath = (await bucket.file('mkturkfiles/menu.json').download().then(value => {
-        let tmp = JSON.parse(value[0].toString('utf8'));
-        console.log(tmp);
-        return tmp.parameterfile;
-    }));
-    console.log('templatePath:', templatePath);
-    let templateFile = (await bucket.file(templatePath).download().then(value => {
-        return JSON.parse(value[0].toString('utf8'));
-    }));
-    templateFile.Agent = data.wid;
-    const destArr = [
-        `mkturkfiles/parameterfiles/subjects/${data.wid}_params.json`,
-        `user_files/${data.wid}/${data.wid}_params.json`
-    ];
-    destArr.forEach(async (dest) => {
-        console.log('destpath:', dest);
-        let file = bucket.file(dest);
-        await file.save(JSON.stringify(templateFile, null, 2));
-    });
+    let decodedToken;
     try {
-        let decodedToken = await admin.auth().verifyIdToken(data.token);
-        let userData = {
-            workerId: data.wid,
-            assignmentId: data.aid,
-            hitId: data.hid,
-            uid: decodedToken.uid,
-            name: decodedToken.name,
-            email: decodedToken.email,
-            task: templatePath
-        };
-        let res = await firestore.collection('mturkusers').doc(data.wid).set(userData);
-        if (res) {
-            return { status: 'success', message: '' };
+        decodedToken = await admin.auth()
+            .verifyIdToken(data.token)
+            .then(tkn => {
+            console.log('[verifyIdToken] Decode Success');
+            return tkn;
+        });
+    }
+    catch (e) {
+        console.error('[verifyIdToken] Decode Error:', e);
+        return { status: 'error', message: `[verifyIdToken] Decode Error: ${e}` };
+    }
+    let mturkUsersQuerySnapshot = await firestore.collection('mturkusers')
+        .where('uid', '==', decodedToken.uid)
+        .get();
+    // user creation OR existing user update
+    try {
+        if (mturkUsersQuerySnapshot.empty) { // new user
+            admin.auth()
+                .setCustomUserClaims(decodedToken.uid, { wid: data.wid })
+                .then(() => console.log('[setCustomUserClaims] Add Claim (wid) Success'))
+                .catch(e => {
+                console.error('[setCustomUserClaims] Add Claim (wid) Error:', e);
+                throw new ProcessMTurkUserError(`[setCustomUserClaims] Add Claim (wid) Error: ${e}`);
+            });
+            let assignmentEntry = {
+                assignmentId: data.aid,
+                hitId: data.hid,
+                task: data.task,
+                startTime: admin.firestore.Timestamp.fromDate(new Date())
+            };
+            let userData = {
+                workerId: data.wid,
+                uid: decodedToken.uid,
+                assignmentList: [assignmentEntry]
+            };
+            firestore.collection('mturkusers')
+                .doc(data.wid)
+                .set(userData)
+                .then(() => console.log('[mturkusers] New User Created'))
+                .catch(e => {
+                console.error('[mturkusers] User Creation Error:', e);
+                throw new ProcessMTurkUserError(`[mturkusers] User Creation Error: ${e}`);
+            });
         }
-        else {
-            return { status: 'failed', message: '[firestore set()]' };
+        else { // existing user
+            let docs = mturkUsersQuerySnapshot.docs;
+            if (docs.length == 1 && docs[0].data().workerId == decodedToken.wid) {
+                let assignmentEntry = {
+                    assignmentId: data.aid,
+                    hitId: data.hid,
+                    task: data.task,
+                    startTime: admin.firestore.Timestamp.fromDate(new Date())
+                };
+                let updatedUserEntry = docs[0].data();
+                updatedUserEntry.assignmentList.push(assignmentEntry);
+                // docs[0].data().assignmentList.push(assignmentEntry);
+                // console.log('assignmentEntry:', assignmentEntry);
+                // console.log('assignmentList:', docs[0].data().assignmentList);
+                // console.log('docs[0].data():', docs[0].data());
+                firestore.collection('mturkusers')
+                    .doc(decodedToken.wid)
+                    .set(updatedUserEntry)
+                    .then(() => console.log('[mturkusers] Existing User Entry Updated'))
+                    .catch(e => {
+                    console.error('[mturkusers] Existing User Entry Update Error:', e);
+                    throw new ProcessMTurkUserError(`[mturkusers] Existing User Entry Update Error: ${e}`);
+                });
+            }
+            else {
+                throw new ProcessMTurkUserError(`[mturkusers] Multiple User Error: uid=${decodedToken.uid}, wid=${decodedToken.wid}`);
+            }
         }
     }
     catch (error) {
-        console.error('[processMturkUser] Error:', error);
-        return { status: 'failed', message: '[processMturkUser]' };
+        return { status: 'error', message: error };
     }
+    const mturkhit = {
+        hitId: data.hid,
+        task: data.task
+    };
+    // register HIT data & setup ${wid}_params.json
+    try {
+        firestore.collection('mturkhits')
+            .doc(data.hid)
+            .set(mturkhit)
+            .then(() => console.log('[mturkhits] Registration Success'))
+            .catch(e => {
+            console.error('[mturkhits] Registration Error:', e);
+            throw new ProcessMTurkUserError(`[mturkhits] Registration Error: ${e}`);
+        });
+        const tmpPath = await bucket.file('mkturkfiles/menu.json')
+            .download()
+            .then(value => {
+            let menuFile = JSON.parse(value[0].toString('utf8'));
+            return menuFile[data.task];
+        })
+            .catch(e => {
+            console.error('[menu.json] Find Task Error:', e);
+            throw new ProcessMTurkUserError(`[menu.json] Find Task Error: ${e}`);
+        });
+        const paramFile = await bucket.file(tmpPath)
+            .download()
+            .then(value => {
+            let tmp = JSON.parse(value[0].toString('utf8'));
+            tmp.Agent = data.wid;
+            return tmp;
+        })
+            .catch(e => {
+            console.error('[paramfile] Find Param File Error:', e);
+            throw new ProcessMTurkUserError(`[paramfile] Find Param File Error: ${e}`);
+        });
+        const destArr = [
+            `mkturkfiles/parameterfiles/subjects/${data.wid}_params.json`,
+            `user_files/${data.wid}/${data.wid}_params.json`
+        ];
+        destArr.forEach(async (dest) => {
+            bucket.file(dest)
+                .save(JSON.stringify(paramFile, null, 2))
+                .then(() => console.log(`[mturkuser=${data.wid}] Params Copy Success`))
+                .catch(e => {
+                console.error(`[mturkuser=${data.wid}] Params Copy Error: ${e}`);
+                throw new ProcessMTurkUserError(`[mturkuser=${data.wid}] Params Copy Error: ${e}`);
+            });
+        });
+    }
+    catch (error) {
+        return { status: 'error', message: error };
+    }
+    return { status: 'success', message: '' };
 });
 exports.copyParamFile = functions.https.onCall(async () => {
     const storage = admin.storage().bucket('mkturk-mturk');
@@ -249,8 +335,54 @@ exports.listAllUsers = functions.https.onCall(() => {
     });
 });
 exports.sayHello = functions.https.onRequest((req, res) => {
-    res.send('Hello');
+    let aid, hid, wid;
+    aid = req.query.aid;
+    hid = req.query.hid;
+    wid = req.query.wid;
+    res.send({ aid: aid, hid: hid, wid: wid });
+    res.json({ aid: aid, hid: hid, wid: wid });
+    return;
 });
+// export const verifyMturkSubmission = functions.https.onRequest(async (req, res) => {
+//   const firestore = admin.firestore();
+//   let aid, hid, wid, submitCode;
+//   try {
+//     aid = req.query.aid;
+//     hid = req.query.hid;
+//     wid = req.query.wid;
+//     submitCode = req.query.submitCode;
+//   } catch (error) {
+//     console.error('[req.query] Error Assigning Variables:', error);
+//     res.send(
+//       {
+//         status: 'error',
+//         message: `[req.query] Error Assigning Variables: ${error}`
+//       }
+//     );
+//     return;
+//   }
+//   let userSnapshot = await firestore.collection('mturkusers')
+//     .where('wid', '==', wid)
+//     .get();
+//   if (userSnapshot.empty) {
+//     res.send(
+//       {
+//         status: 'error',
+//         message: `[mturkusers] User ${wid} does not exist in mturkusers`
+//       }
+//     );
+//     return;
+//   } else {
+//     let docs = userSnapshot.docs;
+//     if (docs.length == 1 && docs[0].data().workerId == wid) {
+//       let assignmentList = docs[0].data().assignmentList;
+//       let lastEntry = assignmentList[assignmentList.length - 1];
+//       if (lastEntry.aid != aid) {
+//         res.send()
+//       } 
+//     }
+//   }
+// })
 const displayTimeSchema = {
     'fields': [
         {

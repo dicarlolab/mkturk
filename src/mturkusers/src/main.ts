@@ -25,9 +25,9 @@ let mturkUserConfig: any = {};
 // console.log(workerId);
 
 console.log(window);
-
-let mturkCfgPairStr = window.location.search.split('?')[1].split('&');
-mturkCfgPairStr.forEach(str => {
+try {
+  let mturkCfgPairStr = window.location.search.split('?')[1].split('&');
+  mturkCfgPairStr.forEach(str => {
   let pair = str.split('=');
   if (pair[0] == 'AID') { // AID: assignmentId
     mturkUserConfig.aid = pair[1];
@@ -35,10 +35,15 @@ mturkCfgPairStr.forEach(str => {
     mturkUserConfig.hid = pair[1];
   } else if (pair[0] == 'WID') { // WID: workerId
     mturkUserConfig.wid = pair[1];
+  } else if (pair[0] == 'TASK') {
+    mturkUserConfig.task = pair[1];
   }
   console.log('pair:', pair);
-});
-console.log('')
+  });
+} catch (e) {
+  console.log('e:', e);
+}
+
 
 const isLabMember = functions.httpsCallable('isLabMember');
 const isMturkUser = functions.httpsCallable('isMturkUser');
@@ -83,21 +88,13 @@ auth.onAuthStateChanged(user => {
   if (user) {
     user.getIdToken(true).then(async idToken => {
       mturkUserConfig.token = idToken;
+      console.log('token:', idToken);
       processMturkUser(mturkUserConfig).then(async res => {
         console.log('[processMturkUser] Result:', res);
-        // let ppath = `mkturkfiles/parameterfiles/subjects/${mturkUserConfig}_params.json`;
-        // let fileRef = storage.ref(ppath);
-        // let fileUrl = await fileRef.getDownloadURL().catch(e => {
-        //   console.error('Error getting download URL', e);
-        // });
-
-        // let response = await fetch(fileUrl);
-        // let file = await response.json();
-        // console.log(file);
       }).catch(error => {
         console.error('[processMturkUser] Error:', error);
       });
-    })
+    });
   }
 });
 
