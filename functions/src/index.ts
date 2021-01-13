@@ -56,7 +56,9 @@ interface MturkUserAssignmentData {
   task: string,
   hitId: string,
   startTime: FirebaseFirestore.Timestamp,
+  submitCode?: string,
   submitTime?: FirebaseFirestore.Timestamp | null,
+  submitVerifiedTime?: FirebaseFirestore.Timestamp,
   basePayAmount?: number | null,
   basePayTime?: FirebaseFirestore.Timestamp | null,
   bonusPayAmount?: number | null,
@@ -297,7 +299,7 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
         });
     } else { // existing user
       let docs = mturkUsersQuerySnapshot.docs;
-      if (docs.length == 1 && docs[0].data().workerId == decodedToken.wid) {
+      if (docs.length == 1 && docs[0].data().workerId == data.wid) {
         let assignmentEntry: MturkUserAssignmentData = {
           assignmentId: data.aid,
           hitId: data.hid,
@@ -325,12 +327,12 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
           });
       } else {
         throw new ProcessMTurkUserError(
-          `[mturkusers] Multiple User Error: uid=${decodedToken.uid}, wid=${decodedToken.wid}` 
+          `[mturkusers] Multiple User Error: uid=${decodedToken.uid}, wid=${data.wid}, docs=${docs}, empty=${mturkUsersQuerySnapshot.empty}` 
         );
       }
     }
   } catch (error) {
-    return { status: 'error', message: error };
+    return { status: 'error', message: error.message };
   }
 
 
@@ -381,7 +383,7 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
 
     const destArr = [
       `mkturkfiles/parameterfiles/subjects/${data.wid}_params.json`,
-      `user_files/${data.wid}/${data.wid}_params.json`
+      `user_files/${data.wid}/${data.wid}_${data.hid}_${data.aid}params.json`
     ];
 
     destArr.forEach(async dest => {
@@ -396,7 +398,7 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
         });
     })
   } catch (error) {
-    return { status: 'error', message: error };
+    return { status: 'error', message: error.message };
   }
 
   return { status: 'success', message: ''};
@@ -430,6 +432,130 @@ export const sayHello = functions.https.onRequest((req, res) => {
   res.json({aid: aid, hid: hid, wid: wid});
   return;
 });
+
+export const submitAssignment = functions.https.onCall(async (data: MturkUserData) => {
+  const submitTime = new Date();
+  class SubmitAssignmentError extends Error {
+    constructor(message?: string) {
+        super(message);
+        // see: typescriptlang.org/docs/handbook/release-notes/typescript-2-2.html
+        Object.setPrototypeOf(this, new.target.prototype); // restore prototype chain
+        this.name = SubmitAssignmentError.name; // stack traces display correctly now 
+    }
+  }
+  const firestore = admin.firestore();
+  let userSnapshot = await firestore.collection('mturkusers')
+    .where('workerId', '==', data.wid)
+    .get();
+
+  try {
+    if (userSnapshot.empty) {
+      console.error('[submitAssignment] User Not Found');
+      throw new SubmitAssignmentError(
+        '[submitAssignment] User Not Found'
+      );
+    } else {
+      let docs = userSnapshot.docs;
+      if (docs.length === 1) {
+        let mturkUser = docs[0].data();
+        let assignmentList = mturkUser.assignmentList;
+        let lastEntry = assignmentList[assignmentList.length - 1];
+
+        if (data.aid !== lastEntry.assignmentId) {
+          console.error('[submitAssignment] AssignmentId Mismatch');
+          throw new SubmitAssignmentError(
+            '[submitAssignment] AssignmentId Mismatch'
+          );
+        } else if (data.hid !== lastEntry.hitId) {
+          console.error('[submitAssignment] HITId Mismatch');
+          throw new SubmitAssignmentError(
+            '[submitAssignment] HITId Mismatch'
+          );
+        }
+        
+        lastEntry.submitCode = Math.random()
+          .toString(36)
+          .substr(2);
+        lastEntry.submitTime = admin.firestore.Timestamp.fromDate(submitTime);
+        return await firestore.collection('mturkusers')
+          .doc(data.wid)
+          .set(mturkUser)
+          .then(() => {
+            console.log('[submitAssignment] assignment submission success');
+            return { status: 'success', message: `${lastEntry.submitCode}`}; 
+          })
+          .catch(e => {
+            console.error('[submitAssignment] set() error');
+            throw new SubmitAssignmentError(
+              '[submitAssignment] set() error'
+            );
+          });
+      }
+      console.error('[submitAssignment] More than one document with the same workerId');
+      throw new SubmitAssignmentError(
+        '[submitAssignment] More than one document with the same workerId'
+      );
+    }
+  } catch (error) {
+    return { status: 'error', message: error.message };
+  }
+});
+
+// export const verifyAssignmentSubmission = functions.https.onRequest(async (req, res) => {
+//   const firestore = admin.firestore();
+//   class VerifyAssignmentError extends Error {
+//     constructor(message?: string) {
+//         super(message);
+//         // see: typescriptlang.org/docs/handbook/release-notes/typescript-2-2.html
+//         Object.setPrototypeOf(this, new.target.prototype); // restore prototype chain
+//         this.name = VerifyAssignmentError.name; // stack traces display correctly now 
+//     }
+//   }
+//   let aid, hid, wid, submitCode;
+//   try {
+//     aid = req.query.aid;
+//     hid = req.query.hid;
+//     wid = req.query.wid;
+//     submitCode = req.query.submitCode;
+//   } catch (error) {
+//     console.error('[req.query] Error Getting Variables:', error);
+//     res.send(
+//       {
+//         status: 'error',
+//         message: `[req.query] Error Getting Variables: ${error.message}`
+//       }
+//     );
+//     return;
+//   }
+
+//   let userSnapshot = await firestore.collection('mturkusers')
+//     .where('workerId', '==', wid)
+//     .get();
+
+//   if (userSnapshot.empty) {
+//     console.error('[verifyAssignmentSubmission] User Not Found');
+//     throw new VerifyAssignmentError(
+//       '[submitAssignment] User Not Found'
+//     );
+//   } else {
+//     let docs = userSnapshot.docs;
+//     if (docs.length === 1) {
+//       let mturkUser = docs[0].data();
+//       let assignmentList = mturkUser.assignmentList;
+//       let lastEntry = assignmentList[assignmentList.length - 1];
+
+//       if (aid !== lastEntry.assignmentId) {
+//         console.error('[verifyAssignmentSubmission] AssignmentId Mismatch');
+//         res.send(
+//           {
+//             status: 'error',
+//             message: `[]`
+//           }
+//         )
+//       }
+//     }
+//   }
+// })
 
 // export const verifyMturkSubmission = functions.https.onRequest(async (req, res) => {
 //   const firestore = admin.firestore();

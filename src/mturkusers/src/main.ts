@@ -24,7 +24,7 @@ let mturkUserConfig: any = {};
 // let workerId = Math.random().toString(36).substr(2);
 // console.log(workerId);
 
-console.log(window);
+// console.log(window);
 try {
   let mturkCfgPairStr = window.location.search.split('?')[1].split('&');
   mturkCfgPairStr.forEach(str => {
@@ -41,7 +41,7 @@ try {
   console.log('pair:', pair);
   });
 } catch (e) {
-  console.log('e:', e);
+  console.error('e:', e);
 }
 
 
@@ -50,10 +50,27 @@ const isMturkUser = functions.httpsCallable('isMturkUser');
 const decodeToken = functions.httpsCallable('decodeToken');
 const processMturkUser = functions.httpsCallable('processMturkUser');
 const copyParamFile = functions.httpsCallable('copyParamFile');
+const submitAssignment = functions.httpsCallable('submitAssignment');
 
 const signOutBtn = (
   document.querySelector('#sign-out-btn') as HTMLButtonElement
 );
+
+const doneBtn = (
+  document.querySelector('#done-btn') as HTMLButtonElement
+);
+
+const submitCodeSpan = (
+  document.querySelector('#submit-code-span') as HTMLSpanElement
+);
+
+doneBtn.addEventListener('click', async (ev: Event) => {
+  ev.preventDefault();
+  submitCodeSpan.textContent = 'Loading...';
+  let submissionState = await submitAssignment(mturkUserConfig);
+  submitCodeSpan.textContent = submissionState.data.message;
+  console.log(submissionState);
+});
 
 signOutBtn.addEventListener('click', (ev: Event) => {
   ev.preventDefault();
