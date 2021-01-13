@@ -45,7 +45,8 @@ auth.getRedirectResult().then(result => {
 let mkcolony: Mkcolony | null;
 auth.onAuthStateChanged(user => {
   if (user) {
-    user.getIdTokenResult().then(idTokenResult => {
+    user.getIdTokenResult(true).then(idTokenResult => {
+      console.log('idtokenresult:', idTokenResult.token);
       if (idTokenResult.claims.labMember) {
         console.log('Authorized user', user);
         console.log('idTokenResult', idTokenResult);

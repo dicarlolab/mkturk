@@ -307,24 +307,30 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
           startTime: admin.firestore.Timestamp.fromDate(new Date())
         };
 
-        let updatedUserEntry = docs[0].data();
-        updatedUserEntry.assignmentList.push(assignmentEntry);
 
-        // docs[0].data().assignmentList.push(assignmentEntry);
-        // console.log('assignmentEntry:', assignmentEntry);
-        // console.log('assignmentList:', docs[0].data().assignmentList);
-        // console.log('docs[0].data():', docs[0].data());
+        let mturkUser = docs[0].data();
+        let assignmentList = mturkUser.assignmentList;
+        let lastEntry = assignmentList[assignmentList.length - 1];
 
-        firestore.collection('mturkusers')
-          .doc(decodedToken.wid)
-          .set(updatedUserEntry)
-          .then(() => console.log('[mturkusers] Existing User Entry Updated'))
-          .catch(e => {
-            console.error('[mturkusers] Existing User Entry Update Error:', e);
-            throw new ProcessMTurkUserError(
-              `[mturkusers] Existing User Entry Update Error: ${e}`
-            );
-          });
+
+        if (
+          lastEntry.assignmentId !== data.aid
+          && lastEntry.hitId !== data.hid
+        ) {
+          assignmentList.push(assignmentEntry);
+          firestore.collection('mturkusers')
+            .doc(decodedToken.wid)
+            .set(mturkUser)
+            .then(() => console.log('[mturkusers] Existing User Entry Updated'))
+            .catch(e => {
+              console.error('[mturkusers] Existing User Entry Update Error:', e);
+              throw new ProcessMTurkUserError(
+                `[mturkusers] Existing User Entry Update Error: ${e}`
+              );
+            });
+        } else {
+          return { status: 'error', message: 'assignment entry already exists'};
+        }
       } else {
         throw new ProcessMTurkUserError(
           `[mturkusers] Multiple User Error: uid=${decodedToken.uid}, wid=${data.wid}, docs=${docs}, empty=${mturkUsersQuerySnapshot.empty}` 
@@ -336,23 +342,48 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
   }
 
 
-  const mturkhit = {
+  let mturkhit = {
     hitId: data.hid,
-    task: data.task 
+    task: data.task,
+    path: `mkturkfiles/paramterfiles/params_storage/${data.task}.json`,
+    workerIds: [data.wid]
   };
 
   // register HIT data & setup ${wid}_params.json
   try {
-    firestore.collection('mturkhits')
-      .doc(data.hid)
-      .set(mturkhit)
-      .then(() => console.log('[mturkhits] Registration Success'))
-      .catch(e => {
-        console.error('[mturkhits] Registration Error:', e);
-        throw new ProcessMTurkUserError(
-          `[mturkhits] Registration Error: ${e}`
-        );
-      });
+    let hitSnapshot = await firestore.collection('mturkhits')
+      .where('hitId', '==', data.hid)
+      .get();
+    
+    if (hitSnapshot.empty) {
+      firestore.collection('mturkhits')
+        .doc(data.hid)
+        .set(mturkhit)
+        .then(() => {
+          console.log('[mturkhits] Created a new HIT entry');
+          console.log('[mturkhits] Registration Success');
+        })
+        .catch(e => {
+          console.error('[mturkhits] Registration Error:', e);
+          throw new ProcessMTurkUserError(
+            `[mturkhits] Registration Error: ${e}`
+          );
+        });
+    } else {
+      let docs = hitSnapshot.docs;
+      firestore.collection('mturkhits')
+        .doc(docs[0].id)
+        .update({
+          workerIds: admin.firestore.FieldValue.arrayUnion(data.wid)
+        })
+        .then(() =>  console.log('[mturkhits] Registration Success'))
+        .catch(e => {
+          console.error('[mturkhits] Existing HIT Registration Error:', e);
+          throw new ProcessMTurkUserError(
+            `[mturkhits] Existing HIT Registration Error: ${e}`
+          );
+        });
+    }
 
     const tmpPath = await bucket.file('mkturkfiles/menu.json')
       .download()
@@ -372,6 +403,8 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
       .then(value => {
         let tmp = JSON.parse(value[0].toString('utf8'));
         tmp.Agent = data.wid;
+        tmp.AssignmentId = data.aid;
+        tmp.HITId = data.hid;
         return tmp;
       })
       .catch(e => {

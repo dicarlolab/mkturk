@@ -87,6 +87,8 @@ ENV.FrameRateMovie = 30
 
 ENV.Task = ""
 
+ENV.MTurkWorkerId = '';
+
 //================ EYE GLOBALS ================//
 ENV.Eye = {}
 

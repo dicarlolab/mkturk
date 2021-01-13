@@ -20,6 +20,7 @@ const auth = firebase.auth();
 const storage = firebase.app().storage('gs://mkturk-mturk');
 
 let mturkUserConfig: any = {};
+console.log('location:', window.location.search);
 
 // let workerId = Math.random().toString(36).substr(2);
 // console.log(workerId);
@@ -92,7 +93,6 @@ auth.getRedirectResult().then(redirectResult => {
   } else {
     console.log('User Not Yet Authenticated');
     let provider = new firebase.auth.GoogleAuthProvider();
-    provider.addScope('https://www.googleapis.com/auth/plus.me');
     provider.addScope('https://www.googleapis.com/auth/user.emails.read');
     provider.addScope('https://www.googleapis.com/auth/userinfo.email');
     auth.signInWithRedirect(provider);
@@ -108,6 +108,10 @@ auth.onAuthStateChanged(user => {
       console.log('token:', idToken);
       processMturkUser(mturkUserConfig).then(async res => {
         console.log('[processMturkUser] Result:', res);
+        if (res.data.message == 'assignment entry already exists') {
+          console.log('same');
+          window.close();
+        }
       }).catch(error => {
         console.error('[processMturkUser] Error:', error);
       });
