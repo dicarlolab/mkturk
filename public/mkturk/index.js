@@ -549,33 +549,33 @@ function skipHardwareDevice(event) {
 			statustext_connect: "",
 			statustext_sent: "",
 			statustext_received: "",
-		}
+		};
 		ble = {
 			connected: 0,
-		}
+		};
 	}
 
 	//================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
-	if (QuickLoad.load == 0){
-		updateStatusText(JSON.stringify(TASK,null,' '));
-		document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
-		document.querySelector("button[id=doneEditingParams]").style.display = "block"
-		document.querySelector("button[id=doneEditingParams]").style.visibility = "visible"
+	if (QuickLoad.load == 0) {
+		updateStatusText(JSON.stringify(TASK, null, ' '));
+    document.querySelector("p[id=headsuptext]").setAttribute("contentEditable", true);
+		document.querySelector("button[id=doneEditingParams]").style.display = "block";
+		document.querySelector("button[id=doneEditingParams]").style.visibility = "visible";
 
-		await editParamsPromise()
-		document.querySelector("button[id=doneEditingParams]").style.display = "none"
-		var textobj = document.getElementById("headsuptext")
-		textobj.removeEventListener('touchend',headsuptext_listener)
-		textobj.removeEventListener('mouseup',headsuptext_listener)
-		document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",false)
+		await editParamsPromise();
+		document.querySelector("button[id=doneEditingParams]").style.display = "none";
+		var textobj = document.getElementById("headsuptext");
+		textobj.removeEventListener('touchend', headsuptext_listener);
+		textobj.removeEventListener('mouseup', headsuptext_listener);
+    document.querySelector("p[id=headsuptext]").setAttribute("contentEditable", false);
 
-		if (FLAGS.need2saveParameters == 1){
-			var user_param_text = document.getElementById("headsuptext").innerHTML //get new params
-			await saveParameterTexttoFirebase(user_param_text) //write new params
-			await loadParametersfromFirebase(ENV.ParamFileName) //then read them
+		if (FLAGS.need2saveParameters == 1) {
+			var user_param_text = document.getElementById("headsuptext").innerHTML; //get new params
+			await saveParameterTexttoFirebase(user_param_text); //write new params
+			await loadParametersfromFirebase(ENV.ParamFileName); //then read them
 		} //IF 
 	} //IF !QuickLoad.load
-	//================== (END) AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
+  //================== (END) AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
 
   // //======================== CHECK IF FIRST NEED TO SAVE OUT IMAGE BAGS ==========================//
   // if (TASK.Agent != "SaveImages"){
@@ -606,7 +606,7 @@ function skipHardwareDevice(event) {
   // }//IF !SaveImages
 	// //===================== (END) CHECK IF FIRST NEED TO SAVE OUT IMAGE BAGS =======================//
 	
-	// LOAD MKMODELS IF SPECIES = MODEL //
+  // =================== LOAD MKMODELS IF SPECIES = MODEL =================//
 	let mkm;
 	if (TASK.Species == 'model') {
 		mkm = new MkModels();
@@ -616,376 +616,419 @@ function skipHardwareDevice(event) {
 		mkm.bindCanvasElement(cvs);
 		mkm.buildClassifier(TASK.ModelConfig);
 	}
+  // ======================== (END) LOAD MKMODELS ========================//
 
-	// (END) LOAD MKMODELS //
 
-	//============= AWAIT READ SUBJECT PERFORMANCE HISTORY =============//
+  //============= AWAIT READ SUBJECT PERFORMANCE HISTORY =============//
 	// Read performance history
-	var subject_behavior_save_directory = DATA_SAVEPATH + ENV.Subject + '/'
-	if (TASK.Automator != 0){
-		var history_file_paths = await getMostRecentBehavioralFilePathsFromFirebase(ndatafiles2read, ENV.Subject, subject_behavior_save_directory)
+	var subject_behavior_save_directory = DATA_SAVEPATH + ENV.Subject + '/';
+	if (TASK.Automator != 0) {
+		var history_file_paths = (
+      await getMostRecentBehavioralFilePathsFromFirebase(
+        ndatafiles2read,
+        ENV.Subject,
+        subject_behavior_save_directory,
+      )
+    );
 		trialhistory = await readTrialHistoryFromFirebase(history_file_paths);		
 	}
 
 	//===================== AWAIT INITIALIZE AUTOMATOR =================//
 	// Initialize automator - change TASK to that specified by TASK.CurrentAutomatorStage. 
-	var num_prebuffer_trials = 200
-	if (TASK.Automator != 0){
-		automator_data = await loadTextfromFirebase(TASK.AutomatorFilePath)
-		automateTask(automator_data, trialhistory) 
-		await saveParameterstoFirebase() 
+	var num_prebuffer_trials = 200;
+	if (TASK.Automator != 0) {
+		automator_data = await loadTextfromFirebase(TASK.AutomatorFilePath);
+		automateTask(automator_data, trialhistory);
+		await saveParameterstoFirebase();
 		await loadParametersfromFirebase(ENV.ParamFileName);
 	}//IF TASK.Automator != 0
 
 	//============= AWAIT LOAD SOUNDS =============//
 	soundpromises = sounds.serial.map(loadSoundfromFirebase); //create array of sound load Promises
 	await Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
-	updateStatusText("")
+	updateStatusText("");
 
-    //============= AWAIT ESTIMATE SCREEN REFRESH RATE =========//
-    var fps = await estimatefps()
-    ENV.FrameRateDisplay = fps
-    ENV.FrameRateMovie = fps/2
+  //============= AWAIT ESTIMATE SCREEN REFRESH RATE =========//
+  var fps = await estimatefps();
+  ENV.FrameRateDisplay = fps;
+  ENV.FrameRateMovie = fps / 2;
 
 	//========= Start in TEST mode =======//
-	document.querySelector("button[id=googlesignin]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
-	document.querySelector("button[id=reloadpage]").style.display = "block"
-	document.querySelector("button[id=reloadpage]").style.visibility = "visible"
+	document.querySelector("button[id=googlesignin]").style.display = "none"; //if do style.visibility=hidden, element will still occupy space
+	document.querySelector("button[id=reloadpage]").style.display = "block";
+	document.querySelector("button[id=reloadpage]").style.visibility = "visible";
 
-	document.querySelector("button[id=doneTestingTask]").style.display = "block"
-	document.querySelector("button[id=doneTestingTask]").style.visibility = "visible"
-	document.querySelector("button[id=gridPoints]").style.display = "block"
-	document.querySelector("button[id=gridPoints]").style.visibility = "visible"
+	document.querySelector("button[id=doneTestingTask]").style.display = "block";
+	document.querySelector("button[id=doneTestingTask]").style.visibility = "visible";
+	document.querySelector("button[id=gridPoints]").style.display = "block";
+	document.querySelector("button[id=gridPoints]").style.visibility = "visible";
 
-	FLAGS.need2loadParameters = 1
-	FLAGS.need2loadScenes = 1
-	CURRTRIAL.num = 0
-	EVENTS.trialnum = 0
-	FLAGS.savedata = 0 // test trials can be performed, but data won't be saved
+	FLAGS.need2loadParameters = 1;
+	FLAGS.need2loadScenes = 1;
+	CURRTRIAL.num = 0;
+	EVENTS.trialnum = 0;
+  FLAGS.savedata = 0; // test trials can be performed, but data won't be saved
 	
 	// await mkmodels.loadFeatureExtractor('https://tfhub.dev/google/tfjs-model/imagenet/resnet_v2_50/feature_vector/3/default/1');
 
 // =========================================================================================================== // 
 // ============ MAIN LOOP ==================================================================================== // 
 // =========================================================================================================== // 
-while(true){
+  while(true){
 
 	//============= AWAIT LOAD PARAMS =============//
-	if (FLAGS.need2loadParameters == 1){
-		FLAGS.need2loadParameters = await loadParametersfromFirebase(ENV.ParamFileName);
+    if (FLAGS.need2loadParameters == 1) {
+      FLAGS.need2loadParameters = await loadParametersfromFirebase(ENV.ParamFileName);
 
-    if (TASK.Agent == "SaveImages"){
-      document.querySelector("button[id=stressTest]").innerHTML = "Save Images"
-      TASK.SamplingStrategy = "sequential"
-      console.log("Automatically using sequential sampling since SAVE IMAGES was specified.")
-    }//IF SaveImages
+      if (TASK.Agent == "SaveImages") { 
+        document.querySelector("button[id=stressTest]").innerHTML = "Save Images";
+        TASK.SamplingStrategy = "sequential";
+        console.log("Automatically using sequential sampling since SAVE IMAGES was specified.");
+      }//IF SaveImages
 
-		if (typeof(TASK.DragtoRespond) != "undefined"){
-		}//IF defined, do nothing
-		else {
-      if (FLAGS.trackeye == 0){
-        TASK.DragtoRespond = 0 //click in box
-      }//IF touch, then only clicking
-      else if (FLAGS.trackeye != 0){
-        TASK.DragtoRespond = 1 //drag into box
-      }//ELSE IF eyetracker, allow dragging
-		}//ELSE default to no eye tracking
+      if (typeof(TASK.DragtoRespond) == 'undefined') {
+        if (FLAGS.trackeye == 0) { // IF touch, then only clicking
+          TASK.DragtoRespond = 0; // click in box
+        } else if (FLAGS.trackeye != 0) { // ELSE IF eyetracker, allow dragging
+          TASK.DragtoRespond = 1; // drag into box
+        }
+      }
 
-		//load previous calibration if available
-		if (FLAGS.trackeye > 0 ){
-			//Calibration
-			ENV.Eye.calibration = 0;
-			ENV.Eye.CalibXTransform = []
-			ENV.Eye.CalibYTransform = []
-			ENV.Eye.CalibType = 'default'
-			ENV.Eye.NCalibPointsTrain = 0
-			ENV.Eye.NCalibPointsTest = 0
-			ENV.Eye.CalibTrainMSE = []
-			ENV.Eye.CalibTestMSE = []
+      //load previous calibration if available
+      if (FLAGS.trackeye > 0){ // IF trackeye
+        //Calibration
+        ENV.Eye.calibration = 0;
+        ENV.Eye.CalibXTransform = [];
+        ENV.Eye.CalibYTransform = [];
+        ENV.Eye.CalibType = 'default';
+        ENV.Eye.NCalibPointsTrain = 0;
+        ENV.Eye.NCalibPointsTest = 0;
+        ENV.Eye.CalibTrainMSE = [];
+        ENV.Eye.CalibTestMSE = [];
+  
+        await loadEyeCalibrationfromFirestore(ENV.Subject);
 
-			await loadEyeCalibrationfromFirestore(ENV.Subject)
-			if (ENV.Eye.CalibXTransform.length == 0){
+        if (ENV.Eye.CalibXTransform.length == 0) { // Default calibration
+  
+          var xrange = 0.5;
+          var yrange = 0.5;
+          var xscale = ENV.ViewportPixels[0] / xrange;
+          var yscale = ENV.ViewportPixels[1] / yrange;
+  
+          ENV.Eye.CalibXTransform = [xscale, 0, -(0.5 - xrange/2)*xscale]
+          ENV.Eye.CalibYTransform = [
+            0,
+            -yscale,
+            ENV.ViewportPixels[1] + (0.5 - yrange / 2 ) * yscale,
+          ];
+  
+          // ENV.Eye.CalibXTransform = [ 1, 0, 0]
+          // ENV.Eye.CalibYTransform = [ 0, 1, 0]
+  
+          saveEyeCalibrationtoFirestore(
+            ENV.Eye.CalibXTransform,
+            ENV.Eye.CalibYTransform,
+            ENV.Eye.NCalibPoints,
+            ENV.Eye.CalibType,
+          );
 
-				var xrange = 0.5
-				var yrange = 0.5
-				var xscale = ENV.ViewportPixels[0] / xrange;
-				var yscale = ENV.ViewportPixels[1] / yrange;
+        }
 
-				ENV.Eye.CalibXTransform = [ xscale, 0, -(0.5 - xrange/2)*xscale]
-				ENV.Eye.CalibYTransform = [ 0, -yscale, ENV.ViewportPixels[1] + (0.5 - yrange/2)*yscale]
+        // will calibrate using TASK.CalibrateEye number of trials for train & same number for test
+        if (TASK.CalibrateEye > 0) { // IF CalibrateEye
+          ENV.Eye.calibration = 1;
+          ENV.Eye.NCalibPointsTrain = 0;
+          ENV.Eye.NCalibPointsTest = 0;
+          ENV.Eye.CalibTrainMSE = [];
+          ENV.Eye.CalibTestMSE = [];
+        }
 
-				// ENV.Eye.CalibXTransform = [ 1, 0, 0]
-				// ENV.Eye.CalibYTransform = [ 0, 1, 0]
+      }
 
-				saveEyeCalibrationtoFirestore(ENV.Eye.CalibXTransform,ENV.Eye.CalibYTransform,ENV.Eye.NCalibPoints,ENV.Eye.CalibType)
-			}//default calibration
-			if (TASK.CalibrateEye > 0){
- 				//will calibrate using TASK.CalibrateEye number of trials for train & same number for test
- 				ENV.Eye.calibration = 1
-				ENV.Eye.NCalibPointsTrain = 0
-				ENV.Eye.NCalibPointsTest = 0
-				ENV.Eye.CalibTrainMSE = []
-				ENV.Eye.CalibTestMSE = []
-			}//IF calibrateeye
-		}//IF trackeye
+      //============= SET UP CANVAS =============//
+      // Update canvas based on latest TASK state: 
+      refreshCanvasSettings(TASK); 
+      setupCanvasHeadsUp();
+      setupImageLoadingText();
+      windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
+      windowHeight = document.body.clientHeight;
+      setupCanvas(VISIBLECANVAS);
 
-		//============= SET UP CANVAS =============//
-		// Update canvas based on latest TASK state: 
-		refreshCanvasSettings(TASK); 
-		setupCanvasHeadsUp()
-		setupImageLoadingText()
-		windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
-		windowHeight = document.body.clientHeight;
-		setupCanvas(VISIBLECANVAS);
+      //Foreground canvas that displays eye position during practice screen
+      setupEyeTrackerCanvas();
 
- 		//Foreground canvas that displays eye position during practice screen
- 		setupEyeTrackerCanvas()
+      if (ENV.DevicePixelRatio !== 1) {
+        scaleCanvasforHiDPI(VISIBLECANVAS);
+        scaleCanvasforHiDPI(EYETRACKERCANVAS);
+      }
+      
+      if (ENV.OffscreenCanvasAvailable) {
+        OFFSCREENCANVAS = new OffscreenCanvas(VISIBLECANVAS.width, VISIBLECANVAS.height);
+        OFFSCREENCANVAS.commitTo = (dest) => {
+          try {
+            let bitmap = OFFSCREENCANVAS.transferToImageBitmap();
+            dest.transferFromImageBitmap(bitmap);
+            return { status: 'succeeded' };
+          } catch (e) {
+            console.error('[OFFSCREENCANVAS.commitTo] Error:', e);
+            return { status: 'failed' };
+          }
+        }
+        // OFFSCREENCANVAS.commitTo = function(dest) {
+        //   try {
+        //     var bitmap = this.transferToImageBitmap()
+        //     dest.transferFromImageBitmap(bitmap)
+        //     str = {status: "succeeded"}
+        //     return str
+        //   }
+        //   catch(error){
+        //     console.log(error)
+        //     str = {status: "failed"}
+        //     return str				
+        //   }
+        // }
+      } else {
+        OFFSCREENCANVAS = VISIBLECANVAS;
+      }
 
-		if (ENV.DevicePixelRatio !== 1){
-			scaleCanvasforHiDPI(VISIBLECANVAS);
-			scaleCanvasforHiDPI(EYETRACKERCANVAS);
-		}
-		
-		if (ENV.OffscreenCanvasAvailable){
-			OFFSCREENCANVAS = new OffscreenCanvas(VISIBLECANVAS.width, VISIBLECANVAS.height)
-			OFFSCREENCANVAS.commitTo = function(dest){
-				try {
-					var bitmap = this.transferToImageBitmap()
-					dest.transferFromImageBitmap(bitmap)
-					str = {status: "succeeded"}
-					return str
-				}
-				catch(error){
-					console.log(error)
-					str = {status: "failed"}
-					return str				
-				}
-			}
-		}
-		else
-		{
-			OFFSCREENCANVAS = VISIBLECANVAS
-		}
+      CANVAS.workspace = [
+        0,
+        0,
+        VISIBLECANVAS.width,
+        VISIBLECANVAS.height
+      ];
 
-		CANVAS.workspace = [
-			0,
-			0,
-			VISIBLECANVAS.width,
-			VISIBLECANVAS.height
-		]
+      TQS = undefined;
+      FLAGS.need2loadScenes = 1; 
 
-		TQS = undefined
-		FLAGS.need2loadScenes = 1; 
+      //Determine task type
+      if (TASK.RewardStage == 0) {
+        ENV.Task = "FIXATION"
+      } else if (TASK.RewardStage == 1) { // IF Task.RewardStage
+        if (TASK.NRSVP > 0) {
+          ENV.Task = 'RSVP';
+        } else if (TASK.SameDifferent > 0 && TASK.ChoiceGridIndex.length == 2) { // Task is SameDifferent
+          // Same-Different (SD)
+          ENV.Task = 'SD';
+        } else if (TASK.ObjectGridIndex.length == TASK.ImageBagsSample.length) { // Task is Stimulus-Response
+          // Stimulus-Response (SR)
+          ENV.Task = 'SR';
+        } else { // Task is Match-to-Sample
+          // Match-to-Sample
+          ENV.Task = 'MTS';
+        }
+      }
 
-		//Determine task type
-		if (TASK.RewardStage == 0){
-				ENV.Task = "FIXATION"
-		}
-		else if (TASK.RewardStage == 1){
-            if (TASK.NRSVP > 0){
-                ENV.Task = "RSVP"
-            }
-			else if (TASK.SameDifferent > 0 && TASK.ChoiceGridIndex.length == 2){
-				//Same-Different (SD)
-				ENV.Task = "SD"
-			} //IF TASK.SameDifferent
-			else if (TASK.ObjectGridIndex.length == TASK.ImageBagsSample.length){
-				//Stimulus-Response (SR)
-				ENV.Task = "SR"
-			} //IF TASK.ObjectGridIndex
-			else {
-				//Match-to-Sample
-				ENV.Task = "MTS"
-			}
-		} //if TASK.RewardStage
+      //Size of Fixation screen circle or image
+      ENV.FixationRadius = TASK.FixationSizeInches / 2 * ENV.ViewportPPI;
+  
+      //Size of Choice screen circle or square
+      ENV.ChoiceRadius = TASK.ChoiceSizeInches / 2 * ENV.ViewportPPI;
+  
+      //Fixation dot, if >0, will appear on both fixation & sample screens
+      ENV.FixationDotRadius = TASK.FixationDotSizeInches / 2 * ENV.ViewportPPI;
+  
+      //Fixation window, if specified, operates on both fixation & sample screens
+      ENV.FixationWindowRadius = TASK.FixationWindowSizeInches / 2 * ENV.ViewportPPI;
 
-    //Size of Fixation screen circle or image
-    ENV.FixationRadius = TASK.FixationSizeInches/2 * ENV.ViewportPPI
+      // define image display grid
+      funcreturn = defineImageGrid(
+        TASK.NGridPoints,
+        TASK.GridSpacingInches * ENV.ViewportPPI,
+        TASK.GridXOffsetInches * ENV.ViewportPPI,
+        TASK.GridYOffsetInches * ENV.ViewportPPI,
+      );
+      xcanvascenter = funcreturn[0];
+      ycanvascenter = funcreturn[1];
+      ENV.XGridCenter = funcreturn[2];
+      ENV.YGridCenter = funcreturn[3];
 
-    //Size of Choice screen circle or square
-    ENV.ChoiceRadius = TASK.ChoiceSizeInches/2 * ENV.ViewportPPI
+      FLAGS.purge = 1;
+      FLAGS.createnewfirestore = 1;
+      CURRTRIAL.reset();
+      EVENTS.reset_trialseries();
+      EVENTS.reset_timeseries();
+    } //IF need2loadParameters
 
-    //Fixation dot, if >0, will appear on both fixation & sample screens
-    ENV.FixationDotRadius = TASK.FixationDotSizeInches/2 * ENV.ViewportPPI
-
-    //Fixation window, if specified, operates on both fixation & sample screens
-    ENV.FixationWindowRadius = TASK.FixationWindowSizeInches/2 * ENV.ViewportPPI
-
-    // define image display grid
-    funcreturn = defineImageGrid(TASK.NGridPoints, TASK.GridSpacingInches*ENV.ViewportPPI,TASK.GridXOffsetInches*ENV.ViewportPPI,TASK.GridYOffsetInches*ENV.ViewportPPI);
-    xcanvascenter = funcreturn[0]
-    ycanvascenter = funcreturn[1]
-    ENV.XGridCenter = funcreturn[2]
-    ENV.YGridCenter = funcreturn[3]
-
-	FLAGS.purge = 1
-	FLAGS.createnewfirestore = 1
-    CURRTRIAL.reset()
-	EVENTS.reset_trialseries()
-    EVENTS.reset_timeseries()
-	}//IF need2loadParameters
-
-	if (FLAGS.purge == 1){
-		purgeTrackingVariables()
-		FLAGS.purge = 0; 
-	} //if purge
-
-
-	//======================== 3D SCENE SET-UP =======================//
-	if (FLAGS.need2loadScenes){
-		IMAGES = { Sample: [], Test: [] }
-		IMAGEMETA = {}
-		// STEPS FOR 3D SCENE SET-UP
-		// ---- 0: load scene params from JSON
-		// 0: expand trial params & get mesh paths
-		// ---- 1: load meshes
-		// ---- 2: init scene & camera
-		// ---- 3: add all lights & objects
-		// ---- 4: compile shaders
-		// 5: select frame to render
-		// 5: animate <--> render loop within trial
-
-		//============ 0: LOAD SCENES from JSON ============//
-		for (var f = 0; f <= TASK.ImageBagsSample.length-1; f++){
-			IMAGES.Sample[f] = await loadTextfromFirebase(TASK.ImageBagsSample[f])
-		}
-		for (var f = 0; f <= TASK.ImageBagsTest.length-1; f++){
-			IMAGES.Test[f] = await loadTextfromFirebase(TASK.ImageBagsTest[f])
-		}
-		//find longest scene param array in IMAGES (ie # of trials)
-		for (var j = 0; j<=IMAGES.Sample.length-1; j++){
-			IMAGES.Sample[j].nimages = getLongestArray(IMAGES.Sample[j])
-			IMAGES.Test[j].nimages = getLongestArray(IMAGES.Test[j])
-
-			//Determine if images will also be rendered
-			IMAGES.Sample[j].nbackgroundimages = IMAGES.Sample[j].IMAGES.imageidx.length
-			IMAGES.Test[j].nbackgroundimages = IMAGES.Test[j].IMAGES.imageidx.length
-
-            FLAGS.movieper["Sample"][j] =[]
-            FLAGS.movieper["Test"][j] = []
-		}//FOR j scenes
-		//============ (END) 0: LOAD SCENES from JSON ============//
-
-		//============ 1: LOAD MESHES FOR SCENES ============//
-		OBJECTS = {Sample: {}, Test: {}}
-		for (var taskscreen in OBJECTS){
-			var mesh_paths = []
-			var mesh_inds = []
-			for (var classlabel = 0; classlabel <= IMAGES[taskscreen].length-1; classlabel++){
-				for (const obj in IMAGES[taskscreen][classlabel].OBJECTS){
-					mesh_paths.push(IMAGES[taskscreen][classlabel].OBJECTS[obj].meshpath)
-					mesh_inds.push([classlabel,obj])
-				} //FOR obj objects in scene classlabel
-			} //FOR classlabel scene
-			var meshes = await loadMeshArrayfromFirebase(mesh_paths);
-
-			for (var m=0; m<=meshes.length-1; m++){
-				var meshlabel = mesh_inds[m][0]
-        OBJECTS[taskscreen][meshlabel] = {"meshes": [] }
-      }//FOR m meshes, initialize corresponding label to empty
-
-      for (var m=0; m<=meshes.length-1; m++){
-        var meshlabel = mesh_inds[m][0]
-				var meshname = mesh_inds[m][1]
-				OBJECTS[taskscreen][meshlabel].meshes[meshname] = meshes[m]
-			}//FOR m meshes, store in corresponding label
-		}//FOR taskscreen
-		//============ (END) 1: LOAD MESHES FOR SCENES ============//
+    if (FLAGS.purge == 1) {
+      purgeTrackingVariables();
+      FLAGS.purge = 0; 
+    } //IF purge
 
 
-		//============ 2: INIT SCENE & CAMERA ============//
-    setupCanvas(VISIBLECANVASWEBGL)
-		await initThreeJS(IMAGES)
-		//============ (END) 2: INIT SCENE & CAMERA ============//
+    //======================== 3D SCENE SET-UP =======================//
+    if (FLAGS.need2loadScenes) {
+      IMAGES = { Sample: [], Test: [] };
+      IMAGEMETA = {};
+      // STEPS FOR 3D SCENE SET-UP
+      // ---- 0: load scene params from JSON
+      // 0: expand trial params & get mesh paths
+      // ---- 1: load meshes
+      // ---- 2: init scene & camera
+      // ---- 3: add all lights & objects
+      // ---- 4: compile shaders
+      // 5: select frame to render
+      // 5: animate <--> render loop within trial
 
-		//============ 3: ADD ALL LIGHTS/OBJECTS TO SCENE ============//
-	    CAMERAS = {Sample: {}, Test: {}}
-	    LIGHTS = {Sample: {}, Test: {}}
-		for (scenetype in scene){
-			await addToScene(scenetype)
-		}
-		console.log('3js: added lights & objects')	
-		//============ (END) 3: ADD ALL LIGHTS/OBJECTS TO SCENE ============//
+      //============ 0: LOAD SCENES from JSON ============//
+      for (let i = 0; i < TASK.ImageBagsSample.length; i++) {
+        IMAGES.Sample[i] = await loadTextfromFirebase(TASK.ImageBagsSample[i]);
+      }
 
-		//============ 4: PRELOAD SHADERS (COMPILE) ============//
-		for (scenetype in scene){
-			renderer.compile(scene[scenetype],scene[scenetype].getObjectByName("cam0"))
-		}
-		console.log('3js: compiled scene')
-		//============ (END) 4: PRELOAD SHADERS (COMPILE) ============//
-		FLAGS.need2loadScenes = 0
+      for (let i = 0; i < TASK.ImageBagsTest.length; i++) {
+        IMAGES.Test[i] = await loadTextfromFirebase(TASK.ImageBagsTest[i]);
+      }
 
-		//Make a scene trial queue TQS (overrides TQ)
-		TQS = new TrialQueueScene(TASK.SamplingStrategy)
-		await TQS.build(num_prebuffer_trials)
+      // find the longest scene param arry in IMAGES (ie # of trials)
+      for (let i = 0; i < IMAGES.Sample.length; i++) {
+        IMAGES.Sample[i].nimages = getLongestArray(IMAGES.Sample[i]);
+        IMAGES.Test[i].nimages = getLongestArray(IMAGES.Test[i]);
 
-		//Store some scene metadata
-		var funcreturn = objectomeSceneNamesToLatentVars(TASK.ImageBagsSample,TQS.testbag_labels,IMAGES.Sample)
-		var keys = Object.keys(funcreturn)
-		for (var i=0; i<=keys.length-1; i++){
-			IMAGEMETA["Sample" + keys[i]] = funcreturn[keys[i]]
-		} //for i keys
+        //Determine if images will also be rendered
+			  IMAGES.Sample[i].nbackgroundimages = IMAGES.Sample[i].IMAGES.imageidx.length;
+        IMAGES.Test[i].nbackgroundimages = IMAGES.Test[i].IMAGES.imageidx.length;
+        
+        FLAGS.movieper['Sample'][i] = [];
+        FLAGS.movieper['Test'][i] = [];
+      }
+      //============ (END) 0: LOAD SCENES from JSON ============//
 
-		var funcreturn = objectomeSceneNamesToLatentVars(TASK.ImageBagsTest,TQS.testbag_labels,IMAGES.Test)
-		var keys = Object.keys(funcreturn)
-		for (var i=0; i<=keys.length-1; i++){
-			IMAGEMETA["Test" + keys[i]] = funcreturn[keys[i]]
-		} //for i keys
-	} //IF load scenes
+      //============ 1: LOAD MESHES FOR SCENES ============//
+      OBJECTS = { Sample: {}, Test: {} };
+      for (let taskscreen in OBJECTS) {
+        let meshPaths = [];
+        let meshIdxs = [];
 
-    if (typeof(TASK.BackgroundColor2D) == "undefined"){
-        TASK.BackgroundColor2D = "#7F7F7F"
+        for (let classLabel = 0; classLabel < IMAGES[taskscreen].length; classLabel++) {
+          for (const obj in IMAGES[taskscreen][classLabel].OBJECTS) {
+            meshPaths.push(IMAGES[taskscreen][classLabel].OBJECTS[obj].meshpath);
+            meshIdxs.push([classLabel, obj]); 
+          }
+        }
+
+        let meshes = await loadMeshArrayfromFirebase(meshPaths);
+
+        // FOR i meshes, initialize corresponding label to an empty array
+        for (let i = 0; i < meshes.length; i++) {
+          let meshLabel = meshIdxs[i][0];
+          OBJECTS[taskscreen][meshLabel] = { meshes: [] };
+        }
+
+        // For i meshes, store in corresponding labels
+        for (let i = 0; i < meshes.length; i++) {
+          let meshLabel = meshIdxs[i][0];
+          let meshName = meshIdxs[i][1];
+          OBJECTS[taskscreen][meshLabel].meshes[meshName] = meshes[i];
+        }
+      }
+      //============ (END) 1: LOAD MESHES FOR SCENES ============//
+
+
+      //============ 2: INIT SCENE & CAMERA ============//
+      setupCanvas(VISIBLECANVASWEBGL);
+		  await initThreeJS(IMAGES);
+      //============ (END) 2: INIT SCENE & CAMERA ============//
+
+      //============ 3: ADD ALL LIGHTS/OBJECTS TO SCENE ============//
+	    CAMERAS = { Sample: {}, Test: {} };
+	    LIGHTS = { Sample: {}, Test: {} };
+		  for (let scenetype in scene) {
+			  await addToScene(scenetype);
+		  } 
+		  console.log('3js: added lights & objects');
+      //============ (END) 3: ADD ALL LIGHTS/OBJECTS TO SCENE ============//
+
+   		//============ 4: PRELOAD SHADERS (COMPILE) ============//
+       for (let scenetype in scene) {
+        renderer.compile(
+          scene[scenetype],
+          scene[scenetype].getObjectByName('cam0')
+        );
+      }
+      console.log('3js: compiled scene')
+      //============ (END) 4: PRELOAD SHADERS (COMPILE) ============//
+       
+      FLAGS.need2loadScenes = 0;
+
+      // Make a scene trial queue TQS (overrides TQ)
+      TQS = new TrialQueueScene(TASK.SamplingStrategy);
+      await TQS.build(num_prebuffer_trials);
+
+      // Store scene metadata
+      let sampleSceneMeta = (
+        objectomeSceneNamesToLatentVars(
+          TASK.ImageBagsSample,
+          TQS.testbag_labels,
+          IMAGES.Sample
+        )
+      );
+      let sampleSceneMetaKeys = Object.keys(sampleSceneMeta);
+      for (let i = 0; i < sampleSceneMetaKeys.length; i++) {
+        IMAGEMETA['Sample' + sampleSceneMetaKeys[i]] = sampleSceneMeta[sampleSceneMetaKeys[i]];
+      }
+
+      let testSceneMeta = (
+        objectomeSceneNamesToLatentVars(
+          TASK.ImageBagsTest,
+          TQS.testbag_labels,
+          IMAGES.Test
+        )
+      );
+      let testSceneMetaKeys = Object.keys(testSceneMeta);
+      for (let i = 0; i < testSceneMetaKeys.length; i++) {
+        IMAGEMETA['Test' + testSceneMetaKeys[i]] = testSceneMeta[testSceneMetaKeys[i]];
+      }
+    }
+
+    if (typeof(TASK.BackgroundColor2D) == 'undefined') {
+      TASK.BackgroundColor2D = '#7F7F7F';
     }
     document.body.style.background = TASK.BackgroundColor2D;
-	//========================(END) 3D SCENE SET-UP =======================//
+    //========================(END) 3D SCENE SET-UP =======================//
 
-	//============ SELECT SAMPLE & TEST IMAGES ============//
-    if (typeof(TASK.NRSVP) == "undefined" || TASK.NRSVP <= 0){
-      var imagesequencelength = 1;  
-    }//IF !rsvp
-    else{
-      var imagesequencelength = TASK.NRSVP
-    }//ELSE rsvp
 
-    for (var i=0; i<=imagesequencelength-1; i++){
-      var x = await TQS.get_next_trial()
-      CURRTRIAL.sampleimage[i] = x[0]
-      CURRTRIAL.sampleindex[i] = x[1]
-	  
-	  //Sample can have multiple sequential scenes (items are over time; eg, RSVP)
-      CURRTRIAL.sampleindex_nonarray[i] = x[1][0]
-      
-      CURRTRIAL.sample_scenebag_label[i] = x[5]
-      CURRTRIAL.sample_scenebag_index[i] = x[6]
+    //============ SELECT SAMPLE & TEST IMAGES ============//
 
-      //Test can have multiple simultaneous scenes (items are over space; eg, MtS)
-      if (i==0){
-        CURRTRIAL.testimages[i] = x[2]
+    let imgSeqLen = (
+      (typeof(TASK.NRSVP) == 'undefined' || TASK.NRSVP <= 0) ? 1 : TASK.NRSVP
+    );
+
+    for (let i = 0; i < imgSeqLen; i++) {
+      let x = await TQS.get_next_trial();
+      CURRTRIAL.sampleimage[i] = x[0];
+      CURRTRIAL.sampleindex[i] = x[1];
+
+      // Sample can have multiple sequential scenes (items are over time; eg, RSVP)
+      CURRTRIAL.sampleindex_nonarray[i] = x[1][0];
+      CURRTRIAL.sample_scenebag_label[i] = x[5];
+      CURRTRIAL.sample_scenebag_index[i] = x[6];
+
+      // Test can have multiple simultaneous scenes (items are over space; ev, MtS)
+      if (i == 0) { // IF first image
+        CURRTRIAL.testimages[i] = x[2];
         CURRTRIAL.testindices[i] = x[3]
         CURRTRIAL.test_scenebag_labels[i] = x[7]
         CURRTRIAL.test_scenebag_indices[i] = x[8]
-
         CURRTRIAL.correctitem = x[4]
         samplereward = x[9]
-      }//IF first image
-    }//FOR i rsvp images
+      }
+    }
 
-	logEVENTS("Sample",CURRTRIAL.sampleindex_nonarray,"trialseries")
-	logEVENTS("Test",CURRTRIAL.testindices[0],"trialseries")
+    logEVENTS("Sample", CURRTRIAL.sampleindex_nonarray, "trialseries");
+    logEVENTS("Test", CURRTRIAL.testindices[0], "trialseries");
     //============(END) SELECT SAMPLE & TEST IMAGES ============//
 
-
     //============ SET UP SAMPLE & TEST SEQUENCE ============//
-    //when & where to display
-    CURRTRIAL.tsequence = [ 0 ]
-    CURRTRIAL.sequencegridindex = [ [-1] ]
+    // when & where to display
+    CURRTRIAL.tsequence = [0];
+    CURRTRIAL.sequencegridindex = [[-1]];
 
-    //what to display
-    CURRTRIAL.sequenceclip = [ -1 ] //movieclip# in RSVP
-    CURRTRIAL.sequenceframe = [ -1 ] //frame# in movie
-    CURRTRIAL.sequencetaskscreen = [ 'blank' ]
-    CURRTRIAL.sequencelabel = [ [0] ] //image class
-    CURRTRIAL.sequenceindex = [ [0] ] //image index
+    // what to display
+    CURRTRIAL.sequenceclip = [-1]; //movieclip# in RSVP
+    CURRTRIAL.sequenceframe = [-1]; //frame# in movie
+    CURRTRIAL.sequencetaskscreen = ['blank'];
+    CURRTRIAL.sequencelabel = [[0]]; //image class
+    CURRTRIAL.sequenceindex = [[0]]; //image index
 
     //EXPAND SAMPLE (for rsvp & movies)
     //Start with blank for max(100,SampleOFF), then append SampleON+blank (eg, blank,Sample,blank,Sample,blank)
