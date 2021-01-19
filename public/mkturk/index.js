@@ -1221,8 +1221,10 @@ function skipHardwareDevice(event) {
         frame.frames = [];
         frame.current = 0;
         
-        for (let i = 0; i <= CURRTRIAL.sequencegridindex.length; i++) {
-          for (let j = 0; j <= CURRTRIAL.sequencegridindex[i].length; j++) {
+        for (let i = 0; i < CURRTRIAL.sequencegridindex.length; i++) {
+          console.log('hello');
+          for (let j = 0; j < CURRTRIAL.sequencegridindex[i].length; j++) {
+            console.log('hello2');
             if (CURRTRIAL.sequencetaskscreen[i] == 'Sample') { // IF sample
               // Set location to fixation
               CURRTRIAL.sequencegridindex[i][j] = CURRTRIAL.fixationgridindex;
@@ -1835,255 +1837,292 @@ function skipHardwareDevice(event) {
         race_return.cxyt[3]
       ];
 
-      logEVENTS("ResponseXYT",CURRTRIAL.responsexyt,"trialseries")
-      logEVENTS("ResponseTouchEvent",CURRTRIAL.responsetouchevent,"trialseries")
-      logEVENTS("Response",CURRTRIAL.response,"trialseries")
+      logEVENTS("ResponseXYT", CURRTRIAL.responsexyt, "trialseries");
+		  logEVENTS("ResponseTouchEvent", CURRTRIAL.responsetouchevent, "trialseries");
+      logEVENTS("Response", CURRTRIAL.response, "trialseries");
 
       // Keep track of repeated responses to one side
-      if (TASK.NRSVP <= 0 && CURRTRIAL.num > 0 && FLAGS.savedata && CURRTRIAL.responsetouchevent == "theld"){
-        if (CURRTRIAL.response==trialhistory.response[trialhistory.correct.length-1]){
+      // Keep track of repeated responses to one side
+      if (
+        TASK.NRSVP <= 0
+        && CURRTRIAL.num > 0
+        && FLAGS.savedata
+        && CURRTRIAL.responsetouchevent == 'theld'
+      ) {
+        if (CURRTRIAL.response == trialhistory.response[trialhistory.correct.length - 1]) {
           FLAGS.stickyresponse++;
+        } else {
+          FLAGS.stickyresponse = 0;
         }
-        else {
-          FLAGS.stickyresponse=0;
-        }
-      } //IF
+      }
     } //if TASK.RewardStage
-    logEVENTS("CorrectItem",CURRTRIAL.correctitem,"trialseries")
+    logEVENTS("CorrectItem", CURRTRIAL.correctitem, "trialseries");
 
 
 
-//REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    //
-//REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    //
-//REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    //
-  // Determine if Choice was correct
-  if (CURRTRIAL.response == CURRTRIAL.correctitem){ CURRTRIAL.correct = 1; }
-  else { CURRTRIAL.correct=0; }
+    //REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    //
+    //REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    //
+    //REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    REWARD PUNISH    //
+    // Determine if Choice was correct
+    // if (CURRTRIAL.response == CURRTRIAL.correctitem){ CURRTRIAL.correct = 1; }
+    // else { CURRTRIAL.correct=0; }
+    
+    CURRTRIAL.correct = (CURRTRIAL.response == CURRTRIAL.correctitem) ? 1 : 0;
 
-	//============ DETERMINE NUMBER OF REWARDS ============//
-	if (TASK.RewardStage == 0 && samplereward == 0){
-		CURRTRIAL.nreward = -1 //skip reward/punish
-	}
-	else if ( CURRTRIAL.correct && ( samplereward == -1 || TASK.RewardStage == 0 ) ){ //default behavior
-		if (FLAGS.savedata && (CURRTRIAL.starttime - trialhistory.starttime[trialhistory.starttime.length-1] < TASK.ConsecutiveHitsITI || CURRTRIAL.num==0)){
-			// if correct within bonus interval
-			FLAGS.consecutivehits++
-		}
-		else {
-			// took too long, set to 1
-			FLAGS.consecutivehits=1
-		}
-		CURRTRIAL.nreward = 1 + Math.floor(FLAGS.consecutivehits / TASK.NConsecutiveHitsforBonus)
+    
 
-		if (CURRTRIAL.nreward > TASK.NRewardMax){
-			CURRTRIAL.nreward = TASK.NRewardMax
-		}
-	}
-	else if (CURRTRIAL.correct && samplereward >= 1){
-		//Override if user had manually set reward for that sample image in image_reward_list file
-		CURRTRIAL.nreward = samplereward
-	}
-	else if (!CURRTRIAL.correct){
-			FLAGS.consecutivehits=0;
+    //============ DETERMINE NUMBER OF REWARDS ============//
+    if (TASK.RewardStage == 0 && samplereward == 0) {
+      CURRTRIAL.nreward = -1; // skip reward/punish
+    } else if (
+      CURRTRIAL.correct
+      && (samplereward == -1 || TASK.RewardStage == 0)
+    ) { // default behavior
+      let lastStartTimeIdx = trialhistory.starttime.length - 1;
+      if (
+        FLAGS.savedata
+        && (
+          CURRTRIAL.starttime - trialhistory.starttime[lastStartTimeIdx] < TASK.ConsecutiveHitsITI
+          || CURRTRIAL.num==0
+        )
+      ) { // if correct within bonus interval
+        FLAGS.consecutivehits++;
+      } else { // took too long, set to 1
+        FLAGS.consecutivehits = 1;
+      }
+      CURRTRIAL.nreward = 1 + Math.floor(FLAGS.consecutivehits / TASK.NConsecutiveHitsforBonus);
+
+      if (CURRTRIAL.nreward > TASK.NRewardMax) {
+        CURRTRIAL.nreward = TASK.NRewardMax;
+      }
+    } else if (CURRTRIAL.correct && samplereward >= 1) {
+      // Override if user had manually set reward for that sample image in image_reward_list file
+      CURRTRIAL.nreward = samplereward;
+    } else if (!CURRTRIAL.correct) {
+      FLAGS.consecutivehits = 0;
 			CURRTRIAL.nreward = 0;
-	} //# of rewards to give
+    }
+    //========= (END) DETERMINE NUMBER OF REWARDS =========//
 
-	ENV.RewardDuration = setReward();
-	logEVENTS("NReward",CURRTRIAL.nreward,"trialseries")
+    ENV.RewardDuration = setReward();
+    logEVENTS("NReward", CURRTRIAL.nreward, "trialseries");
 	
-	//============ DELIVER REWARD/PUNISH ============//
-	//NO FEEDBACK
-	if (  CURRTRIAL.nreward == -1 ){
-		CANVAS.sequencepost[1] = "blank";
-		CANVAS.tsequencepost[2] = 2*CANVAS.tsequencepost[1];
-		frame.shown=[]; frame.frames=[];  frame.current=0;
-		for (var q in CANVAS.sequencepost){frame.shown[q]=0; frame.frames[q]=[q]};
+    //============ DELIVER REWARD/PUNISH ============//
+    //NO FEEDBACK
+    if (CURRTRIAL.nreward == -1) { // IF no feedback
+      CANVAS.sequencepost[1] = "blank";
+		  CANVAS.tsequencepost[2] = 2 * CANVAS.tsequencepost[1];
+      frame.shown = [];
+      frame.frames = [];
+      frame.current = 0;
 
-		renderShape2D(CANVAS.sequencepost[0],-1,OFFSCREENCANVAS)
+      for (let q in CANVAS.sequencepost) {
+        frame.shown[q] = 0;
+        frame.frames[q] = [q];
+      }
 
-		var len = CANVAS.tsequencepost.length
-		await displayTrial(CANVAS.tsequencepost,
-							Array(len).fill(-1),
-							range(0,len-1,1),
-							CANVAS.sequencepost,
-							Array(len).fill(0),
-							Array(len).fill(0)) // dispTrial(time,grid,frame,screen,obj,idx)
-	}//IF no feedback
-	// REWARD
-	else if (CURRTRIAL.correct){
-		CANVAS.sequencepost[1]="reward";
-		CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+ENV.RewardDuration*1000;
+      renderShape2D(CANVAS.sequencepost[0], -1, OFFSCREENCANVAS);
 
-		for (var q = 0; q <= CURRTRIAL.nreward-1; q++){
-			frame.shown=[]; frame.frames=[]; frame.current=0;
-			for (var q2 in CANVAS.sequencepost){frame.shown[q2]=0; frame.frames[q2] = [q2]};
+      let lenTsequencePost = CANVAS.tsequencepost.length;
+      // displayTrial(time, grid, frame, screen, obj, idx)
+      await displayTrial(
+        CANVAS.tsequencepost,
+				Array(lenTsequencePost).fill(-1),
+				range(0, lenTsequencePost - 1, 1),
+				CANVAS.sequencepost,
+				Array(lenTsequencePost).fill(0),
+				Array(lenTsequencePost).fill(0),
+      );
+    } else if (CURRTRIAL.correct) { // ELSE IF correct, then REWARD
+      CANVAS.sequencepost[1] = "reward";
+      CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1] + ENV.RewardDuration * 1000;
+      
+      for (let i = 0; i < CURRTRIAL.nreward; i++) { // FOR nrewards
+        frame.shown = [];
+        frame.frames = [];
+        frame.current = 0;
 
-			playSound(2);
-			renderShape2D(CANVAS.sequencepost[0],-1,OFFSCREENCANVAS)
-			var len = CANVAS.tsequencepost.length
-			var p1 = displayTrial(CANVAS.tsequencepost,
-								Array(len).fill(-1),
-								range(0,len-1,1),
-								CANVAS.sequencepost,
-								Array(len).fill(0),
-								Array(len).fill(0)) // dispTrial(time,grid,frame,screen,obj,idx)
-			if (ble.connected == false && port.connected == false){
-				await Promise.all([p1])
-			}
-			else if (ble.connected == true){
-				var p2 = writepumpdurationtoBLE(Math.round(ENV.RewardDuration*1000))
-				await Promise.all([p1, p2])
-			}
-			else if (port.connected == true){
-				var p2 = port.writepumpdurationtoUSB(Math.round(ENV.RewardDuration*1000))
-				await Promise.all([p1, p2])
-			}
-		} //FOR nrewards
-	}//ELSEIF correct, then reward
-	//PUNISH
-	else if (!CURRTRIAL.correct) {
-		CANVAS.sequencepost[1] = "punish";
-		CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+TASK.PunishTimeOut;
-		frame.shown=[]; frame.frames=[];  frame.current=0;
-		for (var q in CANVAS.sequencepost){frame.shown[q]=0; frame.frames[q]=[q]};
+        for (let j in CANVAS.sequencepost) {
+          frame.shown[j] = 0;
+          frame.frames[j] = [j];
+        }
 
-		renderShape2D(CANVAS.sequencepost[0],-1,OFFSCREENCANVAS)
- 		var len = CANVAS.sequencepost.length
-		var p1 = displayTrial(CANVAS.tsequencepost,
-							Array(len).fill(-1),
-							range(0,len-1,1),
-							CANVAS.sequencepost,
-							Array(len).fill(0),
-							Array(len).fill(0)) // dispTrial(time,grid,frame,screen,obj,idx)
-		var num_trials_to_buffer_in_punishperiod = 50
-        var p2 = TQS.generate_trials(num_trials_to_buffer_in_punishperiod*TASK.RSVP)
-		playSound(3);
-		await Promise.all([p1,p2])
-	}//ELSEIF wrong, then timeout
-	//============ (end) DELIVER REWARD/PUNISH ============//
+        playSound(2);
+        renderShape2D(CANVAS.sequencepost[0], -1, OFFSCREENCANVAS);
+        let lenTsequencePost = CANVAS.tsequencepost.length;
+        // displayTrial(time, grid, frame, screen, obj, idx);
+        let p1 = displayTrial(
+          CANVAS.tsequencepost,
+					Array(lenTsequencePost).fill(-1),
+					range(0, lenTsequencePost - 1, 1),
+					CANVAS.sequencepost,
+					Array(lenTsequencePost).fill(0),
+					Array(lenTsequencePost).fill(0)
+        );
+
+        if (ble.connected == false && port.connected == false) {
+          await Promise.all([p1]);
+        } else if (ble.connected == true) {
+          let p2 = writepumpdurationtoBLE(Math.round(ENV.RewardDuration * 1000));
+          await Promise.all([p1, p2]);
+        } else if (port.connected == true) {
+          let p2 = port.writepumpdurationtoUSB(Math.round(ENV.RewardDuration * 1000));
+          await Promise.all([p1, p2]);
+        }
+
+      }
+    } else if (!CURRTRIAL.correct) { // ELSE IF wrong, then timeout (PUNISH)
+      CANVAS.sequencepost[1] = "punish";
+		  CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1] + TASK.PunishTimeOut;
+      frame.shown = [];
+      frame.frames = [];
+      frame.current = 0;
+		  for (let q in CANVAS.sequencepost) {
+        frame.shown[q] = 0;
+        frame.frames[q] = [q];
+      }
+
+      renderShape2D(CANVAS.sequencepost[0], -1, OFFSCREENCANVAS);
+      let lenSequencepost = CANVAS.sequencepost.length
+      // displayTrial(time, grid, frame, screen, obj, idx);
+		  let p1 = displayTrial(
+        CANVAS.tsequencepost,
+				Array(lenSequencepost).fill(-1),
+				range(0, lenSequencepost -1, 1),
+				CANVAS.sequencepost,
+				Array(lenSequencepost).fill(0),
+        Array(lenSequencepost).fill(0),
+      );
+
+      let numTrialsToBufferPunishPeriod = 50;
+      let p2 = TQS.generate_trials(numTrialsToBufferPunishPeriod * TASK.RSVP);
+      playSound(3);
+      await Promise.all([p1, p2]);
+    }
+    //============ (end) DELIVER REWARD/PUNISH ============//
 
 
-//HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    //
-//HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    //
-//HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    //
-	//================= HOUSEKEEPING =================//
-	var ITIstart = performance.now()
+    //HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    //
+    //HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    //
+    //HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    //
+	  //================= HOUSEKEEPING =================//
+    let ITIstart = performance.now();
 
-	// CALIBRATE eye
-	if (FLAGS.trackeye > 0){
-		// Can manually adjust params only when on practice screen
-		// Can automatically calibrate when on test screen
-		if (FLAGS.savedata == 1 && ENV.Eye.calibration == 1){
-				if (CURRTRIAL.fixationtouchevent == 'theld'){
-					ENV.Eye.NCalibPointsTrain += 1
-				}
-				if (ENV.Eye.NCalibPointsTrain == TASK.CalibrateEye){
-					// Run calibration fitting 
-					var calibreturn = runCallibration()
-					ENV.Eye.CalibXTransform = calibreturn.xtform
-					ENV.Eye.CalibYTransform = calibreturn.ytform
-					ENV.Eye.NCalibPoints = calibreturn.n
-					ENV.Eye.CalibType = calibreturn.type
+    // CALIBRATE eye
+    if (FLAGS.trackeye > 0){
+      // Can manually adjust params only when on practice screen
+      // Can automatically calibrate when on test screen
+      if (FLAGS.savedata == 1 && ENV.Eye.calibration == 1){
+          if (CURRTRIAL.fixationtouchevent == 'theld'){
+            ENV.Eye.NCalibPointsTrain += 1
+          }
+          if (ENV.Eye.NCalibPointsTrain == TASK.CalibrateEye){
+            // Run calibration fitting 
+            var calibreturn = runCallibration()
+            ENV.Eye.CalibXTransform = calibreturn.xtform
+            ENV.Eye.CalibYTransform = calibreturn.ytform
+            ENV.Eye.NCalibPoints = calibreturn.n
+            ENV.Eye.CalibType = calibreturn.type
 
-					// Compute GOF
-					ENV.Eye.CalibTrainMSE[0] = compute_mse(calibreturn.predictedx,calibreturn.actualx)
-					ENV.Eye.CalibTrainMSE[1] = compute_mse(calibreturn.predictedy,calibreturn.actualy)
+            // Compute GOF
+            ENV.Eye.CalibTrainMSE[0] = compute_mse(calibreturn.predictedx,calibreturn.actualx)
+            ENV.Eye.CalibTrainMSE[1] = compute_mse(calibreturn.predictedy,calibreturn.actualy)
 
-					// Store calibration
-					saveEyeCalibrationtoFirestore(ENV.Eye.CalibXTransform,ENV.Eye.CalibYTransform,ENV.Eye.CalibType,ENV.Eye.NCalibPointsTrain,ENV.Eye.CalibTrainMSE,ENV.Eye.NCalibPointsTest,ENV.Eye.CalibTestMSE)
+            // Store calibration
+            saveEyeCalibrationtoFirestore(ENV.Eye.CalibXTransform,ENV.Eye.CalibYTransform,ENV.Eye.CalibType,ENV.Eye.NCalibPointsTrain,ENV.Eye.CalibTrainMSE,ENV.Eye.NCalibPointsTest,ENV.Eye.CalibTestMSE)
 
-					ENV.Eye.calibration = 0;
-				}//IF enough points
-		}//IF train eye calibration
-		else if (FLAGS.savedata == 1 && ENV.Eye.calibration == 0){
-			if (CURRTRIAL.fixationtouchevent == 'theld'){
-				ENV.Eye.NCalibPointsTest += 1
-			}//IF held fixation
-			if (ENV.Eye.NCalibPointsTest == TASK.CalibrateEye){
-				//cross-validate on same number of trials used for training
-				ENV.Eye.CalibTestMSE = evaluateCalibration() //GOF test 
+            ENV.Eye.calibration = 0;
+          }//IF enough points
+      }//IF train eye calibration
+      else if (FLAGS.savedata == 1 && ENV.Eye.calibration == 0){
+        if (CURRTRIAL.fixationtouchevent == 'theld'){
+          ENV.Eye.NCalibPointsTest += 1
+        }//IF held fixation
+        if (ENV.Eye.NCalibPointsTest == TASK.CalibrateEye){
+          //cross-validate on same number of trials used for training
+          ENV.Eye.CalibTestMSE = evaluateCalibration() //GOF test 
 
-				// Store calibration
-				saveEyeCalibrationtoFirestore(ENV.Eye.CalibXTransform,ENV.Eye.CalibYTransform,ENV.Eye.CalibType,ENV.Eye.NCalibPointsTrain,ENV.Eye.CalibTrainMSE,ENV.Eye.NCalibPointsTest,ENV.Eye.CalibTestMSE)
-			}//IF enough points
-		}//ELSE test eye calibration
-	}//IF track eye
-	
-	//clear tracker canvas at end of trial
-	if (FLAGS.savedata == 0  || CURRTRIAL.num <= 1){
-		EYETRACKERCANVAS.getContext('2d').clearRect(0,0,EYETRACKERCANVAS.width,EYETRACKERCANVAS.height)
-	}//IF practice screen
+          // Store calibration
+          saveEyeCalibrationtoFirestore(ENV.Eye.CalibXTransform,ENV.Eye.CalibYTransform,ENV.Eye.CalibType,ENV.Eye.NCalibPointsTrain,ENV.Eye.CalibTrainMSE,ENV.Eye.NCalibPointsTest,ENV.Eye.CalibTestMSE)
+        }//IF enough points
+      }//ELSE test eye calibration
+    }//IF track eye
+    
+    //clear tracker canvas at end of trial
+    if (FLAGS.savedata == 0  || CURRTRIAL.num <= 1){
+      EYETRACKERCANVAS.getContext('2d').clearRect(0,0,EYETRACKERCANVAS.width,EYETRACKERCANVAS.height)
+    }//IF practice screen
 
-	CURRTRIAL.lastTrialCompleted = new Date()
+    CURRTRIAL.lastTrialCompleted = new Date()
 
-	// Update EVENTS only if saving data
-	if (FLAGS.savedata == 1){
-		// Update trial tracking variables
-		updateTrialHistory() //appends to running trial history
+    // Update EVENTS only if saving data
+    if (FLAGS.savedata == 1){
+      // Update trial tracking variables
+      updateTrialHistory() //appends to running trial history
 
-		// Run automator
-		if (TASK.Automator !=0){	
-			await automateTask(automator_data, trialhistory);
-		}
+      // Run automator
+      if (TASK.Automator !=0){	
+        await automateTask(automator_data, trialhistory);
+      }
 
-		if (TASK.Agent != "SaveImages"){
-			// Cloud Storage: Save data asynchronously to json
-			saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS);
+      if (TASK.Agent != "SaveImages"){
+        // Cloud Storage: Save data asynchronously to json
+        saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS);
 
-			// Firestore Database: Save data asynchronously to database
-			if (FLAGS.createnewfirestore == 1){
-				saveBehaviorDatatoFirestore(TASK,ENV,CANVAS); //write once
-				pingFirestore() //every 10 seconds, will check for data updates to upload to firestore
-			}//IF new firestore, kick off firestore database writes
+        // Firestore Database: Save data asynchronously to database
+        if (FLAGS.createnewfirestore == 1){
+          saveBehaviorDatatoFirestore(TASK,ENV,CANVAS); //write once
+          pingFirestore() //every 10 seconds, will check for data updates to upload to firestore
+        }//IF new firestore, kick off firestore database writes
 
-      // BigQuery Table
-      // Save display times asynchronously to BigQuery
-      if (CURRTRIAL.num == 0){
-          pingBigQueryDisplayTimesTable() //uploads eyedata to bigquery every 10 seconds        
-      }//IF first trial, kick-off bigquery writes
+        // BigQuery Table
+        // Save display times asynchronously to BigQuery
+        if (CURRTRIAL.num == 0){
+            pingBigQueryDisplayTimesTable() //uploads eyedata to bigquery every 10 seconds        
+        }//IF first trial, kick-off bigquery writes
 
-      // Save eye data asynchronously to BigQuery
-      if (FLAGS.trackeye > 0 && CURRTRIAL.num == 0){
-          pingBigQueryEyeTable() //uploads eyedata to bigquery every 10 seconds        
-      }//IF first trial, kick-off bigquery writes
-		}//IF not saving images, save data
-	}//IF savedata
+        // Save eye data asynchronously to BigQuery
+        if (FLAGS.trackeye > 0 && CURRTRIAL.num == 0){
+            pingBigQueryEyeTable() //uploads eyedata to bigquery every 10 seconds        
+        }//IF first trial, kick-off bigquery writes
+      }//IF not saving images, save data
+    }//IF savedata
 
-	if (FLAGS.need2saveParameters == 1){
-		FLAGS.need2saveParameters = saveParameterstoFirebase(); // Save parameters asynchronously
-	}
+    if (FLAGS.need2saveParameters == 1){
+      FLAGS.need2saveParameters = saveParameterstoFirebase(); // Save parameters asynchronously
+    }
 
-	await checkParameterFileStatusFirebase()
-	if ( (new Date).getDate() != ENV.CurrentDate.getDate() || CURRTRIAL.num == 1000){ //in local time
-		updateEventDataonFirestore(EVENTS);
-		FLAGS.need2loadParameters = 1
-	} //if new day, start new file or reached 1000 trials 
+    await checkParameterFileStatusFirebase()
+    if ( (new Date).getDate() != ENV.CurrentDate.getDate() || CURRTRIAL.num == 1000){ //in local time
+      updateEventDataonFirestore(EVENTS);
+      FLAGS.need2loadParameters = 1
+    } //if new day, start new file or reached 1000 trials 
 
-	rtdbAgentRef.once('value').then(snap => {
-		try {
-			FLAGS.rtdbAgentNumConnections = Object.keys(snap.val()).length;
-		} catch (err) {
-			FLAGS.rtdbAgentNumConnections = 0;
-			console.error(`rtdbAgentRef most likely not yet instantiated: ${err}`);
-		}
-	});
+    rtdbAgentRef.once('value').then(snap => {
+      try {
+        FLAGS.rtdbAgentNumConnections = Object.keys(snap.val()).length;
+      } catch (err) {
+        FLAGS.rtdbAgentNumConnections = 0;
+        console.error(`rtdbAgentRef most likely not yet instantiated: ${err}`);
+      }
+    });
 
-	if (TASK.Agent == "SaveImages" && CURRTRIAL.num >= TQS.samplebag_indices.length-1){
-		return
-	}//IF saved all images
+    if (TASK.Agent == "SaveImages" && CURRTRIAL.num >= TQS.samplebag_indices.length-1){
+      return
+    }//IF saved all images
 
-	//================= (end) HOUSEKEEPING =================//
+    //================= (end) HOUSEKEEPING =================//
 
-	updateHeadsUpDisplay();
-	console.log('END OF TRIAL ', CURRTRIAL.num)
-	CURRTRIAL.num++
-	EVENTS.trialnum = CURRTRIAL.num
+    updateHeadsUpDisplay();
+    console.log('END OF TRIAL ', CURRTRIAL.num)
+    CURRTRIAL.num++
+    EVENTS.trialnum = CURRTRIAL.num
 
-	if (typeof(TASK.InterTrialInterval) != "undefined"){
-		var remainingInterTrialInterval = TASK.InterTrialInterval - (performance.now() - ITIstart)
-		if (remainingInterTrialInterval > 0){
-			await sleep(remainingInterTrialInterval)
-		}
-	}//IF ITI
+    if (typeof(TASK.InterTrialInterval) != "undefined"){
+      var remainingInterTrialInterval = TASK.InterTrialInterval - (performance.now() - ITIstart)
+      if (remainingInterTrialInterval > 0){
+        await sleep(remainingInterTrialInterval)
+      }
+    }//IF ITI
 }
 })();

@@ -639,10 +639,15 @@
       TASK.BackgroundColor2D = '#7F7F7F';
     }
     document.body.style.background = TASK.BackgroundColor2D;
-    //========================(END) 3D SCENE SET-UP =======================//
+    //=====================(END) 3D SCENE SET-UP ====================//
+
+
+
+
+
+
 
     //============ SELECT SAMPLE & TEST IMAGES ============//
-
     let imgSeqLen = (
       (typeof(TASK.NRSVP) == 'undefined' || TASK.NRSVP <= 0) ? 1 : TASK.NRSVP
     );
@@ -1580,7 +1585,7 @@
 				Array(lenTsequencePost).fill(0),
 				Array(lenTsequencePost).fill(0),
       );
-    } else if (CURRTRIAL.correct) { // ELSE IF correct, then reward
+    } else if (CURRTRIAL.correct) { // ELSE IF correct, then REWARD
       CANVAS.sequencepost[1] = "reward";
       CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1] + ENV.RewardDuration * 1000;
       
