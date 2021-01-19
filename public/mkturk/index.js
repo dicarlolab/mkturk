@@ -1221,9 +1221,9 @@ function skipHardwareDevice(event) {
         frame.frames = [];
         frame.current = 0;
         
-        for (let i = 0; i < CURRTRIAL.sequencegridindex.length; i++) {
-          for (let j = 0; j < CURRTRIAL.sequencegridindex[i].length; j++) {
-            if (CURRTRIAL.sequencetaskscreen == 'Sample') { // IF sample
+        for (let i = 0; i <= CURRTRIAL.sequencegridindex.length; i++) {
+          for (let j = 0; j <= CURRTRIAL.sequencegridindex[i].length; j++) {
+            if (CURRTRIAL.sequencetaskscreen[i] == 'Sample') { // IF sample
               // Set location to fixation
               CURRTRIAL.sequencegridindex[i][j] = CURRTRIAL.fixationgridindex;
 

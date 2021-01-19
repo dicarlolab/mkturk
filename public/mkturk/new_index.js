@@ -872,8 +872,8 @@
         frame.frames = [];
         frame.current = 0;
         
-        for (let i = 0; i < CURRTRIAL.sequencegridindex.length; i++) {
-          for (let j = 0; j < CURRTRIAL.sequencegridindex[i].length; j++) {
+        for (let i = 0; i <= CURRTRIAL.sequencegridindex.length - 1; i++) {
+          for (let j = 0; j <= CURRTRIAL.sequencegridindex[i].length - 1; j++) {
             if (CURRTRIAL.sequencetaskscreen[i] == 'Sample') { // IF sample
               // Set location to fixation
               CURRTRIAL.sequencegridindex[i][j] = CURRTRIAL.fixationgridindex;
