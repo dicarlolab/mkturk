@@ -1529,6 +1529,7 @@ function skipHardwareDevice(event) {
 
         // FOR i remaining frames after Sample
         for (let i = idxArr[idxArr.length - 1] + 1; i < frame.frames.length; i++) {
+          console.log('keepsampleon FRAME:', frame);
           // Append last Sample scene rendered
           frame.frames[i].push(idxArr[idxArr.length - 1]);
         }
@@ -1639,7 +1640,7 @@ function skipHardwareDevice(event) {
           || CURRTRIAL.sequencetaskscreen[f] != CURRTRIAL.sequencetaskscreen[f - 1]
           || CURRTRIAL.sequenceclip[f] != CURRTRIAL.sequenceclip[f - 1]
         ) {
-          CURRTRIAL.tsequencedesiredclip.push(CURRTRIAL.tsequence[f]);
+          CURRTRIAL.tsequencedesiredclip.push(CURRTRIAL.tsequence[f])
           if (f > CURRTRIAL.tsequenceactual.length - 1) { // IF clip not shown
             CURRTRIAL.tsequenceactualclip.push(-1);
           } else {
@@ -1704,7 +1705,7 @@ function skipHardwareDevice(event) {
         let y;
 
         if (TASK.Species == 'model') {
-          let currchoice = 0;
+          currchoice = 0;
           x = 0;
           y = 0;
 

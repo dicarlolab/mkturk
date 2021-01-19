@@ -1186,6 +1186,7 @@
 
         // FOR i remaining frames after Sample
         for (let i = idxArr[idxArr.length - 1] + 1; i < frame.frames.length; i++) {
+          console.log('keepsampleon FRAME:', frame);
           // Append last Sample scene rendered
           frame.frames[i].push(idxArr[idxArr.length - 1]);
         }
@@ -1561,8 +1562,8 @@
       CANVAS.sequencepost[1] = "blank";
 		  CANVAS.tsequencepost[2] = 2 * CANVAS.tsequencepost[1];
       frame.shown = [];
-      frame.frames=[];
-      frame.current=0;
+      frame.frames = [];
+      frame.current = 0;
 
       for (let q in CANVAS.sequencepost) {
         frame.shown[q] = 0;
