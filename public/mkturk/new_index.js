@@ -874,7 +874,7 @@
         
         for (let i = 0; i < CURRTRIAL.sequencegridindex.length; i++) {
           for (let j = 0; j < CURRTRIAL.sequencegridindex[i].length; j++) {
-            if (CURRTRIAL.sequencetaskscreen == 'Sample') { // IF sample
+            if (CURRTRIAL.sequencetaskscreen[i] == 'Sample') { // IF sample
               // Set location to fixation
               CURRTRIAL.sequencegridindex[i][j] = CURRTRIAL.fixationgridindex;
 
@@ -924,11 +924,9 @@
       //========= AWAIT HOLD FIXATION TOUCH =========//
       if (ENV.FixationWindowRadius > 0) { // IF FixationWindow, then override object size
         // TODO: contain the scope of funcreturn to each file.
-        funcreturn = (
-          getFixationWindowBoundingBox(
-            CURRTRIAL.fixationgridindex,
-            ENV.FixationWindowRadius
-          )
+        funcreturn = getFixationWindowBoundingBox(
+          CURRTRIAL.fixationgridindex,
+          ENV.FixationWindowRadius
         );
         boundingBoxesFixation.x[0] = funcreturn[0];
         boundingBoxesFixation.y[0] = funcreturn[1];
@@ -1153,8 +1151,8 @@
         if (TASK.FixationGridIndex < 0) { // IF moving fixation, use its grid location for sample
           CURRTRIAL.samplegridindex = CURRTRIAL.fixationgridindex;
         } else { // ELSE use random grid location for sample
-          CURRTRIAL.samplegridindex = (
-            Math.floor(ENV.XGridCenter.length * Math.random())
+          CURRTRIAL.samplegridindex = Math.floor(
+            ENV.XGridCenter.length * Math.random()
           );
         }
       }
@@ -1169,9 +1167,9 @@
       }
 
       logEVENTS("SampleGridIndex", CURRTRIAL.samplegridindex, "trialseries");
-      frame.shown=[];
-      frame.frames=[];
-      frame.current=0;
+      frame.shown = [];
+      frame.frames = [];
+      frame.current = 0;
       for (let q in CURRTRIAL.sequencetaskscreen) {
         frame.shown[q] = 0;
         frame.frames[q] = [q];
@@ -1290,13 +1288,13 @@
       CURRTRIAL.tsequencedesiredclip = [];
       CURRTRIAL.tsequenceactualclip = [];
 
-      // FOR i frames
-      for (let i = 0; i < CURRTRIAL.sequencetaskscreen.length; f++) {
+      // FOR f frames
+      for (let f = 0; f < CURRTRIAL.sequencetaskscreen.length; f++) {
         // IF new clip || new taskscreen within that clip
         if (
           f==0
-          || CURRTRIAL.sequencetaskscreen[f] != CURRTRIAL.sequencetaskscreen[f-1]
-          || CURRTRIAL.sequenceclip[f] != CURRTRIAL.sequenceclip[f-1]
+          || CURRTRIAL.sequencetaskscreen[f] != CURRTRIAL.sequencetaskscreen[f - 1]
+          || CURRTRIAL.sequenceclip[f] != CURRTRIAL.sequenceclip[f - 1]
         ) {
           CURRTRIAL.tsequencedesiredclip.push(CURRTRIAL.tsequence[f]);
           if (f > CURRTRIAL.tsequenceactual.length - 1) { // IF clip not shown
@@ -1357,8 +1355,8 @@
 
         if (TASK.Species == 'model') {
           let currchoice = 0;
-          let x = 0;
-          let y = 0;
+          x = 0;
+          y = 0;
 
           if (CURRTRIAL.num > TASK.ModelConfig.trainIdx) {
             let yPred = mkm.model.predict(mkm.dataObj.xTest.reshape([1, 2048]));
@@ -1380,15 +1378,20 @@
             } else if (TASK.ModelConfig.saveImages == 2) {
               let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
               let cvsData = mkm.cvs.toDataURL();
-              if (currchoice != CURRTRIAL.correctitem) {
-                let path = (
-                  `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_incorrect.png`
-                );
-              } else if (currchoice == CURRTRIAL.correctitem) {
-                let path = (
-                  `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_correct.png`
-                );
-              }
+              let path = (
+                (currchoice == CURRTRIAL.correctitem) 
+                ? `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_correct.png`
+                : `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_incorrect.png`
+              );
+              // if (currchoice != CURRTRIAL.correctitem) {
+              //   let path = (
+              //     `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_incorrect.png`
+              //   );
+              // } else if (currchoice == CURRTRIAL.correctitem) {
+              //   let path = (
+              //     `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_correct.png`
+              //   );
+              // }
               mkmodelsRef.child(path).putString(cvsData, 'data_url');
             }
           }

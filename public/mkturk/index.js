@@ -1032,600 +1032,822 @@ function skipHardwareDevice(event) {
 
     //EXPAND SAMPLE (for rsvp & movies)
     //Start with blank for max(100,SampleOFF), then append SampleON+blank (eg, blank,Sample,blank,Sample,blank)
-    for (var i=0; i<=CURRTRIAL.sample_scenebag_index.length-1; i++){
-        var t0=CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
-        var sampleon = chooseArrayElement(IMAGES["Sample"][CURRTRIAL.sample_scenebag_label[i][0]].durationMS, CURRTRIAL.sample_scenebag_index[i][0],0)
+    //EXPAND SAMPLE (for rsvp & movies)
+    //Start with blank for max(100,SampleOFF), then append SampleON+blank (eg, blank,Sample,blank,Sample,blank)
+    for (let i = 0; i < CURRTRIAL.sample_scenebag_index.length; i++) { // FOR i RSVP Sample
+      let t0 = CURRTRIAL.tsequence[CURRTRIAL.tsequence.length - 1];
+      let sampleon = (
+        chooseArrayElement(
+          IMAGES['Sample'][CURRTRIAL.sample_scenebag_label[i][0]].durationMS,
+          CURRTRIAL.sample_scenebag_index[i][0],
+          0
+        )
+      );
 
-        //Timing: blankdurationpre, sampleon, framerate
-        if (i==0){
-            var blankdurationpre = Math.max(100,TASK.SampleOFF)
-        }//if first blank, prepend at least 100ms
-        else{
-            var blankdurationpre = TASK.SampleOFF
-        }
+      // Timing: blankdurationpre, sampleon, framerate
+      let blankdurationpre = (
+        (i == 0) ? Math.max(100, TASK.SampleOFF) : TASK.SampleOFF
+      );
 
-        //Create Movie Sequence
-        [movie_sequence, movie_tsequence, movie_framenum] = 
-        createMovieSeq("Sample",blankdurationpre, sampleon, TASK.SampleOFF, ENV.FrameRateMovie)
-        movie_tsequence = movie_tsequence.map(function (a){return a + t0}) //shift clip's frames to absolute position in rsvp sequence
+      // Create Movie Sequence
+      [movie_sequence, movie_tsequence, movie_framenum] = (
+        createMovieSeq('Sample', blankdurationpre, sampleon, TASK.SampleOFF, ENV.FrameRateMovie)
+      );
+      movie_tsequence = (
+        movie_tsequence.map((a) => {
+          return a + t0;
+        })
+      );
 
-        CURRTRIAL.tsequence.push(...movie_tsequence)
-        CURRTRIAL.sequencegridindex.push(...Array(movie_tsequence.length).fill([TASK.SampleGridIndex]))
+      CURRTRIAL.tsequence.push(...movie_tsequence);
+      CURRTRIAL.sequencegridindex.push(
+        ...Array(movie_tsequence.length).fill([TASK.SampleGridIndex])
+      );
 
-        CURRTRIAL.sequenceclip.push(...Array(movie_tsequence.length).fill(i))
-        CURRTRIAL.sequenceframe.push(...movie_framenum)
-        CURRTRIAL.sequencetaskscreen.push(...movie_sequence)
-        CURRTRIAL.sequencelabel.push(...Array(movie_tsequence.length).fill(CURRTRIAL.sample_scenebag_label[i]))
-        CURRTRIAL.sequenceindex.push(...Array(movie_tsequence.length).fill(CURRTRIAL.sample_scenebag_index[i]))
-    }//FOR i RSVP Sample
+      CURRTRIAL.sequenceclip.push(
+        ...Array(movie_tsequence.length).fill(i)
+      );
 
-    //APPEND TEST OR CHOICE
-    if (TASK.NRSVP <= 0){
-        var t0 = CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
-        var teston = chooseArrayElement(IMAGES["Test"][CURRTRIAL.test_scenebag_labels[0][0]].durationMS, CURRTRIAL.test_scenebag_indices[0][0],0)
+      CURRTRIAL.sequenceframe.push(...movie_framenum);
+      CURRTRIAL.sequencetaskscreen.push(...movie_sequence);
+      CURRTRIAL.sequencelabel.push(
+        ...Array(movie_tsequence.length).fill(CURRTRIAL.sample_scenebag_label[i])
+      );
 
-if (typeof(teston) == "undefined"){
-    console.log("Without this if, then print-to-console code, teston is undefined. Not clear why this strange behavior happens. Something to do with chooseArrayElement returning in time.")
-}
-        [movie_sequence, movie_tsequence, movie_framenum] = 
-            createMovieSeq("Test",TASK.SampleOFF, teston, TASK.TestOFF, ENV.FrameRateMovie)
-        movie_tsequence = movie_tsequence.map(function (a){return a + t0}) //shift frames to absolute position in sequence
+      CURRTRIAL.sequenceindex.push(
+        ...Array(movie_tsequence.length).fill(CURRTRIAL.sample_scenebag_index[i])
+      );
+    }
 
-        CURRTRIAL.tsequence.push(...movie_tsequence)
-        CURRTRIAL.sequencegridindex.push(...Array(movie_tsequence.length).fill(TASK.TestGridIndex))
+    // APPEND TEST OR CHOICE
+    if (TASK.NRSVP <= 0) { // IF !RSVP, then show test/choice screen
+      let t0 = CURRTRIAL.tsequence[CURRTRIAL.tsequence.length - 1];
+      let teston = (
+        chooseArrayElement(
+          IMAGES["Test"][CURRTRIAL.test_scenebag_labels[0][0]].durationMS,
+          CURRTRIAL.test_scenebag_indices[0][0],
+          0,
+        )
+      );
 
-        CURRTRIAL.sequenceclip.push(...Array(movie_tsequence.length).fill(0))
-        CURRTRIAL.sequenceframe.push(...movie_framenum)
-        CURRTRIAL.sequencetaskscreen.push(...movie_sequence)
-        CURRTRIAL.sequencelabel.push(...Array(movie_tsequence.length).fill(CURRTRIAL.test_scenebag_labels[0]))
-        CURRTRIAL.sequenceindex.push(...Array(movie_tsequence.length).fill(CURRTRIAL.test_scenebag_indices[0]))
+      if (typeof(teston) == 'undefined') {
+        console.log('Without this if, then print-to-console code, teston is undefined. Not clear why this strange behavior happens. Something to do with chooseArrayElement returning in time.');
+      }
 
-        //Append choice if needed
-        if (TASK.SameDifferent > 0){
-            var t0 = CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
-            if (TASK.TestOFF > 0){
-                var seq=["blank","choice"]
-                var tseq=[ t0,t0+TASK.TestOFF ];
-            }//ELSEIF TestOFF
-            else if (TASK.TestOFF <= 0){
-                var seq=["choice"]
-                var tseq=[ t0 ];
-            }//ELSEIF no TestOFF
-            CURRTRIAL.tsequence.push(...tseq)
-            CURRTRIAL.sequencegridindex.push(...Array(tseq.length).fill(TASK.ChoiceGridIndex))
+      [movie_sequence, movie_tsequence, movie_framenum] = (
+        createMovieSeq('Test', TASK.SampleOFF, teston, TASK.TestOFF, ENV.FrameRateMovie)
+      );
+      movie_tsequence = (
+        movie_tsequence.map((a) => {
+          return a + t0;
+        })
+      );
 
-            CURRTRIAL.sequenceclip.push(...Array(tseq.length).fill(0))
-            CURRTRIAL.sequenceframe.push(...Array(tseq.length).fill(0))
-            CURRTRIAL.sequencetaskscreen.push(...seq)
-            CURRTRIAL.sequencelabel.push(...Array(tseq.length).fill([0]))
-            CURRTRIAL.sequenceindex.push(...Array(tseq.length).fill([0]))
-        }//IF Same-Different, show test & choice
-    }//IF !RSVP, then show test/choice screen
-//============(END) SET UP SAMPLE & TEST SEQUENCE ============//
+      CURRTRIAL.tsequence.push(...movie_tsequence);
+      CURRTRIAL.sequencegridindex.push(
+        ...Array(movie_tsequence.length).fill(TASK.TestGridIndex)
+      );
 
+      CURRTRIAL.sequenceclip.push(
+        ...Array(movie_tsequence.length).fill(0)
+      );
 
-	//================= RFID check =================//
-	// If no matching read in the last TASK.CheckRFID seconds, wait for matching read
-	// (kicks-them-off model where they can work as long as reading, but then get kicked off within TASK.CheckRFID seconds if they are the wrong agent or no reads)
-	if (TASK.CheckRFID > 0 && ENV.AgentRFID != "XX" && FLAGS.savedata == 1){
-		if (port.connected == false){
-			console.log('NO USB DEVICE CONNECTED: cannot check RFID!!')
-		}//IF !connected
-		else if (port.connected == true){
-			var nreads = Object.keys(EVENTS['timeseries']['RFIDTag']).length
-	    	if ( nreads>0 && EVENTS['timeseries']['RFIDTag'][nreads-1][2] == ENV.AgentRFID && 
-                    Date.now() - new Date(EVENTS['timeseries']['RFIDTag'][nreads-1][1]) < TASK.CheckRFID
-                ){
-	    		// RFID checks out
-	    	}
-	    	else{ //wait for a recent rfid read before proceeding with next trial
-				await rfid_promise(ENV.AgentRFID,TASK.CheckRFID)
-	    	}
-		}//ELSE connected
-	}//IF CheckRFID
-	//================= (end) RFID check =================//
+      CURRTRIAL.sequenceframe.push(...movie_framenum);
+      CURRTRIAL.sequencetaskscreen.push(...movie_sequence);
+      CURRTRIAL.sequencelabel.push(
+        ...Array(movie_tsequence.length).fill(CURRTRIAL.test_scenebag_labels[0])
+      );
 
+      CURRTRIAL.sequenceindex.push(
+        ...Array(movie_tsequence.length).fill(CURRTRIAL.test_scenebag_indices[0])
+      );
 
-// FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   //
-// FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   //
-// FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   //
-//============ WHILE RUN FIXATION SCREEN ============//
-	FLAGS.waitingforTouches = TASK.NFixations
-	if (TASK.RewardStage == 0){
-		FLAGS.punishOutsideTouch = 1		
-	}
-	CURRTRIAL.allfixationxyt = []
-	while (FLAGS.waitingforTouches > 0){
-		// Choose fixation grid index at random
-		if (TASK.FixationGridIndex > 0){
-            CURRTRIAL.fixationgridindex = TASK.FixationGridIndex;
-		}
-		else if (TASK.FixationGridIndex < 0){
-            CURRTRIAL.fixationgridindex = Math.floor((ENV.XGridCenter.length)*Math.random()); 
-		}
-		logEVENTS("FixationGridIndex",CURRTRIAL.fixationgridindex,"trialseries")
-
-        if (TASK.FixationUsesSample <= 0){
-            // Render fixation screen 
-            if (TASK.Species == "macaque" || TASK.Species == "human"){
-                ENV.FixationColor = "white";
-            }
-            else if (TASK.Species == "marmoset"){
-                ENV.FixationColor = "blue";
-            }  
-            frame.shown=[]; frame.frames=[]; frame.current=0;
-            for (var q in CANVAS.sequencepre){ frame.shown[q]=0; frame.frames[q]=[q]}; 
-        }//IF !Sample, show fixation dot
-		else if (TASK.FixationUsesSample > 0){
-            //Update grid location of sample to current fixation grid index
-            frame.shown = []; frame.frames=[]; frame.current=0
-            for (var i=0; i<=CURRTRIAL.sequencegridindex.length-1; i++){
-                for (var j=0; j<=CURRTRIAL.sequencegridindex[i].length-1; j++){
-                    if (CURRTRIAL.sequencetaskscreen[i] == "Sample"){
-
-						//Set location to fixation
-						CURRTRIAL.sequencegridindex[i][j] = CURRTRIAL.fixationgridindex
-                        
-                        if (CURRTRIAL.sequenceclip[i] == 0 && j==0){
-                            frame.shown.push(0)
-                            frame.frames.push([i])
-                        }//IF first clip, add frame
-                    }//IF Sample
-                }//FOR j display items
-            }//FOR i frames
-        }//IF Sample, show first image/movie
-
-		// Start timer for this fixation render trial.
-		CURRTRIAL.starttime=Date.now() - ENV.CurrentDate.valueOf();
-		logEVENTS("StartTime",CURRTRIAL.starttime,"trialseries")
-
-		//========= AWAIT SHOW FIXATION =========//
-		// todo: move to appropriate location
-		if (TASK.Species == 'marmoset' || TASK.Species == 'model'){
-			playSound(0)
-		}
-
-        if (TASK.FixationUsesSample <= 0){
-            await displayTrial(CANVAS.tsequencepre,[CURRTRIAL.fixationgridindex],[0],
-                         CANVAS.sequencepre,[0],[0]) // dispTrial(time,grid,frame,screen,obj,idx)            
-        }//IF !Sample, show fixation dot
-        else if (TASK.FixationUsesSample > 0){
-           displayTrial(CURRTRIAL.tsequence, CURRTRIAL.sequencegridindex, CURRTRIAL.sequenceframe,
-                    CURRTRIAL.sequencetaskscreen, CURRTRIAL.sequencelabel, CURRTRIAL.sequenceindex)
-			await moviestart_promise()
-        }//ELSE Sample, show image/movie
-
-		audiocontext.suspend()
-
-		//========= AWAIT HOLD FIXATION TOUCH =========//
-        if (ENV.FixationWindowRadius > 0){
-            funcreturn = getFixationWindowBoundingBox(CURRTRIAL.fixationgridindex,ENV.FixationWindowRadius)
-            boundingBoxesFixation.x[0] = funcreturn[0];
-            boundingBoxesFixation.y[0] = funcreturn[1];
-        }//IF fixationWindow, then override object size
-        else if (TASK.FixationUsesSample > 0 && ENV.FixationWindowRadius <= 0){
-            boundingBoxesFixation = boundingBoxesChoice3D
-        }//alternative fixation windows
-
-		if (FLAGS.stressTest == 1){
-			if (TASK.Species == 'model') {
-				// console.log('MODEL:', CURRTRIAL.num);
-				// console.log('Model:',EVENTS['trialseries']['Response'].length);
-				let ctx = mkm.cvs.getContext('2d');
-				ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
-				
-				var touchhold_return = {type: "theld"};
-				// console.log('boundingBoxesFixation:', boundingBoxesFixation);
-				let sxOffset = (
-					IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
-					* ENV.PhysicalPPI / ENV.ScreenRatio
-				);
-				let sx = (
-					boundingBoxesFixation.x[0][1]
-					+ boundingBoxesFixation.x[0][0]
-					- sxOffset
-				);
-				sx = Math.round(sx);
-
-				let syOffset = (
-					IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
-					* ENV.PhysicalPPI / ENV.ScreenRatio - ENV.FixationWindowRadius
-				);
-				let sy = (
-					(boundingBoxesFixation.y[0][1] + boundingBoxesFixation.y[0][0]) 
-					/ ENV.ScreenRatio 
-					- syOffset
-				);
-				sy = Math.round(sy);
-
-				let sHeight = Math.round(
-					IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
-					* ENV.PhysicalPPI
-				);
-				let sWidth = sHeight;
-				
-				ctx.drawImage(VISIBLECANVAS, sx, sy, sWidth, sHeight, 0, 0, 224, 224);
-				let tensor = mkm.normalizePixelValues(mkm.cvs);
-				let feature = mkm.featureExtractor.execute(tensor);
-				feature = feature.reshape([2048]);
-				if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
-					mkm.dataObj.xTrain.push(feature);
-					if (CURRTRIAL.correctitem == 0) {
-						mkm.dataObj.yTrain.push([1, 0]);
-					} else if (CURRTRIAL.correctitem == 1) {
-						mkm.dataObj.yTrain.push([0, 1]);
-					}
-				} else {
-					mkm.dataObj.xTest = feature;
-					mkm.dataObj.yTest = CURRTRIAL.correctitem;
-				}
-
-				if (CURRTRIAL.num == TASK.ModelConfig.trainIdx) {
-					// console.log('xTrain len:', mkm.dataObj.xTrain.length);
-					let xTrain = tf.data.array(mkm.dataObj.xTrain);
-					let yTrain = tf.data.array(mkm.dataObj.yTrain);
-					let trainDataset = tf.data.zip({xs: xTrain, ys: yTrain}).batch(4).shuffle(4);
-
-					const beginMs = performance.now();
-					await mkm.model.fitDataset(trainDataset, {
-						epochs: TASK.ModelConfig.epochs,
-						callbacks: {
-							onEpochEnd: async(epoch, logs) => {
-								const secPerEpoch = (
-									(performance.now() - beginMs) / (1000 * (epoch + 1))
-								);
-								console.log('Training model ... Approx. ' + `${secPerEpoch.toFixed(4)} sec/epoch`);
-								console.log('logs:', logs);
-							}
-						}
-					});
-				}
-				
-				// let storageRef = storage.ref();
-				// let cvsData = cvs.toDataURL();
-				// storageRef.child('mkturkfiles/mkmodels/cvsdata.png').putString(cvsData, 'data_url');
-
-
-				var x = boundingBoxesFixation.x[0][0] + Math.round(Math.random()*(boundingBoxesFixation.x[0][1] - boundingBoxesFixation.x[0][0]))
-				var y = boundingBoxesFixation.y[0][0] + Math.round(Math.random()*(boundingBoxesFixation.y[0][1] - boundingBoxesFixation.y[0][0]))
-				touchhold_return.cxyt = [0,x,y,Date.now() - ENV.CurrentDate.valueOf()];
-				FLAGS.waitingforTouches--;
-			} else {
-				var touchhold_return = {type: "theld"}
-				var x = boundingBoxesFixation.x[0][0] + Math.round(Math.random()*(boundingBoxesFixation.x[0][1] - boundingBoxesFixation.x[0][0]))
-				var y = boundingBoxesFixation.y[0][0] + Math.round(Math.random()*(boundingBoxesFixation.y[0][1] - boundingBoxesFixation.y[0][0]))
-				touchhold_return.cxyt = [0,x,y,Date.now() - ENV.CurrentDate.valueOf()]
-				FLAGS.waitingforTouches--	
-			}
-		}//IF automated stress test
-		else {
-      FLAGS.acquiredTouch = 0;
-      var p1 = hold_promise(TASK.FixationDuration,boundingBoxesFixation,FLAGS.punishOutsideTouch);
-			var p2 = choiceTimeOut(TASK.FixationTimeOut);
-			var touchhold_return = await Promise.race([p1,p2]);
-		}//ELSE await fixation hold
-
-		if (FLAGS.movieplaying==1){
-			//So that sample movie does not continue playing after fixation acquired
-			frame.current = frame.shown.length-1
-			frame.shown[frame.current] = 1
-			await moviefinish_promise()
-		}//IF movie playing
-
-		CURRTRIAL.fixationtouchevent = touchhold_return.type
-		CURRTRIAL.fixationxyt = [touchhold_return.cxyt[1], touchhold_return.cxyt[2], touchhold_return.cxyt[3]]
-		CURRTRIAL.allfixationxyt[TASK.NFixations - FLAGS.waitingforTouches - 1] = CURRTRIAL.fixationxyt
-
-		logEVENTS("FixationTouchEvent",CURRTRIAL.fixationtouchevent,"trialseries")
-		logEVENTS("FixationXYT",CURRTRIAL.fixationxyt,"trialseries")
-
-		if (CURRTRIAL.fixationtouchevent == "theld"){
-			if (TASK.RewardStage == 0 && FLAGS.waitingforTouches == 0){
-				CURRTRIAL.response = 1
-                CURRTRIAL.correctitem = 1
-				logEVENTS("Response",CURRTRIAL.response,"trialseries")
-			}
-		}//IF held fixaton & fixation task, count as correct
-		else if (TASK.RewardStage == 0 && CURRTRIAL.fixationtouchevent == "tbroken"){
-			CURRTRIAL.response = 0
-            CURRTRIAL.correctitem = 1
-			FLAGS.waitingforTouches = 0 //exit loop
-			logEVENTS("Response",CURRTRIAL.response,"trialseries")
-		}//IF broke fixation & fixation task, count as incorrect
-		else if ( (CURRTRIAL.fixationtouchevent == "tbroken" && TASK.RewardStage == 1)
-              || (CURRTRIAL.fixationtouchevent == "TimeOut")){
-        }//IF timed out OR dms task, ok if touched outside, just wait for touch inside fixation area
-
-		//========= AWAIT CLEAR FIXATION =========//
-		for (var q in CANVAS.sequenceblank){frame.shown[q]=0; frame.frames[q]=[q] }
-		frame.current=0;
-		if (FLAGS.waitingforTouches > 0){
-			await displayTrial(CANVAS.tsequenceblank,[-1,-1],[0,1],CANVAS.sequenceblank,[0,0],[0,0])
-		}//blank out screen
-	}//WHILE waiting for NFixations
-	//============ (end) WHILE RUN FIXATION SCREEN ============//
-
-
-//SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    //
-//SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    //
-//SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    //
-	//============== AWAIT SHOW SAMPLE THEN TEST ==============//
-	if (TASK.RewardStage === 1){
-
-        //Set where to display
-        if (TASK.SampleGridIndex > 0){
-          CURRTRIAL.samplegridindex = TASK.SampleGridIndex;
-        }//IF fixed sample location
-        else if (TASK.SampleGridIndex < 0){
-          if (TASK.FixationGridIndex < 0){
-              CURRTRIAL.samplegridindex = CURRTRIAL.fixationgridindex
-          }//IF moving fixation, use its grid location for sample
-          else {
-              CURRTRIAL.samplegridindex = Math.floor((ENV.XGridCenter.length)*Math.random()); 
-          }//ELSE use random grid location for sample
-        }//ELSE IF random sample location
-
-		//Update grid location of each Sample frame
-		for (var i=0; i<=CURRTRIAL.sequencegridindex.length-1; i++){
-			for (var j=0; j<=CURRTRIAL.sequencegridindex[i].length-1; j++){
-				if (CURRTRIAL.sequencetaskscreen[i] == "Sample"){
-					CURRTRIAL.sequencegridindex[i][j] = CURRTRIAL.samplegridindex
-				}//IF Sample
-			}//FOR j display items
-		}//FOR i frames
+      // Append choice if needed
+      if (TASK.SameDifferent > 0) { // IF Same-Different, show test & choice
+        let t0 = CURRTRIAL.tsequence[CURRTRIAL.tsequence.length - 1];
+        let seq;
+        let tseq;
         
-        logEVENTS("SampleGridIndex",CURRTRIAL.samplegridindex,"trialseries")
-
-        frame.shown=[]
-        frame.frames=[]
-        frame.current=0
-        for (var q in CURRTRIAL.sequencetaskscreen){
-            frame.shown[q]=0
-            frame.frames[q]=[q]
-        }//FOR q frames
-
-        //Add KeepSampleON & KeepTestON
-        if (TASK.KeepSampleON == 1){
-            var indices = []
-            var idx = CURRTRIAL.sequencetaskscreen.indexOf("Sample");
-            while (idx != -1) {
-                indices.push(idx);
-                idx = CURRTRIAL.sequencetaskscreen.indexOf("Sample", idx + 1);
-            }//WHILE
-            for (var i=indices[indices.length-1]+1; i<=frame.frames.length-1; i++){
-                frame.frames[i].push(indices[indices.length-1]) //Append last Sample scene rendered
-            }//FOR i remaining frames after Sample
-        }//IF KeepSampleON
-
-        if (TASK.KeepTestON == 1 && TASK.SameDifferent > 0){
-            var indices = []
-            var idx = CURRTRIAL.sequencetaskscreen.indexOf("Test");
-            while (idx != -1) {
-                indices.push(idx);
-                idx = CURRTRIAL.sequencetaskscreen.indexOf("Test", idx + 1);
-            }//WHILE
-            for (var i=indices[indices.length-1]+1; i<=frame.frames.length-1; i++){
-                frame.frames[i].push(indices[indices.length-1]) //Append last Test scene rendered
-            }//FOR i remaining frames after Test
-        }//IF KeepSampleON
-
-        //Display Sample & Test/Choice
-        if (TASK.NRSVP>0 && TASK.FixationWindowSizeInches>0){
-            funcreturn = getFixationWindowBoundingBox(CURRTRIAL.samplegridindex,ENV.FixationWindowRadius)
-            boundingBoxesSampleFixation.x[0] = funcreturn[0]
-            boundingBoxesSampleFixation.y[0] = funcreturn[1]
-            FLAGS.punishOutsideTouch = 1
-            FLAGS.waitingforTouches = 1
-            FLAGS.acquiredTouch = 1;
-            if (FLAGS.trackeye){
-              ENV.Eye.EventType = "eyemove"
-            }//IF trackeye
-            var p1 = hold_promise(0,boundingBoxesSampleFixation,FLAGS.punishOutsideTouch)
-            var p2 = displayTrial(CURRTRIAL.tsequence, CURRTRIAL.sequencegridindex, CURRTRIAL.sequenceframe, CURRTRIAL.sequencetaskscreen, CURRTRIAL.sequencelabel, CURRTRIAL.sequenceindex)
-            CURRTRIAL.samplestarttime=Date.now() - ENV.CurrentDate.valueOf();
-            CURRTRIAL.samplestarttime_string = new Date(Date.now()).toJSON()
-            var race_return = await Promise.race([p1,p2])
-            FLAGS.acquiredTouch = 0;
-            FLAGS.waitingforTouches = 0
-
-			if (FLAGS.movieplaying==1){
-				//So that sample movie does not continue playing after fixation broken
-				frame.current = frame.shown.length-1
-				frame.shown[frame.current] = 1
-				await moviefinish_promise()
-			}//IF movie playing
-
-            if (FLAGS.trackeye > 0){
-                ENV.Eye.EventType = "eyestart" //Reset eye state
-            }//IF TrackEye
-
-            if (typeof(race_return.type) == "undefined"){
-                CURRTRIAL.samplefixationtouchevent = 'theld'
-                CURRTRIAL.samplefixationxyt = [0,0,Date.now() - ENV.CurrentDate.valueOf()]
-            }//IF held samplefixation
-            else{
-                CURRTRIAL.samplefixationtouchevent = race_return.type
-                CURRTRIAL.samplefixationxyt = [race_return.cxyt[1], race_return.cxyt[2], race_return.cxyt[3]]
-            }//ELSE broke samplefixation
-        }//IF RSVP, hold sample fixation
-        else{
-			boundingBoxesChoice3D = {'x':[],'y':[]} //determined on the fly during display
-	        CURRTRIAL.samplefixationtouchevent = ''
-            CURRTRIAL.samplefixationxyt = []
-            CURRTRIAL.samplestarttime=Date.now() - ENV.CurrentDate.valueOf();
-            CURRTRIAL.samplestarttime_string = new Date(Date.now()).toJSON()            
-			await displayTrial(CURRTRIAL.tsequence, CURRTRIAL.sequencegridindex, CURRTRIAL.sequenceframe,
-								CURRTRIAL.sequencetaskscreen, CURRTRIAL.sequencelabel, CURRTRIAL.sequenceindex)
-        }//ELSE !RSVP, no fixation hold
-        logEVENTS("SampleFixationTouchEvent",CURRTRIAL.samplefixationtouchevent,"trialseries")
-        logEVENTS("SampleFixationXYT",CURRTRIAL.samplefixationxyt,"trialseries")
-
-        //Store timing of clip presentations
-        CURRTRIAL.tsequencedesiredclip = []
-        CURRTRIAL.tsequenceactualclip = []
-        for (var f=0; f<=CURRTRIAL.sequencetaskscreen.length-1; f++){
-            if (f==0 || CURRTRIAL.sequencetaskscreen[f] != CURRTRIAL.sequencetaskscreen[f-1] || CURRTRIAL.sequenceclip[f] != CURRTRIAL.sequenceclip[f-1])
-            {               	
-               	CURRTRIAL.tsequencedesiredclip.push(CURRTRIAL.tsequence[f])
-                if (f > CURRTRIAL.tsequenceactual.length-1){
-                    CURRTRIAL.tsequenceactualclip.push(-1)
-                }//IF clip not shown
-                else{
-                    CURRTRIAL.tsequenceactualclip.push(CURRTRIAL.tsequenceactual[f])
-                }//ELSE clip shown
-            }//IF new clip || new taskscreen within that clip
-        }//FOR f frames
-    	logEVENTS("TSequenceDesiredClip",CURRTRIAL.tsequencedesiredclip,"trialseries")
-    	logEVENTS("TSequenceActualClip",CURRTRIAL.tsequenceactualclip,"trialseries")
-        logEVENTS("SampleStartTime",CURRTRIAL.samplestarttime,"trialseries")
-        logEVENTS("FrameNum",CURRTRIAL.sequenceframe,'timeseries')
-        logEVENTS("TSequenceDesired",CURRTRIAL.tsequence,"timeseries")
-        logEVENTS("TSequenceActual",CURRTRIAL.tsequenceactual,"timeseries")
-
-        //Store timestamp from beginnning of display
-        EVENTS["timeseries"]["FrameNum"][Object.keys(EVENTS["timeseries"]["FrameNum"]).length-1][1] = CURRTRIAL.samplestarttime_string
-        EVENTS["timeseries"]["TSequenceDesired"][Object.keys(EVENTS["timeseries"]["TSequenceDesired"]).length-1][1] = CURRTRIAL.samplestarttime_string
-        EVENTS["timeseries"]["TSequenceActual"][Object.keys(EVENTS["timeseries"]["TSequenceActual"]).length-1][1] = CURRTRIAL.samplestarttime_string
-        if (FLAGS.savedata == 0){
-            updateImageLoadingAndDisplayText(' ') //displays frame tactual - tdesired
+        if (TASK.TestOFF > 0) {
+          seq = ['blank', 'choice'];
+          tseq = [t0, t0 + TASK.TestOFF];
+        } else {
+          seq = ['choice'];
+          tseq = [t0];
         }
 
-		audiocontext.suspend()
+        CURRTRIAL.tsequence.push(...tseq);
+        CURRTRIAL.sequencegridindex.push(
+          ...Array(tseq.length).fill(TASK.ChoiceGridIndex)
+        );
 
-//RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    //
-//RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    //
-//RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    //
-        //========= AWAIT TOUCH RESPONSE =========//
-		FLAGS.waitingforTouches = 1
-		if (TASK.HideTestDistractors >= 1){
-			FLAGS.punishOutsideTouch = 1
-		}
-		else {
-			FLAGS.punishOutsideTouch = 0			
-		}
+        CURRTRIAL.sequenceclip.push(...Array(tseq.length).fill(0));
+        CURRTRIAL.sequenceframe.push(...Array(tseq.length).fill(0));
+        CURRTRIAL.sequencetaskscreen.push(...seq);
+        CURRTRIAL.sequencelabel.push(...Array(tseq.length).fill([0]));
+        CURRTRIAL.sequenceindex.push(...Array(tseq.length).fill([0]));
+      }
 
-		if (FLAGS.stressTest == 1){
-			var race_return = {type: "theld"}
-			var nchoices = boundingBoxesChoice3D.x.length;
+    }
+    //============(END) SET UP SAMPLE & TEST SEQUENCE ============//
 
-			if (TASK.Species == 'model') {
-				var currchoice = 0;
-				var x = 0;
-				var y = 0;
 
-				if (CURRTRIAL.num > TASK.ModelConfig.trainIdx) {
-					
-					let yPred = mkm.model.predict(mkm.dataObj.xTest.reshape([1, 2048]));
-					yPred.print();
-					yPred = yPred.reshape([2]).argMax(0);
-					yPred = yPred.dataSync();
-					currchoice = yPred[0];
-					console.log('yPred:', currchoice, 'yTrue:', CURRTRIAL.correctitem);
-					if (TASK.ModelConfig.saveImages == 1) {
-						if (currchoice != CURRTRIAL.correctitem) {
-							let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
-							let cvsData = mkm.cvs.toDataURL();
-							let path = (
-								`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_incorrect.png`
-							);
-							mkmodelsRef.child(path).putString(cvsData, 'data_url');
-						}
-					} else if (TASK.ModelConfig.saveImages == 2) {
-						let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
-						let cvsData = mkm.cvs.toDataURL();
-						if (currchoice != CURRTRIAL.correctitem) {
-							let path = (
-								`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_incorrect.png`
-							);
-						} else if (currchoice == CURRTRIAL.correctitem) {
-							let path = (
-								`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_correct.png`
-							);
-						}
-						mkmodelsRef.child(path).putString(cvsData, 'data_url');
-					}
-					
-				}
-			} else {
-				
-				var hitrate = 0;
+    //================= RFID check =================//
+    /**
+     * If no matching read in the last TASK.CheckRFID seconds, wait for matching read
+     * (kicks-them-off model where they can work as long as reading, but then get 
+     * kicked off within TASK.CheckRFID seconds if they are the wrong agent or no reads)
+     */
+    if (
+      TASK.CheckRFID > 0
+      && ENV.AgentRFID != 'XX'
+      && FLAGS.savedata == 1
+    ) {
+      if (!port.connected) {
+        console.log('NO USB DEVICE CONNECTED: cannot check RFID!!');
+      } else {
+        let nreads = Object.keys(EVENTS['timeseries']['RFIDTag']).length;
+        // IF RFID does not check out, wait for a recent RFID read before proceeding with the next trial
+        if (
+          !(nreads > 0
+          && EVENTS['timeseries']['RFIDTag'][nreads - 1][2] == ENV.AgentRFID
+          && (Date.now() - new Date(EVENTS['timeseries']['RFIDTag'][nreads - 1][1])) < TASK.CheckRFID)
+        ) {
+          await rfid_promise(ENV.AgentRFID, TASK.CheckRFID);
+        } 
+      }
+    }
+    //================= (end) RFID check =================//
 
-				if (TASK.Agent == 'Youno') {
-					hitrate = 0.9;
-				} else if (TASK.Agent == 'Eliaso') {
-					hitrate = 0.7;
-				} else if (TASK.Agent == 'SaveImages') {
-					hitrate = 1.0;
-				}
 
-				if (Math.random() < hitrate) {
-					var currchoice = CURRTRIAL.correctitem;
-				} else {
-					var distractor_array = [];
-					for (let i = 0; i < nchoices; i++) {
-						if (i != CURRTRIAL.correctitem) {
-							distractor_array.push(i);
-						}
-					}
-					distractor_array = shuffle(distractor_array);
-					var currchoice = distractor_array[0];
-				}
+    // FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   //
+    // FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   //
+    // FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   FIXATION   //
+    //============ WHILE RUN FIXATION SCREEN ============//
+    FLAGS.waitingforTouches = TASK.NFixations;
+    if (TASK.RewardStage == 0) {
+      FLAGS.punishOutsideTouch = 1;
+    }
 
-				var x = boundingBoxesChoice3D.x[currchoice][0] + Math.round(Math.random()*(boundingBoxesChoice3D.x[currchoice][1] - boundingBoxesChoice3D.x[currchoice][0]))
-				var y = boundingBoxesChoice3D.y[currchoice][0] + Math.round(Math.random()*(boundingBoxesChoice3D.y[currchoice][1] - boundingBoxesChoice3D.y[currchoice][0]))
-			}
-			
-			
-			race_return.cxyt = [currchoice,x,y,Date.now() - ENV.CurrentDate.valueOf()]
-			FLAGS.waitingforTouches--
-		}//IF StressTest
-		else {
-            if (TASK.NRSVP > 0){
-            	CURRTRIAL.correctitem = 1
-                if (TASK.FixationWindowSizeInches <= 0){
-                    var race_return = {type: "theld"}
-                    var currchoice = 1
-                }//IF no fixation required
-                else {
-                    var race_return = {type: CURRTRIAL.samplefixationtouchevent}
+    CURRTRIAL.allfixationxyt = [];
+    while (FLAGS.waitingforTouches > 0) {
+      // Choose fixation grid index at random
+      if (TASK.FixationGridIndex > 0) {
+        CURRTRIAL.fixationgridindex = TASK.FixationGridIndex;
+      } else if (TASK.FixationGridIndex < 0) {
+        CURRTRIAL.fixationgridindex = Math.floor(
+          Math.random() * ENV.XGridCenter.length
+        );
+      }
+      logEVENTS('FixationGridIndex', CURRTRIAL.fixationgridindex, 'trialseries');
 
-                    if (CURRTRIAL.samplefixationtouchevent == "theld"){
-                        var currchoice = 1
-                    }//IF held samplefixation
-                    else {
-                        var currchoice = 0
-                    }//ELSE broke samplefixation
-                }//ELSE fixation required
+      if (TASK.FixationUsesSample <= 0) { // IF !FixationUsesSample, show fixation dot
+        // Render fixation screen
+        if (TASK.Species == 'macaque' || TASK.Species == 'human') {
+          ENV.FixationColor = 'white';
+        } else if (TASK.Species == 'marmoset') {
+          ENV.FixationColor = 'blue';
+        }
+        frame.shown = [];
+        frame.frames = [];
+        frame.current = 0;
+        for (let i in CANVAS.sequencepre) {
+          frame.shown[i] = 0;
+          frame.frames[i] = [i];
+        }
+      } else if (TASK.FixationUsesSample > 0) { // IF Sample, show first image/movie
+        // Update grid location of sample to current fixation grid index
+        frame.shown = [];
+        frame.frames = [];
+        frame.current = 0;
+        
+        for (let i = 0; i < CURRTRIAL.sequencegridindex.length; i++) {
+          for (let j = 0; j < CURRTRIAL.sequencegridindex[i].length; j++) {
+            if (CURRTRIAL.sequencetaskscreen == 'Sample') { // IF sample
+              // Set location to fixation
+              CURRTRIAL.sequencegridindex[i][j] = CURRTRIAL.fixationgridindex;
 
-                race_return.cxyt = [currchoice,-1,-1,CURRTRIAL.samplefixationxyt[2]]
-                FLAGS.waitingforTouches--            
-            }//IF RSVP, skip choice
-            else{
-                var p1 = hold_promise(0,boundingBoxesChoice3D,FLAGS.punishOutsideTouch)
-                var p2 = choiceTimeOut(TASK.ChoiceTimeOut)
+              if (CURRTRIAL.sequenceclip[i] == 0 && j == 0) { // IF first clip, add frame
+                frame.shown.push(0);
+                frame.frames.push([i]);
+              }
+            }
+          }
+        }
+      }
 
-                var race_return = await Promise.race([p1,p2])
-            }//ELSE require choice
-		}//ELSE
+      // Start timer for this fixation render trial
+      CURRTRIAL.starttime = Date.now() - ENV.CurrentDate.valueOf();
+      logEVENTS('StartTime', CURRTRIAL.starttime, 'trialseries');
 
-		CURRTRIAL.responsetouchevent = race_return.type
-		CURRTRIAL.response = race_return.cxyt[0]
-		CURRTRIAL.responsexyt = [race_return.cxyt[1], race_return.cxyt[2], race_return.cxyt[3]]
+      //========= AWAIT SHOW FIXATION =========//
+      // TODO: move to appropriate location
+      if (TASK.Species == 'marmoset' || TASK.Species == 'model') {
+        playSound(0);
+      }
 
-		logEVENTS("ResponseXYT",CURRTRIAL.responsexyt,"trialseries")
-		logEVENTS("ResponseTouchEvent",CURRTRIAL.responsetouchevent,"trialseries")
-		logEVENTS("Response",CURRTRIAL.response,"trialseries")
+      if (TASK.FixationUsesSample <= 0) { // IF !FixationUsesSample, show fixation dot
+        // displayTrial(time, grid, frame, screen, obj, idx)
+        await displayTrial(
+          CANVAS.tsequencepre,
+          [CURRTRIAL.fixationgridindex],
+          [0],
+          CANVAS.sequencepre,
+          [0],
+          [0],
+        );
+      } else if (TASK.FixationUsesSample > 0) { // IF FixationUsesSample, show image/movie
+        console.log('indexjs FRAME:', frame);
+        displayTrial(
+          CURRTRIAL.tsequence,
+          CURRTRIAL.sequencegridindex,
+          CURRTRIAL.sequenceframe,
+          CURRTRIAL.sequencetaskscreen,
+          CURRTRIAL.sequencelabel,
+          CURRTRIAL.sequenceindex,
+        );
+        await moviestart_promise();
+      }
 
-		// Keep track of repeated responses to one side
-		if (TASK.NRSVP <= 0 && CURRTRIAL.num > 0 && FLAGS.savedata && CURRTRIAL.responsetouchevent == "theld"){
-			if (CURRTRIAL.response==trialhistory.response[trialhistory.correct.length-1]){
-				FLAGS.stickyresponse++;
-			}
-			else {
-				FLAGS.stickyresponse=0;
-			}
-		} //IF
-	} //if TASK.RewardStage
+      audiocontext.suspend()
+
+      //========= AWAIT HOLD FIXATION TOUCH =========//
+      if (ENV.FixationWindowRadius > 0) { // IF FixationWindow, then override object size
+        // TODO: contain the scope of funcreturn to each file.
+        funcreturn = getFixationWindowBoundingBox(
+          CURRTRIAL.fixationgridindex,
+          ENV.FixationWindowRadius
+        );
+        boundingBoxesFixation.x[0] = funcreturn[0];
+        boundingBoxesFixation.y[0] = funcreturn[1];
+      } else if (
+        TASK.FixationUsesSample > 0
+        && ENV.FixationWindowRadius <= 0
+      ) { // alt. fixation window
+        boundingBoxesFixation = boundingBoxesChoice3D;
+      }
+
+      let touchhold_return; 
+      if (FLAGS.stressTest == 1) { //IF automated stress test
+        if (TASK.Species == 'model') {
+          let ctx = mkm.cvs.getContext('2d');
+          ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
+
+          touchhold_return = { type: 'theld' };
+          let sxOffset = (
+            IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
+            * ENV.PhysicalPPI
+            / ENV.ScreenRatio
+          );
+
+          let sx = (
+            boundingBoxesFixation.x[0][1]
+            + boundingBoxesFixation.x[0][0]
+            - sxOffset
+          );
+          sx = Math.round(sx);
+
+          let syOffset = (
+            IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
+            * ENV.PhysicalPPI 
+            / ENV.ScreenRatio
+            - ENV.FixationWindowRadius
+          );
+          let sy = (
+            (boundingBoxesFixation.y[0][1] + boundingBoxesFixation.y[0][0]) 
+            / ENV.ScreenRatio 
+            - syOffset
+          );
+          sy = Math.round(sy);
+
+          let sHeight = Math.round(
+            IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
+            * ENV.PhysicalPPI
+          );
+          let sWidth = sHeight;
+
+          ctx.drawImage(VISIBLECANVAS, sx, sy, sWidth, sHeight, 0, 0, 224, 224);
+          let tensor = mkm.normalizePixelValues(mkm.cvs);
+          let feature = mkm.featureExtractor.execute(tensor);
+          feature = feature.reshape([2048]);
+          if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
+            mkm.dataObj.xTrain.push(feature);
+            if (CURRTRIAL.correctitem == 0) {
+              mkm.dataObj.yTrain.push([1, 0]);
+            } else if (CURRTRIAL.correctitem == 1) {
+              mkm.dataObj.yTrain.push([0, 1]);
+            }
+          } else {
+            mkm.dataObj.xTest = feature;
+            mkm.dataObj.yTest = CURRTRIAL.correctitem;
+          }
+
+          if (CURRTRIAL.num == TASK.ModelConfig.trainIdx) {
+            let xTrain = tf.data.array(mkm.dataObj.xTrain);
+            let yTrain = tf.data.array(mkm.dataObj.yTrain);
+            let trainDataset = tf.data.zip({ xs: xTrain, ys: yTrain })
+              .batch(4)
+              .shuffle(4);
+
+            const beginMs = performance.now();
+            await mkm.model.fitDataset(trainDataset, {
+              epochs: TASK.ModelConfig.epochs,
+              callbacks: {
+                onEpochEnd: async(epoch, logs) => {
+                  const secPerEpoch = (
+                    (performance.now() - beginMs) / (1000 * (epoch + 1))
+                  );
+                  console.log('Training model ... Approx. ' + `${secPerEpoch.toFixed(4)} sec/epoch`);
+                  console.log('logs:', logs);
+                }
+              }
+            });
+          }
+
+          let x = (
+            boundingBoxesFixation.x[0][0]
+            + Math.round(
+              Math.random() * (boundingBoxesFixation.x[0][1] - boundingBoxesFixation.x[0][0])
+            )
+          );
+
+          let y = (
+            boundingBoxesFixation.y[0][0]
+            + Math.round(
+              Math.random() * (boundingBoxesFixation.y[0][1] - boundingBoxesFixation.y[0][0])
+            )
+          );
+
+          touchhold_return.cxyt = [
+            0,
+            x,
+            y,
+            Date.now() - ENV.CurrentDate.valueOf()
+          ];
+          FLAGS.waitingforTouches--;
+        } else {
+          touchhold_return = { type: 'theld' };
+          let x = (
+            boundingBoxesFixation.x[0][0]
+            + Math.round(
+              Math.random() * (boundingBoxesFixation.x[0][1] - boundingBoxesFixation.x[0][0])
+            )
+          );
+
+          let y = (
+            boundingBoxesFixation.y[0][0]
+            + Math.round(
+              Math.random() * (boundingBoxesFixation.y[0][1] - boundingBoxesFixation.y[0][0])
+            )
+          );
+
+          touchhold_return.cxyt = [
+            0,
+            x,
+            y,
+            Date.now() - ENV.CurrentDate.valueOf()
+          ];
+
+          FLAGS.waitingforTouches--;
+        }
+      } else { // ELSE await fixation hold
+        FLAGS.acquiredTouch = 0;
+        let p1 = hold_promise(
+          TASK.FixationDuration,
+          boundingBoxesFixation,
+          FLAGS.punishOutsideTouch,
+        );
+        let p2 = choiceTimeOut(TASK.FixationTimeOut);
+        touchhold_return = await Promise.race([p1, p2]);
+      }
+
+      if (FLAGS.movieplaying == 1) { // IF movie is playing
+        // So that sample movie does not continue playing after fixation acquired
+        frame.current = frame.shown.length - 1;
+        frame.shown[frame.current] = 1;
+        await moviefinish_promise()
+      }
+
+      CURRTRIAL.fixationtouchevent = touchhold_return.type
+      CURRTRIAL.fixationxyt = [
+        touchhold_return.cxyt[1],
+        touchhold_return.cxyt[2],
+        touchhold_return.cxyt[3]
+      ];
+      CURRTRIAL.allfixationxyt[TASK.NFixations - FLAGS.waitingforTouches - 1] =  (
+        CURRTRIAL.fixationxyt
+      );
+
+      logEVENTS("FixationTouchEvent", CURRTRIAL.fixationtouchevent, "trialseries");
+      logEVENTS("FixationXYT", CURRTRIAL.fixationxyt, "trialseries");
+
+      //IF held fixaton & fixation task, count as correct
+      if (CURRTRIAL.fixationtouchevent == "theld") {
+        if (TASK.RewardStage == 0 && FLAGS.waitingforTouches == 0) {
+          CURRTRIAL.response = 1;
+          CURRTRIAL.correctitem = 1;
+          logEVENTS('Response', CURRTRIAL.response, 'trialseries');
+        }
+
+        // ELSE IF broke fixation & fixation task, count as incorrect
+      } else if (TASK.RewardStage == 0 && CURRTRIAL.fixationtouchevent == "tbroken") {
+        CURRTRIAL.response = 0;
+        CURRTRIAL.correctitem = 1;
+        FLAGS.waitingforTouches = 0; //exit loop
+        logEVENTS("Response", CURRTRIAL.response, "trialseries");
+      }
+      
+      // else if ( (CURRTRIAL.fixationtouchevent == "tbroken" && TASK.RewardStage == 1)
+      //           || (CURRTRIAL.fixationtouchevent == "TimeOut")){
+      //     }//IF timed out OR dms task, ok if touched outside, just wait for touch inside fixation area
+
+      //========= AWAIT CLEAR FIXATION =========//
+      for (let q in CANVAS.sequenceblank) {
+        frame.shown[q] = 0;
+        frame.frames[q] = [q];
+      }
+      frame.current = 0;
+      if (FLAGS.waitingforTouches > 0) { // blank out screen
+        await displayTrial(
+          CANVAS.tsequenceblank,
+          [-1, -1],
+          [0, 1],
+          CANVAS.sequenceblank,
+          [0, 0],
+          [0, 0],
+        );
+      }
+    }//WHILE waiting for NFixations
+	  //============ (end) WHILE RUN FIXATION SCREEN ============//
+
+
+    //SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    //
+    //SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    //
+    //SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    SAMPLE TEST    //
+	  //============== AWAIT SHOW SAMPLE THEN TEST ==============//
+    if (TASK.RewardStage === 1){
+
+       // Set where to display
+      if (TASK.SampleGridIndex > 0) { // IF fixed sample location
+        CURRTRIAL.samplegridindex = TASK.SampleGridIndex;
+      } else if (TASK.SampleGridIndex < 0) { // ELSE IF random sample location
+        if (TASK.FixationGridIndex < 0) { // IF moving fixation, use its grid location for sample
+          CURRTRIAL.samplegridindex = CURRTRIAL.fixationgridindex;
+        } else { // ELSE use random grid location for sample
+          CURRTRIAL.samplegridindex = Math.floor(
+            ENV.XGridCenter.length * Math.random()
+          );
+        }
+      }
+
+      // Update grid location of each Sample frame
+      for (let i = 0; i < CURRTRIAL.sequencegridindex.length; i++) {
+        for (let j = 0; j < CURRTRIAL.sequencegridindex[i].length; j++) {
+          if (CURRTRIAL.sequencetaskscreen[i] == 'Sample') {
+            CURRTRIAL.sequencegridindex[i][j] = CURRTRIAL.samplegridindex;
+          }
+        }
+      }
+          
+      logEVENTS("SampleGridIndex", CURRTRIAL.samplegridindex, "trialseries");
+      frame.shown = [];
+      frame.frames = [];
+      frame.current = 0;
+      for (let q in CURRTRIAL.sequencetaskscreen) {
+        frame.shown[q] = 0;
+        frame.frames[q] = [q];
+      } // FOR q frames
+
+      // KeepSampleON
+      if (TASK.KeepSampleON == 1) {
+        let idxArr = [];
+        let idx = CURRTRIAL.sequencetaskscreen.indexOf('Sample');
+        while (idx != -1) {
+          idxArr.push(idx);
+          idx = CURRTRIAL.sequencetaskscreen.indexOf('Sample', idx + 1);
+        }
+
+        // FOR i remaining frames after Sample
+        for (let i = idxArr[idxArr.length - 1] + 1; i < frame.frames.length; i++) {
+          // Append last Sample scene rendered
+          frame.frames[i].push(idxArr[idxArr.length - 1]);
+        }
+      }
+
+      // KeepTestON
+      if (TASK.KeepTestON == 1 && TASK.SameDifferent > 0) {
+        let idxArr = [];
+        let idx = CURRTRIAL.sequencetaskscreen.indexOf('Test');
+        while (idx != -1) {
+          idxArr.push(idx);
+          idx = CURRTRIAL.sequencetaskscreen.indexOf('Test', idx + 1);
+        }
+
+        // FOR i remaining frames after TEst
+        for (let i = idxArr[idxArr.length - 1] + 1; i < frame.frames.length; i++) {
+          // Append last Test scene rendered
+          frame.frames[i].push(idxArr[idxArr.length - 1]);
+        }
+      }
+
+          //Display Sample & Test/Choice
+      if (TASK.NRSVP > 0 && TASK.FixationWindowSizeInches > 0) { // IF RSVP, hold sample fixation
+        let fixationWindowBoundingBox = (
+          getFixationWindowBoundingBox(CURRTRIAL.samplegridindex, ENV.FixationWindowRadius)
+        );
+        boundingBoxesSampleFixation.x[0] = fixationWindowBoundingBox[0];
+        boundingBoxesSampleFixation.y[0] = fixationWindowBoundingBox[1];
+        FLAGS.punishOutsideTouch = 1;
+        FLAGS.waitingforTouches = 1;
+        FLAGS.acquiredTouch = 1;
+        if (FLAGS.trackeye) {
+          ENV.Eye.EventType = 'eyemove';
+        }
+        let p1 = hold_promise(
+          0,
+          boundingBoxesSampleFixation,
+          FLAGS.punishOutsideTouch,
+        )
+        let p2 = displayTrial(
+          CURRTRIAL.tsequence,
+          CURRTRIAL.sequencegridindex,
+          CURRTRIAL.sequenceframe,
+          CURRTRIAL.sequencetaskscreen,
+          CURRTRIAL.sequencelabel,
+          CURRTRIAL.sequenceindex,
+        );
+        CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
+        CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime).toJSON();
+        let race_return = await Promise.race([p1, p2]);
+        FLAGS.acquiredTouch = 0;
+        FLAGS.waitingforTouches = 0;
+
+        if (FLAGS.movieplaying == 1) {
+          // So that sample movie does not continue playing after fixation broken
+          frame.current = frame.shown.length - 1;
+          frame.shown[frame.current] = 1;
+          await moviefinish_promise();
+        }
+
+        if (FLAGS.trackeye > 0) {
+          ENV.Eye.EventType = 'eyestart'; // Reset eye state
+        }
+
+        if (typeof(race_return.type) == 'undefined') { // IF held sample fixation
+          CURRTRIAL.samplefixationtouchevent = 'theld';
+          CURRTRIAL.samplefixationxyt = [
+            0,
+            0,
+            Date.now() - ENV.CurrentDate.valueOf(),
+          ];
+        } else { // ELSE broke samplefixation
+          CURRTRIAL.samplefixationtouchevent = race_return.type;
+          CURRTRIAL.samplefixationxyt = [
+            race_return.cxyt[1],
+            race_return.cxyt[2],
+            race_return.cxyt[3],
+          ];
+        }
+      } else { // ELSE !RSVP, no fixation hold
+        boundingBoxesChoice3D = { x: [], y: [] } // determined on the fly during display
+        CURRTRIAL.samplefixationtouchevent = '';
+        CURRTRIAL.samplefixationxyt = [];
+        CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
+        CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime).toJSON();
+        await displayTrial(
+          CURRTRIAL.tsequence,
+          CURRTRIAL.sequencegridindex,
+          CURRTRIAL.sequenceframe,
+          CURRTRIAL.sequencetaskscreen,
+          CURRTRIAL.sequencelabel,
+          CURRTRIAL.sequenceindex,
+        );
+      }
+
+      logEVENTS("SampleFixationTouchEvent", CURRTRIAL.samplefixationtouchevent, "trialseries");
+      logEVENTS("SampleFixationXYT", CURRTRIAL.samplefixationxyt, "trialseries");
+
+      //Store timing of clip presentations
+      CURRTRIAL.tsequencedesiredclip = [];
+      CURRTRIAL.tsequenceactualclip = [];
+
+      // FOR f frames
+      for (let f = 0; f < CURRTRIAL.sequencetaskscreen.length; f++) {
+        // IF new clip || new taskscreen within that clip
+        if (
+          f==0
+          || CURRTRIAL.sequencetaskscreen[f] != CURRTRIAL.sequencetaskscreen[f - 1]
+          || CURRTRIAL.sequenceclip[f] != CURRTRIAL.sequenceclip[f - 1]
+        ) {
+          CURRTRIAL.tsequencedesiredclip.push(CURRTRIAL.tsequence[f]);
+          if (f > CURRTRIAL.tsequenceactual.length - 1) { // IF clip not shown
+            CURRTRIAL.tsequenceactualclip.push(-1);
+          } else {
+            CURRTRIAL.tsequenceactualclip.push(CURRTRIAL.tsequenceactual[f]);
+          }
+        }
+      }
+
+      logEVENTS("TSequenceDesiredClip", CURRTRIAL.tsequencedesiredclip, "trialseries");
+    	logEVENTS("TSequenceActualClip", CURRTRIAL.tsequenceactualclip, "trialseries");
+      logEVENTS("SampleStartTime", CURRTRIAL.samplestarttime, "trialseries");
+      logEVENTS("FrameNum", CURRTRIAL.sequenceframe, 'timeseries');
+      logEVENTS("TSequenceDesired", CURRTRIAL.tsequence, "timeseries");
+      logEVENTS("TSequenceActual", CURRTRIAL.tsequenceactual, "timeseries");
+
+          // //Store timestamp from beginnning of display
+          // EVENTS["timeseries"]["FrameNum"][Object.keys(EVENTS["timeseries"]["FrameNum"]).length-1][1] = CURRTRIAL.samplestarttime_string
+          // EVENTS["timeseries"]["TSequenceDesired"][Object.keys(EVENTS["timeseries"]["TSequenceDesired"]).length-1][1] = CURRTRIAL.samplestarttime_string
+          // EVENTS["timeseries"]["TSequenceActual"][Object.keys(EVENTS["timeseries"]["TSequenceActual"]).length-1][1] = CURRTRIAL.samplestarttime_string
+          // if (FLAGS.savedata == 0){
+          //     updateImageLoadingAndDisplayText(' ') //displays frame tactual - tdesired
+          // }
+
+      // Store timestamp from beginning of display
+      let lastFrameIdx = Object.keys(EVENTS['timeseries']['FrameNum']).length - 1;
+      let lastTSequenceDesiredIdx = (
+        Object.keys(EVENTS['timeseries']['TSequenceDesired']).length - 1
+      );
+      let lastTSequenceActualIdx = (
+        Object.keys(EVENTS['timeseries']['TSequenceActual']).length - 1
+      );
+      EVENTS["timeseries"]["FrameNum"][lastFrameIdx][1] = CURRTRIAL.samplestarttime_string;
+      EVENTS["timeseries"]["TSequenceDesired"][lastTSequenceDesiredIdx][1] = (
+        CURRTRIAL.samplestarttime_string
+      );
+      EVENTS["timeseries"]["TSequenceActual"][lastTSequenceActualIdx][1] = (
+        CURRTRIAL.samplestarttime_string
+      );
+      if (FLAGS.savedata == 0) {
+        updateImageLoadingAndDisplayText(' ') // displays frame tactual - tdesired
+      }
+
+      audiocontext.suspend()
+
+      //RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    //
+      //RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    //
+      //RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    RESPONSE    //
+      //========= AWAIT TOUCH RESPONSE =========//
+      FLAGS.waitingforTouches = 1
+		  if (TASK.HideTestDistractors >= 1) {
+			  FLAGS.punishOutsideTouch = 1;
+		  } else {
+			  FLAGS.punishOutsideTouch = 0;
+      }
+
+      let race_return = { type: 'theld' };
+      let currchoice;
+      if (FLAGS.stressTest == 1) {
+        let nchoices = boundingBoxesChoice3D.x.length;
+        let distractor_array;
+        let x;
+        let y;
+
+        if (TASK.Species == 'model') {
+          let currchoice = 0;
+          x = 0;
+          y = 0;
+
+          if (CURRTRIAL.num > TASK.ModelConfig.trainIdx) {
+            let yPred = mkm.model.predict(mkm.dataObj.xTest.reshape([1, 2048]));
+            yPred.print();
+					  yPred = yPred.reshape([2]).argMax(0);
+					  yPred = yPred.dataSync();
+					  currchoice = yPred[0];
+            console.log('yPred:', currchoice, 'yTrue:', CURRTRIAL.correctitem);
+            
+            if (TASK.ModelConfig.saveImages == 1) {
+              if (currchoice != CURRTRIAL.correctitem) {
+                let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
+                let cvsData = mkm.cvs.toDataURL();
+                let path = (
+                  `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_incorrect.png`
+                );
+                mkmodelsRef.child(path).putString(cvsData, 'data_url');
+              }
+            } else if (TASK.ModelConfig.saveImages == 2) {
+              let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
+              let cvsData = mkm.cvs.toDataURL();
+              let path = (
+                (currchoice == CURRTRIAL.correctitem) 
+                ? `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_correct.png`
+                : `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_incorrect.png`
+              );
+              // if (currchoice != CURRTRIAL.correctitem) {
+              //   let path = (
+              //     `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_incorrect.png`
+              //   );
+              // } else if (currchoice == CURRTRIAL.correctitem) {
+              //   let path = (
+              //     `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_correct.png`
+              //   );
+              // }
+              mkmodelsRef.child(path).putString(cvsData, 'data_url');
+            }
+          }
+
+        } else { // ELSE TASK.Species != 'model'
+          let hitrate = 0;
+
+          if (TASK.Agent == 'Youno') {
+            hitrate = 0.9;
+          } else if (TASK.Agent == 'Eliaso') {
+            hitrate = 0.7;
+          } else if (TASK.Agent == 'SaveImages') {
+            hitrate = 1.0;
+          }
+
+          if (Math.random() < hitrate) {
+            currchoice = CURRTRIAL.correctitem;
+          } else {
+            distractor_array = [];
+            for (let i = 0; i < nchoices; i++) {
+              if (i != CURRTRIAL.correctitem) {
+                distractor_array.push(i);
+              }
+            }
+            
+            distractor_array = shuffle(distractor_array);
+            currchoice = distractor_array[0];
+          }
+
+          x = (
+            boundingBoxesChoice3D.x[currchoice][0]
+            + Math.round(
+              Math.random()
+              * (boundingBoxesChoice3D.x[currchoice][1] - boundingBoxesChoice3D.x[currchoice][0])
+            )
+          );
+
+          y = (
+            boundingBoxesChoice3D.y[currchoice][0]
+            + Math.round(
+              Math.random()
+              * (boundingBoxesChoice3D.y[currchoice][1] - boundingBoxesChoice3D.y[currchoice][0])
+            )
+          );
+        }
+
+        race_return.cxyt = [
+          currchoice,
+          x,
+          y,
+          Date.now() - ENV.CurrentDate.valueOf()
+        ];
+        FLAGS.waitingforTouches--
+
+      } else { // ELSE !FLAGS.stressTest
+        if (TASK.NRSVP > 0) { // IF RSVP, skip choice
+          CURRTRIAL.correctitem = 1;
+          if (TASK.FixationWindowSizeInches <= 0) { // IF no fixation required
+            race_return = { type: 'theld' };
+            currchoice = 1;
+          } else { // fixation required
+            race_return = { type: CURRTRIAL.samplefixationtouchevent };
+
+            if (CURRTRIAL.samplefixationtouchevent == 'theld') { // held samplefixation
+              currchoice = 1;
+            } else { // broke samplefixation
+              currchoice = 0;
+            }
+          }
+
+          race_return.cxyt = [
+            currchoice,
+            -1,
+            -1,
+            CURRTRIAL.samplefixationxyt[2],
+          ];
+          FLAGS.waitingforTouches--;
+        } else { // IF !RSVP, require choiuce
+          let p1 = hold_promise(0, boundingBoxesChoice3D, FLAGS.punishOutsideTouch);
+          let p2 = choiceTimeOut(TASK.ChoiceTimeOut);
+          race_return = await Promise.race([p1, p2]);
+        }
+      }
+
+      CURRTRIAL.responsetouchevent = race_return.type;
+		  CURRTRIAL.response = race_return.cxyt[0];
+		  CURRTRIAL.responsexyt = [
+        race_return.cxyt[1],
+        race_return.cxyt[2],
+        race_return.cxyt[3]
+      ];
+
+      logEVENTS("ResponseXYT",CURRTRIAL.responsexyt,"trialseries")
+      logEVENTS("ResponseTouchEvent",CURRTRIAL.responsetouchevent,"trialseries")
+      logEVENTS("Response",CURRTRIAL.response,"trialseries")
+
+      // Keep track of repeated responses to one side
+      if (TASK.NRSVP <= 0 && CURRTRIAL.num > 0 && FLAGS.savedata && CURRTRIAL.responsetouchevent == "theld"){
+        if (CURRTRIAL.response==trialhistory.response[trialhistory.correct.length-1]){
+          FLAGS.stickyresponse++;
+        }
+        else {
+          FLAGS.stickyresponse=0;
+        }
+      } //IF
+    } //if TASK.RewardStage
     logEVENTS("CorrectItem",CURRTRIAL.correctitem,"trialseries")
 
 
