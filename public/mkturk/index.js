@@ -2,7 +2,6 @@
 // import firebase from 'firebase/app';
 // import 'firebase/auth';
 // import 'firebase/storage';
-// import { formatWithOptions } from 'util';
 /* 
  * Check for MTurk tokens in the URL
  */
@@ -1222,9 +1221,7 @@ function skipHardwareDevice(event) {
         frame.current = 0;
         
         for (let i = 0; i < CURRTRIAL.sequencegridindex.length; i++) {
-          console.log('hello');
           for (let j = 0; j < CURRTRIAL.sequencegridindex[i].length; j++) {
-            console.log('hello2');
             if (CURRTRIAL.sequencetaskscreen[i] == 'Sample') { // IF sample
               // Set location to fixation
               CURRTRIAL.sequencegridindex[i][j] = CURRTRIAL.fixationgridindex;
@@ -1259,7 +1256,6 @@ function skipHardwareDevice(event) {
           [0],
         );
       } else if (TASK.FixationUsesSample > 0) { // IF FixationUsesSample, show image/movie
-        console.log('indexjs FRAME:', frame);
         displayTrial(
           CURRTRIAL.tsequence,
           CURRTRIAL.sequencegridindex,
@@ -2008,52 +2004,74 @@ function skipHardwareDevice(event) {
 	  //================= HOUSEKEEPING =================//
     let ITIstart = performance.now();
 
-    // CALIBRATE eye
-    if (FLAGS.trackeye > 0){
-      // Can manually adjust params only when on practice screen
-      // Can automatically calibrate when on test screen
-      if (FLAGS.savedata == 1 && ENV.Eye.calibration == 1){
-          if (CURRTRIAL.fixationtouchevent == 'theld'){
-            ENV.Eye.NCalibPointsTrain += 1
-          }
-          if (ENV.Eye.NCalibPointsTrain == TASK.CalibrateEye){
-            // Run calibration fitting 
-            var calibreturn = runCallibration()
-            ENV.Eye.CalibXTransform = calibreturn.xtform
-            ENV.Eye.CalibYTransform = calibreturn.ytform
-            ENV.Eye.NCalibPoints = calibreturn.n
-            ENV.Eye.CalibType = calibreturn.type
+    // Calibrate eye
+    if (FLAGS.trackeye > 0) { // IF track eye
+      /**
+       * Can manually adjust params only when on practice screen
+       * Can automatically calibrate when on test screen
+       */
 
-            // Compute GOF
-            ENV.Eye.CalibTrainMSE[0] = compute_mse(calibreturn.predictedx,calibreturn.actualx)
-            ENV.Eye.CalibTrainMSE[1] = compute_mse(calibreturn.predictedy,calibreturn.actualy)
+      if (FLAGS.savedata == 1 && ENV.Eye.calibration == 1) { // IF train eye calibration
+        if (CURRTRIAL.fixationtouchevent == 'theld') {
+          ENV.Eye.NCalibPointsTrain++;
+        }
 
-            // Store calibration
-            saveEyeCalibrationtoFirestore(ENV.Eye.CalibXTransform,ENV.Eye.CalibYTransform,ENV.Eye.CalibType,ENV.Eye.NCalibPointsTrain,ENV.Eye.CalibTrainMSE,ENV.Eye.NCalibPointsTest,ENV.Eye.CalibTestMSE)
+        if (ENV.Eye.NCalibPointsTrain == TASK.CalibrateEye){ //IF enough points
+					// Run calibration fitting 
+					let calibreturn = runCallibration();
+					ENV.Eye.CalibXTransform = calibreturn.xtform;
+					ENV.Eye.CalibYTransform = calibreturn.ytform;
+					ENV.Eye.NCalibPoints = calibreturn.n;
+					ENV.Eye.CalibType = calibreturn.type;
 
-            ENV.Eye.calibration = 0;
-          }//IF enough points
-      }//IF train eye calibration
-      else if (FLAGS.savedata == 1 && ENV.Eye.calibration == 0){
-        if (CURRTRIAL.fixationtouchevent == 'theld'){
-          ENV.Eye.NCalibPointsTest += 1
-        }//IF held fixation
-        if (ENV.Eye.NCalibPointsTest == TASK.CalibrateEye){
+					// Compute GOF
+					ENV.Eye.CalibTrainMSE[0] = compute_mse(calibreturn.predictedx, calibreturn.actualx);
+					ENV.Eye.CalibTrainMSE[1] = compute_mse(calibreturn.predictedy, calibreturn.actualy);
+
+					// Store calibration
+					saveEyeCalibrationtoFirestore(
+            ENV.Eye.CalibXTransform,
+            ENV.Eye.CalibYTransform,
+            ENV.Eye.CalibType,
+            ENV.Eye.NCalibPointsTrain,
+            ENV.Eye.CalibTrainMSE,
+            ENV.Eye.NCalibPointsTest,
+            ENV.Eye.CalibTestMSE,
+          );
+
+					ENV.Eye.calibration = 0;
+				}//IF enough points
+      } else if (FLAGS.savedata == 1 && ENV.Eye.calibration == 0) { // ELSEIF test eye calibration
+        if (CURRTRIAL.fixationtouchevent == 'theld'){ // IF held fixation
+          ENV.Eye.NCalibPointsTest++;
+        }
+
+        if (ENV.Eye.NCalibPointsTest == TASK.CalibrateEye) { // IF enough points
           //cross-validate on same number of trials used for training
-          ENV.Eye.CalibTestMSE = evaluateCalibration() //GOF test 
-
+          ENV.Eye.CalibTestMSE = evaluateCalibration(); //GOF test
+          
           // Store calibration
-          saveEyeCalibrationtoFirestore(ENV.Eye.CalibXTransform,ENV.Eye.CalibYTransform,ENV.Eye.CalibType,ENV.Eye.NCalibPointsTrain,ENV.Eye.CalibTrainMSE,ENV.Eye.NCalibPointsTest,ENV.Eye.CalibTestMSE)
-        }//IF enough points
-      }//ELSE test eye calibration
-    }//IF track eye
+				  saveEyeCalibrationtoFirestore(
+            ENV.Eye.CalibXTransform,
+            ENV.Eye.CalibYTransform,
+            ENV.Eye.CalibType,
+            ENV.Eye.NCalibPointsTrain,
+            ENV.Eye.CalibTrainMSE,
+            NV.Eye.NCalibPointsTest,
+            ENV.Eye.CalibTestMSE
+          );
+        }
+
+      }
+    }
     
     //clear tracker canvas at end of trial
-    if (FLAGS.savedata == 0  || CURRTRIAL.num <= 1){
-      EYETRACKERCANVAS.getContext('2d').clearRect(0,0,EYETRACKERCANVAS.width,EYETRACKERCANVAS.height)
-    }//IF practice screen
+    if (FLAGS.savedata == 0 || CURRTRIAL.num <= 1) { //IF practice screen
+      EYETRACKERCANVAS.getContext('2d')
+        .clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
+    }
 
-    CURRTRIAL.lastTrialCompleted = new Date()
+    CURRTRIAL.lastTrialCompleted = new Date();
 
     // Update EVENTS only if saving data
     if (FLAGS.savedata == 1){
@@ -2070,59 +2088,68 @@ function skipHardwareDevice(event) {
         saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS);
 
         // Firestore Database: Save data asynchronously to database
-        if (FLAGS.createnewfirestore == 1){
-          saveBehaviorDatatoFirestore(TASK,ENV,CANVAS); //write once
+        if (FLAGS.createnewfirestore == 1) {
+          saveBehaviorDatatoFirestore(TASK, ENV, CANVAS); //write once
           pingFirestore() //every 10 seconds, will check for data updates to upload to firestore
         }//IF new firestore, kick off firestore database writes
 
         // BigQuery Table
         // Save display times asynchronously to BigQuery
         if (CURRTRIAL.num == 0){
-            pingBigQueryDisplayTimesTable() //uploads eyedata to bigquery every 10 seconds        
+          pingBigQueryDisplayTimesTable(); //uploads eyedata to bigquery every 10 seconds        
         }//IF first trial, kick-off bigquery writes
 
         // Save eye data asynchronously to BigQuery
-        if (FLAGS.trackeye > 0 && CURRTRIAL.num == 0){
-            pingBigQueryEyeTable() //uploads eyedata to bigquery every 10 seconds        
+        if (FLAGS.trackeye > 0 && CURRTRIAL.num == 0) {
+          pingBigQueryEyeTable(); //uploads eyedata to bigquery every 10 seconds        
         }//IF first trial, kick-off bigquery writes
       }//IF not saving images, save data
     }//IF savedata
 
-    if (FLAGS.need2saveParameters == 1){
+    if (FLAGS.need2saveParameters == 1) {
       FLAGS.need2saveParameters = saveParameterstoFirebase(); // Save parameters asynchronously
     }
 
-    await checkParameterFileStatusFirebase()
-    if ( (new Date).getDate() != ENV.CurrentDate.getDate() || CURRTRIAL.num == 1000){ //in local time
+    await checkParameterFileStatusFirebase();
+    if (
+      new Date().getDate() != ENV.CurrentDate.getDate()
+      || CURRTRIAL.num == 1000
+    ) {
       updateEventDataonFirestore(EVENTS);
-      FLAGS.need2loadParameters = 1
-    } //if new day, start new file or reached 1000 trials 
+	  	FLAGS.need2loadParameters = 1;
+    } //if new day, start new file or reached 1000 trials
 
     rtdbAgentRef.once('value').then(snap => {
       try {
         FLAGS.rtdbAgentNumConnections = Object.keys(snap.val()).length;
       } catch (err) {
         FLAGS.rtdbAgentNumConnections = 0;
-        console.error(`rtdbAgentRef most likely not yet instantiated: ${err}`);
+        // console.error(`rtdbAgentRef most likely not yet instantiated: ${err}`);
       }
     });
 
-    if (TASK.Agent == "SaveImages" && CURRTRIAL.num >= TQS.samplebag_indices.length-1){
-      return
+    if (
+      TASK.Agent == "SaveImages"
+      && CURRTRIAL.num >= TQS.samplebag_indices.length - 1
+    ) {
+      return;
     }//IF saved all images
 
     //================= (end) HOUSEKEEPING =================//
 
     updateHeadsUpDisplay();
-    console.log('END OF TRIAL ', CURRTRIAL.num)
-    CURRTRIAL.num++
-    EVENTS.trialnum = CURRTRIAL.num
-
-    if (typeof(TASK.InterTrialInterval) != "undefined"){
-      var remainingInterTrialInterval = TASK.InterTrialInterval - (performance.now() - ITIstart)
-      if (remainingInterTrialInterval > 0){
-        await sleep(remainingInterTrialInterval)
+	  console.log('END OF TRIAL ', CURRTRIAL.num);
+	  CURRTRIAL.num++
+    EVENTS.trialnum = CURRTRIAL.num;
+    
+    if (typeof(TASK.InterTrialInterval) != 'undefined') {
+      let remainingInterTrialInterval = (
+        TASK.InterTrialInterval - (performance.now() - ITIstart)
+      );
+      if (remainingInterTrialInterval > 0) {
+        await sleep(remainingInterTrialInterval);
       }
-    }//IF ITI
-}
+    }
+  }
+
 })();

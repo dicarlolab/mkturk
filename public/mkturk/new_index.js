@@ -1745,14 +1745,14 @@
   
         // Firestore Database: Save data asynchronously to database
         if (FLAGS.createnewfirestore == 1) {
-          saveBehaviorDatatoFirestore(TASK,ENV,CANVAS); //write once
+          saveBehaviorDatatoFirestore(TASK, ENV, CANVAS); //write once
           pingFirestore(); //every 10 seconds, will check for data updates to upload to firestore
         }//IF new firestore, kick off firestore database writes
   
         // BigQuery Table
         // Save display times asynchronously to BigQuery
         if (CURRTRIAL.num == 0) {
-            pingBigQueryDisplayTimesTable(); //uploads eyedata to bigquery every 10 seconds        
+          pingBigQueryDisplayTimesTable(); //uploads eyedata to bigquery every 10 seconds        
         }//IF first trial, kick-off bigquery writes
   
         // Save eye data asynchronously to BigQuery
@@ -1762,7 +1762,7 @@
       }//IF not saving images, save data
     }//IF savedata
 
-    if (FLAGS.need2saveParameters == 1){
+    if (FLAGS.need2saveParameters == 1) {
       FLAGS.need2saveParameters = saveParameterstoFirebase(); // Save parameters asynchronously
     }
 
