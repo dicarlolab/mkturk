@@ -29,4 +29,13 @@ var FIRESTORECOLLECTION =	{ 	DATA: 'mkturkdata',
 // ------ Misc. -----------------------
 var ndatafiles2read=5; // todo: change to trials. and use as upper bound (stop reading once you hit the first discrepancy). maybe this is effectively synonymous with mintrials
 
+
+// try {
+// 	if (ENV.MTurkWorkerId) {
+// 		const DATA_SAVEPATH = '/mkturkfiles_mturk/datafiles/';
+// 		const 
+// 	}
+// }
+
+
 // ------ todo: move into params file -

@@ -59,3 +59,25 @@ auth.getRedirectResult().then((redirectResult) => {
   console.error(`[Authentication Error]: ${authError}`);
 });
 
+
+auth.onAuthStateChanged((user) => {
+  if (user && Object.keys(mturkUserConfig).length) {
+    user.getIdToken(true)
+      .then(async (idToken) => {
+        mturkUserConfig.token = idToken;
+        console.log(`Auth Token: ${idToken}`);
+        processMturkUser(mturkUserConfig).then(async (res) => {
+          if (res.data.message == 'assignment entry already exists') {
+            console.log('window will close here');
+            //window.close();
+          }
+          if (res.data.status == 'success') {
+            ENV.MTurkWorkerId = mturkUserConfig.wid;
+          }
+        }).catch((error) => {
+          console.error(`[processMturkUser] Error: ${error}`);
+        });
+      });
+  }
+});
+
