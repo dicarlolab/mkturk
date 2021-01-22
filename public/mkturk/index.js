@@ -29,6 +29,9 @@ if (window.location.search) {
 
 //================== AUTHENTICATE GOOGLE ==================//
 const auth = firebase.auth();
+var provider = new firebase.auth.GoogleAuthProvider();
+provider.addScope('https://www.googleapis.com/auth/user.emails.read');
+provider.addScope('https://www.googleapis.com/auth/userinfo.email');
 auth.getRedirectResult().then((redirectResult) => {
   if (redirectResult.user) {
     // User just signed in
@@ -48,9 +51,6 @@ auth.getRedirectResult().then((redirectResult) => {
     updateHeadsUpDisplay();
   } else {
     console.log('User Not Yet Authenticated');
-    let provider = new firebase.auth.GoogleAuthProvider();
-    provider.addScope('https://www.googleapis.com/auth/user.emails.read');
-    provider.addScope('https://www.googleapis.com/auth/userinfo.email');
     auth.signInWithRedirect(provider);    
   }
 }).catch((authError) => {

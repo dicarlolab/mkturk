@@ -2,18 +2,18 @@
 // Also used for liveplot to identify where to look for behavioral files
 
 // ------ Subject settings ------ 
-var subjectlist = [
-"Eliaso","Youno","Hectoro","Ericao","Alexo",
-"You-Nah","Tahereh","Hector","Erica","Elias","Andrea","Alex",
-"West","Waffles","Shirley","Sherlock","Sausage",
-"Rafiki","Ollie","Hutch","East",
-"Bourgeois","Boris","Bolshevik",
-"Bool","Bolo","Boba",
-"Bloo","Blizzard","Blintz",
-"Blast","Blasco","Blaise",
-"Barb",
-"AJ"
-];
+// var subjectlist = [
+// "Eliaso","Youno","Hectoro","Ericao","Alexo",
+// "You-Nah","Tahereh","Hector","Erica","Elias","Andrea","Alex",
+// "West","Waffles","Shirley","Sherlock","Sausage",
+// "Rafiki","Ollie","Hutch","East",
+// "Bourgeois","Boris","Bolshevik",
+// "Bool","Bolo","Boba",
+// "Bloo","Blizzard","Blintz",
+// "Blast","Blasco","Blaise",
+// "Barb",
+// "AJ"
+// ];
 
 // ------ Save location settings ------
 var DATA_SAVEPATH = "/mkturkfiles/datafiles/"
@@ -30,12 +30,29 @@ var FIRESTORECOLLECTION =	{ 	DATA: 'mkturkdata',
 var ndatafiles2read=5; // todo: change to trials. and use as upper bound (stop reading once you hit the first discrepancy). maybe this is effectively synonymous with mintrials
 
 
-// try {
-// 	if (ENV.MTurkWorkerId) {
-// 		const DATA_SAVEPATH = '/mkturkfiles_mturk/datafiles/';
-// 		const 
-// 	}
-// }
+var subjectlist = [];
+// var DATA_SAVEPATH;
+// var PARAM_DIRPATH;
+// var SOUND_FILEPREFIX;
+// var FIRESTORECOLLECTION = {};
+
+if (!ENV.MTurkWorkerId) {
+	storageRef.child(PARAM_DIRPATH).listAll()
+		.then((res) => {
+			res.items.slice().reverse().forEach((itemRef) => {
+				let subjectName = itemRef.name.split('_')[0];
+				subjectlist.push(subjectName);
+			});
+		})
+		.catch(err => {
+			console.error('error:', err);
+		});
+} else {
+	subjectlist.push(ENV.MTurkWorkerId);
+	DATA_SAVEPATH = `/mkturkfiles/userfiles/${ENV.MTurkWorkerId}/data/`;
+	FIRESTORECOLLECTION.DATA = 'mturkdata';
+	FIRESTORECOLLECTION.AGENTS = 'mturkusers';
+}
 
 
 // ------ todo: move into params file -
