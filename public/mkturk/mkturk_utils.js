@@ -34,7 +34,6 @@
           ret[key] = [ret[key], val];
         }
       });
-
       return ret;
     }
   };

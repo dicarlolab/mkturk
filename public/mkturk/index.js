@@ -33,11 +33,12 @@ var provider = new firebase.auth.GoogleAuthProvider();
 provider.addScope('https://www.googleapis.com/auth/user.emails.read');
 provider.addScope('https://www.googleapis.com/auth/userinfo.email');
 auth.getRedirectResult().then((redirectResult) => {
+  console.log(redirectResult);
   if (redirectResult.user) {
     // User just signed in
     ENV.ResearcherDisplayName = redirectResult.user.displayName;
-    ENV.ResearcherEmail = result.user.email;
-    ENV.ResearcherID = result.user.uid;
+    ENV.ResearcherEmail = redirectResult.user.email;
+    ENV.ResearcherID = redirectResult.user.uid;
 
     console.log(`Sign-In Redirect Result, USER ${redirectResult.user.email} is signed in`);
     updateHeadsUpDisplay();
