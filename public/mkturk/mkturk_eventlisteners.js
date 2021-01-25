@@ -8,7 +8,6 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 		errFunc = reject;
 	}).then(function(resolveval){
 		FLAGS.touchGeneratorCreated = 0
-		console.log('resolveval:', resolveval);
 		return resolveval
 	});
 	function *waitforeventGenerator(){
@@ -16,7 +15,6 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 		var return_event = {type: "", cxyt: []}
 		while (true){
 			touchevent = yield touchevent
-			console.log('touchevent:', touchevent);
 
 			if (FLAGS.trackeye > 0){
 				//Ignore touches if tracking eye, this will be removed in next commit since we want to use touches as surrogates when available

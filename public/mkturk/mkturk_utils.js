@@ -562,3 +562,92 @@ function getLongestArray(x){
   } //IF object
   return n
 } //FUNCTION getLongestArray
+
+async function deviceDetect() {
+  let navigator = window.navigator;
+
+  // GPU INFO
+  let canvas = document.createElement('canvas');
+  let gl, debugInfo, vendor, renderer;
+
+  try {
+    gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  } catch (e) {
+    console.error('WebGL Context Error:', e);
+  }
+
+  if (gl) {
+    debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+    vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+    renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+  }
+
+  /**
+   * TOUCH INFO
+   * Chrome (desktop) used to lie about its support on this, 
+   * but that has since been rectified: https://bugs.chromium.org/p/chromium/issues/detail?id=36415
+   * 
+   * Chrome also changed its behaviour since v70 and recommends
+   * the TouchEvent object for detection: https://www.chromestatus.com/feature/4764225348042752
+   */
+  let touchscreen = 0;
+  if (
+    'ontouchstart' in window
+    || window.TouchEvent
+    || window.DoucumentTouch
+    && document instanceof DoucmentTouch
+  ) {
+    touchscreen = 1;
+  }
+
+  // DEVICE INFO
+  let deviceInfo = await detectDevice(navigator.userAgent);
+
+  if (deviceInfo.data.device == null) {
+    deviceInfo.data.device = { type: '', brand: '', model: '' };
+  }
+
+  if (deviceInfo.data.client == null) {
+    deviceInfo.data.client = { name: '', version: '' };
+  }
+
+  if (deviceInfo.data.os == null) {
+    deviceInfo.data.os = { name: '', version: '' };
+  }
+
+  deviceInfo.data.gpu = {};
+  deviceInfo.data.gpu.vendor = vendor;
+  deviceInfo.data.gpu.renderer = renderer;
+  deviceInfo.data.touchscreen = touchscreen;
+  return deviceInfo;
+}
+
+function connectHardwareButtonPromise() {
+  let resolveFunc;
+  let errFunc;
+
+  let p = new Promise((resolve, reject) => {
+    resolveFunc = resolve;
+    errFunc = reject;
+  }).then((resolveVal) => {
+    console.log(`User clicked ${resolveVal}`);
+  });
+
+  function* waitforclickGenerator() {
+    let buttonClicked = [-1];
+    while (true) {
+      buttonClicked = yield buttonClicked;
+      resolveFunc(buttonClicked);
+    }
+  }
+
+  waitforClick = waitforclickGenerator(); // start async function
+  waitforClick.next(); // move out of default sate
+  return p;
+}
+
+function skipHardwareDevice(event) {
+  event.preventDefault(); // prevents additional downstream call of click listener
+  localStorage.setItem('ConnectUSB', 0);
+  waitforClick.next(1);
+}

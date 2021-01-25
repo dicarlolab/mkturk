@@ -15,6 +15,21 @@
 // "AJ"
 // ];
 
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
+const storageRef = storage.ref();
+const rtdb = firebase.database();
+
+const functions = firebase.functions();
+
+const bqInsertEyeData = functions.httpsCallable('bqInsertEyeData');
+const bqInsertDisplayTimes = functions.httpsCallable('bqInsertDisplayTimes');
+const detectDevice = functions.httpsCallable('detectDevice');
+const processMturkUser = functions.httpsCallable('processMturkUser');
+const submitAssignment = functions.httpsCallable('submitAssignment');
+
+
 // ------ Save location settings ------
 var DATA_SAVEPATH = "/mkturkfiles/datafiles/"
 var PARAM_DIRPATH = "/mkturkfiles/parameterfiles/subjects/"
@@ -30,7 +45,7 @@ var FIRESTORECOLLECTION =	{ 	DATA: 'mkturkdata',
 var ndatafiles2read=5; // todo: change to trials. and use as upper bound (stop reading once you hit the first discrepancy). maybe this is effectively synonymous with mintrials
 
 
-var subjectlist = [];
+let subjectlist = [];
 // var DATA_SAVEPATH;
 // var PARAM_DIRPATH;
 // var SOUND_FILEPREFIX;

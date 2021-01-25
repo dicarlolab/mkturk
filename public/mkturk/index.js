@@ -2,116 +2,6 @@
 // import firebase from 'firebase/app';
 // import 'firebase/auth';
 // import 'firebase/storage';
-/* 
- * Check for MTurk tokens in the URL
- */
-let mturkUserConfig = {};
-
-if (window.location.search) {
-  try {
-    let mturkCfgPairStr = window.location.search.split('?')[1].split('&');
-    mturkCfgPairStr.forEach(str => {
-      let pair = str.split('=');
-      if (pair[0] == 'AID') { // AID: assignmentId
-        mturkUserConfig.aid = pair[1];
-      } else if (pair[0] == 'HID') { // HID: hitId
-        mturkUserConfig.hid = pair[1];
-      } else if (pair[0] == 'WID') { // WID: workerId
-        mturkUserConfig.wid = pair[1];
-      } else if (pair[0] == 'TASK') { // TASK: name of task in params_storage
-        mturkUserConfig.task = pair[1];
-      }
-    });
-  } catch (e) {
-    console.error('Error Parsing User Config:', e);
-  }
-}
-
-//================== AUTHENTICATE GOOGLE ==================//
-const auth = firebase.auth();
-var provider = new firebase.auth.GoogleAuthProvider();
-provider.addScope('https://www.googleapis.com/auth/user.emails.read');
-provider.addScope('https://www.googleapis.com/auth/userinfo.email');
-auth.getRedirectResult().then((redirectResult) => {
-  console.log(redirectResult);
-  if (redirectResult.user) {
-    // User just signed in
-    ENV.ResearcherDisplayName = redirectResult.user.displayName;
-    ENV.ResearcherEmail = redirectResult.user.email;
-    ENV.ResearcherID = redirectResult.user.uid;
-
-    console.log(`Sign-In Redirect Result, USER ${redirectResult.user.email} is signed in`);
-    updateHeadsUpDisplay();
-  } else if (auth.currentUser) {
-    // User already signed in.
-    ENV.ResearcherDisplayName = auth.currentUser.displayName;
-    ENV.ResearcherEmail = auth.currentUser.email;
-    ENV.ResearcherID = auth.currentUser.uid;
-
-    console.log(`Sign-In Redirect Result, USER ${auth.currentUser.email} is signed in`);
-    updateHeadsUpDisplay();
-  } else {
-    console.log('User Not Yet Authenticated');
-    auth.signInWithRedirect(provider);    
-  }
-}).catch((authError) => {
-  console.error(`[Authentication Error]: ${authError}`);
-});
-
-auth.onAuthStateChanged((user) => {
-  if (user && Object.keys(mturkUserConfig).length) {
-    user.getIdToken(true)
-      .then(async (idToken) => {
-        mturkUserConfig.token = idToken;
-        console.log(`Auth Token: ${idToken}`);
-        processMturkUser(mturkUserConfig).then(async (res) => {
-          if (res.data.message == 'assignment entry already exists') {
-            console.log('window will close here');
-            //window.close();
-          }
-          if (res.data.status == 'success') {
-            ENV.MTurkWorkerId = mturkUserConfig.wid;
-          }
-        }).catch((error) => {
-          console.error(`[processMturkUser] Error: ${error}`);
-        });
-      });
-  }
-});
-//================== (end) AUTHENTICATE GOOGLE ==================//
-
-
-// //================== AUTHENTICATE GOOGLE ==================//
-// // [START authstatelistener]
-// var provider = new firebase.auth.GoogleAuthProvider();
-// provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
-// firebase.auth().getRedirectResult().then(function(result) {
-// 	console.log('url:', window.location.href);
-// 	console.log('what:', window.location.search);
-// 	let thisUrl = window.location.href;
-// 	console.log(thisUrl.split('?MID=')[1]);
-//   if (result.user) {
-//     // User just signed in. you can get the result.credential.
-//     ENV.ResearcherDisplayName = result.user.displayName;
-// 		ENV.ResearcherEmail = result.user.email;
-// 		ENV.ResearcherID = result.user.uid
-
-// 		console.log('Sign-In Redirect Result, USER ' + result.user.email + ' is signed in')
-// 		updateHeadsUpDisplay()
-//   } else if (firebase.auth().currentUser) {
-//     // User already signed in.
-// 		ENV.ResearcherDisplayName = firebase.auth().currentUser.displayName;
-// 		ENV.ResearcherEmail = firebase.auth().currentUser.email;
-// 		ENV.ResearcherID = firebase.auth().currentUser.uid
-
-// 		console.log('Sign-In Redirect Result, USER ' + firebase.auth().currentUser.email + ' is signed in')
-// 		updateHeadsUpDisplay()		
-//   } else {
-// 		// No user signed in, update your UI, show the redirect sign-in screen.
-// 		firebase.auth().signInWithRedirect(provider)
-//   }
-// });
-// //================== (end) AUTHENTICATE GOOGLE ==================//
 
 // Check Availability of APIs
 if (typeof(navigator.usb) == "object"){ ENV.WebUSBAvailable = 1 }
@@ -199,58 +89,6 @@ if (ENV.BatteryAPIAvailable) {
 } // Do nothing if BatteryAPI unavailable
 //============= (end) Initialize Audio & Battery Objects ==================//
 
-function connectHardwareButtonPromise() {
-  let resolveFunc;
-  let errFunc;
-
-  let p = new Promise((resolve, reject) => {
-    resolveFunc = resolve;
-    errFunc = reject;
-  }).then((resolveVal) => {
-    console.log(`User clicked ${resolveVal}`);
-  });
-
-  function* waitforclickGenerator() {
-    let buttonClicked = [-1];
-    while (true) {
-      buttonClicked = yield buttonClicked;
-      resolveFunc(buttonClicked);
-    }
-  }
-
-  waitforClick = waitforclickGenerator(); // start async function
-  waitforClick.next(); // move out of default sate
-  return p;
-}
-
-// function connectHardwareButtonPromise(){
-//   var resolveFunc
-//   var errFunc
-//   p = new Promise(function(resolve,reject){
-//     resolveFunc = resolve;
-//     errFunc = reject;
-//   }).then(function(resolveval){console.log('User clicked ' + resolveval)});
-
-//   function *waitforclickGenerator(){
-//     var buttonclicked =[-1];
-//     while (true){
-//       buttonclicked = yield buttonclicked;
-//       resolveFunc(buttonclicked);
-//     }
-//   }
-
-//   waitforClick = waitforclickGenerator(); // start async function
-//   waitforClick.next(); //move out of default state
-//   return p;
-// }
-
-function skipHardwareDevice(event) {
-  event.preventDefault(); // prevents additional downstream call of click listener
-  localStorage.setItem('ConnectUSB', 0);
-  waitforClick.next(1);
-}
-
-
 (async function(){
 	document.querySelector('button[id=quickload]')
     .addEventListener('pointerup', quickLoad_listener, false);
@@ -258,25 +96,6 @@ function skipHardwareDevice(event) {
   //--- for Safari
   document.querySelector('button[id=quickload')
     .addEventListener('click', quickLoad_listener, false);
-
-	// if ( ENV.WebUSBAvailable ){
-	// 	await usb_scriptLoaded
-	// 	document.querySelector ("button[id=connectusb]").addEventListener(
-	// 		'pointerup',findUSBDevice,false)
-	// 	document.querySelector("button[id=nousb]").addEventListener(
-	// 		'pointerup',skipHardwareDevice,false)
-	// 	document.querySelector("button[id=preemptRFID]").addEventListener(
-	// 		'pointerup',preemptRFID_listener,false)	
-
-	// 		//---- for Safari
-	// 		document.querySelector ("button[id=connectusb]").addEventListener(
-	// 			'click',findUSBDevice,false)
-	// 		document.querySelector("button[id=nousb]").addEventListener(
-	// 			'click',skipHardwareDevice,false)
-	// 		document.querySelector("button[id=preemptRFID]").addEventListener(
-	// 			'click',preemptRFID_listener,false)	
-	// 		//---- (END) for Safari
-  // }
 
   if (ENV.WebUSBAvailable) {
     await usb_scriptLoaded;
