@@ -1776,11 +1776,6 @@ if (typeof(teston) == "undefined"){
 		// Update trial tracking variables
 		updateTrialHistory() //appends to running trial history
 
-		// Run automator
-		if (TASK.Automator !=0){	
-			await automateTask(automator_data, trialhistory);
-		}
-
 		if (TASK.Agent != "SaveImages"){
 			// Cloud Storage: Save data asynchronously to json
 			saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS);
@@ -1826,6 +1821,11 @@ if (typeof(teston) == "undefined"){
 	if (TASK.Agent == "SaveImages" && CURRTRIAL.num >= TQS.samplebag_indices.length-1){
 		return
 	}//IF saved all images
+
+	// Run automator only after everything is saved
+  	if (TASK.Automator !=0){  
+    	await automateTask(automator_data, trialhistory);
+  	}
 
 	//================= (end) HOUSEKEEPING =================//
 
