@@ -185,12 +185,12 @@ exports.processMturkUser = functions.https.onCall(async (data) => {
         }
     }
     const firestore = admin.firestore();
-    const bucket = admin.storage().bucket('mkturk-mturk');
+    const bucket = admin.storage().bucket();
     let decodedToken;
     try {
         decodedToken = await admin.auth()
             .verifyIdToken(data.token)
-            .then(tkn => {
+            .then((tkn) => {
             console.log('[verifyIdToken] Decode Success');
             return tkn;
         });
@@ -215,7 +215,7 @@ exports.processMturkUser = functions.https.onCall(async (data) => {
             let assignmentEntry = {
                 assignmentId: data.aid,
                 hitId: data.hid,
-                task: data.task,
+                // task: data.task,
                 startTime: admin.firestore.Timestamp.fromDate(new Date())
             };
             let userData = {
@@ -238,7 +238,7 @@ exports.processMturkUser = functions.https.onCall(async (data) => {
                 let assignmentEntry = {
                     assignmentId: data.aid,
                     hitId: data.hid,
-                    task: data.task,
+                    // task: data.task,
                     startTime: admin.firestore.Timestamp.fromDate(new Date())
                 };
                 let mturkUser = docs[0].data();
@@ -270,8 +270,8 @@ exports.processMturkUser = functions.https.onCall(async (data) => {
     }
     let mturkhit = {
         hitId: data.hid,
-        task: data.task,
-        path: `mkturkfiles/paramterfiles/params_storage/${data.task}.json`,
+        // task: data.task,
+        path: `mkturkfiles/paramterfiles/mturk_params/${data.hid}.json`,
         workerIds: [data.wid]
     };
     // register HIT data & setup ${wid}_params.json
@@ -305,21 +305,26 @@ exports.processMturkUser = functions.https.onCall(async (data) => {
                 throw new ProcessMTurkUserError(`[mturkhits] Existing HIT Registration Error: ${e}`);
             });
         }
-        const tmpPath = await bucket.file('mkturkfiles/menu.json')
-            .download()
-            .then(value => {
-            let menuFile = JSON.parse(value[0].toString('utf8'));
-            return menuFile[data.task];
-        })
-            .catch(e => {
-            console.error('[menu.json] Find Task Error:', e);
-            throw new ProcessMTurkUserError(`[menu.json] Find Task Error: ${e}`);
-        });
-        const paramFile = await bucket.file(tmpPath)
+        // const tmpPath = await bucket.file(`/mkturkfiles/parameterfiles/mturk_params/${data.hid}_params.json`)
+        //   .download()
+        //   .then(value => {
+        //     let menuFile = JSON.parse(value[0].toString('utf8'));
+        //     return menuFile[data.task];
+        //   })
+        //   .catch(e => {
+        //     console.error('[menu.json] Find Task Error:', e);
+        //     throw new ProcessMTurkUserError(
+        //       `[menu.json] Find Task Error: ${e}`
+        //     );
+        //   });
+        const paramfilePath = `mkturkfiles/parameterfiles/mturk_params/${data.hid}_params.json`;
+        const paramFile = await bucket.file(paramfilePath)
             .download()
             .then(value => {
             let tmp = JSON.parse(value[0].toString('utf8'));
             tmp.Agent = data.wid;
+            tmp.AssignmentId = data.aid;
+            tmp.HITId = data.hid;
             return tmp;
         })
             .catch(e => {
@@ -327,8 +332,9 @@ exports.processMturkUser = functions.https.onCall(async (data) => {
             throw new ProcessMTurkUserError(`[paramfile] Find Param File Error: ${e}`);
         });
         const destArr = [
-            `mkturkfiles/parameterfiles/subjects/${data.wid}_params.json`,
-            `user_files/${data.wid}/${data.wid}_${data.hid}_${data.aid}params.json`
+            // `mkturkfiles/parameterfiles/subjects/${data.wid}_params.json`,
+            // `user_files/${data.wid}/${data.wid}_${data.hid}_${data.aid}params.json`,
+            `mkturkfiles_mturk/userfiles/${data.wid}/params/${data.wid}_${data.aid}_${data.hid}_params.json`
         ];
         destArr.forEach(async (dest) => {
             bucket.file(dest)

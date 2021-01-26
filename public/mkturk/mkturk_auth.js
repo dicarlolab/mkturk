@@ -3,7 +3,41 @@
  * Authentication procedure for MkTurk.
  * TODO: Change mkturk_installsettings.js based on authentication result
  */
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
+const storageRef = storage.ref();
+const rtdb = firebase.database();
+
+const functions = firebase.functions();
+
+const bqInsertEyeData = functions.httpsCallable('bqInsertEyeData');
+const bqInsertDisplayTimes = functions.httpsCallable('bqInsertDisplayTimes');
+const detectDevice = functions.httpsCallable('detectDevice');
+const processMturkUser = functions.httpsCallable('processMturkUser');
+const submitAssignment = functions.httpsCallable('submitAssignment');
+
+// ------ Save location settings ------
+var DATA_SAVEPATH = "/mkturkfiles/datafiles/"
+var PARAM_DIRPATH = "/mkturkfiles/parameterfiles/subjects/"
+var SOUND_FILEPREFIX = "/mkturkfiles/sounds/au"
+
+var FIRESTORECOLLECTION =	{
+  DATA: 'mkturkdata',
+	DEVICES: 'devices',
+	AGENTS: 'marmosets',
+	CALIBRATION: 'eyecalibrations',
+};
+
+// ------ Misc. -----------------------
+var ndatafiles2read = 5; // todo: change to trials. and use as upper bound (stop reading once you hit the first discrepancy). maybe this is effectively synonymous with mintrials
+let subjectlist = [];
+
+
 let mturkUserConfig = {};
+
+console.log('window.location.search:', window.location.search);
 
 if (window.location.search) {
   try {
@@ -25,9 +59,12 @@ if (window.location.search) {
   }
 }
 
+console.log('mturkUserConfig:', mturkUserConfig);
+
 let provider = new firebase.auth.GoogleAuthProvider();
 provider.addScope('https://www.googleapis.com/auth/user.emails.read');
 provider.addScope('https://www.googleapis.com/auth/userinfo.email');
+
 
 auth.getRedirectResult().then((redirectResult) => {
   if (redirectResult.user) {
@@ -68,12 +105,31 @@ auth.onAuthStateChanged((user) => {
             //window.close();
           }
           if (res.data.status == 'success') {
+            console.log('HELLO');
             ENV.MTurkWorkerId = mturkUserConfig.wid;
+            ENV.HITId = mturkUserConfig.hid;
+            ENV.AssignmentId = mturkUserConfig.aid;
+            subjectlist.push(ENV.MTurkWorkerId);
+            DATA_SAVEPATH = `/mkturkfiles_mturk/userfiles/${ENV.MTurkWorkerId}/data/`;
+            PARAM_DIRPATH = `/mkturkfiles_mturk/userfiles/${ENV.MTurkWorkerId}/params/`
+            FIRESTORECOLLECTION.DATA = 'mturkdata';
+            // FIRESTORECOLLECTION.AGENTS = 'mturkusers';
           }
         }).catch((error) => {
           console.error(`[processMturkUser] Error: ${error}`);
         });
       });
+  } else {
+	  storageRef.child(PARAM_DIRPATH).listAll()
+		.then((res) => {
+			res.items.slice().reverse().forEach((itemRef) => {
+				let subjectName = itemRef.name.split('_')[0];
+				subjectlist.push(subjectName);
+			});
+		})
+		.catch(err => {
+			console.error('error:', err);
+		});
   }
 });
 

@@ -53,7 +53,7 @@ interface MturkUserData {
 
 interface MturkUserAssignmentData {
   assignmentId: string,
-  task: string,
+  // task: string,
   hitId: string,
   startTime: FirebaseFirestore.Timestamp,
   submitCode?: string,
@@ -241,14 +241,14 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
   }
 
   const firestore = admin.firestore();
-  const bucket = admin.storage().bucket('mkturk-mturk');
+  const bucket = admin.storage().bucket();
 
 
   let decodedToken: admin.auth.DecodedIdToken;
   try {
     decodedToken = await admin.auth()
       .verifyIdToken(data.token)
-      .then(tkn => {
+      .then((tkn: any) => {
         console.log('[verifyIdToken] Decode Success');
         return tkn;
       });
@@ -265,7 +265,7 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
   try {
     if (mturkUsersQuerySnapshot.empty) { // new user
       admin.auth()
-        .setCustomUserClaims(decodedToken.uid, {wid: data.wid})
+        .setCustomUserClaims(decodedToken.uid, { wid: data.wid })
         .then(() => console.log('[setCustomUserClaims] Add Claim (wid) Success'))
         .catch(e => {
           console.error('[setCustomUserClaims] Add Claim (wid) Error:', e);
@@ -277,7 +277,7 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
       let assignmentEntry: MturkUserAssignmentData = {
         assignmentId: data.aid,
         hitId: data.hid,
-        task: data.task,
+        // task: data.task,
         startTime: admin.firestore.Timestamp.fromDate(new Date())
       };
 
@@ -303,7 +303,7 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
         let assignmentEntry: MturkUserAssignmentData = {
           assignmentId: data.aid,
           hitId: data.hid,
-          task: data.task,
+          // task: data.task,
           startTime: admin.firestore.Timestamp.fromDate(new Date())
         };
 
@@ -344,8 +344,8 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
 
   let mturkhit = {
     hitId: data.hid,
-    task: data.task,
-    path: `mkturkfiles/paramterfiles/params_storage/${data.task}.json`,
+    // task: data.task,
+    path: `mkturkfiles/paramterfiles/mturk_params/${data.hid}.json`,
     workerIds: [data.wid]
   };
 
@@ -385,20 +385,22 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
         });
     }
 
-    const tmpPath = await bucket.file('mkturkfiles/menu.json')
-      .download()
-      .then(value => {
-        let menuFile = JSON.parse(value[0].toString('utf8'));
-        return menuFile[data.task];
-      })
-      .catch(e => {
-        console.error('[menu.json] Find Task Error:', e);
-        throw new ProcessMTurkUserError(
-          `[menu.json] Find Task Error: ${e}`
-        );
-      });
+    // const tmpPath = await bucket.file(`/mkturkfiles/parameterfiles/mturk_params/${data.hid}_params.json`)
+    //   .download()
+    //   .then(value => {
+    //     let menuFile = JSON.parse(value[0].toString('utf8'));
+    //     return menuFile[data.task];
+    //   })
+    //   .catch(e => {
+    //     console.error('[menu.json] Find Task Error:', e);
+    //     throw new ProcessMTurkUserError(
+    //       `[menu.json] Find Task Error: ${e}`
+    //     );
+    //   });
 
-    const paramFile = await bucket.file(tmpPath)
+    const paramfilePath = `mkturkfiles/parameterfiles/mturk_params/${data.hid}_params.json`;
+
+    const paramFile = await bucket.file(paramfilePath)
       .download()
       .then(value => {
         let tmp = JSON.parse(value[0].toString('utf8'));
@@ -415,8 +417,9 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
       });
 
     const destArr = [
-      `mkturkfiles/parameterfiles/subjects/${data.wid}_params.json`,
-      `user_files/${data.wid}/${data.wid}_${data.hid}_${data.aid}params.json`
+      // `mkturkfiles/parameterfiles/subjects/${data.wid}_params.json`,
+      // `user_files/${data.wid}/${data.wid}_${data.hid}_${data.aid}params.json`,
+      `mkturkfiles_mturk/userfiles/${data.wid}/params/${data.wid}_${data.aid}_${data.hid}_params.json`
     ];
 
     destArr.forEach(async dest => {

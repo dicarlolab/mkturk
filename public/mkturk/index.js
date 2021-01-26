@@ -278,7 +278,11 @@ if (ENV.BatteryAPIAvailable) {
 
 	localStorage.setItem("Agent",ENV.Subject)	;
 
-	ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.json";
+  if (ENV.MTurkWorkerId) {
+    ENV.ParamFileName = PARAM_DIRPATH + ENV.MTurkWorkerId + '_' + ENV.AssignmentId + '_' + ENV.HITId + '_params.json';
+  } else {
+    ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.json";
+  }
 	await loadParametersfromFirebase(ENV.ParamFileName);
 	
 	let rtdbAgentRef = rtdb.ref('agents/' + ENV.Subject);

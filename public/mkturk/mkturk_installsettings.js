@@ -15,7 +15,7 @@
 // "AJ"
 // ];
 
-const auth = firebase.auth();
+// const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 const storageRef = storage.ref();
@@ -64,7 +64,7 @@ if (!ENV.MTurkWorkerId) {
 		});
 } else {
 	subjectlist.push(ENV.MTurkWorkerId);
-	DATA_SAVEPATH = `/mkturkfiles/userfiles/${ENV.MTurkWorkerId}/data/`;
+	DATA_SAVEPATH = `/mkturkfiles_mturk/userfiles/${ENV.MTurkWorkerId}/data/`;
 	FIRESTORECOLLECTION.DATA = 'mturkdata';
 	FIRESTORECOLLECTION.AGENTS = 'mturkusers';
 }
