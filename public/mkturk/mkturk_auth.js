@@ -32,7 +32,7 @@ var FIRESTORECOLLECTION =	{
 
 // ------ Misc. -----------------------
 var ndatafiles2read = 5; // todo: change to trials. and use as upper bound (stop reading once you hit the first discrepancy). maybe this is effectively synonymous with mintrials
-let subjectlist = [];
+var subjectlist = [];
 
 
 let mturkUserConfig = {};
@@ -99,13 +99,13 @@ auth.onAuthStateChanged((user) => {
       .then(async (idToken) => {
         mturkUserConfig.token = idToken;
         console.log(`Auth Token: ${idToken}`);
-        processMturkUser(mturkUserConfig).then(async (res) => {
-          if (res.data.message == 'assignment entry already exists') {
+        await processMturkUser(mturkUserConfig).then(async (res) => {
+          if (await res.data.message == 'assignment entry already exists') {
             console.log('window will close here');
             //window.close();
           }
-          if (res.data.status == 'success') {
-            console.log('HELLO');
+          if (await res.data.status == 'success') {
+            // console.log('HELLO');
             ENV.MTurkWorkerId = mturkUserConfig.wid;
             ENV.HITId = mturkUserConfig.hid;
             ENV.AssignmentId = mturkUserConfig.aid;
@@ -113,7 +113,11 @@ auth.onAuthStateChanged((user) => {
             DATA_SAVEPATH = `/mkturkfiles_mturk/userfiles/${ENV.MTurkWorkerId}/data/`;
             PARAM_DIRPATH = `/mkturkfiles_mturk/userfiles/${ENV.MTurkWorkerId}/params/`
             FIRESTORECOLLECTION.DATA = 'mturkdata';
-            // FIRESTORECOLLECTION.AGENTS = 'mturkusers';
+            let subjectlistobj = document.getElementById("subjectID_select");
+            let opt = document.createElement('option');
+            opt.value = 0;
+            opt.innerHTML = subjectlist[0];
+            subjectlistobj.appendChild(opt);
           }
         }).catch((error) => {
           console.error(`[processMturkUser] Error: ${error}`);
@@ -123,13 +127,24 @@ auth.onAuthStateChanged((user) => {
 	  storageRef.child(PARAM_DIRPATH).listAll()
 		.then((res) => {
 			res.items.slice().reverse().forEach((itemRef) => {
-				let subjectName = itemRef.name.split('_')[0];
-				subjectlist.push(subjectName);
-			});
+        let subjectName = itemRef.name.split('_')[0];
+        if (subjectName) {
+          subjectlist.push(subjectName);
+        }
+      });
+      let subjectlistobj = document.getElementById("subjectID_select");
+      for (let i = subjectlist.length - 1; i >= 0; i--) {
+        console.log('subjectlist i:', i);
+        let opt = document.createElement('option');
+        opt.value = i;
+        opt.innerHTML = subjectlist[i];
+        subjectlistobj.appendChild(opt);
+      }
 		})
 		.catch(err => {
 			console.error('error:', err);
 		});
   }
 });
+
 

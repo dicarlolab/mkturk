@@ -94,7 +94,7 @@ if (ENV.BatteryAPIAvailable) {
     .addEventListener('pointerup', quickLoad_listener, false);
 
   //--- for Safari
-  document.querySelector('button[id=quickload')
+  document.querySelector('button[id=quickload]')
     .addEventListener('click', quickLoad_listener, false);
 
   if (ENV.WebUSBAvailable) {
@@ -237,13 +237,16 @@ if (ENV.BatteryAPIAvailable) {
 	//====================== Quickload Button Set-up ===========================//
 	// GET PARAMFILE NAME
   var subjectlistobj = document.getElementById("subjectID_select");
+  
 
-  for (let i = subjectlist.length - 1; i >= 0; i--) {
-    let opt = document.createElement('option');
-    opt.value = i;
-    opt.innerHTML = subjectlist[i];
-    subjectlistobj.appendChild(opt);
-  }
+  // console.log('index.js subjectlist:', subjectlist);
+  // for (let i = subjectlist.length - 1; i >= 0; i--) {
+  //   console.log('subjectlist i:', i);
+  //   let opt = document.createElement('option');
+  //   opt.value = i;
+  //   opt.innerHTML = subjectlist[i];
+  //   subjectlistobj.appendChild(opt);
+  // }
 	
 	subjectlistobj.addEventListener("change", subjectlist_listener, false);
   subjectlistobj.style.visibility = "visible";
@@ -444,7 +447,10 @@ if (ENV.BatteryAPIAvailable) {
 
   //============= AWAIT READ SUBJECT PERFORMANCE HISTORY =============//
 	// Read performance history
-	var subject_behavior_save_directory = DATA_SAVEPATH + ENV.Subject + '/';
+  var subject_behavior_save_directory = DATA_SAVEPATH + ENV.Subject + '/';
+  if (ENV.MTurkWorkerId) {
+    subject_behavior_save_directory = DATA_SAVEPATH;
+  }
 	if (TASK.Automator != 0) {
 		var history_file_paths = (
       await getMostRecentBehavioralFilePathsFromFirebase(

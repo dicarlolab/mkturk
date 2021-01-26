@@ -27,7 +27,7 @@ async function automateTask(automator_data, trialhistory){
 				console.log(automator_eventstring[automator_eventstring.length-1])
 
 				TASK[property] = automator_data[i_current_stage][property]
-				FLAGS.need2saveParameters=1
+				FLAGS.need2saveParameters = 1;
 			}//IF need to update TASK property to property in current automator stage
 		}//IF
 	}//FOR property
@@ -40,8 +40,8 @@ async function automateTask(automator_data, trialhistory){
 
 	// Calculate current pctcorrect and ntrials
 	var funcreturn = computeRunningHistory(ENV.MinTrialsCriterion, current_stage, trialhistory.trainingstage, trialhistory.correct)
-	ENV.StagePctCorrect = funcreturn[0]
-	ENV.StageNTrials = funcreturn[1]
+	ENV.StagePctCorrect = funcreturn[0];
+	ENV.StageNTrials = funcreturn[1];
 
 	console.log('Performance history: '+ENV.StageNTrials+' trials, pctcorrect='+ ENV.StagePctCorrect)
 
@@ -52,7 +52,7 @@ async function automateTask(automator_data, trialhistory){
 		if (automator_data.length <= TASK.CurrentAutomatorStage+1){
 			// Stay in current stage settings, and turn automator off
 			TASK.Automator = 0;
-			FLAGS.need2saveParameters=1
+			FLAGS.need2saveParameters = 1;
 			
 			automator_eventstring.push('COMPLETED FINAL STAGE, TURNING AUTOMATOR OFF')
 			FLAGS.automatortext = updateHeadsUpDisplayAutomator(ENV.CurrentAutomatorStageName,ENV.StagePctCorrect,ENV.StageNTrials,ENV.MinPercentCriterion,ENV.MinTrialsCriterion,automator_eventstring)
@@ -78,7 +78,7 @@ async function automateTask(automator_data, trialhistory){
 		updateEventDataonFirestore(EVENTS);
 
 		// Reset tracking variables 
-		purgeTrackingVariables()
+		purgeTrackingVariables();
 
 		// Update TASK
 		for (var property in automator_data[i_current_stage+1]){
@@ -96,8 +96,8 @@ async function automateTask(automator_data, trialhistory){
 				}//IF need to update TASK property
 			}//IF property
 		}//FOR property
-		FLAGS.need2saveParameters=1
-		FLAGS.need2loadParameters=1
+		FLAGS.need2saveParameters = 1;
+		FLAGS.need2loadParameters = 1;
 	}//IF stage transition
 
 	FLAGS.automatortext = updateHeadsUpDisplayAutomator(
