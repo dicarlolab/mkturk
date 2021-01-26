@@ -364,6 +364,19 @@ serial.Port.prototype.writepumpdurationtoUSB = async function(data){
 	updateHeadsUpDisplayDevices()
 } //port.writepumpdurationUSB
 
+
+
+//PORT - transferOut sample command to external devices (eg, Camera)
+serial.Port.prototype.writeSampleCommandTriggertoUSB = async function(data){
+    let msgstr = "$" + data.toString() + "%" // start($), end(%) characters
+    let textEncoder = new TextEncoder();
+    await this.device_.transferOut(4, textEncoder.encode(msgstr)); //SANITY CHECK what the 4 is
+
+    port.statustext_sent = "TRANSFERRED SampleCommandSignal --> USB:" + msgstr
+    // console.log(port.statustext_sent)
+    updateHeadsUpDisplayDevices()
+} //port.writepumpdurationUSB
+
 //PORT - disconnect
 serial.Port.prototype.disconnect = async function() {
 	await this.device_.controlTransferOut({

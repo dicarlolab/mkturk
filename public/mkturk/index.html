@@ -1014,14 +1014,19 @@ while(true){
         var t0=CURRTRIAL.tsequence[CURRTRIAL.tsequence.length-1]
         var sampleon = chooseArrayElement(IMAGES["Sample"][CURRTRIAL.sample_scenebag_label[i][0]].durationMS, CURRTRIAL.sample_scenebag_index[i][0],0)
 
-        //Timing: blankdurationpre, sampleon, framerate
+		//Timing: blankdurationpre, sampleon, framerate
         if (i==0){
-            var blankdurationpre = Math.max(100,TASK.SampleOFF)
+			if (typeof TASK.SamplePRE === 'undefined' || TASK.SamplePRE === null || TASK.SamplePRE < 0) {  // variable is undefined or null
+	          var blankdurationpre = Math.max(100,TASK.SampleOFF)
+	        }
+	        else{
+	          var blankdurationpre = Task.SamplePRE // use provided value
+	        }//IF       
         }//if first blank, prepend at least 100ms
         else{
             var blankdurationpre = TASK.SampleOFF
-        }
-
+        }//ELSE subsequent RSVP images
+        
         //Create Movie Sequence
         [movie_sequence, movie_tsequence, movie_framenum] = 
         createMovieSeq("Sample",blankdurationpre, sampleon, TASK.SampleOFF, ENV.FrameRateMovie)
@@ -1398,6 +1403,8 @@ if (typeof(teston) == "undefined"){
             if (FLAGS.trackeye){
               ENV.Eye.EventType = "eyemove"
             }//IF trackeye
+
+			await port.writeSampleCommandTriggertoUSB("1")
             var p1 = hold_promise(0,boundingBoxesSampleFixation,FLAGS.punishOutsideTouch)
             var p2 = displayTrial(CURRTRIAL.tsequence, CURRTRIAL.sequencegridindex, CURRTRIAL.sequenceframe, CURRTRIAL.sequencetaskscreen, CURRTRIAL.sequencelabel, CURRTRIAL.sequenceindex)
             CURRTRIAL.samplestarttime=Date.now() - ENV.CurrentDate.valueOf();
@@ -1431,7 +1438,8 @@ if (typeof(teston) == "undefined"){
 	        CURRTRIAL.samplefixationtouchevent = ''
             CURRTRIAL.samplefixationxyt = []
             CURRTRIAL.samplestarttime=Date.now() - ENV.CurrentDate.valueOf();
-            CURRTRIAL.samplestarttime_string = new Date(Date.now()).toJSON()            
+            CURRTRIAL.samplestarttime_string = new Date(Date.now()).toJSON() 
+			await port.writeSampleCommandTriggertoUSB("1")
 			await displayTrial(CURRTRIAL.tsequence, CURRTRIAL.sequencegridindex, CURRTRIAL.sequenceframe,
 								CURRTRIAL.sequencetaskscreen, CURRTRIAL.sequencelabel, CURRTRIAL.sequenceindex)
         }//ELSE !RSVP, no fixation hold
@@ -1715,6 +1723,14 @@ if (typeof(teston) == "undefined"){
 		playSound(3);
 		await Promise.all([p1,p2])
 	}//ELSEIF wrong, then timeout
+
+	port.writeSampleCommandTriggertoUSB("0")
+
+    // Log trial end time
+    CURRTRIAL.endtime=Date.now() - ENV.CurrentDate.valueOf();
+    logEVENTS("EndTime",CURRTRIAL.endtime,"trialseries")
+
+
 	//============ (end) DELIVER REWARD/PUNISH ============//
 
 

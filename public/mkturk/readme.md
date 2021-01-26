@@ -99,6 +99,8 @@ SampleGridIndex: Index on grid where sample image appears. SampleGridIndex=4 cen
 
 SamplingStrategy: Determines how sample images are drawn: uniform_with_replacement, uniform_without_replacement, sequential
 
+SamplePRE: Duration in milliseconds that a gray screen is presented before the first sample image. If SamplePRE is not defined or <0, then max(100,SampleOFF) is used for the blank duration preceding the first sample
+
 SampleOFF: Duration in milliseconds that a gray screen is presented after the sample image before the response screen. This implements the delay in a DMS task. SampleOFF=0, leads to no delay
 
 SampleSizeInches (deprecated, now specified in scene param file): Size of sample image in physical inches on the screen. sampleSizeInches = 0.834444 displays a 256 x 256 image on 256 x 256 screen pixels on the google pixel c screen (i.e. no up or down sampling/resizing/filtering of the image)
@@ -223,6 +225,8 @@ AllFixationXYT: records all fixation touches as opposed to most recent fixation 
 AutomatorStage: Stage number if Automator=1
 
 CorrectItem: Index of the correct item on each trial
+
+EndTime: End of trial, time is recorded when either reward delivery or punish timeout promise is fulfilled.
 
 FixationGridIndex: Fixation grid location on each trial.
 
