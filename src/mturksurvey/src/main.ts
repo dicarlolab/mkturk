@@ -22,6 +22,18 @@ const auth = firebase.auth();
 let mturkUserConfig: any = {};
 console.log('location:', window.location.search);
 
+const surveyForm = document.querySelector('#survey-form') as HTMLFormElement;
+surveyForm.addEventListener('submit', (evt: Event) => {
+  console.log('hello');
+});
+
+const submitBtn = document.querySelector('#submit-btn') as HTMLInputElement;
+submitBtn.addEventListener('pointerup', (evt: Event) => {
+  console.log('hello');
+  let submitEvent = new Event('submit');
+  surveyForm.dispatchEvent(submitEvent);
+});
+
 // let workerId = Math.random().toString(36).substr(2);
 // console.log(workerId);
 

@@ -37,7 +37,7 @@ module.exports = {
       {
         test: /\.css$/i,
         use: ['style-loader', 'css-loader'],
-        include: [path.resolve(__dirname, 'src'), path.resolve(__dirname, 'node_modules/jsoneditor/dist'), path.resolve(__dirname, 'node_modules/getmdl-select/getmdl-select.min.css')],
+        include: [path.resolve(__dirname, 'src')],
         sideEffects: true
       },
       {
