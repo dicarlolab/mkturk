@@ -17,6 +17,8 @@ firebase.initializeApp(firebaseConfig);
 
 const functions = firebase.functions();
 const auth = firebase.auth();
+const submitAssignment = functions.httpsCallable('submitAssignment');
+const submitSurvey = functions.httpsCallable('submitSurvey');
 const countriesList = [
   "Afghanistan", "Albania", "Algeria", "American Samoa", "Angola", "Anguilla",
   "Antartica", "Antigua and Barbuda", "Argentina", "Armenia", "Aruba",
@@ -62,6 +64,7 @@ const countriesList = [
 ];
 
 let mturkUserConfig: any = {};
+mturkUserConfig.survey = {};
 console.log('location:', window.location.search);
 if (window.location.search) {
   try {
@@ -85,10 +88,12 @@ if (window.location.search) {
 console.log(mturkUserConfig);
 
 const surveyForm = document.querySelector('#survey-form') as HTMLFormElement;
-surveyForm.addEventListener('submit', (evt: Event) => {
+surveyForm.addEventListener('submit', async (evt: Event) => {
   // prevent submit form on ENTER/RETURN
   evt.preventDefault();
   // 1. Check that all required elements are populated
+  
+  // console.log(document.querySelectorAll('input[name=difficulty]:checked')[0].value);
   let difficultyChecked = document.querySelectorAll('input[name=difficulty]:checked').length;
   let engagingChecked = document.querySelectorAll('input[name=engaging]:checked').length;
   const requiredElems = (
@@ -105,13 +110,63 @@ surveyForm.addEventListener('submit', (evt: Event) => {
     requiredElems.forEach((requiredEl: HTMLInputElement | HTMLSelectElement) => {
       if (!requiredEl.value) {
         throw new TypeError(`value of ${requiredEl.id} is undefined`);
+      } else {
+        if (requiredEl.id == 'age') {
+          mturkUserConfig.survey[requiredEl.id] = parseInt(requiredEl.value);
+        } else {
+          mturkUserConfig.survey[requiredEl.id] = requiredEl.value;
+        }
       }
     });
 
-    console.log('all values look good');
+    let engagingLevel = (
+      document.querySelector('input[name=difficulty]:checked') as HTMLInputElement
+    );
+    let difficultyLevel = (
+      document.querySelector('input[name=difficulty]:checked') as HTMLInputElement
+    );
+
+    mturkUserConfig.survey['engagingLevel'] = parseInt(engagingLevel.value);
+    mturkUserConfig.survey['difficultyLevel'] = parseInt(difficultyLevel.value);
+    console.log('all values look good:', mturkUserConfig);
+
+    let response = await submitSurvey(mturkUserConfig);
+    if (response.data.status === 200) {
+      alert(`Your submit code is: ${response.data.message}`);
+    } else {
+      alert(`There was an error: ${response.data.message}`);
+    }
+
   } catch (error) {
     console.error(error);
     alert(error.message);
   }
   
 });
+
+const submitBtn = document.querySelector('#submit-btn') as HTMLInputElement;
+submitBtn.addEventListener('pointerup', (evt: Event) => {
+  surveyForm.dispatchEvent(new Event('submit'));
+});
+
+const countriesListEls = (
+  document.querySelectorAll('.countries-list') as NodeListOf<HTMLSelectElement>
+);
+
+countriesList.forEach((country: string) => {
+  let option = document.createElement('option');
+  option.textContent = country;
+  option.value = country.toLocaleLowerCase();
+
+  countriesListEls.forEach((el: HTMLSelectElement) => {
+    el.appendChild(option.cloneNode(true));
+  });
+});
+
+const assignmentBtn = document.querySelector('#assignment-btn') as HTMLButtonElement;
+assignmentBtn.addEventListener('pointerup', async (evt: Event) => {
+  let response = await submitAssignment(mturkUserConfig);
+  console.log(response);
+});
+
+

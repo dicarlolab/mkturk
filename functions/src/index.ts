@@ -51,6 +51,16 @@ interface MturkUserData {
   task: string,
 };
 
+// interface MturkSurvey {
+//   engagementLevel: number,
+//   difficultyLevel: number,
+//   feedback: string | null,
+//   age: number,
+//   sex: string,
+//   residencyCountry: string,
+//   schoolingCountry: string
+// };
+
 interface MturkUserAssignmentData {
   assignmentId: string,
   // task: string,
@@ -467,6 +477,84 @@ export const sayHello = functions.https.onRequest((req, res) => {
   res.send({aid: aid, hid: hid, wid: wid});
   res.json({aid: aid, hid: hid, wid: wid});
   return;
+});
+
+export const submitSurvey = functions.https.onCall(async (data: any) => {
+  const surveySubmitTime = new Date();
+  class SubmitSurveyError extends Error {
+    constructor(message?: string) {
+      super(message);
+
+      Object.setPrototypeOf(this, new.target.prototype);
+      this.name = SubmitSurveyError.name;
+    }
+  }
+
+  const firestore = admin.firestore();
+  const bucket = admin.storage().bucket();
+
+  let userSnapshot = await firestore.collection('mturkusers')
+    .where('workerId', '==', data.wid)
+    .get();
+
+  try {
+    if (userSnapshot.empty) {
+      console.error('[submitSurvey] User Not Found');
+      throw new SubmitSurveyError('[submitSurvey] User Not Found');
+    } else {
+      let docs = userSnapshot.docs;
+      if (docs.length === 1) {
+        let mturkUser = docs[0].data();
+        let assignmentList = mturkUser.assignmentList;
+        let lastEntry = assignmentList[assignmentList.length - 1];
+
+        if (data.aid !== lastEntry.assignmentId) {
+          console.error('[submitSurvey] AssignmentId Mismatch');
+          throw new SubmitSurveyError('[submitSurvey] AssignmentId Mismatch');
+        } else if (data.hid !== lastEntry.hitId) {
+          console.error('[submitSurvey] HITId Mismatch');
+          throw new SubmitSurveyError('[submitSurvey] HITId Mismatch');
+        }
+
+        lastEntry.surveySubmitTime = admin.firestore.Timestamp.fromDate(surveySubmitTime);
+        const surveyFilePath = (
+          `mkturkfiles_mturk/userfiles/${data.wid}/surveys/${data.wid}_${data.aid}_${data.hid}.json`
+        );
+
+        return await bucket.file(surveyFilePath)
+          .save(JSON.stringify(data.survey, null, 2))
+          .then(async () => {
+            const mturkuserUpdated = await firestore.collection('mturkusers')
+              .doc(data.wid)
+              .set(mturkUser)
+              .then(() => {
+                return 200;
+              })
+              .catch(e => {
+                return 500;
+              });
+
+            if (mturkuserUpdated === 200) {
+              return { status: 200, message: `${lastEntry.submitCode}` };
+            } else {
+              // throw new SubmitSurveyError(`mturkuser=${data.wid}'s entry could not be set`);
+              return { status: 500, message: 'Error' };
+            }
+          }).catch(e => {
+            console.error('[submitSurvey] Error:', e);
+            throw new SubmitSurveyError(`mturkuser=${data.wid}'s entry could not be set`);
+          });
+      }
+      console.error('[submitSurvey] More than one document with the same workerId');
+      throw new SubmitSurveyError(
+        '[submitSurvey] More than one document with the same workerId'
+      );
+    }
+  } catch (e) {
+    return { status: 500, message: e.message };
+  }
+
+  
 });
 
 export const submitAssignment = functions.https.onCall(async (data: MturkUserData) => {

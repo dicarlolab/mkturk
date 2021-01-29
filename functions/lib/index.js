@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.bqInsertDisplayTimes = exports.submitAssignment = exports.sayHello = exports.listAllUsers = exports.copyParamFile = exports.processMturkUser = exports.isMturkUser = exports.isLabMember = exports.detectDevice = exports.bqListDatasets = exports.listTables = exports.bqQuery = exports.bqInsertEyeData = void 0;
+exports.bqInsertDisplayTimes = exports.submitAssignment = exports.submitSurvey = exports.sayHello = exports.listAllUsers = exports.copyParamFile = exports.processMturkUser = exports.isMturkUser = exports.isLabMember = exports.detectDevice = exports.bqListDatasets = exports.listTables = exports.bqQuery = exports.bqInsertEyeData = void 0;
 const functions = require("firebase-functions");
 const bigquery_1 = require("@google-cloud/bigquery");
 const DeviceDetector = require("device-detector-js");
@@ -376,6 +376,73 @@ exports.sayHello = functions.https.onRequest((req, res) => {
     res.json({ aid: aid, hid: hid, wid: wid });
     return;
 });
+exports.submitSurvey = functions.https.onCall(async (data) => {
+    const surveySubmitTime = new Date();
+    class SubmitSurveyError extends Error {
+        constructor(message) {
+            super(message);
+            Object.setPrototypeOf(this, new.target.prototype);
+            this.name = SubmitSurveyError.name;
+        }
+    }
+    const firestore = admin.firestore();
+    const bucket = admin.storage().bucket();
+    let userSnapshot = await firestore.collection('mturkusers')
+        .where('workerId', '==', data.wid)
+        .get();
+    try {
+        if (userSnapshot.empty) {
+            console.error('[submitSurvey] User Not Found');
+            throw new SubmitSurveyError('[submitSurvey] User Not Found');
+        }
+        else {
+            let docs = userSnapshot.docs;
+            if (docs.length === 1) {
+                let mturkUser = docs[0].data();
+                let assignmentList = mturkUser.assignmentList;
+                let lastEntry = assignmentList[assignmentList.length - 1];
+                if (data.aid !== lastEntry.assignmentId) {
+                    console.error('[submitSurvey] AssignmentId Mismatch');
+                    throw new SubmitSurveyError('[submitSurvey] AssignmentId Mismatch');
+                }
+                else if (data.hid !== lastEntry.hitId) {
+                    console.error('[submitSurvey] HITId Mismatch');
+                    throw new SubmitSurveyError('[submitSurvey] HITId Mismatch');
+                }
+                lastEntry.surveySubmitTime = admin.firestore.Timestamp.fromDate(surveySubmitTime);
+                const surveyFilePath = (`mkturkfiles_mturk/userfiles/${data.wid}/surveys/${data.wid}_${data.aid}_${data.hid}.json`);
+                return await bucket.file(surveyFilePath)
+                    .save(JSON.stringify(data.survey, null, 2))
+                    .then(async () => {
+                    const mturkuserUpdated = await firestore.collection('mturkusers')
+                        .doc(data.wid)
+                        .set(mturkUser)
+                        .then(() => {
+                        return 200;
+                    })
+                        .catch(e => {
+                        return 500;
+                    });
+                    if (mturkuserUpdated === 200) {
+                        return { status: 200, message: `${lastEntry.submitCode}` };
+                    }
+                    else {
+                        // throw new SubmitSurveyError(`mturkuser=${data.wid}'s entry could not be set`);
+                        return { status: 500, message: 'Error' };
+                    }
+                }).catch(e => {
+                    console.error('[submitSurvey] Error:', e);
+                    throw new SubmitSurveyError(`mturkuser=${data.wid}'s entry could not be set`);
+                });
+            }
+            console.error('[submitSurvey] More than one document with the same workerId');
+            throw new SubmitSurveyError('[submitSurvey] More than one document with the same workerId');
+        }
+    }
+    catch (e) {
+        return { status: 500, message: e.message };
+    }
+});
 exports.submitAssignment = functions.https.onCall(async (data) => {
     const submitTime = new Date();
     class SubmitAssignmentError extends Error {
@@ -433,98 +500,6 @@ exports.submitAssignment = functions.https.onCall(async (data) => {
         return { status: 'error', message: error.message };
     }
 });
-// export const verifyAssignmentSubmission = functions.https.onRequest(async (req, res) => {
-//   const firestore = admin.firestore();
-//   class VerifyAssignmentError extends Error {
-//     constructor(message?: string) {
-//         super(message);
-//         // see: typescriptlang.org/docs/handbook/release-notes/typescript-2-2.html
-//         Object.setPrototypeOf(this, new.target.prototype); // restore prototype chain
-//         this.name = VerifyAssignmentError.name; // stack traces display correctly now 
-//     }
-//   }
-//   let aid, hid, wid, submitCode;
-//   try {
-//     aid = req.query.aid;
-//     hid = req.query.hid;
-//     wid = req.query.wid;
-//     submitCode = req.query.submitCode;
-//   } catch (error) {
-//     console.error('[req.query] Error Getting Variables:', error);
-//     res.send(
-//       {
-//         status: 'error',
-//         message: `[req.query] Error Getting Variables: ${error.message}`
-//       }
-//     );
-//     return;
-//   }
-//   let userSnapshot = await firestore.collection('mturkusers')
-//     .where('workerId', '==', wid)
-//     .get();
-//   if (userSnapshot.empty) {
-//     console.error('[verifyAssignmentSubmission] User Not Found');
-//     throw new VerifyAssignmentError(
-//       '[submitAssignment] User Not Found'
-//     );
-//   } else {
-//     let docs = userSnapshot.docs;
-//     if (docs.length === 1) {
-//       let mturkUser = docs[0].data();
-//       let assignmentList = mturkUser.assignmentList;
-//       let lastEntry = assignmentList[assignmentList.length - 1];
-//       if (aid !== lastEntry.assignmentId) {
-//         console.error('[verifyAssignmentSubmission] AssignmentId Mismatch');
-//         res.send(
-//           {
-//             status: 'error',
-//             message: `[]`
-//           }
-//         )
-//       }
-//     }
-//   }
-// })
-// export const verifyMturkSubmission = functions.https.onRequest(async (req, res) => {
-//   const firestore = admin.firestore();
-//   let aid, hid, wid, submitCode;
-//   try {
-//     aid = req.query.aid;
-//     hid = req.query.hid;
-//     wid = req.query.wid;
-//     submitCode = req.query.submitCode;
-//   } catch (error) {
-//     console.error('[req.query] Error Assigning Variables:', error);
-//     res.send(
-//       {
-//         status: 'error',
-//         message: `[req.query] Error Assigning Variables: ${error}`
-//       }
-//     );
-//     return;
-//   }
-//   let userSnapshot = await firestore.collection('mturkusers')
-//     .where('wid', '==', wid)
-//     .get();
-//   if (userSnapshot.empty) {
-//     res.send(
-//       {
-//         status: 'error',
-//         message: `[mturkusers] User ${wid} does not exist in mturkusers`
-//       }
-//     );
-//     return;
-//   } else {
-//     let docs = userSnapshot.docs;
-//     if (docs.length == 1 && docs[0].data().workerId == wid) {
-//       let assignmentList = docs[0].data().assignmentList;
-//       let lastEntry = assignmentList[assignmentList.length - 1];
-//       if (lastEntry.aid != aid) {
-//         res.send()
-//       } 
-//     }
-//   }
-// })
 const displayTimeSchema = {
     'fields': [
         {
