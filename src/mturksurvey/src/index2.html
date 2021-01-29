@@ -74,7 +74,7 @@
                   On a scale of 1-5 (5 is the most engaging), please rate how <strong>ENGAGING</strong>
                   you found the task:
                 </span></br>
-                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="0" style="margin: 20px;">
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" style="margin: 20px;">
                   <input class="mdl-radio__button" name="engaging" type="radio" value="1">
                   <span class="mdl-radio__label">1</span>
                 </label>
@@ -105,7 +105,7 @@
                   On a scale of 1-5 (5 is the most difficult), please rate how <strong>DIFFICULT</strong>
                   you found the task:
                 </span></br>
-                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="0" style="margin: 20px;">
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" style="margin: 20px;">
                   <input class="mdl-radio__button" name="difficulty" type="radio" value="1">
                   <span class="mdl-radio__label">1</span>
                 </label>
@@ -131,45 +131,63 @@
                 </label> -->
               </div>
 
-              <span>
-                (Optional) Please provide us with feedback on the way the experiment was
-                administrated. In particular, did you encounter any technical issues?
-              </span><br>
-              <div class="mdl-textfield mdl-js-textfield" style="width: 80%;">
-                <!-- <span>
+              <div>
+                <span>
                   (Optional) Please provide us with feedback on the way the experiment was
                   administrated. In particular, did you encounter any technical issues?
-                </span><br> -->
-                <textarea class="mdl-textfield__input" type="text" rows="5" id="impression"></textarea>
-                <label class="mdl-textfield__label" for="impression">
-                  Write feedback here...
-                </label>
+                </span><br>
+                <div class="mdl-textfield mdl-js-textfield" style="width: 80%;">
+                  <textarea class="mdl-textfield__input" type="text" rows="5" id="impression"></textarea>
+                  <label class="mdl-textfield__label" for="impression">
+                    Write feedback here...
+                  </label>
+                </div>
+              </div>
+              
+
+              <div>
+                <span>How old are you? Please answer in years, using only numbers:</span><br>
+                <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 40%;">
+                  <input class="mdl-textfield__input required" type="text" id="age" pattern="-?[0-9]*(\.[0-9]+)?">
+                  <label class="mdl-textfield__label" for="age">Age*</label>
+                  <span class="mdl-textfield__error">Input is not a number!</span>
+                </div>
+              </div>
+              
+
+              <div>
+                <span>Male or Female? (sex assigned at birth):</span><br>
+                <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 40%;">
+                  <select class="mdl-textfield__input required" id="gender">
+                    <option></option>
+                    <option value="female">Female</option>
+                    <option value="male">Male</option>
+                  </select>
+                  <label class="mdl-textfield__label" for="gender">Gender*</label>
+                </div>
               </div>
 
-
-              <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 40%;">
-                <input class="mdl-textfield__input" type="text" id="age">
-                <label class="mdl-textfield__label" for="age">Age*</label>
+              <div>
+                <span>In what country are you currently residing?</span><br>
+                <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 40%;">
+                  <select class="mdl-textfield__input countries-list required" id="residency">
+                    <option></option>
+                  </select>
+                  <label class="mdl-textfield__label" for="residency">Residency*</label>
+                </div>
               </div>
-
-              <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 40%;">
-                <select class="mdl-textfield__input" id="gender">
-                  <option></option>
-                  <option value="female">Female</option>
-                  <option value="male">Male</option>
-                </select>
-                <label class="mdl-textfield__label" for="gender">Gender*</label>
+              
+              
+              <div>
+                <span>In what country did you attend elementary (primary) school?</span><br>
+                <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 40%;">
+                  <select class="mdl-textfield__input countries-list required" id="schooling">
+                    <option></option>
+                  </select>
+                  <label class="mdl-textfield__label" for="schooling">Schooling*</label>
+                </div>
               </div>
-
-              <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 40%;">
-                <input class="mdl-textfield__input" type="text" id="residency">
-                <label class="mdl-textfield__label" for="residency">Residency*</label>
-              </div>
-
-              <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 40%;">
-                <input class="mdl-textfield__input" type="text" id="schooling">
-                <label class="mdl-textfield__label" for="schooling">Schooling*</label>
-              </div>
+              
             </form>
               <!-- <h3>MkTurk HIT Survey</h3> -->
               <!-- <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 40%;">
