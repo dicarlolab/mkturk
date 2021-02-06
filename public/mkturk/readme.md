@@ -240,6 +240,8 @@ NRFID: total # of RFID tag reads
 
 NWeights: total # of weight reads
 
+ReinforcementTime: Start time of reinforcement (reward/punish) delivery
+
 Response: Index of the chosen item on each trial. For M2S and SR2, response is measured for touches on the test screen. For same-different task, this is collected at the choice screen.
 
 ResponseTouchEvent: The type of touch event that was registered for that trial (e.g. touchheld, touchbroken, TimeOut)

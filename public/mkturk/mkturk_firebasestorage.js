@@ -346,7 +346,10 @@ async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS){
 					'TRIALEVENTS': EVENTS['trialseries'],
 					'TIMEEVENTS': { 'Battery': EVENTS['timeseries']['Battery'],
 									'RFIDTag': EVENTS['timeseries']['RFIDTag'], 
-									'Weight': EVENTS['timeseries']['Weight'] }
+									'Weight': EVENTS['timeseries']['Weight'],
+									'Arduino': EVENTS['timeseries']['Arduino'],
+									'TSequenceActual': EVENTS['timeseries']['TSequenceActual']
+									 }
 	}//dataobj
 	datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
 	var blob = new Blob([ datastr ], {type : 'application/json'});
