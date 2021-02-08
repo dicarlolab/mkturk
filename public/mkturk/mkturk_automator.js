@@ -61,6 +61,17 @@ async function automateTask(automator_data, trialhistory){
 						+', subject completed the final stage '+(i_current_stage)
 						+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
 			console.log('Turning automator OFF.')
+			if (ENV.MTurkWorkerId) {
+				let mturkUser = {
+					wid: ENV.MTurkWorkerId,
+					aid: ENV.AssignmentId,
+					hid: ENV.HITId
+				}
+				let submitAssignmentResult = await submitAssignment(mturkUser);
+				if (submitAssignmentResult.data.status === 'success') {
+					window.location.replace(`http://localhost:5000/mturksurvey/?WID=${ENV.MTurkWorkerId}&AID=${ENV.AssignmentId}&HID=${ENV.HITId}`);
+				}
+			}
 			return 
 		}//IF finished final automator state
 

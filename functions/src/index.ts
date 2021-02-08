@@ -557,7 +557,7 @@ export const submitSurvey = functions.https.onCall(async (data: any) => {
   
 });
 
-export const submitAssignment = functions.https.onCall(async (data: MturkUserData) => {
+export const submitAssignment = functions.https.onCall(async (data: any) => {
   const submitTime = new Date();
   class SubmitAssignmentError extends Error {
     constructor(message?: string) {

@@ -1825,9 +1825,8 @@ if (ENV.BatteryAPIAvailable) {
       playSound(3);
       await Promise.all([p1, p2]);
     }
+    
     //============ (end) DELIVER REWARD/PUNISH ============//
-
-
     //HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    //
     //HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    //
     //HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    //

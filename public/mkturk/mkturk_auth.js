@@ -94,18 +94,21 @@ auth.getRedirectResult().then((redirectResult) => {
 
 
 auth.onAuthStateChanged((user) => {
+  console.log('user:', user);
   if (user && Object.keys(mturkUserConfig).length) {
     user.getIdToken(true)
       .then(async (idToken) => {
         mturkUserConfig.token = idToken;
         console.log(`Auth Token: ${idToken}`);
         await processMturkUser(mturkUserConfig).then(async (res) => {
+          console.log('hello');
+          console.log('res:', res);
           if (await res.data.message == 'assignment entry already exists') {
             console.log('window will close here');
             //window.close();
           }
           if (await res.data.status == 'success') {
-            // console.log('HELLO');
+            console.log('HELLO');
             ENV.MTurkWorkerId = mturkUserConfig.wid;
             ENV.HITId = mturkUserConfig.hid;
             ENV.AssignmentId = mturkUserConfig.aid;
@@ -118,6 +121,8 @@ auth.onAuthStateChanged((user) => {
             opt.value = 0;
             opt.innerHTML = subjectlist[0];
             subjectlistobj.appendChild(opt);
+            console.log(subjectlist);
+            console.log(subjectlistobj);
           }
         }).catch((error) => {
           console.error(`[processMturkUser] Error: ${error}`);
