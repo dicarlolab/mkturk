@@ -82,6 +82,11 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 					if (taskscreen=="Touchfix" || taskscreen=="Sample"){
 						//Overlay fixation dot
 						renderShape2D("FixationDot",gr[f],OFFSCREENCANVAS)
+
+						if (port.connected){
+							renderShape2D("PhotodiodeSquare",
+								[ ENV.PhotodiodeSquareX, ENV.PhotodiodeSquareY ], OFFSCREENCANVAS)
+						}
 					}//IF
 				}//IF !Offscreen
 			}//FOR s screens within frame
@@ -161,6 +166,11 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 					if (taskscreen=="Touchfix" || taskscreen=="Sample"){
 						//Overlay fixation dot
 						renderShape2D("FixationDot",gr[f],OFFSCREENCANVAS)
+
+						if (port.connected){
+							renderShape2D("PhotodiodeSquare",
+								[ ENV.PhotodiodeSquareX, ENV.PhotodiodeSquareY ], OFFSCREENCANVAS)
+						}
 					}//IF
 				}//FOR s screens
 			//}
@@ -332,6 +342,13 @@ function renderShape2D(sc,gr,canvasobj){
 				renderFixationWindow(ENV.XGridCenter,ENV.YGridCenter,gr,ENV.FixationWindowRadius,ENV.CanvasRatio,canvasobj);
 		}//IF !savedata, overlay fixation window
 		break
+	case 'PhotodiodeSquare':
+		if (Math.round(frame.current/2) == frame.current/2){
+			renderSquareOnCanvas('white', gr, ENV.PhotodiodeSquareWidth, canvasobj)
+		}//IF even frame, draw white square
+		else {
+			renderSquareOnCanvas('black', gr, ENV.PhotodiodeSquareWidth, canvasobj)
+		}//ELSE go back to blank
 	case 'Choice':
 		return bufferChoiceUsingCircleSquare(ENV.ChoiceColor,ENV.ChoiceRadius,gr,canvasobj);
 	case 'Reward':
@@ -421,9 +438,17 @@ function getFixationWindowBoundingBox(gridindex,rad){
 function renderSquareOnCanvas(color, gridindex, square_pixelwidth, canvasobj){
 	// Draw Square
 	var context=canvasobj.getContext('2d');
+
+	if (Array.isArray(gridindex)){
+		var xcent = gridindex[0]/ENV.CanvasRatio
+		var ycent = gridindex[1]/ENV.CanvasRatio
+	}//IF x,y coord provided
+	else {
+		var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
+		var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;	
+	}//IF gridindex provided
 	var wd = square_pixelwidth/ENV.CanvasRatio;
-	var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
-	var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;
+
 	context.fillStyle=color;
 	context.fillRect(xcent-wd/2,ycent-wd/2,wd,wd);
 
@@ -476,8 +501,7 @@ function renderTriangleOnCanvas(color, gridindex, square_pixelwidth, canvasobj){
 function renderBlank(canvasobj,bkgdcolor){
 	var context=canvasobj.getContext('2d');
 	context.fillStyle=bkgdcolor;
-	context.fillRect(0,100,canvasobj.width,canvasobj.height);
-	// context.clearRect(0,0,canvasobj.width,canvasobj.height);
+	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 }//FUNCTION renderBlank
 
 function renderFixationWindow(gridx,gridy,fixationgridindex,fixationwindowradius,canvasratio,canvasobj){
@@ -630,7 +654,7 @@ function updateImageLoadingAndDisplayText(str){
 	var dt = []
 	var u_dt = 0
 	for (var i=0; i<=CURRTRIAL.tsequenceactualclip.length-1; i++){
-		dt[i] = CURRTRIAL.tsequenceactualclip[i] - CURRTRIAL.tsequencedesiredclip[i]
+		dt[i] = Math.round(CURRTRIAL.tsequenceactualclip[i] - CURRTRIAL.tsequencedesiredclip[i])
 		u_dt = u_dt + Math.abs(dt[i])
 	}
 	u_dt = u_dt/dt.length
@@ -644,6 +668,11 @@ function updateImageLoadingAndDisplayText(str){
 	+ " --- " + 0.01*Math.round(100*ENV.FrameRateMovie) + "Hz scene update" 
 	+ "<br>" + "<font color=red> mean(t_actual - t_desired) = " + Math.round(u_dt) + " ms"
 	+ "  (min=" + Math.round(Math.min(... dt)) + ", max=" + Math.round(Math.max(... dt)) + ") </font>"
+	+ "<br>" + "software desired - software actual" + dt
+	+ "<br><br>" + "roundtrip command" +
+	+ "<br>" + "roundtrip reward" + 
+	+ "<br><br>" + "softwared desired - software actual" 
+	+ "<br><br>" + "softwared actual - photodiode actual"
 	+ "<br>" + eyedataratestr
 }
 
@@ -900,9 +929,15 @@ function setupCanvasHeadsUp(){
 		//hide buttons for triggering pump
 		document.querySelector("button[id=pumpflush]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
 		document.querySelector("button[id=pumptrigger]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+
+		document.getElementById("headsuptext").style.display = "none"
+		document.getElementById("headsuptextdevices").style.display = "none"
 	}
 	else{
 		canvasobj.style.display="block";
+
+		document.getElementById("headsuptext").style.height = 100*CANVAS.headsupfraction + "%"
+		document.getElementById("headsuptextdevices").style.height = 100*CANVAS.headsupfraction + "%"
 
 		//show buttons for triggering pump
 		document.querySelector("button[id=pumpflush]").style.display = "block"

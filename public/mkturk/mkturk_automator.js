@@ -84,10 +84,6 @@ async function automateTask(automator_data, trialhistory){
 					+', subject advanced to stage '+(i_current_stage+1)
 					+' of '+(automator_data.length-1)+' (zero indexing) of automator.')
 
-		// Save behavior with current TASK, ENV, and EVENTS before moving on. 
-		saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS);
-		updateEventDataonFirestore(EVENTS);
-
 		// Reset tracking variables 
 		purgeTrackingVariables();
 

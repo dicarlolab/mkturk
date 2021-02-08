@@ -109,6 +109,10 @@ ENV.Eye.NCalibPointsTest = 0
 ENV.Eye.CalibTrainMSE = []
 ENV.Eye.CalibTestMSE = []
 
+ENV.PhotodiodeSquareSizeInches = 0.75
+ENV.PhotodiodeSquareX = 0
+ENV.PhotodiodeSquareY = 0
+
 //================ OTHER GLOBALS (NOT SAVED) ================//
 var FLAGS = {} // Global that keeps track of the task's requests to the Dropbox/server/disk/whatever; buffering requests; etc.
 // The scientist does not care about tracking this variable into the behavioral files. 
@@ -169,6 +173,8 @@ var CURRTRIAL = {}
 CURRTRIAL.reset = function(){
 	this.num = 0;
 	this.starttime = NaN; 
+	this.reinforcementtime = NaN;
+	this.endtime = NaN;
 	this.samplestarttime = NaN; 
 	this.samplestarttime_string = ""; 	
 	this.fixationgridindex = NaN; 
@@ -213,6 +219,8 @@ EVENTS.reset_trialseries = function(){
 	this.trialseries.CorrectItem = {}
 	this.trialseries.FixationGridIndex = {}
 	this.trialseries.StartTime = {}
+	this.trialseries.ReinforcementTime = {};
+	this.trialseries.EndTime = {}
 	this.trialseries.SampleStartTime = {}; 	
 	this.trialseries.FixationTouchEvent = {}
 	this.trialseries.FixationXYT = {}
@@ -237,6 +245,7 @@ EVENTS.reset_timeseries = function(){
 	this.timeseries.TSequenceDesired = {}
 	this.timeseries.TSequenceActual = {}
 	this.timeseries.EyeData = {}
+	this.timeseries.Arduino = {}
 
 	// Initialize battery value
 	if (ENV.BatteryAPIAvailable){
@@ -282,6 +291,8 @@ var datafiles=[];
 var displayoutofboundsstr=""
 var imageloadingtimestr="Loaded: "
 var eyedataratestr=""
+var samplecommand_roundtripstr = ""
+var pumpcommand_roundtripstr = ""
 
 //================ UPDATE VARIABLE FUNCTIONS ================//
 function updateTrialHistory(){

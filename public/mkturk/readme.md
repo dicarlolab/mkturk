@@ -99,6 +99,8 @@ SampleGridIndex: Index on grid where sample image appears. SampleGridIndex=4 cen
 
 SamplingStrategy: Determines how sample images are drawn: uniform_with_replacement, uniform_without_replacement, sequential
 
+SamplePRE: Duration in milliseconds that a gray screen is presented before the first sample image. If SamplePRE is not defined or <0, then max(100,SampleOFF) is used for the blank duration preceding the first sample
+
 SampleOFF: Duration in milliseconds that a gray screen is presented after the sample image before the response screen. This implements the delay in a DMS task. SampleOFF=0, leads to no delay
 
 SampleSizeInches (deprecated, now specified in scene param file): Size of sample image in physical inches on the screen. sampleSizeInches = 0.834444 displays a 256 x 256 image on 256 x 256 screen pixels on the google pixel c screen (i.e. no up or down sampling/resizing/filtering of the image)
@@ -224,6 +226,8 @@ AutomatorStage: Stage number if Automator=1
 
 CorrectItem: Index of the correct item on each trial
 
+EndTime: End of trial, time is recorded when either reward delivery or punish timeout promise is fulfilled.
+
 FixationGridIndex: Fixation grid location on each trial.
 
 FixationTouchEvent: The type of touch event that was registered for that trial (e.g. touchheld or touchbroke if there was a required FixationDuration>0 period)
@@ -235,6 +239,8 @@ NReward: The number of rewards given at the end of each trial; usually 1x reward
 NRFID: total # of RFID tag reads
 
 NWeights: total # of weight reads
+
+ReinforcementTime: Start time of reinforcement (reward/punish) delivery
 
 Response: Index of the chosen item on each trial. For M2S and SR2, response is measured for touches on the test screen. For same-different task, this is collected at the choice screen.
 

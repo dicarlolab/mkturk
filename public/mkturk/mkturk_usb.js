@@ -344,8 +344,10 @@ serial.Port.prototype.onReceive = data => {
 	//=============== NOT RFID/EYE ===============//
 	else {
 		port.statustext_received = "RECEIVED CHAR <-- USB: " + textDecoder.decode(data)
-// 		console.log("RECEIVED CHAR <-- USB (not eye or rfid): " + port.statustext_received)
-		// updateHeadsUpDisplayDevices()
+		// console.log("RECEIVED CHAR <-- USB (not eye or rfid): " + port.statustext_received)
+		// console.log(Math.round(performance.now()))
+        logEVENTS("Arduino",textDecoder.decode(data),'timeseries')
+		updateHeadsUpDisplayDevices()
 	}//ELSE not RFID or EYE
 } //port.onReceive
 
@@ -362,6 +364,19 @@ serial.Port.prototype.writepumpdurationtoUSB = async function(data){
 	port.statustext_sent = "TRANSFERRED CHAR --> USB:" + msgstr
 	// console.log(port.statustext_sent)
 	updateHeadsUpDisplayDevices()
+} //port.writepumpdurationUSB
+
+
+
+//PORT - transferOut sample command to external devices (eg, Camera)
+serial.Port.prototype.writeSampleCommandTriggertoUSB = async function(data){
+    let msgstr = "$" + data.toString() + "%" // start($), end(%) characters
+    let textEncoder = new TextEncoder();
+    await this.device_.transferOut(4, textEncoder.encode(msgstr)); //SANITY CHECK what the 4 is
+
+    port.statustext_sent = "TRANSFERRED SampleCommandSignal --> USB:" + msgstr
+    // console.log(port.statustext_sent)
+    updateHeadsUpDisplayDevices()
 } //port.writepumpdurationUSB
 
 //PORT - disconnect
