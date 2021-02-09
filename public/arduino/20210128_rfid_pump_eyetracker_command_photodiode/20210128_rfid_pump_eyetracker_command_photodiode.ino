@@ -181,7 +181,8 @@ void readTransmitPhotodiode(){
   photodiodeval_new = analogRead(photodiodePin);
 
   // Cross threshold --> Transmit out 
-  if ((photodiodeval_old < 375 && photodiodeval_new > 375) || (photodiodeval_old > 325 && photodiodeval_new < 325)){
+  if ((photodiodeval_old < 350 && photodiodeval_new > 350) || (photodiodeval_old > 250 && photodiodeval_new < 250)){
+//  if ( (photodiodeval_new > 375 || photodiodeval_new < 275) && (photodiodeval_new-photodiodeval_old>15 || photodiodeval_new-photodiodeval_old<15)){
     Serial.print(photodiodeOutMarker);
     Serial.print(photodiodeval_new);
     Serial.flush();

@@ -105,7 +105,7 @@ ENV.Eye.NCalibPointsTest = 0
 ENV.Eye.CalibTrainMSE = []
 ENV.Eye.CalibTestMSE = []
 
-ENV.PhotodiodeSquareSizeInches = 0.75
+ENV.PhotodiodeSquareSizeInches = 2.5
 ENV.PhotodiodeSquareX = 0
 ENV.PhotodiodeSquareY = 0
 
@@ -330,7 +330,13 @@ function logEVENTS(eventname,eventval,eventtype){
 	else if (eventtype == 'timeseries'){
 		//running index
 		var indevent = Object.keys(EVENTS[eventtype][eventname]).length
-		var trialtime = [EVENTS.trialnum, new Date(Date.now()).toJSON()]
+		var trialtime = [EVENTS.trialnum, Date.now() - ENV.CurrentDate.valueOf()]
+		
+		console.log(CURRTRIAL.samplestarttime + ' --> '
+		+ (Date.now()- ENV.CurrentDate.valueOf() - CURRTRIAL.samplestarttime)
+		+ ', ' + eventval)
+		
+		// var trialtime = [EVENTS.trialnum, new Date(Date.now()).toJSON()]
 		EVENTS[eventtype][eventname][indevent.toString()] = trialtime.concat(eventval)
 	}
 }

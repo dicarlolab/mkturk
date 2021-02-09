@@ -346,8 +346,12 @@ serial.Port.prototype.onReceive = data => {
 		port.statustext_received = "RECEIVED CHAR <-- USB: " + textDecoder.decode(data)
 		// console.log("RECEIVED CHAR <-- USB (not eye or rfid): " + port.statustext_received)
 		// console.log(Math.round(performance.now()))
-        logEVENTS("Arduino",textDecoder.decode(data),'timeseries')
-		updateHeadsUpDisplayDevices()
+		// if (frame.current > 0){
+	        logEVENTS("Arduino",textDecoder.decode(data),'timeseries')
+	        // logEVENTS("Arduino",frame.current,'timeseries')
+			updateHeadsUpDisplayDevices()
+
+		// }
 	}//ELSE not RFID or EYE
 } //port.onReceive
 

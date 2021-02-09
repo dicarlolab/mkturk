@@ -88,6 +88,14 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 								[ ENV.PhotodiodeSquareX, ENV.PhotodiodeSquareY ], OFFSCREENCANVAS)
 						}
 					}//IF
+
+					if (taskscreen=="Blank"){
+						if (port.connected){
+							renderShape2D("PhotodiodeSquare",
+								[ ENV.PhotodiodeSquareX, ENV.PhotodiodeSquareY ], OFFSCREENCANVAS)
+						}						
+					}
+
 				}//IF !Offscreen
 			}//FOR s screens within frame
 
