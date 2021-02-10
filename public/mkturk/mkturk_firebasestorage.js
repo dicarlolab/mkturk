@@ -3,10 +3,12 @@
 //------------- LOAD JSON TEXT --------------//
 async function loadTextfromFirebase(textfile_path){
 	console.log('textfile_path', textfile_path);
-	var textfileRef = storage.ref().child(textfile_path)
-	url = await textfileRef.getDownloadURL()
-	response = await fetch(url)
-	return response.json()
+	var textfileRef = storage.ref().child(textfile_path);
+	console.log('textfile ref:', textfileRef);
+	let url = await textfileRef.getDownloadURL();
+	console.log('url:', url);
+	let response = await fetch(url);
+	return response.json();
 } //ReadFromFirebase
 
 //------------- LOAD IMAGE --------------//

@@ -101,7 +101,6 @@ auth.onAuthStateChanged((user) => {
         mturkUserConfig.token = idToken;
         console.log(`Auth Token: ${idToken}`);
         await processMturkUser(mturkUserConfig).then(async (res) => {
-          console.log('hello');
           console.log('res:', res);
           if (await res.data.message == 'assignment entry already exists') {
             console.log('window will close here');
