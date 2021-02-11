@@ -582,6 +582,8 @@ export class Charts {
       throw 'file.data is Undefined';
     }
 
+    console.log('HELLO');
+
     this.perfDataTable.removeRows(
       0, this.perfDataTable.getNumberOfRows()
     );
@@ -667,7 +669,8 @@ export class Charts {
       && _.size(data.ResponseXYT) > 0
       && _.size(file.data.ResponseXYT[0]) > 0
     ) {
-      for (let i = 0; i < _.size(data.ResponseXYT[0]) * 2; i += 2) {
+      for (let i = 0; i < _.size(data.FixationXYT[0]) * 2; i += 2) {
+        console.log('before touchevent 1');
         touchevent[i] = [];
         touchevent[i + 1] = [];
         touchevent[i][0] = file.data.FixationXYT[0][i / 2];
@@ -676,7 +679,8 @@ export class Charts {
         touchevent[i + 1][1] = file.data.ResponseXYT[1][i / 2];
       }
     } else {
-      for (let i = 0; i < _.size(data.ResponseXYT[0]) * 2; i += 2) {
+      for (let i = 0; i < _.size(data.FixationXYT[0]) * 2; i += 2) {
+        console.log('before touchevent 2');
         touchevent[i] = [];
         touchevent[i + 1] = [];
         touchevent[i][0] = file.data.FixationXYT[0][i / 2];
@@ -968,7 +972,10 @@ export class Charts {
     let testYPos: number[][] = [];
     let numTarget = [0, 0];
 
+    console.log('touchevent:', touchevent);
+
     for (let i = 0; i < touchevent.length; i++) {
+      console.log('i:', i);
       xPos = touchevent[i][0];
       yPos = data.ViewportPixels[1] - touchevent[i][1];
 
@@ -1076,6 +1083,7 @@ export class Charts {
         );
       }
       this.vitals.stdevTest = stdevTest;
+      console.log('vitals.stdevTest:', this.vitals.stdevTest);
     }
 
     yDataSmall = utils.smooth(yData, 5);
