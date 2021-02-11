@@ -69,7 +69,7 @@ async function automateTask(automator_data, trialhistory){
 				}
 				let submitAssignmentResult = await submitAssignment(mturkUser);
 				if (submitAssignmentResult.data.status === 'success') {
-					window.location.replace(`http://localhost:5000/mturksurvey/?WID=${ENV.MTurkWorkerId}&AID=${ENV.AssignmentId}&HID=${ENV.HITId}`);
+					window.location.replace(`https://mkturk.com/mturksurvey/?WID=${ENV.MTurkWorkerId}&AID=${ENV.AssignmentId}&HID=${ENV.HITId}`);
 				}
 			}
 			return 
