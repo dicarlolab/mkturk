@@ -87,6 +87,10 @@ ENV.FrameRateMovie = 30
 
 ENV.Task = ""
 
+ENV.MTurkWorkerId = '';
+ENV.AssignmentId = '';
+ENV.HITId = '';
+
 //================ EYE GLOBALS ================//
 ENV.Eye = {}
 
@@ -341,7 +345,19 @@ function purgeTrackingVariables(){
 
 	ENV.CurrentDate = new Date;
 	var datestr = ENV.CurrentDate.toISOString();
-	ENV.DataFileName = DATA_SAVEPATH + ENV.Subject + "/" + datestr.slice(0,datestr.indexOf(".")) + "_" + ENV.Subject + ".json";
+	if (ENV.MTurkWorkerId) {
+		ENV.DataFileName = `${DATA_SAVEPATH}${datestr.slice(0,datestr.indexOf("."))}_${ENV.Subject}.json`;
+	} else {
+		ENV.DataFileName = (
+			DATA_SAVEPATH
+			+ ENV.Subject
+			+ "/"
+			+ datestr.slice(0,datestr.indexOf("."))
+			+ "_"
+			+ ENV.Subject
+			+ ".json"
+		);
+	}
 	ENV.FirestoreDocRoot = datestr.slice(0,datestr.indexOf(".")) + "_" + ENV.Subject
 
 	if(FLAGS.waitingforTouches > 0 || FLAGS.purge == 1){
