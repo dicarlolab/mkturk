@@ -649,7 +649,6 @@
 			var fps = await estimatefps()
 			ENV.FrameRateDisplay = fps
 			ENV.FrameRateMovie = fps / 2
-			ENV.FrameRateMovie = 2
 
 			//========= Start in TEST mode =======//
 			document.querySelector("button[id=googlesignin]").style.display = "none"
@@ -1044,7 +1043,7 @@
 							// variable is undefined or null
 							var blankdurationpre = Math.max(100, TASK.SampleOFF)
 						} else {
-							var blankdurationpre = TASK.SamplePRE
+							var blankdurationpre = Task.SamplePRE
 							// use provided value
 						}
 						//IF       
@@ -1823,11 +1822,10 @@
 
 					for (var q in EVENTS['timeseries']['Arduino']) {
 						var evt = EVENTS['timeseries']['Arduino'][q]
-						// if (evt[0] != CURRTRIAL.num) {
-						// 	continue
-						// }
-// 						var tarduino = new Date(evt[1]).valueOf() - ENV.CurrentDate.valueOf()
-tarduino=evt[1]
+						if (evt[0] != CURRTRIAL.num) {
+							continue
+						}
+						var tarduino = new Date(evt[1]).valueOf() - ENV.CurrentDate.valueOf()
 
 						if (evt[2].indexOf('sa') == 0) {
 							if (evt[2][2] == 1) {
@@ -1842,20 +1840,16 @@ tarduino=evt[1]
 						else if (evt[2].indexOf('pu') == 0) {
 							var d_pumpON = tarduino - EVENTS["trialseries"]["ReinforcementTime"]
 							console.log("d_roundtrip_pumpON=" + d_pumpON)
-						} //ELSE IF pump command return
-
-						//Photodiode
+						}
+						//IF pump command return
 						if (evt[2].indexOf('ph') == 0) {
-							if (tarduino > EVENTS["trialseries"]["SampleStartTime"])
-							{
-								photodiode.t.push(tarduino - EVENTS["trialseries"]["SampleStartTime"]) //measure re: sample start
-								photodiode.v.push(Number(evt[2].slice(2,evt[2].length)))
-							}
-						}//IF photodiode
-					}//FOR e arduino events
+							photodiode.t.push(tarduino - EVENTS["trialseries"]["SampleStartTime"]) //measure re: sample start
+							photodiode.v.push(evt[2].slice(2,evt[2].length))
+						}
+						//IF photodiode
+					}
+					//FOR e arduino events
 
-					console.log(photodiode.t)
-					console.log(photodiode.v)
 
 					if (photodiode.t.length > 1){
 						var tdisplay = {d: [], a: [], p:[], v:[]} //desired,actual,photodiode,photodiodeval
@@ -1865,9 +1859,6 @@ tarduino=evt[1]
 						tdisplay.a = EVENTS["timeseries"]["TSequenceActual"][CURRTRIAL.num].slice(2,n)
 
 						for (var i=tdisplay.d.length-1; i >= 0; i--){
-							tdisplay.d[i] = Math.round(tdisplay.d[i])
-
-							tdisplay.a[i] = Math.round(tdisplay.a[i])
 							dt.software[i] = Math.round(tdisplay.a[i] - tdisplay.d[i])
 							for (var j=0; j<=photodiode.t.length-1; j++){
 								if (photodiode.t[j] > tdisplay.a[i]){
@@ -1875,25 +1866,18 @@ tarduino=evt[1]
 									tdisplay.v[i] = photodiode.v[j]
 									dt.hardware[i] = Math.round(tdisplay.p[i] - tdisplay.a[i])
 									photodiode.t[j] = -99999
-
-									if (j < photodiode.t.length-1){
-										for (var k=j+1; k<=photodiode.t.length-1;k++){
-											photodiode.t[k] = -99999
-										}//for k remaining timepoints, remove those as they might be duplicates										
-									}//IF
 									break
 								}//If first photodiode timestamp after desired time
 							}//j photodiode vals
 						}//for i frames
 					}//IF photodiode vals
 
-console.log(tdisplay.d)
 console.log(tdisplay.a)
-console.log(CURRTRIAL.sequencetaskscreen)
-// console.log(tdisplay.p)
+console.log(tdisplay.p)
 console.log(dt.software)
 console.log(dt.hardware)
-// console.log(tdisplay.v)
+console.log(tdisplay.v)
+console.log(CURRTRIAL.sequencetaskscreen)
 
 					updateImageLoadingAndDisplayText(' ')
 					//displays relevant timing information
