@@ -826,10 +826,10 @@ export class Charts {
 
         numDisplayElems++;
         if (data.NRSVP > 0) {
-          testX.push(data.XGridCenter[maxSampleGridIndex!]);
+          testX.push(data.XGridCenter[maxSampleGridIndex as number]);
           testY.push(
             data.ViewportPixels[1]
-            - (data.YGridCenter[maxSampleGridIndex!] + data.offsettop)
+            - (data.YGridCenter[maxSampleGridIndex as number] + data.offsettop)
           );
         } else {
           testX.push(data.XGridCenter[data.TestGridIndex[i]]);
@@ -1367,7 +1367,7 @@ export class Charts {
     for (let i = 0; i < data.NRewardMax; i++) {
       NRewardMax.push(i.toString());
     }
-    NRewardMax.unshift('-1');
+    // NRewardMax.unshift('-1');
 
     for (let i = 0; i < _.size(NRewardMax); i++) {
       this.rewardDataTable.addRow([NRewardMax[i], 0]);

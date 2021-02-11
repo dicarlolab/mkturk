@@ -19,18 +19,59 @@ const functions = firebase.functions();
 const auth = firebase.auth();
 const storage = firebase.app().storage('gs://mkturk-mturk');
 
-let workerId = Math.random().toString(36).substr(2);
-console.log(workerId);
+let mturkUserConfig: any = {};
+console.log('location:', window.location.search);
+
+// let workerId = Math.random().toString(36).substr(2);
+// console.log(workerId);
+
+// console.log(window);
+try {
+  let mturkCfgPairStr = window.location.search.split('?')[1].split('&');
+  mturkCfgPairStr.forEach(str => {
+  let pair = str.split('=');
+  if (pair[0] == 'AID') { // AID: assignmentId
+    mturkUserConfig.aid = pair[1];
+  } else if (pair[0] == 'HID') { // HID: HITId
+    mturkUserConfig.hid = pair[1];
+  } else if (pair[0] == 'WID') { // WID: workerId
+    mturkUserConfig.wid = pair[1];
+  } else if (pair[0] == 'TASK') {
+    mturkUserConfig.task = pair[1];
+  }
+  console.log('pair:', pair);
+  });
+} catch (e) {
+  console.error('e:', e);
+}
+
 
 const isLabMember = functions.httpsCallable('isLabMember');
 const isMturkUser = functions.httpsCallable('isMturkUser');
 const decodeToken = functions.httpsCallable('decodeToken');
 const processMturkUser = functions.httpsCallable('processMturkUser');
 const copyParamFile = functions.httpsCallable('copyParamFile');
+const submitAssignment = functions.httpsCallable('submitAssignment');
 
 const signOutBtn = (
   document.querySelector('#sign-out-btn') as HTMLButtonElement
 );
+
+const doneBtn = (
+  document.querySelector('#done-btn') as HTMLButtonElement
+);
+
+const submitCodeSpan = (
+  document.querySelector('#submit-code-span') as HTMLSpanElement
+);
+
+doneBtn.addEventListener('click', async (ev: Event) => {
+  ev.preventDefault();
+  submitCodeSpan.textContent = 'Loading...';
+  let submissionState = await submitAssignment(mturkUserConfig);
+  submitCodeSpan.textContent = submissionState.data.message;
+  console.log(submissionState);
+});
 
 signOutBtn.addEventListener('click', (ev: Event) => {
   ev.preventDefault();
@@ -52,7 +93,6 @@ auth.getRedirectResult().then(redirectResult => {
   } else {
     console.log('User Not Yet Authenticated');
     let provider = new firebase.auth.GoogleAuthProvider();
-    provider.addScope('https://www.googleapis.com/auth/plus.me');
     provider.addScope('https://www.googleapis.com/auth/user.emails.read');
     provider.addScope('https://www.googleapis.com/auth/userinfo.email');
     auth.signInWithRedirect(provider);
@@ -64,28 +104,20 @@ auth.getRedirectResult().then(redirectResult => {
 auth.onAuthStateChanged(user => {
   if (user) {
     user.getIdToken(true).then(async idToken => {
-      let tmp = {
-        wid: workerId,
-        token: idToken
-      };
-      processMturkUser(tmp).then(async res => {
+      mturkUserConfig.token = idToken;
+      console.log('token:', idToken);
+      processMturkUser(mturkUserConfig).then(async res => {
         console.log('[processMturkUser] Result:', res);
-        let ppath = `mkturkfiles/parameterfiles/subjects/${workerId}_params.json`;
-        let fileRef = storage.ref(ppath);
-        let fileUrl = await fileRef.getDownloadURL().catch(e => {
-          console.error('Error getting download URL', e);
-        });
-
-        let response = await fetch(fileUrl);
-        let file = await response.json();
-        console.log(file);
+        if (res.data.message == 'assignment entry already exists') {
+          console.log('same');
+          window.close();
+        }
       }).catch(error => {
         console.error('[processMturkUser] Error:', error);
       });
-    })
+    });
   }
 });
-
 
 
 // let res = await copyParamFile();

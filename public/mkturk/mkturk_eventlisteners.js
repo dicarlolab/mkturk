@@ -342,7 +342,7 @@ function gridPoints_listener(event){
 	return
 }
 
-function subjectlist_listener(event){
+function subjectlist_listener(event) {
 	ENV.Subject = subjectlist[this.value];
 	waitforClick.next(1);
 	return
