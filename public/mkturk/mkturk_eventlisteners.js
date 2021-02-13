@@ -71,6 +71,7 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 				if (FLAGS.rtdbAgentNumConnections > 0) {
 					let metaStr = chosenbox >= 0 ? 1 : 0;
 					if (!isNaN(x) && !isNaN(y)) {
+						// console.log(boundingBoxes);
 						FLAGS.rtdbDataRef.set({
 							x: x - CANVAS.offsetleft,
 							y: ENV.ViewportPixels[1] - y,
@@ -204,6 +205,7 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 
 		}//WHILE events
 		if (FLAGS.rtdbAgentNumConnections > 0) {
+			console.log(boundingBoxes);
 			let metaStr = 2;
 			FLAGS.rtdbDataRef.set({
 				x: -1,

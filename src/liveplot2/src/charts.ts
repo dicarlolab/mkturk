@@ -670,7 +670,6 @@ export class Charts {
       && _.size(file.data.ResponseXYT[0]) > 0
     ) {
       for (let i = 0; i < _.size(data.FixationXYT[0]) * 2; i += 2) {
-        console.log('before touchevent 1');
         touchevent[i] = [];
         touchevent[i + 1] = [];
         touchevent[i][0] = file.data.FixationXYT[0][i / 2];
@@ -680,7 +679,6 @@ export class Charts {
       }
     } else {
       for (let i = 0; i < _.size(data.FixationXYT[0]) * 2; i += 2) {
-        console.log('before touchevent 2');
         touchevent[i] = [];
         touchevent[i + 1] = [];
         touchevent[i][0] = file.data.FixationXYT[0][i / 2];
@@ -753,6 +751,7 @@ export class Charts {
     );
 
     if (!this.realtimeRowDataAdded && !this.realtimePlotActive) {
+      console.log('realtime not active');
       this.rtData['fixation'] = {
         x: fixX,
         y: fixY,
@@ -950,7 +949,7 @@ export class Charts {
           }
         );
         
-
+        // realtime not active
         if (!this.realtimeRowDataAdded && !this.realtimePlotActive) {
           this.rtData['choice'].push(
             {
@@ -972,10 +971,7 @@ export class Charts {
     let testYPos: number[][] = [];
     let numTarget = [0, 0];
 
-    console.log('touchevent:', touchevent);
-
     for (let i = 0; i < touchevent.length; i++) {
-      console.log('i:', i);
       xPos = touchevent[i][0];
       yPos = data.ViewportPixels[1] - touchevent[i][1];
 
@@ -1083,7 +1079,6 @@ export class Charts {
         );
       }
       this.vitals.stdevTest = stdevTest;
-      console.log('vitals.stdevTest:', this.vitals.stdevTest);
     }
 
     yDataSmall = utils.smooth(yData, 5);
@@ -1640,70 +1635,6 @@ export class Charts {
       ctx?.fill();
     });
 
-
-    
-    // if (ctx) {
-    //   // Setup Canvas
-    //   ctx.fillStyle = 'gray';
-    //   ctx.fillRect(
-    //     0, 
-    //     0, 
-    //     data.workspace[2] * data.CanvasRatio,
-    //     data.ViewportPixels[1] - data.offsettop
-    //   );
-
-    //   // Fixation
-    //   if (data.FixationUsesSample < 1) {
-    //     ctx.beginPath();
-    //     ctx.arc(
-    //       this.rtData.fixation.x,
-    //       cvs.height - this.rtData.fixation.y,
-    //       this.rtData.fixation.width / 2,
-    //       0,
-    //       Math.PI * 2,
-    //       true
-    //     );
-    //     ctx.stroke();
-    //   }
-      
-    //   // Sample
-    //   ctx.beginPath();
-    //   ctx.rect(
-    //     this.rtData.sample.x - this.rtData.sample.width / 2,
-    //     cvs.height - (this.rtData.sample.y + this.rtData.sample.height / 2),
-    //     this.rtData.sample.width,
-    //     this.rtData.sample.height
-    //   );
-    //   ctx.stroke();
-
-    //   // Test
-    //   for (let i = 0; i < _.size(this.rtData['test']); i++) {
-    //     console.log('test');
-    //     ctx.beginPath();
-    //     ctx.rect(
-    //       this.rtData['test'][i].x - this.rtData['test'][i].width / 2,
-    //       cvs.height - (this.rtData['test'][i].y + this.rtData['test'][i].height / 2),
-    //       this.rtData['test'][i].width,
-    //       this.rtData['test'][i].height
-    //     );
-    //     ctx.stroke();
-    //   }
-
-    //   // Choice
-    //   for (let i = 0; i < _.size(this.rtData['choice']); i++) {
-    //     ctx.beginPath();
-    //     ctx.rect(
-    //       this.rtData['choice'][i].x - this.rtData['choice'][i].width / 2,
-    //       cvs.height - (this.rtData['choice'][i].y + this.rtData['choice'][i].height / 2),
-    //       this.rtData['choice'][i].width,
-    //       this.rtData['choice'][i].height
-    //     );
-    //     ctx.stroke();
-    //   }
-
-      
-    
-    
   }
 
   private drawScreenPlot(data: LiveplotDataType, screenActive: boolean) {

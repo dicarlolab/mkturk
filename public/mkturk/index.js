@@ -1839,6 +1839,9 @@ if (ENV.BatteryAPIAvailable) {
       await Promise.all([p1, p2]);
     }
 
+    CURRTRIAL.endtime = Date.now() - ENV.CurrentDate.valueOf();
+		logEVENTS("EndTime", CURRTRIAL.endtime, "trialseries")
+
     //============ (end) DELIVER REWARD/PUNISH ============//
     //HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    //
     //HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    //
