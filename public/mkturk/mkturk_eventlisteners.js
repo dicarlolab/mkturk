@@ -1,6 +1,7 @@
 //================== TOUCH PROMISE ==================//
 // TouchHold either by clicking in or dragging in
 function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
+	console.log('boundingboxes top:', boundingBoxes);
 	var resolveFunc
 	var errFunc
 	p = new Promise(function(resolve,reject){
@@ -71,7 +72,7 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 				if (FLAGS.rtdbAgentNumConnections > 0) {
 					let metaStr = chosenbox >= 0 ? 1 : 0;
 					if (!isNaN(x) && !isNaN(y)) {
-						// console.log(boundingBoxes);
+						console.log(boundingBoxes);
 						FLAGS.rtdbDataRef.set({
 							x: x - CANVAS.offsetleft,
 							y: ENV.ViewportPixels[1] - y,

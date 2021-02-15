@@ -1401,6 +1401,7 @@ if (ENV.BatteryAPIAvailable) {
         if (FLAGS.trackeye) {
           ENV.Eye.EventType = 'eyemove';
         }
+        console.log('boundingBoxesSampleFixation:', boundingBoxesSampleFixation);
         let p1 = hold_promise(
           0,
           boundingBoxesSampleFixation,
@@ -1839,8 +1840,8 @@ if (ENV.BatteryAPIAvailable) {
       await Promise.all([p1, p2]);
     }
 
-    CURRTRIAL.endtime = Date.now() - ENV.CurrentDate.valueOf();
-		logEVENTS("EndTime", CURRTRIAL.endtime, "trialseries")
+    // CURRTRIAL.endtime = Date.now() - ENV.CurrentDate.valueOf();
+		// logEVENTS("EndTime", CURRTRIAL.endtime, "trialseries")
 
     //============ (end) DELIVER REWARD/PUNISH ============//
     //HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    //
