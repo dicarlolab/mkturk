@@ -3,6 +3,7 @@ import "firebase/firestore";
 import "firebase/storage";
 import JSONEditor from "jsoneditor";
 import Viewer from "viewerjs";
+import * as EditorParams from "./editor-params";
 
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -98,10 +99,11 @@ export class Mkeditor {
     this.btnBoxDiv.style.gridTemplateAreas = '"update-btn update-btn"'
     this.fileNameInput.value = '';
     this.fileNameInput.disabled = true;
+
     try {
       let options = {
         modes: ['tree' as 'tree', 'code' as 'code'],
-        sortObjectKeys: true
+        sortObjectKeys: true,
       };
       this.editor.destroy();
       this.editor = new JSONEditor(this.editorElement, options, file);
@@ -184,6 +186,11 @@ export class Mkeditor {
 
     const sceneParamPath = 'mkturkfiles/scenebags/objectome3d';
     const taskParamPath = 'mkturkfiles/parameterfiles';
+
+    function onClassName(classNameParams: {path: ReadonlyArray<string>; field: string; value: string;}) {
+      console.log(`onClassName path=${classNameParams.path}, field=${classNameParams.field}, value=${classNameParams.value}`);
+      return 'color-node';
+    }
 
     let sceneTemplateOptions = {
       modes: ['tree' as 'tree', 'code' as 'code'],
@@ -273,18 +280,25 @@ export class Mkeditor {
       modes: ['tree' as 'tree', 'code' as 'code']
     }
 
+    let taskParamOptions = {
+      modes: ['tree' as 'tree', 'code' as 'code'],
+      onClassName: onClassName,
+      schema: EditorParams.taskParamSchema
+    };
+
 
     if (fileRef.fullPath.includes(sceneParamPath)) {
       if (fileRef.fullPath.includes('template')) {
         this.fileDupBtn.style.display = 'inline-block';
         // this.genSceneParamBtn.style.display = 'inline-block';
-        options = sceneTemplateOptions
+        options = sceneTemplateOptions;
       } else {
         this.fileDupBtn.style.display = 'inline-block';
         // this.genSceneParamBtn.style.display = 'none';
       }
     } else if (fileRef.fullPath.includes(taskParamPath)) {
       this.fileDupBtn.style.display = 'inline-block';
+      options = taskParamOptions;
       // this.genSceneParamBtn.style.display = 'none';
     } else {
       this.fileDupBtn.style.display = 'none';

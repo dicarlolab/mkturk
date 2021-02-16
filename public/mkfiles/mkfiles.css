@@ -379,3 +379,7 @@
   grid-template-columns: repeat(2, 1fr);
   grid-template-areas: "add-rule-btn undo-edit-btn";
 }
+
+.color-node div.jsoneditor-field {
+  background-color: #bae1ff;
+}
