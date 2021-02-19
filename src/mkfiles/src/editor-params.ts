@@ -36,18 +36,15 @@ export const taskParamSchema = {
 
     "DragtoRespond": {
       "type": "integer",
-      "enum": [0, 1]
     },
     "CalibrateEye": {
       "type": "integer",
-      "enum": [0, 1]
     },
     "NRSVP": {
       "type": "integer",
     },
     "SameDifferent": {
       "type": "integer",
-      "enum": [0, 1]
     },
     "SamplingStrategy": {
       "type": "string"
@@ -75,11 +72,11 @@ export const taskParamSchema = {
     },
     "FixationGridIndex": {
       "type": "integer",
-      "minimum": 0
+      "minimum": -1
     },
     "SampleGridIndex": {
       "type": "integer",
-      "minimum": 0
+      "minimum": -1
     },
     "ObjectGridIndex": {
       "type": "array",
@@ -111,7 +108,6 @@ export const taskParamSchema = {
     },
     "FixationUsesSample": {
       "type": "integer",
-      "enum": [0, 1]
     },
     "FixationSizeInches": {
       "type": "number"
@@ -140,7 +136,6 @@ export const taskParamSchema = {
     },
     "KeepSampleON": {
       "type": "integer",
-      "enum": [0, 1]
     },
     "SamplePRE": {
       "type": "integer",
@@ -159,15 +154,12 @@ export const taskParamSchema = {
     },
     "KeepTestON": {
       "type": "integer",
-      "enum": [0, 1]
     },
     "TestOFF": {
       "type": "integer",
-      "minimum": 0
     },
     "HideTestDistractors": {
       "type": "integer",
-      "enum": [0, 1]
     },
 
     "ChoiceSizeInches": {
@@ -176,7 +168,6 @@ export const taskParamSchema = {
     },
     "HideChoiceDistractors": {
       "type": "integer",
-      "enum": [0, 1]
     },
     "ChoiceTimeOut": {
       "type": "integer",
@@ -186,7 +177,6 @@ export const taskParamSchema = {
 
     "RewardStage": {
       "type": "integer",
-      "enum": [0, 1]
     },
     "RewardPer1000Trials": {
       "type": "integer",
@@ -219,11 +209,9 @@ export const taskParamSchema = {
     },
     "Homecage": {
       "type": "integer",
-      "enum": [0, 1],
     },
     "Separated": {
       "type": "integer",
-      "enum": [0, 1]
     },
     "Species": {
       "type": "string",
@@ -235,7 +223,6 @@ export const taskParamSchema = {
     },
     "Liquid": {
       "type": "integer",
-      "enum": [1, 2, 3],
     },
   }
 };
