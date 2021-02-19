@@ -385,7 +385,7 @@
 }
 
 .color-node-automator div.jsoneditor-field {
-  background-color: #B5EAD7;
+  background-color: #FDF1ED;
 }
 
 .color-node-general div.jsoneditor-field {
@@ -401,11 +401,11 @@
 }
 
 .color-node-fixation-config div.jsoneditor-field {
-  background-color: #FF9AA2;
+  background-color: #FDFDFA;
 }
 
 .color-node-sample div.jsoneditor-field {
-  background-color: #BDE8E7;
+  background-color: #FF9AA2;
 }
 
 .color-node-test div.jsoneditor-field {
@@ -413,11 +413,12 @@
 }
 
 .color-node-choice div.jsoneditor-field {
-  background-color: #FDFDFA;
+  background-color:  #BDE8E7;
+  
 }
 
 .color-node-reward div.jsoneditor-field {
-  background-color: #FDF1ED;
+  background-color: #B5EAD7;
 }
 
 .color-node-nuisance div.jsoneditor-field {

@@ -1,6 +1,18 @@
 //================== TOUCH PROMISE ==================//
 // TouchHold either by clicking in or dragging in
 function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
+	let boundingBoxesRtdb = {};
+	if (FLAGS.rtdbAgentNumConnections > 0) {
+		for (let i = 0; i < boundingBoxes.x.length; i++) {
+			boundingBoxesRtdb[`${i}`] = {};
+			for (let j = 0; j < boundingBoxes.x[i].length; j++) {
+				boundingBoxesRtdb[`${i}`][`x_${j}`] = boundingBoxes.x[i][j];
+			}
+			for (let k = 0; k < boundingBoxes.y[i].length; k++) {
+				boundingBoxesRtdb[`${i}`][`y_${k}`] = boundingBoxes.y[i][k];
+			}
+		}
+	}
 	console.log('boundingboxes top:', boundingBoxes);
 	var resolveFunc
 	var errFunc
@@ -76,6 +88,7 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 						FLAGS.rtdbDataRef.set({
 							x: x - CANVAS.offsetleft,
 							y: ENV.ViewportPixels[1] - y,
+							boundingBox: boundingBoxesRtdb,
 							meta: metaStr,
 							timestamp: new Date().toJSON()
 						});	
