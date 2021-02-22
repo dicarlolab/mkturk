@@ -582,8 +582,6 @@ export class Charts {
       throw 'file.data is Undefined';
     }
 
-    console.log('HELLO');
-
     this.perfDataTable.removeRows(
       0, this.perfDataTable.getNumberOfRows()
     );
@@ -1533,80 +1531,107 @@ export class Charts {
     });
   }
 
-  private drawStaticElements(cvs: HTMLCanvasElement, ctx: CanvasRenderingContext2D | null, data: LiveplotDataType) {
+  private drawStaticElements(cvs: HTMLCanvasElement, ctx: CanvasRenderingContext2D | null, data: LiveplotDataType, evt: CustomEventInit) {
     if (ctx) {
       ctx.fillStyle = 'gray';
       ctx.fillRect(
-        0, 
-        0, 
+        0,
+        0,
         data.workspace[2] * data.CanvasRatio,
         data.ViewportPixels[1] - data.offsettop
       );
 
-      // Fixation
-      if (data.FixationUsesSample < 1) {
-        ctx.strokeStyle = '#0000FF';
-        ctx.beginPath();
-        ctx.arc(
-          this.rtData.fixation.x,
-          cvs.height - this.rtData.fixation.y,
-          this.rtData.fixation.width / 2,
-          0,
-          Math.PI * 2,
-          true
-        );
-        ctx.stroke();
-      }
-    
-      // Sample
-      ctx.strokeStyle = '#000000'; // black
-      ctx.beginPath();
-      ctx.rect(
-        this.rtData.sample.x - this.rtData.sample.width / 2,
-        cvs.height - (this.rtData.sample.y + this.rtData.sample.height / 2),
-        this.rtData.sample.width,
-        this.rtData.sample.height
-      );
-      ctx.stroke();
-
-      // Test
-      for (let i = 0; i < _.size(this.rtData['test']); i++) {
-        console.log('test');
+      for (let idx in evt.detail.boundingBoxes) {
+        let width = evt.detail.boundingBoxes[idx]['x_1'] - evt.detail.boundingBoxes[idx]['x_0'];
+        let height = evt.detail.boundingBoxes[idx]['y_1'] - evt.detail.boundingBoxes[idx]['y_0'];
+        console.log('height:', height);
+        console.log('cvs.height:', cvs.height);
+        console.log('y_0:', evt.detail.boundingBoxes[idx]['y_0']);
         ctx.beginPath();
         ctx.rect(
-          this.rtData['test'][i].x - this.rtData['test'][i].width / 2,
-          cvs.height - (this.rtData['test'][i].y + this.rtData['test'][i].height / 2),
-          this.rtData['test'][i].width,
-          this.rtData['test'][i].height
+          _.floor(evt.detail.boundingBoxes[idx]['x_0']),
+          _.floor(cvs.height - evt.detail.boundingBoxes[idx]['y_0']),
+          width,
+          -height
         );
         ctx.stroke();
       }
 
-      // Choice
-      for (let i = 0; i < _.size(this.rtData['choice']); i++) {
-        ctx.beginPath();
-        ctx.rect(
-          this.rtData['choice'][i].x - this.rtData['choice'][i].width / 2,
-          cvs.height - (this.rtData['choice'][i].y + this.rtData['choice'][i].height / 2),
-          this.rtData['choice'][i].width,
-          this.rtData['choice'][i].height
-        );
-        ctx.stroke();
-      }
 
-      let fixWinSz = data.FixationWindowSizeInches;
-
-      if (_.isNumber(fixWinSz) && fixWinSz > 0) {
-        ctx.strokeStyle = '#FFFF00'; // yellow
-        ctx.strokeRect(
-          this.rtData.fixation.x - _.floor(fixWinSz / 2 * data.ViewportPPI),
-          cvs.height 
-          - (this.rtData.fixation.y + _.floor(fixWinSz / 2 * data.ViewportPPI)),
-          _.floor(fixWinSz * data.ViewportPPI),
-          _.floor(fixWinSz * data.ViewportPPI)
-        );
-      }
     }
+    // if (ctx) {
+    //   ctx.fillStyle = 'gray';
+    //   ctx.fillRect(
+    //     0, 
+    //     0, 
+    //     data.workspace[2] * data.CanvasRatio,
+    //     data.ViewportPixels[1] - data.offsettop
+    //   );
+
+    //   // Fixation
+    //   if (data.FixationUsesSample < 1) {
+    //     ctx.strokeStyle = '#0000FF';
+    //     ctx.beginPath();
+    //     ctx.arc(
+    //       this.rtData.fixation.x,
+    //       cvs.height - this.rtData.fixation.y,
+    //       this.rtData.fixation.width / 2,
+    //       0,
+    //       Math.PI * 2,
+    //       true
+    //     );
+    //     ctx.stroke();
+    //   }
+    
+    //   // Sample
+    //   ctx.strokeStyle = '#000000'; // black
+    //   ctx.beginPath();
+    //   ctx.rect(
+    //     this.rtData.sample.x - this.rtData.sample.width / 2,
+    //     cvs.height - (this.rtData.sample.y + this.rtData.sample.height / 2),
+    //     this.rtData.sample.width,
+    //     this.rtData.sample.height
+    //   );
+    //   ctx.stroke();
+
+    //   // Test
+    //   for (let i = 0; i < _.size(this.rtData['test']); i++) {
+    //     console.log('test');
+    //     ctx.beginPath();
+    //     ctx.rect(
+    //       this.rtData['test'][i].x - this.rtData['test'][i].width / 2,
+    //       cvs.height - (this.rtData['test'][i].y + this.rtData['test'][i].height / 2),
+    //       this.rtData['test'][i].width,
+    //       this.rtData['test'][i].height
+    //     );
+    //     ctx.stroke();
+    //   }
+
+    //   // Choice
+    //   for (let i = 0; i < _.size(this.rtData['choice']); i++) {
+    //     ctx.beginPath();
+    //     ctx.rect(
+    //       this.rtData['choice'][i].x - this.rtData['choice'][i].width / 2,
+    //       cvs.height - (this.rtData['choice'][i].y + this.rtData['choice'][i].height / 2),
+    //       this.rtData['choice'][i].width,
+    //       this.rtData['choice'][i].height
+    //     );
+    //     ctx.stroke();
+    //   }
+
+    //   let fixWinSz = data.FixationWindowSizeInches;
+
+    //   if (_.isNumber(fixWinSz) && fixWinSz > 0) {
+    //     ctx.strokeStyle = '#FFFF00'; // yellow
+    //     ctx.strokeRect(
+    //       this.rtData.fixation.x - _.floor(fixWinSz / 2 * data.ViewportPPI),
+    //       cvs.height 
+    //       - (this.rtData.fixation.y + _.floor(fixWinSz / 2 * data.ViewportPPI)),
+    //       _.floor(fixWinSz * data.ViewportPPI),
+    //       _.floor(fixWinSz * data.ViewportPPI)
+    //     );
+    //   }
+    // }
   }
 
 
@@ -1615,17 +1640,20 @@ export class Charts {
     cvs.width = data.workspace[2] * data.CanvasRatio;
     cvs.height = data.ViewportPixels[1] - data.offsettop;
     let ctx = cvs.getContext('2d') as CanvasRenderingContext2D;
-    this.drawStaticElements(cvs, ctx, data);
+    // this.drawStaticElements(cvs, ctx, data);
     window.addEventListener('data_arrived', (evt: CustomEventInit) => {
 
       if (evt.detail.meta == 2) {
-        this.drawStaticElements(cvs, ctx, data);
+        this.drawStaticElements(cvs, ctx, data, evt);
       }
 
       if (evt.detail.meta == 1) {
         ctx.fillStyle = 'green';
+        // this.drawStaticElements(cvs, ctx, data, evt);
       } else if (evt.detail.meta == 0) {
+
         ctx.fillStyle = 'red';
+        // this.drawStaticElements(cvs, ctx, data, evt);
       }
 
       ctx?.beginPath();

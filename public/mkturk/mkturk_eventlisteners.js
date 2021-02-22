@@ -6,14 +6,24 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 		for (let i = 0; i < boundingBoxes.x.length; i++) {
 			boundingBoxesRtdb[`${i}`] = {};
 			for (let j = 0; j < boundingBoxes.x[i].length; j++) {
-				boundingBoxesRtdb[`${i}`][`x_${j}`] = boundingBoxes.x[i][j];
+				boundingBoxesRtdb[`${i}`][`x_${j}`] = boundingBoxes.x[i][j] - CANVAS.offsetleft;
 			}
 			for (let k = 0; k < boundingBoxes.y[i].length; k++) {
-				boundingBoxesRtdb[`${i}`][`y_${k}`] = boundingBoxes.y[i][k];
+				boundingBoxesRtdb[`${i}`][`y_${k}`] = ENV.ViewportPixels[1] - boundingBoxes.y[i][k];
 			}
 		}
 	}
-	console.log('boundingboxes top:', boundingBoxes);
+	// console.log('boundingboxes top:', boundingBoxes);
+	if (FLAGS.rtdbAgentNumConnections > 0) {
+		let metaStr = 2;
+		FLAGS.rtdbDataRef.set({
+			x: -1,
+			y: -1,
+			boundingBoxes: boundingBoxesRtdb,
+			meta: metaStr,
+			timestamp: new Date().toJSON()
+		});
+	}
 	var resolveFunc
 	var errFunc
 	p = new Promise(function(resolve,reject){
@@ -84,11 +94,11 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 				if (FLAGS.rtdbAgentNumConnections > 0) {
 					let metaStr = chosenbox >= 0 ? 1 : 0;
 					if (!isNaN(x) && !isNaN(y)) {
-						console.log(boundingBoxes);
+						console.log('boundingBoxes', boundingBoxes);
 						FLAGS.rtdbDataRef.set({
 							x: x - CANVAS.offsetleft,
 							y: ENV.ViewportPixels[1] - y,
-							boundingBox: boundingBoxesRtdb,
+							boundingBoxes: boundingBoxesRtdb,
 							meta: metaStr,
 							timestamp: new Date().toJSON()
 						});	
@@ -218,16 +228,17 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 			//================== (END) 4-END HOLD prematurely ==================//
 
 		}//WHILE events
-		if (FLAGS.rtdbAgentNumConnections > 0) {
-			console.log(boundingBoxes);
-			let metaStr = 2;
-			FLAGS.rtdbDataRef.set({
-				x: -1,
-				y: -1,
-				meta: metaStr,
-				timestamp: new Date().toJSON()
-			});
-		}
+		// if (FLAGS.rtdbAgentNumConnections > 0) {
+		// 	console.log(boundingBoxes);
+		// 	let metaStr = 2;
+		// 	FLAGS.rtdbDataRef.set({
+		// 		x: -1,
+		// 		y: -1,
+		// 		boundingBoxes: boundingBoxesRtdb,
+		// 		meta: metaStr,
+		// 		timestamp: new Date().toJSON()
+		// 	});
+		// }
 		if (FLAGS.trackeye){
 			//Median x,y = final eye position estimate
 			var xs = []
