@@ -438,7 +438,7 @@ export class Charts {
     let streamActive = plotOptions.streamActive;
     this.drawScreenPlot(fileData, streamActive);
     if (streamActive && !this.realtimePlotActive) {
-      console.log('hello');
+      // console.log('hello');
       this.drawRealtimePlot2(fileData);
       this.realtimePlotActive = true;
     }
@@ -654,7 +654,7 @@ export class Charts {
       }
     }
 
-    console.log(rt);
+    // console.log(rt);
 
     /**
      * Touch XY
@@ -1544,9 +1544,6 @@ export class Charts {
       for (let idx in evt.detail.boundingBoxes) {
         let width = evt.detail.boundingBoxes[idx]['x_1'] - evt.detail.boundingBoxes[idx]['x_0'];
         let height = evt.detail.boundingBoxes[idx]['y_1'] - evt.detail.boundingBoxes[idx]['y_0'];
-        console.log('height:', height);
-        console.log('cvs.height:', cvs.height);
-        console.log('y_0:', evt.detail.boundingBoxes[idx]['y_0']);
         ctx.beginPath();
         ctx.rect(
           _.floor(evt.detail.boundingBoxes[idx]['x_0']),
@@ -1640,7 +1637,6 @@ export class Charts {
     cvs.width = data.workspace[2] * data.CanvasRatio;
     cvs.height = data.ViewportPixels[1] - data.offsettop;
     let ctx = cvs.getContext('2d') as CanvasRenderingContext2D;
-    // this.drawStaticElements(cvs, ctx, data);
     window.addEventListener('data_arrived', (evt: CustomEventInit) => {
 
       if (evt.detail.meta == 2) {
@@ -1649,11 +1645,9 @@ export class Charts {
 
       if (evt.detail.meta == 1) {
         ctx.fillStyle = 'green';
-        // this.drawStaticElements(cvs, ctx, data, evt);
       } else if (evt.detail.meta == 0) {
 
         ctx.fillStyle = 'red';
-        // this.drawStaticElements(cvs, ctx, data, evt);
       }
 
       ctx?.beginPath();

@@ -42,14 +42,14 @@ export class Utils {
 
   public async getStorageFile(path: string) {
     let fileRef = storageRef.child(path);
-    console.log('fileRef:', fileRef);
+    // console.log('fileRef:', fileRef);
     let file = await storageRef.child(path).getDownloadURL().then(async (url: string) => {
       let response = await fetch(url);
       return response.json();
     }).catch(e => {
       console.error('Error Getting URL:', e);
     });
-    console.log('file:', file);
+    // console.log('file:', file);
     return file;
   }
 

@@ -1401,7 +1401,6 @@ if (ENV.BatteryAPIAvailable) {
         if (FLAGS.trackeye) {
           ENV.Eye.EventType = 'eyemove';
         }
-        console.log('boundingBoxesSampleFixation:', boundingBoxesSampleFixation);
         let p1 = hold_promise(
           0,
           boundingBoxesSampleFixation,
