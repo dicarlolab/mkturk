@@ -833,6 +833,7 @@ console.log(rt)
              std_T[j]= dist_xpos_T.map(function(a,i){return Math.sqrt(a+dist_ypos_T[i])}).reduce(function(a,b){return a+b},0)/all_xpos_T.length
         } //for j test choices
         vitals.std_T = std_T
+        console.log('vitals.stdevTest:', vitals.std_T);
     } //for i touch events   
 
     ydata_5 = smooth(ydata,5);

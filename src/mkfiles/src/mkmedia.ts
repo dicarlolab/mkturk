@@ -3,6 +3,7 @@ import "firebase/firestore";
 import "firebase/storage";
 import JSONEditor from "jsoneditor";
 import Viewer from "viewerjs";
+import * as EditorParams from "./editor-params";
 
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -98,10 +99,11 @@ export class Mkeditor {
     this.btnBoxDiv.style.gridTemplateAreas = '"update-btn update-btn"'
     this.fileNameInput.value = '';
     this.fileNameInput.disabled = true;
+
     try {
       let options = {
         modes: ['tree' as 'tree', 'code' as 'code'],
-        sortObjectKeys: true
+        sortObjectKeys: true,
       };
       this.editor.destroy();
       this.editor = new JSONEditor(this.editorElement, options, file);
@@ -184,6 +186,74 @@ export class Mkeditor {
 
     const sceneParamPath = 'mkturkfiles/scenebags/objectome3d';
     const taskParamPath = 'mkturkfiles/parameterfiles';
+
+    function onClassName(classNameParams: {path: ReadonlyArray<string>; field: string; value: string;}) {
+      console.log(`onClassName path=${classNameParams.path}, field=${classNameParams.field}, value=${classNameParams.value}`);
+
+      const bioKeys = ['Agent', 'CheckRFID'];
+      const automatorKeys = [
+        'Automator', 'AutomatorFilePath', 'CurrentAutomatorStage',
+        'MinPercentCriterion', 'MinTrialsCriterion'
+      ];
+      const generalKeys = [
+        'DragtoRespond', 'CalibrateEye', 'NRSVP', 'SameDifferent',
+        'SamplingStrategy', 'NStickyResponse', 'NTrialsPerBagBlock'
+      ];
+      const gridKeys = [
+        'NGridPoints', 'GridSpacingInches', 'GridXOffsetInches',
+        'GridYOffsetInches', 'FixationGridIndex', 'SampleGridIndex',
+        'ObjectGridIndex', 'ChoiceGridIndex', 'TestGridIndex',
+      ];
+      const fixationKeys = [
+        'NFixations', 'FixationUsesSample', 'FixationSizeInches',
+        'FixationDuration', 'FixationTimeOut',
+      ];
+      const fixationConfigKeys = [
+        'FixationWindowSizeInches',
+        'FixationDotSizeInches',
+      ];
+      const sampleKeys = [
+        'ImageBagsSample', 'KeepSampleON',
+        'SamplePRE', 'SampleOFF',
+      ];
+      const testKeys = [
+        'ImageBagsTest', 'KeepTestON',
+        'TestOFF', 'HideTestDistractors',
+      ];
+      const choiceKeys = [
+        'ChoiceSizeInches', 'HideChoiceDistractors',
+        'ChoiceTimeOut',
+      ];
+      const rewardKeys = [
+        'RewardStage', 'RewardPer1000Trials',
+        'NRewardMax', 'NConsecutiveHitsforBonus',
+        'PunishTimeOut', 'ConsecutiveHitsITI',
+      ];
+      
+      if (bioKeys.includes(classNameParams.field)) {
+        return 'color-node-bio';
+      } else if (automatorKeys.includes(classNameParams.field)) {
+        return 'color-node-automator';
+      } else if (generalKeys.includes(classNameParams.field)) {
+        return 'color-node-general';
+      } else if (gridKeys.includes(classNameParams.field)) {
+        return 'color-node-grid';
+      } else if (fixationKeys.includes(classNameParams.field)) {
+        return 'color-node-fixation';
+      } else if (fixationConfigKeys.includes(classNameParams.field)) {
+        return 'color-node-fixation-config';
+      } else if (sampleKeys.includes(classNameParams.field)) {
+        return 'color-node-sample';
+      } else if (testKeys.includes(classNameParams.field)) {
+        return 'color-node-test';
+      } else if (choiceKeys.includes(classNameParams.field)) {
+        return 'color-node-choice';
+      } else if (rewardKeys.includes(classNameParams.field)) {
+        return 'color-node-reward';
+      } else {
+        return 'color-node-nuisance';
+      }
+    }
 
     let sceneTemplateOptions = {
       modes: ['tree' as 'tree', 'code' as 'code'],
@@ -273,41 +343,49 @@ export class Mkeditor {
       modes: ['tree' as 'tree', 'code' as 'code']
     }
 
+    let taskParamOptions = {
+      modes: ['tree' as 'tree', 'code' as 'code'],
+      onClassName: onClassName,
+      schema: EditorParams.taskParamSchema
+    };
+
+    let fileUrl = await fileRef.getDownloadURL().catch(e => {
+      console.error("Error getting download URL", e);
+    });
+    let response = await fetch(fileUrl);
+    let file = await response.json();
 
     if (fileRef.fullPath.includes(sceneParamPath)) {
       if (fileRef.fullPath.includes('template')) {
         this.fileDupBtn.style.display = 'inline-block';
         // this.genSceneParamBtn.style.display = 'inline-block';
-        options = sceneTemplateOptions
+        options = sceneTemplateOptions;
       } else {
         this.fileDupBtn.style.display = 'inline-block';
         // this.genSceneParamBtn.style.display = 'none';
       }
     } else if (fileRef.fullPath.includes(taskParamPath)) {
       this.fileDupBtn.style.display = 'inline-block';
+      options = taskParamOptions;
+      let taskParamKeys = Object.keys(JSON.parse(JSON.stringify(EditorParams.taskParamSchema, null, 1)).properties);
+      let json = JSON.parse(JSON.stringify(file, taskParamKeys, 1));
+      let json2: any = {};
+      Object.keys(file).forEach(key => {
+        if (!(key in json)) {
+          json2[key] = file[key];
+        }
+      });
+      file = Object.assign(json, json2);
       // this.genSceneParamBtn.style.display = 'none';
     } else {
       this.fileDupBtn.style.display = 'none';
       // this.genSceneParamBtn.style.display = 'none';
     }
 
-    let fileUrl = await fileRef.getDownloadURL().catch(e => {
-      console.error("Error getting download URL", e);
-    });
-
-    let response = await fetch(fileUrl);
-    let file = await response.json();
-
     this.editor.destroy();
-    // let options = {
-    //   modes: ['tree' as 'tree', 'code' as 'code']
-    // };
     this.editor = new JSONEditor(this.editorElement, options, file);
     this.activeFile = { loc: "mkturkfiles", id: fileRef };
     console.log("activeFile", this.activeFile);
-    // if (fileRef.fullPath.includes('template')) {
-    //   this.pe.generateParamObject(file);
-    // }
     this.fileNameInput.placeholder = fileRef.name;
   }
 
