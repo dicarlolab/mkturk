@@ -138,7 +138,7 @@ export class Liveplot {
       this.file.name = this.file.list[0].fullpath;
       this.file.fileChanged = true;
       let rawStorageFile = await utils.getStorageFile(this.file.name);
-      console.log('rawFile', rawStorageFile);
+      // console.log('rawFile', rawStorageFile);
       
       this.processData(rawStorageFile);
 

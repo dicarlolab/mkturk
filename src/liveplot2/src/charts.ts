@@ -438,7 +438,7 @@ export class Charts {
     let streamActive = plotOptions.streamActive;
     this.drawScreenPlot(fileData, streamActive);
     if (streamActive && !this.realtimePlotActive) {
-      console.log('hello');
+      // console.log('hello');
       this.drawRealtimePlot2(fileData);
       this.realtimePlotActive = true;
     }
@@ -654,7 +654,7 @@ export class Charts {
       }
     }
 
-    console.log(rt);
+    // console.log(rt);
 
     /**
      * Touch XY
@@ -667,7 +667,7 @@ export class Charts {
       && _.size(data.ResponseXYT) > 0
       && _.size(file.data.ResponseXYT[0]) > 0
     ) {
-      for (let i = 0; i < _.size(data.ResponseXYT[0]) * 2; i += 2) {
+      for (let i = 0; i < _.size(data.FixationXYT[0]) * 2; i += 2) {
         touchevent[i] = [];
         touchevent[i + 1] = [];
         touchevent[i][0] = file.data.FixationXYT[0][i / 2];
@@ -676,7 +676,7 @@ export class Charts {
         touchevent[i + 1][1] = file.data.ResponseXYT[1][i / 2];
       }
     } else {
-      for (let i = 0; i < _.size(data.ResponseXYT[0]) * 2; i += 2) {
+      for (let i = 0; i < _.size(data.FixationXYT[0]) * 2; i += 2) {
         touchevent[i] = [];
         touchevent[i + 1] = [];
         touchevent[i][0] = file.data.FixationXYT[0][i / 2];
@@ -749,6 +749,7 @@ export class Charts {
     );
 
     if (!this.realtimeRowDataAdded && !this.realtimePlotActive) {
+      console.log('realtime not active');
       this.rtData['fixation'] = {
         x: fixX,
         y: fixY,
@@ -946,7 +947,7 @@ export class Charts {
           }
         );
         
-
+        // realtime not active
         if (!this.realtimeRowDataAdded && !this.realtimePlotActive) {
           this.rtData['choice'].push(
             {
@@ -1530,112 +1531,32 @@ export class Charts {
     });
   }
 
-  private drawStaticElements(cvs: HTMLCanvasElement, ctx: CanvasRenderingContext2D | null, data: LiveplotDataType) {
+  private drawStaticElements(cvs: HTMLCanvasElement, ctx: CanvasRenderingContext2D | null, data: LiveplotDataType, evt: CustomEventInit) {
     if (ctx) {
       ctx.fillStyle = 'gray';
       ctx.fillRect(
-        0, 
-        0, 
+        0,
+        0,
         data.workspace[2] * data.CanvasRatio,
         data.ViewportPixels[1] - data.offsettop
       );
 
-      // Fixation
-      if (data.FixationUsesSample < 1) {
-        ctx.strokeStyle = '#0000FF';
-        ctx.beginPath();
-        ctx.arc(
-          this.rtData.fixation.x,
-          cvs.height - this.rtData.fixation.y,
-          this.rtData.fixation.width / 2,
-          0,
-          Math.PI * 2,
-          true
-        );
-        ctx.stroke();
-      }
-    
-      // Sample
-      ctx.strokeStyle = '#000000'; // black
-      ctx.beginPath();
-      ctx.rect(
-        this.rtData.sample.x - this.rtData.sample.width / 2,
-        cvs.height - (this.rtData.sample.y + this.rtData.sample.height / 2),
-        this.rtData.sample.width,
-        this.rtData.sample.height
-      );
-      ctx.stroke();
-
-      // Test
-      for (let i = 0; i < _.size(this.rtData['test']); i++) {
-        console.log('test');
+      for (let idx in evt.detail.boundingBoxes) {
+        let width = evt.detail.boundingBoxes[idx]['x_1'] - evt.detail.boundingBoxes[idx]['x_0'];
+        let height = evt.detail.boundingBoxes[idx]['y_1'] - evt.detail.boundingBoxes[idx]['y_0'];
         ctx.beginPath();
         ctx.rect(
-          this.rtData['test'][i].x - this.rtData['test'][i].width / 2,
-          cvs.height - (this.rtData['test'][i].y + this.rtData['test'][i].height / 2),
-          this.rtData['test'][i].width,
-          this.rtData['test'][i].height
+          _.floor(evt.detail.boundingBoxes[idx]['x_0']),
+          _.floor(cvs.height - evt.detail.boundingBoxes[idx]['y_0']),
+          width,
+          -height
         );
         ctx.stroke();
       }
 
-      // Choice
-      for (let i = 0; i < _.size(this.rtData['choice']); i++) {
-        ctx.beginPath();
-        ctx.rect(
-          this.rtData['choice'][i].x - this.rtData['choice'][i].width / 2,
-          cvs.height - (this.rtData['choice'][i].y + this.rtData['choice'][i].height / 2),
-          this.rtData['choice'][i].width,
-          this.rtData['choice'][i].height
-        );
-        ctx.stroke();
-      }
 
-      let fixWinSz = data.FixationWindowSizeInches;
-
-      if (_.isNumber(fixWinSz) && fixWinSz > 0) {
-        ctx.strokeStyle = '#FFFF00'; // yellow
-        ctx.strokeRect(
-          this.rtData.fixation.x - _.floor(fixWinSz / 2 * data.ViewportPPI),
-          cvs.height 
-          - (this.rtData.fixation.y + _.floor(fixWinSz / 2 * data.ViewportPPI)),
-          _.floor(fixWinSz * data.ViewportPPI),
-          _.floor(fixWinSz * data.ViewportPPI)
-        );
-      }
     }
-  }
-
-
-  private drawRealtimePlot2(data: LiveplotDataType) {
-    let cvs = document.querySelector('#realtime-canvas') as HTMLCanvasElement;
-    cvs.width = data.workspace[2] * data.CanvasRatio;
-    cvs.height = data.ViewportPixels[1] - data.offsettop;
-    let ctx = cvs.getContext('2d') as CanvasRenderingContext2D;
-    this.drawStaticElements(cvs, ctx, data);
-    window.addEventListener('data_arrived', (evt: CustomEventInit) => {
-
-      if (evt.detail.meta == 2) {
-        this.drawStaticElements(cvs, ctx, data);
-      }
-
-      if (evt.detail.meta == 1) {
-        ctx.fillStyle = 'green';
-      } else if (evt.detail.meta == 0) {
-        ctx.fillStyle = 'red';
-      }
-
-      ctx?.beginPath();
-      let x = _.floor(evt.detail.x);
-      let y = _.floor(cvs.height - evt.detail.y);
-      ctx?.arc(x, y, 2, 0, Math.PI * 2, true);
-      ctx?.fill();
-    });
-
-
-    
     // if (ctx) {
-    //   // Setup Canvas
     //   ctx.fillStyle = 'gray';
     //   ctx.fillRect(
     //     0, 
@@ -1646,6 +1567,7 @@ export class Charts {
 
     //   // Fixation
     //   if (data.FixationUsesSample < 1) {
+    //     ctx.strokeStyle = '#0000FF';
     //     ctx.beginPath();
     //     ctx.arc(
     //       this.rtData.fixation.x,
@@ -1657,8 +1579,9 @@ export class Charts {
     //     );
     //     ctx.stroke();
     //   }
-      
+    
     //   // Sample
+    //   ctx.strokeStyle = '#000000'; // black
     //   ctx.beginPath();
     //   ctx.rect(
     //     this.rtData.sample.x - this.rtData.sample.width / 2,
@@ -1693,9 +1616,47 @@ export class Charts {
     //     ctx.stroke();
     //   }
 
-      
-    
-    
+    //   let fixWinSz = data.FixationWindowSizeInches;
+
+    //   if (_.isNumber(fixWinSz) && fixWinSz > 0) {
+    //     ctx.strokeStyle = '#FFFF00'; // yellow
+    //     ctx.strokeRect(
+    //       this.rtData.fixation.x - _.floor(fixWinSz / 2 * data.ViewportPPI),
+    //       cvs.height 
+    //       - (this.rtData.fixation.y + _.floor(fixWinSz / 2 * data.ViewportPPI)),
+    //       _.floor(fixWinSz * data.ViewportPPI),
+    //       _.floor(fixWinSz * data.ViewportPPI)
+    //     );
+    //   }
+    // }
+  }
+
+
+  private drawRealtimePlot2(data: LiveplotDataType) {
+    let cvs = document.querySelector('#realtime-canvas') as HTMLCanvasElement;
+    cvs.width = data.workspace[2] * data.CanvasRatio;
+    cvs.height = data.ViewportPixels[1] - data.offsettop;
+    let ctx = cvs.getContext('2d') as CanvasRenderingContext2D;
+    window.addEventListener('data_arrived', (evt: CustomEventInit) => {
+
+      if (evt.detail.meta == 2) {
+        this.drawStaticElements(cvs, ctx, data, evt);
+      }
+
+      if (evt.detail.meta == 1) {
+        ctx.fillStyle = 'green';
+      } else if (evt.detail.meta == 0) {
+
+        ctx.fillStyle = 'red';
+      }
+
+      ctx?.beginPath();
+      let x = _.floor(evt.detail.x);
+      let y = _.floor(cvs.height - evt.detail.y);
+      ctx?.arc(x, y, 2, 0, Math.PI * 2, true);
+      ctx?.fill();
+    });
+
   }
 
   private drawScreenPlot(data: LiveplotDataType, screenActive: boolean) {

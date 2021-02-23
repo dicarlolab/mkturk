@@ -379,3 +379,49 @@
   grid-template-columns: repeat(2, 1fr);
   grid-template-areas: "add-rule-btn undo-edit-btn";
 }
+
+.color-node-bio div.jsoneditor-field {
+  background-color: #C7CEEA;
+}
+
+.color-node-automator div.jsoneditor-field {
+  background-color: #FDF1ED;
+}
+
+.color-node-general div.jsoneditor-field {
+  background-color: #E2F0CB;
+}
+
+.color-node-grid div.jsoneditor-field {
+  background-color: #FFDAC1;
+}
+
+.color-node-fixation div.jsoneditor-field {
+  background-color: #FFB7B2;
+}
+
+.color-node-fixation-config div.jsoneditor-field {
+  background-color: #FDFDFA;
+}
+
+.color-node-sample div.jsoneditor-field {
+  background-color: #FF9AA2;
+}
+
+.color-node-test div.jsoneditor-field {
+  background-color: #DCF2DE;
+}
+
+.color-node-choice div.jsoneditor-field {
+  background-color:  #BDE8E7;
+  
+}
+
+.color-node-reward div.jsoneditor-field {
+  background-color: #B5EAD7;
+}
+
+.color-node-nuisance div.jsoneditor-field {
+  background-color: #FDE2E6;
+}
+

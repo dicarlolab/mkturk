@@ -138,7 +138,7 @@ auth.onAuthStateChanged((user) => {
       });
       let subjectlistobj = document.getElementById("subjectID_select");
       for (let i = subjectlist.length - 1; i >= 0; i--) {
-        console.log('subjectlist i:', i);
+        // console.log('subjectlist i:', i);
         let opt = document.createElement('option');
         opt.value = i;
         opt.innerHTML = subjectlist[i];

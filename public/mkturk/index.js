@@ -1366,7 +1366,7 @@ if (ENV.BatteryAPIAvailable) {
 
         // FOR i remaining frames after Sample
         for (let i = idxArr[idxArr.length - 1] + 1; i < frame.frames.length; i++) {
-          console.log('keepsampleon FRAME:', frame);
+          // console.log('keepsampleon FRAME:', frame);
           // Append last Sample scene rendered
           frame.frames[i].push(idxArr[idxArr.length - 1]);
         }
@@ -1440,6 +1440,12 @@ if (ENV.BatteryAPIAvailable) {
           ];
         } else { // ELSE broke samplefixation
           CURRTRIAL.samplefixationtouchevent = race_return.type;
+          // Quick Fix for race_return.cxyt[1:4] returning undefined
+          for (let i = 1; i < 4; i++) { 
+            if (typeof race_return.cxyt[i] == 'undefined') {
+              race_return.cxyt[i] = -1;
+            }
+          }
           CURRTRIAL.samplefixationxyt = [
             race_return.cxyt[1],
             race_return.cxyt[2],
@@ -1838,6 +1844,9 @@ if (ENV.BatteryAPIAvailable) {
       
       await Promise.all([p1, p2]);
     }
+
+    // CURRTRIAL.endtime = Date.now() - ENV.CurrentDate.valueOf();
+		// logEVENTS("EndTime", CURRTRIAL.endtime, "trialseries")
 
     //============ (end) DELIVER REWARD/PUNISH ============//
     //HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    //
