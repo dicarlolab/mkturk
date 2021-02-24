@@ -44,5 +44,34 @@ class MkModels {
     this.model.summary();
   }
 
+  buildSvmClassifier(config) {
+    this.model = tf.sequential();
+    this.model.add(tf.layers.dense({
+      units: 1,
+      inputShape: [config.inputShape],
+      activation: 'linear',
+      kernelRegularizer: tf.regularizers.l2(),
+    }));
+
+    function hingeLoss(yTrue, yPred) {
+      console.log('hinge yTrue:');
+      yTrue.print(true);
+      console.log('hinge yPred:');
+      yPred.print(true);
+      // let loss = tf.maximum(0., 1 - yTrue * yPred);
+      let loss = tf.losses.hingeLoss(yTrue, yPred);
+      console.log('hinge loss:');
+      loss.print(true);
+      return loss;
+    }
+
+    this.model.compile({
+      optimizer: tf.train.adam(),
+      loss: hingeLoss,
+      metrics: ['accuracy']
+    });
+    this.model.summary();
+  }
+
 
 }

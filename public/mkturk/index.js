@@ -440,7 +440,8 @@ if (ENV.BatteryAPIAvailable) {
 		await mkm.loadFeatureExtractor(TASK.ModelConfig.modelURL, { fromTFHub: fromTFHub });
 		let cvs = document.getElementById('model-canvas');
 		mkm.bindCanvasElement(cvs);
-		mkm.buildClassifier(TASK.ModelConfig);
+		// mkm.buildClassifier(TASK.ModelConfig);
+    mkm.buildSvmClassifier(TASK.ModelConfig);
 	}
   // ======================== (END) LOAD MKMODELS ========================//
 
@@ -1167,12 +1168,18 @@ if (ENV.BatteryAPIAvailable) {
           let tensor = mkm.normalizePixelValues(mkm.cvs);
           let feature = mkm.featureExtractor.execute(tensor);
           feature = feature.reshape([2048]);
+          let moments = tf.moments(feature);
+          let subtracted = feature.sub(moments.mean);
+          let scaledFeature = subtracted.divNoNan(moments.variance);
+          scaledFeature.print();
           if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
             mkm.dataObj.xTrain.push(feature);
             if (CURRTRIAL.correctitem == 0) {
-              mkm.dataObj.yTrain.push([1, 0]);
+              mkm.dataObj.yTrain.push([-1]);
+              // mkm.dataObj.yTrain.push([1, 0]);
             } else if (CURRTRIAL.correctitem == 1) {
-              mkm.dataObj.yTrain.push([0, 1]);
+              mkm.dataObj.yTrain.push([1]);
+              // mkm.dataObj.yTrain.push([0, 1]);
             }
           } else {
             mkm.dataObj.xTest = feature;
@@ -1555,10 +1562,10 @@ if (ENV.BatteryAPIAvailable) {
           if (CURRTRIAL.num > TASK.ModelConfig.trainIdx) {
             let yPred = mkm.model.predict(mkm.dataObj.xTest.reshape([1, 2048]));
             yPred.print();
-					  yPred = yPred.reshape([2]).argMax(0);
-					  yPred = yPred.dataSync();
-					  currchoice = yPred[0];
-            console.log('yPred:', currchoice, 'yTrue:', CURRTRIAL.correctitem);
+					  // yPred = yPred.reshape([2]).argMax(0);
+					  // yPred = yPred.dataSync();
+					  // currchoice = yPred[0];
+            // console.log('yPred:', currchoice, 'yTrue:', CURRTRIAL.correctitem);
             
             if (TASK.ModelConfig.saveImages == 1) {
               if (currchoice != CURRTRIAL.correctitem) {
