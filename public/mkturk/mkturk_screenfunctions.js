@@ -1,5 +1,9 @@
 //================== IMAGE RENDERING ==================//
 function displayTrial(ti,gr,fr,sc,ob,id){
+	console.log('arguments.length:', arguments.length);
+	if (arguments.length == 7) {
+		console.log('mkm:', mkm);
+	}
 // ti = time, gr = grid, fr = frame
 // sc = screen, ob = object label, id = index of renderparam
 	var resolveFunc
@@ -13,13 +17,14 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 		resolveFunc = resolve;
 		errFunc = reject;
 	}).then();
-
 	var start = null;
 	CURRTRIAL.tsequenceactual = []
 	async function updateCanvas(timestamp){
+		
 		if (!start) start = timestamp; //IF start has not been set to a float timestamp, set it now.
 
 		if (timestamp - start > ti[frame.current]){
+			console.log('updateCanvas called');
 			//----- RENDER ALL ELEMENTS
 			if (!ENV.OffscreenCanvasAvailable){
 					renderShape2D('Blank',[-1],OFFSCREENCANVAS)				
@@ -28,6 +33,8 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 			for (var s = 0; s<=frame.frames[frame.current].length-1; s++){
 				f = frame.frames[frame.current][s]
 				var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
+				console.log('taskscreen:', taskscreen);
+				
 				if (s==0){
 					var taskscreen0 = taskscreen
 				}//IF primary screen

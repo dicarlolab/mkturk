@@ -128,26 +128,6 @@ if (ENV.BatteryAPIAvailable) {
       .addEventListener('click', blescaleconnect, false);
 		//---- (END) for Safari
   }
-
-	// document.querySelector("button[id=doneEditingParams]").addEventListener(
-	// 	'pointerup',doneEditingParams_listener,false)
-	// document.querySelector("button[id=doneTestingTask]").addEventListener(
-	// 	'pointerup',doneTestingTask_listener,false)
-	// document.querySelector("button[id=stressTest]").addEventListener(
-	// 	'touchstart',stressTest_listener,false)
-	// document.querySelector("button[id=gridPoints]").addEventListener(
-	// 	'touchstart',gridPoints_listener,false)
-
-	// 	//---- for Safari
-	// 	document.querySelector("button[id=doneEditingParams]").addEventListener(
-	// 		'click',doneEditingParams_listener,false)
-	// 	document.querySelector("button[id=doneTestingTask]").addEventListener(
-	// 		'click',doneTestingTask_listener,false)
-	// 	document.querySelector("button[id=stressTest]").addEventListener(
-	// 		'click',stressTest_listener,false)
-	// 	document.querySelector("button[id=gridPoints]").addEventListener(
-	// 		'click',gridPoints_listener,false)
-  // 	//---- (END) for Safari
   
   document.querySelector("button[id=doneEditingParams]")
     .addEventListener('pointerup', doneEditingParams_listener, false);
@@ -1128,6 +1108,7 @@ if (ENV.BatteryAPIAvailable) {
       let touchhold_return; 
       if (FLAGS.stressTest == 1) { //IF automated stress test
         if (TASK.Species == 'model') {
+          
           let ctx = mkm.cvs.getContext('2d');
           ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
 
@@ -1173,6 +1154,7 @@ if (ENV.BatteryAPIAvailable) {
           let scaledFeature = subtracted.divNoNan(moments.variance);
           scaledFeature.print();
           if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
+            console.log('CURRTRIAL.num:', CURRTRIAL.num);
             mkm.dataObj.xTrain.push(feature);
             if (CURRTRIAL.correctitem == 0) {
               mkm.dataObj.yTrain.push([-1]);
@@ -1472,6 +1454,7 @@ if (ENV.BatteryAPIAvailable) {
           CURRTRIAL.sequencetaskscreen,
           CURRTRIAL.sequencelabel,
           CURRTRIAL.sequenceindex,
+          mkm
         );
       }
 
