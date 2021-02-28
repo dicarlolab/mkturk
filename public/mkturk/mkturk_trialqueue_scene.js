@@ -99,7 +99,6 @@ async generate_trials(n_trials){
 
 	var image_requests = []; 
 
-	// console.log('TQ.generate_trials() will generate '+n_trials+' trials')
 	for (var i = 0; i < n_trials; i++){
 		if (TASK.NTrialsPerBagBlock <= 0){
 			// do nothing
@@ -118,17 +117,18 @@ async generate_trials(n_trials){
 					if (this.currentbag >= this.ntrials_per_bag.length){
 						this.currentbag = 0; //go back to first bag
 					}
-				}
+				}//IF
 
-				// make new bag
+				//Make new bag for this block
 				this.samplebag_block_indices = []
 				for (var j = 0; j <= this.samplebag_labels.length-1; j++){
 					if (this.samplebag_labels[j] == this.currentbag){
 						this.samplebag_block_indices.push(j)
 					}
-				} //for j images in bag
-			} // if ntrials_per_bag exceeded
-		} // if sample all bags vs blocks
+				}//FOR j images in bag
+
+			}//IF ntrials_per_bag exceeded
+		}//IF sample all bags vs blocks
 
 		// Draw one (1) sample image from samplebag
 		var sample_index = this.selectSampleImage(this.samplebag_block_indices, this.samplingStrategy)
@@ -332,7 +332,6 @@ if (this.samplebucket.length == 0){
 	else {
 		throw SamplingStrategy + " not implemented in selectSampleImage."
 	}
-
 	return sample_image_index
 }//FUNCTION selectSampleImage
 

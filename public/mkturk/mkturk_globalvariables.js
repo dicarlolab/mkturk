@@ -179,7 +179,6 @@ CURRTRIAL.reset = function(){
 	this.samplestarttime_string = ""; 	
 	this.fixationgridindex = NaN; 
 	this.fixationxyt = [];
-	this.allfixationxyt = [];
 	this.samplegridindex = NaN; 
 	this.sampleindex = [];
 	this.sampleindex_nonarray = [];
