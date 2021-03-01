@@ -1,9 +1,9 @@
 //================== IMAGE RENDERING ==================//
 function displayTrial(ti,gr,fr,sc,ob,id){
 	console.log('arguments.length:', arguments.length);
-	if (arguments.length == 7) {
-		console.log('mkm:', mkm);
-	}
+	// if (arguments.length == 7) {
+	// 	console.log('mkm:', mkm);
+	// }
 // ti = time, gr = grid, fr = frame
 // sc = screen, ob = object label, id = index of renderparam
 	var resolveFunc
@@ -108,6 +108,8 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 				boundingBoxesChoice3D.x = boundingBoxesChoice3JS.x
 				boundingBoxesChoice3D.y = boundingBoxesChoice3JS.y			
 			}
+
+			console.log(`taskscreen: ${taskscreen}; taskscreen0: ${taskscreen0}; boundingBoxesChoice3D: ${JSON.stringify(boundingBoxesChoice3D)}`);
 
 			//----- (2) Update Status
 			updated2d = 0
