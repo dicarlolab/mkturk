@@ -1,18 +1,19 @@
 //================== IMAGE RENDERING ==================//
-function displayTrial(ti,gr,fr,sc,ob,id){
+function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 	console.log('arguments.length:', arguments.length);
+	let lenArgs = arguments.length;
 	// if (arguments.length == 7) {
 	// 	console.log('mkm:', mkm);
 	// }
 // ti = time, gr = grid, fr = frame
 // sc = screen, ob = object label, id = index of renderparam
-	var resolveFunc
-	var errFunc
-	updated2d = 0
-	updated3d = 0
-	boundingBoxesChoice2D = {'x':[],'y':[]}
-	boundingBoxesChoice3JS = {'x':[],'y':[]}
-	boundingBoxesChoice3D = {'x':[],'y':[]}
+	var resolveFunc;
+	var errFunc;
+	updated2d = 0;
+	updated3d = 0;
+	boundingBoxesChoice2D = { 'x': [], 'y': [] };
+	boundingBoxesChoice3JS = { 'x': [], 'y': [] };
+	boundingBoxesChoice3D = { 'x': [], 'y': [] };
 	p = new Promise(function(resolve,reject){
 		resolveFunc = resolve;
 		errFunc = reject;
@@ -23,20 +24,20 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 		
 		if (!start) start = timestamp; //IF start has not been set to a float timestamp, set it now.
 
-		if (timestamp - start > ti[frame.current]){
-			console.log('updateCanvas called');
+		if (timestamp - start > ti[frame.current]) {
+			// console.log('updateCanvas called');
 			//----- RENDER ALL ELEMENTS
-			if (!ENV.OffscreenCanvasAvailable){
-					renderShape2D('Blank',[-1],OFFSCREENCANVAS)				
+			if (!ENV.OffscreenCanvasAvailable) {
+				renderShape2D('Blank', [-1], OFFSCREENCANVAS);
 			}
 
 			for (var s = 0; s<=frame.frames[frame.current].length-1; s++){
 				f = frame.frames[frame.current][s]
 				var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
-				console.log('taskscreen:', taskscreen);
+				// console.log('taskscreen:', taskscreen);
 				
 				if (s==0){
-					var taskscreen0 = taskscreen
+					var taskscreen0 = taskscreen;
 				}//IF primary screen
 
 //------------------- DISPLAY THE FRAME 2D ---------------------//
@@ -109,7 +110,101 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 				boundingBoxesChoice3D.y = boundingBoxesChoice3JS.y			
 			}
 
-			console.log(`taskscreen: ${taskscreen}; taskscreen0: ${taskscreen0}; boundingBoxesChoice3D: ${JSON.stringify(boundingBoxesChoice3D)}`);
+			// console.log(`taskscreen: ${taskscreen}; taskscreen0: ${taskscreen0}; boundingBoxesChoice3D: ${JSON.stringify(boundingBoxesChoice3D)}`);
+			if (taskscreen == 'Sample') {
+				console.log(`arguments.length=${lenArgs}`);
+			}
+
+			// MkModel Logic
+			
+			if (TASK.SameDifferent > 0 && lenArgs == 7) {
+				console.log('displayTrial SD');
+				if (taskscreen == 'Sample' && !mkm.hasSampleFeatures) {
+					let ctx = mkm.cvs.getContext('2d');
+					ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
+					let label = CURRTRIAL.sample_scenebag_label[0][0];
+					let sxOffset = (
+						IMAGES.Sample[label].IMAGES.sizeInches
+						* ENV.PhysicalPPI
+						/ ENV.ScreenRatio
+					);
+					let sx = Math.round(
+						boundingBoxesChoice3D.x[0][1]
+						+ boundingBoxesChoice3D.x[0][0]
+						- sxOffset
+					);
+					let syOffset = (
+						IMAGES.Sample[label].IMAGES.sizeInches
+						* ENV.PhysicalPPI
+						/ ENV.ScreenRatio
+					);
+					let sy = Math.round(
+						(boundingBoxesChoice3D.y[0][1] + boundingBoxesChoice3D.y[0][0])
+						/ ENV.ScreenRatio
+					);
+					let sHeight = Math.round(
+						IMAGES.Sample[label].IMAGES.sizeInches
+						* ENV.PhysicalPPI
+					);
+					let sWidth = sHeight;
+					console.log(`SAMPLE sx=${sx}; sy=${sy}; sWidth=${sWidth}; sHeight=${sHeight}; syOffset=${syOffset}`);
+					
+					ctx.drawImage(VISIBLECANVAS, sx, sy, sWidth, sHeight, 0, 0, 224, 224);
+					let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
+					let cvsData = mkm.cvs.toDataURL();
+					let path = (
+						`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`
+					);
+					mkmodelsRef.child(path).putString(cvsData, 'data_url');
+					mkm.hasSampleFeatures = true;
+				} else if (taskscreen == 'Test' && !mkm.hasTestFeatures) {
+					let ctx = mkm.cvs.getContext('2d');
+					ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
+					let label = CURRTRIAL.test_scenebag_labels[0][0];
+					let sxOffset = (
+						IMAGES.Test[label].IMAGES.sizeInches
+						* ENV.PhysicalPPI
+						/ ENV.ScreenRatio
+					);
+					let sx = Math.round(
+						boundingBoxesChoice3D.x[0][1]
+						+ boundingBoxesChoice3D.x[0][0]
+						- sxOffset
+					);
+					let syOffset = (
+						IMAGES.Test[label].IMAGES.sizeInches
+						* ENV.PhysicalPPI
+						/ ENV.ScreenRatio
+					);
+					let sy = Math.round(
+						(boundingBoxesChoice3D.y[0][1] + boundingBoxesChoice3D.y[0][0])
+						/ ENV.ScreenRatio
+						- syOffset
+					);
+					let sHeight = Math.round(
+						IMAGES.Test[label].IMAGES.sizeInches
+						* ENV.PhysicalPPI
+					);
+					// let sHeight = 300;
+					let sWidth = sHeight;
+					console.log(`TEST sx=${sx}; sy=${sy}; sWidth=${sWidth}; sHeight=${sHeight}`);
+
+					console.log(`mkm.cvs.width=${mkm.cvs.width}; mkm.cvs.height=${mkm.cvs.height}`);
+					ctx.drawImage(VISIBLECANVAS, sx, sy, sWidth, sHeight, 0, 0, 224, 224);
+					let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
+					let cvsData = mkm.cvs.toDataURL();
+					let path = (
+						`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_test.png`
+					);
+					mkmodelsRef.child(path).putString(cvsData, 'data_url');
+					mkm.hasTestFeatures = true;
+				} else if (taskscreen == 'Choice' && mkm.hasSampleFeatures && mkm.hasTestFeatures) {
+					mkm.hasSampleFeatures = false;
+					mkm.hasTestFeatures = false;
+				}
+
+			}
+				
 
 			//----- (2) Update Status
 			updated2d = 0

@@ -6,6 +6,8 @@ class MkModels {
     this.dataObj.xTrain = [];
     this.dataObj.yTrain = [];
     this.cvs;
+    this.hasSampleFeatures = false;
+    this.hasTestFeatures = false;
   }
 
   bindCanvasElement(canvas) {
