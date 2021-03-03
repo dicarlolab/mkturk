@@ -118,43 +118,76 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 
 			// MkModel Logic
 			
-			if (TASK.SameDifferent > 0 && lenArgs == 7) {
+			// if (TASK.SameDifferent > 0 && lenArgs == 7) {
+			if (lenArgs == 7 && mkm != undefined) {
 				console.log('displayTrial SD');
+				console.log('taskscreen:', taskscreen);
 				if (taskscreen == 'Sample' && !mkm.hasSampleFeatures) {
 					let ctx = mkm.cvs.getContext('2d');
 					ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
 					let label = CURRTRIAL.sample_scenebag_label[0][0];
-					let sxOffset = (
-						IMAGES.Sample[label].IMAGES.sizeInches
-						* ENV.PhysicalPPI
-						/ ENV.ScreenRatio
-					);
-					let sx = (
-						boundingBoxesChoice3D.x[0][1]
-						+ boundingBoxesChoice3D.x[0][0]
-						- sxOffset
-					);
-					let syOffset = (
-						IMAGES.Sample[label].IMAGES.sizeInches
-						* ENV.PhysicalPPI
-						/ ENV.ScreenRatio
-					);
-					let sy = (
-						(boundingBoxesChoice3D.y[0][1] + boundingBoxesChoice3D.y[0][0] - syOffset)
-						/ ENV.ScreenRatio
+					let idx = CURRTRIAL.sample_scenebag_index[0][0];
+					let obj = IMAGES.Sample[label].OBJECTS;
+
+					let sx, sy, sxOffset, syOffset, sWidth, sHeight;
+
+					if (IMAGES.Sample[label].IMAGES.imageidx.length > 0 && IMAGES.Sample[label].IMAGES.imagebag) { // IF background image
+						sx = boundingBoxesChoice3D.x[0][0] * ENV.ScreenRatio;
+						sy = (boundingBoxesChoice3D.y[0][0] - CANVAS.offsettop) * ENV.ScreenRatio;
+						sWidth = Math.round(
+							IMAGES.Sample[label].IMAGES.sizeInches
+							* ENV.ViewportPPI
+							* ENV.ScreenRatio
+						);
+						sHeight = sWidth;
+					} else {
+						console.log('hello');
+						try {
+							sxOffset = (
+								obj[Object.keys(obj)[0]].sizeInches[idx] * ENV.ViewportPPI
+							);
+							syOffset = sxOffset;
+						} catch {
+							sxOffset = (
+								obj[Object.keys(obj)[0]].sizeInches * ENV.ViewportPPI
+							);
+							syOffset = sxOffset;
+						}
+
+						sx = (
+							boundingBoxesChoice3D.x[0][0]
+							+ boundingBoxesChoice3D.x[0][1]
+							- sxOffset
+						);
 						
-					);
-					let sHeight = Math.round(
-						IMAGES.Sample[label].IMAGES.sizeInches
-						* ENV.PhysicalPPI
-					);
-					let sWidth = sHeight;
-					console.log(`SAMPLE sx=${sx}; sy=${sy}; sWidth=${sWidth}; sHeight=${sHeight}; syOffset=${syOffset}`);
+						sy = (
+							(boundingBoxesChoice3D.y[0][0] - CANVAS.offsettop)
+							+ (boundingBoxesChoice3D.y[0][1] - CANVAS.offsettop)
+							- syOffset
+						);
+						sHeight = sxOffset * ENV.ScreenRatio;
+						sWidth = sHeight;
+					}
+					// let sx = (
+					// 	boundingBoxesChoice3D.x[0][0]
+					// 	* ENV.ScreenRatio
+					// );
+					// let sy = (
+					// 	(boundingBoxesChoice3D.y[0][0] - CANVAS.offsettop)
+					// 	* ENV.ScreenRatio
+					// );
+					// let sHeight = Math.round(
+					// 	IMAGES.Sample[label].IMAGES.sizeInches
+					// 	* ENV.ViewportPPI
+					// 	* ENV.ScreenRatio
+					// );
+					// let sWidth = sHeight;
+					console.log(`SAMPLE sx=${sx}; sy=${sy}; sWidth=${sWidth}; sHeight=${sHeight}`);
 					console.log('boundingBoxesChoice3D:', boundingBoxesChoice3D);
 					let visiblecvs = document.getElementById("canvaseyetracker");
 					let ctx2 = visiblecvs.getContext('2d');
 				
-					ctx2.rect(772, 674, sWidth, sHeight);
+					ctx2.rect(sx, sy, sWidth, sHeight);
 					ctx2.stroke();
 					
 					ctx.drawImage(VISIBLECANVAS, sx, sy, sWidth, sHeight, 0, 0, 224, 224);
@@ -169,37 +202,21 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 					let ctx = mkm.cvs.getContext('2d');
 					ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
 					let label = CURRTRIAL.test_scenebag_labels[0][0];
-					let sxOffset = (
-						IMAGES.Test[label].IMAGES.sizeInches
-						* ENV.PhysicalPPI
-						/ ENV.ScreenRatio
-					);
 					let sx = (
-						boundingBoxesChoice3D.x[0][1]
-						+ boundingBoxesChoice3D.x[0][0]
-						- sxOffset
-					);
-					let syOffset = (
-						IMAGES.Test[label].IMAGES.sizeInches
-						* ENV.PhysicalPPI
-						/ ENV.ScreenRatio
+						boundingBoxesChoice3D.x[0][0]
+						* ENV.ScreenRatio
 					);
 					let sy = (
-						(boundingBoxesChoice3D.y[0][1] + boundingBoxesChoice3D.y[0][0] - syOffset)
-						/ ENV.ScreenRatio
-						
+						(boundingBoxesChoice3D.y[0][0] - CANVAS.offsettop)
+						* ENV.ScreenRatio
 					);
 					let sHeight = Math.round(
 						IMAGES.Test[label].IMAGES.sizeInches
-						* ENV.PhysicalPPI
+						* ENV.ViewportPPI
+						* ENV.ScreenRatio
 					);
-					// let sHeight = 300;
 					let sWidth = sHeight;
 					console.log(`TEST sx=${sx}; sy=${sy}; sWidth=${sWidth}; sHeight=${sHeight}`);
-					console.log('boundingBoxesChoice3D:', boundingBoxesChoice3D);
-
-
-					console.log(`mkm.cvs.width=${mkm.cvs.width}; mkm.cvs.height=${mkm.cvs.height}`);
 					ctx.drawImage(VISIBLECANVAS, sx, sy, sWidth, sHeight, 0, 0, 224, 224);
 					let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
 					let cvsData = mkm.cvs.toDataURL();
@@ -304,19 +321,21 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 }//FUNCTION displayTrial
 
 
-function render3D(taskscreen,s,f,gr,fr,sc,ob,id){
-	f = frame.frames[frame.current][s]
+function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
+	f = frame.frames[frame.current][s];
 	//var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
 
-	renderer.autoClear = false
-	for (var j = 0; j<=ob[f].length - 1; j++){
-		renderer.clear()
+	renderer.autoClear = false;
+	for (var j = 0; j < ob[f].length; j++) {
+		renderer.clear();
 		
-		var boundingBox = updateSingleFrame3D(taskscreen,
-											ob[f][j],
-											id[f][j],
-											fr[f],
-											gr[f][j])
+		var boundingBox = updateSingleFrame3D(
+			taskscreen,
+			ob[f][j],
+			id[f][j],
+			fr[f],
+			gr[f][j]
+		);
 		
 		if (s==0 && typeof(boundingBox) != "undefined" && typeof(boundingBox[ob[f][j]]) != "undefined" && typeof(boundingBox[ob[f][j]][0]) != "undefined"){
 			boundingBoxesChoice3JS.x[j] = boundingBox[ob[f][j]][0].x
@@ -352,19 +371,20 @@ function render3D(taskscreen,s,f,gr,fr,sc,ob,id){
 			fr[f],
 			gr[f][j])
 			
-	    OFFSCREENCANVAS.getContext('2d').filter = objFilterSingleFrame
-		OFFSCREENCANVAS.getContext('2d').drawImage(renderer.domElement,0,0,OFFSCREENCANVAS.width,OFFSCREENCANVAS.height)	
-		OFFSCREENCANVAS.getContext('2d').filter = 'none'
+	  OFFSCREENCANVAS.getContext('2d').filter = objFilterSingleFrame;
+		OFFSCREENCANVAS.getContext('2d').drawImage(renderer.domElement,0,0,OFFSCREENCANVAS.width,OFFSCREENCANVAS.height);
+		OFFSCREENCANVAS.getContext('2d').filter = 'none';
 	}//FOR j display items
 }//FUNCTION render3D
 
 async function render2D(taskscreen,s,f,gr,fr,sc,ob,id,canvasobj){
-	if (FLAGS.savedata == 0 && s==0 && FLAGS.underlayGridPoints == 1){
+	if (FLAGS.savedata == 0 && s==0 && FLAGS.underlayGridPoints == 1) {
 		renderBlankWithGridMarkers(
 			ENV.XGridCenter,ENV.YGridCenter, 
 			CURRTRIAL.FixationGridIndex,CURRTRIAL.samplegridindex,TASK.TestGridIndex, TASK.ChoiceGridIndex,
 			ENV.FixationRadius,ENV.ChoiceRadius,
-			ENV.CanvasRatio,canvasobj);
+			ENV.CanvasRatio,canvasobj
+		);
 	}//IF !savedata, underlay grid
 	
 	if (f==0  || taskscreen != sc[f-1] || id[f] != id[f-1] || fr[f] != fr[f-1]){
@@ -432,6 +452,7 @@ function renderImage2D(im,sc,ob,id,fr,gr,imgFilterSingleFrame,canvasobj){
 	xbound[1]=xbound[1]+CANVAS.offsetleft;
 	ybound[0]=ybound[0]+CANVAS.offsettop;
 	ybound[1]=ybound[1]+CANVAS.offsettop;
+	console.log('xbound:', xbound, 'ybound:', ybound);
 
 	return [xbound, ybound]
 }//FUNCTION renderImage2D
