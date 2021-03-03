@@ -1,6 +1,5 @@
 //================== IMAGE RENDERING ==================//
 function displayTrial(ti,gr,fr,sc,ob,id,mkm){
-	console.log('arguments.length:', arguments.length);
 	let lenArgs = arguments.length;
 	// if (arguments.length == 7) {
 	// 	console.log('mkm:', mkm);
@@ -102,10 +101,12 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 //------------------- Frame is fully on display ---------------------//
 			//----- (1) Merge Bounding Boxes
 			if (updated2d){
+				console.log('updated2d');
 				boundingBoxesChoice3D.x = boundingBoxesChoice2D.x
 				boundingBoxesChoice3D.y = boundingBoxesChoice2D.y
 			}//
 			if (updated3d){
+				console.log('updated3d');
 				boundingBoxesChoice3D.x = boundingBoxesChoice3JS.x
 				boundingBoxesChoice3D.y = boundingBoxesChoice3JS.y			
 			}
@@ -128,7 +129,7 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						* ENV.PhysicalPPI
 						/ ENV.ScreenRatio
 					);
-					let sx = Math.round(
+					let sx = (
 						boundingBoxesChoice3D.x[0][1]
 						+ boundingBoxesChoice3D.x[0][0]
 						- sxOffset
@@ -138,9 +139,10 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						* ENV.PhysicalPPI
 						/ ENV.ScreenRatio
 					);
-					let sy = Math.round(
-						(boundingBoxesChoice3D.y[0][1] + boundingBoxesChoice3D.y[0][0])
+					let sy = (
+						(boundingBoxesChoice3D.y[0][1] + boundingBoxesChoice3D.y[0][0] - syOffset)
 						/ ENV.ScreenRatio
+						
 					);
 					let sHeight = Math.round(
 						IMAGES.Sample[label].IMAGES.sizeInches
@@ -148,6 +150,12 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 					);
 					let sWidth = sHeight;
 					console.log(`SAMPLE sx=${sx}; sy=${sy}; sWidth=${sWidth}; sHeight=${sHeight}; syOffset=${syOffset}`);
+					console.log('boundingBoxesChoice3D:', boundingBoxesChoice3D);
+					let visiblecvs = document.getElementById("canvaseyetracker");
+					let ctx2 = visiblecvs.getContext('2d');
+				
+					ctx2.rect(772, 674, sWidth, sHeight);
+					ctx2.stroke();
 					
 					ctx.drawImage(VISIBLECANVAS, sx, sy, sWidth, sHeight, 0, 0, 224, 224);
 					let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
@@ -166,7 +174,7 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						* ENV.PhysicalPPI
 						/ ENV.ScreenRatio
 					);
-					let sx = Math.round(
+					let sx = (
 						boundingBoxesChoice3D.x[0][1]
 						+ boundingBoxesChoice3D.x[0][0]
 						- sxOffset
@@ -176,10 +184,10 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						* ENV.PhysicalPPI
 						/ ENV.ScreenRatio
 					);
-					let sy = Math.round(
-						(boundingBoxesChoice3D.y[0][1] + boundingBoxesChoice3D.y[0][0])
+					let sy = (
+						(boundingBoxesChoice3D.y[0][1] + boundingBoxesChoice3D.y[0][0] - syOffset)
 						/ ENV.ScreenRatio
-						- syOffset
+						
 					);
 					let sHeight = Math.round(
 						IMAGES.Test[label].IMAGES.sizeInches
@@ -188,6 +196,8 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 					// let sHeight = 300;
 					let sWidth = sHeight;
 					console.log(`TEST sx=${sx}; sy=${sy}; sWidth=${sWidth}; sHeight=${sHeight}`);
+					console.log('boundingBoxesChoice3D:', boundingBoxesChoice3D);
+
 
 					console.log(`mkm.cvs.width=${mkm.cvs.width}; mkm.cvs.height=${mkm.cvs.height}`);
 					ctx.drawImage(VISIBLECANVAS, sx, sy, sWidth, sHeight, 0, 0, 224, 224);
@@ -407,6 +417,8 @@ function renderImage2D(im,sc,ob,id,fr,gr,imgFilterSingleFrame,canvasobj){
 	var ybound=[];
 	xleft = Math.round(ENV.XGridCenter[gr]/ENV.CanvasRatio - 0.5*wdpixels);
 	ytop = Math.round(ENV.YGridCenter[gr]/ENV.CanvasRatio - 0.5*htpixels);
+
+	console.log(`xleft=${xleft}, ytop=${ytop}, wdpixels=${wdpixels}, htpixels=${htpixels}`);
 			
 	context.filter = imgFilterSingleFrame
 	context.drawImage(im,xleft,ytop,wdpixels,htpixels);
