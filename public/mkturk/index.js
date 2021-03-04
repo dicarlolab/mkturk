@@ -1116,37 +1116,7 @@ if (ENV.BatteryAPIAvailable) {
           // ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
 
           touchhold_return = { type: 'theld' };
-          // let sxOffset = (
-          //   IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
-          //   * ENV.PhysicalPPI
-          //   / ENV.ScreenRatio
-          // );
-
-          // let sx = (
-          //   boundingBoxesFixation.x[0][1]
-          //   + boundingBoxesFixation.x[0][0]
-          //   - sxOffset
-          // );
-          // sx = Math.round(sx);
-
-          // let syOffset = (
-          //   IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
-          //   * ENV.PhysicalPPI 
-          //   / ENV.ScreenRatio
-          //   - ENV.FixationWindowRadius
-          // );
-          // let sy = (
-          //   (boundingBoxesFixation.y[0][1] + boundingBoxesFixation.y[0][0]) 
-          //   / ENV.ScreenRatio 
-          //   - syOffset
-          // );
-          // sy = Math.round(sy);
-
-          // let sHeight = Math.round(
-          //   IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
-          //   * ENV.PhysicalPPI
-          // );
-          // let sWidth = sHeight;
+          
 
           ctx.drawImage(VISIBLECANVAS, sx, sy, sWidth, sHeight, 0, 0, 224, 224);
           let tensor = mkm.normalizePixelValues(mkm.cvs);
