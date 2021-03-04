@@ -415,6 +415,7 @@ if (ENV.BatteryAPIAvailable) {
   // =================== LOAD MKMODELS IF SPECIES = MODEL =================//
 	let mkm;
 	if (TASK.Species == 'model') {
+    TASK.PunishTimeOut = 0;
 		mkm = new MkModels();
 		let fromTFHub = TASK.ModelConfig.modelURL.includes('tfhub');
 		await mkm.loadFeatureExtractor(TASK.ModelConfig.modelURL, { fromTFHub: fromTFHub });
@@ -1024,7 +1025,7 @@ if (ENV.BatteryAPIAvailable) {
         // Render fixation screen
         if (TASK.Species == 'macaque' || TASK.Species == 'human') {
           ENV.FixationColor = 'white';
-        } else if (TASK.Species == 'marmoset') {
+        } else if (TASK.Species == 'marmoset' || TASK.Species == 'model') {
           ENV.FixationColor = 'blue';
         }
         frame.shown = [];
@@ -1074,6 +1075,7 @@ if (ENV.BatteryAPIAvailable) {
           CANVAS.sequencepre,
           [0],
           [0],
+          mkm
         );
       } else if (TASK.FixationUsesSample > 0) { // IF FixationUsesSample, show image/movie
         displayTrial(
@@ -1083,6 +1085,7 @@ if (ENV.BatteryAPIAvailable) {
           CURRTRIAL.sequencetaskscreen,
           CURRTRIAL.sequencelabel,
           CURRTRIAL.sequenceindex,
+          mkm
         );
         await moviestart_promise();
       }
@@ -1109,41 +1112,41 @@ if (ENV.BatteryAPIAvailable) {
       if (FLAGS.stressTest == 1) { //IF automated stress test
         if (TASK.Species == 'model') {
           
-          let ctx = mkm.cvs.getContext('2d');
-          ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
+          // let ctx = mkm.cvs.getContext('2d');
+          // ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
 
           touchhold_return = { type: 'theld' };
-          let sxOffset = (
-            IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
-            * ENV.PhysicalPPI
-            / ENV.ScreenRatio
-          );
+          // let sxOffset = (
+          //   IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
+          //   * ENV.PhysicalPPI
+          //   / ENV.ScreenRatio
+          // );
 
-          let sx = (
-            boundingBoxesFixation.x[0][1]
-            + boundingBoxesFixation.x[0][0]
-            - sxOffset
-          );
-          sx = Math.round(sx);
+          // let sx = (
+          //   boundingBoxesFixation.x[0][1]
+          //   + boundingBoxesFixation.x[0][0]
+          //   - sxOffset
+          // );
+          // sx = Math.round(sx);
 
-          let syOffset = (
-            IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
-            * ENV.PhysicalPPI 
-            / ENV.ScreenRatio
-            - ENV.FixationWindowRadius
-          );
-          let sy = (
-            (boundingBoxesFixation.y[0][1] + boundingBoxesFixation.y[0][0]) 
-            / ENV.ScreenRatio 
-            - syOffset
-          );
-          sy = Math.round(sy);
+          // let syOffset = (
+          //   IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
+          //   * ENV.PhysicalPPI 
+          //   / ENV.ScreenRatio
+          //   - ENV.FixationWindowRadius
+          // );
+          // let sy = (
+          //   (boundingBoxesFixation.y[0][1] + boundingBoxesFixation.y[0][0]) 
+          //   / ENV.ScreenRatio 
+          //   - syOffset
+          // );
+          // sy = Math.round(sy);
 
-          let sHeight = Math.round(
-            IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
-            * ENV.PhysicalPPI
-          );
-          let sWidth = sHeight;
+          // let sHeight = Math.round(
+          //   IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
+          //   * ENV.PhysicalPPI
+          // );
+          // let sWidth = sHeight;
 
           ctx.drawImage(VISIBLECANVAS, sx, sy, sWidth, sHeight, 0, 0, 224, 224);
           let tensor = mkm.normalizePixelValues(mkm.cvs);
@@ -1301,6 +1304,7 @@ if (ENV.BatteryAPIAvailable) {
           CANVAS.sequenceblank,
           [0, 0],
           [0, 0],
+          mkm
         );
       }
     }//WHILE waiting for NFixations
@@ -1402,6 +1406,7 @@ if (ENV.BatteryAPIAvailable) {
           CURRTRIAL.sequencetaskscreen,
           CURRTRIAL.sequencelabel,
           CURRTRIAL.sequenceindex,
+          mkm
         );
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
         CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime).toJSON();
@@ -1763,6 +1768,7 @@ if (ENV.BatteryAPIAvailable) {
 				CANVAS.sequencepost,
 				Array(lenTsequencePost).fill(0),
 				Array(lenTsequencePost).fill(0),
+        mkm
       );
     } else if (CURRTRIAL.correct) { // ELSE IF correct, then REWARD
       CANVAS.sequencepost[1] = "reward";
@@ -1788,7 +1794,8 @@ if (ENV.BatteryAPIAvailable) {
 					range(0, lenTsequencePost - 1, 1),
 					CANVAS.sequencepost,
 					Array(lenTsequencePost).fill(0),
-					Array(lenTsequencePost).fill(0)
+					Array(lenTsequencePost).fill(0),
+          mkm
         );
 
         if (ble.connected == false && port.connected == false) {
@@ -1823,6 +1830,7 @@ if (ENV.BatteryAPIAvailable) {
 				CANVAS.sequencepost,
 				Array(lenSequencepost).fill(0),
         Array(lenSequencepost).fill(0),
+        mkm
       );
 
       let numTrialsToBufferPunishPeriod = 50;
