@@ -1498,6 +1498,10 @@ if (ENV.BatteryAPIAvailable) {
           y = 0;
 
           if (CURRTRIAL.num == TASK.ModelConfig.trainIdx) {
+            let yTrainLabel0 = mkm.dataObj.yTrainLabels.filter(x => x === 0).length;
+            let yTrainLabel1 = mkm.dataObj.yTrainLabels.filter(x => x === 1).length;
+            console.log('yTrainLabels:', mkm.dataObj.yTrainLabels, 'Label 0:', yTrainLabel0, 'Label 1:', yTrainLabel1);
+
             let xTrain = tf.data.array(mkm.dataObj.xTrain);
             let yTrain = tf.data.array(mkm.dataObj.yTrain);
             let trainDataset = tf.data.zip({ xs: xTrain, ys: yTrain })

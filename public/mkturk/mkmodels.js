@@ -5,6 +5,7 @@ class MkModels {
     this.dataObj = {};
     this.dataObj.xTrain = [];
     this.dataObj.yTrain = [];
+    this.dataObj.yTrainLabels = [];
     this.dataObj.xTest = [];
     this.dataObj.yTest = [];
     this.cvs;
@@ -127,5 +128,11 @@ class MkModels {
     return { sx: srcX, sy: srcY, sWidth: srcWidth, sHeight: srcHeight };
   }
 
+  removeItemOnce(arr, idx) {
+    if (idx > -1) {
+      arr.splice(idx, 1);
+    }
+    return arr;
+  }
 
 }
