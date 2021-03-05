@@ -140,6 +140,7 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						// console.log(`SAMPLE sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
 						// let visiblecvs = document.getElementById("canvaseyetracker");
 						// let ctx2 = visiblecvs.getContext('2d');
+						// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
 						// ctx2.rect(mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight);
 						// ctx2.stroke();
 						
@@ -167,6 +168,7 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						// 	`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`
 						// );
 						// mkmodelsRef.child(path).putString(cvsData, 'data_url');
+						// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
 						mkm.hasSampleFeatures = true;							
 					} else if (taskscreen == 'Test' && !mkm.hasTestFeatures) {
 						let ctx = mkm.cvs.getContext('2d');
@@ -189,6 +191,7 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						// console.log(`TEST sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
 						// let visiblecvs = document.getElementById("canvaseyetracker");
 						// let ctx2 = visiblecvs.getContext('2d');
+						// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
 						// ctx2.rect(mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight);
 						// ctx2.stroke();
 						
@@ -217,6 +220,7 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						// 	`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_test.png`
 						// );
 						// mkmodelsRef.child(path).putString(cvsData, 'data_url');
+						// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
 						mkm.hasTestFeatures = true;							
 					} else if (taskscreen == 'Choice' && mkm.hasSampleFeatures && mkm.hasTestFeatures) {
 						mkm.hasSampleFeatures = false;
@@ -270,6 +274,7 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						// 	`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`
 						// );
 						// mkmodelsRef.child(path).putString(cvsData, 'data_url');
+						ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
 						mkm.hasSampleFeatures = true;
 					} else if (taskscreen != 'Sample' && mkm.hasSampleFeatures) {
 						mkm.hasSampleFeatures = false;

@@ -79,7 +79,7 @@ class MkModels {
 
   getMkModelBoundingBox(params) {
     let srcX, srcY, srcWidth, srcHeight;
-    if (!params.image.imageidx.includes(NaN)) { // IF background image
+    if (!params.image.imageidx.includes(NaN) && params.image.imagebag) { // IF background image
       srcX = params.boundingBoxes2D.x[0][0] * params.ScreenRatio;
       srcY = (params.boundingBoxes2D.y[0][0] - params.offsettop) * params.ScreenRatio;
       if (Array.isArray(params.image.sizeInches)) {
@@ -115,8 +115,8 @@ class MkModels {
       );
       
       srcY = (
-        (boundingBoxes3D.y[0][0] - params.offsettop)
-        + (boundingBoxes3D.y[0][1] - params.offsettop)
+        (params.boundingBoxes3D.y[0][0] - params.offsettop)
+        + (params.boundingBoxes3D.y[0][1] - params.offsettop)
         - offsetY
       );
 
