@@ -5,6 +5,8 @@ class MkModels {
     this.dataObj = {};
     this.dataObj.xTrain = [];
     this.dataObj.yTrain = [];
+    this.dataObj.xTest = [];
+    this.dataObj.yTest = [];
     this.cvs;
     this.hasSampleFeatures = false;
     this.hasTestFeatures = false;

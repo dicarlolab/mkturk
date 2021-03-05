@@ -150,15 +150,15 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
 							mkm.dataObj.xTrain.push(featureVec);
 							if (CURRTRIAL.sample_scenebag_label[0][0] == 0) {
-								mkm.dataObj.yTrain.push([0]);
+								mkm.dataObj.yTrain.push([1, 0]);
 								// for SVM
 								// mkm.dataObj.yTrain.push([-1])
 							} else if (CURRTRIAL.sample_scenebag_label[0][0] == 1) {
-								mkm.dataObj.yTrain.push([1]);
+								mkm.dataObj.yTrain.push([0, 1]);
 							}
 						} else {
-							mkm.dataObj.xTest = featureVec;
-							mkm.dataObj.yTest = CURRTRIAL.sample_scenebag_label[0][0];
+							mkm.dataObj.xTest.push(featureVec);
+							mkm.dataObj.yTest.push(CURRTRIAL.sample_scenebag_label[0][0]);
 						}
 						// mkm.cvs SANITY CHECK CODE
 						// let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
@@ -193,29 +193,21 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						// ctx2.stroke();
 						
 						ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
+						let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs));
+						featureVec = featureVec.reshape([2048]);
 
 						if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
 							mkm.dataObj.xTrain.push(featureVec);
 							if (CURRTRIAL.test_scenebag_labels[0][0] == 0) {
-								mkm.dataObj.yTrain.push([0]);
+								mkm.dataObj.yTrain.push([1, 0]);
 								// for SVM
 								// mkm.dataObj.yTrain.push([-1])
 							} else if (CURRTRIAL.test_scenebag_labels[0][0] == 1) {
-								mkm.dataObj.yTrain.push([1]);
+								mkm.dataObj.yTrain.push([0, 1]);
 							}
 						} else {
-							mkm.dataObj.xTest = featureVec;
-							mkm.dataObj.yTest = CURRTRIAL.test_scenebag_labels[0][0];
-						}
-
-						if (CURRTRIAL.num == TASK.ModelConfig.trainIdx) {
-							let xTrain = tf.data.array(mkm.dataObj.xTrain);
-							let yTrain = tf.data.array(mkm.dataObj.yTrain);
-							let trainDataset = tf.data.zip({ xs: xTrain, ys: yTrain })
-								.batch(4)
-								.shuffle(4);
-
-							
+							mkm.dataObj.xTest.push(featureVec);
+							mkm.dataObj.yTest.push(CURRTRIAL.test_scenebag_labels[0][0]);
 						}
 
 						// mkm.cvs SANITY CHECK HERE
@@ -256,12 +248,28 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						// ctx2.stroke();
 						
 						ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
-						let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
-						let cvsData = mkm.cvs.toDataURL();
-						let path = (
-							`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`
-						);
-						mkmodelsRef.child(path).putString(cvsData, 'data_url');
+						let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs));
+						featureVec = featureVec.reshape([2048]);
+						if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
+							mkm.dataObj.xTrain.push(featureVec);
+							if (CURRTRIAL.correctitem == 0) {
+								mkm.dataObj.yTrain.push([1, 0]);
+								// for SVM
+								// mkm.dataObj.yTrain.push([-1])
+							} else if (CURRTRIAL.correctitem == 1) {
+								mkm.dataObj.yTrain.push([0, 1]);
+							}
+						} else {
+							mkm.dataObj.xTest.push(featureVec);
+							mkm.dataObj.yTest.push(CURRTRIAL.sample_scenebag_label[0][0]);
+						}
+						// mkm.cvs SANITY CHECK CODE
+						// let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
+						// let cvsData = mkm.cvs.toDataURL();
+						// let path = (
+						// 	`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`
+						// );
+						// mkmodelsRef.child(path).putString(cvsData, 'data_url');
 						mkm.hasSampleFeatures = true;
 					} else if (taskscreen != 'Sample' && mkm.hasSampleFeatures) {
 						mkm.hasSampleFeatures = false;

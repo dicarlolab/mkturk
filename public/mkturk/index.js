@@ -421,8 +421,8 @@ if (ENV.BatteryAPIAvailable) {
 		await mkm.loadFeatureExtractor(TASK.ModelConfig.modelURL, { fromTFHub: fromTFHub });
 		let cvs = document.getElementById('model-canvas');
 		mkm.bindCanvasElement(cvs);
-		// mkm.buildClassifier(TASK.ModelConfig);
-    mkm.buildSvmClassifier(TASK.ModelConfig);
+		mkm.buildClassifier(TASK.ModelConfig);
+    // mkm.buildSvmClassifier(TASK.ModelConfig);
 	}
   // ======================== (END) LOAD MKMODELS ========================//
 
@@ -1118,50 +1118,30 @@ if (ENV.BatteryAPIAvailable) {
           touchhold_return = { type: 'theld' };
           
 
-          ctx.drawImage(VISIBLECANVAS, sx, sy, sWidth, sHeight, 0, 0, 224, 224);
-          let tensor = mkm.normalizePixelValues(mkm.cvs);
-          let feature = mkm.featureExtractor.execute(tensor);
-          feature = feature.reshape([2048]);
-          let moments = tf.moments(feature);
-          let subtracted = feature.sub(moments.mean);
-          let scaledFeature = subtracted.divNoNan(moments.variance);
-          scaledFeature.print();
-          if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
-            console.log('CURRTRIAL.num:', CURRTRIAL.num);
-            mkm.dataObj.xTrain.push(feature);
-            if (CURRTRIAL.correctitem == 0) {
-              mkm.dataObj.yTrain.push([-1]);
-              // mkm.dataObj.yTrain.push([1, 0]);
-            } else if (CURRTRIAL.correctitem == 1) {
-              mkm.dataObj.yTrain.push([1]);
-              // mkm.dataObj.yTrain.push([0, 1]);
-            }
-          } else {
-            mkm.dataObj.xTest = feature;
-            mkm.dataObj.yTest = CURRTRIAL.correctitem;
-          }
+          // ctx.drawImage(VISIBLECANVAS, sx, sy, sWidth, sHeight, 0, 0, 224, 224);
+          // let tensor = mkm.normalizePixelValues(mkm.cvs);
+          // let feature = mkm.featureExtractor.execute(tensor);
+          // feature = feature.reshape([2048]);
+          // let moments = tf.moments(feature);
+          // let subtracted = feature.sub(moments.mean);
+          // let scaledFeature = subtracted.divNoNan(moments.variance);
+          // scaledFeature.print();
+          // if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
+          //   console.log('CURRTRIAL.num:', CURRTRIAL.num);
+          //   mkm.dataObj.xTrain.push(feature);
+          //   if (CURRTRIAL.correctitem == 0) {
+          //     mkm.dataObj.yTrain.push([-1]);
+          //     // mkm.dataObj.yTrain.push([1, 0]);
+          //   } else if (CURRTRIAL.correctitem == 1) {
+          //     mkm.dataObj.yTrain.push([1]);
+          //     // mkm.dataObj.yTrain.push([0, 1]);
+          //   }
+          // } else {
+          //   mkm.dataObj.xTest = feature;
+          //   mkm.dataObj.yTest = CURRTRIAL.correctitem;
+          // }
 
-          if (CURRTRIAL.num == TASK.ModelConfig.trainIdx) {
-            let xTrain = tf.data.array(mkm.dataObj.xTrain);
-            let yTrain = tf.data.array(mkm.dataObj.yTrain);
-            let trainDataset = tf.data.zip({ xs: xTrain, ys: yTrain })
-              .batch(4)
-              .shuffle(4);
-
-            const beginMs = performance.now();
-            await mkm.model.fitDataset(trainDataset, {
-              epochs: TASK.ModelConfig.epochs,
-              callbacks: {
-                onEpochEnd: async(epoch, logs) => {
-                  const secPerEpoch = (
-                    (performance.now() - beginMs) / (1000 * (epoch + 1))
-                  );
-                  console.log('Training model ... Approx. ' + `${secPerEpoch.toFixed(4)} sec/epoch`);
-                  console.log('logs:', logs);
-                }
-              }
-            });
-          }
+          
 
           let x = (
             boundingBoxesFixation.x[0][0]
@@ -1517,13 +1497,62 @@ if (ENV.BatteryAPIAvailable) {
           x = 0;
           y = 0;
 
+          if (CURRTRIAL.num == TASK.ModelConfig.trainIdx) {
+            let xTrain = tf.data.array(mkm.dataObj.xTrain);
+            let yTrain = tf.data.array(mkm.dataObj.yTrain);
+            let trainDataset = tf.data.zip({ xs: xTrain, ys: yTrain })
+              .batch(4)
+              .shuffle(4);
+
+            const beginMs = performance.now();
+            await mkm.model.fitDataset(trainDataset, {
+              epochs: TASK.ModelConfig.epochs,
+              callbacks: {
+                onEpochEnd: async(epoch, logs) => {
+                  const secPerEpoch = (
+                    (performance.now() - beginMs) / (1000 * (epoch + 1))
+                  );
+                  console.log('Training model ... Approx. ' + `${secPerEpoch.toFixed(4)} sec/epoch`);
+                  console.log('logs:', logs);
+                }
+              }
+            });
+          }
+
           if (CURRTRIAL.num > TASK.ModelConfig.trainIdx) {
-            let yPred = mkm.model.predict(mkm.dataObj.xTest.reshape([1, 2048]));
-            yPred.print();
+            let yPred = [];
+            if (TASK.SameDifferent > 0) {
+              mkm.dataObj.xTest.forEach(feature => {
+                let pred = mkm.model.predict(feature.reshape([1, 2048]));
+                pred.print();
+                pred = pred.reshape([2]).argMax(0);
+                pred = pred.dataSync();
+                yPred.push(pred[0]);
+              });
+              let allEqual = arr => arr.every(v => v === arr[0]);
+              if (allEqual(yPred)) {
+                currchoice = 0;
+              } else {
+                currchoice = 1;
+              }
+            } else {
+              mkm.dataObj.xTest.forEach(feature => {
+                let pred = mkm.model.predict(feature.reshape([1, 2048]));
+                pred.print();
+                pred = pred.reshape([2]).argMax(0);
+                pred = pred.dataSync();
+                yPred.push(pred[0]);
+              });
+              currchoice = yPred[0];
+            }
+            // let yPred = mkm.model.predict(mkm.dataObj.xTest.reshape([1, 2048]));
+            // yPred.print();
 					  // yPred = yPred.reshape([2]).argMax(0);
 					  // yPred = yPred.dataSync();
 					  // currchoice = yPred[0];
-            // console.log('yPred:', currchoice, 'yTrue:', CURRTRIAL.correctitem);
+            console.log('yPred:', currchoice, 'yTrue:', CURRTRIAL.correctitem);
+            mkm.dataObj.xTest = [];
+            mkm.dataObj.yTest = [];
             
             if (TASK.ModelConfig.saveImages == 1) {
               if (currchoice != CURRTRIAL.correctitem) {
