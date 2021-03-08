@@ -22,12 +22,20 @@ class MkModels {
   }
 
   normalizePixelValues(canvas) {
-    let offset = tf.scalar(127.5);
+    // let offset = tf.scalar(127.5);
+    // let tensor = (
+    //   tf.browser.fromPixels(canvas)
+    //     .resizeNearestNeighbor([224, 224])
+    //     .toFloat()
+    //     .sub(offset)
+    //     .div(offset)
+    //     .expandDims()
+    // );
+    let offset = tf.scalar(255.0);
     let tensor = (
       tf.browser.fromPixels(canvas)
         .resizeNearestNeighbor([224, 224])
         .toFloat()
-        .sub(offset)
         .div(offset)
         .expandDims()
     );
@@ -85,7 +93,7 @@ class MkModels {
       srcY = (params.boundingBoxes2D.y[0][0] - params.offsettop) * params.ScreenRatio;
       if (Array.isArray(params.image.sizeInches)) {
         srcWidth = Math.round(
-          params.image.sizeInches[0]
+          Math.max(...params.image.sizeInches)
           * params.ViewportPPI
           * params.ScreenRatio
         );
@@ -100,8 +108,11 @@ class MkModels {
     } else { // NO background image. 
       let offsetX;
       if (Array.isArray(params.object[Object.keys(params.object)[0]].sizeInches)) {
+        // offsetX = (
+        //   params.object[Object.keys(params.object)[0]].sizeInches[params.idx] * params.ViewportPPI
+        // );
         offsetX = (
-          params.object[Object.keys(params.object)[0]].sizeInches[params.idx] * params.ViewportPPI
+          Math.max(...params.object[Object.keys(params.object)[0]].sizeInches) * params.ViewportPPI
         );
       } else {
         offsetX = (

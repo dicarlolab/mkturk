@@ -152,11 +152,13 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 							mkm.dataObj.xTrain.push(featureVec);
 							if (CURRTRIAL.sample_scenebag_label[0][0] == 0) {
 								mkm.dataObj.yTrainLabels.push(0);
+								// mkm.dataObj.yTrain.push([0]);
 								mkm.dataObj.yTrain.push([1, 0]);
 								// for SVM
 								// mkm.dataObj.yTrain.push([-1])
 							} else if (CURRTRIAL.sample_scenebag_label[0][0] == 1) {
 								mkm.dataObj.yTrainLabels.push(1);
+								// mkm.dataObj.yTrain.push([1]);
 								mkm.dataObj.yTrain.push([0, 1]);
 							}
 						} else {
@@ -205,11 +207,13 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 							mkm.dataObj.xTrain.push(featureVec);
 							if (CURRTRIAL.test_scenebag_labels[0][0] == 0) {
 								mkm.dataObj.yTrainLabels.push(0);
+								// mkm.dataObj.yTrain.push([0]);
 								mkm.dataObj.yTrain.push([1, 0]);
 								// for SVM
 								// mkm.dataObj.yTrain.push([-1])
 							} else if (CURRTRIAL.test_scenebag_labels[0][0] == 1) {
 								mkm.dataObj.yTrainLabels.push(1);
+								// mkm.dataObj.yTrain.push([1]);
 								mkm.dataObj.yTrain.push([0, 1]);
 							}
 						} else {
@@ -261,10 +265,12 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
 							mkm.dataObj.xTrain.push(featureVec);
 							if (CURRTRIAL.correctitem == 0) {
+								mkm.dataObj.yTrainLabels.push(0);
 								mkm.dataObj.yTrain.push([1, 0]);
 								// for SVM
 								// mkm.dataObj.yTrain.push([-1])
 							} else if (CURRTRIAL.correctitem == 1) {
+								mkm.dataObj.yTrainLabels.push(1);
 								mkm.dataObj.yTrain.push([0, 1]);
 							}
 						} else {
@@ -272,13 +278,13 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 							mkm.dataObj.yTest.push(CURRTRIAL.sample_scenebag_label[0][0]);
 						}
 						// mkm.cvs SANITY CHECK CODE
-						// let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
-						// let cvsData = mkm.cvs.toDataURL();
-						// let path = (
-						// 	`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`
-						// );
-						// mkmodelsRef.child(path).putString(cvsData, 'data_url');
-						ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
+						let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
+						let cvsData = mkm.cvs.toDataURL();
+						let path = (
+							`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`
+						);
+						mkmodelsRef.child(path).putString(cvsData, 'data_url');
+						// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
 						mkm.hasSampleFeatures = true;
 					} else if (taskscreen != 'Sample' && mkm.hasSampleFeatures) {
 						mkm.hasSampleFeatures = false;
