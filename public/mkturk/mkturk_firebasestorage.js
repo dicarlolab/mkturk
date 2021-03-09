@@ -235,6 +235,9 @@ async function loadParametersfromFirebase(paramfile_path){
 		data = await loadTextfromFirebase(paramfile_path)
 		TASK = {}
 		TASK = data
+		if (TASK.Species == 'model') {
+			TASK.PunishTimeOut = 0;
+		}
 		await loadAgentRFIDfromFirestore(ENV.Subject,TASK.Species)
 
 		

@@ -1247,7 +1247,7 @@ function updateHeadsUpDisplay(){
 	}
 	if (CANVAS.headsupfraction > 0){
 		if (TASK.Species == 'model') {
-			if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
+			if (CURRTRIAL.num < TASK.ModelConfig.trainIdx - 1) {
 				// console.log('screenfunc:', EVENTS['trialseries']['Response'].length, CURRTRIAL.num, TASK.ModelConfig.trainIdx);
 				let tmp = EVENTS['trialseries']['Response'].length;
 				let tmp2 = CURRTRIAL.num + 2;
