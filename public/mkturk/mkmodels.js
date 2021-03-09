@@ -11,6 +11,11 @@ class MkModels {
     this.cvs;
     this.hasSampleFeatures = false;
     this.hasTestFeatures = false;
+    this.inputShape; // inputShape (number[]);
+    this.units; // units (number);
+    // this.loss; // loss (string): 'categoricalCrossentropy'|'binaryCrossentropy';
+    // this.activation; // activation (string): 'softmax'|'sigmoid';
+    // this.optimizer;
   }
 
   bindCanvasElement(canvas) {
@@ -42,19 +47,76 @@ class MkModels {
     return tensor;
   }
 
-  buildClassifier(config) {
+  buildClassifier(task) {
+    let config = task.ModelConfig;
+    
+    // determine inputShape on the fly using the output shape of featureExtractor
+    let dummyFeature = this.featureExtractor.execute(this.normalizePixelValues(this.cvs));
+    this.inputShape = [Math.max(...dummyFeature.shape)];
+    this.units = task['ImageBagsTest'].length;
     this.model = tf.sequential();
-    this.model.add(tf.layers.dense({
-      units: config.outputUnits,
-      inputShape: [config.inputShape],
-      activation: config.activation
-    }));
-    this.model.compile({
-      optimizer: tf.train.adam(),
-      loss: config.loss,
-      metrics: ['accuracy']
-    });
-    this.model.summary();
+
+
+    
+    if (config.mode == 'default') {
+      let loss = (this.units > 2) ? 'categoricalCrossentropy' : 'binaryCrossentropy';
+      let activation = (this.units > 2) ? 'softmax' : 'sigmoid';
+      this.model.add(tf.layers.dense({
+        units: this.units,
+        inputShape: this.inputShape,
+        activation: activation
+      }));
+      this.model.compile({
+        optimizer: tf.train.adam(),
+        loss: loss,
+        metrics: ['accuracy']
+      });
+      this.model.summary();
+    } else if (config.mode == 'advanced') {
+      let configKeys = Object.keys(config);
+      let optimizer = (
+        configKeys.includes('learningRate') ? tf.train.adam(config.learningRate) : tf.train.adam()
+      );
+      this.units = (
+        configKeys.includes('imageBagsTrainIdxs') ? config['imageBagTrainIdxs'].length : this.units
+      );
+      let activation;
+      let loss;
+      if (configKeys.includes('activation')) {
+        activation = config['activation'];
+      } else {
+        activation = (this.units > 2) ? 'softmax' : 'sigmoid';
+      }
+
+      if (configKeys.includes('loss')) {
+        loss = config['loss'];
+      } else {
+        loss = (this.units > 2) ? 'categoricalCrossentropy' : 'binaryCrossentropy';
+      }
+
+      this.model.add(tf.layers.dense({
+        units: this.units,
+        inputShape: this.inputShape,
+        activation: activation
+      }));
+      this.model.compile({
+        optimizer: optimizer,
+        loss: loss,
+        metrics: ['accuracy']
+      });
+      this.model.summary();
+    } 
+    // this.model.add(tf.layers.dense({
+    //   units: config.outputUnits,
+    //   inputShape: [config.inputShape],
+    //   activation: config.activation
+    // }));
+    // this.model.compile({
+    //   optimizer: tf.train.adam(),
+    //   loss: config.loss,
+    //   metrics: ['accuracy']
+    // });
+    // this.model.summary();
   }
 
   buildSvmClassifier(config) {

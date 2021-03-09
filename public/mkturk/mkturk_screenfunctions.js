@@ -261,8 +261,9 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						
 						ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
 						let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs));
-						featureVec = featureVec.reshape([2048]);
-						if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
+						featureVec = featureVec.reshape(mkm.inputShape);
+						if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
+							console.log('CURRTRIAL.num:', CURRTRIAL.num);
 							mkm.dataObj.xTrain.push(featureVec);
 							if (CURRTRIAL.correctitem == 0) {
 								mkm.dataObj.yTrainLabels.push(0);
@@ -278,12 +279,12 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 							mkm.dataObj.yTest.push(CURRTRIAL.sample_scenebag_label[0][0]);
 						}
 						// mkm.cvs SANITY CHECK CODE
-						let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
-						let cvsData = mkm.cvs.toDataURL();
-						let path = (
-							`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`
-						);
-						mkmodelsRef.child(path).putString(cvsData, 'data_url');
+						// let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
+						// let cvsData = mkm.cvs.toDataURL();
+						// let path = (
+						// 	`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`
+						// );
+						// mkmodelsRef.child(path).putString(cvsData, 'data_url');
 						// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
 						mkm.hasSampleFeatures = true;
 					} else if (taskscreen != 'Sample' && mkm.hasSampleFeatures) {
@@ -1219,7 +1220,7 @@ function updateHeadsUpDisplay(){
 			for (let i = TASK.ModelConfig.trainIdx + 1; i < EVENTS['trialseries']['Response'].length; i++) {
 				if (EVENTS['trialseries']['Response'][i] == EVENTS['trialseries']['CorrectItem'][i]) {
 					ncorrect = ncorrect + 1;
-					let len = EVENTS['trialseries']['Response'].length - TASK.ModelConfig.trainIdx - 1;
+					let len = EVENTS['trialseries']['Response'].length - TASK.ModelConfig.trainIdx;
 					var pctcorrect = Math.round(100 * ncorrect / len);
 				}
 			}
@@ -1246,15 +1247,14 @@ function updateHeadsUpDisplay(){
 	}
 	if (CANVAS.headsupfraction > 0){
 		if (TASK.Species == 'model') {
-			if (CURRTRIAL.num == 0) {
-
-			} else if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
+			if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
 				// console.log('screenfunc:', EVENTS['trialseries']['Response'].length, CURRTRIAL.num, TASK.ModelConfig.trainIdx);
-				let tmp = EVENTS['trialseries']['Response'].length - 1;
+				let tmp = EVENTS['trialseries']['Response'].length;
+				let tmp2 = CURRTRIAL.num + 2;
 				textobj.innerHTML = (
 					'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail + "<br>" +
 					'Agent: ' + ENV.Subject + ", <font color=green><b>" + 
-					"TRAINING</b></font> "  + '(' + tmp + ' of ' + TASK.ModelConfig.trainIdx + ')' +"<br>" +
+					"TRAINING</b></font> "  + '(' + tmp2 + ' of ' + TASK.ModelConfig.trainIdx + ')' +"<br>" +
 					task1 + "<br>" + task2 + "<br>" + "<br>" +
 					"last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>" +
 					"last saved to firebase @ " + CURRTRIAL.lastFirebaseSave.toLocaleTimeString("en-US")
@@ -1263,7 +1263,7 @@ function updateHeadsUpDisplay(){
 				textobj.innerHTML = (
 					'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail + "<br>" +
 					'Agent: ' + ENV.Subject + ", <font color=green><b>" + pctcorrect  +
-					"%</b></font> " + "(" + ncorrect + " of " + (EVENTS['trialseries']['Response'].length - TASK.ModelConfig.trainIdx - 1) + " trials)" +
+					"%</b></font> " + "(" + ncorrect + " of " + (EVENTS['trialseries']['Response'].length - TASK.ModelConfig.trainIdx) + " trials)" +
 					"<br>" +
 					task1 + "<br>" + task2 + "<br>" + "<br>" +
 					"last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>" +

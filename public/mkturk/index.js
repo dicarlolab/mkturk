@@ -421,7 +421,7 @@ if (ENV.BatteryAPIAvailable) {
 		await mkm.loadFeatureExtractor(TASK.ModelConfig.modelURL, { fromTFHub: fromTFHub });
 		let cvs = document.getElementById('model-canvas');
 		mkm.bindCanvasElement(cvs);
-		mkm.buildClassifier(TASK.ModelConfig);
+		mkm.buildClassifier(TASK);
     // mkm.buildSvmClassifier(TASK.ModelConfig);
 	}
   // ======================== (END) LOAD MKMODELS ========================//
@@ -1497,33 +1497,51 @@ if (ENV.BatteryAPIAvailable) {
           x = 0;
           y = 0;
 
-          if (CURRTRIAL.num == TASK.ModelConfig.trainIdx) {
-            let yTrainLabel0 = mkm.dataObj.yTrainLabels.filter(x => x === 0).length;
-            let yTrainLabel1 = mkm.dataObj.yTrainLabels.filter(x => x === 1).length;
-            console.log('yTrainLabels:', mkm.dataObj.yTrainLabels, 'Label 0:', yTrainLabel0, 'Label 1:', yTrainLabel1);
+          if (CURRTRIAL.num == TASK.ModelConfig.trainIdx - 1) {
+            EVENTS['trainseries'] = {
+              TrainingAccuracy: [],
+              TrainingLoss: [],
+              MsPerEpoch: [],
+            };
+            
+            let modelConfigKeys = Object.keys(TASK.ModelConfig);
+            // batchSize defaults to 4 if not specified
+            let batchSz = modelConfigKeys.includes('batchSize') ? TASK.ModelConfig.batchSize : 4;
+            let shuffleSz = (
+              modelConfigKeys.includes('shuffleSize') ? TASK.ModelConfig.shuffleSize : 4
+            );
+            let yTrainLabelsObj = {};
+            for (let i = 0; i < mkm.units; i++) {
+              yTrainLabelsObj[`Label ${i}`] = mkm.dataObj.yTrainLabels.filter(x => x === i).length;
+            }
+            console.log('yTrainLabels:', mkm.dataObj.yTrainLabels);
+            console.log('yTrainLabelsObj:', yTrainLabelsObj);
 
             let xTrain = tf.data.array(mkm.dataObj.xTrain);
             let yTrain = tf.data.array(mkm.dataObj.yTrain);
             let trainDataset = tf.data.zip({ xs: xTrain, ys: yTrain })
-              .batch(4)
-              .shuffle(4);
+              .batch(batchSz)
+              .shuffle(shuffleSz);
 
             const beginMs = performance.now();
             await mkm.model.fitDataset(trainDataset, {
               epochs: TASK.ModelConfig.epochs,
               callbacks: {
                 onEpochEnd: async(epoch, logs) => {
-                  const secPerEpoch = (
-                    (performance.now() - beginMs) / (1000 * (epoch + 1))
-                  );
+                  const msPerEpoch = (performance.now() - beginMs) / (epoch + 1);
+                  const secPerEpoch = msPerEpoch / 1000;
                   console.log('Training model ... Approx. ' + `${secPerEpoch.toFixed(4)} sec/epoch`);
                   console.log('logs:', logs);
+                  EVENTS['trainseries'].TrainingAccuracy.push(logs.acc);
+                  EVENTS['trainseries'].TrainingLoss.push(logs.loss);
+                  EVENTS['trainseries'].MsPerEpoch.push(msPerEpoch);
                 }
               }
             });
+            console.log(EVENTS['trainseries']);
           }
 
-          if (CURRTRIAL.num > TASK.ModelConfig.trainIdx) {
+          if (CURRTRIAL.num >= TASK.ModelConfig.trainIdx) {
             let yPred = [];
             if (TASK.SameDifferent > 0) {
               mkm.dataObj.xTest.forEach(feature => {
