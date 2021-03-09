@@ -148,22 +148,28 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs));
 						featureVec = featureVec.reshape([2048]);
 
-						if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
+						if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
+							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.sample_scenebag_label[0][0]);
+							mkm.dataObj.yTrainLabels.push(oneHotIdx);
+							mkm.dataObj.yTrain.push(mkm.oneHotArr[oneHotIdx]);
 							mkm.dataObj.xTrain.push(featureVec);
-							if (CURRTRIAL.sample_scenebag_label[0][0] == 0) {
-								mkm.dataObj.yTrainLabels.push(0);
-								// mkm.dataObj.yTrain.push([0]);
-								mkm.dataObj.yTrain.push([1, 0]);
-								// for SVM
-								// mkm.dataObj.yTrain.push([-1])
-							} else if (CURRTRIAL.sample_scenebag_label[0][0] == 1) {
-								mkm.dataObj.yTrainLabels.push(1);
-								// mkm.dataObj.yTrain.push([1]);
-								mkm.dataObj.yTrain.push([0, 1]);
-							}
+							
+							// if (CURRTRIAL.sample_scenebag_label[0][0] == 0) {
+							// 	mkm.dataObj.yTrainLabels.push(0);
+							// 	// mkm.dataObj.yTrain.push([0]);
+							// 	mkm.dataObj.yTrain.push([1, 0]);
+							// 	// for SVM
+							// 	// mkm.dataObj.yTrain.push([-1])
+							// } else if (CURRTRIAL.sample_scenebag_label[0][0] == 1) {
+							// 	mkm.dataObj.yTrainLabels.push(1);
+							// 	// mkm.dataObj.yTrain.push([1]);
+							// 	mkm.dataObj.yTrain.push([0, 1]);
+							// }
 						} else {
+							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.sample_scenebag_label[0][0]);
 							mkm.dataObj.xTest.push(featureVec);
-							mkm.dataObj.yTest.push(CURRTRIAL.sample_scenebag_label[0][0]);
+							// mkm.dataObj.yTest.push(CURRTRIAL.sample_scenebag_label[0][0]);
+							mkm.dataObj.yTest.push(oneHotIdx);
 						}
 						// mkm.cvs SANITY CHECK CODE
 						let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
@@ -203,22 +209,27 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs));
 						featureVec = featureVec.reshape([2048]);
 
-						if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
+						if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
+							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.test_scenebag_labels[0][0]);
+							mkm.dataObj.yTrainLabels.push(oneHotIdx);
+							mkm.dataObj.yTrain.push(mkm.oneHotArr[oneHotIdx]);
 							mkm.dataObj.xTrain.push(featureVec);
-							if (CURRTRIAL.test_scenebag_labels[0][0] == 0) {
-								mkm.dataObj.yTrainLabels.push(0);
-								// mkm.dataObj.yTrain.push([0]);
-								mkm.dataObj.yTrain.push([1, 0]);
-								// for SVM
-								// mkm.dataObj.yTrain.push([-1])
-							} else if (CURRTRIAL.test_scenebag_labels[0][0] == 1) {
-								mkm.dataObj.yTrainLabels.push(1);
-								// mkm.dataObj.yTrain.push([1]);
-								mkm.dataObj.yTrain.push([0, 1]);
-							}
+							// if (CURRTRIAL.test_scenebag_labels[0][0] == 0) {
+							// 	mkm.dataObj.yTrainLabels.push(0);
+							// 	// mkm.dataObj.yTrain.push([0]);
+							// 	mkm.dataObj.yTrain.push([1, 0]);
+							// 	// for SVM
+							// 	// mkm.dataObj.yTrain.push([-1])
+							// } else if (CURRTRIAL.test_scenebag_labels[0][0] == 1) {
+							// 	mkm.dataObj.yTrainLabels.push(1);
+							// 	// mkm.dataObj.yTrain.push([1]);
+							// 	mkm.dataObj.yTrain.push([0, 1]);
+							// }
 						} else {
+							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.test_scenebag_labels[0][0]);
 							mkm.dataObj.xTest.push(featureVec);
-							mkm.dataObj.yTest.push(CURRTRIAL.test_scenebag_labels[0][0]);
+							// mkm.dataObj.yTest.push(CURRTRIAL.test_scenebag_labels[0][0]);
+							mkm.dataObj.yTest.push(oneHotIdx);
 						}
 
 						// mkm.cvs SANITY CHECK HERE
@@ -265,18 +276,23 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
 							console.log('CURRTRIAL.num:', CURRTRIAL.num);
 							mkm.dataObj.xTrain.push(featureVec);
-							if (CURRTRIAL.correctitem == 0) {
-								mkm.dataObj.yTrainLabels.push(0);
-								mkm.dataObj.yTrain.push([1, 0]);
-								// for SVM
-								// mkm.dataObj.yTrain.push([-1])
-							} else if (CURRTRIAL.correctitem == 1) {
-								mkm.dataObj.yTrainLabels.push(1);
-								mkm.dataObj.yTrain.push([0, 1]);
-							}
+							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.correctitem);
+							mkm.dataObj.yTrainLabels.push(oneHotIdx);
+							mkm.dataObj.yTrain.push(mkm.oneHotArr[oneHotIdx]);
+							// if (CURRTRIAL.correctitem == 0) {
+							// 	mkm.dataObj.yTrainLabels.push(0);
+							// 	mkm.dataObj.yTrain.push([1, 0]);
+							// 	// for SVM
+							// 	// mkm.dataObj.yTrain.push([-1])
+							// } else if (CURRTRIAL.correctitem == 1) {
+							// 	mkm.dataObj.yTrainLabels.push(1);
+							// 	mkm.dataObj.yTrain.push([0, 1]);
+							// }
 						} else {
+							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.correctitem);
 							mkm.dataObj.xTest.push(featureVec);
-							mkm.dataObj.yTest.push(CURRTRIAL.sample_scenebag_label[0][0]);
+							// mkm.dataObj.yTest.push(CURRTRIAL.sample_scenebag_label[0][0]);
+							mkm.dataObj.yTest.push(oneHotIdx);
 						}
 						// mkm.cvs SANITY CHECK CODE
 						// let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');

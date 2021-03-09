@@ -13,6 +13,7 @@ class MkModels {
     this.hasTestFeatures = false;
     this.inputShape; // inputShape (number[]);
     this.units; // units (number);
+    this.oneHotArr;
     // this.loss; // loss (string): 'categoricalCrossentropy'|'binaryCrossentropy';
     // this.activation; // activation (string): 'softmax'|'sigmoid';
     // this.optimizer;
@@ -80,6 +81,7 @@ class MkModels {
       this.units = (
         configKeys.includes('imageBagsTrainIdxs') ? config['imageBagTrainIdxs'].length : this.units
       );
+
       let activation;
       let loss;
       if (configKeys.includes('activation')) {
@@ -105,7 +107,8 @@ class MkModels {
         metrics: ['accuracy']
       });
       this.model.summary();
-    } 
+    }
+    this.oneHotArr = this.createOneHot(this.units);
     // this.model.add(tf.layers.dense({
     //   units: config.outputUnits,
     //   inputShape: [config.inputShape],
@@ -150,7 +153,7 @@ class MkModels {
 
   getMkModelBoundingBox(params) {
     let srcX, srcY, srcWidth, srcHeight;
-    if (!params.image.imageidx.includes(NaN) && params.image.imagebag) { // IF background image
+    if (!params.image.imageidx.includes(NaN) && !params.image.imageidx[0].includes(NaN) && params.image.imagebag) { // IF background image
       srcX = params.boundingBoxes2D.x[0][0] * params.ScreenRatio;
       srcY = (params.boundingBoxes2D.y[0][0] - params.offsettop) * params.ScreenRatio;
       if (Array.isArray(params.image.sizeInches)) {
@@ -206,6 +209,19 @@ class MkModels {
       arr.splice(idx, 1);
     }
     return arr;
+  }
+
+  createOneHot(units) {
+    let arr = [];
+    for (let i = 0; i < units; i++) {
+      arr[i] = Array(units).fill(0);
+      arr[i][i] = 1;
+    }
+    return arr;
+  }
+
+  getOneHotIdx(correctItem) {
+    return correctItem % this.units;
   }
 
 }

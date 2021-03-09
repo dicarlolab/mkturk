@@ -1545,9 +1545,9 @@ if (ENV.BatteryAPIAvailable) {
             let yPred = [];
             if (TASK.SameDifferent > 0) {
               mkm.dataObj.xTest.forEach(feature => {
-                let pred = mkm.model.predict(feature.reshape([1, 2048]));
+                let pred = mkm.model.predict(feature.reshape([1, mkm.inputShape[0]]));
                 pred.print();
-                pred = pred.reshape([2]).argMax(0);
+                pred = pred.reshape([mkm.units]).argMax(0);
                 pred = pred.dataSync();
                 yPred.push(pred[0]);
               });
@@ -1559,9 +1559,9 @@ if (ENV.BatteryAPIAvailable) {
               }
             } else {
               mkm.dataObj.xTest.forEach(feature => {
-                let pred = mkm.model.predict(feature.reshape([1, 2048]));
+                let pred = mkm.model.predict(feature.reshape([1, mkm.inputShape[0]]));
                 pred.print();
-                pred = pred.reshape([2]).argMax(0);
+                pred = pred.reshape([mkm.units]).argMax(0);
                 pred = pred.dataSync();
                 yPred.push(pred[0]);
               });
