@@ -204,7 +204,13 @@ if (ENV.BatteryAPIAvailable) {
 	ENV.ViewportPixels[0] = ENV.ScreenPhysicalPixels[0] / ENV.DevicePixelRatio;
 	ENV.ViewportPixels[1] = ENV.ScreenPhysicalPixels[1] / ENV.DevicePixelRatio;		
 
-	ENV.ViewportPPI = ENV.ViewportPixels[0] / ENV.ScreenSizeInches[0]; //viewport pixels per inch
+	//always compute PPI based on the larger dimension for consistency across portrait/landscape modes
+	if (ENV.ViewportPixels[0] >= ENV.ViewportPixels[1]){
+		ENV.ViewportPPI = ENV.ViewportPixels[0] / ENV.ScreenSizeInches[0]; //viewport pixels per inch
+	}
+	else{
+		ENV.ViewportPPI = ENV.ViewportPixels[1] / ENV.ScreenSizeInches[1]; //viewport pixels per inch
+	}//IF
 	updateHeadsUpDisplay()
 	//====================== (END) Retrieve device's screen properties ===========================//
 
@@ -1009,7 +1015,6 @@ if (ENV.BatteryAPIAvailable) {
       FLAGS.punishOutsideTouch = 1;
     }
 
-    CURRTRIAL.allfixationxyt = [];
     while (FLAGS.waitingforTouches > 0) {
       // Choose fixation grid index at random
       if (TASK.FixationGridIndex > 0) {
@@ -1213,9 +1218,6 @@ if (ENV.BatteryAPIAvailable) {
         touchhold_return.cxyt[2],
         touchhold_return.cxyt[3]
       ];
-      CURRTRIAL.allfixationxyt[TASK.NFixations - FLAGS.waitingforTouches - 1] =  (
-        CURRTRIAL.fixationxyt
-      );
 
       logEVENTS("FixationTouchEvent", CURRTRIAL.fixationtouchevent, "trialseries");
       logEVENTS("FixationXYT", CURRTRIAL.fixationxyt, "trialseries");

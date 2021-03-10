@@ -163,6 +163,23 @@ async function queryFirestoreCallback(querySnapshot){
 //NOTE: would use generator to step out for X seconds (pause), but firestore externally calls query Firestore anyway, so only get new data & update plot every X seconds, but can't prevent multiple calls from firestore in the meantime
   if (performance.now() - tlastquery < queryUpdateInterval && queryfirstpass == 0){
     console.log('NEW DATA! Skipping snapshot callback @' + Math.round(performance.now()-tlastquery) + 'ms')
+
+    var tleft = queryUpdateInterval - (performance.now() - tlastquery)
+
+    var d = new Date(tlastquery)
+    h = d.getHours()
+    m = d.getMinutes()
+    s = d.getSeconds()
+    var ampm = 'am'
+    if (h>12){ h = h-12; ampm = 'pm' }
+    if (m<10){ m = "0" + m}
+    if (s<10){ s = "0" + s}
+    document.getElementById('titletext').innerHTML = 
+            'fireplace mkturk &nbsp&nbsp' + 
+            "<font size=-4>" + DATA.ndocs + ' docs, ' + Math.round(DATA.totalloadtime/1000) + ' sec' + "</font>" +
+            "<font size=-4><i>" + '&nbsp&nbsp ' + h + ':' + m + ':' + s + '' + ampm + "</i></font>" +
+            "<font size=-4><font color=red><i>" + "  T-" + Math.round(tleft/1000) + "sec" + "</i></font>"
+    document.querySelector('#progressbar').style.display = "none"
     return //wait queryUpdateInterval milliseconds between updates
   }
   queryfirstpass = 0
@@ -303,7 +320,9 @@ async function queryFirestoreCallback(querySnapshot){
     document.getElementById('titletext').innerHTML = 
             'fireplace mkturk &nbsp&nbsp' + 
             "<font size=-4>" + DATA.ndocs + ' docs, ' + Math.round(DATA.totalloadtime/1000) + ' sec' + "</font>" +
-            "<font size=-4><i>" + '&nbsp&nbsp ' + h + ':' + m + ':' + s + '' + ampm + "</i></font>"
+            "<font size=-4><i>" + '&nbsp&nbsp ' + h + ':' + m + ':' + s + '' + ampm + "</i></font>" +
+            "<font size=-4><font color=green><i>" + "   just updated" + "</i></font>"
+
     document.querySelector('#progressbar').style.display = "none"
 } // FUNCTION queryFirestoreCallback(querySnapshot)
 

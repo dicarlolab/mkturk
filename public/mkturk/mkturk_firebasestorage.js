@@ -360,7 +360,7 @@ async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS) {
 				'Arduino': EVENTS['timeseries']['Arduino'],
 				'TSequenceActual': EVENTS['timeseries']['TSequenceActual']
 			},
-			'TRAINEVENTS': EVENTS['trainseries'],
+			'CLASSIFIERSTATS': EVENTS['trainseries'],
 		};
 	} else {
 		dataObj = {
