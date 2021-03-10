@@ -14,6 +14,7 @@ class MkModels {
     this.inputShape; // inputShape (number[]);
     this.units; // units (number);
     this.oneHotArr;
+    this.outputNode;
     // this.loss; // loss (string): 'categoricalCrossentropy'|'binaryCrossentropy';
     // this.activation; // activation (string): 'softmax'|'sigmoid';
     // this.optimizer;
@@ -62,6 +63,7 @@ class MkModels {
     if (config.mode == 'default') {
       let loss = (this.units > 2) ? 'categoricalCrossentropy' : 'binaryCrossentropy';
       let activation = (this.units > 2) ? 'softmax' : 'sigmoid';
+      this.outputNode = '';
       this.model.add(tf.layers.dense({
         units: this.units,
         inputShape: this.inputShape,
@@ -80,6 +82,10 @@ class MkModels {
       );
       this.units = (
         configKeys.includes('imageBagsTrainIdxs') ? config['imageBagTrainIdxs'].length : this.units
+      );
+
+      this.outputNode = (
+        configKeys.includes('outputNode') ? config.outputNode : ''
       );
 
       let activation;
@@ -109,17 +115,6 @@ class MkModels {
       this.model.summary();
     }
     this.oneHotArr = this.createOneHot(this.units);
-    // this.model.add(tf.layers.dense({
-    //   units: config.outputUnits,
-    //   inputShape: [config.inputShape],
-    //   activation: config.activation
-    // }));
-    // this.model.compile({
-    //   optimizer: tf.train.adam(),
-    //   loss: config.loss,
-    //   metrics: ['accuracy']
-    // });
-    // this.model.summary();
   }
 
   buildSvmClassifier(config) {

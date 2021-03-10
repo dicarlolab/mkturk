@@ -145,8 +145,8 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						// ctx2.stroke();
 						
 						ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
-						let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs));
-						featureVec = featureVec.reshape([2048]);
+						let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), mkm.outputNode);
+						featureVec = featureVec.reshape(mkm.inputShape);
 
 						if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
 							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.sample_scenebag_label[0][0]);
@@ -206,8 +206,8 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						// ctx2.stroke();
 						
 						ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
-						let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs));
-						featureVec = featureVec.reshape([2048]);
+						let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), mkm.ouputNode);
+						featureVec = featureVec.reshape(mkm.inputShape);
 
 						if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
 							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.test_scenebag_labels[0][0]);
@@ -271,7 +271,10 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						// ctx2.stroke();
 						
 						ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
-						let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs));
+						// console.log(mkm.featureExtractor);
+						let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), mkm.ouputNode);
+						// console.log('featureVec:', featureVec);
+
 						featureVec = featureVec.reshape(mkm.inputShape);
 						if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
 							console.log('CURRTRIAL.num:', CURRTRIAL.num);
@@ -279,15 +282,6 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.correctitem);
 							mkm.dataObj.yTrainLabels.push(oneHotIdx);
 							mkm.dataObj.yTrain.push(mkm.oneHotArr[oneHotIdx]);
-							// if (CURRTRIAL.correctitem == 0) {
-							// 	mkm.dataObj.yTrainLabels.push(0);
-							// 	mkm.dataObj.yTrain.push([1, 0]);
-							// 	// for SVM
-							// 	// mkm.dataObj.yTrain.push([-1])
-							// } else if (CURRTRIAL.correctitem == 1) {
-							// 	mkm.dataObj.yTrainLabels.push(1);
-							// 	mkm.dataObj.yTrain.push([0, 1]);
-							// }
 						} else {
 							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.correctitem);
 							mkm.dataObj.xTest.push(featureVec);
