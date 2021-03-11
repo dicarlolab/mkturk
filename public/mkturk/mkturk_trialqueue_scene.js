@@ -31,6 +31,25 @@ async build(trial_cushion_size){
 	this.samplebag_labels = [];
 	this.samplebag_indices = [];
 	this.samplebag_paths = [];
+	// for (let i = 0; i < IMAGES['Sample'].length; i++) {
+	// 	// FOR i scene bags (labels)
+	// 	for (let j = 0; j < IMAGES['Sample'][i].nimages; j++) {
+	// 		// FOR j scene renders, assign label
+	// 		this.samplebag_labels.push(i);
+	// 		this.samplebag_indices.push(j);
+	// 	}
+
+	// 	if (IMAGES['Sample'][i].nbackgroundimages > 0) {
+	// 		// get background images, if any
+	// 		let imageBagPaths = (
+	// 			await loadImageBagPathsParallelFirebase([IMAGES['Sample'][i].IMAGES.imagebag])
+	// 		);
+	// 		this.samplebag_paths[i] = imageBagPaths[0];
+	// 	} else {
+	// 		this.samplebag_paths[i] = [];
+	// 	}
+	// }
+
 	for (var i=0; i <= IMAGES["Sample"].length-1; i++){
 		for (var j=0; j<= IMAGES["Sample"][i].nimages-1; j++){
 			this.samplebag_labels.push(i)
@@ -50,6 +69,26 @@ async build(trial_cushion_size){
 	this.testbag_labels = [];
 	this.testbag_paths = [];
 	this.testbag_indices = [];
+
+	// FOR i scene bags (labels)
+	// for (let i = 0; i < IMAGES['Test'].length; i++) {
+	// 	// FOR j scene renders, assign label
+	// 	for (let j = 0; i < IMAGES['Test'][i].nimages; j++) {
+	// 		this.testbag_labels.push(i);
+	// 		this.testbag_indices.push(j);
+	// 	}
+
+	// 	// get background images, if any
+	// 	if (IMAGES['Test'][i].nbackgroundimages > 0) {
+	// 		let imageBagPaths = (
+	// 			await loadImageBagPathsParallelFirebase([IMAGES['Test'][i].IMAGES.imagebag])
+	// 		);
+	// 		this.testbag_paths[i] = imageBagPaths[0];
+	// 	} else {
+	// 		this.testbag_paths[i] = [];
+	// 	}
+	// }
+
 	for (var i=0; i <= IMAGES["Test"].length-1; i++){
 		for (var j=0; j<= IMAGES["Test"][i].nimages-1; j++){
 			this.testbag_labels.push(i)

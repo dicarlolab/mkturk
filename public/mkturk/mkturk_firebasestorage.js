@@ -235,6 +235,9 @@ async function loadParametersfromFirebase(paramfile_path){
 		data = await loadTextfromFirebase(paramfile_path)
 		TASK = {}
 		TASK = data
+		if (TASK.Species == 'model') {
+			TASK.PunishTimeOut = 0;
+		}
 		await loadAgentRFIDfromFirestore(ENV.Subject,TASK.Species)
 
 		
@@ -340,29 +343,51 @@ async function saveParameterstoFirebase() {
 
 
 //------------- SAVE DATA --------------//
-async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS){
-	var dataobj = { 'TASK': TASK,
-					'ENV': ENV,
-					'CANVAS': CANVAS,
-					'SCENEMETA': IMAGEMETA,
-					'SCENES': { 'SampleScenes': IMAGES.Sample, 'TestScenes': IMAGES.Test },
-					'TRIALEVENTS': EVENTS['trialseries'],
-					'TIMEEVENTS': { 'Battery': EVENTS['timeseries']['Battery'],
-									'RFIDTag': EVENTS['timeseries']['RFIDTag'], 
-									'Weight': EVENTS['timeseries']['Weight']
-									// ,
-									// 'Arduino': EVENTS['timeseries']['Arduino'],
-									// 'TSequenceActual': EVENTS['timeseries']['TSequenceActual']
-									 }
-	}//dataobj
-	datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
-	var blob = new Blob([ datastr ], {type : 'application/json'});
+async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS) {
+	let dataObj;
+	if (TASK.Species == 'model' && Object.keys(EVENTS).includes('trainseries')) {
+		dataObj = {
+			'TASK': TASK,
+			'ENV': ENV,
+			'CANVAS': CANVAS,
+			'SCENEMETA': IMAGEMETA,
+			'SCENES': { 'SampleScenes': IMAGES.Sample, 'TestScenes': IMAGES.Test },
+			'TRIALEVENTS': EVENTS['trialseries'],
+			'TIMEEVENTS': {
+				'Battery': EVENTS['timeseries']['Battery'],
+				'RFIDTag': EVENTS['timeseries']['RFIDTag'], 
+				'Weight': EVENTS['timeseries']['Weight'],
+				'Arduino': EVENTS['timeseries']['Arduino'],
+				'TSequenceActual': EVENTS['timeseries']['TSequenceActual']
+			},
+			'CLASSIFIERSTATS': EVENTS['trainseries'],
+		};
+	} else {
+		dataObj = {
+			'TASK': TASK,
+			'ENV': ENV,
+			'CANVAS': CANVAS,
+			'SCENEMETA': IMAGEMETA,
+			'SCENES': { 'SampleScenes': IMAGES.Sample, 'TestScenes': IMAGES.Test },
+			'TRIALEVENTS': EVENTS['trialseries'],
+			'TIMEEVENTS': {
+				'Battery': EVENTS['timeseries']['Battery'],
+				'RFIDTag': EVENTS['timeseries']['RFIDTag'], 
+				'Weight': EVENTS['timeseries']['Weight'],
+				'Arduino': EVENTS['timeseries']['Arduino'],
+				'TSequenceActual': EVENTS['timeseries']['TSequenceActual']
+			}
+		}
+	}
+	
+	// let datastr = JSON.stringify(dataObj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
+	let blob = new Blob([JSON.stringify(dataObj)], { type : 'application/json' });
 
 	// Create file metadata including the content type
-	var metadata = { contentType: 'application/json' };
+	let metadata = { contentType: 'application/json' };
 
 	// Upload the file and metadata
-	var response = await storage.ref().child(ENV.DataFileName).put(blob, metadata);
+	let response = await storage.ref().child(ENV.DataFileName).put(blob, metadata);
 	CURRTRIAL.lastFirebaseSave = new Date(response.metadata.updated)
 	console.log("FIREBASE: Save Data, " + Math.round(response.totalBytes/1000) + 'kb')
 } //UploadToFirebase

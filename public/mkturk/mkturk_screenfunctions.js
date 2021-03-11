@@ -1,35 +1,42 @@
 //================== IMAGE RENDERING ==================//
-function displayTrial(ti,gr,fr,sc,ob,id){
+function displayTrial(ti,gr,fr,sc,ob,id,mkm){
+	let lenArgs = arguments.length;
+	// if (arguments.length == 7) {
+	// 	console.log('mkm:', mkm);
+	// }
 // ti = time, gr = grid, fr = frame
 // sc = screen, ob = object label, id = index of renderparam
-	var resolveFunc
-	var errFunc
-	updated2d = 0
-	updated3d = 0
-	boundingBoxesChoice2D = {'x':[],'y':[]}
-	boundingBoxesChoice3JS = {'x':[],'y':[]}
-	boundingBoxesChoice3D = {'x':[],'y':[]}
+	var resolveFunc;
+	var errFunc;
+	updated2d = 0;
+	updated3d = 0;
+	boundingBoxesChoice2D = { 'x': [], 'y': [] };
+	boundingBoxesChoice3JS = { 'x': [], 'y': [] };
+	boundingBoxesChoice3D = { 'x': [], 'y': [] };
 	p = new Promise(function(resolve,reject){
 		resolveFunc = resolve;
 		errFunc = reject;
 	}).then();
-
 	var start = null;
 	CURRTRIAL.tsequenceactual = []
 	async function updateCanvas(timestamp){
+		
 		if (!start) start = timestamp; //IF start has not been set to a float timestamp, set it now.
 
-		if (timestamp - start > ti[frame.current]){
+		if (timestamp - start > ti[frame.current]) {
+			// console.log('updateCanvas called');
 			//----- RENDER ALL ELEMENTS
-			if (!ENV.OffscreenCanvasAvailable){
-					renderShape2D('Blank',[-1],OFFSCREENCANVAS)				
+			if (!ENV.OffscreenCanvasAvailable) {
+				renderShape2D('Blank', [-1], OFFSCREENCANVAS);
 			}
 
 			for (var s = 0; s<=frame.frames[frame.current].length-1; s++){
 				f = frame.frames[frame.current][s]
 				var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
+				// console.log('taskscreen:', taskscreen);
+				
 				if (s==0){
-					var taskscreen0 = taskscreen
+					var taskscreen0 = taskscreen;
 				}//IF primary screen
 
 //------------------- DISPLAY THE FRAME 2D ---------------------//
@@ -101,6 +108,202 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 				boundingBoxesChoice3D.x = boundingBoxesChoice3JS.x
 				boundingBoxesChoice3D.y = boundingBoxesChoice3JS.y			
 			}
+
+			// console.log(`taskscreen: ${taskscreen}; taskscreen0: ${taskscreen0}; boundingBoxesChoice3D: ${JSON.stringify(boundingBoxesChoice3D)}`);
+			// if (taskscreen == 'Sample') {
+			// 	console.log(`arguments.length=${lenArgs}`);
+			// }
+
+			// MkModel Logic
+			
+			// if (TASK.SameDifferent > 0 && lenArgs == 7) {
+			if (lenArgs == 7 && mkm) {
+				if (TASK.SameDifferent > 0) {
+					if (taskscreen == 'Sample' && !mkm.hasSampleFeatures) {
+						let ctx = mkm.cvs.getContext('2d');
+						ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
+						let label = CURRTRIAL.sample_scenebag_label[0][0];
+						let params = {
+							image: IMAGES.Sample[label].IMAGES,
+							object: IMAGES.Sample[label].OBJECTS,
+							idx: CURRTRIAL.sample_scenebag_index[0][0],
+							ViewportPPI: ENV.ViewportPPI,
+							ScreenRatio: ENV.ScreenRatio,
+							offsettop: CANVAS.offsettop,
+							boundingBoxes3D: boundingBoxesChoice3D,
+							boundingBoxes2D: boundingBoxesChoice2D
+						};
+	
+						let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
+
+						// mkmBoundingBox SANITY CHECK CODE
+						// console.log(`SAMPLE sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
+						// let visiblecvs = document.getElementById("canvaseyetracker");
+						// let ctx2 = visiblecvs.getContext('2d');
+						// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
+						// ctx2.rect(mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight);
+						// ctx2.stroke();
+						
+						ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
+						let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), mkm.outputNode);
+						featureVec = featureVec.reshape(mkm.inputShape);
+
+						if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
+							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.sample_scenebag_label[0][0]);
+							mkm.dataObj.yTrainLabels.push(oneHotIdx);
+							mkm.dataObj.yTrain.push(mkm.oneHotArr[oneHotIdx]);
+							mkm.dataObj.xTrain.push(featureVec);
+							
+							// if (CURRTRIAL.sample_scenebag_label[0][0] == 0) {
+							// 	mkm.dataObj.yTrainLabels.push(0);
+							// 	// mkm.dataObj.yTrain.push([0]);
+							// 	mkm.dataObj.yTrain.push([1, 0]);
+							// 	// for SVM
+							// 	// mkm.dataObj.yTrain.push([-1])
+							// } else if (CURRTRIAL.sample_scenebag_label[0][0] == 1) {
+							// 	mkm.dataObj.yTrainLabels.push(1);
+							// 	// mkm.dataObj.yTrain.push([1]);
+							// 	mkm.dataObj.yTrain.push([0, 1]);
+							// }
+						} else {
+							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.sample_scenebag_label[0][0]);
+							mkm.dataObj.xTest.push(featureVec);
+							// mkm.dataObj.yTest.push(CURRTRIAL.sample_scenebag_label[0][0]);
+							mkm.dataObj.yTest.push(oneHotIdx);
+						}
+						// mkm.cvs SANITY CHECK CODE
+						let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
+						let cvsData = mkm.cvs.toDataURL();
+						let path = (
+							`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`
+						);
+						mkmodelsRef.child(path).putString(cvsData, 'data_url');
+						// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
+						mkm.hasSampleFeatures = true;							
+					} else if (taskscreen == 'Test' && !mkm.hasTestFeatures) {
+						let ctx = mkm.cvs.getContext('2d');
+						ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
+						let label = CURRTRIAL.test_scenebag_labels[0][0];
+						let params = {
+							image: IMAGES.Test[label].IMAGES,
+							object: IMAGES.Test[label].OBJECTS,
+							idx: CURRTRIAL.test_scenebag_indices[0][0],
+							ViewportPPI: ENV.ViewportPPI,
+							ScreenRatio: ENV.ScreenRatio,
+							offsettop: CANVAS.offsettop,
+							boundingBoxes3D: boundingBoxesChoice3D,
+							boundingBoxes2D: boundingBoxesChoice2D
+						};
+	
+						let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
+
+						// mkmBoundingBox SANITY CHECK CODE
+						// console.log(`TEST sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
+						// let visiblecvs = document.getElementById("canvaseyetracker");
+						// let ctx2 = visiblecvs.getContext('2d');
+						// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
+						// ctx2.rect(mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight);
+						// ctx2.stroke();
+						
+						ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
+						let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), mkm.ouputNode);
+						featureVec = featureVec.reshape(mkm.inputShape);
+
+						if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
+							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.test_scenebag_labels[0][0]);
+							mkm.dataObj.yTrainLabels.push(oneHotIdx);
+							mkm.dataObj.yTrain.push(mkm.oneHotArr[oneHotIdx]);
+							mkm.dataObj.xTrain.push(featureVec);
+							// if (CURRTRIAL.test_scenebag_labels[0][0] == 0) {
+							// 	mkm.dataObj.yTrainLabels.push(0);
+							// 	// mkm.dataObj.yTrain.push([0]);
+							// 	mkm.dataObj.yTrain.push([1, 0]);
+							// 	// for SVM
+							// 	// mkm.dataObj.yTrain.push([-1])
+							// } else if (CURRTRIAL.test_scenebag_labels[0][0] == 1) {
+							// 	mkm.dataObj.yTrainLabels.push(1);
+							// 	// mkm.dataObj.yTrain.push([1]);
+							// 	mkm.dataObj.yTrain.push([0, 1]);
+							// }
+						} else {
+							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.test_scenebag_labels[0][0]);
+							mkm.dataObj.xTest.push(featureVec);
+							// mkm.dataObj.yTest.push(CURRTRIAL.test_scenebag_labels[0][0]);
+							mkm.dataObj.yTest.push(oneHotIdx);
+						}
+
+						// mkm.cvs SANITY CHECK HERE
+						let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
+						let cvsData = mkm.cvs.toDataURL();
+						let path = (
+							`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_test.png`
+						);
+						mkmodelsRef.child(path).putString(cvsData, 'data_url');
+						// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
+						mkm.hasTestFeatures = true;							
+					} else if (taskscreen == 'Choice' && mkm.hasSampleFeatures && mkm.hasTestFeatures) {
+						mkm.hasSampleFeatures = false;
+						mkm.hasTestFeatures = false;	
+					}
+				} else {
+					if (taskscreen == 'Sample' && !mkm.hasSampleFeatures) {
+						let ctx = mkm.cvs.getContext('2d');
+						ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
+						let label = CURRTRIAL.sample_scenebag_label[0][0];
+						let params = {
+							image: IMAGES.Sample[label].IMAGES,
+							object: IMAGES.Sample[label].OBJECTS,
+							idx: CURRTRIAL.sample_scenebag_index[0][0],
+							ViewportPPI: ENV.ViewportPPI,
+							ScreenRatio: ENV.ScreenRatio,
+							offsettop: CANVAS.offsettop,
+							boundingBoxes3D: boundingBoxesChoice3D,
+							boundingBoxes2D: boundingBoxesChoice2D
+						};
+	
+						let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
+
+						// mkmBoundingBox SANITY CHECK CODE
+						// console.log(`SAMPLE sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
+						// let visiblecvs = document.getElementById("canvaseyetracker");
+						// let ctx2 = visiblecvs.getContext('2d');
+						// ctx2.rect(mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight);
+						// ctx2.stroke();
+						
+						ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
+						// console.log(mkm.featureExtractor);
+						let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), mkm.ouputNode);
+						// console.log('featureVec:', featureVec);
+
+						featureVec = featureVec.reshape(mkm.inputShape);
+						if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
+							console.log('CURRTRIAL.num:', CURRTRIAL.num);
+							mkm.dataObj.xTrain.push(featureVec);
+							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.correctitem);
+							mkm.dataObj.yTrainLabels.push(oneHotIdx);
+							mkm.dataObj.yTrain.push(mkm.oneHotArr[oneHotIdx]);
+						} else {
+							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.correctitem);
+							mkm.dataObj.xTest.push(featureVec);
+							// mkm.dataObj.yTest.push(CURRTRIAL.sample_scenebag_label[0][0]);
+							mkm.dataObj.yTest.push(oneHotIdx);
+						}
+						// mkm.cvs SANITY CHECK CODE
+						// let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
+						// let cvsData = mkm.cvs.toDataURL();
+						// let path = (
+						// 	`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`
+						// );
+						// mkmodelsRef.child(path).putString(cvsData, 'data_url');
+						// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
+						mkm.hasSampleFeatures = true;
+					} else if (taskscreen != 'Sample' && mkm.hasSampleFeatures) {
+						mkm.hasSampleFeatures = false;
+					}
+				}
+
+			}
+				
 
 			//----- (2) Update Status
 			updated2d = 0
@@ -190,19 +393,21 @@ function displayTrial(ti,gr,fr,sc,ob,id){
 }//FUNCTION displayTrial
 
 
-function render3D(taskscreen,s,f,gr,fr,sc,ob,id){
-	f = frame.frames[frame.current][s]
+function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
+	f = frame.frames[frame.current][s];
 	//var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
 
-	renderer.autoClear = false
-	for (var j = 0; j<=ob[f].length - 1; j++){
-		renderer.clear()
+	renderer.autoClear = false;
+	for (var j = 0; j < ob[f].length; j++) {
+		renderer.clear();
 		
-		var boundingBox = updateSingleFrame3D(taskscreen,
-											ob[f][j],
-											id[f][j],
-											fr[f],
-											gr[f][j])
+		var boundingBox = updateSingleFrame3D(
+			taskscreen,
+			ob[f][j],
+			id[f][j],
+			fr[f],
+			gr[f][j]
+		);
 		
 		if (s==0 && typeof(boundingBox) != "undefined" && typeof(boundingBox[ob[f][j]]) != "undefined" && typeof(boundingBox[ob[f][j]][0]) != "undefined"){
 			boundingBoxesChoice3JS.x[j] = boundingBox[ob[f][j]][0].x
@@ -238,19 +443,20 @@ function render3D(taskscreen,s,f,gr,fr,sc,ob,id){
 			fr[f],
 			gr[f][j])
 			
-	    OFFSCREENCANVAS.getContext('2d').filter = objFilterSingleFrame
-		OFFSCREENCANVAS.getContext('2d').drawImage(renderer.domElement,0,0,OFFSCREENCANVAS.width,OFFSCREENCANVAS.height)	
-		OFFSCREENCANVAS.getContext('2d').filter = 'none'
+	  OFFSCREENCANVAS.getContext('2d').filter = objFilterSingleFrame;
+		OFFSCREENCANVAS.getContext('2d').drawImage(renderer.domElement,0,0,OFFSCREENCANVAS.width,OFFSCREENCANVAS.height);
+		OFFSCREENCANVAS.getContext('2d').filter = 'none';
 	}//FOR j display items
 }//FUNCTION render3D
 
 async function render2D(taskscreen,s,f,gr,fr,sc,ob,id,canvasobj){
-	if (FLAGS.savedata == 0 && s==0 && FLAGS.underlayGridPoints == 1){
+	if (FLAGS.savedata == 0 && s==0 && FLAGS.underlayGridPoints == 1) {
 		renderBlankWithGridMarkers(
 			ENV.XGridCenter,ENV.YGridCenter, 
 			CURRTRIAL.FixationGridIndex,CURRTRIAL.samplegridindex,TASK.TestGridIndex, TASK.ChoiceGridIndex,
 			ENV.FixationRadius,ENV.ChoiceRadius,
-			ENV.CanvasRatio,canvasobj);
+			ENV.CanvasRatio,canvasobj
+		);
 	}//IF !savedata, underlay grid
 	
 	if (f==0  || taskscreen != sc[f-1] || id[f] != id[f-1] || fr[f] != fr[f-1]){
@@ -1024,7 +1230,7 @@ function updateHeadsUpDisplay(){
 			for (let i = TASK.ModelConfig.trainIdx + 1; i < EVENTS['trialseries']['Response'].length; i++) {
 				if (EVENTS['trialseries']['Response'][i] == EVENTS['trialseries']['CorrectItem'][i]) {
 					ncorrect = ncorrect + 1;
-					let len = EVENTS['trialseries']['Response'].length - TASK.ModelConfig.trainIdx - 1;
+					let len = EVENTS['trialseries']['Response'].length - TASK.ModelConfig.trainIdx;
 					var pctcorrect = Math.round(100 * ncorrect / len);
 				}
 			}
@@ -1051,15 +1257,14 @@ function updateHeadsUpDisplay(){
 	}
 	if (CANVAS.headsupfraction > 0){
 		if (TASK.Species == 'model') {
-			if (CURRTRIAL.num == 0) {
-
-			} else if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
+			if (CURRTRIAL.num < TASK.ModelConfig.trainIdx - 1) {
 				// console.log('screenfunc:', EVENTS['trialseries']['Response'].length, CURRTRIAL.num, TASK.ModelConfig.trainIdx);
-				let tmp = EVENTS['trialseries']['Response'].length - 1;
+				let tmp = EVENTS['trialseries']['Response'].length;
+				let tmp2 = CURRTRIAL.num + 2;
 				textobj.innerHTML = (
 					'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail + "<br>" +
 					'Agent: ' + ENV.Subject + ", <font color=green><b>" + 
-					"TRAINING</b></font> "  + '(' + tmp + ' of ' + TASK.ModelConfig.trainIdx + ')' +"<br>" +
+					"TRAINING</b></font> "  + '(' + tmp2 + ' of ' + TASK.ModelConfig.trainIdx + ')' +"<br>" +
 					task1 + "<br>" + task2 + "<br>" + "<br>" +
 					"last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>" +
 					"last saved to firebase @ " + CURRTRIAL.lastFirebaseSave.toLocaleTimeString("en-US")
@@ -1068,7 +1273,7 @@ function updateHeadsUpDisplay(){
 				textobj.innerHTML = (
 					'User: ' + ENV.ResearcherDisplayName + ', ' + ENV.ResearcherEmail + "<br>" +
 					'Agent: ' + ENV.Subject + ", <font color=green><b>" + pctcorrect  +
-					"%</b></font> " + "(" + ncorrect + " of " + (EVENTS['trialseries']['Response'].length - TASK.ModelConfig.trainIdx - 1) + " trials)" +
+					"%</b></font> " + "(" + ncorrect + " of " + (EVENTS['trialseries']['Response'].length - TASK.ModelConfig.trainIdx) + " trials)" +
 					"<br>" +
 					task1 + "<br>" + task2 + "<br>" + "<br>" +
 					"last trial @ " + CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") + "<br>" +

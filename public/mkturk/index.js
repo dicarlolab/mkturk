@@ -128,26 +128,6 @@ if (ENV.BatteryAPIAvailable) {
       .addEventListener('click', blescaleconnect, false);
 		//---- (END) for Safari
   }
-
-	// document.querySelector("button[id=doneEditingParams]").addEventListener(
-	// 	'pointerup',doneEditingParams_listener,false)
-	// document.querySelector("button[id=doneTestingTask]").addEventListener(
-	// 	'pointerup',doneTestingTask_listener,false)
-	// document.querySelector("button[id=stressTest]").addEventListener(
-	// 	'touchstart',stressTest_listener,false)
-	// document.querySelector("button[id=gridPoints]").addEventListener(
-	// 	'touchstart',gridPoints_listener,false)
-
-	// 	//---- for Safari
-	// 	document.querySelector("button[id=doneEditingParams]").addEventListener(
-	// 		'click',doneEditingParams_listener,false)
-	// 	document.querySelector("button[id=doneTestingTask]").addEventListener(
-	// 		'click',doneTestingTask_listener,false)
-	// 	document.querySelector("button[id=stressTest]").addEventListener(
-	// 		'click',stressTest_listener,false)
-	// 	document.querySelector("button[id=gridPoints]").addEventListener(
-	// 		'click',gridPoints_listener,false)
-  // 	//---- (END) for Safari
   
   document.querySelector("button[id=doneEditingParams]")
     .addEventListener('pointerup', doneEditingParams_listener, false);
@@ -441,12 +421,14 @@ if (ENV.BatteryAPIAvailable) {
   // =================== LOAD MKMODELS IF SPECIES = MODEL =================//
 	let mkm;
 	if (TASK.Species == 'model') {
+    TASK.PunishTimeOut = 0;
 		mkm = new MkModels();
 		let fromTFHub = TASK.ModelConfig.modelURL.includes('tfhub');
 		await mkm.loadFeatureExtractor(TASK.ModelConfig.modelURL, { fromTFHub: fromTFHub });
 		let cvs = document.getElementById('model-canvas');
 		mkm.bindCanvasElement(cvs);
-		mkm.buildClassifier(TASK.ModelConfig);
+		mkm.buildClassifier(TASK);
+    // mkm.buildSvmClassifier(TASK.ModelConfig);
 	}
   // ======================== (END) LOAD MKMODELS ========================//
 
@@ -1048,7 +1030,7 @@ if (ENV.BatteryAPIAvailable) {
         // Render fixation screen
         if (TASK.Species == 'macaque' || TASK.Species == 'human') {
           ENV.FixationColor = 'white';
-        } else if (TASK.Species == 'marmoset') {
+        } else if (TASK.Species == 'marmoset' || TASK.Species == 'model') {
           ENV.FixationColor = 'blue';
         }
         frame.shown = [];
@@ -1098,6 +1080,7 @@ if (ENV.BatteryAPIAvailable) {
           CANVAS.sequencepre,
           [0],
           [0],
+          mkm
         );
       } else if (TASK.FixationUsesSample > 0) { // IF FixationUsesSample, show image/movie
         displayTrial(
@@ -1107,6 +1090,7 @@ if (ENV.BatteryAPIAvailable) {
           CURRTRIAL.sequencetaskscreen,
           CURRTRIAL.sequencelabel,
           CURRTRIAL.sequenceindex,
+          mkm
         );
         await moviestart_promise();
       }
@@ -1132,79 +1116,37 @@ if (ENV.BatteryAPIAvailable) {
       let touchhold_return; 
       if (FLAGS.stressTest == 1) { //IF automated stress test
         if (TASK.Species == 'model') {
-          let ctx = mkm.cvs.getContext('2d');
-          ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
+          
+          // let ctx = mkm.cvs.getContext('2d');
+          // ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
 
           touchhold_return = { type: 'theld' };
-          let sxOffset = (
-            IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
-            * ENV.PhysicalPPI
-            / ENV.ScreenRatio
-          );
+          
 
-          let sx = (
-            boundingBoxesFixation.x[0][1]
-            + boundingBoxesFixation.x[0][0]
-            - sxOffset
-          );
-          sx = Math.round(sx);
+          // ctx.drawImage(VISIBLECANVAS, sx, sy, sWidth, sHeight, 0, 0, 224, 224);
+          // let tensor = mkm.normalizePixelValues(mkm.cvs);
+          // let feature = mkm.featureExtractor.execute(tensor);
+          // feature = feature.reshape([2048]);
+          // let moments = tf.moments(feature);
+          // let subtracted = feature.sub(moments.mean);
+          // let scaledFeature = subtracted.divNoNan(moments.variance);
+          // scaledFeature.print();
+          // if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
+          //   console.log('CURRTRIAL.num:', CURRTRIAL.num);
+          //   mkm.dataObj.xTrain.push(feature);
+          //   if (CURRTRIAL.correctitem == 0) {
+          //     mkm.dataObj.yTrain.push([-1]);
+          //     // mkm.dataObj.yTrain.push([1, 0]);
+          //   } else if (CURRTRIAL.correctitem == 1) {
+          //     mkm.dataObj.yTrain.push([1]);
+          //     // mkm.dataObj.yTrain.push([0, 1]);
+          //   }
+          // } else {
+          //   mkm.dataObj.xTest = feature;
+          //   mkm.dataObj.yTest = CURRTRIAL.correctitem;
+          // }
 
-          let syOffset = (
-            IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
-            * ENV.PhysicalPPI 
-            / ENV.ScreenRatio
-            - ENV.FixationWindowRadius
-          );
-          let sy = (
-            (boundingBoxesFixation.y[0][1] + boundingBoxesFixation.y[0][0]) 
-            / ENV.ScreenRatio 
-            - syOffset
-          );
-          sy = Math.round(sy);
-
-          let sHeight = Math.round(
-            IMAGES.Sample[CURRTRIAL.correctitem].IMAGES.sizeInches
-            * ENV.PhysicalPPI
-          );
-          let sWidth = sHeight;
-
-          ctx.drawImage(VISIBLECANVAS, sx, sy, sWidth, sHeight, 0, 0, 224, 224);
-          let tensor = mkm.normalizePixelValues(mkm.cvs);
-          let feature = mkm.featureExtractor.execute(tensor);
-          feature = feature.reshape([2048]);
-          if (CURRTRIAL.num <= TASK.ModelConfig.trainIdx) {
-            mkm.dataObj.xTrain.push(feature);
-            if (CURRTRIAL.correctitem == 0) {
-              mkm.dataObj.yTrain.push([1, 0]);
-            } else if (CURRTRIAL.correctitem == 1) {
-              mkm.dataObj.yTrain.push([0, 1]);
-            }
-          } else {
-            mkm.dataObj.xTest = feature;
-            mkm.dataObj.yTest = CURRTRIAL.correctitem;
-          }
-
-          if (CURRTRIAL.num == TASK.ModelConfig.trainIdx) {
-            let xTrain = tf.data.array(mkm.dataObj.xTrain);
-            let yTrain = tf.data.array(mkm.dataObj.yTrain);
-            let trainDataset = tf.data.zip({ xs: xTrain, ys: yTrain })
-              .batch(4)
-              .shuffle(4);
-
-            const beginMs = performance.now();
-            await mkm.model.fitDataset(trainDataset, {
-              epochs: TASK.ModelConfig.epochs,
-              callbacks: {
-                onEpochEnd: async(epoch, logs) => {
-                  const secPerEpoch = (
-                    (performance.now() - beginMs) / (1000 * (epoch + 1))
-                  );
-                  console.log('Training model ... Approx. ' + `${secPerEpoch.toFixed(4)} sec/epoch`);
-                  console.log('logs:', logs);
-                }
-              }
-            });
-          }
+          
 
           let x = (
             boundingBoxesFixation.x[0][0]
@@ -1314,6 +1256,7 @@ if (ENV.BatteryAPIAvailable) {
           CANVAS.sequenceblank,
           [0, 0],
           [0, 0],
+          mkm
         );
       }
     }//WHILE waiting for NFixations
@@ -1415,6 +1358,7 @@ if (ENV.BatteryAPIAvailable) {
           CURRTRIAL.sequencetaskscreen,
           CURRTRIAL.sequencelabel,
           CURRTRIAL.sequenceindex,
+          mkm
         );
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
         CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime).toJSON();
@@ -1467,6 +1411,7 @@ if (ENV.BatteryAPIAvailable) {
           CURRTRIAL.sequencetaskscreen,
           CURRTRIAL.sequencelabel,
           CURRTRIAL.sequenceindex,
+          mkm
         );
       }
 
@@ -1554,13 +1499,84 @@ if (ENV.BatteryAPIAvailable) {
           x = 0;
           y = 0;
 
-          if (CURRTRIAL.num > TASK.ModelConfig.trainIdx) {
-            let yPred = mkm.model.predict(mkm.dataObj.xTest.reshape([1, 2048]));
-            yPred.print();
-					  yPred = yPred.reshape([2]).argMax(0);
-					  yPred = yPred.dataSync();
-					  currchoice = yPred[0];
+          if (CURRTRIAL.num == TASK.ModelConfig.trainIdx - 1) {
+            EVENTS['trainseries'] = {
+              TrainingAccuracy: [],
+              TrainingLoss: [],
+              MsPerEpoch: [],
+            };
+            
+            let modelConfigKeys = Object.keys(TASK.ModelConfig);
+            // batchSize defaults to 4 if not specified
+            let batchSz = modelConfigKeys.includes('batchSize') ? TASK.ModelConfig.batchSize : 4;
+            let shuffleSz = (
+              modelConfigKeys.includes('shuffleSize') ? TASK.ModelConfig.shuffleSize : 4
+            );
+            let yTrainLabelsObj = {};
+            for (let i = 0; i < mkm.units; i++) {
+              yTrainLabelsObj[`Label ${i}`] = mkm.dataObj.yTrainLabels.filter(x => x === i).length;
+            }
+            console.log('yTrainLabels:', mkm.dataObj.yTrainLabels);
+            console.log('yTrainLabelsObj:', yTrainLabelsObj);
+
+            let xTrain = tf.data.array(mkm.dataObj.xTrain);
+            let yTrain = tf.data.array(mkm.dataObj.yTrain);
+            let trainDataset = tf.data.zip({ xs: xTrain, ys: yTrain })
+              .batch(batchSz)
+              .shuffle(shuffleSz);
+
+            const beginMs = performance.now();
+            await mkm.model.fitDataset(trainDataset, {
+              epochs: TASK.ModelConfig.epochs,
+              callbacks: {
+                onEpochEnd: async(epoch, logs) => {
+                  const msPerEpoch = (performance.now() - beginMs) / (epoch + 1);
+                  const secPerEpoch = msPerEpoch / 1000;
+                  console.log('Training model ... Approx. ' + `${secPerEpoch.toFixed(4)} sec/epoch`);
+                  console.log('logs:', logs);
+                  EVENTS['trainseries'].TrainingAccuracy.push(logs.acc);
+                  EVENTS['trainseries'].TrainingLoss.push(logs.loss);
+                  EVENTS['trainseries'].MsPerEpoch.push(msPerEpoch);
+                }
+              }
+            });
+            console.log(EVENTS['trainseries']);
+          }
+
+          if (CURRTRIAL.num >= TASK.ModelConfig.trainIdx) {
+            let yPred = [];
+            if (TASK.SameDifferent > 0) {
+              mkm.dataObj.xTest.forEach(feature => {
+                let pred = mkm.model.predict(feature.reshape([1, mkm.inputShape[0]]));
+                pred.print();
+                pred = pred.reshape([mkm.units]).argMax(0);
+                pred = pred.dataSync();
+                yPred.push(pred[0]);
+              });
+              let allEqual = arr => arr.every(v => v === arr[0]);
+              if (allEqual(yPred)) {
+                currchoice = 0;
+              } else {
+                currchoice = 1;
+              }
+            } else {
+              mkm.dataObj.xTest.forEach(feature => {
+                let pred = mkm.model.predict(feature.reshape([1, mkm.inputShape[0]]));
+                pred.print();
+                pred = pred.reshape([mkm.units]).argMax(0);
+                pred = pred.dataSync();
+                yPred.push(pred[0]);
+              });
+              currchoice = yPred[0];
+            }
+            // let yPred = mkm.model.predict(mkm.dataObj.xTest.reshape([1, 2048]));
+            // yPred.print();
+					  // yPred = yPred.reshape([2]).argMax(0);
+					  // yPred = yPred.dataSync();
+					  // currchoice = yPred[0];
             console.log('yPred:', currchoice, 'yTrue:', CURRTRIAL.correctitem);
+            mkm.dataObj.xTest = [];
+            mkm.dataObj.yTest = [];
             
             if (TASK.ModelConfig.saveImages == 1) {
               if (currchoice != CURRTRIAL.correctitem) {
@@ -1775,6 +1791,7 @@ if (ENV.BatteryAPIAvailable) {
 				CANVAS.sequencepost,
 				Array(lenTsequencePost).fill(0),
 				Array(lenTsequencePost).fill(0),
+        mkm
       );
     } else if (CURRTRIAL.correct) { // ELSE IF correct, then REWARD
       CANVAS.sequencepost[1] = "reward";
@@ -1800,7 +1817,8 @@ if (ENV.BatteryAPIAvailable) {
 					range(0, lenTsequencePost - 1, 1),
 					CANVAS.sequencepost,
 					Array(lenTsequencePost).fill(0),
-					Array(lenTsequencePost).fill(0)
+					Array(lenTsequencePost).fill(0),
+          mkm
         );
 
         if (ble.connected == false && port.connected == false) {
@@ -1835,6 +1853,7 @@ if (ENV.BatteryAPIAvailable) {
 				CANVAS.sequencepost,
 				Array(lenSequencepost).fill(0),
         Array(lenSequencepost).fill(0),
+        mkm
       );
 
       let numTrialsToBufferPunishPeriod = 50;
