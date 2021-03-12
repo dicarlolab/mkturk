@@ -871,6 +871,19 @@ if (ENV.BatteryAPIAvailable) {
       );
 
       // Timing: blankdurationpre, sampleon, framerate
+      let blankdurationpre;
+
+      if (i == 0) {
+        if (typeof TASK.SamplePRE === 'undefined' || TASK.SamplePRE === null || TASK.SamplePRE < 0) {
+          blankdurationpre = Math.max(100, TASK.SampleOFF);
+        } else {
+          blankdurationpre = TASK.SamplePRE;
+        }
+      } else {
+        blankdurationpre = TASK.SampleOFF;
+      }
+
+
       let blankdurationpre = (
         (i == 0) ? Math.max(100, TASK.SampleOFF) : TASK.SampleOFF
       );
@@ -1346,6 +1359,9 @@ if (ENV.BatteryAPIAvailable) {
         if (FLAGS.trackeye) {
           ENV.Eye.EventType = 'eyemove';
         }
+        
+        await port.writeSampleCommandTriggertoUSB('1');
+
         let p1 = hold_promise(
           0,
           boundingBoxesSampleFixation,
@@ -1361,7 +1377,7 @@ if (ENV.BatteryAPIAvailable) {
           mkm
         );
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
-        CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime).toJSON();
+        CURRTRIAL.samplestarttime_string = new Date().toJSON();
         let race_return = await Promise.race([p1, p2]);
         FLAGS.acquiredTouch = 0;
         FLAGS.waitingforTouches = 0;
@@ -1404,6 +1420,7 @@ if (ENV.BatteryAPIAvailable) {
         CURRTRIAL.samplefixationxyt = [];
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
         CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime).toJSON();
+        await port.writeSampleCommandTriggertoUSB('1');
         await displayTrial(
           CURRTRIAL.tsequence,
           CURRTRIAL.sequencegridindex,
@@ -1866,8 +1883,11 @@ if (ENV.BatteryAPIAvailable) {
       await Promise.all([p1, p2]);
     }
 
-    // CURRTRIAL.endtime = Date.now() - ENV.CurrentDate.valueOf();
-		// logEVENTS("EndTime", CURRTRIAL.endtime, "trialseries")
+    port.writeSampleCommandTriggertoUSB('0');
+
+    // Log trial end time
+    CURRTRIAL.endtime = Date.now() - ENV.CurrentDate.valueOf();
+		logEVENTS("EndTime", CURRTRIAL.endtime, "trialseries")
 
     //============ (end) DELIVER REWARD/PUNISH ============//
     //HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    HOUSEKEEPING    //
