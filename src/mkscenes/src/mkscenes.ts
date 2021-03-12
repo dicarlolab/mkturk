@@ -51,4 +51,17 @@ export class MkScenes {
     console.log('Rendering Scene', idx);
     
   }
+
+  public getScreenPosition(vec: THREE.Vector3, cam: THREE.PerspectiveCamera) {
+    // offsetX = widthHalf; offsetY = heightHalf;
+    let offsetX = 0.5 * this.renderer.getContext().canvas.width;
+    let offsetY = 0.5 * this.renderer.getContext().canvas.height;
+
+    vec.project(cam);
+
+    vec.x = (vec.x * offsetX) + offsetX;
+    vec.y = -1 * (vec.y * offsetY) + offsetY;
+
+    return { x: vec.x, y: vec.y };
+  }
 }

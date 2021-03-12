@@ -13,6 +13,7 @@ const fixBtn = document.querySelector('#fix-btn') as HTMLButtonElement;
 const factorizeBtn = document.querySelector('#factorize-btn') as HTMLButtonElement;
 
 const previewEditorDiv = document.querySelector('#editor-preview') as HTMLDivElement;
+const renderBtn = document.querySelector('#render-btn') as HTMLButtonElement;
 const saveBtn = document.querySelector('#save-btn') as HTMLButtonElement;
 
 let mks = new MkScenes(playground);
@@ -47,6 +48,10 @@ factorizeBtn.addEventListener('click', (evt: Event) => {
 
 
 let previewEditor = new JSONEditor(previewEditorDiv);
+renderBtn.addEventListener('click', (evt: Event) => {
+  // TODO: Render logic
+  console.log('Render scene file');
+});
 saveBtn.addEventListener('click', (evt: Event) => {
   // TODO: Saving logic
   console.log('Save scene file');
