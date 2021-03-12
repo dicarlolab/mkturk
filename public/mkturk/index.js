@@ -1377,7 +1377,7 @@ if (ENV.BatteryAPIAvailable) {
           mkm
         );
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
-        CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime).toJSON();
+        CURRTRIAL.samplestarttime_string = new Date().toJSON();
         let race_return = await Promise.race([p1, p2]);
         FLAGS.acquiredTouch = 0;
         FLAGS.waitingforTouches = 0;
@@ -1883,7 +1883,7 @@ if (ENV.BatteryAPIAvailable) {
       await Promise.all([p1, p2]);
     }
 
-    await port.writeSampleCommandTriggertoUSB('0');
+    port.writeSampleCommandTriggertoUSB('0');
 
     // Log trial end time
     CURRTRIAL.endtime = Date.now() - ENV.CurrentDate.valueOf();
