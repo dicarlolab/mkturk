@@ -1,4 +1,4 @@
-import * as firebase from "firebase/app";
+import firebase from "firebase/app";
 import "firebase/firestore";
 type Timestamp = firebase.firestore.Timestamp;
 import { Mkeditor, Mkthree, Mkimage, Mkchart } from "./mkmedia";
