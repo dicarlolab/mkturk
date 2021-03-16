@@ -6,6 +6,7 @@ import './init';
 import firebase from 'firebase/app';
 
 const auth = firebase.auth();
+const db = firebase.firestore();
 
 import { Fireplace } from './fireplace';
 let fp = new Fireplace();
@@ -30,9 +31,12 @@ auth.getRedirectResult().then(result => {
 
 const table = document.querySelector('#table') as HTMLDivElement;
 
-// let fp = new Fireplace();
-// let stuff = await fp.getAgentList();
-// console.log(stuff);
+
+let query = db.collection('mkturkdata')
+  .where('Doctype', '==', 'task')
+  .where('CurrentDateValue', '<', fp.queryEndDateValue)
+  .where('CurrentDateValue', '>=', fp.queryStartDateValue)
+  .onSnapshot(snapshot => fp.queryCallback(snapshot));
 
 
 
