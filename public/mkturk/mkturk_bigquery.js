@@ -39,7 +39,7 @@ var nsamples = Object.keys(EVENTS[eventtype][eventname]).length
 				{
 					'agent': ENV.Subject,
 					'timestamp': EVENTS[eventtype][eventname][i][1],
-		  			'trial_num': EVENTS[eventtype][eventname][i][0],
+		  		'trial_num': EVENTS[eventtype][eventname][i][0],
 					'num_eyes': EVENTS[eventtype][eventname][i][2],
 					'left_x': EVENTS[eventtype][eventname][i][3],
 					'left_y': EVENTS[eventtype][eventname][i][4],
@@ -66,11 +66,11 @@ console.log("BIGQUERY: Upload EyeData")
 }//FUNCTION saveEyeDatatoBigQuery
 
 function saveDisplayTimestoBigQuery(){
-eventtype = 'timeseries'
-eventname1 = 'FrameNum'
-eventname2 = 'TSequenceDesired'
-eventname0 = 'TSequenceActual'
-var nsamples = Object.keys(EVENTS[eventtype][eventname0]).length 
+	eventtype = 'timeseries'
+	eventname1 = 'FrameNum'
+	eventname2 = 'TSequenceDesired'
+	eventname0 = 'TSequenceActual'
+	var nsamples = Object.keys(EVENTS[eventtype][eventname0]).length 
 
 	var displaydata = []
 	for (var i=0; i<=nsamples-1; i++){
@@ -78,7 +78,7 @@ var nsamples = Object.keys(EVENTS[eventtype][eventname0]).length
 			{
 				'agent': ENV.Subject,
 				'timestamp': EVENTS[eventtype][eventname0][i][1],
-	  			'trial_num': EVENTS[eventtype][eventname0][i][0],
+	  		'trial_num': EVENTS[eventtype][eventname0][i][0],
 				'frame_num': EVENTS[eventtype][eventname1][i].slice(2,EVENTS[eventtype][eventname1][i].length),
 				't_desired': EVENTS[eventtype][eventname2][i].slice(2,EVENTS[eventtype][eventname2][i].length),
 				't_actual': EVENTS[eventtype][eventname0][i].slice(2,EVENTS[eventtype][eventname0][i].length)
@@ -88,7 +88,7 @@ var nsamples = Object.keys(EVENTS[eventtype][eventname0]).length
 
 	bqInsertDisplayTimes(displaydata)
 
-console.log("BIGQUERY: Upload DisplayTimes")
+	console.log("BIGQUERY: Upload DisplayTimes")
 
 	//reset eye event accumulation in mkturk (reduce memory load)
 	EVENTS[eventtype][eventname0] = {}
