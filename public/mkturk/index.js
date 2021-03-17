@@ -884,9 +884,6 @@ if (ENV.BatteryAPIAvailable) {
       }
 
 
-      let blankdurationpre = (
-        (i == 0) ? Math.max(100, TASK.SampleOFF) : TASK.SampleOFF
-      );
 
       // Create Movie Sequence
       [movie_sequence, movie_tsequence, movie_framenum] = (
@@ -1360,8 +1357,10 @@ if (ENV.BatteryAPIAvailable) {
           ENV.Eye.EventType = 'eyemove';
         }
         
-        await port.writeSampleCommandTriggertoUSB('1');
-
+        if (port.connected) {
+          await port.writeSampleCommandTriggertoUSB('1');
+        }
+        
         let p1 = hold_promise(
           0,
           boundingBoxesSampleFixation,
@@ -1420,7 +1419,10 @@ if (ENV.BatteryAPIAvailable) {
         CURRTRIAL.samplefixationxyt = [];
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
         CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime).toJSON();
-        await port.writeSampleCommandTriggertoUSB('1');
+        if (port.connected) {
+          await port.writeSampleCommandTriggertoUSB('1');
+        }
+        
         await displayTrial(
           CURRTRIAL.tsequence,
           CURRTRIAL.sequencegridindex,
@@ -1883,7 +1885,10 @@ if (ENV.BatteryAPIAvailable) {
       await Promise.all([p1, p2]);
     }
 
-    port.writeSampleCommandTriggertoUSB('0');
+    if (port.connected) {
+      port.writeSampleCommandTriggertoUSB('0');
+    }
+    
 
     // Log trial end time
     CURRTRIAL.endtime = Date.now() - ENV.CurrentDate.valueOf();

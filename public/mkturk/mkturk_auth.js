@@ -152,3 +152,13 @@ auth.onAuthStateChanged((user) => {
 });
 
 
+
+function firebaseRedirectSignIn() {
+  //log out and show the redirect sign-in screen
+  //default behavior of redirect ui is to automatically log-in if there is one user
+  //go to accounts.google.com to log-in a second user
+
+  auth.signOut().then(() => {
+    auth.signInWithRedirect(provider);
+  });
+}
