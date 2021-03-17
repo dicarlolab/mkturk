@@ -56,24 +56,34 @@ async function updateEventDataonFirestore(EVENTS){
 	var batch = db.batch();
 
 	var taskRef = db.collection(FIRESTORECOLLECTION.DATA).doc(ENV.FirestoreDocRoot + '_task')
-	batch.update(taskRef,EVENTS.trialseries)
-	batch.update(taskRef,{'Battery': EVENTS['timeseries']['Battery']})
+	
+	if (
+		Object.keys(EVENTS['trialseries']).includes('ReinforcementTime')
+		&& Array.isArray(EVENTS['trialseries']['ReinforcementTime'])
+	) {
+		console.log(`EVENTS.trialseries.ReinforcementTime: ${EVENTS.trialseries.ReinforcementTime}`);
+		// clean and replace empty cells in a sparse array with -1;
+		// May solve https://github.com/issalab/mkturk/issues/31
+		EVENTS['trialseries']['ReinforcementTime'] = (
+			Array.from(EVENTS['trialseries']['ReinforcementTime'], elem => elem || -1)
+		);
+	}
+	batch.update(taskRef, EVENTS.trialseries);
+	batch.update(taskRef, { 'Battery': EVENTS['timeseries']['Battery'] });
 
 	// Commit the batch
-	var currtrial = CURRTRIAL.num
-	await batch.commit().then(function () {
-		FLAGS.firestorelastsavedtrial = currtrial
-	    console.log("FIRESTORE: Trial " + FLAGS.firestorelastsavedtrial + "--Update Task Doc");
-
-	    delete firestoreTimer //to start a new timer
-		pingFirestore()
-	})
-	.catch(function(error) {
-		console.error("FIRESTORE: !Trial" + FLAGS.firestorelastsavedtrial + "--Error updating database task doc: ", error);
-
-		delete firestoreTimer //to start a new timer
-		pingFirestore()
+	var currtrial = CURRTRIAL.num;
+	await batch.commit().then(() => {
+		FLAGS.firestorelastsavedtrial = currtrial;
+		console.log(`FIRESTORE: Trial ${FLAGS.firestorelastsavedtrial}--Update Task Doc`);
+		delete firestoreTimer;
+		pingFirestore();
+	}).catch(error => {
+		console.error(`FIRESTORE: !Trial ${FLAGS.firestorelastsavedtrial}--Error updating database task doc: ${error}`);
+		delete firestoreTimer;
+		pingFirestore();
 	});
+	
 }//FUNCTION updateEventDataonFirestore
 //================== UPDATE FIRESTORE WITH EVENT DATA (end) ====================//
 
