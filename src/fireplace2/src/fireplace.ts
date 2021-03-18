@@ -13,6 +13,7 @@ export class Fireplace {
   public tQueryInterval: number;
   private tableElem: HTMLDivElement;
   private editorElem: HTMLDivElement;
+  private table: Tabulator;
 
   constructor() {
     this.queryEndDateValue = new Date(new Date().toLocaleDateString()).valueOf() 
@@ -39,7 +40,7 @@ export class Fireplace {
   }
 
   private processData(snapshot: firebase.firestore.QuerySnapshot<firebase.firestore.DocumentData>) {
-    this.tLastQuery = Date.now();
+    // this.tLastQuery = Date.now();
     console.log('snapshot', snapshot);
     let data: any[] = [];
     let agentList: string[] = [];
@@ -51,12 +52,14 @@ export class Fireplace {
       let c: math.Matrix;
       let numCorrect: number;
       let numTrials: number;
+      let tLastTrial: number;
 
       if (Array.isArray(d.Response)) {
         r = matrix(d.Response);
         c = matrix(d.CorrectItem);
         numCorrect = (<math.Matrix>filter(subtract(r, c) as math.Matrix, el => el == 0)).size()[0];
         numTrials = d.Response.length;
+        tLastTrial = d.CurrentDateValue + d.StartTime[d.StartTime.length - 1];
       } else {
         return; // skip to next iteration since d.Response is undefined
       }
@@ -66,10 +69,12 @@ export class Fireplace {
         if (dateIdx > -1) {
           data[agentIdx]['numTrials'][dateIdx] += numTrials;
           data[agentIdx]['numCorrect'][dateIdx] += numCorrect;
+          data[agentIdx]['tLastTrial'] = tLastTrial;
         } else {
           data[agentIdx]['dates'].push(dateString);
           data[agentIdx]['numTrials'].push(numTrials);
           data[agentIdx]['numCorrect'].push(numCorrect);
+          data[agentIdx]['tLastTrial'] = tLastTrial;
         }
         
       } else {
@@ -78,38 +83,137 @@ export class Fireplace {
           agent: d.Agent,
           dates: [dateString],
           numTrials: [numTrials],
-          numCorrect: [numCorrect]
+          numCorrect: [numCorrect],
+          tLastTrial: tLastTrial
         });
       }
     });
-    this.constructTable(data);
+    
+    if (this.tLastQuery == 0) {
+      console.log(this.table);
+      this.constructTable(data);
+      this.tLastQuery = Date.now();
+    } else {
+      this.updateTable(data);
+      this.tLastQuery = Date.now();
+    }
+    
   }
 
   private constructTable(data: any[]) {
-    console.log(data);
+    let timeNow = Date.now();
 
-    function numTrialAccessor(cell: Tabulator.CellComponent, params: any, onRendered: any) {
+
+    function numTrialMutator(value: any, data: any, type: any, params: any, component: any) {
       if (params.range == 24) {
         let dateStringToday = new Date().toLocaleDateString();
-        console.log(cell.getRow());
+        let idx = data['dates'].indexOf(dateStringToday);
+        if (idx > -1) {
+          return data['numTrials'][idx];
+        } else {
+          return 0;
+        }
+      } else if (params.range == 48) {
+        if (data['numTrials'].slice(1).slice(-2).length < 2) {
+          return NaN;
+        } else {
+          let numTrialsSum = (
+            data['numTrials'].slice(1).slice(-2).reduce((a: number, b: number) => a + b, 0)
+          );
+          return numTrialsSum / 2;
+        }
       }
-      
     }
 
-    let table = new Tabulator(this.tableElem, {
+    function pctCorrectMutator(value: any, data: any, type: any, params: any, component: any) {
+      if (params.range == 24) {
+        let dateStringToday = new Date().toLocaleDateString();
+        let idx = data['dates'].indexOf(dateStringToday);
+        if (idx > -1) {
+          return Math.round(data['numCorrect'][idx] / data['numTrials'][idx] * 100);
+        } else {
+          return 0;
+        }
+      } else if (params.range == 48) {
+        if (data['numCorrect'].slice(1).slice(-2).length < 2) {
+          return NaN;
+        } else {
+          let numCorrectSum = (
+            data['numCorrect'].slice(1).slice(-2).reduce((a: number, b: number) => a + b, 0)
+          );
+          let numTrialsSum = (
+            data['numTrials'].slice(1).slice(-2).reduce((a: number, b: number) => a + b, 0)
+          );
+          return Math.round(numCorrectSum / numTrialsSum * 100);
+        }
+      }
+    }
+
+    function tSinceLastTrial(value: any, data: any, type: any, params: any, component: any) {
+      let dtt = Date.now();
+      console.log(dtt);
+      return Math.round((dtt - data.tLastTrial) / 1000 / 60);
+    }
+
+    function tLastTrialFormat(cell: Tabulator.CellComponent) {
+      if (cell.getValue() <= 5) {
+        cell.getElement().style.background = '#198754';
+      } else if (cell.getValue() > 5 && cell.getValue() < 60) {
+        cell.getElement().style.background = 'dc3545';
+      }
+      return cell.getValue();
+    }
+
+    this.table = new Tabulator(this.tableElem, {
       data: data,
       layout: 'fitColumns',
       columns: [
         {
-          title: 'n (today)',
-          field: 'numTrials',
-          formatter: numTrialAccessor,
-          formatterParams: { range: 24 }
+          title: 'Agent',
+          field: 'agent'
         },
+        {
+          title: '% (today)',
+          field: 'pctCorrectToday',
+          mutator: pctCorrectMutator,
+          mutatorParams: { range: 24 }
+        },
+        {
+          title: 'n (today)',
+          field: 'numTrialsToday',
+          mutator: numTrialMutator,
+          mutatorParams: { range: 24 }
+        },
+        {
+          title: '% (-2d)',
+          field: 'pctCorrectAvg',
+          mutator: pctCorrectMutator,
+          mutatorParams: { range: 48 }
+        },
+        {
+          title: 'n (-2d)',
+          field: 'numTrialsAvg',
+          mutator: numTrialMutator,
+          mutatorParams: { range: 48 }
+        },
+        {
+          title: 'tLast',
+          field: 'tSinceLastTrial',
+          mutator: tSinceLastTrial,
+          formatter: tLastTrialFormat
+        }
+        
         
       ],
       tooltips: true,
+      dataLoaded: function(data) {
+        console.log(data);
+      }
     });
+  }
+
+  private updateTable(data: any[]) {
+    this.table.replaceData(data);
   }
 
   public registerDomElement(type: string, elem: HTMLDivElement) {

@@ -29,9 +29,20 @@ auth.getRedirectResult().then(result => {
 
 
 const tableElem = document.querySelector('#table') as HTMLDivElement;
-// console.log(tableElem);
+const endDateInput = document.querySelector('#end-date') as HTMLInputElement;
+endDateInput.valueAsDate = new Date();
+const refreshBtn = document.querySelector('#refresh-btn') as HTMLButtonElement;
+refreshBtn.addEventListener('pointerup', (evt: Event) => {
+  console.log('hello');
+  fp.tLastQuery = 0;
+  let query = db.collection('mkturkdata')
+    .where('Doctype', '==', 'task')
+    .where('CurrentDateValue', '<', fp.queryEndDateValue)
+    .where('CurrentDateValue', '>=', fp.queryStartDateValue)
+    .onSnapshot(snapshot => fp.queryCallback(snapshot));
+});
 
-fp.registerDomElement('table', tableElem)
+fp.registerDomElement('table', tableElem);
 
 
 let query = db.collection('mkturkdata')
