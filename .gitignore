@@ -9,3 +9,6 @@ userManagement.js
 initFirestore.js
 *.code-workspace
 Icon*
+tmp/
+.yarn/
+.yarnrc.yml
