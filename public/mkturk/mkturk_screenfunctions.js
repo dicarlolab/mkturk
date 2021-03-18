@@ -90,7 +90,7 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						//Overlay fixation dot
 						renderShape2D("FixationDot",gr[f],OFFSCREENCANVAS)
 
-						if (port.connected){
+						if (port.connected && TASK.Photodiode > 0){
 							renderShape2D("PhotodiodeSquare",
 								[ ENV.PhotodiodeSquareX, ENV.PhotodiodeSquareY ], OFFSCREENCANVAS)
 						}
@@ -370,7 +370,7 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						//Overlay fixation dot
 						renderShape2D("FixationDot",gr[f],OFFSCREENCANVAS)
 
-						if (port.connected){
+						if (port.connected && TASK.Photodiode > 0){
 							renderShape2D("PhotodiodeSquare",
 								[ ENV.PhotodiodeSquareX, ENV.PhotodiodeSquareY ], OFFSCREENCANVAS)
 						}

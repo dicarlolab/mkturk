@@ -674,6 +674,15 @@ if (ENV.BatteryAPIAvailable) {
       CURRTRIAL.reset();
       EVENTS.reset_trialseries();
       EVENTS.reset_timeseries();
+
+	    if (typeof(TASK.Photodiode) == 'undefined') {
+	      TASK.Photodiode = 0;
+	    }
+
+	    if (typeof(TASK.SampleCommand) == 'undefined') {
+	      TASK.SampleCommand = 0;
+	    }
+
     } //IF need2loadParameters
 
     if (FLAGS.purge == 1) {
@@ -1356,8 +1365,8 @@ if (ENV.BatteryAPIAvailable) {
         if (FLAGS.trackeye) {
           ENV.Eye.EventType = 'eyemove';
         }
-        
-        if (port.connected) {
+       
+        if (port.connected && TASK.SampleCommand > 0) {
           await port.writeSampleCommandTriggertoUSB('1');
         }
         
@@ -1419,7 +1428,7 @@ if (ENV.BatteryAPIAvailable) {
         CURRTRIAL.samplefixationxyt = [];
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
         CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime).toJSON();
-        if (port.connected) {
+        if (port.connected && TASK.SampleCommand > 0) {
           await port.writeSampleCommandTriggertoUSB('1');
         }
         
@@ -1840,6 +1849,10 @@ if (ENV.BatteryAPIAvailable) {
           mkm
         );
 
+		CURRTRIAL.reinforcementtime = Date.now() - ENV.CurrentDate.valueOf();
+		logEVENTS("ReinforcementTime", CURRTRIAL.reinforcementtime, "trialseries")
+
+
         if (ble.connected == false && port.connected == false) {
           await Promise.all([p1]);
         } else if (ble.connected == true) {
@@ -1885,7 +1898,7 @@ if (ENV.BatteryAPIAvailable) {
       await Promise.all([p1, p2]);
     }
 
-    if (port.connected) {
+    if (port.connected && TASK.SampleCommand > 0) {
       port.writeSampleCommandTriggertoUSB('0');
     }
     
@@ -1901,72 +1914,72 @@ if (ENV.BatteryAPIAvailable) {
 	  //================= HOUSEKEEPING =================//
     let ITIstart = performance.now();
 
-    if (FLAGS.savedata == 0) {
-      let photodiode = { t: [], v: [] };
+    // if (FLAGS.savedata == 0) {
+    //   let photodiode = { t: [], v: [] };
 
-      for (let q in EVENTS['timeseries']['Arduino']) { // FOR q Arduino events
-        let evt = EVENTS['timeseries']['Arduino'][q];
-        if (evt[0] != CURRTRIAL.num) {
-          continue;
-        }
+    //   for (let q in EVENTS['timeseries']['Arduino']) { // FOR q Arduino events
+    //     let evt = EVENTS['timeseries']['Arduino'][q];
+    //     if (evt[0] != CURRTRIAL.num) {
+    //       continue;
+    //     }
 
-        let tArduino = new Date(evt[1]).valueOf() - ENV.CurrentDate.valueOf();
+    //     let tArduino = new Date(evt[1]).valueOf() - ENV.CurrentDate.valueOf();
 
-        if (evt[2].indexOf('sa') == 0) { // IF sample command return
-          if (evt[2][2] == 1) {
-            let dSampleCommandOn = tArduino - EVENTS['trialseries']['SampleStartTime'];
-            console.log(`d_roundtrip_commandON=${dSampleCommandOn}`);
-          } else if (evt[2][2] == 0) {
-            let dSampleCommandOff = tArduino - EVENTS['trialseries']['EndTime'];
-            console.log(`d_roundtrip_commandOFF=${dSampleCommandOff}`);
-          }
+    //     if (evt[2].indexOf('sa') == 0) { // IF sample command return
+    //       if (evt[2][2] == 1) {
+    //         let dSampleCommandOn = tArduino - EVENTS['trialseries']['SampleStartTime'];
+    //         console.log(`d_roundtrip_commandON=${dSampleCommandOn}`);
+    //       } else if (evt[2][2] == 0) {
+    //         let dSampleCommandOff = tArduino - EVENTS['trialseries']['EndTime'];
+    //         console.log(`d_roundtrip_commandOFF=${dSampleCommandOff}`);
+    //       }
 
-        } else if (evt[2].indexOf('pu') == 0) {
-          console.log(`d_roundtrip_pumpON=${tArduino - EVENTS['trialseries']['ReinforcementTime']}`);
-        }
+    //     } else if (evt[2].indexOf('pu') == 0) {
+    //       console.log(`d_roundtrip_pumpON=${tArduino - EVENTS['trialseries']['ReinforcementTime']}`);
+    //     }
 
-        if (evt[2].indexOf('ph') == 0) {
-          photodiode.t.push(tArduino - EVENTS['trialseries']['SampleStartTime']); // measure re: sample start
-          photodiode.v.push(evt[2].slice(2, evt[2].length));
-        }
-      }
+    //     if (evt[2].indexOf('ph') == 0) {
+    //       photodiode.t.push(tArduino - EVENTS['trialseries']['SampleStartTime']); // measure re: sample start
+    //       photodiode.v.push(evt[2].slice(2, evt[2].length));
+    //     }
+    //   }
 
-      // IF photodiode vals
-      if (photodiode.t.length > 1) {
-        let tDisplay = {
-          d: [],
-          a: [],
-          p: [],
-          v: []
-        };
-        let dt = { software: [], hardware: [] };
-        let n = EVENTS['timeseries']['TSequenceDesired'][CURRTRIAL.num].length;
-        tDisplay.d = EVENTS['timeseries']['TSequenceDesired'][CURRTRIAL.num].slice(2, n);
-        tDisplay.a = EVENTS['timeseries']['TSequenceDesired'][CURRTRIAL.num].slice(2, n);
+    //   // IF photodiode vals
+    //   if (photodiode.t.length > 1) {
+    //     let tDisplay = {
+    //       d: [],
+    //       a: [],
+    //       p: [],
+    //       v: []
+    //     };
+    //     let dt = { software: [], hardware: [] };
+    //     let n = EVENTS['timeseries']['TSequenceDesired'][CURRTRIAL.num].length;
+    //     tDisplay.d = EVENTS['timeseries']['TSequenceDesired'][CURRTRIAL.num].slice(2, n);
+    //     tDisplay.a = EVENTS['timeseries']['TSequenceDesired'][CURRTRIAL.num].slice(2, n);
 
-        for (let i = tDisplay.d.length - 1; i >= 0; i--) { // backwards traversal
-          dt.software[i] = Math.round(tDisplay.a[i] - tDisplay.d[i]);
-          for (let j = 0; j < photodiode.t.length; j++) {
-            if (photodiode.t[j] > tDisplay.a[i]) {
-              tDisplay.p[i] = photodiode.t[j];
-              tDisplay.v[i] = photodiode.v[j];
-              dt.hardware[i] = Math.round(tDisplay.p[i] - tDisplay.a[i]);
-              photodiode.t[j] = -99999;
-              break;
-            }
-          }
-        }
+    //     for (let i = tDisplay.d.length - 1; i >= 0; i--) { // backwards traversal
+    //       dt.software[i] = Math.round(tDisplay.a[i] - tDisplay.d[i]);
+    //       for (let j = 0; j < photodiode.t.length; j++) {
+    //         if (photodiode.t[j] > tDisplay.a[i]) {
+    //           tDisplay.p[i] = photodiode.t[j];
+    //           tDisplay.v[i] = photodiode.v[j];
+    //           dt.hardware[i] = Math.round(tDisplay.p[i] - tDisplay.a[i]);
+    //           photodiode.t[j] = -99999;
+    //           break;
+    //         }
+    //       }
+    //     }
 
-        console.log(tDisplay.a);
-        console.log(tDisplay.p);
-        console.log(dt.software);
-        console.log(dt.hardware);
-        console.log(tdisplay.v);
-        console.log(CURRTRIAL.sequencetaskscreen);
-      }
+    //     console.log(tDisplay.a);
+    //     console.log(tDisplay.p);
+    //     console.log(dt.software);
+    //     console.log(dt.hardware);
+    //     console.log(tdisplay.v);
+    //     console.log(CURRTRIAL.sequencetaskscreen);
+    //   }
 
-      updateImageLoadingAndDisplayText(' '); // displays relevant timing information
-    }
+    //   updateImageLoadingAndDisplayText(' '); // displays relevant timing information
+    // }
 
     // Calibrate eye
     if (FLAGS.trackeye > 0) { // IF track eye
