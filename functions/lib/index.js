@@ -6,117 +6,122 @@ const bigquery_1 = require("@google-cloud/bigquery");
 const DeviceDetector = require("device-detector-js");
 const admin = require("firebase-admin");
 admin.initializeApp();
-// // Start writing Firebase Functions
-// // https://firebase.google.com/docs/functions/typescript
-//
-// export const helloWorld = functions.https.onRequest((request, response) => {
-//  response.send("Hello from Firebase!");
-// });
-function insertHandler(err, apiResp) {
-    if (err) {
-        console.log(err);
-        if (err.name === 'PartialFailureError') {
-            console.log(err);
-        }
-    }
-}
 ;
 ;
 ;
 ;
-const schema = {
-    "fields": [
-        {
-            "name": "timestamp",
-            "type": "TIMESTAMP",
-            "mode": "REQUIRED"
-        },
-        {
-            "name": "trial_num",
-            "type": "INTEGER",
-            "mode": "REQUIRED"
-        },
-        {
-            "name": "num_eyes",
-            "type": "INTEGER",
-            "mode": "REQUIRED"
-        },
-        {
-            "name": "left_x",
-            "type": "FLOAT",
-            "mode": "NULLABLE"
-        },
-        {
-            "name": "left_y",
-            "type": "FLOAT"
-        },
-        {
-            "name": "left_aux_0",
-            "type": "FLOAT"
-        },
-        {
-            "name": "left_aux_1",
-            "type": "FLOAT"
-        },
-        {
-            "name": "right_x",
-            "type": "FLOAT"
-        },
-        {
-            "name": "right_y",
-            "type": "FLOAT"
-        },
-        {
-            "name": "right_aux_0",
-            "type": "FLOAT"
-        },
-        {
-            "name": "right_aux_1",
-            "type": "FLOAT"
-        }
-    ]
-};
-const createTableOptions = {
-    "schema": schema,
-    "timePartitioning": {
-        "type": "DAY",
-        "field": "timestamp"
-    }
-};
+// const schema = {
+//   "fields": [
+//     {
+//       "name": "timestamp",
+//       "type": "TIMESTAMP",
+//       "mode": "REQUIRED"
+//     },
+//     {
+//       "name": "trial_num",
+//       "type": "INTEGER",
+//       "mode": "REQUIRED"
+//     },
+//     {
+//       "name": "num_eyes",
+//       "type": "INTEGER",
+//       "mode": "REQUIRED"
+//     },
+//     {
+//       "name": "left_x",
+//       "type": "FLOAT",
+//       "mode": "NULLABLE"
+//     },
+//     {
+//       "name": "left_y",
+//       "type": "FLOAT",
+//       "mode": "NULLABLE"
+//     },
+//     {
+//       "name": "left_aux_0",
+//       "type": "FLOAT",
+//       "mode": "NULLABLE"
+//     },
+//     {
+//       "name": "left_aux_1",
+//       "type": "FLOAT",
+//       "mode": "NULLABLE"
+//     },
+//     {
+//       "name": "right_x",
+//       "type": "FLOAT",
+//       "mode": "NULLABLE"
+//     },
+//     {
+//       "name": "right_y",
+//       "type": "FLOAT",
+//       "mode": "NULLABLE"
+//     },
+//     {
+//       "name": "right_aux_0",
+//       "type": "FLOAT",
+//       "mode": "NULLABLE"
+//     },
+//     {
+//       "name": "right_aux_1",
+//       "type": "FLOAT",
+//       "mode": "NULLABLE"
+//     }
+//   ]
+// };
+// const createTableOptions = {
+//   "schema": schema,
+//   "timePartitioning": {
+//     "type": "DAY",
+//     "field": "timestamp"
+//   }
+// };
 /* caller must guarantee that all rows belong to the same agent */
 exports.bqInsertEyeData = functions.https.onCall((rows) => {
-    const bq = new bigquery_1.BigQuery();
-    const dataset = bq.dataset('eyedata');
-    const table = dataset.table(rows[0].agent);
-    console.log("rows received");
-    table.exists().then(async (existsData) => {
-        const exists = existsData[0];
-        if (exists) {
-            rows.forEach((row) => {
-                console.log('row', row);
-                delete row.agent;
-                row.timestamp = new Date(row.timestamp);
-            });
-            console.log('existing table entire rows:', rows);
-            table.insert(rows, {}, insertHandler);
-            console.log('exists table insert');
-        }
-        else {
-            const [newTable] = await dataset.createTable(rows[0].agent, createTableOptions);
-            console.log(`Table ${newTable.id} created with partitioning: `);
-            console.log(newTable.metadata.timePartitioning);
-            rows.forEach((row) => {
-                console.log('row', row);
-                delete row.agent;
-                row.timestamp = new Date(row.timestamp);
-            });
-            console.log('new table entire rows:', rows);
-            newTable.insert(rows, {}, insertHandler);
-            console.log('new table insert');
-        }
-    }).catch(error => {
-        console.error("Exists function error:", error);
-    });
+    // const bq = new BigQuery();
+    // const dataset = bq.dataset('eyedata');
+    // const table = dataset.table(rows[0].agent);
+    console.log("bqinserteyedata rows received:", rows);
+    // console.log('bqinserteyedata AGENT:', rows[0].agent);
+    // table.exists().then(async (existsData) => {
+    //   const exists = existsData[0];
+    //   if (exists) {
+    //     rows.forEach((row: any) => {
+    //       console.log('row', row);
+    //       delete row.agent;
+    //       row.timestamp = new Date(row.timestamp);
+    //       for (let key in row) {
+    //         if (Number.isNaN(row[key])) {
+    //           row[key] = null;
+    //         }
+    //       }
+    //     });
+    //     console.log('existing table entire rows:', rows);
+    //     table.insert(rows, {}, insertHandler);
+    //     console.log('exists table insert');
+    //     return;
+    //   } else {
+    //     const [newTable] = await dataset.createTable(rows[0].agent, createTableOptions);
+    //     console.log(`Table ${newTable.id} created with partitioning: `);
+    //     console.log(newTable.metadata.timePartitioning);
+    //     rows.forEach((row: any) => {
+    //       console.log('row', row);
+    //       delete row.agent;
+    //       row.timestamp = new Date(row.timestamp);
+    //       for (let key in row) {
+    //         if (Number.isNaN(row[key])) {
+    //           row[key] = null;
+    //         }
+    //       }
+    //     });
+    //     console.log('new table entire rows:', rows);
+    //     newTable.insert(rows, {}, insertHandler);
+    //     console.log('new table insert');
+    //     return;
+    //   }
+    // }).catch(error => {
+    //   console.error("Exists function error:", error);
+    // });
 });
 exports.bqQuery = functions.https.onCall(async (query) => {
     const bq = new bigquery_1.BigQuery();
@@ -500,69 +505,80 @@ exports.submitAssignment = functions.https.onCall(async (data) => {
         return { status: 'error', message: error.message };
     }
 });
-const displayTimeSchema = {
-    'fields': [
-        {
-            'name': 'timestamp',
-            'type': 'TIMESTAMP',
-            'mode': 'REQUIRED'
-        },
-        {
-            'name': 'trial_num',
-            'type': 'INTEGER',
-            'mode': 'REQUIRED'
-        },
-        {
-            'name': 'frame_num',
-            'type': 'INTEGER',
-            'mode': 'REPEATED'
-        },
-        {
-            'name': 't_desired',
-            'type': 'FLOAT',
-            'mode': 'REPEATED'
-        },
-        {
-            'name': 't_actual',
-            'type': 'FLOAT',
-            'mode': 'REPEATED'
-        }
-    ]
-};
-const displayTimeTableOptions = {
-    'schema': displayTimeSchema,
-    'timePartitioning': {
-        'type': 'DAY',
-        'field': 'timestamp'
-    }
-};
+// const displayTimeSchema = {
+//   'fields': [
+//     {
+//       'name': 'timestamp',
+//       'type': 'TIMESTAMP',
+//       'mode': 'REQUIRED'
+//     },
+//     {
+//       'name': 'trial_num',
+//       'type': 'INTEGER',
+//       'mode': 'REQUIRED'
+//     },
+//     {
+//       'name': 'frame_num',
+//       'type': 'INTEGER',
+//       'mode': 'REPEATED'
+//     },
+//     {
+//       'name': 't_desired',
+//       'type': 'FLOAT',
+//       'mode': 'REPEATED'
+//     },
+//     {
+//       'name': 't_actual',
+//       'type': 'FLOAT',
+//       'mode': 'REPEATED'
+//     }
+//   ]
+// };
+// const displayTimeTableOptions = {
+//   'schema': displayTimeSchema,
+//   'timePartitioning': {
+//     'type': 'DAY',
+//     'field': 'timestamp'
+//   }
+// };
 exports.bqInsertDisplayTimes = functions.https.onCall((rows) => {
-    const bq = new bigquery_1.BigQuery();
-    const dataset = bq.dataset('displaytimedata');
-    const table = dataset.table(rows[0].agent);
-    table.exists().then(async (existsData) => {
-        const exists = existsData[0];
-        if (exists) {
-            rows.forEach((row) => {
-                delete row.agent;
-                row.timestamp = new Date(row.timestamp);
-            });
-            table.insert(rows, {}, insertHandler);
-            console.log('Rows inserted to existing table');
-        }
-        else {
-            const [newTable] = await dataset.createTable(rows[0].agent, displayTimeTableOptions);
-            console.log(`Table ${newTable.id} created with partitioning: `);
-            console.log(newTable.metadata.timePartitioning);
-            rows.forEach((row) => {
-                delete row.agent;
-                row.timestamp = new Date(row.timestamp);
-            });
-            newTable.insert(rows, {}, insertHandler);
-            console.log('Row inserted to newly created table');
-        }
-    }).catch(error => {
-        console.log('Exists function error:', error);
-    });
+    // const bq = new BigQuery();
+    // const dataset = bq.dataset('displaytimedata');
+    // const table = dataset.table(rows[0].agent);
+    console.log('AGENT', rows[0].agent);
+    console.log('bqinsertdisplaytimes rows:', rows);
+    // table.exists().then(async (existsData) => {
+    //   const exists = existsData[0];
+    //   if (exists) {
+    //     rows.forEach((row: any) => {
+    //       delete row.agent;
+    //       row.timestamp = new Date(row.timestamp);
+    //       for (let key in row) {
+    //         if (Number.isNaN(row[key])) {
+    //           row[key] = null;
+    //         }
+    //       }
+    //     });
+    //     table.insert(rows, {}, insertHandler);
+    //     console.log('Rows inserted to existing table');
+    //   } else {
+    //     const [newTable] = await dataset.createTable(rows[0].agent, displayTimeTableOptions);
+    //     console.log(`Table ${newTable.id} created with partitioning: `);
+    //     console.log(newTable.metadata.timePartitioning);
+    //     rows.forEach((row: any) => {
+    //       delete row.agent;
+    //       row.timestamp = new Date(row.timestamp);
+    //       for (let key in row) {
+    //         if (Number.isNaN(row[key])) {
+    //           row[key] = null;
+    //         }
+    //       }
+    //     });
+    //     newTable.insert(rows, {}, insertHandler);
+    //     console.log('Row inserted to newly created table');
+    //   }
+    // }).catch(error => {
+    //   console.log('Exists function error:', error);
+    // });
 });
 //# sourceMappingURL=index.js.map
