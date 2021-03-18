@@ -688,7 +688,7 @@ export const bqInsertDisplayTimes = functions.https.onCall((rows: displayTimesDa
   // const dataset = bq.dataset('displaytimedata');
   // const table = dataset.table(rows[0].agent);
   console.log('AGENT', rows[0].agent);
-  // console.log('bqinsertdisplaytimes rows:', rows);
+  console.log('bqinsertdisplaytimes rows:', rows);
 
   // table.exists().then(async (existsData) => {
   //   const exists = existsData[0];

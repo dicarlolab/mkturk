@@ -2059,14 +2059,14 @@ if (ENV.BatteryAPIAvailable) {
 
         // BigQuery Table
         // Save display times asynchronously to BigQuery
-        // if (CURRTRIAL.num == 0){
-        //   pingBigQueryDisplayTimesTable(); //uploads eyedata to bigquery every 10 seconds        
-        // }//IF first trial, kick-off bigquery writes
+        if (CURRTRIAL.num == 0) {
+          pingBigQueryDisplayTimesTable(); //uploads eyedata to bigquery every 10 seconds        
+        }//IF first trial, kick-off bigquery writes
 
         // Save eye data asynchronously to BigQuery
-        // if (FLAGS.trackeye > 0 && CURRTRIAL.num == 0) {
-        //   pingBigQueryEyeTable(); //uploads eyedata to bigquery every 10 seconds        
-        // }//IF first trial, kick-off bigquery writes
+        if (FLAGS.trackeye > 0 && CURRTRIAL.num == 0) {
+          pingBigQueryEyeTable(); //uploads eyedata to bigquery every 10 seconds        
+        }//IF first trial, kick-off bigquery writes
       }//IF not saving images, save data
     }//IF savedata
 
