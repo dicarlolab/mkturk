@@ -2059,7 +2059,7 @@ if (ENV.BatteryAPIAvailable) {
 
         // BigQuery Table
         // Save display times asynchronously to BigQuery
-        if (CURRTRIAL.num == 0){
+        if (CURRTRIAL.num == 0) {
           pingBigQueryDisplayTimesTable(); //uploads eyedata to bigquery every 10 seconds        
         }//IF first trial, kick-off bigquery writes
 

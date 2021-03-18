@@ -25,19 +25,18 @@ function pingBigQueryDisplayTimesTable(){
 	} //else check again in 10 seconds
 }//FUNCTION pingBigQueryEyeTable()
 
-function saveEyeDatatoBigQuery(){
-eventtype = 'timeseries'
-eventname = 'EyeData'
-var nsamples = Object.keys(EVENTS[eventtype][eventname]).length 
+function saveEyeDatatoBigQuery() {
+	eventtype = 'timeseries';
+	eventname = 'EyeData';
+	let nsamples = Object.keys(EVENTS[eventtype][eventname]).length;
 
 	var eyedata = []
 	for (var i=0; i<=nsamples-1; i++){
 		var trialnum = EVENTS[eventtype][eventname][i][0]
 		var timestamp = new Date(EVENTS[eventtype][eventname][i][1]) - ENV.CurrentDate
 		if (timestamp >= EVENTS['trialseries']['StartTime'][trialnum]-2000){
-			eyedata.push(
-				{
-					'agent': ENV.Subject,
+			let obj = {
+				'agent': ENV.Subject,
 					'timestamp': EVENTS[eventtype][eventname][i][1],
 		  		'trial_num': EVENTS[eventtype][eventname][i][0],
 					'num_eyes': EVENTS[eventtype][eventname][i][2],
@@ -49,52 +48,67 @@ var nsamples = Object.keys(EVENTS[eventtype][eventname]).length
 					'right_y': EVENTS[eventtype][eventname][i][8],
 					'right_aux_0': EVENTS[eventtype][eventname][i][9],
 					'right_aux_1': EVENTS[eventtype][eventname][i][10]
+			};
+			
+			for (let key in obj) {
+				if (Number.isNaN(obj[key])) {
+					console.error('Eyedata contains NaN:', obj, key);
+					obj[key] = -10000;
 				}
-			)//push single event			
+			}
+
+			eyedata.push(obj); //push single event			
 		}//IF after trial start minus 2 seconds
 	}//FOR i events
 
-	bqInsertEyeData(eyedata)
+	bqInsertEyeData(eyedata);
 
-console.log("BIGQUERY: Upload EyeData")
+	console.log("BIGQUERY: Upload EyeData");
 
 	//reset eye event accumulation in mkturk (reduce memory load)
-	EVENTS[eventtype][eventname] = {}
+	EVENTS[eventtype][eventname] = {};
 
-	delete bigqueryEyeTimer //to start a new timer
-	pingBigQueryEyeTable()
+	delete bigqueryEyeTimer; //to start a new timer
+	pingBigQueryEyeTable();
 }//FUNCTION saveEyeDatatoBigQuery
 
-function saveDisplayTimestoBigQuery(){
-	eventtype = 'timeseries'
-	eventname1 = 'FrameNum'
-	eventname2 = 'TSequenceDesired'
-	eventname0 = 'TSequenceActual'
-	var nsamples = Object.keys(EVENTS[eventtype][eventname0]).length 
+function saveDisplayTimestoBigQuery() {
+	eventtype = 'timeseries';
+	eventname1 = 'FrameNum';
+	eventname2 = 'TSequenceDesired';
+	eventname0 = 'TSequenceActual';
+	var nsamples = Object.keys(EVENTS[eventtype][eventname0]).length;
 
-	var displaydata = []
-	for (var i=0; i<=nsamples-1; i++){
-		displaydata.push(
-			{
-				'agent': ENV.Subject,
-				'timestamp': EVENTS[eventtype][eventname0][i][1],
-	  		'trial_num': EVENTS[eventtype][eventname0][i][0],
-				'frame_num': EVENTS[eventtype][eventname1][i].slice(2,EVENTS[eventtype][eventname1][i].length),
-				't_desired': EVENTS[eventtype][eventname2][i].slice(2,EVENTS[eventtype][eventname2][i].length),
-				't_actual': EVENTS[eventtype][eventname0][i].slice(2,EVENTS[eventtype][eventname0][i].length)
+	var displaydata = [];
+	for (let i = 0; i < nsamples; i++) {
+		let obj = {
+			'agent': ENV.Subject,
+			'timestamp': EVENTS[eventtype][eventname0][i][1],
+			'trial_num': EVENTS[eventtype][eventname0][i][0],
+			'frame_num': EVENTS[eventtype][eventname1][i].slice(2,EVENTS[eventtype][eventname1][i].length),
+			't_desired': EVENTS[eventtype][eventname2][i].slice(2,EVENTS[eventtype][eventname2][i].length),
+			't_actual': EVENTS[eventtype][eventname0][i].slice(2,EVENTS[eventtype][eventname0][i].length)
+		};
+		for (let key in obj) {
+			if (Number.isNaN(obj[key])) {
+				console.error('Eyedata contains NaN:', obj, key);
+				obj[key] = -10000;
 			}
-		)//push single event
+		}
+		//push single event
+		displaydata.push(obj);
+		
 	}//FOR i events
 
-	bqInsertDisplayTimes(displaydata)
+	bqInsertDisplayTimes(displaydata);
 
-	console.log("BIGQUERY: Upload DisplayTimes")
+	console.log("BIGQUERY: Upload DisplayTimes");
 
 	//reset eye event accumulation in mkturk (reduce memory load)
-	EVENTS[eventtype][eventname0] = {}
-	EVENTS[eventtype][eventname1] = {}
-	EVENTS[eventtype][eventname2] = {}
+	EVENTS[eventtype][eventname0] = {};
+	EVENTS[eventtype][eventname1] = {};
+	EVENTS[eventtype][eventname2] = {};
 
-	delete bigqueryDisplayTimer //to start a new timer
-	pingBigQueryDisplayTimesTable()
+	delete bigqueryDisplayTimer; //to start a new timer
+	pingBigQueryDisplayTimesTable();
 }//FUNCTION saveDisplayTimestoBigQuery()
