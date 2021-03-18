@@ -2034,7 +2034,7 @@ if (ENV.BatteryAPIAvailable) {
             ENV.Eye.CalibType,
             ENV.Eye.NCalibPointsTrain,
             ENV.Eye.CalibTrainMSE,
-            NV.Eye.NCalibPointsTest,
+            ENV.Eye.NCalibPointsTest,
             ENV.Eye.CalibTestMSE
           );
         }
