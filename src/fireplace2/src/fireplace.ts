@@ -2,6 +2,7 @@ import firebase from 'firebase/app';
 import { matrix, subtract, filter, dotDivide, dotMultiply, round } from 'mathjs';
 import Tabulator from 'tabulator-tables';
 import * as d3 from 'd3';
+import { line } from 'd3';
 
 
 const db = firebase.firestore();
@@ -257,6 +258,7 @@ export class Fireplace {
           return 0;
         }
       });
+      console.log(row['_performance']);
       row['_numTrials'] = queryDateRangeArrayStr.map((date: string) => {
         if (row['dates'].includes(date)) {
           return row['numTrials'].shift();
@@ -267,35 +269,40 @@ export class Fireplace {
     });
     
     let queryDateRangeArray = queryDateRangeArrayStr.map(d3.timeParse('%m/%d/%Y'));
-    console.log(queryDateRangeArray);
 
-    console.log('buildPlots data:', data);
-    
+    let d3Data = {
+      y: 'Number of Trials',
+      series: data,
+      dates: queryDateRangeArray
+    }
     
     let svg = d3.select('#performance-plot')
       .append('svg')
       .attr('style', 'width: 100%; height: 100%');
     let width = (<HTMLElement>d3.select('#performance-plot').node()).clientWidth;
     let height = (<HTMLElement>d3.select('#performance-plot').node()).clientHeight;
-    svg.attr('viewBox', `0 0 ${width} ${height}`);
+    svg.attr('viewBox', `0 0 ${width} ${height}`)
+      .style("overflow", "visible");
+    
 
-    let margin = { top: 5, bottom: 5, right: 5, left: 5 };
+    let margin = { top: 20, bottom: 30, right: 20, left: 50 };
 
     let x = d3.scaleTime()
-      .domain(<[Date, Date]>d3.extent(queryDateRangeArray, function (d) { return d }))
+      .domain(<[Date, Date]>d3.extent(d3Data.dates, function (d) { return d }))
       .range([margin.left, width - margin.right]);
 
-    let yPerformance = d3.scaleLinear()
-      .domain([0, 100])
-      .range([height - margin.bottom, margin.top]);
+    // let yPerformance = d3.scaleLinear()
+    //   .domain([0, 100])
+    //   .range([height - margin.bottom, margin.top]);
     
     let yNumTrials = d3.scaleLinear()
-      .domain([0, <any>d3.max(data, d => d3.max(d['_numTrials']))])
+      .domain([0, <any>d3.max(d3Data.series, d => d3.max(d['_numTrials']))])
       .range([height - margin.bottom, margin.top]);
 
+      
     let xAxis = (g: any) => g
       .attr("transform", `translate(0,${height - margin.bottom})`)
-      .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0));
+      .call(d3.axisBottom<Date>(x).ticks(9).tickSizeOuter(0).tickFormat(d3.timeFormat('%a')));
 
     let yAxisNumTrials = (g: any) => g
       .attr("transform", `translate(${margin.left},0)`)
@@ -305,14 +312,72 @@ export class Fireplace {
           .attr("x", 3)
           .attr("text-anchor", "start")
           .attr("font-weight", "bold")
-          .text('NumTrials'));
+          .text(d3Data.y));
 
-    let linesNumTrials = d3.line()
-      .defined((d, i) => !isNaN(d[i]))
-      .x((d, i) => x(queryDateRangeArray[i] as Date))
-      .y((d, i) => yNumTrials(d[i]));
+    let linesNumTrials = d3.line<any>()
+      .defined(d => !isNaN(d))
+      .x((d, i) => x(d3Data.dates[i] as Date))
+      .y((d, i) => yNumTrials(d));
+
+    console.log(d3Data);
+    
+
+    svg.append('g')
+      .call(xAxis);
+
+    svg.append('g')
+      .call(yAxisNumTrials);
+
+    let color = d3.scaleOrdinal(d3.schemeCategory10);
+
+    
+    let path = 
+      svg.append('g')
+        .attr("fill", "none")
+        .attr("stroke", (d,i) => d3.schemeCategory10[1])
+        .attr("stroke-width", 1.5)
+        .attr("stroke-linejoin", "round")
+        .attr("stroke-linecap", "round")
+      .selectAll("path")
+      .data(data)
+      .join('path')
+        .style('mix-blend-mode', 'multiply')
+        .attr('d', d => linesNumTrials(d['_numTrials']));
     
     
+    const hover = (svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any> , path: d3.Selection<SVGPathElement, any, SVGElement, unknown>) => {
+      const moved = (event: Event) => {
+        event.preventDefault();
+        const pointer = d3.pointer(event, this);
+        const xm = x.invert(pointer[0]);
+        const ym = yNumTrials.invert(pointer[1]);
+        const i = d3.bisectCenter(queryDateRangeArray as Date[], xm);
+        const s = d3.least(data, d => Math.abs(d['_numTrials'][i] - ym));
+        // path.attr("stroke", d => d === s ? null : "#ddd").filter(d => d === s).raise();
+        // dot.attr("transform", `translate(${x(data.dates[i])},${y(s.values[i])})`);
+        // dot.select("text").text(s.name);
+      }
+      
+      svg
+        .on('mousemove', moved);
+
+      const dot = svg.append('g')
+        .attr('display', 'none');
+
+      dot.append('circle')
+        .attr('r', 2.5);
+
+      dot.append("text")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 10)
+        .attr("text-anchor", "middle")
+        .attr("y", -8);
+
+      
+    }
+
+    svg.call(hover, path);
+    return svg.node();
     
     // console.log(svg);
   }
