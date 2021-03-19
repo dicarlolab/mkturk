@@ -16,6 +16,7 @@ export class Fireplace {
   private editorElem: HTMLDivElement;
   private performancePlotElem: HTMLDivElement;
   private table: Tabulator;
+  private taskDocs: any;
 
   constructor() {
     this.queryEndDateValue = new Date(new Date().toLocaleDateString()).valueOf() 
@@ -23,6 +24,9 @@ export class Fireplace {
     this.queryStartDateValue = this.queryEndDateValue - (7 * 24 * 3600 * 1000);
     this.tQueryInterval = 20 * 1000;
     this.tLastQuery = 0;
+    this.taskDocs = {
+      dates: this.getDateArray(this.queryStartDateValue, this.queryEndDateValue)
+    };
   }
 
   public async getAgentList() {
@@ -42,7 +46,7 @@ export class Fireplace {
   }
 
   private processData(snapshot: firebase.firestore.QuerySnapshot<firebase.firestore.DocumentData>) {
-    // this.tLastQuery = Date.now();
+    
     console.log('snapshot', snapshot);
     let data: any[] = [];
     let agentList: string[] = [];
@@ -72,13 +76,16 @@ export class Fireplace {
           data[agentIdx]['numTrials'][dateIdx] += numTrials;
           data[agentIdx]['numCorrect'][dateIdx] += numCorrect;
           data[agentIdx]['tLastTrial'] = tLastTrial;
+          this.taskDocs[d.Agent][dateString].push(d);
+          // console.log('case 1:', d.Agent, dateString);
         } else {
           data[agentIdx]['dates'].push(dateString);
           data[agentIdx]['numTrials'].push(numTrials);
           data[agentIdx]['numCorrect'].push(numCorrect);
           data[agentIdx]['tLastTrial'] = tLastTrial;
+          this.taskDocs[d.Agent][dateString] = [d];
+          // console.log('case 2:', d.Agent, dateString);
         }
-        
       } else {
         agentList.push(d.Agent);
         data.push({
@@ -88,6 +95,10 @@ export class Fireplace {
           numCorrect: [numCorrect],
           tLastTrial: tLastTrial
         });
+        console.log(this.taskDocs);
+        this.taskDocs[d.Agent] = {};
+        this.taskDocs[d.Agent][dateString] = [d];
+        // console.log('case 3:', d.Agent, dateString);
       }
     });
 
@@ -107,6 +118,10 @@ export class Fireplace {
 
     let buildStuff = (d: any) => {
       this.buildPlots(d);
+    }
+
+    let returnTaskDocs = () => {
+      return this.taskDocs;
     }
 
     function numTrialMutator(value: any, data: any, type: any, params: any, component: any) {
@@ -171,8 +186,6 @@ export class Fireplace {
       return cell.getValue();
     }
 
-    
-
     this.table = new Tabulator(this.tableElem, {
       data: data,
       cellVertAlign: 'middle',
@@ -217,14 +230,19 @@ export class Fireplace {
       ],
       tooltips: true,
       dataLoaded: function(data) {
-        // data.forEach((row: any) => {
-        //   row['performance'] = ;
-        //   row['_numTrials'] = [];
-        //   row['dates'] = row['dates'].map(d3.timeParse('%m/%d/%Y'));
-        // });
-        // console.log(data);
         buildStuff(data);
+        // let tmp = returnTaskDocs();
+        
       },
+      rowClick(evt, row) {
+        let taskDocs = returnTaskDocs();
+        console.log('row clicked:', taskDocs[row.getData().agent]);
+
+        let taskDocsKeys = Object.keys(taskDocs);
+        let mostRecentDate = taskDocsKeys[taskDocsKeys.length - 1];
+        console.log('most recent taskdoc:', taskDocs[row.getData().agent])
+
+      }
     });
   }
 
@@ -276,43 +294,74 @@ export class Fireplace {
       dates: queryDateRangeArray
     }
     
-    let svg = d3.select('#performance-plot')
-      .append('svg')
-      .attr('style', 'width: 100%; height: 100%');
-    let width = (<HTMLElement>d3.select('#performance-plot').node()).clientWidth;
-    let height = (<HTMLElement>d3.select('#performance-plot').node()).clientHeight;
-    svg.attr('viewBox', `0 0 ${width} ${height}`)
-      .style("overflow", "visible");
-    
-
+    let svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
+    let width = (<HTMLElement>d3.select('#num-trials-plot').node()).clientWidth;
+    let height = (<HTMLElement>d3.select('#num-trials-plot').node()).clientHeight;
     let margin = { top: 20, bottom: 30, right: 20, left: 50 };
 
     let x = d3.scaleTime()
       .domain(<[Date, Date]>d3.extent(d3Data.dates, function (d) { return d }))
       .range([margin.left, width - margin.right]);
 
+    let yNumTrials = d3.scaleLinear()
+      .domain([0, <any>d3.max(d3Data.series, d => d3.max(d['_numTrials']))])
+      .range([height - margin.bottom, margin.top]);
+    
+    if (d3.select('svg').size() == 0) {
+      svg = (
+        d3.select('#num-trials-plot')
+          .append('svg')
+          .attr('style', 'width: 100%; height: 100%')
+      );
+      svg
+        .attr('viewBox', `0 0 ${width} ${height}`)
+        .style("overflow", "visible");
+
+      let xAxis = (g: any) => g
+        .attr("transform", `translate(0,${height - margin.bottom})`)
+        .call(d3.axisBottom<Date>(x).ticks(9).tickSizeOuter(0).tickFormat(d3.timeFormat('%a')));
+
+      let yAxisNumTrials = (g: any) => g
+        .attr("transform", `translate(${margin.left},0)`)
+        .call(d3.axisLeft(yNumTrials))
+        .call((g: any) => g.select(".domain").remove())
+        .call((g: any) => g.select(".tick:last-of-type text").clone()
+            .attr("x", 3)
+            .attr("text-anchor", "start")
+            .attr("font-weight", "bold")
+            .text(d3Data.y));
+
+      svg.append('g')
+        .call(xAxis);
+  
+      svg.append('g')
+        .call(yAxisNumTrials);
+    } else {
+      svg = (
+        d3.select('svg')
+      );
+      d3.selectAll('path.line').remove();
+    }
+
     // let yPerformance = d3.scaleLinear()
     //   .domain([0, 100])
     //   .range([height - margin.bottom, margin.top]);
     
-    let yNumTrials = d3.scaleLinear()
-      .domain([0, <any>d3.max(d3Data.series, d => d3.max(d['_numTrials']))])
-      .range([height - margin.bottom, margin.top]);
 
       
-    let xAxis = (g: any) => g
-      .attr("transform", `translate(0,${height - margin.bottom})`)
-      .call(d3.axisBottom<Date>(x).ticks(9).tickSizeOuter(0).tickFormat(d3.timeFormat('%a')));
+    // let xAxis = (g: any) => g
+    //   .attr("transform", `translate(0,${height - margin.bottom})`)
+    //   .call(d3.axisBottom<Date>(x).ticks(9).tickSizeOuter(0).tickFormat(d3.timeFormat('%a')));
 
-    let yAxisNumTrials = (g: any) => g
-      .attr("transform", `translate(${margin.left},0)`)
-      .call(d3.axisLeft(yNumTrials))
-      .call((g: any) => g.select(".domain").remove())
-      .call((g: any) => g.select(".tick:last-of-type text").clone()
-          .attr("x", 3)
-          .attr("text-anchor", "start")
-          .attr("font-weight", "bold")
-          .text(d3Data.y));
+    // let yAxisNumTrials = (g: any) => g
+    //   .attr("transform", `translate(${margin.left},0)`)
+    //   .call(d3.axisLeft(yNumTrials))
+    //   .call((g: any) => g.select(".domain").remove())
+    //   .call((g: any) => g.select(".tick:last-of-type text").clone()
+    //       .attr("x", 3)
+    //       .attr("text-anchor", "start")
+    //       .attr("font-weight", "bold")
+    //       .text(d3Data.y));
 
     let linesNumTrials = d3.line<any>()
       .defined(d => !isNaN(d))
@@ -322,27 +371,49 @@ export class Fireplace {
     console.log(d3Data);
     
 
-    svg.append('g')
-      .call(xAxis);
-
-    svg.append('g')
-      .call(yAxisNumTrials);
-
     let color = d3.scaleOrdinal(d3.schemeCategory10);
 
+    let sumstat = d3.group(d3Data.series, d => d['_numTrials']);
+    console.log(sumstat);
+      
+
     
-    let path = 
-      svg.append('g')
-        .attr("fill", "none")
-        .attr("stroke", (d,i) => d3.schemeCategory10[1])
-        .attr("stroke-width", 1.5)
-        .attr("stroke-linejoin", "round")
-        .attr("stroke-linecap", "round")
-      .selectAll("path")
-      .data(data)
-      .join('path')
-        .style('mix-blend-mode', 'multiply')
-        .attr('d', d => linesNumTrials(d['_numTrials']));
+    // let path = (
+    //   svg.append('g')
+    //     .attr("fill", "none")
+    //     .attr("stroke", (d,i) => d = d3.schemeCategory10[i])
+    //     .attr("stroke-width", 1.5)
+    //     .attr("stroke-linejoin", "round")
+    //     .attr("stroke-linecap", "round")
+    //   .selectAll("path")
+    //   .data(d3Data.series)
+    //   .join('path')
+    //     .style('mix-blend-mode', 'multiply')
+    //     .attr('d', d => linesNumTrials(d['_numTrials']))
+    // );
+
+    d3Data.series.forEach((d: any) => {
+      let nT = d['_numTrials'];
+      svg.append('path')
+        .attr('class', 'line')
+        .attr('fill', 'none')
+        .attr("stroke-width", 3)
+        .style('stroke', () => { return color(d.agent); })
+        .attr('d', () => linesNumTrials(nT));
+    });
+
+    
+
+    // let path = (
+    //   svg.selectAll('.line')
+    //     .data(d3Data.series)
+    //     .enter()
+    //     .append('path')
+    //       .attr('fill', 'none')
+    //       .attr('stroke', 'bluesteel')
+    //       .attr('stroke-width', 1.5)
+    //       .attr('d', d => linesNumTrials(d['_numTrials']))
+    // );
     
     
     const hover = (svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any> , path: d3.Selection<SVGPathElement, any, SVGElement, unknown>) => {
@@ -376,8 +447,8 @@ export class Fireplace {
       
     }
 
-    svg.call(hover, path);
-    return svg.node();
+    svg.call(hover);
+    // return svg.node();
     
     // console.log(svg);
   }
