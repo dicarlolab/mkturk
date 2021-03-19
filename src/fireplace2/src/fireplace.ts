@@ -1,18 +1,19 @@
 import firebase from 'firebase/app';
-import math, { matrix, subtract, filter } from 'mathjs';
+import { matrix, subtract, filter, dotDivide, dotMultiply, round } from 'mathjs';
 import Tabulator from 'tabulator-tables';
+import * as d3 from 'd3';
 
 
 const db = firebase.firestore();
 
 export class Fireplace {
-  public agents: any;
   public queryStartDateValue: number;
   public queryEndDateValue: number;
   public tLastQuery: number;
   public tQueryInterval: number;
   private tableElem: HTMLDivElement;
   private editorElem: HTMLDivElement;
+  private performancePlotElem: HTMLDivElement;
   private table: Tabulator;
 
   constructor() {
@@ -88,7 +89,7 @@ export class Fireplace {
         });
       }
     });
-    
+
     if (this.tLastQuery == 0) {
       console.log(this.table);
       this.constructTable(data);
@@ -103,6 +104,9 @@ export class Fireplace {
   private constructTable(data: any[]) {
     let timeNow = Date.now();
 
+    let buildStuff = (d: any) => {
+      this.buildPlots(d);
+    }
 
     function numTrialMutator(value: any, data: any, type: any, params: any, component: any) {
       if (params.range == 24) {
@@ -158,15 +162,20 @@ export class Fireplace {
     function tLastTrialFormat(cell: Tabulator.CellComponent) {
       if (cell.getValue() <= 5) {
         cell.getElement().style.background = '#198754';
+        cell.getElement().style.color = 'white';
       } else if (cell.getValue() > 5 && cell.getValue() < 60) {
-        cell.getElement().style.background = 'dc3545';
+        cell.getElement().style.background = '#dc3545';
+        cell.getElement().style.color = 'white';
       }
       return cell.getValue();
     }
 
+    
+
     this.table = new Tabulator(this.tableElem, {
       data: data,
-      layout: 'fitColumns',
+      cellVertAlign: 'middle',
+      layout: 'fitData',
       columns: [
         {
           title: 'Agent',
@@ -207,8 +216,14 @@ export class Fireplace {
       ],
       tooltips: true,
       dataLoaded: function(data) {
-        console.log(data);
-      }
+        // data.forEach((row: any) => {
+        //   row['performance'] = ;
+        //   row['_numTrials'] = [];
+        //   row['dates'] = row['dates'].map(d3.timeParse('%m/%d/%Y'));
+        // });
+        // console.log(data);
+        buildStuff(data);
+      },
     });
   }
 
@@ -222,8 +237,94 @@ export class Fireplace {
       this.tableElem = elem;
     } else if (type === 'editor') {
       this.editorElem = elem;
+    } else if (type === 'perf-plot') {
+      this.performancePlotElem = elem;
     }
+  }
+
+  private buildPlots(data: any[]) {
+
+    // each row holds one agent's data
+    let queryDateRangeArrayStr = this.getDateArray(this.queryStartDateValue, this.queryEndDateValue);
+    data.forEach(row => {
+      row['performance'] = (
+        round(dotMultiply(100, dotDivide(row['numCorrect'], row['numTrials'])) as math.MathArray)
+      );
+      row['_performance'] = queryDateRangeArrayStr.map((date: string) => {
+        if (row['dates'].includes(date)) {
+          return row['performance'].shift();
+        } else {
+          return 0;
+        }
+      });
+      row['_numTrials'] = queryDateRangeArrayStr.map((date: string) => {
+        if (row['dates'].includes(date)) {
+          return row['numTrials'].shift();
+        } else {
+          return 0;
+        }
+      });
+    });
     
+    let queryDateRangeArray = queryDateRangeArrayStr.map(d3.timeParse('%m/%d/%Y'));
+    console.log(queryDateRangeArray);
+
+    console.log('buildPlots data:', data);
+    
+    
+    let svg = d3.select('#performance-plot')
+      .append('svg')
+      .attr('style', 'width: 100%; height: 100%');
+    let width = (<HTMLElement>d3.select('#performance-plot').node()).clientWidth;
+    let height = (<HTMLElement>d3.select('#performance-plot').node()).clientHeight;
+    svg.attr('viewBox', `0 0 ${width} ${height}`);
+
+    let margin = { top: 5, bottom: 5, right: 5, left: 5 };
+
+    let x = d3.scaleTime()
+      .domain(<[Date, Date]>d3.extent(queryDateRangeArray, function (d) { return d }))
+      .range([margin.left, width - margin.right]);
+
+    let yPerformance = d3.scaleLinear()
+      .domain([0, 100])
+      .range([height - margin.bottom, margin.top]);
+    
+    let yNumTrials = d3.scaleLinear()
+      .domain([0, <any>d3.max(data, d => d3.max(d['_numTrials']))])
+      .range([height - margin.bottom, margin.top]);
+
+    let xAxis = (g: any) => g
+      .attr("transform", `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0));
+
+    let yAxisNumTrials = (g: any) => g
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(yNumTrials))
+      .call((g: any) => g.select(".domain").remove())
+      .call((g: any) => g.select(".tick:last-of-type text").clone()
+          .attr("x", 3)
+          .attr("text-anchor", "start")
+          .attr("font-weight", "bold")
+          .text('NumTrials'));
+
+    let linesNumTrials = d3.line()
+      .defined((d, i) => !isNaN(d[i]))
+      .x((d, i) => x(queryDateRangeArray[i] as Date))
+      .y((d, i) => yNumTrials(d[i]));
+    
+    
+    
+    // console.log(svg);
+  }
+
+  private getDateArray(start: number, end: number) {
+    let arr = [];
+    let dt = new Date(start);
+    while (dt.valueOf() <= end) {
+      arr.push(dt.toLocaleDateString());
+      dt.setDate(dt.getDate() + 1);
+    }
+    return arr;
   }
 
 

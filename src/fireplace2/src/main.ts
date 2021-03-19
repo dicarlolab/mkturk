@@ -1,5 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'tabulator-tables/dist/css/bootstrap/tabulator_bootstrap.min.css';
+import './fireplace.css';
 
 import './init';
 
@@ -30,7 +31,10 @@ auth.getRedirectResult().then(result => {
 
 const tableElem = document.querySelector('#table') as HTMLDivElement;
 const endDateInput = document.querySelector('#end-date') as HTMLInputElement;
-endDateInput.valueAsDate = new Date();
+endDateInput.value = new Date().toLocaleDateString('en-CA');
+const performancePlotElem = document.querySelector('#performance-plot') as HTMLDivElement;
+fp.registerDomElement('perf-plot', performancePlotElem);
+
 const refreshBtn = document.querySelector('#refresh-btn') as HTMLButtonElement;
 refreshBtn.addEventListener('pointerup', (evt: Event) => {
   console.log('hello');

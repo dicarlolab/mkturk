@@ -121,7 +121,8 @@ function showTaskText(dayidx,agentidx){
 
   //add object metadata
   var task = DATA.task[STAT.lastfile[agentidx-1][dayidx]];
-  var imagesRef = db.collection(FIRESTORECOLLECTION.DATA).doc(task.Imagesdoc)
+  console.log('task:', task);
+  var imagesRef = db.collection(FIRESTORECOLLECTION.DATA).doc(task.Taskdoc)
 
   imagesRef.get().then(
     function(doc)
