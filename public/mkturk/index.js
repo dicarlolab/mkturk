@@ -818,9 +818,17 @@ if (ENV.BatteryAPIAvailable) {
 
 
     //============ SELECT SAMPLE & TEST IMAGES ============//
+    if (typeof(TASK.NRSVP) != "undefined" && TASK.NRSVP > 0){
+    	ENV.NRSVPMax = TASK.NRSVP
+    	ENV.NRSVPMin = TASK.NRSVP
+
+    	if (typeof(TASK.NRSVPMax) != "undefined" && TASK.NRSVPMax > TASK.NRSVP){
+	    	ENV.NRSVPMax = TASK.NRSVPMax
+    	}//IF NRSVPMax
+    }//IF NRSVP
 
     let imgSeqLen = (
-      (typeof(TASK.NRSVP) == 'undefined' || TASK.NRSVP <= 0) ? 1 : TASK.NRSVP
+      (typeof(TASK.NRSVP) == 'undefined' || TASK.NRSVP <= 0) ? 1 : ENV.NRSVPMax
     );
 
     for (let i = 0; i < imgSeqLen; i++) {
@@ -1385,6 +1393,12 @@ if (ENV.BatteryAPIAvailable) {
         FLAGS.acquiredTouch = 0;
         FLAGS.waitingforTouches = 0;
 
+        //Determine number of clips fixated
+       	var nclipshown = CURRTRIAL.sequenceclip[frame.shown.lastIndexOf(1)]
+       	if (typeof(race_return.type) == 'undefined') {
+       		nclipshown++
+       	}//IF held until completeion, count all i clips; otw only count i-1
+
         if (FLAGS.movieplaying == 1) {
           // So that sample movie does not continue playing after fixation broken
           frame.current = frame.shown.length - 1;
@@ -1403,7 +1417,8 @@ if (ENV.BatteryAPIAvailable) {
             0,
             Date.now() - ENV.CurrentDate.valueOf(),
           ];
-        } else { // ELSE broke samplefixation
+        }
+        else { // ELSE broke samplefixation
           CURRTRIAL.samplefixationtouchevent = race_return.type;
           // Quick Fix for race_return.cxyt[1:4] returning undefined
           for (let i = 1; i < 4; i++) { 
@@ -1690,7 +1705,7 @@ if (ENV.BatteryAPIAvailable) {
           } else { // fixation required
             race_return = { type: CURRTRIAL.samplefixationtouchevent };
 
-            if (CURRTRIAL.samplefixationtouchevent == 'theld') { // held samplefixation
+            if (CURRTRIAL.samplefixationtouchevent == 'theld' || nclipshown >= ENV.NRSVPMin) { // held samplefixation
               currchoice = 1;
             } else { // broke samplefixation
               currchoice = 0;
@@ -1756,7 +1771,22 @@ if (ENV.BatteryAPIAvailable) {
     //============ DETERMINE NUMBER OF REWARDS ============//
     if (TASK.RewardStage == 0 && samplereward == 0) {
       CURRTRIAL.nreward = -1; // skip reward/punish
-    } else if (
+    }
+    else if (ENV.NRSVPMin > 0 && ENV.NRSVPMax > 0 
+    		&& ENV.NRSVPMax > ENV.NRSVPMin
+    		 && TASK.RewardStage > 0){
+    	if (nclipshown < ENV.NRSVPMin){
+    		CURRTRIAL.nreward = 0
+    	}
+    	else {
+    		// exponential reward = 1*exp(a*(nseen - nmin)), where a = ln(rmax)/(nmax-nmin)
+    		CURRTRIAL.nreward = Math.exp(
+    			( Math.log1p(TASK.NRewardMax)/(ENV.NRSVPMax - ENV.NRSVPMin) ) * (nclipshown - ENV.NRSVPMin) )
+
+    		CURRTRIAL.nreward = Math.round(CURRTRIAL.nreward)
+    	}
+    }//IF NRSVP && reward based on nclips fixated before break
+    else if (
       CURRTRIAL.correct
       && (samplereward == -1 || TASK.RewardStage == 0)
     ) { // default behavior

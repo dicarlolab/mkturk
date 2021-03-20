@@ -54,6 +54,8 @@ ENV.MinPercentCriterion = -1
 ENV.MinTrialsCriterion = -1
 ENV.StagePctCorrect = -1
 ENV.StageNTrials = -1
+ENV.NRSVPMin = -1
+ENV.NRSVPMax = -1
 
 ENV.WebBluetoothAvailable = 0
 ENV.WebUSBAvailable = 0
