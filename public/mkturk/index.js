@@ -678,11 +678,6 @@ if (ENV.BatteryAPIAvailable) {
 	    if (typeof(TASK.Photodiode) == 'undefined') {
 	      TASK.Photodiode = 0;
 	    }
-
-	    if (typeof(TASK.SampleCommand) == 'undefined') {
-	      TASK.SampleCommand = 0;
-	    }
-
     } //IF need2loadParameters
 
     if (FLAGS.purge == 1) {
@@ -1366,7 +1361,7 @@ if (ENV.BatteryAPIAvailable) {
           ENV.Eye.EventType = 'eyemove';
         }
        
-        if (port.connected && TASK.SampleCommand > 0) {
+        if (port.connected) {
           await port.writeSampleCommandTriggertoUSB('1');
         }
         
@@ -1428,7 +1423,7 @@ if (ENV.BatteryAPIAvailable) {
         CURRTRIAL.samplefixationxyt = [];
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
         CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime).toJSON();
-        if (port.connected && TASK.SampleCommand > 0) {
+        if (port.connected) {
           await port.writeSampleCommandTriggertoUSB('1');
         }
         
@@ -1898,7 +1893,7 @@ if (ENV.BatteryAPIAvailable) {
       await Promise.all([p1, p2]);
     }
 
-    if (port.connected && TASK.SampleCommand > 0) {
+    if (port.connected) {
       port.writeSampleCommandTriggertoUSB('0');
     }
     
