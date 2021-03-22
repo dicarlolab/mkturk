@@ -77,6 +77,8 @@ Liquid: 1=water 2=water-condensed milk 3=marshmallow slurry (4/30mL)
 
 **NRSVP:** Number of sample scene images to show in a single trial. Displayed at TASK.SampleON duration TASK.SampleOFF between each sample drawn according to TASK.SamplingStrategy. If TASK.NRSVP<=0, only a single sample scene render will be shown for that trial. If TASK.NRSVP>0, then no choice response is awaited & reward is automatically given at the end of the sequence.
 
+**NRSVPMax:** Exponentially more reward pulses given for longer fixations up to NRewardMax for fixating NRSVPMax images. No reward for <NRSVP clips fixated, one reward pulse for NRSVP clips viewed, and NRewardMax pulses given for NRSVPMax.  Trial-by-Trial bonus reward for consecutive hits will be ignored if this option is on to reward more images fixated within a trial. NRSVPMax is ignored if set less than NRSVP. See TSequenceActualClip in TRIALEVENTS if want to determine which clips were fixated (-1 is registered for clip times if broke fixation). See TRIALEVENTS[NReward] to determine how many reward pulses were delivered. NOTE: If want to use bonus rewards & NRewardMax in the traditional trial-by-trial sense, then set NRSVPMax < NRSVP so that only one reward is given per NRSVP images shown and bonus is enacted based on multiple consecutive trial hits.
+
 **NStickyResponse:** Number of times subject can choose the same location on the screen before force them out of it by placing the correct answer somewhere else (i.e. if they have response bias, then on the next trial, the correct choice is drawn somewhere away from that bias). Currently not implemented for same-different task or SR2
 
 **NStimuliPerBagBlock:** if 0, randomly samples from all bags (interleaved design), if >0, samples N consecutive images from the same sample image bag (block design). This is equivalent to blocking the session so that training is done in object blocks rather than interleaving all objects. After N sample draws are completed for bag i, proceeds to next bag i+1 according to bag sequence specified in ImageBagsSample. When all bags have been sampled NTrialsPerBagBlock times, starts back at bag 0. Note, that in an RSVP design, if NRSVP = x and NStimuliPerBagBlock = y, then y/x consecutive trials will be from the same bag. In other words, the counting of what goes into a block is in units of images not trials.
@@ -174,6 +176,10 @@ FixationColor: color of fixation dot if image is not used
 ImageHeightPixels: The height of the sample image in pixels. The image height is used as the unit for the vertical dimension.
 
 ImageWidthPixels: The width of the sample image in pixels. The image width is used as the unit for the horizontal dimension.
+
+NRSVPMin: set to be TASK.NRSVP. Guaranteed one reward if fixate for NRSVPMin images
+
+NRSVPMax: set to TASK.NRSVPMax (if present); otherwise, set to TASK.NRSVP. Bonus rewards are given in an exponential fashion for fixating up to TASK.NRSVPMax images.
 
 Ordered_Samplebag_Filenames: Names of the sample image bags. Each bag is treated as a separate label class
 

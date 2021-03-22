@@ -54,6 +54,8 @@ ENV.MinPercentCriterion = -1
 ENV.MinTrialsCriterion = -1
 ENV.StagePctCorrect = -1
 ENV.StageNTrials = -1
+ENV.NRSVPMin = -1
+ENV.NRSVPMax = -1
 
 ENV.WebBluetoothAvailable = 0
 ENV.WebUSBAvailable = 0
@@ -109,7 +111,7 @@ ENV.Eye.NCalibPointsTest = 0
 ENV.Eye.CalibTrainMSE = []
 ENV.Eye.CalibTestMSE = []
 
-ENV.PhotodiodeSquareSizeInches = 0.75
+ENV.PhotodiodeSquareSizeInches = 0.25
 ENV.PhotodiodeSquareX = 0
 ENV.PhotodiodeSquareY = 0
 

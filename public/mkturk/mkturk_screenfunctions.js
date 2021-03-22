@@ -303,7 +303,6 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 				}
 
 			}
-				
 
 			//----- (2) Update Status
 			updated2d = 0
