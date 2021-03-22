@@ -1369,7 +1369,7 @@ if (ENV.BatteryAPIAvailable) {
           ENV.Eye.EventType = 'eyemove';
         }
        
-        if (port.connected) {
+        if (port.connected && FLAGS.savedata) {
           await port.writeSampleCommandTriggertoUSB('1');
         }
         
@@ -1438,7 +1438,7 @@ if (ENV.BatteryAPIAvailable) {
         CURRTRIAL.samplefixationxyt = [];
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
         CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime).toJSON();
-        if (port.connected) {
+        if (port.connected && FLAGS.savedata) {
           await port.writeSampleCommandTriggertoUSB('1');
         }
         
@@ -1923,7 +1923,7 @@ if (ENV.BatteryAPIAvailable) {
       await Promise.all([p1, p2]);
     }
 
-    if (port.connected) {
+    if (port.connected && FLAGS.savedata) {
       port.writeSampleCommandTriggertoUSB('0');
     }
     
