@@ -2,7 +2,9 @@ import firebase from 'firebase/app';
 import { matrix, subtract, filter, dotDivide, dotMultiply, round } from 'mathjs';
 import Tabulator from 'tabulator-tables';
 import * as d3 from 'd3';
-import { line } from 'd3';
+import 'jsoneditor/dist/jsoneditor.min.css';
+import JSONEditor, { JSONEditorOptions } from 'jsoneditor';
+
 
 
 const db = firebase.firestore();
@@ -16,6 +18,7 @@ export class Fireplace {
   private editorElem: HTMLDivElement;
   private performancePlotElem: HTMLDivElement;
   private table: Tabulator;
+  private viewer: JSONEditor;
   private taskDocs: any;
 
   constructor() {
@@ -114,7 +117,6 @@ export class Fireplace {
   }
 
   private constructTable(data: any[]) {
-    let timeNow = Date.now();
 
     let buildStuff = (d: any) => {
       this.buildPlots(d);
@@ -123,6 +125,8 @@ export class Fireplace {
     let returnTaskDocs = () => {
       return this.taskDocs;
     }
+
+    let viewer = this.viewer;
 
     function numTrialMutator(value: any, data: any, type: any, params: any, component: any) {
       if (params.range == 24) {
@@ -186,6 +190,8 @@ export class Fireplace {
       return cell.getValue();
     }
 
+    let viewerElem = document.querySelector('#taskdoc-viewer') as HTMLDivElement;
+
     this.table = new Tabulator(this.tableElem, {
       data: data,
       cellVertAlign: 'middle',
@@ -199,31 +205,36 @@ export class Fireplace {
           title: '% (today)',
           field: 'pctCorrectToday',
           mutator: pctCorrectMutator,
-          mutatorParams: { range: 24 }
+          mutatorParams: { range: 24 },
+          hozAlign: 'right'
         },
         {
           title: 'n (today)',
           field: 'numTrialsToday',
           mutator: numTrialMutator,
-          mutatorParams: { range: 24 }
+          mutatorParams: { range: 24 },
+          hozAlign: 'right'
         },
         {
           title: '% (-2d)',
           field: 'pctCorrectAvg',
           mutator: pctCorrectMutator,
-          mutatorParams: { range: 48 }
+          mutatorParams: { range: 48 },
+          hozAlign: 'right'
         },
         {
           title: 'n (-2d)',
           field: 'numTrialsAvg',
           mutator: numTrialMutator,
-          mutatorParams: { range: 48 }
+          mutatorParams: { range: 48 },
+          hozAlign: 'right'
         },
         {
           title: 'tLast',
           field: 'tSinceLastTrial',
           mutator: tSinceLastTrial,
-          formatter: tLastTrialFormat
+          formatter: tLastTrialFormat,
+          hozAlign: 'right'
         }
         
         
@@ -236,11 +247,29 @@ export class Fireplace {
       },
       rowClick(evt, row) {
         let taskDocs = returnTaskDocs();
+        console.log('taskDocs:', taskDocs);
         console.log('row clicked:', taskDocs[row.getData().agent]);
 
-        let taskDocsKeys = Object.keys(taskDocs);
+        let taskDocsKeys = Object.keys(taskDocs[row.getData().agent]);
         let mostRecentDate = taskDocsKeys[taskDocsKeys.length - 1];
-        console.log('most recent taskdoc:', taskDocs[row.getData().agent])
+        console.log(mostRecentDate);
+        let recentTaskDocs = taskDocs[row.getData().agent][mostRecentDate];
+        console.log(recentTaskDocs);
+        
+
+        // Need this try-catch block because JSONEditor.get() throws an error if no data is loaded
+        try {
+          viewer.get(); 
+          viewer.update(recentTaskDocs[recentTaskDocs.length - 1]);
+        } catch {
+          let options: JSONEditorOptions = {
+            modes: ['tree' as 'tree', 'code' as 'code'],
+            sortObjectKeys: true
+          };
+          viewer = new JSONEditor(viewerElem, options, recentTaskDocs[recentTaskDocs.length - 1]);  
+        }
+        
+        
 
       }
     });
@@ -294,10 +323,11 @@ export class Fireplace {
       dates: queryDateRangeArray
     }
     
-    let svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
+    let svgNumTrials: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
+    let svgPerformance: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
     let width = (<HTMLElement>d3.select('#num-trials-plot').node()).clientWidth;
     let height = (<HTMLElement>d3.select('#num-trials-plot').node()).clientHeight;
-    let margin = { top: 20, bottom: 30, right: 20, left: 50 };
+    let margin = { top: 20, bottom: 30, right: 150, left: 50, legendOffset: 30 };
 
     let x = d3.scaleTime()
       .domain(<[Date, Date]>d3.extent(d3Data.dates, function (d) { return d }))
@@ -306,40 +336,72 @@ export class Fireplace {
     let yNumTrials = d3.scaleLinear()
       .domain([0, <any>d3.max(d3Data.series, d => d3.max(d['_numTrials']))])
       .range([height - margin.bottom, margin.top]);
+
+    let yPerformance = d3.scaleLinear()
+      .domain([0, 100])
+      .range([height - margin.bottom, margin.top]);
     
     if (d3.select('svg').size() == 0) {
-      svg = (
+      svgNumTrials = (
         d3.select('#num-trials-plot')
           .append('svg')
+          .attr('id', 'num-trials-svg')
           .attr('style', 'width: 100%; height: 100%')
       );
-      svg
+      svgNumTrials
         .attr('viewBox', `0 0 ${width} ${height}`)
         .style("overflow", "visible");
 
+      svgPerformance = (
+        d3.select('#performance-plot')
+          .append('svg')
+          .attr('id', 'performance-svg')
+          .attr('style', 'width: 100%; height: 100%')
+          .attr('viewBox', `0 0 ${width} ${height}`)
+          .style("overflow", "visible")
+      );
+
       let xAxis = (g: any) => g
         .attr("transform", `translate(0,${height - margin.bottom})`)
+        .style('font-size', '15px')
         .call(d3.axisBottom<Date>(x).ticks(9).tickSizeOuter(0).tickFormat(d3.timeFormat('%a')));
 
       let yAxisNumTrials = (g: any) => g
-        .attr("transform", `translate(${margin.left},0)`)
-        .call(d3.axisLeft(yNumTrials))
-        .call((g: any) => g.select(".domain").remove())
-        .call((g: any) => g.select(".tick:last-of-type text").clone()
-            .attr("x", 3)
-            .attr("text-anchor", "start")
-            .attr("font-weight", "bold")
-            .text(d3Data.y));
+        .attr("transform", `translate(${margin.left}, 0)`)
+        .style('font-size', 14)
+        .call(d3.axisLeft(yNumTrials).tickFormat(d3.format('')).tickSize(-(width - margin.left - margin.right)))
+        .call((g: any) => g.select(".domain").remove());
+        // .call((g: any) => g.select(".tick:last-of-type text").clone()
+        //     .attr("x", 3)
+        //     .attr("text-anchor", "start")
+        //     .attr("font-weight", "bold")
+        //     .text(d3Data.y));
 
-      svg.append('g')
+      let yAxisPerformance = (g: any) => g
+        .attr('transform', `translate(${margin.left}, 0)`)
+        .style('font-size', 14)
+        .call(d3.axisLeft(yPerformance).ticks(5).tickFormat(d3.format('')).tickSize(-(width - margin.left - margin.right)))
+        .call((g: any) => g.select('.domain').remove());
+        // .call((g: any) => g.select(".tick:last-of-type text").clone()
+        // .attr("x", 3)
+        //     .attr("text-anchor", "start")
+        //     .attr("font-weight", "bold")
+        //     .text('Performance'));
+
+      svgNumTrials.append('g')
         .call(xAxis);
   
-      svg.append('g')
+      svgNumTrials.append('g')
         .call(yAxisNumTrials);
+
+      svgPerformance.append('g')
+        .call(xAxis);
+
+      svgPerformance.append('g')
+        .call(yAxisPerformance);
     } else {
-      svg = (
-        d3.select('svg')
-      );
+      svgNumTrials = d3.select('#num-trials-svg');
+      svgPerformance = d3.select('#performance-svg');
       d3.selectAll('path.line').remove();
     }
 
@@ -368,16 +430,16 @@ export class Fireplace {
       .x((d, i) => x(d3Data.dates[i] as Date))
       .y((d, i) => yNumTrials(d));
 
+    let linesPerformance = d3.line<any>()
+      .defined(d => !isNaN(d))
+      .x((d, i) => x(d3Data.dates[i] as Date))
+      .y((d, i) => yPerformance(d));
+
     console.log(d3Data);
     
 
-    let color = d3.scaleOrdinal(d3.schemeCategory10);
+    let color = d3.scaleOrdinal(d3.schemeTableau10);
 
-    let sumstat = d3.group(d3Data.series, d => d['_numTrials']);
-    console.log(sumstat);
-      
-
-    
     // let path = (
     //   svg.append('g')
     //     .attr("fill", "none")
@@ -392,14 +454,53 @@ export class Fireplace {
     //     .attr('d', d => linesNumTrials(d['_numTrials']))
     // );
 
-    d3Data.series.forEach((d: any) => {
-      let nT = d['_numTrials'];
-      svg.append('path')
+    d3Data.series.forEach((d: any, i: number) => {
+      let numTrials = d['_numTrials'];
+      svgNumTrials.append('path')
         .attr('class', 'line')
         .attr('fill', 'none')
-        .attr("stroke-width", 3)
+        .attr("stroke-width", 2)
         .style('stroke', () => { return color(d.agent); })
-        .attr('d', () => linesNumTrials(nT));
+        .attr('d', () => linesNumTrials(numTrials));
+
+      svgPerformance.append('path')
+        .attr('class', 'line')
+        .attr('fill', 'none')
+        .attr('stroke-width', 2)
+        .style('stroke', () => { return color(d.agent); })
+        .attr('d', () => linesPerformance(d['_performance']));
+
+      svgPerformance
+        .append('circle')
+          .attr('cx', width - margin.right + margin.legendOffset)
+          .attr('cy', () => { return margin.top + i * 25})
+          .attr('r', 7)
+          .style('fill', () => { return color(d.agent); });
+
+      svgPerformance
+        .append('text')
+          .attr('x', width - margin.right + margin.legendOffset + 20)
+          .attr('y', () => { return margin.top + i * 25; })
+          .style('fill', () => { return color(d.agent); })
+          .text(() => { return d.agent; })
+          .attr('text-anchor', 'left')
+          .attr('alignment-baseline', 'middle');
+
+      svgNumTrials
+        .append('circle')
+          .attr('cx', width - margin.right + margin.legendOffset)
+          .attr('cy', () => { return margin.top + i * 25})
+          .attr('r', 7)
+          .style('fill', () => { return color(d.agent); });
+
+      svgNumTrials
+        .append('text')
+          .attr('x', width - margin.right + margin.legendOffset+ 20)
+          .attr('y', () => { return margin.top + i * 25; })
+          .style('fill', () => { return color(d.agent); })
+          .text(() => { return d.agent; })
+          .attr('text-anchor', 'left')
+          .attr('alignment-baseline', 'middle');
     });
 
     
@@ -447,7 +548,8 @@ export class Fireplace {
       
     }
 
-    svg.call(hover);
+    // svgNumTrials.call(hover);
+    // svgPerformance.call(hover);
     // return svg.node();
     
     // console.log(svg);
