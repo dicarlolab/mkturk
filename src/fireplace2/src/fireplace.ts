@@ -294,6 +294,7 @@ export class Fireplace {
 
     // each row holds one agent's data
     let queryDateRangeArrayStr = this.getDateArray(this.queryStartDateValue, this.queryEndDateValue);
+    console.log(queryDateRangeArrayStr);
     data.forEach(row => {
       row['performance'] = (
         round(dotMultiply(100, dotDivide(row['numCorrect'], row['numTrials'])) as math.MathArray)
@@ -364,7 +365,7 @@ export class Fireplace {
       let xAxis = (g: any) => g
         .attr("transform", `translate(0,${height - margin.bottom})`)
         .style('font-size', '15px')
-        .call(d3.axisBottom<Date>(x).ticks(9).tickSizeOuter(0).tickFormat(d3.timeFormat('%a')));
+        .call(d3.axisBottom<Date>(x).ticks(7).tickSizeOuter(0).tickFormat(d3.timeFormat('%a')));
 
       let yAxisNumTrials = (g: any) => g
         .attr("transform", `translate(${margin.left}, 0)`)
@@ -461,7 +462,14 @@ export class Fireplace {
         .attr('fill', 'none')
         .attr("stroke-width", 2)
         .style('stroke', () => { return color(d.agent); })
-        .attr('d', () => linesNumTrials(numTrials));
+        .attr('d', () => linesNumTrials(numTrials))
+        .on('mouseover', (d, idx) => {
+          d3.select('#num-trials-svg')
+            .transition()
+              .duration(50)
+              .attr('opacity', '1')
+          console.log('d:', d, 'i:', idx);
+        });;
 
       svgPerformance.append('path')
         .attr('class', 'line')
@@ -518,15 +526,24 @@ export class Fireplace {
     
     
     const hover = (svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any> , path: d3.Selection<SVGPathElement, any, SVGElement, unknown>) => {
+      
+      
       const moved = (event: Event) => {
+        let rect = svgNumTrials.node();
+        let rectt = rect?.getBoundingClientRect();
+        console.log(rectt);
         event.preventDefault();
-        const pointer = d3.pointer(event, this);
+        const pointer = d3.pointer(event, svgNumTrials);
+        console.log('svg:', svg);
+        console.log('pointer:', pointer);
         const xm = x.invert(pointer[0]);
         const ym = yNumTrials.invert(pointer[1]);
+        // console.log(queryDateRangeArray);
         const i = d3.bisectCenter(queryDateRangeArray as Date[], xm);
         const s = d3.least(data, d => Math.abs(d['_numTrials'][i] - ym));
-        // path.attr("stroke", d => d === s ? null : "#ddd").filter(d => d === s).raise();
-        // dot.attr("transform", `translate(${x(data.dates[i])},${y(s.values[i])})`);
+        // console.log('i:', i);
+        path.attr("stroke", d => d === s ? null : "#ddd").filter(d => d === s).raise();
+        // dot.attr("transform", `translate(${x(d3Data.dates[i] as Date)},${yNumTrials(d3Data.series[i])})`);
         // dot.select("text").text(s.name);
       }
       
@@ -549,7 +566,7 @@ export class Fireplace {
     }
 
     // svgNumTrials.call(hover);
-    // svgPerformance.call(hover);
+    svgNumTrials.call(hover, svgNumTrials.selectAll('.path'));
     // return svg.node();
     
     // console.log(svg);
@@ -558,7 +575,7 @@ export class Fireplace {
   private getDateArray(start: number, end: number) {
     let arr = [];
     let dt = new Date(start);
-    while (dt.valueOf() <= end) {
+    while (dt.valueOf() < end) {
       arr.push(dt.toLocaleDateString());
       dt.setDate(dt.getDate() + 1);
     }
