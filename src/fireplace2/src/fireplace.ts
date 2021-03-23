@@ -441,35 +441,34 @@ export class Fireplace {
 
     let color = d3.scaleOrdinal(d3.schemeTableau10);
 
-    // let path = (
-    //   svg.append('g')
-    //     .attr("fill", "none")
-    //     .attr("stroke", (d,i) => d = d3.schemeCategory10[i])
-    //     .attr("stroke-width", 1.5)
-    //     .attr("stroke-linejoin", "round")
-    //     .attr("stroke-linecap", "round")
-    //   .selectAll("path")
-    //   .data(d3Data.series)
-    //   .join('path')
-    //     .style('mix-blend-mode', 'multiply')
-    //     .attr('d', d => linesNumTrials(d['_numTrials']))
-    // );
+    let path = (
+      svgNumTrials.append('g')
+        .attr("fill", "none")
+        // .attr("stroke", (d, i) => { return color(d.agent)})
+        .attr("stroke-width", 1.5)
+        .attr("stroke-linejoin", "round")
+        .attr("stroke-linecap", "round")
+      .selectAll("path")
+      .data(d3Data.series)
+      .join('path')
+        .style('mix-blend-mode', 'multiply')
+        .attr('d', d => linesNumTrials(d['_numTrials']))
+        .attr('stroke', (d, i) => color(d.agent))
+        .attr('id', (d, i) => d.agent)
+    );
 
     d3Data.series.forEach((d: any, i: number) => {
       let numTrials = d['_numTrials'];
-      svgNumTrials.append('path')
-        .attr('class', 'line')
-        .attr('fill', 'none')
-        .attr("stroke-width", 2)
-        .style('stroke', () => { return color(d.agent); })
-        .attr('d', () => linesNumTrials(numTrials))
-        .on('mouseover', (d, idx) => {
-          d3.select('#num-trials-svg')
-            .transition()
-              .duration(50)
-              .attr('opacity', '1')
-          console.log('d:', d, 'i:', idx);
-        });;
+      // svgNumTrials.append('path')
+      //   .attr('class', 'line')
+      //   .attr('fill', 'none')
+      //   .attr("stroke-width", 2)
+      //   .attr('stroke', () => { return color(d.agent); })
+      //   .data(d3Data.series)
+      //   .join('path')
+      //   .attr('d', () => linesNumTrials(numTrials))
+      //   .style('mix-blend-mode', 'multiply');
+        
 
       svgPerformance.append('path')
         .attr('class', 'line')
@@ -527,28 +526,7 @@ export class Fireplace {
     
     const hover = (svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any> , path: d3.Selection<SVGPathElement, any, SVGElement, unknown>) => {
       
-      
-      const moved = (event: Event) => {
-        let rect = svgNumTrials.node();
-        let rectt = rect?.getBoundingClientRect();
-        console.log(rectt);
-        event.preventDefault();
-        const pointer = d3.pointer(event, svgNumTrials);
-        console.log('svg:', svg);
-        console.log('pointer:', pointer);
-        const xm = x.invert(pointer[0]);
-        const ym = yNumTrials.invert(pointer[1]);
-        // console.log(queryDateRangeArray);
-        const i = d3.bisectCenter(queryDateRangeArray as Date[], xm);
-        const s = d3.least(data, d => Math.abs(d['_numTrials'][i] - ym));
-        // console.log('i:', i);
-        path.attr("stroke", d => d === s ? null : "#ddd").filter(d => d === s).raise();
-        // dot.attr("transform", `translate(${x(d3Data.dates[i] as Date)},${yNumTrials(d3Data.series[i])})`);
-        // dot.select("text").text(s.name);
-      }
-      
-      svg
-        .on('mousemove', moved);
+      let pathClicked = false;
 
       const dot = svg.append('g')
         .attr('display', 'none');
@@ -561,12 +539,174 @@ export class Fireplace {
         .attr("font-size", 10)
         .attr("text-anchor", "middle")
         .attr("y", -8);
+      
+      const moved = (event: Event) => {
+        event.preventDefault();
+        // console.log('path:', path);
+
+        if (pathClicked) {
+          let hhh = path.node()?.parentNode?.lastElementChild?.id;
+          let pointer = d3.pointer(event, svgNumTrials.node());
+          let xm = x.invert(pointer[0]);
+          let ym = yNumTrials.invert(pointer[1]);
+          let i = d3.bisectCenter(queryDateRangeArray as Date[], xm);
+          // let s = d3.least(d3Data.series, d => {
+          //   let idx = d3Data.series.map((row: any, idx: number) => {
+          //     if (row.agent == path.nodes()[path.nodes().length - 1].id) {
+          //       return idx;
+          //     }
+          //   }).filter(idx => idx)[0];
+          //   console.log(idx);
+          //   // let tmp = d3Data.series.forEach((row: any, idx: number) => {
+          //   //   if (row.agent == path.nodes()[path.nodes().length - 1].id) {
+          //   //     console.log(idx);
+          //   //     return idx;
+          //   //   }
+          //   // });
+
+          //   if (idx) {
+          //     console.log('matchy matchy:', path.nodes()[path.nodes().length - 1].id, d3Data.series[idx]['agent'])
+          //     return Math.abs(d3Data.series[idx]['_numTrials'][i] - ym);
+          //   } else {
+          //     return;
+          //   }
+          // });
+
+          // console.log('s:', s);
+          // if (!s) {
+          //   return;
+          // }
+
+          let s = d3Data.series.map((row: any, idx: number) => {
+            if (row.agent == hhh) {
+              return row;
+            }
+          }).filter(row => row)[0];
+          
+
+          // path.attr("stroke", d => {
+          //   if (d === s) {
+          //     console.log('YES');
+          //     console.log('D:', d);
+          //   }
+          //   return d === s ? color(d.agent) : "#ddd"
+          // }).filter(d => d === s).raise();
+          dot.attr("display", null);
+          dot.attr("transform", `translate(${x(d3Data.dates[i] as Date)},${yNumTrials(s['_numTrials'][i])})`);
+          dot.select("text").text(`${s['agent']}, ${s['_numTrials'][i]}`);
+        } else {
+          return;
+        }
+
+
+        // const pointer = d3.pointer(event, svgNumTrials.node());
+        // const xm = x.invert(pointer[0]);
+        // const ym = yNumTrials.invert(pointer[1]);
+        // // console.log(queryDateRangeArray);
+        // const i = d3.bisectCenter(queryDateRangeArray as Date[], xm);
+        // const s = d3.least(d3Data.series, d => {
+        //   if (pathClicked && d.agent == path.nodes()[path.nodes().length - 1].id) {
+        //     return Math.abs(d['_numTrials'][i] - ym);
+        //   }
+        //   return;
+          
+        // });
+        // // console.log('i:', i, 's:', s);
+        // // path.attr('stroke', d => {
+        // //   console.log('d', d);
+        // //   return d;
+        // // })
+        // // path.attr("stroke", d => {
+        // //   if (d === s) {
+        // //     console.log('YES');
+        // //   }
+        // //   return d === s ? 	color(d.agent) : "#ddd"
+        // // }).filter(d => d === s).raise();
+        // dot.attr("transform", `translate(${x(d3Data.dates[i] as Date)},${yNumTrials(s['_numTrials'][i])})`);
+        // dot.select("text").text(`${s['agent']}, ${s['_numTrials'][i]}`);
+      }
+
+      const clicked = (event: Event) => {
+        event.preventDefault();
+        if (pathClicked) {
+          path.style('mix-blend-mode', 'multiply')
+            .attr('stroke', d => color(d.agent));
+          dot.attr('display', 'none');
+        } else {
+          let pointer = d3.pointer(event, svgNumTrials.node());
+          let xm = x.invert(pointer[0]);
+          let ym = yNumTrials.invert(pointer[1]);
+          let i = d3.bisectCenter(queryDateRangeArray as Date[], xm);
+          let s = d3.least(d3Data.series, d => Math.abs(d['_numTrials'][i] - ym));
+          let hello = path.attr("stroke", d => {
+            if (d === s) {
+              console.log('YES');
+              console.log('D:', d);
+            }
+            return d === s ? 	color(d.agent) : "#ddd"
+          }).filter(d => d === s).raise();
+          console.log('raised path', hello);
+          dot.attr("display", null);
+          dot.attr("transform", `translate(${x(d3Data.dates[i] as Date)},${yNumTrials(s['_numTrials'][i])})`);
+          dot.select("text").text(`${s['agent']}, ${s['_numTrials'][i]}`);
+        }
+        pathClicked = (pathClicked == true) ? false : true;
+        // const pointer = d3.pointer(event, svgNumTrials.node());
+        // const xm = x.invert(pointer[0]);
+        // const ym = yNumTrials.invert(pointer[1]);
+        // // console.log(queryDateRangeArray);
+        // const i = d3.bisectCenter(queryDateRangeArray as Date[], xm);
+        // const s = d3.least(d3Data.series, d => Math.abs(d['_numTrials'][i] - ym));
+        // // console.log('i:', i, 's:', s);
+        // // path.attr('stroke', d => {
+        // //   console.log('d', d);
+        // //   return d;
+        // // })
+        // path.attr("stroke", d => {
+        //   if (d === s) {
+        //     console.log('YES');
+        //     console.log('D:', d);
+        //   }
+        //   return d === s ? 	color(d.agent) : "#ddd"
+        // }).filter(d => d === s).raise();
+        // dot.attr("display", null);
+        // dot.attr("transform", `translate(${x(d3Data.dates[i] as Date)},${yNumTrials(s['_numTrials'][i])})`);
+        // dot.select("text").text(`${s['agent']}, ${s['_numTrials'][i]}`);
+      }
+
+      function entered() {
+        path.style("mix-blend-mode", null).attr("stroke", "#ddd");
+        dot.attr("display", null);
+      }
+
+      function left() {
+        path.style("mix-blend-mode", "multiply").attr("stroke", d => color(d.agent));
+        dot.attr("display", "none");
+      }
+      
+      svg
+        .on('mousemove', moved)
+        .on('click', clicked);
+        // .on('mouseleave', left);
+
+      // const dot = svg.append('g')
+      //   .attr('display', 'none');
+
+      // dot.append('circle')
+      //   .attr('r', 2.5);
+
+      // dot.append("text")
+      //   .attr("font-family", "sans-serif")
+      //   .attr("font-size", 10)
+      //   .attr("text-anchor", "middle")
+      //   .attr("y", -8);
 
       
     }
 
     // svgNumTrials.call(hover);
-    svgNumTrials.call(hover, svgNumTrials.selectAll('.path'));
+    // svgNumTrials.call(hover, svgNumTrials.selectAll('path.line'));
+    svgNumTrials.call(hover, path);
     // return svg.node();
     
     // console.log(svg);
