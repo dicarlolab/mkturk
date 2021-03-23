@@ -196,7 +196,7 @@ export class Mkeditor {
         'MinPercentCriterion', 'MinTrialsCriterion'
       ];
       const generalKeys = [
-        'DragtoRespond', 'CalibrateEye', 'NRSVP', 'SameDifferent',
+        'DragtoRespond', 'CalibrateEye', 'NRSVP', 'NRSVPMax', 'SameDifferent',
         'SamplingStrategy', 'NStickyResponse', 'NTrialsPerBagBlock'
       ];
       const gridKeys = [

@@ -403,28 +403,10 @@ export class Fireplace {
     } else {
       svgNumTrials = d3.select('#num-trials-svg');
       svgPerformance = d3.select('#performance-svg');
-      d3.selectAll('path.line').remove();
+      // d3.selectAll('path.line').remove();
+      d3.selectAll('path').remove();
+      d3.selectAll('g.dot').remove();
     }
-
-    // let yPerformance = d3.scaleLinear()
-    //   .domain([0, 100])
-    //   .range([height - margin.bottom, margin.top]);
-    
-
-      
-    // let xAxis = (g: any) => g
-    //   .attr("transform", `translate(0,${height - margin.bottom})`)
-    //   .call(d3.axisBottom<Date>(x).ticks(9).tickSizeOuter(0).tickFormat(d3.timeFormat('%a')));
-
-    // let yAxisNumTrials = (g: any) => g
-    //   .attr("transform", `translate(${margin.left},0)`)
-    //   .call(d3.axisLeft(yNumTrials))
-    //   .call((g: any) => g.select(".domain").remove())
-    //   .call((g: any) => g.select(".tick:last-of-type text").clone()
-    //       .attr("x", 3)
-    //       .attr("text-anchor", "start")
-    //       .attr("font-weight", "bold")
-    //       .text(d3Data.y));
 
     let linesNumTrials = d3.line<any>()
       .defined(d => !isNaN(d))
@@ -441,11 +423,10 @@ export class Fireplace {
 
     let color = d3.scaleOrdinal(d3.schemeTableau10);
 
-    let path = (
+    let numTrialsPath = (
       svgNumTrials.append('g')
         .attr("fill", "none")
-        // .attr("stroke", (d, i) => { return color(d.agent)})
-        .attr("stroke-width", 1.5)
+        .attr("stroke-width", 2)
         .attr("stroke-linejoin", "round")
         .attr("stroke-linecap", "round")
       .selectAll("path")
@@ -457,34 +438,37 @@ export class Fireplace {
         .attr('id', (d, i) => d.agent)
     );
 
+    let performancePath = (
+      svgPerformance.append('g')
+          .attr('fill', 'none')
+          .attr('stroke-width', 2)
+          .attr('stroke-linejoin', 'round')
+          .attr('stroke-linecap', 'round')
+        .selectAll('path')
+        .data(d3Data.series)
+        .join('path')
+          // .style('mix-blend-mode', 'multiply')
+          .attr('d', d => linesPerformance(d['_performance']))
+          .attr('stroke', (d, i) => color(d.agent))
+          .attr('id', (d, i) => d.agent)
+    );
+
     d3Data.series.forEach((d: any, i: number) => {
-      let numTrials = d['_numTrials'];
-      // svgNumTrials.append('path')
-      //   .attr('class', 'line')
-      //   .attr('fill', 'none')
-      //   .attr("stroke-width", 2)
-      //   .attr('stroke', () => { return color(d.agent); })
-      //   .data(d3Data.series)
-      //   .join('path')
-      //   .attr('d', () => linesNumTrials(numTrials))
-      //   .style('mix-blend-mode', 'multiply');
-        
 
-      svgPerformance.append('path')
-        .attr('class', 'line')
-        .attr('fill', 'none')
-        .attr('stroke-width', 2)
-        .style('stroke', () => { return color(d.agent); })
-        .attr('d', () => linesPerformance(d['_performance']));
-
-      svgPerformance
+      svgPerformance.append('g')
+        .attr('class', 'legend')
         .append('circle')
           .attr('cx', width - margin.right + margin.legendOffset)
           .attr('cy', () => { return margin.top + i * 25})
           .attr('r', 7)
           .style('fill', () => { return color(d.agent); });
-
-      svgPerformance
+      // svgPerformance
+      //   .append('circle')
+      //     .attr('cx', width - margin.right + margin.legendOffset)
+      //     .attr('cy', () => { return margin.top + i * 25})
+      //     .attr('r', 7)
+      //     .style('fill', () => { return color(d.agent); });
+      svgPerformance.select('g.legend')
         .append('text')
           .attr('x', width - margin.right + margin.legendOffset + 20)
           .attr('y', () => { return margin.top + i * 25; })
@@ -492,6 +476,14 @@ export class Fireplace {
           .text(() => { return d.agent; })
           .attr('text-anchor', 'left')
           .attr('alignment-baseline', 'middle');
+      // svgPerformance
+      //   .append('text')
+      //     .attr('x', width - margin.right + margin.legendOffset + 20)
+      //     .attr('y', () => { return margin.top + i * 25; })
+      //     .style('fill', () => { return color(d.agent); })
+      //     .text(() => { return d.agent; })
+      //     .attr('text-anchor', 'left')
+      //     .attr('alignment-baseline', 'middle');
 
       svgNumTrials
         .append('circle')
@@ -509,185 +501,290 @@ export class Fireplace {
           .attr('text-anchor', 'left')
           .attr('alignment-baseline', 'middle');
     });
-
-    
-
-    // let path = (
-    //   svg.selectAll('.line')
-    //     .data(d3Data.series)
-    //     .enter()
-    //     .append('path')
-    //       .attr('fill', 'none')
-    //       .attr('stroke', 'bluesteel')
-    //       .attr('stroke-width', 1.5)
-    //       .attr('d', d => linesNumTrials(d['_numTrials']))
-    // );
     
     
-    const hover = (svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any> , path: d3.Selection<SVGPathElement, any, SVGElement, unknown>) => {
+    const numTrialsAction = (svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any> , path: d3.Selection<SVGPathElement, any, SVGElement, unknown>) => {
       
       let pathClicked = false;
+      let dotClicked = false;
+      let clickedDot: any;
 
-      const dot = svg.append('g')
-        .attr('display', 'none');
-
-      dot.append('circle')
-        .attr('r', 2.5);
-
-      dot.append("text")
-        .attr("font-family", "sans-serif")
-        .attr("font-size", 10)
-        .attr("text-anchor", "middle")
-        .attr("y", -8);
-      
-      const moved = (event: Event) => {
-        event.preventDefault();
-        // console.log('path:', path);
-
-        if (pathClicked) {
-          let hhh = path.node()?.parentNode?.lastElementChild?.id;
-          let pointer = d3.pointer(event, svgNumTrials.node());
-          let xm = x.invert(pointer[0]);
-          let ym = yNumTrials.invert(pointer[1]);
-          let i = d3.bisectCenter(queryDateRangeArray as Date[], xm);
-          // let s = d3.least(d3Data.series, d => {
-          //   let idx = d3Data.series.map((row: any, idx: number) => {
-          //     if (row.agent == path.nodes()[path.nodes().length - 1].id) {
-          //       return idx;
-          //     }
-          //   }).filter(idx => idx)[0];
-          //   console.log(idx);
-          //   // let tmp = d3Data.series.forEach((row: any, idx: number) => {
-          //   //   if (row.agent == path.nodes()[path.nodes().length - 1].id) {
-          //   //     console.log(idx);
-          //   //     return idx;
-          //   //   }
-          //   // });
-
-          //   if (idx) {
-          //     console.log('matchy matchy:', path.nodes()[path.nodes().length - 1].id, d3Data.series[idx]['agent'])
-          //     return Math.abs(d3Data.series[idx]['_numTrials'][i] - ym);
-          //   } else {
-          //     return;
-          //   }
-          // });
-
-          // console.log('s:', s);
-          // if (!s) {
-          //   return;
-          // }
-
-          let s = d3Data.series.map((row: any, idx: number) => {
-            if (row.agent == hhh) {
-              return row;
-            }
-          }).filter(row => row)[0];
-          
-
-          // path.attr("stroke", d => {
-          //   if (d === s) {
-          //     console.log('YES');
-          //     console.log('D:', d);
-          //   }
-          //   return d === s ? color(d.agent) : "#ddd"
-          // }).filter(d => d === s).raise();
-          dot.attr("display", null);
-          dot.attr("transform", `translate(${x(d3Data.dates[i] as Date)},${yNumTrials(s['_numTrials'][i])})`);
-          dot.select("text").text(`${s['agent']}, ${s['_numTrials'][i]}`);
-        } else {
-          return;
-        }
-
-
-        // const pointer = d3.pointer(event, svgNumTrials.node());
-        // const xm = x.invert(pointer[0]);
-        // const ym = yNumTrials.invert(pointer[1]);
-        // // console.log(queryDateRangeArray);
-        // const i = d3.bisectCenter(queryDateRangeArray as Date[], xm);
-        // const s = d3.least(d3Data.series, d => {
-        //   if (pathClicked && d.agent == path.nodes()[path.nodes().length - 1].id) {
-        //     return Math.abs(d['_numTrials'][i] - ym);
-        //   }
-        //   return;
-          
-        // });
-        // // console.log('i:', i, 's:', s);
-        // // path.attr('stroke', d => {
-        // //   console.log('d', d);
-        // //   return d;
-        // // })
-        // // path.attr("stroke", d => {
-        // //   if (d === s) {
-        // //     console.log('YES');
-        // //   }
-        // //   return d === s ? 	color(d.agent) : "#ddd"
-        // // }).filter(d => d === s).raise();
-        // dot.attr("transform", `translate(${x(d3Data.dates[i] as Date)},${yNumTrials(s['_numTrials'][i])})`);
-        // dot.select("text").text(`${s['agent']}, ${s['_numTrials'][i]}`);
-      }
-
-      const clicked = (event: Event) => {
-        event.preventDefault();
-        if (pathClicked) {
-          path.style('mix-blend-mode', 'multiply')
-            .attr('stroke', d => color(d.agent));
-          dot.attr('display', 'none');
-        } else {
-          let pointer = d3.pointer(event, svgNumTrials.node());
-          let xm = x.invert(pointer[0]);
-          let ym = yNumTrials.invert(pointer[1]);
-          let i = d3.bisectCenter(queryDateRangeArray as Date[], xm);
-          let s = d3.least(d3Data.series, d => Math.abs(d['_numTrials'][i] - ym));
-          let hello = path.attr("stroke", d => {
-            if (d === s) {
-              console.log('YES');
-              console.log('D:', d);
-            }
-            return d === s ? 	color(d.agent) : "#ddd"
-          }).filter(d => d === s).raise();
-          console.log('raised path', hello);
-          dot.attr("display", null);
-          dot.attr("transform", `translate(${x(d3Data.dates[i] as Date)},${yNumTrials(s['_numTrials'][i])})`);
-          dot.select("text").text(`${s['agent']}, ${s['_numTrials'][i]}`);
-        }
-        pathClicked = (pathClicked == true) ? false : true;
-        // const pointer = d3.pointer(event, svgNumTrials.node());
-        // const xm = x.invert(pointer[0]);
-        // const ym = yNumTrials.invert(pointer[1]);
-        // // console.log(queryDateRangeArray);
-        // const i = d3.bisectCenter(queryDateRangeArray as Date[], xm);
-        // const s = d3.least(d3Data.series, d => Math.abs(d['_numTrials'][i] - ym));
-        // // console.log('i:', i, 's:', s);
-        // // path.attr('stroke', d => {
-        // //   console.log('d', d);
-        // //   return d;
-        // // })
-        // path.attr("stroke", d => {
-        //   if (d === s) {
-        //     console.log('YES');
-        //     console.log('D:', d);
-        //   }
-        //   return d === s ? 	color(d.agent) : "#ddd"
-        // }).filter(d => d === s).raise();
-        // dot.attr("display", null);
-        // dot.attr("transform", `translate(${x(d3Data.dates[i] as Date)},${yNumTrials(s['_numTrials'][i])})`);
-        // dot.select("text").text(`${s['agent']}, ${s['_numTrials'][i]}`);
-      }
-
-      function entered() {
-        path.style("mix-blend-mode", null).attr("stroke", "#ddd");
-        dot.attr("display", null);
-      }
-
-      function left() {
-        path.style("mix-blend-mode", "multiply").attr("stroke", d => color(d.agent));
-        dot.attr("display", "none");
-      }
-      
       svg
-        .on('mousemove', moved)
-        .on('click', clicked);
-        // .on('mouseleave', left);
+        .on('mousemove', (e) => {
+          let target = d3.select(e.target).node();
+          if (!pathClicked) {
+            if (target.nodeName == 'path') {
+              path.attr('stroke-width', d => {
+                return d.agent === target.id ? 4 : 2;
+              });
+            } else {
+              path.attr('stroke-width', 2);
+            }
+          } else {
+            if (target.nodeName == 'circle' && dotClicked == true) {     
+              if (target != clickedDot) {
+                console.log('target:', target, 'clickedDot:', clickedDot);
+                d3.select(target)
+                .attr('r', 4.5)
+                .attr('fill', 'black');
+              }
+            } else if (target.nodeName == 'circle' && dotClicked == false) {
+              d3.select(target)
+                .attr('r', 4.5);
+              // svg.selectAll('g.dot circle').attr('r', 4.5);
+            } else if (target.nodeName != 'circle' && dotClicked == false) {
+              d3.selectAll('g.dot circle').attr('r', 2.5);
+            } else if (target.nodeName != 'circle' && dotClicked == true) {
+              d3.selectAll('g.dot circle').attr('r', 2.5);
+              d3.select(clickedDot)
+                .attr('r', 4.5)
+                .attr('fill', 'red');
+            }
+          }
+        })
+        .on('click', (e) => {
+          let target = d3.select(e.target).node();
+          if (!pathClicked) {
+            if (target.nodeName == 'path') {
+              path.attr('stroke', d => {
+                return d.agent === target.id ? color(d.agent) : '#ddd';
+              }).filter(d => d.agent === target.id).raise();
+              path.attr('stroke-width', d => {
+                return d.agent === target.id ? 4 : 2;
+              });
+
+              let row = d3Data.series.map((row: any) => {
+                if (row.agent == target.id) {
+                  return row;
+                }
+              }).filter(row => row)[0];
+
+              row['_numTrials'].forEach((numTrials: number, idx: number) => {
+                console.log('numTrials:', numTrials, 'idx:', idx);
+                let dot = svg.append('g')
+                  .attr('display', null)
+                  .attr('class', 'dot');
+
+                dot.append('circle')
+                    .attr('r', 2.5);
+
+                dot.append('text')
+                    .attr('font-family', 'sans-serif')
+                    .attr('font-size', 10)
+                    .attr('text-anchor', 'middle')
+                    .attr('y', -8);
+                dot.attr('transform', `translate(${x(d3Data.dates[idx] as Date)}, ${yNumTrials(numTrials)})`);
+                dot.select('text').text(`${row['agent']}, ${numTrials}`);
+
+
+              });
+              
+
+              pathClicked = true;
+            } 
+          } else {
+            if (target.nodeName == 'circle' && dotClicked == false) {
+              let pointer = d3.pointer(e, svg);
+              let dateClicked = x.invert(pointer[0]);
+              let agent = path.node()?.parentNode?.lastElementChild?.id as string;
+              let agentTaskDocs = this.taskDocs[agent][dateClicked.toLocaleDateString()];
+              let lastTaskDoc = agentTaskDocs[agentTaskDocs.length - 1];
+              d3.select(target)
+                .attr('r', 4.5)
+                .attr('fill', 'red');
+              dotClicked = true;
+              clickedDot = target;
+
+              try {
+                this.viewer.get();
+                this.viewer.update(lastTaskDoc);
+              } catch {
+                let options: JSONEditorOptions = {
+                  modes: ['tree' as 'tree', 'code' as 'code'],
+                  sortObjectKeys: true
+                };
+                let viewerElem = document.querySelector('#taskdoc-viewer') as HTMLDivElement;
+                this.viewer = new JSONEditor(viewerElem, options, lastTaskDoc);
+              }
+            } else if (target.nodeName == 'circle' && dotClicked == true) {
+              if (target == clickedDot) {
+                d3.select(target)
+                  .attr('r', 2.5)
+                  .attr('fill', 'black');
+                dotClicked = false;
+              } else {
+                let pointer = d3.pointer(e, svg);
+                let dateClicked = x.invert(pointer[0]);
+                let agent = path.node()?.parentNode?.lastElementChild?.id as string;
+                let agentTaskDocs = this.taskDocs[agent][dateClicked.toLocaleDateString()];
+                let lastTaskDoc = agentTaskDocs[agentTaskDocs.length - 1];
+                d3.select(target)
+                  .attr('r', 4.5)
+                  .attr('fill', 'red');
+                d3.select(clickedDot)
+                  .attr('r', 2.5)
+                  .attr('fill', 'black');
+                clickedDot = target;
+                this.viewer.update(lastTaskDoc);
+              }
+            } else {
+              path
+              .attr('stroke', d => color(d.agent))
+              .attr('stroke-width', 2);
+
+              svg.selectAll('g.dot').remove();
+              pathClicked = false;
+              dotClicked = false;
+            }
+          }
+        });
+      
+    }
+
+    const performanceAction = (svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any> , path: d3.Selection<SVGPathElement, any, SVGElement, unknown>) => {
+      
+      let pathClicked = false;
+      let dotClicked = false;
+      let clickedDot: any;
+
+      svg
+        .on('mousemove', (e) => {
+          let target = d3.select(e.target).node();
+          if (!pathClicked) {
+            if (target.nodeName == 'path') {
+              path.attr('stroke-width', d => {
+                return d.agent === target.id ? 4 : 2;
+              });
+            } else {
+              path.attr('stroke-width', 2);
+            }
+          } else {
+            if (target.nodeName == 'circle' && dotClicked == true) {     
+              if (target != clickedDot) {
+                console.log('target:', target, 'clickedDot:', clickedDot);
+                d3.select(target)
+                .attr('r', 4.5)
+                .attr('fill', 'black');
+              }
+            } else if (target.nodeName == 'circle' && dotClicked == false) {
+              d3.select(target)
+                .attr('r', 4.5);
+              // svg.selectAll('g.dot circle').attr('r', 4.5);
+            } else if (target.nodeName != 'circle' && dotClicked == false) {
+              d3.selectAll('g.dot circle').attr('r', 2.5);
+            } else if (target.nodeName != 'circle' && dotClicked == true) {
+              d3.selectAll('g.dot circle').attr('r', 2.5);
+              d3.select(clickedDot)
+                .attr('r', 4.5)
+                .attr('fill', 'red');
+            }
+          }
+        })
+        .on('click', (e) => {
+          let target = d3.select(e.target).node();
+          if (!pathClicked) {
+            if (target.nodeName == 'path') {
+              path.attr('stroke', d => {
+                return d.agent === target.id ? color(d.agent) : '#ddd';
+              }).filter(d => d.agent === target.id).raise();
+              path.attr('stroke-width', d => {
+                return d.agent === target.id ? 4 : 2;
+              });
+              // path.style('mix-blend-mode', d => {
+              //   return d.agent === target.id ? 'overlay' : 'multiply'
+              // });
+
+              let row = d3Data.series.map((row: any) => {
+                if (row.agent == target.id) {
+                  return row;
+                }
+              }).filter(row => row)[0];
+
+              row['_performance'].forEach((performance: number, idx: number) => {
+                let dot = svg.append('g')
+                  .attr('display', null)
+                  .attr('class', 'dot');
+
+                dot.append('circle')
+                    .attr('r', 2.5);
+
+                dot.append('text')
+                    .attr('font-family', 'sans-serif')
+                    .attr('font-size', 10)
+                    .attr('text-anchor', 'middle')
+                    .attr('y', -8);
+                dot.attr('transform', `translate(${x(d3Data.dates[idx] as Date)}, ${yPerformance(performance)})`);
+                dot.select('text').text(`${row['agent']}, ${performance}%`);
+
+
+              });
+              
+
+              pathClicked = true;
+            } 
+            
+          } else {
+            if (target.nodeName == 'circle' && dotClicked == false) {
+              let pointer = d3.pointer(e, svg);
+              let dateClicked = x.invert(pointer[0]);
+              let agent = path.node()?.parentNode?.lastElementChild?.id as string;
+              let agentTaskDocs = this.taskDocs[agent][dateClicked.toLocaleDateString()];
+              let lastTaskDoc = agentTaskDocs[agentTaskDocs.length - 1];
+              d3.select(target)
+                .attr('r', 4.5)
+                .attr('fill', 'red');
+              dotClicked = true;
+              clickedDot = target;
+
+              try {
+                this.viewer.get();
+                this.viewer.update(lastTaskDoc);
+              } catch {
+                let options: JSONEditorOptions = {
+                  modes: ['tree' as 'tree', 'code' as 'code'],
+                  sortObjectKeys: true
+                };
+                let viewerElem = document.querySelector('#taskdoc-viewer') as HTMLDivElement;
+                this.viewer = new JSONEditor(viewerElem, options, lastTaskDoc);
+              }
+  
+            } else if (target.nodeName == 'circle' && dotClicked == true) {
+              if (target == clickedDot) {
+                d3.select(target)
+                  .attr('r', 2.5)
+                  .attr('fill', 'black');
+                dotClicked = false;
+              } else {
+                let pointer = d3.pointer(e, svg);
+                let dateClicked = x.invert(pointer[0]);
+                let agent = path.node()?.parentNode?.lastElementChild?.id as string;
+                let agentTaskDocs = this.taskDocs[agent][dateClicked.toLocaleDateString()];
+                let lastTaskDoc = agentTaskDocs[agentTaskDocs.length - 1];
+                d3.select(target)
+                  .attr('r', 4.5)
+                  .attr('fill', 'red');
+                d3.select(clickedDot)
+                  .attr('r', 2.5)
+                  .attr('fill', 'black');
+                clickedDot = target;
+                this.viewer.update(lastTaskDoc);
+              }
+              
+            } else {
+              path
+              .attr('stroke', d => color(d.agent))
+              .attr('stroke-width', 2);
+              // .style('mix-blend-mode', 'multiply');
+
+              svg.selectAll('g.dot').remove();
+              pathClicked = false;
+              dotClicked = false;
+            }
+          }
+        });
+
+      // path
+      //   .on('click', pathClick);
 
       // const dot = svg.append('g')
       //   .attr('display', 'none');
@@ -706,7 +803,12 @@ export class Fireplace {
 
     // svgNumTrials.call(hover);
     // svgNumTrials.call(hover, svgNumTrials.selectAll('path.line'));
-    svgNumTrials.call(hover, path);
+    // if (d3.select('svg').size() == 0) {
+    //   svgNumTrials.call(hover, path);
+    // }
+    svgNumTrials.call(numTrialsAction, numTrialsPath);
+    svgPerformance.call(performanceAction, performancePath);
+    
     // return svg.node();
     
     // console.log(svg);
