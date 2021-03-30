@@ -34,6 +34,7 @@ export class Mkeditor {
   // public genSceneParamBtn: HTMLButtonElement;
   // private genSceneParamModal: HTMLDivElement;
   public genBtn: HTMLButtonElement;
+  public expandBtn: HTMLButtonElement;
   public svSceneBtn: HTMLButtonElement;
   private pe: ParseEngine;
   private userEditedSceneParam: Object;
@@ -76,6 +77,7 @@ export class Mkeditor {
     
     
     this.genBtn = document.querySelector('#generate-btn') as HTMLButtonElement;
+    this.expandBtn = document.querySelector('#expand-btn') as HTMLButtonElement;
     this.svSceneBtn = document.querySelector('#save-scene-param-btn') as HTMLButtonElement;
     this.genBtnAction();
     this.svSceneBtnAction();

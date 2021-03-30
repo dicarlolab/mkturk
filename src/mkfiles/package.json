@@ -4,7 +4,8 @@
   "description": "Wireless touchscreen behavioral training",
   "main": "mkfiles.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "webpack --watch --config webpack.devel.config.js"
   },
   "repository": {
     "type": "git",
@@ -18,11 +19,12 @@
   "homepage": "https://github.com/issalab/mkturk#readme",
   "dependencies": {
     "@google-cloud/bigquery": "^5.5.0",
-    "@google-cloud/storage": "^5.8.1",
+    "@google-cloud/storage": "^5.8.3",
     "@types/chart.js": "^2.9.31",
     "@types/file-saver": "^2.0.1",
-    "@types/google.visualization": "0.0.60",
+    "@types/google.visualization": "0.0.64",
     "@types/jsoneditor": "^8.6.0",
+    "@types/lodash": "^4.14.168",
     "@types/lodash.clonedeep": "^4.5.6",
     "@types/mathjs": "^6.0.11",
     "@types/tabulator-tables": "^4.9.1",
@@ -31,9 +33,10 @@
     "chart.js": "^2.9.4",
     "device-detector-js": "^2.2.7",
     "file-saver": "^2.0.5",
-    "firebase": "^8.3.0",
-    "firebase-admin": "^9.5.0",
+    "firebase": "^8.3.1",
+    "firebase-admin": "^9.6.0",
     "jsoneditor": "^9.2.0",
+    "lodash": "^4.17.21",
     "lodash.clonedeep": "^4.5.0",
     "mathjs": "^9.3.0",
     "tabulator-tables": "^4.9.3",
@@ -42,10 +45,18 @@
     "webusb": "^2.2.0"
   },
   "devDependencies": {
+    "clean-webpack-plugin": "^3.0.0",
+    "css-loader": "^5.2.0",
+    "file-loader": "^6.2.0",
     "google-charts": "^2.0.0",
-    "ts-loader": "^8.0.18",
+    "html-webpack-plugin": "^5.3.1",
+    "mini-css-extract-plugin": "^1.4.0",
+    "source-map-loader": "^2.0.1",
+    "style-loader": "^2.0.0",
+    "ts-loader": "^8.1.0",
     "typescript": "^4.2.3",
-    "webpack": "^5.25.0",
-    "webpack-cli": "^4.5.0"
+    "webpack": "^5.28.0",
+    "webpack-cli": "^4.6.0",
+    "webpack-fix-style-only-entries": "^0.6.1"
   }
 }
