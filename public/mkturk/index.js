@@ -1368,11 +1368,7 @@ if (ENV.BatteryAPIAvailable) {
         if (FLAGS.trackeye) {
           ENV.Eye.EventType = 'eyemove';
         }
-       
-        if (port.connected && FLAGS.savedata) {
-          await port.writeSampleCommandTriggertoUSB('1');
-        }
-        
+               
         let p1 = hold_promise(
           0,
           boundingBoxesSampleFixation,
@@ -1387,6 +1383,11 @@ if (ENV.BatteryAPIAvailable) {
           CURRTRIAL.sequenceindex,
           mkm
         );
+
+        if (port.connected && FLAGS.savedata) {
+          port.writeSampleCommandTriggertoUSB('1');
+        }
+
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
         CURRTRIAL.samplestarttime_string = new Date().toJSON();
         let race_return = await Promise.race([p1, p2]);
@@ -1436,11 +1437,13 @@ if (ENV.BatteryAPIAvailable) {
         boundingBoxesChoice3D = { x: [], y: [] } // determined on the fly during display
         CURRTRIAL.samplefixationtouchevent = '';
         CURRTRIAL.samplefixationxyt = [];
-        CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
-        CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime).toJSON();
+
         if (port.connected && FLAGS.savedata) {
           await port.writeSampleCommandTriggertoUSB('1');
         }
+
+        CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
+        CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime).toJSON();
         
         await displayTrial(
           CURRTRIAL.tsequence,
