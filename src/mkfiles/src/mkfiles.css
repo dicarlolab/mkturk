@@ -204,8 +204,13 @@
   /* visibility: hidden; */
 }
 
-#generate-btn {
+/* #generate-btn {
   grid-area: gen-btn;
+  display: none;
+} */
+
+#param-gen-btn-box {
+  grid-area: param-gen-btn-box;
   display: none;
 }
 

@@ -600,7 +600,8 @@ export class Mkfinder {
 
     if (fileRef.fullPath == "mkturkfiles/parameterfiles/params_storage") {
       this.mke.storeParamBtn.style.display = 'none';
-      this.mke.genBtn.style.display = 'none';
+      // this.mke.genBtn.style.display = 'none';
+      this.mke.paramGenBtnBox.style.display = 'none';
       // this.mke.genSceneParamBtn.style.display = 'none';
       this.mke.svSceneBtn.style.display = 'none';
       this.mke.makeActiveBtn.style.display = 'inline-block';
@@ -608,7 +609,8 @@ export class Mkfinder {
       this.mke.btnBoxDiv.style.gridTemplateAreas = '"update-btn active-btn"';
     } else if (fileRef.fullPath == 'mkturkfiles/parameterfiles/subjects') {
       this.mke.makeActiveBtn.style.display = 'none';
-      this.mke.genBtn.style.display = 'none';
+      // this.mke.genBtn.style.display = 'none';
+      this.mke.paramGenBtnBox.style.display = 'none';
       this.mke.svSceneBtn.style.display = 'none';
       this.mke.updateBtn.style.display = 'inline-block';
       this.mke.storeParamBtn.style.display = 'inline-block';
@@ -617,13 +619,15 @@ export class Mkfinder {
       this.mke.makeActiveBtn.style.display = 'none';
       this.mke.storeParamBtn.style.display = 'none';
       this.mke.svSceneBtn.style.display = 'none';
-      this.mke.genBtn.style.display = 'inline-block';
+      // this.mke.genBtn.style.display = 'inline-block';
+      this.mke.paramGenBtnBox.style.display = 'inline-block';
       this.mke.updateBtn.style.display = 'inline-block';
-      this.mke.btnBoxDiv.style.gridTemplateAreas = '"gen-btn update-btn"';
+      this.mke.btnBoxDiv.style.gridTemplateAreas = '"param-gen-btn-box update-btn"';
     } else {
       this.mke.makeActiveBtn.style.display = 'none';
       this.mke.storeParamBtn.style.display = 'none';
-      this.mke.genBtn.style.display = 'none';
+      // this.mke.genBtn.style.display = 'none';
+      this.mke.paramGenBtnBox.style.display = 'none';
       this.mke.svSceneBtn.style.display = 'none';
       this.mke.updateBtn.style.display = 'inline-block';
       this.mke.btnBoxDiv.style.gridTemplateAreas = '"update-btn update-btn"';

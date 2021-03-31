@@ -9,9 +9,8 @@ export class ParseEngine {
 
   }
 
-  public generateParamObject(obj: any) {
+  public generateParamObject(obj: any, scheme: string) {
     
-    let scheme = 'expand';
     let userObj = cloneDeep(obj);
     console.log(userObj);
     let totalLen = 1;
@@ -137,7 +136,7 @@ export class ParseEngine {
                     if (
                       isArray(userObj[module][key][key2][key3])
                       && userObj[module][key][key2][key3].length > 1
-                      && userObj[module][key][key2][key3] != maxLen
+                      && userObj[module][key][key2][key3].length != maxLen
                     ) {
                       let err = new Error(`Length Mismatch: ${module}[${key}][${key2}][${key3}].length=${userObj[module][key][key2][key3].length} != maxLen=${maxLen}`);
                       alert(err.message);
@@ -151,45 +150,6 @@ export class ParseEngine {
         }
       });
     }
-    // path.forEach((module, index) => {
-    //   if (isArray(userObj[module]) && userObj[module].length > 1) {
-    //     let tmp = [];
-    //     for (let i = 0; i < totalLen; i++) {
-    //       tmp.push(userObj[module][i % userObj[module].length]);
-    //     }
-    //     userObj[module] = tmp;
-    //   } else if (isPlainObject(userObj[module])) {
-    //     for (let key in userObj[module]) {
-    //       if (isArray(userObj[module][key]) && userObj[module][key].length > 1) {
-    //         let tmp = [];
-    //         for (let i = 0; i < totalLen; i++) {
-    //           tmp.push(userObj[module][key][i % userObj[module][key].length]);
-    //         }
-    //         userObj[module][key] = tmp;
-    //       } else if (isPlainObject(userObj[module][key])) {
-    //         for (let key2 in userObj[module][key]) {
-    //           if (isArray(userObj[module][key][key2]) && userObj[module][key][key2].length > 1) {
-    //             let tmp = [];
-    //             for (let i = 0; i < totalLen; i++) {
-    //               tmp.push(userObj[module][key][key2][i % userObj[module][key][key2].length]);
-    //             }
-    //             userObj[module][key][key2] = tmp;
-    //           } else if (isPlainObject(userObj[module][key][key2])) {
-    //             for (let key3 in userObj[module][key][key2]) {
-    //               if (isArray(userObj[module][key][key2][key3]) && userObj[module][key][key2][key3].length > 1) {
-    //                 let tmp = [];
-    //                 for (let i = 0; i < totalLen; i++) {
-    //                   tmp.push(userObj[module][key][key2][key3][i % userObj[module][key][key2][key3].length]);
-    //                 }
-    //                 userObj[module][key][key2][key3] = tmp;
-    //               }
-    //             }
-    //           }
-    //         }
-    //       }
-    //     }
-    //   }
-    // });
 
     console.log('userObj', userObj, 'totalLen:', totalLen);
     return userObj;
