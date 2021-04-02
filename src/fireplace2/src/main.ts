@@ -1,5 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'tabulator-tables/dist/css/bootstrap/tabulator_bootstrap.min.css';
+import './fireplace.css';
 
 import './init';
 
@@ -29,9 +30,23 @@ auth.getRedirectResult().then(result => {
 
 
 const tableElem = document.querySelector('#table') as HTMLDivElement;
-// console.log(tableElem);
+const endDateInput = document.querySelector('#end-date') as HTMLInputElement;
+endDateInput.value = new Date().toLocaleDateString('en-CA');
+const performancePlotElem = document.querySelector('#performance-plot') as HTMLDivElement;
+fp.registerDomElement('perf-plot', performancePlotElem);
 
-fp.registerDomElement('table', tableElem)
+const refreshBtn = document.querySelector('#refresh-btn') as HTMLButtonElement;
+refreshBtn.addEventListener('pointerup', (evt: Event) => {
+  console.log('hello');
+  fp.tLastQuery = 0;
+  let query = db.collection('mkturkdata')
+    .where('Doctype', '==', 'task')
+    .where('CurrentDateValue', '<', fp.queryEndDateValue)
+    .where('CurrentDateValue', '>=', fp.queryStartDateValue)
+    .onSnapshot(snapshot => fp.queryCallback(snapshot));
+});
+
+fp.registerDomElement('table', tableElem);
 
 
 let query = db.collection('mkturkdata')

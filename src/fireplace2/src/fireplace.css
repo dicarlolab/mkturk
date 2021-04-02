@@ -1,0 +1,10 @@
+.tabulator-row .tabulator-cell{
+  max-height: 22px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+  padding-right: 16px;
+}
+
+.tick > line {
+  stroke: #ddd;
+}

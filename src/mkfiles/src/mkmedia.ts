@@ -34,6 +34,9 @@ export class Mkeditor {
   // public genSceneParamBtn: HTMLButtonElement;
   // private genSceneParamModal: HTMLDivElement;
   public genBtn: HTMLButtonElement;
+  public paramGenBtnBox: HTMLDivElement;
+
+  public expandBtn: HTMLButtonElement;
   public svSceneBtn: HTMLButtonElement;
   private pe: ParseEngine;
   private userEditedSceneParam: Object;
@@ -47,6 +50,7 @@ export class Mkeditor {
     this.editor = new JSONEditor(this.editorElement);
     this.updateBtn = document.querySelector("#update-btn") as HTMLButtonElement;
     this.btnBoxDiv = document.querySelector("#button-box") as HTMLDivElement;
+    this.paramGenBtnBox = document.querySelector('#param-gen-btn-box') as HTMLDivElement;
     this.makeActiveBtn = document.querySelector("#active-btn") as HTMLButtonElement;
     this.storeParamBtn 
       = document.querySelector('#store-param-btn') as HTMLButtonElement;
@@ -76,6 +80,7 @@ export class Mkeditor {
     
     
     this.genBtn = document.querySelector('#generate-btn') as HTMLButtonElement;
+    this.expandBtn = document.querySelector('#expand-btn') as HTMLButtonElement;
     this.svSceneBtn = document.querySelector('#save-scene-param-btn') as HTMLButtonElement;
     this.genBtnAction();
     this.svSceneBtnAction();
@@ -196,7 +201,7 @@ export class Mkeditor {
         'MinPercentCriterion', 'MinTrialsCriterion'
       ];
       const generalKeys = [
-        'DragtoRespond', 'CalibrateEye', 'NRSVP', 'SameDifferent',
+        'DragtoRespond', 'CalibrateEye', 'NRSVP', 'NRSVPMax', 'SameDifferent',
         'SamplingStrategy', 'NStickyResponse', 'NTrialsPerBagBlock'
       ];
       const gridKeys = [
@@ -677,7 +682,9 @@ export class Mkeditor {
     this.genBtn.addEventListener('click', (ev: Event) => {
       if (this.genBtn.value == 'generate') {
         this.userEditedSceneParam = this.editor.get();
-        this.generatedSceneParam = this.pe.generateParamObject(this.userEditedSceneParam);
+        this.generatedSceneParam = (
+          this.pe.generateParamObject(this.userEditedSceneParam, 'vectorize')
+        );
         this.editor.destroy();
         let options = {
           modes: ['tree' as 'tree', 'code' as 'code']
@@ -687,7 +694,7 @@ export class Mkeditor {
         this.genBtn.textContent = 'Revert';
         this.updateBtn.style.display = 'none';
         this.svSceneBtn.style.display = 'inline-block';
-        this.btnBoxDiv.style.gridTemplateAreas = '"gen-btn sv-scene-param-btn"';
+        this.btnBoxDiv.style.gridTemplateAreas = '"param-gen-btn-box sv-scene-param-btn"';
       } else if (this.genBtn.value == 'revert') {
         this.editor.destroy();
         this.generatedSceneParam = {};
@@ -696,10 +703,41 @@ export class Mkeditor {
         };
         this.editor = new JSONEditor(this.editorElement, options, this.userEditedSceneParam);
         this.genBtn.value = 'generate';
-        this.genBtn.textContent = 'Generate Param';
+        this.genBtn.textContent = 'Vectorize Param';
         this.svSceneBtn.style.display = 'none';
         this.updateBtn.style.display = 'inline-block';
-        this.btnBoxDiv.style.gridTemplateAreas = '"gen-btn update-btn"';
+        this.btnBoxDiv.style.gridTemplateAreas = '"param-gen-btn-box update-btn"';
+      }
+    });
+
+    this.expandBtn.addEventListener('click', (ev: Event) => {
+      if (this.expandBtn.value == 'expand') {
+        this.userEditedSceneParam = this.editor.get();
+        this.generatedSceneParam = (
+          this.pe.generateParamObject(this.userEditedSceneParam, 'expand')
+        );
+        this.editor.destroy();
+        let options = {
+          modes: ['tree' as 'tree', 'code' as 'code']
+        };
+        this.editor = new JSONEditor(this.editorElement, options, this.generatedSceneParam);
+        this.expandBtn.value = 'revert';
+        this.expandBtn.textContent = 'Revert';
+        this.updateBtn.style.display = 'none';
+        this.svSceneBtn.style.display = 'inline-block';
+        this.btnBoxDiv.style.gridTemplateAreas = '"param-gen-btn-box sv-scene-param-btn"';
+      } else if (this.expandBtn.value == 'revert') {
+        this.editor.destroy();
+        this.generatedSceneParam = {};
+        let options = {
+          modes: ['tree' as 'tree', 'code' as 'code']
+        };
+        this.editor = new JSONEditor(this.editorElement, options, this.userEditedSceneParam);
+        this.expandBtn.value = 'expand';
+        this.expandBtn.textContent = 'Expand Param';
+        this.svSceneBtn.style.display = 'none';
+        this.updateBtn.style.display = 'inline-block';
+        this.btnBoxDiv.style.gridTemplateAreas = '"param-gen-btn-box update-btn"';
       }
     });
   }
@@ -713,7 +751,7 @@ export class Mkeditor {
       modal.showModal();
       let activeFileName = this.activeFile.id as FileRef;
       let now = new Date();
-      modalFilename.value = now.toJSON().split('T')[0] + '_' + activeFileName.name;
+      modalFilename.value = now.toLocaleDateString('en-CA') + '_' + activeFileName.name;
       modalFilename.focus();
       modalFilename.select();
     });
@@ -725,7 +763,12 @@ export class Mkeditor {
     modal.querySelector('.sv')?.addEventListener('click', () => {
       let srcRef = this.activeFile.id as FileRef;
       let destRef = srcRef.parent?.parent?.child('generatedParams').child(modalFilename.value);
+      let sceneSrcFileName = (
+        modalFilename.value.split('.')[0] + '_source.' + modalFilename.value.split('.')[1]
+      ); 
+      let sceneSrcDestRef = srcRef.parent?.parent?.child('generatedParams').child(sceneSrcFileName);
       let file = new Blob([JSON.stringify(this.generatedSceneParam, null, 1)]);
+      let sceneSrcFile = new Blob([JSON.stringify(this.userEditedSceneParam, null, 1)]);
       let md = {
         contentType: 'application/json'
       };
@@ -739,6 +782,7 @@ export class Mkeditor {
         console.error('Param Generation Failed');
         alert('Generated param file was NOT saved');
       });
+      sceneSrcDestRef?.put(sceneSrcFile, md);
       modal.close();
     });
   }
