@@ -8,7 +8,7 @@ if (typeof(navigator.usb) == "object"){ ENV.WebUSBAvailable = 1 }
 if (typeof(navigator.bluetooth) == "object"){ ENV.WebBluetoothAvailable = 1 }
 if (typeof(navigator.getBattery) == "function"){ ENV.BatteryAPIAvailable = 1 }
 if (typeof(OffscreenCanvas) == "function"){ ENV.OffscreenCanvasAvailable = 1 }
-// ENV.OffscreenCanvasAvailable = 0;
+ENV.OffscreenCanvasAvailable = 0;
 
 // Button callbacks for inline connection to arduino device
 document.querySelector("button[id=googlesignin]").style.display = "block";
