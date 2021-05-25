@@ -42,7 +42,8 @@ async function addToScene(taskscreen){
     cameraLookAtOriginByDefault = originvec.clone()
 
     // Do the math // when camera is positioned at (0,0,10) and looks at (0,0,0), and has fov = 45
-    var defaultcamera = new THREE.PerspectiveCamera(45,VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height,0.1,2000)
+    //var defaultcamera = new THREE.PerspectiveCamera(45,VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height,0.1,2000)
+    var defaultcamera = new THREE.PerspectiveCamera(45,1,0.1,2000)
     defaultcamera.position.set(0,0,10)
     defaultcamera.lookAt(cameraLookAtOriginByDefault)
     defaultcamera.name = "defaultcam"
@@ -65,8 +66,12 @@ async function addToScene(taskscreen){
 
         CAMERAS[taskscreen][classlabel]= []
         for (cam in IMAGES[taskscreen][classlabel].CAMERAS){
-                var camera = new THREE.PerspectiveCamera(IMAGES[taskscreen][classlabel].CAMERAS[cam].fieldOfView,VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height,
-                                IMAGES[taskscreen][classlabel].CAMERAS[cam].near,IMAGES[taskscreen][classlabel].CAMERAS[cam].far)
+                // var camera = new THREE.PerspectiveCamera(IMAGES[taskscreen][classlabel].CAMERAS[cam].fieldOfView,VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height,
+                //                 IMAGES[taskscreen][classlabel].CAMERAS[cam].near,IMAGES[taskscreen][classlabel].CAMERAS[cam].far)
+
+                var camera = new THREE.PerspectiveCamera(IMAGES[taskscreen][classlabel].CAMERAS[cam].fieldOfView,1,
+                    IMAGES[taskscreen][classlabel].CAMERAS[cam].near,IMAGES[taskscreen][classlabel].CAMERAS[cam].far)
+    
 
                // var camera = new THREE.OrthographicCamera(VISIBLECANVASWEBGL.width/-2, VISIBLECANVASWEBGL.width/2, VISIBLECANVASWEBGL.height/2,VISIBLECANVASWEBGL.height/-2,
                              //  IMAGES[taskscreen][classlabel].CAMERAS[cam].near,IMAGES[taskscreen][classlabel].CAMERAS[cam].far)
@@ -253,6 +258,14 @@ async function addToScene(taskscreen){
         scene[taskscreen].add(objects)
         IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetdelta = [] //stores delta (Target mesh-origin mesh). same length as morphTarget
         IMAGES[taskscreen][classlabel].OBJECTS[obj].morphMultiplier = [] //stores multiplier that is multiplied to the morphTargetvertdelta
+
+        
+        // add boxhelper for each object 
+        var box = new THREE.BoxHelper(objects,0xff0000)
+    
+        box.name = obj + '_' + taskscreen + '_' + classlabel + '_' + "boxhelper"
+        box.material.needsUpdate = true
+        scene[taskscreen].add(box)
         //Expand movie frames if object latent variables vary over time
         if (taskscreen == "Sample" || taskscreen == "Test"){
             for (var i = 0; i<IMAGES[taskscreen][classlabel].nimages;i++){
@@ -824,8 +837,10 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex,c
 	        }//ELSE !visible
 	        var scenecenterX = ENV.XGridCenter[gridindex]
 	        var scenecenterY = ENV.YGridCenter[gridindex]
+
+            var box = scene[taskscreen].getObjectByName(obj + '_' + taskscreen + '_' + classlabel + '_' + "boxhelper")
 	        var [objPosition, objSize, boundingBox] =
-	        	updateObjectSingleFrame(taskscreen,objects,nextobjPosition,nextobjRotation,nextobjSize,nexttransparent,nextmorph,maxlength,camera,scenecenterX,scenecenterY)
+	        	updateObjectSingleFrame(taskscreen,objects,box,nextobjPosition,nextobjRotation,nextobjSize,nexttransparent,nextmorph,maxlength,camera,scenecenterX,scenecenterY)
                 allBoundingBoxes[classlabel].push(boundingBox)
         }//FOR obj in scene
 
@@ -873,7 +888,7 @@ function updateLightSingleFrame(light,lightPosition,lightIntensity){
 //     console.log(lightPosition)
 }//FUNCTION updateLightSingleFrame
 
-function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objSize,objOpacity,objMorph,maxlength,camera,scenecenterX,scenecenterY){
+function updateObjectSingleFrame(taskscreen,objects,box,objPosition,objRotation,objSize,objOpacity,objMorph,maxlength,camera,scenecenterX,scenecenterY){
 // objects.matrixWorldNeedsUpdate = false
 // objects.matrixWorldNeedsUpdate = true
 
@@ -928,16 +943,16 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
     }) //object.traverse (material)
 
 //==== BOUNDING BOX
-    var box = new THREE.BoxHelper(objects,0xff0000)
+    box.update()
     if (FLAGS.savedata == 0){
-        box.material.visible = true //show bounding boxes during practice
+        box.visible = true //show bounding boxes during practice
     }
     else if (FLAGS.savedata == 1){
-        box.material.opacity = 0
-        box.material.transparent = true //hide the bounding boxes during testing
+    	box.visible = false
+//         box.material.opacity = 0
+//         box.material.transparent = true //hide the bounding boxes during testing
     }
-    box.name = taskscreen
-	scene[taskscreen].add(box)
+    
     var bbox = new THREE.Box3();
     bbox.setFromObject( box );
 
