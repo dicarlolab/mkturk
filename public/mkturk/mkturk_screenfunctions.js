@@ -395,17 +395,31 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 	f = frame.frames[frame.current][s];
 	//var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
-
+	if (taskscreen == "Sample"){
+		var ims = [ CURRTRIAL.sampleimage[CURRTRIAL.sequenceclip[f]][fr[f]] ] //fr[f] frame within clip
+	}
+	else if (taskscreen == "Test"){
+		var clip = 0
+		var ims = CURRTRIAL.testimages[clip][fr[f]]
+	}
 	renderer.autoClear = false;
 	for (var j = 0; j < ob[f].length; j++) {
 		renderer.clear();
-		
+	
+		// var boundingBox = updateSingleFrame3D(
+		// 	taskscreen,
+		// 	ob[f][j],
+		// 	id[f][j],
+		// 	fr[f],
+		// 	gr[f][j]
+		// );
 		var boundingBox = updateSingleFrame3D(
 			taskscreen,
 			ob[f][j],
 			id[f][j],
 			fr[f],
-			gr[f][j]
+			gr[f][j],
+			ims[j]
 		);
 		
 		if (s==0 && typeof(boundingBox) != "undefined" && typeof(boundingBox[ob[f][j]]) != "undefined" && typeof(boundingBox[ob[f][j]][0]) != "undefined"){
@@ -413,8 +427,9 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 			boundingBoxesChoice3JS.y[j] = boundingBox[ob[f][j]][0].y
 			updated3d = 1
 		}//IF first screen
-		setViewport(gr[f][j])
 		var camera = scene[taskscreen].getObjectByName("cam"+ob[f][j])
+
+		setViewport(gr[f][j],camera)
 		renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
 			
 		if ((taskscreen == "Test" || taskscreen == "Sample") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
@@ -469,20 +484,21 @@ async function render2D(taskscreen,s,f,gr,fr,sc,ob,id,canvasobj){
 			}
 			if (typeof(ims) != "undefined" && typeof(ims[0])=="object"){
 				for (var j = 0; j<=ob[f].length - 1; j++){
-					var [objFilterSingleFrame,imgFilterSingleFrame] = updateFilterSingleFrame(taskscreen,ob[f][j],id[f][j],
-						fr[f],
-						gr[f][j])
-					var boundingBox = renderImage2D(ims[j],taskscreen,
-													ob[f][j],
-													id[f][j],
-													fr[f],
-													gr[f][j],
-													imgFilterSingleFrame,
-													canvasobj) //render 2D image offscreen prior to next frame draw						
-					if (s==0 && typeof(boundingBox[0]) != "undefined" && boundingBox[0].length>0){
-						boundingBoxesChoice2D.x[j] = boundingBox[0]
-						boundingBoxesChoice2D.y[j] = boundingBox[1]
-					}
+					// var [objFilterSingleFrame,imgFilterSingleFrame] = updateFilterSingleFrame(taskscreen,ob[f][j],id[f][j],
+					// 	fr[f],
+					// 	gr[f][j])
+
+					// var boundingBox = renderImage2D(ims[j],taskscreen,
+					// 								ob[f][j],
+					// 								id[f][j],
+					// 								fr[f],
+					// 								gr[f][j],
+					// 								imgFilterSingleFrame,
+					// 								canvasobj) //render 2D image offscreen prior to next frame draw						
+// 					if (s==0 && typeof(boundingBox[0]) != "undefined" && boundingBox[0].length>0){
+// 						boundingBoxesChoice2D.x[j] = boundingBox[0]
+// 						boundingBoxesChoice2D.y[j] = boundingBox[1]
+// 					}
 					updated2d=1
 				}//FOR j display items
 			}//IF image available
@@ -904,16 +920,21 @@ function displayGridCoordinate(idx,xycoord,canvasobj){
 	visible_ctxt.fillText(idx,xycoord[0]/ENV.CanvasRatio, xycoord[1]/ENV.CanvasRatio)
 }
 
-function setViewport(gridindex){
+function setViewport(gridindex,camera){
 	//==== RENDERER 2D VIEWPORT
-	//width and height are determined by object size Inches. the viewport can't be smaller than the object's size. otherwise the object will look cropped
 	var scenecenterX = ENV.XGridCenter[gridindex]
 	var scenecenterY = ENV.YGridCenter[gridindex]
-	var scenewidth = renderer.getContext().canvas.width
-	var sceneheight = renderer.getContext().canvas.height
+
+	var sceneheight = Math.tan(camera.fov/2 * Math.PI/180) * 2 * camera.position.z 
+	var scenewidth = sceneheight * camera.aspect 
+	sceneheight = sceneheight * IMAGEMETA["SampleTHREEJStoPixels"]
+	scenewidth = scenewidth * IMAGEMETA["SampleTHREEJStoPixels"]
+
+	// var sceneheight = renderer.getContext().canvas.height
+	// var scenewidth  = renderer.getContext().canvas.width
+
 	var left = scenecenterX - scenewidth/2
 	var bottom = -sceneheight/2 + (VISIBLECANVAS.clientHeight-scenecenterY)
-
 
 	renderer.setViewport(left, bottom, scenewidth, sceneheight);
 	renderer.setScissor(left,bottom,scenewidth,sceneheight)
