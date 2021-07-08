@@ -403,6 +403,7 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 		var ims = CURRTRIAL.testimages[clip][fr[f]]
 	}
 	renderer.autoClear = false;
+
 	for (var j = 0; j < ob[f].length; j++) {
 		renderer.clear();
 	
@@ -413,7 +414,7 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 		// 	fr[f],
 		// 	gr[f][j]
 		// );
-		var boundingBox = updateSingleFrame3D(
+		var [boundingBox,boundingBoxCube,crop] = updateSingleFrame3D(
 			taskscreen,
 			ob[f][j],
 			id[f][j],
@@ -423,13 +424,47 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 		);
 		
 		if (s==0 && typeof(boundingBox) != "undefined" && typeof(boundingBox[ob[f][j]]) != "undefined" && typeof(boundingBox[ob[f][j]][0]) != "undefined"){
+			
 			boundingBoxesChoice3JS.x[j] = boundingBox[ob[f][j]][0].x
 			boundingBoxesChoice3JS.y[j] = boundingBox[ob[f][j]][0].y
+
+			for (n_ob = 0; n_ob<boundingBox[ob[f][j]].length;n_ob++){ // multiple objects in a scene
+				boundingBoxesChoice3JS.x[j] = [Math.min(boundingBoxesChoice3JS.x[j][0],boundingBox[ob[f][j]][n_ob].x[0]),
+				                                Math.max(boundingBoxesChoice3JS.x[j][1],boundingBox[ob[f][j]][n_ob].x[1])]
+				boundingBoxesChoice3JS.y[j] = [Math.min(boundingBoxesChoice3JS.y[j][0],boundingBox[ob[f][j]][n_ob].y[0]),
+						Math.max(boundingBoxesChoice3JS.y[j][1],boundingBox[ob[f][j]][n_ob].y[1])]
+			}
+		
+			if (typeof(boundingBoxCube) != "undefined" && typeof(boundingBoxCube[ob[f][j]]) != "undefined" && typeof(boundingBoxCube[ob[f][j]][0]) != "undefined"){
+				boundingBoxesChoice3JS.x[j] = [Math.min(boundingBox[ob[f][j]][0].x[0],boundingBoxCube[ob[f][j]][0].x[0]),
+												Math.max(boundingBox[ob[f][j]][0].x[1],boundingBoxCube[ob[f][j]][0].x[1])]
+				boundingBoxesChoice3JS.y[j] = [Math.min(boundingBox[ob[f][j]][0].y[0],boundingBoxCube[ob[f][j]][0].y[0]),
+												Math.max(boundingBox[ob[f][j]][0].y[1],boundingBoxCube[ob[f][j]][0].y[1])]
+			} 
 			updated3d = 1
+
 		}//IF first screen
+
 		var camera = scene[taskscreen].getObjectByName("cam"+ob[f][j])
 
-		setViewport(gr[f][j],camera)
+		//setViewport(gr[f][j],camera) 
+
+		// render in THREEJS
+		var scenecenterX = VISIBLECANVASWEBGL.clientWidth/2
+		var scenecenterY = VISIBLECANVASWEBGL.clientHeight/2
+
+		//THREEJS is rendered on a square viewport to ensure that the
+		//scene looks the same across different device orientations 
+		//usually, you need to upate camera's aspect ration to match that of the viewport, but we have already set camera aspect ratio = 1 in mkturk_threejs.js
+		var sceneheight = Math.max(renderer.getContext().canvas.height,renderer.getContext().canvas.width)
+		var scenewidth = sceneheight 
+		
+		var left = scenecenterX - scenewidth/2
+		var bottom = -sceneheight/2 + (VISIBLECANVAS.clientHeight-scenecenterY)
+
+		renderer.setViewport(left, bottom, scenewidth, sceneheight);
+		renderer.setScissor(left,bottom,scenewidth,sceneheight)
+		renderer.setScissorTest(true)
 		renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
 			
 		if ((taskscreen == "Test" || taskscreen == "Sample") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
@@ -458,8 +493,49 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 			gr[f][j])
 			
 	  OFFSCREENCANVAS.getContext('2d').filter = objFilterSingleFrame;
-		OFFSCREENCANVAS.getContext('2d').drawImage(renderer.domElement,0,0,OFFSCREENCANVAS.width,OFFSCREENCANVAS.height);
-		OFFSCREENCANVAS.getContext('2d').filter = 'none';
+
+	//OFFSCREENCANVAS.getContext('2d').drawImage(renderer.domElement,0,0,OFFSCREENCANVAS.width,OFFSCREENCANVAS.height);
+
+	// to ensure that a THREEJS scene occupies the same physical space on a device screen, 
+	// when transferring THREEJS canvas to 2d canvas, we scale the canvas so that it matches the defaultcamera's viewport
+	// otherwise, using OFFSCREENCANVAS.height and OFFSCREENCANVAS.width can scale the physical size of THREEJS scene
+
+		var cameraFOV = 45
+		var cameraZ = 10
+		var sceneheight = Math.tan(cameraFOV/2 * Math.PI/180) * 2 * cameraZ
+		var scenewidth = sceneheight * OFFSCREENCANVAS.width/OFFSCREENCANVAS.height
+
+		var scenecenterX = ENV.XGridCenter[gr[f][j]] 
+		var scenecenterY = ENV.YGridCenter[gr[f][j]]
+		sceneheight = Math.round(sceneheight * IMAGEMETA["SampleTHREEJStoPixels"]/ENV.ThreeJSRenderRatio * ENV.ScreenRatio)
+		scenewidth = Math.round(scenewidth * IMAGEMETA["SampleTHREEJStoPixels"] /ENV.ThreeJSRenderRatio * ENV.ScreenRatio)
+	
+		
+		if (isNaN(crop[ob[f][j]][0]) || crop[ob[f][j]][0] <0){ // if no crop 
+			var left = Math.round(scenecenterX * ENV.ScreenRatio - scenewidth/2)
+			var top = Math.round(scenecenterY * ENV.ScreenRatio - sceneheight/2)
+		
+			OFFSCREENCANVAS.getContext('2d').drawImage(renderer.domElement,left,top,scenewidth,sceneheight);
+		} else{ // if crop 
+			var sx = renderer.getContext().canvas.width/2
+			var sy = renderer.getContext().canvas.height/2
+			var swidth = Math.round(crop[ob[f][j]][0] * IMAGEMETA["SampleTHREEJStoPixels"])
+			var sheight = swidth
+			sx = sx-swidth/2
+			sy = sy-sheight/2
+
+			var swidth_2d = Math.round(crop[ob[f][j]][0] * IMAGEMETA["SampleTHREEJStoPixels"]/ENV.ThreeJSRenderRatio * ENV.ScreenRatio)
+			var sheight_2d = swidth_2d
+			var left = Math.round(scenecenterX*ENV.ScreenRatio - swidth_2d/2)
+			var top = Math.round(scenecenterY*ENV.ScreenRatio-sheight_2d/2)
+
+			// update bounding boxes if crop bounding box is smaller than the boundingbox 
+			if (s ==0 && (swidth_2d/ENV.ScreenRatio < boundingBoxesChoice3JS.x[j][1]-boundingBoxesChoice3JS.x[j][0])){
+				boundingBoxesChoice3JS.x[j] = [left/ENV.ScreenRatio,(left+swidth_2d)/ENV.ScreenRatio]
+				boundingBoxesChoice3JS.y[j] = [top/ENV.ScreenRatio + CANVAS.offsettop,(top+sheight_2d)/ENV.ScreenRatio + CANVAS.offsettop]
+			}
+		OFFSCREENCANVAS.getContext('2d').drawImage(renderer.domElement,sx,sy,swidth,sheight,left,top,swidth_2d,sheight_2d);	
+		}
 	}//FOR j display items
 }//FUNCTION render3D
 
@@ -922,17 +998,17 @@ function displayGridCoordinate(idx,xycoord,canvasobj){
 
 function setViewport(gridindex,camera){
 	//==== RENDERER 2D VIEWPORT
-	var scenecenterX = ENV.XGridCenter[gridindex]
-	var scenecenterY = ENV.YGridCenter[gridindex]
+	// var scenecenterX = ENV.XGridCenter[gridindex]
+	// var scenecenterY = ENV.YGridCenter[gridindex]
 
-	var sceneheight = Math.tan(camera.fov/2 * Math.PI/180) * 2 * camera.position.z 
-	var scenewidth = sceneheight * camera.aspect 
-	sceneheight = sceneheight * IMAGEMETA["SampleTHREEJStoPixels"]
-	scenewidth = scenewidth * IMAGEMETA["SampleTHREEJStoPixels"]
+	var scenecenterX = VISIBLECANVASWEBGL.clientWidth/2
+	var scenecenterY = VISIBLECANVASWEBGL.clientHeight/2
 
-	// var sceneheight = renderer.getContext().canvas.height
-	// var scenewidth  = renderer.getContext().canvas.width
-
+	var sceneheight = renderer.getContext().canvas.height
+	var scenewidth = sceneheight * camera.aspect // camera.aspect = 1. THREEJS is rendered on a square viewport to ensure that the
+	//scene looks the same across different device orientations 
+	//var scenewidth = renderer.getContext().canvas.width
+	
 	var left = scenecenterX - scenewidth/2
 	var bottom = -sceneheight/2 + (VISIBLECANVAS.clientHeight-scenecenterY)
 

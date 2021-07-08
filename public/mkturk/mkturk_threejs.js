@@ -42,10 +42,11 @@ async function addToScene(taskscreen){
     cameraLookAtOriginByDefault = originvec.clone()
 
     // Do the math // when camera is positioned at (0,0,10) and looks at (0,0,0), and has fov = 45
-    //var defaultcamera = new THREE.PerspectiveCamera(45,VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height,0.1,2000)
+    // var defaultcamera = new THREE.PerspectiveCamera(45,VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height,0.1,2000)
+    // fix aspect ratio to 1 
     var defaultcamera = new THREE.PerspectiveCamera(45,1,0.1,2000)
     defaultcamera.position.set(0,0,10)
-    defaultcamera.lookAt(cameraLookAtOriginByDefault)
+    defaultcamera.lookAt(0,0,0)
     defaultcamera.name = "defaultcam"
     scene[taskscreen].add(defaultcamera)
 
@@ -85,8 +86,7 @@ async function addToScene(taskscreen){
                     //FOR CAMERA position (THREEJS coordinate)
                     if (Array.isArray(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[i])){
                         IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[i] =
-                            interpParam(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[i],"continuous",durationMS,framerate)
-                        FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[i].length
+                            interpParam(IMAGES[taskscreen][classlabel].CAMERAS[cam].positionTHREEJS.x[i],"continuous",durationMS,framerate)
                         var cameraFirstposition_x = IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[0][0]
                     }else{//IF isArray CAMERAS.position.x 
                         var cameraFirstposition_x = IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[0]
@@ -94,7 +94,6 @@ async function addToScene(taskscreen){
                     if (Array.isArray(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y[i])){
                         IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y[i] =
                             interpParam(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y[i],"continuous",durationMS,framerate)
-                        FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y[i].length
                         var cameraFirstposition_y = IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y[0][0]
                     } else{//IF isArray CAMERAS.position.y
                         var cameraFirstposition_y = IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y[0]
@@ -103,7 +102,6 @@ async function addToScene(taskscreen){
                     if (Array.isArray(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z[i])){
                         IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z[i] =
                             interpParam(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z[i],"continuous",durationMS,framerate)
-                        FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z[i].length
                         var cameraFirstposition_z = IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z[0][0]
                     } else{//IF isArray CAMERAS.position.z
                         var cameraFirstposition_z = IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z[0]
@@ -635,11 +633,22 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex,c
 
 	//==== TURN BACK ON THE CURRENT DISPLAY ITEMS
     var allBoundingBoxes = []
+    var crop = []
+    var allBoundingBoxCubes = []
 	if (typeof(classlabels) == "number"){ classlabels = [classlabels] }
 	for (var i=0; i<=classlabels.length-1; i++){
 		var classlabel = classlabels[i]
         allBoundingBoxes[classlabel] = []
+        crop[classlabel] = []
+        allBoundingBoxCubes[classlabel] = []
 
+        //==== crop
+        if (IMAGES[taskscreen][classlabel].crop != undefined){
+            crop[classlabel].push(chooseArrayElement(IMAGES[taskscreen][classlabel].crop,index,0))
+        } else{
+            crop[classlabel].push(NaN)
+        }
+        
 		//======= CAMERAS
 	    for (var cam in IMAGES[taskscreen][classlabel].CAMERAS){
 
@@ -868,10 +877,10 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex,c
         }else {
             backgroundCube.visible = false
         }
-        updateImageSingleFrame(backgroundCube,cubeTexture,nextimsize)
-                  
+        boundingBoxCube = updateImageSingleFrame(taskscreen,backgroundCube,cubeTexture,nextimsize,camera,scenecenterX,scenecenterY)
+        allBoundingBoxCubes[classlabel].push(boundingBoxCube)          
 	}//FOR classlabel in classlabels
-	return allBoundingBoxes
+	return [allBoundingBoxes, allBoundingBoxCubes,crop]
 }//FUNCTION updateSingleFrame3D
 
 function updateCameraSingleFrame(camera,cameraPosition,camTarget){
@@ -956,8 +965,8 @@ function updateObjectSingleFrame(taskscreen,objects,box,objPosition,objRotation,
     var bbox = new THREE.Box3();
     bbox.setFromObject( box );
 
-    twodcoord_max = toScreenPosition(bbox.max,camera,objects)
-    twodcoord_min = toScreenPosition(bbox.min,camera,objects)
+    var twodcoord_max = toScreenPosition(bbox.max,camera)
+    var twodcoord_min = toScreenPosition(bbox.min,camera)
 
     var boundingBox = {
     	"x": [twodcoord_min.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x),
@@ -969,15 +978,16 @@ function updateObjectSingleFrame(taskscreen,objects,box,objPosition,objRotation,
     return [objPosition,objSize,boundingBox]
 }//FUNCTION updateObjectSingleFrame
 
-function updateImageSingleFrame(backgroundCube,cubeTexture,imsize){
+function updateImageSingleFrame(taskscreen,backgroundCube,cubeTexture,imsize,camera,scenecenterX,scenecenterY){
     // cubeTexture : ['zfront','zback','ytop','ybottom','xright','xleft']
     var textureOrder = [4,5,2,3,0,1]
     var materialArray = []
     if (cubeTexture != undefined){
         for (var t of textureOrder){
-            if (cubeTexture[t] == ""){
-                materialArray.push(new THREE.MeshBasicMaterial({color: TASK.BackgroundColor2D}))
+            if (cubeTexture[t] == "" || cubeTexture[t] == undefined){
+                materialArray.push(new THREE.MeshBasicMaterial({color: TASK.BackgroundColor2D,transparent:true,opacity:0}))
             } else{
+                cubeTexture[t].wrapT = THREE.ClampToEdgeWrapping
                 materialArray.push(new THREE.MeshBasicMaterial({map:cubeTexture[t]}))
             } 
         }
@@ -987,14 +997,26 @@ function updateImageSingleFrame(backgroundCube,cubeTexture,imsize){
         }
         
         backgroundCube.material = materialArray
-    }
-    
+        //backgroundCube size
+        backgroundCube.scale.set(1,1,1)
+        backgroundCube.scale.set(imsize,imsize,imsize)
+        backgroundCube.updateMatrixWorld()
 
-    //backgroundCube size
-    backgroundCube.scale.set(1,1,1)
-    backgroundCube.scale.divideScalar(1/imsize)
-    backgroundCube.updateMatrixWorld()
-    
+        var bbox = new THREE.Box3();
+        bbox.setFromObject( backgroundCube );
+
+        var twodcoord_max = toScreenPosition(bbox.max,camera)
+        var twodcoord_min = toScreenPosition(bbox.min,camera)
+
+        var boundingBoxCube = {
+            "x": [twodcoord_min.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x),
+                    twodcoord_max.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x)].sort(function(a, b){return a-b}),
+            "y": [twodcoord_max.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y),
+                    twodcoord_min.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y)].sort(function(a, b){return a-b})
+        }
+
+    }
+    return boundingBoxCube
 }
 
 function toScreenPosition(vector, camera){
@@ -1092,25 +1114,27 @@ function interpParam(vec,type,durationMS,framerate){
 		var nseg = vec.length-1
 
 		if (nseg <= 0){
-			console.log("for movies provide a vector with length >=2")
-			return false
-		}//IF vec.length<2, return
+			vec_flattened = vec
+		} else{
+            for (var i=0; i <= nseg; i++){
+                var p1 = [ i*dur/nseg, vec[i] ]
+                var p2 = [ (i+1)*dur/nseg, vec[i+1] ] //line
+                if (type == "binary"){
+                    p2 = [ (i+1)*dur/nseg, vec[i] ] //constant
+                }//ELSEIF binary
+                var [slope,intercept] = findLinEqwithTwopts(p1,p2)
+    
+                tseq.forEach((t,j) => {
+                    if ( t>=p1[0]  && t<=p2[0]){
+                        vec_flattened[j] = slope * t + intercept
+                    }//IF time falls within segment
+                })//tseq.forEACH
+            }//FOR i vals
+    
+        }
+        //IF vec.length<2, return
 
-		for (var i=0; i <= nseg; i++){
-			var p1 = [ i*dur/nseg, vec[i] ]
-			var p2 = [ (i+1)*dur/nseg, vec[i+1] ] //line
-			if (type == "binary"){
-				p2 = [ (i+1)*dur/nseg, vec[i] ] //constant
-			}//ELSEIF binary
-			var [slope,intercept] = findLinEqwithTwopts(p1,p2)
-
-			tseq.forEach((t,j) => {
-				if ( t>=p1[0]  && t<=p2[0]){
-					vec_flattened[j] = slope * t + intercept
-				}//IF time falls within segment
-			})//tseq.forEACH
-		}//FOR i vals
-
+	
 		if (isNaN(vec_flattened[vec_flattened.length-1])){
 			vec_flattened[vec_flattened.length-1] = vec[vec.length-1]
 		}

@@ -1,4 +1,3 @@
-//------- ATOMIC OPERATIONS -------//
 
 //------------- LOAD JSON TEXT --------------//
 async function loadTextfromFirebase(textfile_path){
@@ -85,6 +84,22 @@ async function loadMeshfromFirebase(meshfile_path){
 			}
 			) //promise
 		} //gltf loader
+		else if (ext == 'obj'){
+			var loader = new THREE.OBJLoader()
+
+			return new Promise(
+				function(resolve, reject){
+					try {
+
+					loader.load(url, function(objmesh){
+					resolve(objmesh)
+				})
+				} //try
+				catch (error){
+				} //catch
+			}
+			) //promise
+		} // obj loader
 	} catch (error){
 		console.log(error)
 	}
@@ -140,19 +155,31 @@ async function getFileListRecursiveFirebase(dir,ext){
 } //recursviely accumulate files from subfolders (if any)
 
 async function getFileListFirebase(dir){
-	// within each cube's side folder, you can find images with names that start with numbers starting from 00000_
-	// each array consists of all the same numbered images across the 6 folders.
+
+	// returns an array of size 6, each of them corresponds to each side of a cube
+	// if there's no folder corresponding to the cube's sides, or if the folder has fewer images than other folders,
+	// place an empty string 
+
+	var folderList = await storage.ref().child(dir).listAll()
+	var availableFolders = []
+	for (var i=0; i<=folderList.prefixes.length-1; i++){availableFolders.push(folderList.prefixes[i].name)}
 
 	var cubeSides = ['zfront','zback','ytop','ybottom','xright','xleft']
 	
+	// get the maximum number of files across folders
+
 	var max_num_files = 0
 	var allfiles = []
 	for (var side of cubeSides){
-		var subfileList =  await storage.ref().child(dir + side +  '/').listAll()
-		var subfiles = []
-		for (var i=0; i<=subfileList.items.length-1;i++){subfiles.push(subfileList.items[i].name)}
-		allfiles.push(subfiles)
-		max_num_files = Math.max(max_num_files,subfileList.items.length)
+		if (availableFolders.includes(side)){	
+			var subfileList =  await storage.ref().child(dir + side +  '/').listAll()
+			var subfiles = []
+			for (var i=0; i<=subfileList.items.length-1;i++){subfiles.push(subfileList.items[i].name)}
+			allfiles.push(subfiles)
+			max_num_files = Math.max(max_num_files,subfileList.items.length)
+		} else{
+			allfiles.push([])
+		} 		
 	}
 
 	var files = new Array(max_num_files)
@@ -163,15 +190,11 @@ async function getFileListFirebase(dir){
 		
 		for (var side of cubeSides){
 			var subfiles = allfiles[cubeSides.indexOf(side)]
-			var string_fileindex = String(j).padStart(5,'0')
-			var filename = subfiles.filter(s=> s.includes(string_fileindex))
-
-			if (filename.length ==1){
-				files[j][cubeSides.indexOf(side)] =  dir + side + '/' + filename[0]
+			if (subfiles.length>0 && subfiles[j] !=null){
+				files[j][cubeSides.indexOf(side)] =  dir + side + '/' + subfiles[j]
 			} else{
 				files[j][cubeSides.indexOf(side)] = ""
 			}
-
 		}
 	}
 	

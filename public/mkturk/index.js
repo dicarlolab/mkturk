@@ -167,6 +167,7 @@ if (ENV.BatteryAPIAvailable) {
 	ENV.DeviceTouchscreen = deviceProperties.data.touchscreen
 
 	var screenSpecs = await queryDeviceonFirestore(ENV.DeviceName);
+
 	//if device not identified by deviceAPI or no matching firestore devices record found for an identified device
 	if (screenSpecs.screenSizeInches < 0 && ENV.DeviceType == "desktop") {
 		var screenSpecs = await queryDeviceonFirestore('32ul750'); //default to desktop monitor
