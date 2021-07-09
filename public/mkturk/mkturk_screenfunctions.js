@@ -403,6 +403,7 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 		var ims = CURRTRIAL.testimages[clip][fr[f]]
 	}
 	renderer.autoClear = false;
+			
 
 	for (var j = 0; j < ob[f].length; j++) {
 		renderer.clear();
@@ -462,11 +463,12 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 		var left = scenecenterX - scenewidth/2
 		var bottom = -sceneheight/2 + (VISIBLECANVAS.clientHeight-scenecenterY)
 
+		//console.time( CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() +  'render')
 		renderer.setViewport(left, bottom, scenewidth, sceneheight);
 		renderer.setScissor(left,bottom,scenewidth,sceneheight)
 		renderer.setScissorTest(true)
 		renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
-			
+		//console.timeEnd(CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() + 'render')
 		if ((taskscreen == "Test" || taskscreen == "Sample") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
 			if ((FLAGS.movieper[taskscreen][ob[frame.current][0]][id[frame.current][0]] < 1 
 					&& (frame.current == 0 
@@ -499,21 +501,21 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 	// to ensure that a THREEJS scene occupies the same physical space on a device screen, 
 	// when transferring THREEJS canvas to 2d canvas, we scale the canvas so that it matches the defaultcamera's viewport
 	// otherwise, using OFFSCREENCANVAS.height and OFFSCREENCANVAS.width can scale the physical size of THREEJS scene
-
+	
+	//console.time(CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() + 'transfer')
 		var cameraFOV = 45
 		var cameraZ = 10
 		var sceneheight = Math.tan(cameraFOV/2 * Math.PI/180) * 2 * cameraZ
 		var scenewidth = sceneheight * OFFSCREENCANVAS.width/OFFSCREENCANVAS.height
-
+			
 		var scenecenterX = ENV.XGridCenter[gr[f][j]] 
 		var scenecenterY = ENV.YGridCenter[gr[f][j]]
-		sceneheight = Math.round(sceneheight * IMAGEMETA["SampleTHREEJStoPixels"]/ENV.ThreeJSRenderRatio * ENV.ScreenRatio)
-		scenewidth = Math.round(scenewidth * IMAGEMETA["SampleTHREEJStoPixels"] /ENV.ThreeJSRenderRatio * ENV.ScreenRatio)
-	
-		
+		sceneheight = Math.round(sceneheight * IMAGEMETA["SampleTHREEJStoPixels"]/ENV.ThreeJSRenderRatio /ENV.CanvasRatio)
+		scenewidth = Math.round(scenewidth * IMAGEMETA["SampleTHREEJStoPixels"] /ENV.ThreeJSRenderRatio /ENV.CanvasRatio)
+
 		if (isNaN(crop[ob[f][j]][0]) || crop[ob[f][j]][0] <0){ // if no crop 
-			var left = Math.round(scenecenterX * ENV.ScreenRatio - scenewidth/2)
-			var top = Math.round(scenecenterY * ENV.ScreenRatio - sceneheight/2)
+			var left = Math.round(scenecenterX / ENV.CanvasRatio - scenewidth/2)
+			var top = Math.round(scenecenterY / ENV.CanvasRatio - sceneheight/2)
 		
 			OFFSCREENCANVAS.getContext('2d').drawImage(renderer.domElement,left,top,scenewidth,sceneheight);
 		} else{ // if crop 
@@ -524,19 +526,22 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 			sx = sx-swidth/2
 			sy = sy-sheight/2
 
-			var swidth_2d = Math.round(crop[ob[f][j]][0] * IMAGEMETA["SampleTHREEJStoPixels"]/ENV.ThreeJSRenderRatio * ENV.ScreenRatio)
+			var swidth_2d = Math.round(crop[ob[f][j]][0] * IMAGEMETA["SampleTHREEJStoPixels"]/ENV.ThreeJSRenderRatio /ENV.CanvasRatio)
 			var sheight_2d = swidth_2d
-			var left = Math.round(scenecenterX*ENV.ScreenRatio - swidth_2d/2)
-			var top = Math.round(scenecenterY*ENV.ScreenRatio-sheight_2d/2)
+			var left = Math.round(scenecenterX/ENV.CanvasRatio - swidth_2d/2)
+			var top = Math.round(scenecenterY/ENV.CanvasRatio-sheight_2d/2)
 
 			// update bounding boxes if crop bounding box is smaller than the boundingbox 
 			if (s ==0 && (swidth_2d/ENV.ScreenRatio < boundingBoxesChoice3JS.x[j][1]-boundingBoxesChoice3JS.x[j][0])){
-				boundingBoxesChoice3JS.x[j] = [left/ENV.ScreenRatio,(left+swidth_2d)/ENV.ScreenRatio]
-				boundingBoxesChoice3JS.y[j] = [top/ENV.ScreenRatio + CANVAS.offsettop,(top+sheight_2d)/ENV.ScreenRatio + CANVAS.offsettop]
+				boundingBoxesChoice3JS.x[j] = [left*ENV.CanvasRatio,(left+swidth_2d)*ENV.CanvasRatio]
+				boundingBoxesChoice3JS.y[j] = [top*ENV.CanvasRatio + CANVAS.offsettop,(top+sheight_2d)*ENV.CanvasRatio + CANVAS.offsettop]
 			}
+		
 		OFFSCREENCANVAS.getContext('2d').drawImage(renderer.domElement,sx,sy,swidth,sheight,left,top,swidth_2d,sheight_2d);	
 		}
+		//console.timeEnd(CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() + 'transfer')
 	}//FOR j display items
+
 }//FUNCTION render3D
 
 async function render2D(taskscreen,s,f,gr,fr,sc,ob,id,canvasobj){
