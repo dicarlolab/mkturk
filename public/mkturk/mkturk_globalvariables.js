@@ -111,7 +111,7 @@ ENV.Eye.NCalibPointsTest = 0
 ENV.Eye.CalibTrainMSE = []
 ENV.Eye.CalibTestMSE = []
 
-ENV.PhotodiodeSquareSizeInches = 0.25
+ENV.PhotodiodeSquareSizeInches = 1
 ENV.PhotodiodeSquareX = 0
 ENV.PhotodiodeSquareY = 0
 

@@ -97,7 +97,7 @@ async function loadAgentRFIDfromFirestore(subject,species){
 			var docRef = db.collection("marmosets").doc(subject)
 			var doc = await db.collection("marmosets").doc(subject).get()
 
-			if (doc.exists == false || typeof(doc.data().rfid) != "undefined"){
+			if (doc.exists == false || typeof(doc.data().rfid) == "undefined"){
 				ENV.AgentRFID = "XX"	
 				console.log('MISSING AGENT: no biographical document in firestore database for this agent')				
 			}
