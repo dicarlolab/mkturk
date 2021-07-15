@@ -384,11 +384,11 @@ serial.Port.prototype.writeSampleCommandTriggertoUSB = async function(data){
     let msgstr = "$" + data.toString() + "%" // start($), end(%) characters
     let textEncoder = new TextEncoder();
 
-		console.log('[SAMPLE COMMAND::writeSampleCommandTriggertoUSB] Before Await:', Date.now());
+		console.log('[SAMPLE COMMAND::writeSampleCommandTriggertoUSB] Before Await:', Date.now(), 'Trigger:', data);
 
     await this.device_.transferOut(4, textEncoder.encode(msgstr)); //SANITY CHECK what the 4 is
 
-		console.log('[SAMPLE COMMAND::writeSampleCommandTriggertoUSB] After Await:', Date.now());
+		console.log('[SAMPLE COMMAND::writeSampleCommandTriggertoUSB] After Await:', Date.now(), 'Trigger:', data);
 
     port.statustext_sent = "TRANSFERRED SampleCommandSignal --> USB:" + msgstr
     // console.log(port.statustext_sent)

@@ -1389,6 +1389,7 @@ if (ENV.BatteryAPIAvailable) {
         }
 
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
+        console.log('[SAMPLE START TIME LOGGED]:', Date.now());
         CURRTRIAL.samplestarttime_string = new Date().toJSON();
         let race_return = await Promise.race([p1, p2]);
         FLAGS.acquiredTouch = 0;
@@ -1443,6 +1444,7 @@ if (ENV.BatteryAPIAvailable) {
         }
 
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
+        console.log('[SAMPLE START TIME LOGGED [!RSVP]]:', Date.now());
         CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime).toJSON();
         
         await displayTrial(
@@ -1921,7 +1923,8 @@ if (ENV.BatteryAPIAvailable) {
       playSound(3);
 
       CURRTRIAL.reinforcementtime = Date.now() - ENV.CurrentDate.valueOf();
-			logEVENTS("ReinforcementTime", CURRTRIAL.reinforcementtime, "trialseries")
+			logEVENTS("ReinforcementTime", CURRTRIAL.reinforcementtime, "trialseries");
+      console.log('[REINFORCEMENT TIME LOGGED]:', Date.now());
       
       await Promise.all([p1, p2]);
     }
