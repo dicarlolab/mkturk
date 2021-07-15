@@ -1936,6 +1936,7 @@ if (ENV.BatteryAPIAvailable) {
 
     // Log trial end time
     CURRTRIAL.endtime = Date.now() - ENV.CurrentDate.valueOf();
+    console.log('[END TIME LOGGED]:', Date.now());
 		logEVENTS("EndTime", CURRTRIAL.endtime, "trialseries")
 
     //============ (end) DELIVER REWARD/PUNISH ============//
