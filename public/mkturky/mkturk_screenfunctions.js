@@ -395,28 +395,67 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 	f = frame.frames[frame.current][s];
 	//var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
-
+	if (taskscreen == "Sample"){
+		var ims = [ CURRTRIAL.sampleimage[CURRTRIAL.sequenceclip[f]][fr[f]] ] //fr[f] frame within clip
+	}
+	else if (taskscreen == "Test"){
+		var clip = 0
+		var ims = CURRTRIAL.testimages[clip][fr[f]]
+	}
 	renderer.autoClear = false;
+			
+
 	for (var j = 0; j < ob[f].length; j++) {
 		renderer.clear();
-		
-		var boundingBox = updateSingleFrame3D(
+	
+		// var boundingBox = updateSingleFrame3D(
+		// 	taskscreen,
+		// 	ob[f][j],
+		// 	id[f][j],
+		// 	fr[f],
+		// 	gr[f][j]
+		// );
+		var [boundingBox,boundingBoxCube,crop] = updateSingleFrame3D(
 			taskscreen,
 			ob[f][j],
 			id[f][j],
 			fr[f],
-			gr[f][j]
+			gr[f][j],
+			ims[j]
 		);
 		
 		if (s==0 && typeof(boundingBox) != "undefined" && typeof(boundingBox[ob[f][j]]) != "undefined" && typeof(boundingBox[ob[f][j]][0]) != "undefined"){
+			
 			boundingBoxesChoice3JS.x[j] = boundingBox[ob[f][j]][0].x
 			boundingBoxesChoice3JS.y[j] = boundingBox[ob[f][j]][0].y
+
+			for (n_ob = 0; n_ob<boundingBox[ob[f][j]].length;n_ob++){ // multiple objects in a scene
+				boundingBoxesChoice3JS.x[j] = [Math.min(boundingBoxesChoice3JS.x[j][0],boundingBox[ob[f][j]][n_ob].x[0]),
+				                                Math.max(boundingBoxesChoice3JS.x[j][1],boundingBox[ob[f][j]][n_ob].x[1])]
+				boundingBoxesChoice3JS.y[j] = [Math.min(boundingBoxesChoice3JS.y[j][0],boundingBox[ob[f][j]][n_ob].y[0]),
+						Math.max(boundingBoxesChoice3JS.y[j][1],boundingBox[ob[f][j]][n_ob].y[1])]
+			}
+		
+			if (typeof(boundingBoxCube) != "undefined" && typeof(boundingBoxCube[ob[f][j]]) != "undefined" && typeof(boundingBoxCube[ob[f][j]][0]) != "undefined"){
+				boundingBoxesChoice3JS.x[j] = [Math.min(boundingBox[ob[f][j]][0].x[0],boundingBoxCube[ob[f][j]][0].x[0]),
+												Math.max(boundingBox[ob[f][j]][0].x[1],boundingBoxCube[ob[f][j]][0].x[1])]
+				boundingBoxesChoice3JS.y[j] = [Math.min(boundingBox[ob[f][j]][0].y[0],boundingBoxCube[ob[f][j]][0].y[0]),
+												Math.max(boundingBox[ob[f][j]][0].y[1],boundingBoxCube[ob[f][j]][0].y[1])]
+			} 
 			updated3d = 1
+
 		}//IF first screen
-		setViewport(gr[f][j])
+
 		var camera = scene[taskscreen].getObjectByName("cam"+ob[f][j])
-		renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
-			
+
+ 		// render in THREEJS
+		//console.time( CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() +  'render')
+ 		renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
+		 console.log("Scene polycount:", renderer.info.render.triangles)
+		 console.log("Active Drawcalls:", renderer.info.render.calls)
+		 console.log("Textures in Memory", renderer.info.memory.textures)
+		 console.log("Geometries in Memory", renderer.info.memory.geometries)
+		//console.timeEnd(CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() + 'render')
 		if ((taskscreen == "Test" || taskscreen == "Sample") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
 			if ((FLAGS.movieper[taskscreen][ob[frame.current][0]][id[frame.current][0]] < 1 
 					&& (frame.current == 0 
@@ -443,9 +482,42 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 			gr[f][j])
 			
 	  OFFSCREENCANVAS.getContext('2d').filter = objFilterSingleFrame;
-		OFFSCREENCANVAS.getContext('2d').drawImage(renderer.domElement,0,0,OFFSCREENCANVAS.width,OFFSCREENCANVAS.height);
-		OFFSCREENCANVAS.getContext('2d').filter = 'none';
+
+	//console.time(CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() + 'transfer')
+		// 3D Canvas coordinates	
+		var sx = renderer.domElement.width/2
+		var sy = renderer.domElement.height/2
+		if (isNaN(crop[ob[f][j]][0]) || crop[ob[f][j]][0] <0){
+			var swidth = renderer.domElement.width
+			var sheight = renderer.domElement.height
+		} else{
+			var swidth = toScreenPosition(new THREE.Vector3(crop[ob[f][j]][0],crop[ob[f][j]][0],crop[ob[f][j]][0]),scene["Sample"].children[0]).x - sx
+			var sheight = swidth
+		}
+		sx = sx-swidth/2
+		sy = sy - sheight/2
+
+		// 2D Canvas coordinates
+		var swidth_2d = swidth /ENV.ThreeJSRenderRatio /ENV.CanvasRatio
+		var sheight_2d = sheight/ENV.ThreeJSRenderRatio /ENV.CanvasRatio
+
+		var scenecenterX = ENV.XGridCenter[gr[f][j]] 
+		var scenecenterY = ENV.YGridCenter[gr[f][j]]
+		
+		var left = Math.round(scenecenterX/ENV.CanvasRatio - swidth_2d/2)
+		var top = Math.round(scenecenterY/ENV.CanvasRatio-sheight_2d/2)
+
+		// Transfer 3D Canvas to 2D Canvas
+		OFFSCREENCANVAS.getContext('2d').drawImage(renderer.domElement,sx,sy,swidth,sheight,left,top,swidth_2d,sheight_2d);	
+		// update bounding boxes if crop bounding box is smaller than the boundingbox 
+		if (s ==0 && (swidth_2d * ENV.CanvasRatio < boundingBoxesChoice3JS.x[j][1]-boundingBoxesChoice3JS.x[j][0])){
+			boundingBoxesChoice3JS.x[j] = [left*ENV.CanvasRatio,(left+swidth_2d)*ENV.CanvasRatio]
+			boundingBoxesChoice3JS.y[j] = [top*ENV.CanvasRatio + CANVAS.offsettop,(top+sheight_2d)*ENV.CanvasRatio + CANVAS.offsettop]
+		}
+
+		//console.timeEnd(CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() + 'transfer')
 	}//FOR j display items
+
 }//FUNCTION render3D
 
 async function render2D(taskscreen,s,f,gr,fr,sc,ob,id,canvasobj){
@@ -469,20 +541,21 @@ async function render2D(taskscreen,s,f,gr,fr,sc,ob,id,canvasobj){
 			}
 			if (typeof(ims) != "undefined" && typeof(ims[0])=="object"){
 				for (var j = 0; j<=ob[f].length - 1; j++){
-					var [objFilterSingleFrame,imgFilterSingleFrame] = updateFilterSingleFrame(taskscreen,ob[f][j],id[f][j],
-						fr[f],
-						gr[f][j])
-					var boundingBox = renderImage2D(ims[j],taskscreen,
-													ob[f][j],
-													id[f][j],
-													fr[f],
-													gr[f][j],
-													imgFilterSingleFrame,
-													canvasobj) //render 2D image offscreen prior to next frame draw						
-					if (s==0 && typeof(boundingBox[0]) != "undefined" && boundingBox[0].length>0){
-						boundingBoxesChoice2D.x[j] = boundingBox[0]
-						boundingBoxesChoice2D.y[j] = boundingBox[1]
-					}
+					// var [objFilterSingleFrame,imgFilterSingleFrame] = updateFilterSingleFrame(taskscreen,ob[f][j],id[f][j],
+					// 	fr[f],
+					// 	gr[f][j])
+
+					// var boundingBox = renderImage2D(ims[j],taskscreen,
+					// 								ob[f][j],
+					// 								id[f][j],
+					// 								fr[f],
+					// 								gr[f][j],
+					// 								imgFilterSingleFrame,
+					// 								canvasobj) //render 2D image offscreen prior to next frame draw						
+// 					if (s==0 && typeof(boundingBox[0]) != "undefined" && boundingBox[0].length>0){
+// 						boundingBoxesChoice2D.x[j] = boundingBox[0]
+// 						boundingBoxesChoice2D.y[j] = boundingBox[1]
+// 					}
 					updated2d=1
 				}//FOR j display items
 			}//IF image available
@@ -904,16 +977,18 @@ function displayGridCoordinate(idx,xycoord,canvasobj){
 	visible_ctxt.fillText(idx,xycoord[0]/ENV.CanvasRatio, xycoord[1]/ENV.CanvasRatio)
 }
 
-function setViewport(gridindex){
+function setViewport(gridindex,camera){
 	//==== RENDERER 2D VIEWPORT
-	//width and height are determined by object size Inches. the viewport can't be smaller than the object's size. otherwise the object will look cropped
 	var scenecenterX = ENV.XGridCenter[gridindex]
 	var scenecenterY = ENV.YGridCenter[gridindex]
-	var scenewidth = renderer.getContext().canvas.width
+
 	var sceneheight = renderer.getContext().canvas.height
+	var scenewidth = sceneheight * camera.aspect // camera.aspect = 1. THREEJS is rendered on a square viewport to ensure that the
+	//scene looks the same across different device orientations 
+	//var scenewidth = renderer.getContext().canvas.width
+	
 	var left = scenecenterX - scenewidth/2
 	var bottom = -sceneheight/2 + (VISIBLECANVAS.clientHeight-scenecenterY)
-
 
 	renderer.setViewport(left, bottom, scenewidth, sceneheight);
 	renderer.setScissor(left,bottom,scenewidth,sceneheight)
@@ -1164,14 +1239,29 @@ function setupCanvasHeadsUp(){
 	canvasobj.addEventListener('touchstart',touchstart_listener,false);
 }
 function setupCanvas(canvasobj){
+	if (canvasobj == VISIBLECANVASWEBGL){
+		// canvasobj.width=Math.max(windowWidth - CANVAS.offsetleft,windowHeight - CANVAS.offsettop);
+		// canvasobj.height=canvasobj.width;
+		// to ensure consistent physical sizing of THREEJS world, we need to fix the size of the renderer. 
+		// default WebGL canvas size follows pixel c tablet sizing
+		canvasobj.width = 1280
+		canvasobj.height = 1280
+		canvasobj.style.top = (windowHeight - CANVAS.offsettop)/2 + CANVAS.offsettop - canvasobj.height/2  + 'px'
+		canvasobj.style.left = (windowWidth- CANVAS.offsetleft)/2 + CANVAS.offsetleft - canvasobj.width/2 + 'px'
+		canvasobj.style.margin="0 auto";
+		canvasobj.style.display="block"; //visible
+	
+	}else{
+		canvasobj.style.top=CANVAS.offsettop + "px";
+		canvasobj.style.left=CANVAS.offsetleft + "px";
+		canvasobj.width=windowWidth - CANVAS.offsetleft;
+		canvasobj.height=windowHeight - CANVAS.offsettop;
+		canvasobj.style.margin="0 auto";
+		canvasobj.style.display="block"; //visible
+	
+	}
 	// center in page
-	canvasobj.style.top=CANVAS.offsettop + "px";
-	canvasobj.style.left=CANVAS.offsetleft + "px";
-	canvasobj.width=windowWidth - CANVAS.offsetleft;
-	canvasobj.height=windowHeight - CANVAS.offsettop;
-	canvasobj.style.margin="0 auto";
-	canvasobj.style.display="block"; //visible
-
+		
 	setupCanvasListeners(canvasobj)
 } 
 
