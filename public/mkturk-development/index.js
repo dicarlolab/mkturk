@@ -1930,7 +1930,7 @@ if (ENV.BatteryAPIAvailable) {
     }
 
     if (port.connected && FLAGS.savedata) {
-      port.writeSampleCommandTriggertoUSB('0');
+      port.writeSampleCommandTriggertoUSB('2');
     }
     
 

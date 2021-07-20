@@ -209,6 +209,7 @@ serial.Port.prototype.onReceive = data => {
 
 //=============== EYE ===============//
 	else if (eyebuffer.accumulateEye >= 3){
+		let StartTimer = Date.now();
 		// eye: arduino sends one character at a time, but have to handle the case of receiving 2 characters
 
 		eyebuffer.buffer += port.statustext_received; //accumulate ascii vals
@@ -341,6 +342,13 @@ serial.Port.prototype.onReceive = data => {
 			eyebuffer.dt = 0
 			eyebuffer.tstart = performance.now()
 		}// IF display eye stats
+		if (Math.random() <= 0.001) {
+			console.log('[EYE PROCESS TIME] StartTimer:', StartTimer);
+			let EndTimer = Date.now();
+			console.log('[EYE PROCESS TIME] EndTimer:', EndTimer)
+			console.log('[EYE PROCESS TIME]: Date.now() - StartTimer', EndTimer - StartTimer);
+		}
+		// console.log('[EYE PROCESS TIME]:', Date.now() - StartTimer)
 	}//IF EYE
 
 	//=============== NOT RFID/EYE ===============//
@@ -352,6 +360,8 @@ serial.Port.prototype.onReceive = data => {
 			);
 			console.log(port.statustext_received);
 			logEVENTS('Arduino', textReceived, 'timeseries');
+		} else if (textReceived.includes('tm')) {
+			console.log('[recvEyeTracker()] Loop Time:', textReceived);
 		}
 
 		// port.statustext_received = "RECEIVED CHAR <-- USB: " + textDecoder.decode(data)
@@ -384,11 +394,12 @@ serial.Port.prototype.writeSampleCommandTriggertoUSB = async function(data){
     let msgstr = "$" + data.toString() + "%" // start($), end(%) characters
     let textEncoder = new TextEncoder();
 
-		console.log('[SAMPLE COMMAND::writeSampleCommandTriggertoUSB] Before Await:', Date.now(), 'Trigger:', data);
+	console.log('[SAMPLE COMMAND::writeSampleCommandTriggertoUSB] Before Await:', Date.now(), 'Trigger:', data);
 
     await this.device_.transferOut(4, textEncoder.encode(msgstr)); //SANITY CHECK what the 4 is
+	// await this.device_.isochronousTransferOut(4, textEncoder.encode(msgstr), 8)
 
-		console.log('[SAMPLE COMMAND::writeSampleCommandTriggertoUSB] After Await:', Date.now(), 'Trigger:', data);
+	console.log('[SAMPLE COMMAND::writeSampleCommandTriggertoUSB] After Await:', Date.now(), 'Trigger:', data);
 
     port.statustext_sent = "TRANSFERRED SampleCommandSignal --> USB:" + msgstr
     // console.log(port.statustext_sent)
