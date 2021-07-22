@@ -330,8 +330,8 @@ serial.Port.prototype.onReceive = data => {
 							+ 'EYE: Success=' + Math.round(1000*eyebuffer.success/(eyebuffer.fail+eyebuffer.success))/10 + '%'
 							+ ' (dt_u = ' + Math.round(10*(performance.now()-eyebuffer.tstart)/(eyebuffer.success+eyebuffer.fail))/10 + ' ms)'
 							+ "</font>"
-			if (FLAGS.savedata == 0){
-				updateImageLoadingAndDisplayText('')
+			if (FLAGS.savedata == 0) {
+				updateImageLoadingAndDisplayText('');
 			}
 			// console.log(eyedataratestr)
 
@@ -353,16 +353,26 @@ serial.Port.prototype.onReceive = data => {
 
 	//=============== NOT RFID/EYE ===============//
 	else {
+
 		if (textReceived.includes('sa')) {
-			console.log('[SAMPLE COMMAND::onReceive] Time Received:', onReceiveTime);
-			port.statustext_received = (
-				"[SAMPLE COMMAND::onReceive] RECEIVED CHAR <-- USB: " + textReceived
+			console.log('[SAMPLE COMMAND::onReceive] Time Received:', onReceiveTime - ENV.CurrentDate.valueOf());
+			logEVENTS(
+				'SampleCommandReturnTime',
+				onReceiveTime - ENV.CurrentDate.valueOf(),
+				'trialseries'
 			);
-			console.log(port.statustext_received);
-			logEVENTS('Arduino', textReceived, 'timeseries');
-		} else if (textReceived.includes('tm')) {
-			console.log('[recvEyeTracker()] Loop Time:', textReceived);
 		}
+
+		// if (textReceived.includes('sa')) {
+		// 	console.log('[SAMPLE COMMAND::onReceive] Time Received:', onReceiveTime);
+		// 	port.statustext_received = (
+		// 		"[SAMPLE COMMAND::onReceive] RECEIVED CHAR <-- USB: " + textReceived
+		// 	);
+		// 	console.log(port.statustext_received);
+		// 	logEVENTS('Arduino', textReceived, 'timeseries');
+		// } else if (textReceived.includes('tm')) {
+		// 	console.log('[recvEyeTracker()] Loop Time:', textReceived);
+		// }
 
 		// port.statustext_received = "RECEIVED CHAR <-- USB: " + textDecoder.decode(data)
 		// console.log("RECEIVED CHAR <-- USB (not eye or rfid): " + port.statustext_received)

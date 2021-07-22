@@ -1390,7 +1390,12 @@ if (ENV.BatteryAPIAvailable) {
 
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
         console.log('[SAMPLE START TIME LOGGED]:', Date.now());
-        CURRTRIAL.samplestarttime_string = new Date().toJSON();
+        CURRTRIAL.samplestarttime_string = (
+          new Date(
+            CURRTRIAL.samplestarttime
+            + ENV.CurrentDate.valueOf()
+          ).toJSON()
+        );
         let race_return = await Promise.race([p1, p2]);
         FLAGS.acquiredTouch = 0;
         FLAGS.waitingforTouches = 0;
@@ -1445,7 +1450,7 @@ if (ENV.BatteryAPIAvailable) {
 
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
         console.log('[SAMPLE START TIME LOGGED [!RSVP]]:', Date.now());
-        CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime).toJSON();
+        CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime + ENV.CurrentDate.valueOf()).toJSON();
         
         await displayTrial(
           CURRTRIAL.tsequence,
@@ -2108,10 +2113,25 @@ if (ENV.BatteryAPIAvailable) {
           pingBigQueryDisplayTimesTable(); //uploads eyedata to bigquery every 10 seconds        
         }//IF first trial, kick-off bigquery writes
 
-        // Save eye data asynchronously to BigQuery
-        if (FLAGS.trackeye > 0 && CURRTRIAL.num == 0) {
-          pingBigQueryEyeTable(); //uploads eyedata to bigquery every 10 seconds        
-        }//IF first trial, kick-off bigquery writes
+        if (FLAGS.trackeye > 0) {
+          // DO EYE HEALTH CHECK;
+          let firstTimestamp = new Date(EVENTS['timeseries']['EyeData'][0][0]);
+          let lastIdx = EVENTS['timeseries']['EyeData'].length - 1;
+          let lastTimestamp = new Date(
+            EVENTS['timeseries']['EyeData'][lastIdx][0]
+          );
+          
+          let interval = (
+            (lastTimestamp.valueOf() - firstTimestamp.valueOf()) / lastIdx
+          );
+          
+          logEVENTS('EyetrackerSampleInterval', interval, 'trialseries');
+
+          // Save eye data asynchronously to BigQuery
+          if (CURRTRIAL.num == 0) {
+            pingBigQueryEyeTable(); // uploads eyedata to BigQuery every 10 seconds
+          } // IF first trial, kick-off bigquery writes
+        }
       }//IF not saving images, save data
     }//IF savedata
 

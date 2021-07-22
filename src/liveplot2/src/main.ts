@@ -36,6 +36,7 @@ let elemObj = {
   choicePlot: document.querySelector('#choice-plot') as HTMLDivElement,
   objPerfPlot: document.querySelector('#obj-perf-plot') as HTMLDivElement,
   rewardPlot: document.querySelector('#reward-plot') as HTMLDivElement,
+  healthPlot: document.querySelector('#health-plot') as HTMLDivElement,
   perfVitals: document.querySelector('#performance-vitals') as HTMLSpanElement,
   rfidVitals: document.querySelector('#rfid-vitals') as HTMLSpanElement,
   batteryVitals: document.querySelector('#battery-vitals') as HTMLSpanElement,

@@ -35,6 +35,7 @@ export class Charts {
   public choiceDataTable: google.visualization.DataTable;
   public objPerfDataTable: google.visualization.DataTable;
   public realtimeDataTable: google.visualization.DataTable;
+  public healthDataTable: google.visualization.DataTable;
 
   public perfDashboard: google.visualization.Dashboard;
   public trialDashboard: google.visualization.Dashboard;
@@ -74,6 +75,9 @@ export class Charts {
 
   public objPerfPlot: google.visualization.ColumnChart;
   public objPerfPlotOptions: google.visualization.ColumnChartOptions;
+
+  public healthPlot: google.visualization.ScatterChart;
+  public healthPlotOptions: google.visualization.ScatterChartOptions;
 
   private vitals: any;
   private nTrials: number;
@@ -116,7 +120,7 @@ export class Charts {
   }
 
   public async setupCharts() {
-    await google.charts.load('current', { packages: ['corechart', 'controls'] });
+    await google.charts.load('50', { packages: ['corechart', 'controls'] });
     this.setupChartOptions();
     this.setupDataTables();
 
@@ -181,11 +185,28 @@ export class Charts {
         1: { color: '#e2431e' }
       }
     };
-    this.perfPlotConfig = {
-      chartType: 'LineChart',
-      containerId: 'performance-plot',
-      options: this.perfPlotOptions
-    };
+    console.log('PERFPLOT:', this.elemObject.perfPlot);
+    let container = document.getElementById('performance-plot');
+    if (container) {
+      console.log('say hi');
+      this.perfPlotConfig = {
+        chartType: 'LineChart',
+        container: container,
+        options: this.perfPlotOptions
+      };
+    }
+    // this.perfPlotConfig = {
+    //   chartType: 'LineChart',
+    //   container: container,
+    //   containerId: 'performance-plot',
+    //   options: this.perfPlotOptions
+    // };
+
+    // this.perfPlotConfig = {
+    //   chartType: 'LineChart',
+    //   containerId: 'performance-plot',
+    //   options: this.perfPlotOptions
+    // };
     this.perfFilterOptions = {
       filterColumnLabel: 'currentTrial',
       ui: {
@@ -1393,6 +1414,10 @@ export class Charts {
         }
       }
     }
+  }
+
+  private loadHealthData(data: LiveplotDataType) {
+
   }
 
   private drawPerformancePlot(file: FileType) {
