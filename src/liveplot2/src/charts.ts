@@ -430,6 +430,9 @@ export class Charts {
 
     this.objPerfDataTable.addColumn('string', 'object');
     this.objPerfDataTable.addColumn('number', 'performance');
+
+    this.healthDataTable.addColumn('number', 'Trial')
+
     this.updatePlots(file, plotOptions);
 
   }
@@ -1417,7 +1420,15 @@ export class Charts {
   }
 
   private loadHealthData(data: LiveplotDataType) {
+    this.healthDataTable.removeRows(0, this.healthDataTable.getNumberOfRows());
+    for (let i = 0; i < data.TSequenceDesiredClip[2].length; i++) {
+      let dt = (
+        data.TSequenceActualClip[2][i] - data.TSequenceDesiredClip[2][i]
+      );
+      dt = Math.abs(Math.round(dt));
 
+
+    }
   }
 
   private drawPerformancePlot(file: FileType) {
