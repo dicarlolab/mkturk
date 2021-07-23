@@ -1935,7 +1935,7 @@ if (ENV.BatteryAPIAvailable) {
     }
 
     if (port.connected && FLAGS.savedata) {
-      port.writeSampleCommandTriggertoUSB('2');
+      port.writeSampleCommandTriggertoUSB('0');
     }
     
 
@@ -2077,6 +2077,20 @@ if (ENV.BatteryAPIAvailable) {
         }
 
       }
+
+      let firstTimestamp = new Date(EVENTS['timeseries']['EyeData'][0][1]);
+      let lastIdx = Object.keys(EVENTS['timeseries']['EyeData']).length - 1;
+      let lastTimestamp = new Date(
+        EVENTS['timeseries']['EyeData'][lastIdx][1]
+      );
+      
+      let interval = (
+        (lastTimestamp.valueOf() - firstTimestamp.valueOf()) / lastIdx
+      );
+      console.log('[EyetrackerSampleInterval]::trialNum:', CURRTRIAL.num);
+      console.log('[EyetrackerSampleInterval]::interval:', interval);
+      
+      logEVENTS('EyetrackerSampleInterval', interval, 'trialseries');
     }
     
     //clear tracker canvas at end of trial
@@ -2115,17 +2129,19 @@ if (ENV.BatteryAPIAvailable) {
 
         if (FLAGS.trackeye > 0) {
           // DO EYE HEALTH CHECK;
-          let firstTimestamp = new Date(EVENTS['timeseries']['EyeData'][0][0]);
-          let lastIdx = EVENTS['timeseries']['EyeData'].length - 1;
-          let lastTimestamp = new Date(
-            EVENTS['timeseries']['EyeData'][lastIdx][0]
-          );
+          // let firstTimestamp = new Date(EVENTS['timeseries']['EyeData'][0][1]);
+          // let lastIdx = Object.keys(EVENTS['timeseries']['EyeData']).length - 1;
+          // let lastTimestamp = new Date(
+          //   EVENTS['timeseries']['EyeData'][lastIdx][1]
+          // );
           
-          let interval = (
-            (lastTimestamp.valueOf() - firstTimestamp.valueOf()) / lastIdx
-          );
+          // let interval = (
+          //   (lastTimestamp.valueOf() - firstTimestamp.valueOf()) / lastIdx
+          // );
+          // console.log('[EyetrackerSampleInterval]::trialNum:', CURRTRIAL.num);
+          // console.log('[EyetrackerSampleInterval]::interval:', interval);
           
-          logEVENTS('EyetrackerSampleInterval', interval, 'trialseries');
+          // logEVENTS('EyetrackerSampleInterval', interval, 'trialseries');
 
           // Save eye data asynchronously to BigQuery
           if (CURRTRIAL.num == 0) {

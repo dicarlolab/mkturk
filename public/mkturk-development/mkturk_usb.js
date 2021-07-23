@@ -355,12 +355,16 @@ serial.Port.prototype.onReceive = data => {
 	else {
 
 		if (textReceived.includes('sa')) {
+			console.log('[SAMPLE COMMAND::onReceive] textReceived:', textReceived);
 			console.log('[SAMPLE COMMAND::onReceive] Time Received:', onReceiveTime - ENV.CurrentDate.valueOf());
-			logEVENTS(
-				'SampleCommandReturnTime',
-				onReceiveTime - ENV.CurrentDate.valueOf(),
-				'trialseries'
-			);
+			if (textReceived.includes('1')) {
+				logEVENTS(
+					'SampleCommandReturnTime',
+					onReceiveTime - ENV.CurrentDate.valueOf(),
+					'trialseries'
+				);
+			}
+			
 		}
 
 		// if (textReceived.includes('sa')) {
