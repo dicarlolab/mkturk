@@ -15,8 +15,8 @@ async function initThreeJS(scenedata) {
     // renderer.toneMappingExposure = 10;   // set exposure to light
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.autoClear = false;
-    renderer.setPixelRatio(ENV.ThreeJSRenderRatio)
-    var rendererWidth = Math.max(VISIBLECANVASWEBGL.height,VISIBLECANVASWEBGL.width)/ENV.ThreeJSRenderRatio
+    renderer.setPixelRatio(TASK.THREEJSRenderRatio)
+    var rendererWidth = Math.max(VISIBLECANVASWEBGL.height,VISIBLECANVASWEBGL.width)/TASK.THREEJSRenderRatio
     var rendererHeight = rendererWidth
     renderer.setSize(rendererWidth,rendererHeight)
     document.body.append(renderer.domElement);
@@ -24,8 +24,8 @@ async function initThreeJS(scenedata) {
     // renderer.domElement.style.width =  VISIBLECANVAS.clientWidth+ 'px'; //keeps CSS size unchanged
     // renderer.domElement.style.height =  VISIBLECANVAS.clientHeight+ 'px'; //keeps CSS size unchanged
 
-    renderer.domElement.style.width = VISIBLECANVASWEBGL.width/ENV.ThreeJSRenderRatio+ 'px'
-    renderer.domElement.style.height = VISIBLECANVASWEBGL.height/ENV.ThreeJSRenderRatio + 'px'
+    renderer.domElement.style.width = VISIBLECANVASWEBGL.width/TASK.THREEJSRenderRatio+ 'px'
+    renderer.domElement.style.height = VISIBLECANVASWEBGL.height/TASK.THREEJSRenderRatio + 'px'
 
     console.log(VISIBLECANVAS.clientWidth, VISIBLECANVAS.clientHeight);
 
@@ -40,26 +40,17 @@ async function initThreeJS(scenedata) {
 
 async function addToScene(taskscreen){
 
-    // Given scene camera, find scaling 3D scene -> 2D canvas
-
-    var originvec = new THREE.Vector3(0,0,0)
-    var unitvec = new THREE.Vector3(1,1,1)
-
-    cameraLookAtOriginByDefault = originvec.clone()
-
     // Do the math // when camera is positioned at (0,0,10) and looks at (0,0,0), and has fov = 45
-    var defaultcamera = new THREE.PerspectiveCamera(45,VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height,0.1,2000)
-    defaultcamera.position.set(0,0,10)
-    defaultcamera.lookAt(0,0,0)
-    defaultcamera.name = "defaultcam"
-    scene[taskscreen].add(defaultcamera)
+	var defaultcamera = new THREE.PerspectiveCamera(TASK.THREEJScameraFOV,1,0.1,2000)
+	defaultcamera.position.set(0,0,TASK.THREEJScameraZDist)
+	defaultcamera.lookAt(0,0,0)
+	defaultcamera.updateMatrixWorld()
+	defaultcamera.name = "defaultcam"
 
-    var originscreen = toScreenPosition(originvec,defaultcamera)
-    var unitscreen = toScreenPosition(unitvec,defaultcamera)
-    var deltavec = [unitscreen.x - originscreen.x, unitscreen.y - originscreen.y]
-    IMAGEMETA[taskscreen + "OriginScreenPixels"] = originscreen
-    IMAGEMETA[taskscreen + "THREEJStoPixels"] = Math.max.apply(null,deltavec)
-    IMAGEMETA[taskscreen + "THREEJStoInches"] = (IMAGEMETA[taskscreen+ "THREEJStoPixels"])/ENV.ViewportPPI
+	var unitvec = new THREE.Vector3(1,0,0)
+
+	var unitvec2d = toScreenPosition(unitvec,defaultcamera)
+	IMAGEMETA["THREEJStoPixels"] = unitvec2d.x - renderer.domElement.width/2
 
     for (var classlabel = 0; classlabel<=IMAGES[taskscreen].length-1; classlabel++){
 
@@ -71,9 +62,9 @@ async function addToScene(taskscreen){
 
         CAMERAS[taskscreen][classlabel]= []
         for (cam in IMAGES[taskscreen][classlabel].CAMERAS){
-                var camera = new THREE.PerspectiveCamera(IMAGES[taskscreen][classlabel].CAMERAS[cam].fieldOfView,VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height,
-                                IMAGES[taskscreen][classlabel].CAMERAS[cam].near,IMAGES[taskscreen][classlabel].CAMERAS[cam].far)
-
+                var camera = new THREE.PerspectiveCamera(TASK.THREEJScameraFOV,VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height,
+                    IMAGES[taskscreen][classlabel].CAMERAS[cam].near,IMAGES[taskscreen][classlabel].CAMERAS[cam].far)
+                                
                // var camera = new THREE.OrthographicCamera(VISIBLECANVASWEBGL.width/-2, VISIBLECANVASWEBGL.width/2, VISIBLECANVASWEBGL.height/2,VISIBLECANVASWEBGL.height/-2,
                              //  IMAGES[taskscreen][classlabel].CAMERAS[cam].near,IMAGES[taskscreen][classlabel].CAMERAS[cam].far)
 
@@ -86,7 +77,7 @@ async function addToScene(taskscreen){
                     //FOR CAMERA position (THREEJS coordinate)
                     if (Array.isArray(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[i])){
                         IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[i] =
-                            interpParam(IMAGES[taskscreen][classlabel].CAMERAS[cam].positionTHREEJS.x[i],"continuous",durationMS,framerate)
+                            interpParam(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[i],"continuous",durationMS,framerate)
                         var cameraFirstposition_x = IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[0][0]
                     }else{//IF isArray CAMERAS.position.x 
                         var cameraFirstposition_x = IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[0]
@@ -517,7 +508,6 @@ async function addToScene(taskscreen){
 	   backgroundCube.name = 'backgroundCube' + classlabel
 	   backgroundCube.material.needsUpdate = true
        
-
 	   scene[taskscreen].add(backgroundCube)
 
        if (IMAGES[taskscreen][classlabel].IMAGES.sizeTHREEJS == undefined){
@@ -970,10 +960,10 @@ function updateObjectSingleFrame(taskscreen,objects,box,objPosition,objRotation,
     var twodcoord_min = toScreenPosition(bbox.min,camera)
 
     var boundingBox = {
-    	"x": [twodcoord_min.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x),
-            	twodcoord_max.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x)].sort(function(a, b){return a-b}),
-    	"y": [twodcoord_max.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y),
-				twodcoord_min.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y)].sort(function(a, b){return a-b})
+    	"x": [twodcoord_min.x + (scenecenterX - renderer.domElement.width/2),
+            	twodcoord_max.x + (scenecenterX - renderer.domElement.width/2)].sort(function(a, b){return a-b}),
+    	"y": [twodcoord_max.y + CANVAS.offsettop + (scenecenterY - renderer.domElement.height/2),
+				twodcoord_min.y + CANVAS.offsettop + (scenecenterY - renderer.domElement.height/2)].sort(function(a, b){return a-b})
     }
 
     return [objPosition,objSize,boundingBox]
@@ -1001,6 +991,7 @@ function updateImageSingleFrame(taskscreen,backgroundCube,cubeTexture,imsize,cam
         //backgroundCube size
         backgroundCube.scale.set(1,1,1)
         backgroundCube.scale.set(imsize,imsize,imsize)
+        backgroundCube.position.set(0,0,0)
         backgroundCube.updateMatrixWorld()
 
         var bbox = new THREE.Box3();
@@ -1010,10 +1001,10 @@ function updateImageSingleFrame(taskscreen,backgroundCube,cubeTexture,imsize,cam
         var twodcoord_min = toScreenPosition(bbox.min,camera)
 
         var boundingBoxCube = {
-            "x": [twodcoord_min.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x),
-                    twodcoord_max.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x)].sort(function(a, b){return a-b}),
-            "y": [twodcoord_max.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y),
-                    twodcoord_min.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y)].sort(function(a, b){return a-b})
+            "x": [twodcoord_min.x + (scenecenterX - renderer.domElement.width/2),
+                    twodcoord_max.x + (scenecenterX - renderer.domElement.width/2)].sort(function(a, b){return a-b}),
+            "y": [twodcoord_max.y + CANVAS.offsettop + (scenecenterY - renderer.domElement.height/2),
+                    twodcoord_min.y + CANVAS.offsettop + (scenecenterY - renderer.domElement.height/2)].sort(function(a, b){return a-b})
         }
 
     }

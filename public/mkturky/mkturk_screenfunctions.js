@@ -451,10 +451,10 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
  		// render in THREEJS
 		//console.time( CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() +  'render')
  		renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
-		 console.log("Scene polycount:", renderer.info.render.triangles)
-		 console.log("Active Drawcalls:", renderer.info.render.calls)
-		 console.log("Textures in Memory", renderer.info.memory.textures)
-		 console.log("Geometries in Memory", renderer.info.memory.geometries)
+		//  console.log("Scene polycount:", renderer.info.render.triangles)
+		//  console.log("Active Drawcalls:", renderer.info.render.calls)
+		//  console.log("Textures in Memory", renderer.info.memory.textures)
+		//  console.log("Geometries in Memory", renderer.info.memory.geometries)
 		//console.timeEnd(CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() + 'render')
 		if ((taskscreen == "Test" || taskscreen == "Sample") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
 			if ((FLAGS.movieper[taskscreen][ob[frame.current][0]][id[frame.current][0]] < 1 
@@ -484,6 +484,7 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 	  OFFSCREENCANVAS.getContext('2d').filter = objFilterSingleFrame;
 
 	//console.time(CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() + 'transfer')
+	
 		// 3D Canvas coordinates	
 		var sx = renderer.domElement.width/2
 		var sy = renderer.domElement.height/2
@@ -491,15 +492,15 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 			var swidth = renderer.domElement.width
 			var sheight = renderer.domElement.height
 		} else{
-			var swidth = toScreenPosition(new THREE.Vector3(crop[ob[f][j]][0],crop[ob[f][j]][0],crop[ob[f][j]][0]),scene["Sample"].children[0]).x - sx
+			var swidth = IMAGEMETA["THREEJStoPixels"] * crop[ob[f][j]][0]
 			var sheight = swidth
 		}
 		sx = sx-swidth/2
 		sy = sy - sheight/2
 
 		// 2D Canvas coordinates
-		var swidth_2d = swidth /ENV.ThreeJSRenderRatio /ENV.CanvasRatio
-		var sheight_2d = sheight/ENV.ThreeJSRenderRatio /ENV.CanvasRatio
+		var swidth_2d = swidth /TASK.THREEJSRenderRatio /ENV.CanvasRatio
+		var sheight_2d = sheight/TASK.THREEJSRenderRatio /ENV.CanvasRatio
 
 		var scenecenterX = ENV.XGridCenter[gr[f][j]] 
 		var scenecenterY = ENV.YGridCenter[gr[f][j]]
@@ -514,6 +515,24 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 			boundingBoxesChoice3JS.x[j] = [left*ENV.CanvasRatio,(left+swidth_2d)*ENV.CanvasRatio]
 			boundingBoxesChoice3JS.y[j] = [top*ENV.CanvasRatio + CANVAS.offsettop,(top+sheight_2d)*ENV.CanvasRatio + CANVAS.offsettop]
 		}
+
+		var context=canvasvisible.getContext('2d');
+		var gridindex = 39
+	if (Array.isArray(gridindex)){
+		var xcent = gridindex[0]/ENV.CanvasRatio
+		var ycent = gridindex[1]/ENV.CanvasRatio
+	}//IF x,y coord provided
+	else {
+		var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
+		var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;	
+	}//IF gridindex provided
+	var wd = 1 * ENV.ViewportPPI * 2/ENV.CanvasRatio;
+	
+	context.globalAlpha = 0.2;
+	context.fillStyle='white';
+	context.fillRect(xcent-wd/2,ycent-wd/2,wd,wd);
+	context.globalAlpha = 1;
+
 
 		//console.timeEnd(CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() + 'transfer')
 	}//FOR j display items
@@ -725,8 +744,8 @@ function renderSquareOnCanvas(color, gridindex, square_pixelwidth, canvasobj){
 		var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
 		var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;	
 	}//IF gridindex provided
-	var wd = square_pixelwidth/ENV.CanvasRatio;
-
+	var wd = ENV.FixationDotRadius/ENV.CanvasRatio;
+	
 	context.fillStyle=color;
 	context.fillRect(xcent-wd/2,ycent-wd/2,wd,wd);
 
@@ -1242,10 +1261,16 @@ function setupCanvas(canvasobj){
 	if (canvasobj == VISIBLECANVASWEBGL){
 		// canvasobj.width=Math.max(windowWidth - CANVAS.offsetleft,windowHeight - CANVAS.offsettop);
 		// canvasobj.height=canvasobj.width;
-		// to ensure consistent physical sizing of THREEJS world, we need to fix the size of the renderer. 
-		// default WebGL canvas size follows pixel c tablet sizing
-		canvasobj.width = 1280
-		canvasobj.height = 1280
+		// to ensure consistent THREEJS experience across devices, we must fix the size of the webgl canvas and camera setting.
+		// imagine we're setting the size of a room and a camera that looks at that specific room
+		// cameraZDist = 10. FOV = 45 
+		// from trigonometry, 
+		var cameraHeightatOrigin = Math.tan(TASK.THREEJScameraFOV * Math.PI/180) * 2  
+		var webglcanvasSizeInches = Math.round(cameraHeightatOrigin)
+		var webglcanvasSizePixel = Math.round(webglcanvasSizeInches * ENV.ViewportPPI / ENV.CanvasRatio)
+
+		canvasobj.width = webglcanvasSizePixel/TASK.THREEJSRenderRatio
+		canvasobj.height = webglcanvasSizePixel/TASK.THREEJSRenderRatio
 		canvasobj.style.top = (windowHeight - CANVAS.offsettop)/2 + CANVAS.offsettop - canvasobj.height/2  + 'px'
 		canvasobj.style.left = (windowWidth- CANVAS.offsetleft)/2 + CANVAS.offsetleft - canvasobj.width/2 + 'px'
 		canvasobj.style.margin="0 auto";

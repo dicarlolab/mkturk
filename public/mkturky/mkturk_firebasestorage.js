@@ -71,11 +71,11 @@ async function loadMeshfromFirebase(meshfile_path){
 		if (ext == 'gltf' || ext == 'glb'){
 			var loader = new THREE.GLTFLoader()
 			
-			var dracoLoader = new THREE.DRACOLoader()
-			dracoLoader.setDecoderPath( 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/js/libs/draco/' );
-			loader.setDRACOLoader( dracoLoader);
+			// var dracoLoader = new THREE.DRACOLoader()
+			// dracoLoader.setDecoderPath( 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/js/libs/draco/' );
+			// loader.setDRACOLoader( dracoLoader);
 
-			dracoLoader.preload();
+			// dracoLoader.preload();
 			return new Promise(
 				function(resolve, reject){
 					try {

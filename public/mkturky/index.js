@@ -645,7 +645,7 @@ if (ENV.BatteryAPIAvailable) {
   
       //Fixation dot, if >0, will appear on both fixation & sample screens
       ENV.FixationDotRadius = TASK.FixationDotSizeInches / 2 * ENV.ViewportPPI;
-  
+    
       //Fixation window, if specified, operates on both fixation & sample screens
       ENV.FixationWindowRadius = TASK.FixationWindowSizeInches / 2 * ENV.ViewportPPI;
 
