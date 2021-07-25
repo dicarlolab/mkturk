@@ -516,24 +516,6 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 			boundingBoxesChoice3JS.y[j] = [top*ENV.CanvasRatio + CANVAS.offsettop,(top+sheight_2d)*ENV.CanvasRatio + CANVAS.offsettop]
 		}
 
-		var context=canvasvisible.getContext('2d');
-		var gridindex = 39
-	if (Array.isArray(gridindex)){
-		var xcent = gridindex[0]/ENV.CanvasRatio
-		var ycent = gridindex[1]/ENV.CanvasRatio
-	}//IF x,y coord provided
-	else {
-		var xcent = ENV.XGridCenter[gridindex]/ENV.CanvasRatio;
-		var ycent = ENV.YGridCenter[gridindex]/ENV.CanvasRatio;	
-	}//IF gridindex provided
-	var wd = 1 * ENV.ViewportPPI * 2/ENV.CanvasRatio;
-	
-	context.globalAlpha = 0.2;
-	context.fillStyle='white';
-	context.fillRect(xcent-wd/2,ycent-wd/2,wd,wd);
-	context.globalAlpha = 1;
-
-
 		//console.timeEnd(CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() + 'transfer')
 	}//FOR j display items
 
