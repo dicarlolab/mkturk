@@ -228,6 +228,8 @@ async generate_trials(n_trials){
 	}
 	// Download images to support these trials to download queue
 	// console.log("TQ.generate_trials() will request", image_requests.length)
+
+	image_requests = image_requests.flat()
 	await this.IB.cache_these_images(image_requests); 	
 } //FUNCTION generate_trials
 
@@ -275,11 +277,20 @@ async get_next_trial(){
 	// Get image from imagebag
 	if (typeof(sample_filename) != "undefined"){
 		var sample_image = []
-		sample_image = []
+
 		if (Array.isArray(sample_filename)){
 			for (var i = 0; i <sample_filename.length;i++){
 				if (sample_filename[i] !=""){
-					sample_image.push(await this.IB.get_by_name(sample_filename[i])); 
+					if (Array.isArray(sample_filename[i])){
+						var cubeTexture = []
+                        for (var j=0; j<sample_filename[i].length;j++){
+                        	cubeTexture.push(await this.IB.get_by_name(sample_filename[i][j]));
+                        }
+						sample_image.push(cubeTexture)
+					} else{
+						sample_image.push(await this.IB.get_by_name(sample_filename[i])); 
+					}
+					
 				}
 			}
 		}//IF isArray sample filenames

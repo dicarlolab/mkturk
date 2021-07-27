@@ -515,7 +515,7 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 			boundingBoxesChoice3JS.x[j] = [left*ENV.CanvasRatio,(left+swidth_2d)*ENV.CanvasRatio]
 			boundingBoxesChoice3JS.y[j] = [top*ENV.CanvasRatio + CANVAS.offsettop,(top+sheight_2d)*ENV.CanvasRatio + CANVAS.offsettop]
 		}
-		
+
 		//console.timeEnd(CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() + 'transfer')
 	}//FOR j display items
 
@@ -1241,13 +1241,6 @@ function setupCanvasHeadsUp(){
 }
 function setupCanvas(canvasobj){
 	if (canvasobj == VISIBLECANVASWEBGL){
-		// canvasobj.width=Math.max(windowWidth - CANVAS.offsetleft,windowHeight - CANVAS.offsettop);
-		// canvasobj.height=canvasobj.width;
-		// to ensure consistent THREEJS experience across devices, we must fix the size of the webgl canvas and camera setting.
-		// imagine we're setting the size of a room and a camera that looks at that specific room
-		// cameraZDist = 10. FOV = 45 
-		// from trigonometry, 
-		
 		var cameraHeightatOrigin = Math.tan(TASK.THREEJScameraFOV/2 * Math.PI/180) * TASK.THREEJScameraZDist * 2 
 		var webglcanvasSizeInches = cameraHeightatOrigin * ENV.THREEJStoInches
 		var webglcanvasSizePixel = webglcanvasSizeInches * ENV.ViewportPPI / ENV.CanvasRatio

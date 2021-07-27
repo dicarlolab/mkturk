@@ -1,4 +1,3 @@
-//------- ATOMIC OPERATIONS -------//
 
 //------------- LOAD JSON TEXT --------------//
 async function loadTextfromFirebase(textfile_path){
@@ -14,26 +13,44 @@ async function loadTextfromFirebase(textfile_path){
 //------------- LOAD IMAGE --------------//
 async function loadImagefromFirebase(imagefile_path){
 try{
-	var imagefileRef = await storage.ref().child(imagefile_path)
-	var url = await imagefileRef.getDownloadURL()
-	.catch((error) => console.log(error));
+	// var imagefileRef = await storage.ref().child(imagefile_path)
+	// var url = await imagefileRef.getDownloadURL()
+	// .catch((error) => console.log(error));
 
+	// return new Promise(
+	// 	function(resolve, reject){
+	// 		try {
+	// 			var image = new Image(); 
+	// 			image.crossOrigin = "Anonymous"; //to allow saving of a 'tainted canvas', see https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_enabled_image
+	// 			image.onload = function(){
+	// 				updateImageLoadingAndDisplayText('Loaded: ' + imagefile_path)
+	// 				resolve(image)				
+	// 			}
+	// 			image.src = url
+	// 		} //try
+	// 		catch (error){
+	// 			console.log(error)
+	// 		} //catch
+	// 	}
+	// ) //Promise
+
+	var texturefileRef = await storage.ref().child(imagefile_path)
+	var url = await texturefileRef.getDownloadURL().catch((error) => console.log(error))
+
+	var loader = new THREE.TextureLoader();
+	loader.crossOrigin = true;
 	return new Promise(
 		function(resolve, reject){
 			try {
-				var image = new Image(); 
-				image.crossOrigin = "Anonymous"; //to allow saving of a 'tainted canvas', see https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_enabled_image
-				image.onload = function(){
-					updateImageLoadingAndDisplayText('Loaded: ' + imagefile_path)
-					resolve(image)				
-				}
-				image.src = url
+				loader.load(url, function(texture){
+					resolve(texture)		
+				})
 			} //try
 			catch (error){
 				console.log(error)
 			} //catch
 		}
-	) //Promise
+	) // Promise
 }
 catch (error){
 	console.log(error)
@@ -53,7 +70,12 @@ async function loadMeshfromFirebase(meshfile_path){
 
 		if (ext == 'gltf' || ext == 'glb'){
 			var loader = new THREE.GLTFLoader()
+			
+			// var dracoLoader = new THREE.DRACOLoader()
+			// dracoLoader.setDecoderPath( 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/js/libs/draco/' );
+			// loader.setDRACOLoader( dracoLoader);
 
+			// dracoLoader.preload();
 			return new Promise(
 				function(resolve, reject){
 					try {
@@ -67,6 +89,22 @@ async function loadMeshfromFirebase(meshfile_path){
 			}
 			) //promise
 		} //gltf loader
+		else if (ext == 'obj'){
+			var loader = new THREE.OBJLoader()
+
+			return new Promise(
+				function(resolve, reject){
+					try {
+
+					loader.load(url, function(objmesh){
+					resolve(objmesh)
+				})
+				} //try
+				catch (error){
+				} //catch
+			}
+			) //promise
+		} // obj loader
 	} catch (error){
 		console.log(error)
 	}
@@ -121,6 +159,52 @@ async function getFileListRecursiveFirebase(dir,ext){
 	return files
 } //recursviely accumulate files from subfolders (if any)
 
+async function getFileListFirebase(dir){
+
+	// returns an array of size 6, each of them corresponds to each side of a cube
+	// if there's no folder corresponding to the cube's sides, or if the folder has fewer images than other folders,
+	// place an empty string 
+
+	var folderList = await storage.ref().child(dir).listAll()
+	var availableFolders = []
+	for (var i=0; i<=folderList.prefixes.length-1; i++){availableFolders.push(folderList.prefixes[i].name)}
+
+	var cubeSides = ['zfront','zback','ytop','ybottom','xright','xleft']
+	
+	// get the maximum number of files across folders
+
+	var max_num_files = 0
+	var allfiles = []
+	for (var side of cubeSides){
+		if (availableFolders.includes(side)){	
+			var subfileList =  await storage.ref().child(dir + side +  '/').listAll()
+			var subfiles = []
+			for (var i=0; i<=subfileList.items.length-1;i++){subfiles.push(subfileList.items[i].name)}
+			allfiles.push(subfiles)
+			max_num_files = Math.max(max_num_files,subfileList.items.length)
+		} else{
+			allfiles.push([])
+		} 		
+	}
+
+	var files = new Array(max_num_files)
+
+	for (var j=0; j<max_num_files;j++){
+		// change index to a string
+		files[j] = ["","","","","",""]
+		
+		for (var side of cubeSides){
+			var subfiles = allfiles[cubeSides.indexOf(side)]
+			if (subfiles.length>0 && subfiles[j] !=null){
+				files[j][cubeSides.indexOf(side)] =  dir + side + '/' + subfiles[j]
+			} else{
+				files[j][cubeSides.indexOf(side)] = ""
+			}
+		}
+	}
+	
+	return files
+} // create a nested array of files
 
 //======================================//
 //======================================//
@@ -130,18 +214,34 @@ async function getFileListRecursiveFirebase(dir,ext){
 
 //------- LIST IMAGES FROM MULTIPLE FOLDERS -------//
 async function loadImageBagPathsParallelFirebase(imagebagroots){
-	var imagepath_promises = imagebagroots.map(file => getFileListRecursiveFirebase(file,'.png')); //create array of recursive path load Promises
-	var funcreturn = await Promise.all(imagepath_promises);
-	//Assemble images and add labels
-	var bagitems_paths = [] // Can also be paths to a single .png file. 
-	var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
-	for (var i=0; i<=funcreturn.length-1; i++){
-		bagitems_paths.push(... funcreturn[i])
-		for (var j=0; j<= funcreturn[i].length-1; j++){
-			bagitems_labels.push(i)
-		}
-	} //for i labels
+
+	
+		// var imagepath_promises = imagebagroots.map(file => getFileListRecursiveFirebase(file,'.png')); //create array of recursive path load Promises
+		// var funcreturn = await Promise.all(imagepath_promises);
+		// //Assemble images and add labels
+		// var bagitems_paths = [] // Can also be paths to a single .png file. 
+		// var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
+		// for (var i=0; i<=funcreturn.length-1; i++){
+		// 	bagitems_paths.push(... funcreturn[i])
+		// 	for (var j=0; j<= funcreturn[i].length-1; j++){
+		// 		bagitems_labels.push(i)
+		// 	}
+		// } //for i labels
+		var imagepath_promises = imagebagroots.map(file => getFileListFirebase(file)); // returns a nested array of paths for the backgroundCube
+		var funcreturn = await Promise.all(imagepath_promises);
+		//Assemble images and add labels
+		var bagitems_paths = [] // Can also be paths to a single .png file. 
+		var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
+		for (var i=0; i<=funcreturn.length-1; i++){
+			bagitems_paths.push(... funcreturn[i])
+			for (var j=0; j<= funcreturn[i].length-1; j++){
+				bagitems_labels.push(i)
+			}
+		} //for i labels
+	
+	
 	return [bagitems_paths, bagitems_labels] 
+	
 }
 
 async function loadImageArrayfromFirebase(imagepathlist){

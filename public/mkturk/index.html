@@ -56,6 +56,7 @@
 <!-- Add ThreeJS -->
 <script src="https://threejs.org/build/three.js"></script>
 <script src="https://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://threejs.org/examples/js/loaders/DRACOLoader.js"></script>
 <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
 <!-- ************* (END) HEAD *************** -->
 <!-- ************* BODY *************** -->
@@ -99,8 +100,8 @@
 		<button class="mdl-button mdl-js-button mdl-button--raised" id="preemptRFID" style="visibility:hidden; background-color:red; z-index: 102; font-size: 25px; position: absolute; top: 20%; left: 5%; height: 75px; width: 200px; border-radius: 20px">Preempt RFID
    </button>
 		<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"></canvas>
-		<canvas id="canvasvisible" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"></canvas>
-		<canvas id="canvasvisiblewebgl" width="0" height="0" src="" style="visibility:hidden; z-index:3; position: absolute; left: 0px; top: 0px;"></canvas>
+		<canvas id="canvasvisible" width="0" height="0" src="" style="z-index:0; position: absolute; left: 0px; top: 0px;"></canvas>
+		<canvas id="canvasvisiblewebgl" width="0" height="0" src="" style="visibility:hidden; z-index:1; position: absolute; left: 0px; top: 0px;"></canvas>
 		<canvas id="canvaseyetracker" width="0" height="0" src="" style="z-index:4; position: absolute; left: 0px; top: 0px;"></canvas>
 		<canvas id="model-canvas" width="224" height="224" style="z-index:0"></canvas>
 	</div>
