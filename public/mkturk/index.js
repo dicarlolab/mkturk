@@ -2129,22 +2129,6 @@ if (ENV.BatteryAPIAvailable) {
         }//IF first trial, kick-off bigquery writes
 
         if (ENV.Eye.TrackEye > 0) {
-          // DO EYE HEALTH CHECK;
-          // let firstTimestamp = new Date(EVENTS['timeseries']['EyeData'][0][1]);
-          // let lastIdx = Object.keys(EVENTS['timeseries']['EyeData']).length - 1;
-          // let lastTimestamp = new Date(
-          //   EVENTS['timeseries']['EyeData'][lastIdx][1]
-          // );
-          
-          // let interval = (
-          //   (lastTimestamp.valueOf() - firstTimestamp.valueOf()) / lastIdx
-          // );
-          // console.log('[EyetrackerSampleInterval]::trialNum:', CURRTRIAL.num);
-          // console.log('[EyetrackerSampleInterval]::interval:', interval);
-          
-          // logEVENTS('EyetrackerSampleInterval', interval, 'trialseries');
-
-          // Save eye data asynchronously to BigQuery
           if (CURRTRIAL.num == 0) {
             pingBigQueryEyeTable(); // uploads eyedata to BigQuery every 10 seconds
           } // IF first trial, kick-off bigquery writes
