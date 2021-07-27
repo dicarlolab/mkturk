@@ -9,7 +9,7 @@
 
 **BackgroundColor2D:** specify the background color in hex (eg, #FFFFFF for white or #000000 for black). Not required in param file. If not provided, defaults to gray screen background (#7F7F7F)
 
-**CalibrateEye:** If >0, will calibrate for TASK.CalibrateEye number of trials for train & same number for test. Afte test, saves calibration in firestore collection "eyecalibrations." Requires FLAGS.trackeye>0.
+**CalibrateEye:** If >0, will calibrate for TASK.CalibrateEye number of trials for train & same number for test. Afte test, saves calibration in firestore collection "eyecalibrations." Requires ENV.Eye.TrackEye>0.
 
 *CheckRFID: Time in milliseconds over which at least one matching RFID read is required so that agent doesn't get kicked off of task. If there is a read within the last CheckRFID ms, task continues, otherwise agent is locked out at start of next trial. CheckRFID <= 0 turns off RFID checking.
 

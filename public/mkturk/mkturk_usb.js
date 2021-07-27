@@ -160,7 +160,9 @@ serial.Port.prototype.connect = async function(){
 //PORT  - onReceive
 serial.Port.prototype.onReceive = data => {
 	let textDecoder = new TextDecoder();
-	port.statustext_received = textDecoder.decode(data)
+	let onReceiveTime = Date.now();
+	let textReceived = textDecoder.decode(data);
+	port.statustext_received = textDecoder.decode(data);
 
 	//rfid
 	var tagstart = port.statustext_received.indexOf('{tag',0);
@@ -175,8 +177,9 @@ serial.Port.prototype.onReceive = data => {
 		}
 		if (eyebuffer.accumulateEye == 3){
 			//strip start characters (eg, '/') up front
-			port.statustext_received = port.statustext_received.slice(lastslash+1, port.statustext_received.length-1)
-			FLAGS.trackeye = 1
+			port.statustext_received = port.statustext_received.slice(lastslash+1, port.statustext_received.length-1);
+			ENV.Eye.TrackEye = 1;
+			
 		}//IF '///'
 	}//IF '/'
 
@@ -207,6 +210,7 @@ serial.Port.prototype.onReceive = data => {
 
 //=============== EYE ===============//
 	else if (eyebuffer.accumulateEye >= 3){
+		let StartTimer = Date.now();
 		// eye: arduino sends one character at a time, but have to handle the case of receiving 2 characters
 
 		eyebuffer.buffer += port.statustext_received; //accumulate ascii vals
@@ -244,7 +248,7 @@ serial.Port.prototype.onReceive = data => {
 						xy[0],xy[1],w,a,null,null,null,null],"timeseries");
 
 
-			if (FLAGS.touchGeneratorCreated == 1 && FLAGS.trackeye > 0){
+			if (FLAGS.touchGeneratorCreated == 1 && ENV.Eye.TrackEye > 0){
 				//Send calibrated signal, convert from eye coordinates to tablet coordinates
 
 				// DISPLAY median filtered calibrated eye signal
@@ -327,8 +331,8 @@ serial.Port.prototype.onReceive = data => {
 							+ 'EYE: Success=' + Math.round(1000*eyebuffer.success/(eyebuffer.fail+eyebuffer.success))/10 + '%'
 							+ ' (dt_u = ' + Math.round(10*(performance.now()-eyebuffer.tstart)/(eyebuffer.success+eyebuffer.fail))/10 + ' ms)'
 							+ "</font>"
-			if (FLAGS.savedata == 0){
-				updateImageLoadingAndDisplayText('')
+			if (FLAGS.savedata == 0) {
+				updateImageLoadingAndDisplayText('');
 			}
 			// console.log(eyedataratestr)
 
@@ -339,11 +343,42 @@ serial.Port.prototype.onReceive = data => {
 			eyebuffer.dt = 0
 			eyebuffer.tstart = performance.now()
 		}// IF display eye stats
+		if (Math.random() <= 0.001) {
+			console.log('[EYE PROCESS TIME] StartTimer:', StartTimer);
+			let EndTimer = Date.now();
+			console.log('[EYE PROCESS TIME] EndTimer:', EndTimer)
+			console.log('[EYE PROCESS TIME]: Date.now() - StartTimer', EndTimer - StartTimer);
+		}
+		// console.log('[EYE PROCESS TIME]:', Date.now() - StartTimer)
 	}//IF EYE
 
 	//=============== NOT RFID/EYE ===============//
 	else {
-		port.statustext_received = "RECEIVED CHAR <-- USB: " + textDecoder.decode(data)
+
+		if (textReceived.includes('sa')) {
+			console.log('[SAMPLE COMMAND::onReceive] textReceived:', textReceived);
+			console.log('[SAMPLE COMMAND::onReceive] Time Received:', onReceiveTime - ENV.CurrentDate.valueOf());
+			if (textReceived.includes('1')) {
+				logEVENTS(
+					'SampleCommandReturnTime',
+					onReceiveTime - ENV.CurrentDate.valueOf(),
+					'trialseries'
+				);
+			}
+		}
+
+		// if (textReceived.includes('sa')) {
+		// 	console.log('[SAMPLE COMMAND::onReceive] Time Received:', onReceiveTime);
+		// 	port.statustext_received = (
+		// 		"[SAMPLE COMMAND::onReceive] RECEIVED CHAR <-- USB: " + textReceived
+		// 	);
+		// 	console.log(port.statustext_received);
+		// 	logEVENTS('Arduino', textReceived, 'timeseries');
+		// } else if (textReceived.includes('tm')) {
+		// 	console.log('[recvEyeTracker()] Loop Time:', textReceived);
+		// }
+
+		// port.statustext_received = "RECEIVED CHAR <-- USB: " + textDecoder.decode(data)
 		// console.log("RECEIVED CHAR <-- USB (not eye or rfid): " + port.statustext_received)
 		// console.log(Math.round(performance.now()))
         // logEVENTS("Arduino",textDecoder.decode(data),'timeseries')
@@ -372,7 +407,13 @@ serial.Port.prototype.writepumpdurationtoUSB = async function(data){
 serial.Port.prototype.writeSampleCommandTriggertoUSB = async function(data){
     let msgstr = "$" + data.toString() + "%" // start($), end(%) characters
     let textEncoder = new TextEncoder();
+
+	console.log('[SAMPLE COMMAND::writeSampleCommandTriggertoUSB] Before Await:', Date.now(), 'Trigger:', data);
+
     await this.device_.transferOut(4, textEncoder.encode(msgstr)); //SANITY CHECK what the 4 is
+	// await this.device_.isochronousTransferOut(4, textEncoder.encode(msgstr), 8)
+
+	console.log('[SAMPLE COMMAND::writeSampleCommandTriggertoUSB] After Await:', Date.now(), 'Trigger:', data);
 
     port.statustext_sent = "TRANSFERRED SampleCommandSignal --> USB:" + msgstr
     // console.log(port.statustext_sent)
