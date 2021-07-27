@@ -1546,7 +1546,7 @@ export class Charts {
           data.SampleCommandReturnTime[i] - data.SampleStartTime[i]
         );
         this.healthDataTable.addRows(
-          [[i, sampleCmdInterval, dt, data.EyeTrackerSampleInterval[i]]]
+          [[i, sampleCmdInterval, dt, data.EyetrackerSampleInterval[i]]]
         );
       }
     } else if (data.Eye.TrackEye == 0 && data.RewardStage > 0) {

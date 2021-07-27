@@ -14,6 +14,7 @@ export interface LiveplotDataType {
   Agent: string,
   Species: string,
   Homecage: number,
+  WebAppUrl: string,
   StressTest: number,
   Separated: number,
   Liquid: number,
@@ -176,7 +177,7 @@ export interface LiveplotDataType {
   Weight?: any;
   FixationWindowSizeInches?: number,
   SampleCommandReturnTime: number[],
-  EyeTrackerSampleInterval: number[]
+  EyetrackerSampleInterval: number[]
 }
 
 interface Eye {
