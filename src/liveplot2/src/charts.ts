@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import _, { sample } from 'lodash';
 import { FileType, LiveplotDataType } from './types';
 import { Utils } from './utils';
 
@@ -1535,16 +1535,64 @@ export class Charts {
   private loadHealthData(data: LiveplotDataType) {
     console.log('[loadHealthData::fileData]', data);
     this.healthDataTable.removeRows(0, this.healthDataTable.getNumberOfRows());
-    if (Object.keys(data.TSequenceActualClip).length > 0) {
-      for (let i = 0; i < data.TSequenceDesiredClip[2].length; i++) {
+
+    if (data.Eye.TrackEye > 0 && data.RewardStage > 0) { // EYETRACKING
+      for (let i = 0; i < data.TSequenceActualClip[2].length; i++) {
         let dt = (
           data.TSequenceActualClip[2][i] - data.TSequenceDesiredClip[2][i]
         );
         dt = Math.abs(Math.round(dt));
-        this.healthDataTable.addRows([[i, 0, dt, 0]]);
-  
+        let sampleCmdInterval = (
+          data.SampleCommandReturnTime[i] - data.SampleStartTime[i]
+        );
+        this.healthDataTable.addRows(
+          [[i, sampleCmdInterval, dt, data.EyeTrackerSampleInterval[i]]]
+        );
+      }
+    } else if (data.Eye.TrackEye == 0 && data.RewardStage > 0) {
+      for (let i = 0; i < data.TSequenceActualClip[2].length; i++) {
+        let dt = (
+          data.TSequenceActualClip[2][i] - data.TSequenceDesiredClip[2][i]
+        );
+        dt = Math.abs(Math.round(dt));
+        this.healthDataTable.addRows(
+          [[i, null, dt, null]]
+        );
       }
     }
+
+    // if (data.FixationDuration > 0) { // EYETRACKING SCENARIO
+    //   for (let i = 0; i < data.TSequenceActualClip[2].length; i++) {
+    //     let sampleCmdInterval = (
+    //       data.SampleCommandReturnTime[i] - data.SampleStartTime[i]
+    //     );
+    //     let dt = (
+    //       data.TSequenceActualClip[2][i] - data.TSequenceDesiredClip[2][i]
+    //     );
+    //     dt = Math.abs(Math.round(dt));
+    //     this.healthDataTable.addRows(
+    //       [[i, sampleCmdInterval, dt, data.EyeTrackerSampleInterval]]
+    //     );
+    //   }
+    // } else { // !EYETRACKING SCENARIO
+    //   for (let i = 0; i < data.TSequenceActualClip[2].length; i++) {
+    //     let dt = (
+    //       data.TSequenceActualClip[2][i] - data.TSequenceDesiredClip[2][i]
+    //     );
+    //     dt = Math.abs(Math.round(dt));
+    //     this.healthDataTable.addRows([[i, null, dt, null]]);
+    //   }
+    // }
+    // if (Object.keys(data.TSequenceActualClip).length > 0) {
+    //   for (let i = 0; i < data.TSequenceDesiredClip[2].length; i++) {
+    //     let dt = (
+    //       data.TSequenceActualClip[2][i] - data.TSequenceDesiredClip[2][i]
+    //     );
+    //     dt = Math.abs(Math.round(dt));
+    //     this.healthDataTable.addRows([[i, null, dt, null]]);
+  
+    //   }
+    // }
   }
 
   private drawPerformancePlot(file: FileType) {

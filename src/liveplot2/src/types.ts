@@ -14,6 +14,7 @@ export interface LiveplotDataType {
   Agent: string,
   Species: string,
   Homecage: number,
+  StressTest: number,
   Separated: number,
   Liquid: number,
   Pump: number,
@@ -173,10 +174,13 @@ export interface LiveplotDataType {
   Battery: Record<number, any[]>,
   RFIDTag: Record<number, any[]>,
   Weight?: any;
-  FixationWindowSizeInches?: number
+  FixationWindowSizeInches?: number,
+  SampleCommandReturnTime: number[],
+  EyeTrackerSampleInterval: number[]
 }
 
 interface Eye {
+  TrackEye: number,
   EventType: string,
   timeOfLastGlanceInBB: number,
   BlinkGracePeriod: number,

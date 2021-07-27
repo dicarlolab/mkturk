@@ -93,10 +93,13 @@ ENV.MTurkWorkerId = '';
 ENV.AssignmentId = '';
 ENV.HITId = '';
 
+ENV.StressTest = 0;
+
 //================ EYE GLOBALS ================//
 ENV.Eye = {}
 
 //Eye states
+ENV.Eye.TrackEye = 0;
 ENV.Eye.EventType = 'eyestart'
 ENV.Eye.timeOfLastGlanceInBB = -1
 ENV.Eye.BlinkGracePeriod = 200
@@ -139,11 +142,9 @@ FLAGS.runPump = 0
 FLAGS.firestorecreatedoc = 0
 FLAGS.firestorelastsavedtrial = 0
 FLAGS.firestoretimeron = 0
-FLAGS.stressTest = 0
 FLAGS.underlayGridPoints = 0
 FLAGS.RFIDGeneratorCreated = 0
 FLAGS.automatortext = ''
-FLAGS.trackeye = 0
 FLAGS.rtdbAgentNumConnections = null;
 
 var CANVAS = {}; 
