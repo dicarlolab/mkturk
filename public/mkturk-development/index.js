@@ -151,11 +151,12 @@ if (ENV.BatteryAPIAvailable) {
 
 
 	//====================== Retrieve device's screen properties ===========================//
-	ENV.UserAgent = window.navigator.userAgent
-	ENV.DeviceScreenWidth = window.screen.width
-	ENV.DeviceScreenHeight = window.screen.height
+  ENV.WebAppUrl = window.location.href;
+	ENV.UserAgent = window.navigator.userAgent;
+	ENV.DeviceScreenWidth = window.screen.width;
+	ENV.DeviceScreenHeight = window.screen.height;
 
-	var deviceProperties = await deviceDetect()
+	var deviceProperties = await deviceDetect();
 	ENV.DeviceType = deviceProperties.data.device.type
 	ENV.DeviceBrand = deviceProperties.data.device.brand
 	ENV.DeviceName = deviceProperties.data.device.model

@@ -64,6 +64,7 @@ ENV.OffscreenCanvasAvailable = 0
 
 
 ENV.UserAgent = window.navigator.userAgent
+ENV.WebAppUrl = window.location.href;
 ENV.DeviceType = ''
 ENV.DeviceBrand = ''
 ENV.DeviceName = ''
