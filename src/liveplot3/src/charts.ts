@@ -2,9 +2,16 @@ import _, { last, sample } from 'lodash';
 import { FileType, LiveplotDataType } from './types';
 import { Utils } from './utils';
 import * as Highcharts from 'highcharts';
+import * as Highstock from 'highcharts/highstock';
 import { Liveplot } from './liveplot';
-import Histogram from 'highcharts/modules/histogram-bellcurve';
+import  Histogram from 'highcharts/modules/histogram-bellcurve';
 Histogram(Highcharts);
+
+import Accessibility from 'highcharts/modules/accessibility';
+Accessibility(Highcharts);
+
+import noData from 'highcharts/modules/no-data-to-display';
+noData(Highcharts);
 // import Exporting from 'highcharts/modules/exporting';
 // Exporting(Highcharts);
 // import * as Exporting from 'highcharts/modules/exporting';
@@ -38,13 +45,14 @@ export class Charts {
   public perfDataTable: google.visualization.DataTable;
   public cumulDataTable: google.visualization.DataTable;
   public xyPosDataTable: google.visualization.DataTable;
-  public rxnTimeDataTable: google.visualization.DataTable;
-  public choiceDataTable: google.visualization.DataTable;
   public objPerfDataTable: google.visualization.DataTable;
   public realtimeDataTable: google.visualization.DataTable;
   public healthDataTable: google.visualization.DataTable;
   public rewardData: number[];
   public rxnData: number[];
+  public choiceData: number[];
+  public choiceDataCategories: string[];
+  public healthDataTDisplay: number[];
 
   public perfDashboard: google.visualization.Dashboard;
   public trialDashboard: google.visualization.Dashboard;
@@ -71,6 +79,9 @@ export class Charts {
   public healthFilterConfig: google.visualization.ControlWrapperOptions;
   public healthFilterOptions: Object;
 
+  public healthChart: Highstock.StockChart;
+  public healthChartOptions: Highstock.Options;
+
   public screenPlot: google.visualization.ComboChart;
   public screenPlotOptions: google.visualization.ComboChartOptions;
 
@@ -81,17 +92,14 @@ export class Charts {
   public realtimeRowDataAdded: boolean;
   public rtData: any;
 
-  public rxnPlot: google.visualization.Histogram;
-  public rxnPlotOptions: google.visualization.HistogramOptions;
-
   public rxnPlot2: Highcharts.Chart;
   public rxnPlot2Options: Highcharts.Options;
 
   public rewardPlot2: Highcharts.Chart;
   public rewardPlot2Options: Highcharts.Options;
 
-  public choicePlot: google.visualization.ColumnChart;
-  public choicePlotOptions: google.visualization.ColumnChartOptions;
+  public choicePlot2: Highcharts.Chart;
+  public choicePlot2Options: Highcharts.Options;
 
   public objPerfPlot: google.visualization.ColumnChart;
   public objPerfPlotOptions: google.visualization.ColumnChartOptions;
@@ -129,13 +137,20 @@ export class Charts {
     this.healthDataTable = new google.visualization.DataTable();
     this.cumulDataTable = new google.visualization.DataTable();
     this.xyPosDataTable = new google.visualization.DataTable();
-    this.rxnTimeDataTable = new google.visualization.DataTable();
-    this.choiceDataTable = new google.visualization.DataTable();
     this.objPerfDataTable = new google.visualization.DataTable();
     this.realtimeDataTable = new google.visualization.DataTable();
     this.rtData = {};
     this.rewardData = [];
     this.rxnData = [];
+    this.choiceData = [];
+    this.choiceDataCategories = [];
+    this.healthDataTDisplay = [];
+    // this.healthData = {
+    //   tdisplay: [],
+    //   samplecmd: [],
+    //   eyeinterval: []
+    // };
+    // this.healthData.tdisplay
 
     
   }
@@ -182,21 +197,14 @@ export class Charts {
     this.screenPlot = (
       new google.visualization.ComboChart(this.elemObject.screenPlot)
     );
-    // this.realtimePlot = (
-    //   new google.visualization.ChartWrapper(this.realtimePlotConfig)
-    // );
-    this.rxnPlot = (
-      new google.visualization.Histogram(this.elemObject.rxnPlot)
-    );
-    this.choicePlot = (
-      new google.visualization.ColumnChart(this.elemObject.choicePlot)
-    );
     this.objPerfPlot = (
       new google.visualization.ColumnChart(this.elemObject.objPerfPlot)
     );
 
     this.rewardPlot2 = Highcharts.chart(this.rewardPlot2Options);
     this.rxnPlot2 = Highcharts.chart(this.rxnPlot2Options);
+    this.choicePlot2 = Highcharts.chart(this.choicePlot2Options);
+    this.healthChart = Highstock.stockChart(this.healthChartOptions);
 
   }
 
@@ -339,10 +347,15 @@ export class Charts {
 
     this.rewardPlot2Options = {
       title: {
-        text: 'Reward Amount'
+        text: null
       },
       xAxis: {
         tickInterval: 1
+      },
+      yAxis: {
+        title: {
+          text: 'Share'
+        }
       },
       chart: {
         renderTo: this.elemObject.rewardPlot2,
@@ -355,81 +368,119 @@ export class Charts {
       }]
     };
 
+    this.choicePlot2Options = {
+      title: {
+        text: null
+      },
+      xAxis: [{
+        type: 'category',
+        categories: this.choiceDataCategories
+      }],
+      lang: {
+        noData: 'No Data to Display'
+      },
+      chart: {
+        renderTo: this.elemObject.choicePlot2,
+        type: 'column'
+      },
+      series: [
+        {
+          name: 'Choice Bias',
+          type: 'column',
+          data: []
+        }
+      ]
+    };
+
     this.rxnPlot2Options = {
       title: {
-        text: 'Reaction Time'
+        text: null
       },
       chart: {
         renderTo: this.elemObject.rxnPlot2,
-        type: 'histogram'
+        
       },
-      xAxis: [{
-        title: { text: 'Data' },
-        alignTicks: false
-    }, {
-        title: { text: 'Histogram' },
-        alignTicks: true,
-        opposite: true
-    }],
-
-    yAxis: [{
-        title: { text: 'Data' }
-    }, {
-        title: { text: 'Histogram' },
-        opposite: true
-    }],
-      plotOptions: {
-        histogram: {
-            accessibility: {
-                pointDescriptionFormatter: function (point) {
-                  console.log(point);
-                    var ix = point.index + 1,
-                        x1 = point.x.toFixed(3),
-                        x2 = point.x.toFixed(3),
-                        val = point.y;
-                    return ix + '. ' + x1 + ' to ' + x2 + ', ' + val + '.';
-                }
-            }
+      yAxis: [
+        {
+          title: { text: 'Count'}
         }
-    },
+      ],
       series: [
         {
           name: 'Reaction Time',
           type: 'histogram',
-          baseSeries: 1,
+          baseSeries: 's1',
+          yAxis: 0,
+          zIndex: 1          
         },
         {
-          name: 'Data',
-          data: [],
+          data: [0],
           type: 'scatter',
-               
+          id: 's1',
+          visible: false,
+          showInLegend: false
         }
       ]
+    };
 
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    this.healthChartOptions = {
+      title: {
+        text: null
+      },
+      chart: {
+        renderTo: this.elemObject.healthChart
+      },
+      rangeSelector: {
+        enabled: false
+      },
+      yAxis: {
+        title: {
+          text: 'time (ms)'
+        },
+        opposite: false
+      },
+      
+      xAxis: {
+        title: {
+          text: 'Trial#'
+        },
+        type: 'linear',
+        min: 10
+        
+      },
+      navigator: {
+        enabled: true,
+        yAxis: {
+          title: {
+            text: 'ms'
+          }
+        },
+        series: {
+          type: 'scatter',
+          lineWidth: 0,
+          marker: {
+            enabled: true,
+            radius: 1
+          },
+        },
+        xAxis: {
+          labels: {
+            formatter: function() {
+              return this.value as string;
+            }
+          },
+        }
+        
+      },
+      series: [
+        {
+          name: 'tdisplay',
+          type: 'scatter',
+          data: [],
+         
+        }
+      ]
+    };
 
     // this.healthPlotOptions = {
     //   width: this.elemObject.healthPlot.clientWidth,
@@ -473,24 +524,7 @@ export class Charts {
       seriesType: 'scatter',
       pointSize: 1
     };
-    this.rxnPlotOptions = {
-      width: this.elemObject.rxnPlot.clientWidth,
-      height: this.elemObject.rxnPlot.clientHeight,
-      title: 'Reaction Time (ms)',
-      animation: {
-        duration: 500,
-        easing: 'linear',
-        startup: true
-      },
-      legend: { position: 'none' }
-    };
-    this.choicePlotOptions = {
-      width: this.elemObject.choicePlot.clientWidth,
-      height: this.elemObject.choicePlot.clientHeight,
-      hAxis: { title: 'Choice', },
-      vAxis: { title: 'counts', minValue: 0, maxValue: 1 },
-      legend: { position: 'none' }
-    };
+    
     this.objPerfPlotOptions = {
       width: this.elemObject.objPerfPlot.clientWidth,
       height: this.elemObject.objPerfPlot.clientHeight,
@@ -534,15 +568,6 @@ export class Charts {
     this.rtData['test'] = [];
     this.rtData['choice'] = [];
 
-    this.rxnTimeDataTable
-      .removeRows(0, this.rxnTimeDataTable.getNumberOfRows());
-    this.rxnTimeDataTable
-      .removeColumns(0, this.rxnTimeDataTable.getNumberOfColumns());
-
-    this.choiceDataTable
-      .removeRows(0, this.choiceDataTable.getNumberOfRows());
-    this.choiceDataTable
-      .removeColumns(0, this.choiceDataTable.getNumberOfColumns());
 
     this.objPerfDataTable
       .removeRows(0, this.objPerfDataTable.getNumberOfRows());
@@ -559,9 +584,6 @@ export class Charts {
     this.cumulDataTable.addColumn('number', 'Performance');
     this.cumulDataTable.addColumn('number', 'RFID');
     // this.cumulDataTable.addColumn('number', 'Weight');
-
-    this.rxnTimeDataTable.addColumn('string', 'success');
-    this.rxnTimeDataTable.addColumn('number', 'durationMS');
 
     /** 
      * xyPosDataTable Guide
@@ -602,10 +624,6 @@ export class Charts {
 
     this.realtimeDataTable.addColumn('number', 'curY');
     this.realtimeDataTable.addColumn({'type': 'string', 'role': 'style'});
-    
-
-    this.choiceDataTable.addColumn('string', 'choice');
-    this.choiceDataTable.addColumn('number', '# of responses');
 
     this.objPerfDataTable.addColumn('string', 'object');
     this.objPerfDataTable.addColumn('number', 'performance');
@@ -613,6 +631,7 @@ export class Charts {
     this.healthDataTable.addColumn('number', 'trial');
     this.healthDataTable.addColumn('number', 'sample command');
     this.healthDataTable.addColumn('number', 'tdisplay');
+    this.healthDataTable.addColumn('number', 'tdisplay2');
     this.healthDataTable.addColumn('number', 'eye interval');
 
     this.updatePlots(file, plotOptions);
@@ -634,21 +653,18 @@ export class Charts {
     this.loadRxnTimeData(fileData);
     this.loadHealthData(fileData);
     this.loadObjPerfData(fileData);
-    this.loadChoiceData(fileData);
+    this.loadChoiceData2(fileData);
     this.loadRewardData2(fileData);
     this.drawPerformancePlot(file);
     this.drawTrialPlot(file);
     this.drawHealthPlot(file);
     this.drawObjPerfPlot();
-    this.drawRxnTimePlot();
     this.drawRxnTimePlot2();
-    this.drawChoicePlot();
     this.drawRewardPlot2();
     this.loadTouchSDText();
     let streamActive = plotOptions.streamActive;
     this.drawScreenPlot(fileData, streamActive);
     if (streamActive && !this.realtimePlotActive) {
-      // console.log('hello');
       this.drawRealtimePlot2(fileData);
       this.realtimePlotActive = true;
     }
@@ -797,8 +813,6 @@ export class Charts {
     );
     this.cumulDataTable
       .removeRows(0, this.cumulDataTable.getNumberOfRows());
-    this.rxnTimeDataTable
-      .removeRows(0, this.rxnTimeDataTable.getNumberOfRows());
     this.xyPosDataTable
       .removeRows(0, this.xyPosDataTable.getNumberOfRows());
 
@@ -832,35 +846,6 @@ export class Charts {
         numCorrect[i] = numCorrect[i - 1] + yData[i];
       } else if (i == 0) {
         numCorrect[i] = yData[i];
-      }
-    }
-
-    for (let i = 0; i < data.NReward.length; i++) {
-      if (data.RewardStage == 0) {
-        rt[i] = data.FixationXYT[2][i] - data.StartTime[i];
-        this.rxnTimeDataTable.addRows(
-          [[file.data.FixationTouchEvent[i], rt[i]]]
-        );
-      } else if (data.NRSVP > 0) {
-        rt[i] = data.SampleFixationXYT[2][i] - data.SampleStartTime[i];
-        this.rxnTimeDataTable.addRows(
-          [[data.SampleFixationTouchEvent[i], rt[i]]]
-        );
-      } else {
-        rt[i] = data.ResponseXYT[2][i] - data.SampleStartTime[i];
-        if (data.Response[i] == -1) {
-          this.rxnTimeDataTable.addRows(
-            [['timeout', data.ChoiceTimeOut]]
-          );
-        } else if (data.CorrectItem[i] == data.Response[i]) {
-          this.rxnTimeDataTable.addRows(
-            [['correct', rt[i]]]
-          );
-        } else {
-          this.rxnTimeDataTable.addRows(
-            [['wrong', rt[i]]]
-          );
-        }
       }
     }
 
@@ -1339,21 +1324,23 @@ export class Charts {
   }
 
   private loadRxnTimeData(data: LiveplotDataType) {
+    let rxnTimeData = [];
     for (let i = 0; i < data.NReward.length; i++) {
       if (data.RewardStage == 0) { // WATER FOUNTAIN TASK
-        this.rxnData.push(data.FixationXYT[2][i] - data.StartTime[i]);
+        rxnTimeData.push(data.FixationXYT[2][i] - data.StartTime[i]);
       } else if (data.NRSVP > 0) {
-        this.rxnData.push(
+        rxnTimeData.push(
           data.SampleFixationXYT[2][i] - data.SampleStartTime[i]
         );
       } else {
         if (data.Response[i] == -1) {
-          this.rxnData.push(data.ChoiceTimeOut);
+          rxnTimeData.push(data.ChoiceTimeOut);
         } else {
-          this.rxnData.push(data.ResponseXYT[2][i] - data.SampleStartTime[i]);
+          rxnTimeData.push(data.ResponseXYT[2][i] - data.SampleStartTime[i]);
         }
       }
     }
+    this.rxnData = rxnTimeData;
     console.log(this.rxnData);
   }
 
@@ -1515,80 +1502,89 @@ export class Charts {
     }
   }
 
-  private loadChoiceData(data: LiveplotDataType) {
-    this.choiceDataTable.removeRows(0, this.choiceDataTable.getNumberOfRows());
-    
+  private loadChoiceData2(data: LiveplotDataType) {
+    let choiceDataCount: number[];
+    let choiceDataPercent: number[];
+    let choiceDataCatego: string[] = [];
+
     if (data.RewardStage != 0) {
-      // let possibleResp = _.fill(Array(_.size(data.ObjectGridIndex)), 0);
-      let possibleResp = [];
-      
       if (
         _.size(data.ObjectGridIndex) != 0
-        && (_.isUndefined(data.NTrialsPerBagBlock) 
+        && (_.isUndefined(data.NTrialsPerBagBlock)
         || data.NTrialsPerBagBlock < 1000)
       ) {
-        let objGridIndex = _.cloneDeep(data.ObjectGridIndex);
-        objGridIndex.sort((a: number, b: number) => {
-          return a - b;
-        });
-        let allind = [];
-        for (let i = 0; i < _.size(objGridIndex); i++) {
-          // allind.push(_.findIndex(data.ObjectGridIndex, objGridIndex[i]));
-          allind.push(data.ObjectGridIndex.indexOf(objGridIndex[i]));
-          this.choiceDataTable.addRow(
-            [data.ImageBagsSample[allind[i]].split('/')[5], 0]
-          );
-          possibleResp.push(i);
-        }
-      } else {
-        for (let i = 0; i < _.size(data.TestGridIndex); i++) {
-          this.choiceDataTable.addRow(['choice' + (i + 1), 0]);
-          possibleResp.push(i);
-        }
-      }
-
-      let NDiffChoice = _.fill(Array(_.size(possibleResp)), 0);
-      let NAllChoice = 0;
-
-      for (let i = 0; i < _.size(data.Response); i++) {
-        if (data.Response[i] != -1) {
-          NAllChoice++;
-        }
-
-        for (let j = 0; j < _.size(possibleResp); j++) {
-          if (data.Response[i] == possibleResp[j] && data.Response[i] != -1) {
-            NDiffChoice[j]++;
+        choiceDataCount = _.fill(Array(data.ObjectGridIndex.length), 0);
+        for (let i = 0; i < _.size(data.ObjectGridIndex); i++) {
+          choiceDataCatego.push(data.ImageBagsTest[i].split('/').pop());
+          for (let j = 0; j < _.size(data.Response); j++) {
+            if (data.Response[j] != -1 && data.Response[j] == i) {
+              choiceDataCount[i] += 1;
+            }
           }
-          this.choiceDataTable.setValue(j, 1, NDiffChoice[j] / NAllChoice);
+        }
+
+        choiceDataPercent = choiceDataCount.map(count => {
+          return count / _.sum(choiceDataCount);
+        });
+        this.choiceData = choiceDataPercent;
+        this.choicePlot2.update({
+          xAxis: {
+            categories: choiceDataCatego
+          }
+        });
+        this.choicePlot2.series[0].setData(this.choiceData);
+        
+      } else { // SAME DIFFERENT CASE 
+        if (data.SameDifferent) {
+          choiceDataCatego = ['same', 'different'];
+          choiceDataCount = _.fill(Array(2), 0);
+          for (let i = 0; i < _.size(data.Response); i++) {
+            if (data.Response[i] != -1 && data.Response[i]) {
+              choiceDataCount[1] += 1;
+            } else if (data.Response[i] != -1 && !data.Response[i]) {
+              choiceDataCount[0] += 1;
+            }
+          }
+
+          choiceDataPercent = choiceDataCount.map(count => {
+            return count / _.sum(choiceDataCount);
+          });
+          this.choiceData = choiceDataPercent;
+          this.choicePlot2.update({
+            xAxis: {
+              categories: choiceDataCatego
+            }
+          });
+          this.choicePlot2.series[0].setData(this.choiceData);
+        } else {
+          console.error('[loadChoiceData2] NO MATCHING CASE');
+          this.choicePlot2.series[0].setData([]);
         }
       }
-    } else {
-      this.choiceDataTable.addRow(['outside Fix', 0]);
-      this.choiceDataTable.addRow(['inside Fix', 0]);
 
-      let NDiffChoice = _.fill(Array(2), 0);
-      let NAllChoice = 0;
-      let yData = [];
-
+    } else { // RewardStage = 0 CASE
+      choiceDataCount = _.fill(Array(2), 0);
       for (let i = 0; i < _.size(data.CorrectItem); i++) {
         if (data.CorrectItem[i] == data.Response[i]) {
-          yData.push(1);
+          choiceDataCount[1] += 1;
         } else {
-          yData.push(0);
+          choiceDataCount[0] += 1;
         }
       }
+      choiceDataPercent = choiceDataCount.map(count => {
+        return count / data.Response.length;
+      });
 
-      for (let i = 0; i < _.size(yData); i++) {
-        NAllChoice++;
-
-        for (let j = 0; j < 2; j++) {
-          if (yData[i] == j) {
-            NDiffChoice[j] += 1;
-          }
-          this.choiceDataTable.setValue(j, 1, NDiffChoice[j] / NAllChoice);
+      this.choicePlot2.update({
+        xAxis: {
+          categories: ['outside Fix', 'inside Fix']
         }
-      }
+      }, false);
+    
+      this.choiceData = choiceDataPercent;
+      this.choicePlot2.series[0].setData(this.choiceData);
     }
+    
   }
 
   private loadRewardData2(data: LiveplotDataType) {
@@ -1600,18 +1596,6 @@ export class Charts {
       return count / _.size(data.NReward);
     });
     this.rewardData = rewardDataPercent;
-    // console.log('[loadRewardData2]::rewardDataCount:', rewardDataCount);
-    // console.log('[loadRewardData2]::rewardDataPercent:', rewardDataPercent);
-    // let hello: Highcharts.SeriesColumnOptions = {
-    //   name: 'Reward Amount',
-    //   data: rewardDataPercent,
-    //   type: 'column'
-    // };
-    // if (this.rewardPlot2Options.series) {
-    //   console.log('sup');
-    //   this.rewardPlot2Options.series[0] = hello;
-    // }
-    
   }
 
   private loadHealthData(data: LiveplotDataType) {
@@ -1623,14 +1607,22 @@ export class Charts {
       
       for (let i = 0; i < data.TSequenceActualClip[lastIdx].length; i++) {
         let dt: any;
+        let dt2: any;
         if (data.TSequenceActualClip[lastIdx][i] < 0) {
           dt = null;
+          dt2 = null;
         } else {
           dt = (
             data.TSequenceActualClip[lastIdx][i]
             - data.TSequenceDesiredClip[lastIdx][i]
           );
           dt = Math.abs(Math.round(dt));
+
+          dt2 = (
+            data.TSequenceActualClip[1][i]
+            - data.TSequenceDesiredClip[1][i]
+          );
+          dt2 = Math.abs(Math.round(dt2));
         }
         
         let sampleCmdInterval: any;
@@ -1644,8 +1636,9 @@ export class Charts {
             data.SampleCommandReturnTime[i] - data.SampleStartTime[i]
           );  
         }
+        this.healthDataTDisplay.push(dt);
         this.healthDataTable.addRows(
-          [[i, sampleCmdInterval, dt, data.EyetrackerSampleInterval[i]]]
+          [[i, sampleCmdInterval, dt, dt2, data.EyetrackerSampleInterval[i]]]
         );
       }
     } else if (data.Eye.TrackEye == 0 && data.RewardStage > 0) {
@@ -1656,11 +1649,37 @@ export class Charts {
           - data.TSequenceDesiredClip[lastIdx][i]
         );
         dt = Math.abs(Math.round(dt));
-        this.healthDataTable.addRows(
-          [[i, null, dt, null]]
+
+        let dt2 = (
+          data.TSequenceActualClip[1][i]
+          - data.TSequenceDesiredClip[1][i]
         );
+        dt2 = Math.abs(Math.round(dt2));
+        this.healthDataTable.addRows(
+          [[i, null, dt, dt2, null]]
+        );
+        this.healthDataTDisplay.push(dt);
       }
     }
+
+    this.healthChart.update({
+      xAxis: {
+        labels: {
+          formatter: function() {
+            return this.value as string;
+          }
+        },
+      },
+      series: [
+        {
+          pointStart: 300,
+          type: 'scatter'
+        }
+      ]
+    }, false);
+
+    this.healthChart.series[0].setData(this.healthDataTDisplay);
+    console.log(this.healthChart);
 
     // if (data.FixationDuration > 0) { // EYETRACKING SCENARIO
     //   for (let i = 0; i < data.TSequenceActualClip[2].length; i++) {
@@ -1788,6 +1807,7 @@ export class Charts {
 
   private drawRewardPlot2() {
     this.rewardPlot2.series[0].setData(this.rewardData);
+    console.log('[drawRewardPlot2]::this.rewardPlot2:', this.rewardPlot2);
   }
 
   private drawRxnTimePlot2() {
@@ -1797,78 +1817,6 @@ export class Charts {
 
   private drawObjPerfPlot() {
     this.objPerfPlot.draw(this.objPerfDataTable, this.objPerfPlotOptions);
-  }
-
-  private drawRxnTimePlot() {
-    this.rxnPlot.draw(this.rxnTimeDataTable, this.rxnPlotOptions);
-  }
-
-  private drawChoicePlot() {
-    this.choicePlot.draw(this.choiceDataTable, this.choicePlotOptions);
-  }
-
-  private drawRealtimePlot(data: LiveplotDataType) {
-    let idx = 0;
-    this.realtimePlotOptions = {
-      seriesType: 'scatter',
-      width: data.workspace[2] * data.CanvasRatio,
-      height: data.ViewportPixels[1] - data.offsettop,
-      legend: {
-        position: 'top'
-      },
-      hAxis: {
-        title: 'X position (px)',
-        viewWindow: {
-          min: 0,
-          max: data.workspace[2] * data.CanvasRatio
-        }
-      },
-      vAxis: {
-        title: 'Y position (px)',
-        viewWindow: {
-          min: 0,
-          max: data.ViewportPixels[1] - data.offsettop
-        }
-      }
-    };
-    this.realtimePlotOptions.hAxis = {
-      title: 'X position (px)',
-      viewWindow: {
-        min: 0,
-        max: data.workspace[2] * data.CanvasRatio
-      }
-    };
-    this.realtimePlotOptions.vAxis = {
-      title: 'Y position (px)',
-      viewWindow: {
-        min: 0,
-        max: data.ViewportPixels[1] - data.offsettop
-      }
-    };
-    let numCol = this.realtimeDataTable.getNumberOfColumns();
-    this.generateAndAddRowData(
-      this.realtimeDataTable,
-      numCol,
-      {0: 0, [numCol - 2]: 0}
-    );
-    let numRows = this.realtimeDataTable.getNumberOfRows();
-
-    this.realtimePlotConfig = {
-      chartType: 'ComboChart',
-      containerId: 'realtime-plot',
-      options: this.realtimePlotOptions
-    };
-    this.realtimePlot = (
-      new google.visualization.ChartWrapper(this.realtimePlotConfig)
-    );
-    this.realtimePlot.setDataTable(this.realtimeDataTable);
-    window.addEventListener('data_arrived', (evt: CustomEventInit) => {
-      if (idx % 2 == 0) {
-        this.realtimeDataTable.setValue(numRows - 1, 0, Math.floor(evt.detail.x));
-        this.realtimeDataTable.setValue(numRows - 1, numCol - 2, Math.floor(evt.detail.y));
-        this.realtimePlot.draw();
-      }
-    });
   }
 
   private drawStaticElements(cvs: HTMLCanvasElement, ctx: CanvasRenderingContext2D | null, data: LiveplotDataType, evt: CustomEventInit) {
