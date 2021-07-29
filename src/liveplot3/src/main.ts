@@ -36,9 +36,10 @@ let elemObj = {
   screenPlot: document.querySelector('#screen-plot') as HTMLDivElement,
   // realtimePlot: document.querySelector('#realtime-plot') as HTMLDivElement,
   rxnPlot: document.querySelector('#reaction-plot') as HTMLDivElement,
+  rxnPlot2: document.querySelector('#reaction-plot-2') as HTMLDivElement,
   choicePlot: document.querySelector('#choice-plot') as HTMLDivElement,
   objPerfPlot: document.querySelector('#obj-perf-plot') as HTMLDivElement,
-  rewardPlot: document.querySelector('#reward-plot') as HTMLDivElement,
+  rewardPlot2: document.querySelector('#reward-plot-2') as HTMLDivElement,
   
   perfVitals: document.querySelector('#performance-vitals') as HTMLSpanElement,
   rfidVitals: document.querySelector('#rfid-vitals') as HTMLSpanElement,

@@ -2,8 +2,11 @@ import _, { last, sample } from 'lodash';
 import { FileType, LiveplotDataType } from './types';
 import { Utils } from './utils';
 import * as Highcharts from 'highcharts';
-import Exporting from 'highcharts/modules/exporting';
-Exporting(Highcharts);
+import { Liveplot } from './liveplot';
+import Histogram from 'highcharts/modules/histogram-bellcurve';
+Histogram(Highcharts);
+// import Exporting from 'highcharts/modules/exporting';
+// Exporting(Highcharts);
 // import * as Exporting from 'highcharts/modules/exporting';
 
 
@@ -36,11 +39,12 @@ export class Charts {
   public cumulDataTable: google.visualization.DataTable;
   public xyPosDataTable: google.visualization.DataTable;
   public rxnTimeDataTable: google.visualization.DataTable;
-  public rewardDataTable: google.visualization.DataTable;
   public choiceDataTable: google.visualization.DataTable;
   public objPerfDataTable: google.visualization.DataTable;
   public realtimeDataTable: google.visualization.DataTable;
   public healthDataTable: google.visualization.DataTable;
+  public rewardData: number[];
+  public rxnData: number[];
 
   public perfDashboard: google.visualization.Dashboard;
   public trialDashboard: google.visualization.Dashboard;
@@ -80,8 +84,11 @@ export class Charts {
   public rxnPlot: google.visualization.Histogram;
   public rxnPlotOptions: google.visualization.HistogramOptions;
 
-  public rewardPlot: google.visualization.ColumnChart;
-  public rewardPlotOptions: google.visualization.ColumnChartOptions;
+  public rxnPlot2: Highcharts.Chart;
+  public rxnPlot2Options: Highcharts.Options;
+
+  public rewardPlot2: Highcharts.Chart;
+  public rewardPlot2Options: Highcharts.Options;
 
   public choicePlot: google.visualization.ColumnChart;
   public choicePlotOptions: google.visualization.ColumnChartOptions;
@@ -123,61 +130,12 @@ export class Charts {
     this.cumulDataTable = new google.visualization.DataTable();
     this.xyPosDataTable = new google.visualization.DataTable();
     this.rxnTimeDataTable = new google.visualization.DataTable();
-    this.rewardDataTable = new google.visualization.DataTable();
     this.choiceDataTable = new google.visualization.DataTable();
     this.objPerfDataTable = new google.visualization.DataTable();
     this.realtimeDataTable = new google.visualization.DataTable();
     this.rtData = {};
-
-    Highcharts.chart({
-      title: {
-        text: 'HIGHCHART EXAMPLE'
-      },
-
-      plotOptions: {
-        series: {
-          label: {
-            connectorAllowed: false
-          },
-          pointStart: 2010
-        }
-      },
-      exporting: {
-        enabled: false
-      },
-      chart: {
-        renderTo: document.querySelector('#highchart-plot') as HTMLDivElement
-      },
-      
-
-      series: [{
-          name: 'Installation',
-          data: [43934, 52503, 57177, 69658, 97031, 119931, 137133, 154175],
-          type: 'line'
-        },
-        {
-          name: 'Manufacturing',
-          data: [24916, 24064, 29742, 29851, 32490, 30282, 38121, 40434],
-          type: 'line'
-        },
-        {
-          name: 'Sales & Distribution',
-          data: [11744, 17722, 16005, 19771, 20185, 24377, 32147, 39387],
-          type: 'line'
-        },
-        {
-          name: 'Project Development',
-          data: [null, null, 7988, 12169, 15112, 22452, 34400, 34227],
-          type: 'line'
-        },
-        {
-          name: 'Other',
-          data: [12908, 5948, 8105, 11248, 8989, 11816, 18274, 18111],
-          type: 'line'
-      }]
-
-      
-    });
+    this.rewardData = [];
+    this.rxnData = [];
 
     
   }
@@ -230,15 +188,15 @@ export class Charts {
     this.rxnPlot = (
       new google.visualization.Histogram(this.elemObject.rxnPlot)
     );
-    this.rewardPlot = (
-      new google.visualization.ColumnChart(this.elemObject.rewardPlot)
-    );
     this.choicePlot = (
       new google.visualization.ColumnChart(this.elemObject.choicePlot)
     );
     this.objPerfPlot = (
       new google.visualization.ColumnChart(this.elemObject.objPerfPlot)
     );
+
+    this.rewardPlot2 = Highcharts.chart(this.rewardPlot2Options);
+    this.rxnPlot2 = Highcharts.chart(this.rxnPlot2Options);
 
   }
 
@@ -379,6 +337,78 @@ export class Charts {
     };
 
 
+    this.rewardPlot2Options = {
+      title: {
+        text: 'Reward Amount'
+      },
+      xAxis: {
+        tickInterval: 1
+      },
+      chart: {
+        renderTo: this.elemObject.rewardPlot2,
+        type: 'column'
+      },
+      series: [{
+        name: 'Reward Amount',
+        type: 'column',
+        data: []
+      }]
+    };
+
+    this.rxnPlot2Options = {
+      title: {
+        text: 'Reaction Time'
+      },
+      chart: {
+        renderTo: this.elemObject.rxnPlot2,
+        type: 'histogram'
+      },
+      xAxis: [{
+        title: { text: 'Data' },
+        alignTicks: false
+    }, {
+        title: { text: 'Histogram' },
+        alignTicks: true,
+        opposite: true
+    }],
+
+    yAxis: [{
+        title: { text: 'Data' }
+    }, {
+        title: { text: 'Histogram' },
+        opposite: true
+    }],
+      plotOptions: {
+        histogram: {
+            accessibility: {
+                pointDescriptionFormatter: function (point) {
+                  console.log(point);
+                    var ix = point.index + 1,
+                        x1 = point.x.toFixed(3),
+                        x2 = point.x.toFixed(3),
+                        val = point.y;
+                    return ix + '. ' + x1 + ' to ' + x2 + ', ' + val + '.';
+                }
+            }
+        }
+    },
+      series: [
+        {
+          name: 'Reaction Time',
+          type: 'histogram',
+          baseSeries: 1,
+        },
+        {
+          name: 'Data',
+          data: [],
+          type: 'scatter',
+               
+        }
+      ]
+
+    }
+
+
 
 
 
@@ -454,14 +484,6 @@ export class Charts {
       },
       legend: { position: 'none' }
     };
-    this.rewardPlotOptions = {
-      width: this.elemObject.rewardPlot.clientWidth,
-      height: this.elemObject.rewardPlot.clientHeight,
-      title: 'Amount of Reward',
-      hAxis: { title: 'reward amount' },
-      vAxis: { title: 'counts', minValue: 0, maxValue: 1 },
-      legend: { position: 'none' }
-    };
     this.choicePlotOptions = {
       width: this.elemObject.choicePlot.clientWidth,
       height: this.elemObject.choicePlot.clientHeight,
@@ -516,11 +538,6 @@ export class Charts {
       .removeRows(0, this.rxnTimeDataTable.getNumberOfRows());
     this.rxnTimeDataTable
       .removeColumns(0, this.rxnTimeDataTable.getNumberOfColumns());
-
-    this.rewardDataTable
-      .removeRows(0, this.rewardDataTable.getNumberOfRows());
-    this.rewardDataTable
-      .removeColumns(0, this.rewardDataTable.getNumberOfColumns());
 
     this.choiceDataTable
       .removeRows(0, this.choiceDataTable.getNumberOfRows());
@@ -586,8 +603,6 @@ export class Charts {
     this.realtimeDataTable.addColumn('number', 'curY');
     this.realtimeDataTable.addColumn({'type': 'string', 'role': 'style'});
     
-    this.rewardDataTable.addColumn('string', 'reard size');
-    this.rewardDataTable.addColumn('number', 'nrewards');
 
     this.choiceDataTable.addColumn('string', 'choice');
     this.choiceDataTable.addColumn('number', '# of responses');
@@ -616,17 +631,19 @@ export class Charts {
     this.loadVitalsText(file);
     // console.log('vitals', this.vitals);
     this.loadPerformanceData(file);
+    this.loadRxnTimeData(fileData);
     this.loadHealthData(fileData);
     this.loadObjPerfData(fileData);
     this.loadChoiceData(fileData);
-    this.loadRewardData(fileData);
+    this.loadRewardData2(fileData);
     this.drawPerformancePlot(file);
     this.drawTrialPlot(file);
     this.drawHealthPlot(file);
     this.drawObjPerfPlot();
     this.drawRxnTimePlot();
+    this.drawRxnTimePlot2();
     this.drawChoicePlot();
-    this.drawRewardPlot();
+    this.drawRewardPlot2();
     this.loadTouchSDText();
     let streamActive = plotOptions.streamActive;
     this.drawScreenPlot(fileData, streamActive);
@@ -1321,6 +1338,25 @@ export class Charts {
     this.formatDate(this.cumulDataTable, 0);
   }
 
+  private loadRxnTimeData(data: LiveplotDataType) {
+    for (let i = 0; i < data.NReward.length; i++) {
+      if (data.RewardStage == 0) { // WATER FOUNTAIN TASK
+        this.rxnData.push(data.FixationXYT[2][i] - data.StartTime[i]);
+      } else if (data.NRSVP > 0) {
+        this.rxnData.push(
+          data.SampleFixationXYT[2][i] - data.SampleStartTime[i]
+        );
+      } else {
+        if (data.Response[i] == -1) {
+          this.rxnData.push(data.ChoiceTimeOut);
+        } else {
+          this.rxnData.push(data.ResponseXYT[2][i] - data.SampleStartTime[i]);
+        }
+      }
+    }
+    console.log(this.rxnData);
+  }
+
   private generateAndAddRowData(
     target: google.visualization.DataTable, 
     numColumns: number, 
@@ -1555,37 +1591,27 @@ export class Charts {
     }
   }
 
-  private loadRewardData(data: LiveplotDataType) {
-    this.rewardDataTable.removeRows(0, this.rewardDataTable.getNumberOfRows());
-    let NRewardMax = [];
-    for (let i = 0; i < data.NRewardMax; i++) {
-      NRewardMax.push(i.toString());
+  private loadRewardData2(data: LiveplotDataType) {
+    let rewardDataCount = _.fill(Array(data.NRewardMax + 1), 0);
+    for (let i = 0; i < data.NReward.length; i++) {
+      rewardDataCount[data.NReward[i]] += 1;
     }
-    // NRewardMax.unshift('-1');
-
-    for (let i = 0; i < _.size(NRewardMax); i++) {
-      this.rewardDataTable.addRow([NRewardMax[i], 0]);
-    }
-
-    let NDiffReward = _.fill(Array(_.size(NRewardMax)), 0);
-
-    for (let i = 0; i < _.size(data.NReward); i++) {
-      if (data.Response[i] == -1) {
-        NDiffReward[0]++;
-        this.rewardDataTable.setValue(
-          0, 1, NDiffReward[0] / _.size(data.NReward)
-        );
-      } else {
-        for (let j = 1; j < _.size(NRewardMax); j++) {
-          if (data.NReward[i].toString() == NRewardMax[j]) {
-            NDiffReward[j]++;
-          }
-          this.rewardDataTable.setValue(
-            j, 1, NDiffReward[j] / _.size(data.NReward)
-          );
-        }
-      }
-    }
+    let rewardDataPercent = rewardDataCount.map(count => {
+      return count / _.size(data.NReward);
+    });
+    this.rewardData = rewardDataPercent;
+    // console.log('[loadRewardData2]::rewardDataCount:', rewardDataCount);
+    // console.log('[loadRewardData2]::rewardDataPercent:', rewardDataPercent);
+    // let hello: Highcharts.SeriesColumnOptions = {
+    //   name: 'Reward Amount',
+    //   data: rewardDataPercent,
+    //   type: 'column'
+    // };
+    // if (this.rewardPlot2Options.series) {
+    //   console.log('sup');
+    //   this.rewardPlot2Options.series[0] = hello;
+    // }
+    
   }
 
   private loadHealthData(data: LiveplotDataType) {
@@ -1760,6 +1786,15 @@ export class Charts {
     this.trialDashboard.draw(this.cumulDataTable);
   }
 
+  private drawRewardPlot2() {
+    this.rewardPlot2.series[0].setData(this.rewardData);
+  }
+
+  private drawRxnTimePlot2() {
+    this.rxnPlot2.series[1].setData(this.rxnData);
+    console.log('[drawRxnTimePlot2]::this.rxnPlot2:', this.rxnPlot2);
+  }
+
   private drawObjPerfPlot() {
     this.objPerfPlot.draw(this.objPerfDataTable, this.objPerfPlotOptions);
   }
@@ -1770,10 +1805,6 @@ export class Charts {
 
   private drawChoicePlot() {
     this.choicePlot.draw(this.choiceDataTable, this.choicePlotOptions);
-  }
-
-  private drawRewardPlot() {
-    this.rewardPlot.draw(this.rewardDataTable, this.rewardPlotOptions);
   }
 
   private drawRealtimePlot(data: LiveplotDataType) {
