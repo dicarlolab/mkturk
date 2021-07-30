@@ -1,4 +1,4 @@
-import _, { last, sample } from 'lodash';
+import _, { last, min, sample } from 'lodash';
 import { FileType, LiveplotDataType } from './types';
 import { Utils } from './utils';
 import * as Highcharts from 'highcharts';
@@ -79,7 +79,7 @@ export class Charts {
   public healthFilterConfig: google.visualization.ControlWrapperOptions;
   public healthFilterOptions: Object;
 
-  public healthChart: Highstock.StockChart;
+  public healthChart: Highstock.Chart;
   public healthChartOptions: Highstock.Options;
 
   public screenPlot: google.visualization.ComboChart;
@@ -204,7 +204,7 @@ export class Charts {
     this.rewardPlot2 = Highcharts.chart(this.rewardPlot2Options);
     this.rxnPlot2 = Highcharts.chart(this.rxnPlot2Options);
     this.choicePlot2 = Highcharts.chart(this.choicePlot2Options);
-    this.healthChart = Highstock.stockChart(this.healthChartOptions);
+    this.healthChart = Highstock.chart(this.healthChartOptions);
 
   }
 
@@ -445,7 +445,8 @@ export class Charts {
           text: 'Trial#'
         },
         type: 'linear',
-        min: 10
+        min: 0,
+        max: 100
         
       },
       navigator: {
@@ -464,20 +465,32 @@ export class Charts {
           },
         },
         xAxis: {
-          labels: {
-            formatter: function() {
-              return this.value as string;
-            }
+          title: {
+            text: 'HELLO'
           },
-        }
+          type: 'linear',
+          labels: {
+            format: '{value}'
+          },
+        },
+      
+        // xAxis: {
+        //   labels: {
+        //     formatter: function() {
+        //       return this.value as string;
+        //     }
+        //   },
+        // }
         
+      },
+      scrollbar: {
+        enabled: true
       },
       series: [
         {
           name: 'tdisplay',
           type: 'scatter',
-          data: [],
-         
+          data:  [0],
         }
       ]
     };
@@ -1601,6 +1614,7 @@ export class Charts {
   private loadHealthData(data: LiveplotDataType) {
     console.log('[loadHealthData::fileData]', data);
     this.healthDataTable.removeRows(0, this.healthDataTable.getNumberOfRows());
+    this.healthDataTDisplay = [];
 
     if (data.Eye.TrackEye > 0 && data.RewardStage > 0) { // EYETRACKING
       let lastIdx = Object.keys(data.TSequenceActualClip).length - 1;
@@ -1662,23 +1676,26 @@ export class Charts {
       }
     }
 
-    this.healthChart.update({
-      xAxis: {
-        labels: {
-          formatter: function() {
-            return this.value as string;
-          }
-        },
-      },
-      series: [
-        {
-          pointStart: 300,
-          type: 'scatter'
-        }
-      ]
-    }, false);
-
-    this.healthChart.series[0].setData(this.healthDataTDisplay);
+    // this.healthChart.update({
+    //   xAxis: {
+    //     labels: {
+    //       formatter: function() {
+    //         return this.value as string;
+    //       }
+    //     },
+    //   },
+    // }, false);
+    
+    this.healthChart.series[0].setData(this.healthDataTDisplay, false);
+    // this.healthChart.update({
+    //   xAxis: {
+    //     min: 400
+    //   }
+    // })
+    
+    this.healthChart.xAxis[0].setExtremes(this.healthDataTDisplay.length - 100, this.healthDataTDisplay.length, true, true);
+    // this.healthChart.redraw();
+    
     console.log(this.healthChart);
 
     // if (data.FixationDuration > 0) { // EYETRACKING SCENARIO

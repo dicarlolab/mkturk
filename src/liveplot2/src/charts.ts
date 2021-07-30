@@ -1541,14 +1541,22 @@ export class Charts {
       
       for (let i = 0; i < data.TSequenceActualClip[lastIdx].length; i++) {
         let dt: any;
+        let dt2: any;
         if (data.TSequenceActualClip[lastIdx][i] < 0) {
           dt = null;
+          dt2 = null;
         } else {
           dt = (
             data.TSequenceActualClip[lastIdx][i]
             - data.TSequenceDesiredClip[lastIdx][i]
           );
           dt = Math.abs(Math.round(dt));
+
+          dt2 = (
+            data.TSequenceActualClip[1][i]
+            - data.TSequenceDesiredClip[1][i]
+          );
+          dt2 = Math.abs(Math.round(dt2));
         }
         
         let sampleCmdInterval: any;
@@ -1563,7 +1571,7 @@ export class Charts {
           );  
         }
         this.healthDataTable.addRows(
-          [[i, sampleCmdInterval, dt, data.EyetrackerSampleInterval[i]]]
+          [[i, sampleCmdInterval, dt, dt2, data.EyetrackerSampleInterval[i]]]
         );
       }
     } else if (data.Eye.TrackEye == 0 && data.RewardStage > 0) {
@@ -1574,9 +1582,16 @@ export class Charts {
           - data.TSequenceDesiredClip[lastIdx][i]
         );
         dt = Math.abs(Math.round(dt));
-        this.healthDataTable.addRows(
-          [[i, null, dt, null]]
+
+        let dt2 = (
+          data.TSequenceActualClip[1][i]
+          - data.TSequenceDesiredClip[1][i]
         );
+        dt2 = Math.abs(Math.round(dt2));
+        this.healthDataTable.addRows(
+          [[i, null, dt, dt2, null]]
+        );
+        
       }
     }
 
