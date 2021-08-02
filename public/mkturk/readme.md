@@ -169,6 +169,8 @@ Eye.CalibTrainMSE: The train MSE for NCalibPointsTrain training points
 
 Eye.CalibTestMSE: The test MSE for NCalibPointsTest testing points
 
+Eye.TrackEye: 0 (not tracking eye) or 1 (tracking eye)
+
 FixationRadius: Radius of fixation image in pixels. This is not set by the user. Rather, user specifies FixationSizeInches, and then FixationRadius stores the actual pixel-based size in the json data file.
 
 FixationColor: color of fixation dot if image is not used
@@ -205,11 +207,15 @@ ScreenSizePixels: physical quantity, recorded # of pixels of screen (retrieved f
 
 Subject: Name of subject, chosen from pulldown menu at beginning of task.
 
+StressTest: 0 (regular run) or 1 (stress test run)
+
 UserAgent: info from window.navigator.UserAgent
 
 ViewportPixels: derived quantity computed as ENV.ViewportPixels = ENV.ScreenPhysicalPixels/ENV.DevicePixelRatio where ScreenPhysicalPixels is the screen spec retrieved from firestore, and DevicePixelRatio is from the scaling being used by the user as detected during the browser session
 
 ViewportPPI: derived quantity, equals ENV.ViewportPixels[0]/ENV.ScreenSizeInches[0], viewport pixels per inch (computed from first screen dimension)
+
+WebAppUrl: info from window.location.href to track whether mkturk ran from the tested build or beta/development build
 
 XGridCenter: The location of all grid points in pixels. Follows from user-specified NGridPoints and GridScale (e.g. to create a 3x3 grid with adjacent non-overlapping images, set NGridPoints=3, GridScale=1 and XGridCenters will be spaced by ImageWidthPixels)
 

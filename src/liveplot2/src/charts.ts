@@ -541,7 +541,8 @@ export class Charts {
 
     this.healthDataTable.addColumn('number', 'trial');
     this.healthDataTable.addColumn('number', 'sample command');
-    this.healthDataTable.addColumn('number', 'tdisplay');
+    this.healthDataTable.addColumn('number', 'tdisplay_last');
+    this.healthDataTable.addColumn('number', 'tdisplay_first');
     this.healthDataTable.addColumn('number', 'eye interval');
 
     this.updatePlots(file, plotOptions);
@@ -1533,7 +1534,7 @@ export class Charts {
   }
 
   private loadHealthData(data: LiveplotDataType) {
-    console.log('[loadHealthData::fileData]', data);
+    // console.log('[loadHealthData::fileData]', data);
     this.healthDataTable.removeRows(0, this.healthDataTable.getNumberOfRows());
 
     if (data.Eye.TrackEye > 0 && data.RewardStage > 0) { // EYETRACKING
@@ -1595,38 +1596,6 @@ export class Charts {
       }
     }
 
-    // if (data.FixationDuration > 0) { // EYETRACKING SCENARIO
-    //   for (let i = 0; i < data.TSequenceActualClip[2].length; i++) {
-    //     let sampleCmdInterval = (
-    //       data.SampleCommandReturnTime[i] - data.SampleStartTime[i]
-    //     );
-    //     let dt = (
-    //       data.TSequenceActualClip[2][i] - data.TSequenceDesiredClip[2][i]
-    //     );
-    //     dt = Math.abs(Math.round(dt));
-    //     this.healthDataTable.addRows(
-    //       [[i, sampleCmdInterval, dt, data.EyeTrackerSampleInterval]]
-    //     );
-    //   }
-    // } else { // !EYETRACKING SCENARIO
-    //   for (let i = 0; i < data.TSequenceActualClip[2].length; i++) {
-    //     let dt = (
-    //       data.TSequenceActualClip[2][i] - data.TSequenceDesiredClip[2][i]
-    //     );
-    //     dt = Math.abs(Math.round(dt));
-    //     this.healthDataTable.addRows([[i, null, dt, null]]);
-    //   }
-    // }
-    // if (Object.keys(data.TSequenceActualClip).length > 0) {
-    //   for (let i = 0; i < data.TSequenceDesiredClip[2].length; i++) {
-    //     let dt = (
-    //       data.TSequenceActualClip[2][i] - data.TSequenceDesiredClip[2][i]
-    //     );
-    //     dt = Math.abs(Math.round(dt));
-    //     this.healthDataTable.addRows([[i, null, dt, null]]);
-  
-    //   }
-    // }
   }
 
   private drawPerformancePlot(file: FileType) {
@@ -1667,9 +1636,9 @@ export class Charts {
 
   private drawHealthPlot(file: FileType) {
     let numRows = this.healthDataTable.getNumberOfRows();
-    console.log('[drawHealthPlot::numRows]:', numRows);
+    // console.log('[drawHealthPlot::numRows]:', numRows);
     let healthFilterState: any = this.healthFilter.getState();
-    console.log('[drawHealthPlot::healthFilterState]:', healthFilterState);
+    // console.log('[drawHealthPlot::healthFilterState]:', healthFilterState);
 
     if (file.dataChanged && !file.fileChanged) {
       if (numRows <= 100) {
@@ -1696,7 +1665,6 @@ export class Charts {
       }
     });
     this.healthDashboard.draw(this.healthDataTable);
-    
   }
 
   private drawTrialPlot(file: FileType) {
