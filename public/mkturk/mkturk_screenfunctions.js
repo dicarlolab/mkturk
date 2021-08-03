@@ -23,59 +23,28 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 		
 		if (!start) start = timestamp; //IF start has not been set to a float timestamp, set it now.
 
-		if (timestamp - start > ti[frame.current]) {
-			// console.log('updateCanvas called');
-			//----- RENDER ALL ELEMENTS
-			if (!ENV.OffscreenCanvasAvailable) {
-				renderShape2D('Blank', [-1], OFFSCREENCANVAS);
-			}
+		if (frame.shown[frame.current-1] != 1 && frame.current > 0){
+			CURRTRIAL.tsequenceactual[frame.current-1] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
+			frame.shown[frame.current-1]=1
+		}//IF first time shown, store this time as the first transition to the new frame
 
-			for (var s = 0; s<=frame.frames[frame.current].length-1; s++){
-				f = frame.frames[frame.current][s]
-				var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
-				// console.log('taskscreen:', taskscreen);
+		if (timestamp - start > ti[frame.current]) {
 				
-				if (s==0){
-					var taskscreen0 = taskscreen;
-				}//IF primary screen
+			//----- RENDER ALL ELEMENTS
+			renderShape2D('Blank', [-1], OFFSCREENCANVAS);
+
+			if (frame.current <= frame.shown.length-1){ //Skip rendering if already did last frame and just waiting for it to show
+				for (var s = 0; s<=frame.frames[frame.current].length-1; s++){
+					f = frame.frames[frame.current][s]
+					var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
+					// console.log('taskscreen:', taskscreen);
+					
+					if (s==0){
+						var taskscreen0 = taskscreen;
+					}//IF primary screen
 
 //------------------- DISPLAY THE FRAME 2D ---------------------//
-				//TRANSFER 2D ONSCREEN (everything has been pre-rendered offscreen)
-				if (ENV.OffscreenCanvasAvailable && s == frame.frames[frame.current].length-1 && (updated2d || updated3d)){
-					var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
-
-					//FAILED render
-					if (renderstr.status == "failed"){
-						console.log("**** FAILED on 1ST rendering attempt of " + taskscreen)
-						// attempt again
-						CURRTRIAL.tsequenceactual[f] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
-						var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))				
-						console.log("**** " + renderstr.status + " on 2ND rendering attempt of " + taskscreen)
-
-						if (renderstr.status == "failed"){
-							if (taskscreen == "Touchfix" || taskscreen == "Test" || taskscreen == "Choice"){
-								for (var j=0; j < 100; j++){
-									// attempt again
-									await setTimeout(j*100)
-									CURRTRIAL.tsequenceactual[f] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
-									var renderstr = OFFSCREENCANVAS.commitTo(VISIBLECANVAS.getContext("bitmaprenderer"))
-									if (renderstr.status == "succeeded"){
-										break
-									}//IF success
-								}//FOR j attempts
-								console.log("Render "  + taskscreen + " " + renderstr.status + " after " + j + " attempts")
-							}//IF fix/test/choice
-							else {
-								CURRTRIAL.tsequenceactual[f] = -99
-								console.log("Skipping render since not touchfix or test screen")
-							}//ELSE sample
-						}//IF failed again
-					}//IF failed
-				}//IF Offscreen api available
-
-				//RENDER 2D directly onscreen
-				if (!ENV.OffscreenCanvasAvailable) {
-					//----- RENDER ALL 2D ELEMENTS DIRECTLY TO DISPLAY NOW -- offscreencanvas is visiblecanvas
+					//RENDER 2D directly onscreen
 					render2D(taskscreen,s,f,gr,fr,sc,ob,id,OFFSCREENCANVAS)
 
 					//------------------- DISPLAY THE FRAME 3D ---------------------//
@@ -93,290 +62,250 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						if (port.connected && TASK.Photodiode > 0){
 							renderShape2D("PhotodiodeSquare",
 								[ ENV.PhotodiodeSquareX, ENV.PhotodiodeSquareY ], OFFSCREENCANVAS)
-						}
-					}//IF
-				}//IF !Offscreen
-			}//FOR s screens within frame
+						}//IF port.connected
+					}//IF touchfix || sample
+				}//FOR s screens within frame
 
-//------------------- Frame is fully on display ---------------------//
-			//----- (1) Merge Bounding Boxes
-			if (updated2d){
-				boundingBoxesChoice3D.x = boundingBoxesChoice2D.x
-				boundingBoxesChoice3D.y = boundingBoxesChoice2D.y
-			}//
-			if (updated3d){
-				boundingBoxesChoice3D.x = boundingBoxesChoice3JS.x
-				boundingBoxesChoice3D.y = boundingBoxesChoice3JS.y			
-			}
+				//----- (1) Merge Bounding Boxes
+				if (updated2d){
+					boundingBoxesChoice3D.x = boundingBoxesChoice2D.x
+					boundingBoxesChoice3D.y = boundingBoxesChoice2D.y
+				}
+				if (updated3d){
+					boundingBoxesChoice3D.x = boundingBoxesChoice3JS.x
+					boundingBoxesChoice3D.y = boundingBoxesChoice3JS.y			
+				}
 
-			// console.log(`taskscreen: ${taskscreen}; taskscreen0: ${taskscreen0}; boundingBoxesChoice3D: ${JSON.stringify(boundingBoxesChoice3D)}`);
-			// if (taskscreen == 'Sample') {
-			// 	console.log(`arguments.length=${lenArgs}`);
-			// }
+				//----- MkModel Logic				
+				if (lenArgs == 7 && mkm) {
+					if (TASK.SameDifferent > 0) {
+						if (taskscreen == 'Sample' && !mkm.hasSampleFeatures) {
+							let ctx = mkm.cvs.getContext('2d');
+							ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
+							let label = CURRTRIAL.sample_scenebag_label[0][0];
+							let params = {
+								image: IMAGES.Sample[label].IMAGES,
+								object: IMAGES.Sample[label].OBJECTS,
+								idx: CURRTRIAL.sample_scenebag_index[0][0],
+								ViewportPPI: ENV.ViewportPPI,
+								ScreenRatio: ENV.ScreenRatio,
+								offsettop: CANVAS.offsettop,
+								boundingBoxes3D: boundingBoxesChoice3D,
+								boundingBoxes2D: boundingBoxesChoice2D
+							};
+		
+							let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
 
-			// MkModel Logic
-			
-			// if (TASK.SameDifferent > 0 && lenArgs == 7) {
-			if (lenArgs == 7 && mkm) {
-				if (TASK.SameDifferent > 0) {
-					if (taskscreen == 'Sample' && !mkm.hasSampleFeatures) {
-						let ctx = mkm.cvs.getContext('2d');
-						ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
-						let label = CURRTRIAL.sample_scenebag_label[0][0];
-						let params = {
-							image: IMAGES.Sample[label].IMAGES,
-							object: IMAGES.Sample[label].OBJECTS,
-							idx: CURRTRIAL.sample_scenebag_index[0][0],
-							ViewportPPI: ENV.ViewportPPI,
-							ScreenRatio: ENV.ScreenRatio,
-							offsettop: CANVAS.offsettop,
-							boundingBoxes3D: boundingBoxesChoice3D,
-							boundingBoxes2D: boundingBoxesChoice2D
-						};
-	
-						let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
-
-						// mkmBoundingBox SANITY CHECK CODE
-						// console.log(`SAMPLE sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
-						// let visiblecvs = document.getElementById("canvaseyetracker");
-						// let ctx2 = visiblecvs.getContext('2d');
-						// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
-						// ctx2.rect(mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight);
-						// ctx2.stroke();
-						
-						ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
-						let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), mkm.outputNode);
-						featureVec = featureVec.reshape(mkm.inputShape);
-
-						if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
-							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.sample_scenebag_label[0][0]);
-							mkm.dataObj.yTrainLabels.push(oneHotIdx);
-							mkm.dataObj.yTrain.push(mkm.oneHotArr[oneHotIdx]);
-							mkm.dataObj.xTrain.push(featureVec);
+							// mkmBoundingBox SANITY CHECK CODE
+							// console.log(`SAMPLE sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
+							// let visiblecvs = document.getElementById("canvaseyetracker");
+							// let ctx2 = visiblecvs.getContext('2d');
+							// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
+							// ctx2.rect(mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight);
+							// ctx2.stroke();
 							
-							// if (CURRTRIAL.sample_scenebag_label[0][0] == 0) {
-							// 	mkm.dataObj.yTrainLabels.push(0);
-							// 	// mkm.dataObj.yTrain.push([0]);
-							// 	mkm.dataObj.yTrain.push([1, 0]);
-							// 	// for SVM
-							// 	// mkm.dataObj.yTrain.push([-1])
-							// } else if (CURRTRIAL.sample_scenebag_label[0][0] == 1) {
-							// 	mkm.dataObj.yTrainLabels.push(1);
-							// 	// mkm.dataObj.yTrain.push([1]);
-							// 	mkm.dataObj.yTrain.push([0, 1]);
-							// }
-						} else {
-							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.sample_scenebag_label[0][0]);
-							mkm.dataObj.xTest.push(featureVec);
-							// mkm.dataObj.yTest.push(CURRTRIAL.sample_scenebag_label[0][0]);
-							mkm.dataObj.yTest.push(oneHotIdx);
+							ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
+							let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), mkm.outputNode);
+							featureVec = featureVec.reshape(mkm.inputShape);
+
+							if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
+								let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.sample_scenebag_label[0][0]);
+								mkm.dataObj.yTrainLabels.push(oneHotIdx);
+								mkm.dataObj.yTrain.push(mkm.oneHotArr[oneHotIdx]);
+								mkm.dataObj.xTrain.push(featureVec);
+								
+								// if (CURRTRIAL.sample_scenebag_label[0][0] == 0) {
+								// 	mkm.dataObj.yTrainLabels.push(0);
+								// 	// mkm.dataObj.yTrain.push([0]);
+								// 	mkm.dataObj.yTrain.push([1, 0]);
+								// 	// for SVM
+								// 	// mkm.dataObj.yTrain.push([-1])
+								// } else if (CURRTRIAL.sample_scenebag_label[0][0] == 1) {
+								// 	mkm.dataObj.yTrainLabels.push(1);
+								// 	// mkm.dataObj.yTrain.push([1]);
+								// 	mkm.dataObj.yTrain.push([0, 1]);
+								// }
+							} else {
+								let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.sample_scenebag_label[0][0]);
+								mkm.dataObj.xTest.push(featureVec);
+								// mkm.dataObj.yTest.push(CURRTRIAL.sample_scenebag_label[0][0]);
+								mkm.dataObj.yTest.push(oneHotIdx);
+							}
+							// mkm.cvs SANITY CHECK CODE
+							let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
+							let cvsData = mkm.cvs.toDataURL();
+							let path = (
+								`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`
+							);
+							mkmodelsRef.child(path).putString(cvsData, 'data_url');
+							// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
+							mkm.hasSampleFeatures = true;							
+						} else if (taskscreen == 'Test' && !mkm.hasTestFeatures) {
+							let ctx = mkm.cvs.getContext('2d');
+							ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
+							let label = CURRTRIAL.test_scenebag_labels[0][0];
+							let params = {
+								image: IMAGES.Test[label].IMAGES,
+								object: IMAGES.Test[label].OBJECTS,
+								idx: CURRTRIAL.test_scenebag_indices[0][0],
+								ViewportPPI: ENV.ViewportPPI,
+								ScreenRatio: ENV.ScreenRatio,
+								offsettop: CANVAS.offsettop,
+								boundingBoxes3D: boundingBoxesChoice3D,
+								boundingBoxes2D: boundingBoxesChoice2D
+							};
+		
+							let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
+
+							// mkmBoundingBox SANITY CHECK CODE
+							// console.log(`TEST sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
+							// let visiblecvs = document.getElementById("canvaseyetracker");
+							// let ctx2 = visiblecvs.getContext('2d');
+							// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
+							// ctx2.rect(mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight);
+							// ctx2.stroke();
+							
+							ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
+							let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), mkm.ouputNode);
+							featureVec = featureVec.reshape(mkm.inputShape);
+
+							if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
+								let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.test_scenebag_labels[0][0]);
+								mkm.dataObj.yTrainLabels.push(oneHotIdx);
+								mkm.dataObj.yTrain.push(mkm.oneHotArr[oneHotIdx]);
+								mkm.dataObj.xTrain.push(featureVec);
+								// if (CURRTRIAL.test_scenebag_labels[0][0] == 0) {
+								// 	mkm.dataObj.yTrainLabels.push(0);
+								// 	// mkm.dataObj.yTrain.push([0]);
+								// 	mkm.dataObj.yTrain.push([1, 0]);
+								// 	// for SVM
+								// 	// mkm.dataObj.yTrain.push([-1])
+								// } else if (CURRTRIAL.test_scenebag_labels[0][0] == 1) {
+								// 	mkm.dataObj.yTrainLabels.push(1);
+								// 	// mkm.dataObj.yTrain.push([1]);
+								// 	mkm.dataObj.yTrain.push([0, 1]);
+								// }
+							} else {
+								let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.test_scenebag_labels[0][0]);
+								mkm.dataObj.xTest.push(featureVec);
+								// mkm.dataObj.yTest.push(CURRTRIAL.test_scenebag_labels[0][0]);
+								mkm.dataObj.yTest.push(oneHotIdx);
+							}
+
+							// mkm.cvs SANITY CHECK HERE
+							let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
+							let cvsData = mkm.cvs.toDataURL();
+							let path = (
+								`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_test.png`
+							);
+							mkmodelsRef.child(path).putString(cvsData, 'data_url');
+							// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
+							mkm.hasTestFeatures = true;							
+						} else if (taskscreen == 'Choice' && mkm.hasSampleFeatures && mkm.hasTestFeatures) {
+							mkm.hasSampleFeatures = false;
+							mkm.hasTestFeatures = false;	
 						}
-						// mkm.cvs SANITY CHECK CODE
-						let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
-						let cvsData = mkm.cvs.toDataURL();
-						let path = (
-							`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`
-						);
-						mkmodelsRef.child(path).putString(cvsData, 'data_url');
-						// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
-						mkm.hasSampleFeatures = true;							
-					} else if (taskscreen == 'Test' && !mkm.hasTestFeatures) {
-						let ctx = mkm.cvs.getContext('2d');
-						ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
-						let label = CURRTRIAL.test_scenebag_labels[0][0];
-						let params = {
-							image: IMAGES.Test[label].IMAGES,
-							object: IMAGES.Test[label].OBJECTS,
-							idx: CURRTRIAL.test_scenebag_indices[0][0],
-							ViewportPPI: ENV.ViewportPPI,
-							ScreenRatio: ENV.ScreenRatio,
-							offsettop: CANVAS.offsettop,
-							boundingBoxes3D: boundingBoxesChoice3D,
-							boundingBoxes2D: boundingBoxesChoice2D
-						};
-	
-						let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
+					} else {
+						if (taskscreen == 'Sample' && !mkm.hasSampleFeatures) {
+							let ctx = mkm.cvs.getContext('2d');
+							ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
+							let label = CURRTRIAL.sample_scenebag_label[0][0];
+							let params = {
+								image: IMAGES.Sample[label].IMAGES,
+								object: IMAGES.Sample[label].OBJECTS,
+								idx: CURRTRIAL.sample_scenebag_index[0][0],
+								ViewportPPI: ENV.ViewportPPI,
+								ScreenRatio: ENV.ScreenRatio,
+								offsettop: CANVAS.offsettop,
+								boundingBoxes3D: boundingBoxesChoice3D,
+								boundingBoxes2D: boundingBoxesChoice2D
+							};
+		
+							let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
 
-						// mkmBoundingBox SANITY CHECK CODE
-						// console.log(`TEST sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
-						// let visiblecvs = document.getElementById("canvaseyetracker");
-						// let ctx2 = visiblecvs.getContext('2d');
-						// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
-						// ctx2.rect(mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight);
-						// ctx2.stroke();
-						
-						ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
-						let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), mkm.ouputNode);
-						featureVec = featureVec.reshape(mkm.inputShape);
+							// mkmBoundingBox SANITY CHECK CODE
+							// console.log(`SAMPLE sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
+							// let visiblecvs = document.getElementById("canvaseyetracker");
+							// let ctx2 = visiblecvs.getContext('2d');
+							// ctx2.rect(mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight);
+							// ctx2.stroke();
+							
+							ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
+							// console.log(mkm.featureExtractor);
+							let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), mkm.ouputNode);
+							// console.log('featureVec:', featureVec);
 
-						if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
-							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.test_scenebag_labels[0][0]);
-							mkm.dataObj.yTrainLabels.push(oneHotIdx);
-							mkm.dataObj.yTrain.push(mkm.oneHotArr[oneHotIdx]);
-							mkm.dataObj.xTrain.push(featureVec);
-							// if (CURRTRIAL.test_scenebag_labels[0][0] == 0) {
-							// 	mkm.dataObj.yTrainLabels.push(0);
-							// 	// mkm.dataObj.yTrain.push([0]);
-							// 	mkm.dataObj.yTrain.push([1, 0]);
-							// 	// for SVM
-							// 	// mkm.dataObj.yTrain.push([-1])
-							// } else if (CURRTRIAL.test_scenebag_labels[0][0] == 1) {
-							// 	mkm.dataObj.yTrainLabels.push(1);
-							// 	// mkm.dataObj.yTrain.push([1]);
-							// 	mkm.dataObj.yTrain.push([0, 1]);
-							// }
-						} else {
-							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.test_scenebag_labels[0][0]);
-							mkm.dataObj.xTest.push(featureVec);
-							// mkm.dataObj.yTest.push(CURRTRIAL.test_scenebag_labels[0][0]);
-							mkm.dataObj.yTest.push(oneHotIdx);
+							featureVec = featureVec.reshape(mkm.inputShape);
+							if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
+								console.log('CURRTRIAL.num:', CURRTRIAL.num);
+								mkm.dataObj.xTrain.push(featureVec);
+								let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.correctitem);
+								mkm.dataObj.yTrainLabels.push(oneHotIdx);
+								mkm.dataObj.yTrain.push(mkm.oneHotArr[oneHotIdx]);
+							} else {
+								let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.correctitem);
+								mkm.dataObj.xTest.push(featureVec);
+								// mkm.dataObj.yTest.push(CURRTRIAL.sample_scenebag_label[0][0]);
+								mkm.dataObj.yTest.push(oneHotIdx);
+							}
+							// mkm.cvs SANITY CHECK CODE
+							// let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
+							// let cvsData = mkm.cvs.toDataURL();
+							// let path = (
+							// 	`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`
+							// );
+							// mkmodelsRef.child(path).putString(cvsData, 'data_url');
+							// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
+							mkm.hasSampleFeatures = true;
+						} else if (taskscreen != 'Sample' && mkm.hasSampleFeatures) {
+							mkm.hasSampleFeatures = false;
 						}
-
-						// mkm.cvs SANITY CHECK HERE
-						let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
-						let cvsData = mkm.cvs.toDataURL();
-						let path = (
-							`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_test.png`
-						);
-						mkmodelsRef.child(path).putString(cvsData, 'data_url');
-						// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
-						mkm.hasTestFeatures = true;							
-					} else if (taskscreen == 'Choice' && mkm.hasSampleFeatures && mkm.hasTestFeatures) {
-						mkm.hasSampleFeatures = false;
-						mkm.hasTestFeatures = false;	
 					}
-				} else {
-					if (taskscreen == 'Sample' && !mkm.hasSampleFeatures) {
-						let ctx = mkm.cvs.getContext('2d');
-						ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
-						let label = CURRTRIAL.sample_scenebag_label[0][0];
-						let params = {
-							image: IMAGES.Sample[label].IMAGES,
-							object: IMAGES.Sample[label].OBJECTS,
-							idx: CURRTRIAL.sample_scenebag_index[0][0],
-							ViewportPPI: ENV.ViewportPPI,
-							ScreenRatio: ENV.ScreenRatio,
-							offsettop: CANVAS.offsettop,
-							boundingBoxes3D: boundingBoxesChoice3D,
-							boundingBoxes2D: boundingBoxesChoice2D
-						};
-	
-						let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
+				}//IF MkModel
 
-						// mkmBoundingBox SANITY CHECK CODE
-						// console.log(`SAMPLE sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
-						// let visiblecvs = document.getElementById("canvaseyetracker");
-						// let ctx2 = visiblecvs.getContext('2d');
-						// ctx2.rect(mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight);
-						// ctx2.stroke();
-						
-						ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
-						// console.log(mkm.featureExtractor);
-						let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), mkm.ouputNode);
-						// console.log('featureVec:', featureVec);
-
-						featureVec = featureVec.reshape(mkm.inputShape);
-						if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
-							console.log('CURRTRIAL.num:', CURRTRIAL.num);
-							mkm.dataObj.xTrain.push(featureVec);
-							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.correctitem);
-							mkm.dataObj.yTrainLabels.push(oneHotIdx);
-							mkm.dataObj.yTrain.push(mkm.oneHotArr[oneHotIdx]);
-						} else {
-							let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.correctitem);
-							mkm.dataObj.xTest.push(featureVec);
-							// mkm.dataObj.yTest.push(CURRTRIAL.sample_scenebag_label[0][0]);
-							mkm.dataObj.yTest.push(oneHotIdx);
-						}
-						// mkm.cvs SANITY CHECK CODE
-						// let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
-						// let cvsData = mkm.cvs.toDataURL();
-						// let path = (
-						// 	`${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`
-						// );
-						// mkmodelsRef.child(path).putString(cvsData, 'data_url');
-						// ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
-						mkm.hasSampleFeatures = true;
-					} else if (taskscreen != 'Sample' && mkm.hasSampleFeatures) {
-						mkm.hasSampleFeatures = false;
+				//----- (2) Update Status
+				updated2d = 0
+				updated3d = 0
+				if (FLAGS.movieplaying == 0){
+					FLAGS.movieplaying = 1
+					if (typeof(waitforMovieStart) != "undefined"){
+							waitforMovieStart.next()
 					}
-				}
+				}//IF movieplaying
 
-			}
+				//----- (3) Save Out Images
+				if ((taskscreen0=="Sample" || taskscreen0=="Test") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
+					if (
+							(FLAGS.movieper[taskscreen0][ob[frame.current][0]][id[frame.current][0]] < 1 
+								&& 
+								(frame.current == 0 
+									|| (sc[frame.current] != sc[frame.current-1]
+									|| ob[frame.current][0] != ob[frame.current-1][0]
+									|| id[frame.current][0] != id[frame.current-1][0])
+								)
+							)//if !movie, save when screen changes
+							|| FLAGS.movieper[taskscreen0][ob[frame.current][0]][id[frame.current][0]] >= 1
+						)//OR movie
+					{
+							saveScreenshot(VISIBLECANVAS,
+											CURRTRIAL.num,
+											taskscreen0,
+											frame.current,
+											ob[frame.current],
+											id[frame.current])
+					}//IF need to save out this frame
+				}//IF sample or test screen & save out images
 
-			//----- (2) Update Status
-			updated2d = 0
-			updated3d = 0
-			if (FLAGS.movieplaying == 0){
-				FLAGS.movieplaying = 1
-				if (typeof(waitforMovieStart) != "undefined"){
-						waitforMovieStart.next()
-				}
-			}//IF
-
-			//----- (3) Save Out Images
-			if ((taskscreen0=="Sample" || taskscreen0=="Test") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
-				if (
-					(FLAGS.movieper[taskscreen0][ob[frame.current][0]][id[frame.current][0]] < 1 
-					&& (frame.current == 0 
-						|| (sc[frame.current] != sc[frame.current-1]
-							|| ob[frame.current][0] != ob[frame.current-1][0]
-							|| id[frame.current][0] != id[frame.current-1][0])
-						)
-					)//if !movie, save when screen changes
-					|| FLAGS.movieper[taskscreen0][ob[frame.current][0]][id[frame.current][0]] >= 1)//OR movie
-				{
-						saveScreenshot(VISIBLECANVAS,
-										CURRTRIAL.num,
-										taskscreen0,
-										frame.current,
-										ob[frame.current],
-										id[frame.current])
-				}//IF need to save out this frame
-			}//IF sample or test screen & save out images
-
-			CURRTRIAL.tsequenceactual[frame.current] = Math.round(100*(timestamp - start))/100 //in milliseconds, rounded to nearest hundredth of a millisecond
-			frame.shown[frame.current]=1
-			frame.current++
-			if (frame.current >= frame.shown.length){ frame.current = frame.shown.length-1; frame.shown[frame.current] = 1} //for prematurely ending movies externally
+				frame.current++
+			}//IF haven't rendered last frame
 		}//IF time to show new frame
 //---------------- (end) DISPLAY THE FRAME ------------------//
 
-//------------------- PRE-RENDER if not all frames shown --------------------//
+		if (frame.current >= frame.shown.length){
+			frame.current = frame.shown.length; 
+		}//IF prematurely ending movies externally
+
 		if (frame.shown[frame.shown.length-1] != 1){
-			f = frame.frames[frame.current][0]
-			//var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
-
-			//================= Render all 2D elements =================//
-			if (ENV.OffscreenCanvasAvailable){
-				//Blank out between taskscreens
-					renderShape2D('Blank',[-1],OFFSCREENCANVAS)
-
-				//----- RENDER ALL 2D ELEMENTS NOW (commit to screen later)			
-				//if (!updated3d){
-				for (var s = 0; s<=frame.frames[frame.current].length-1; s++){
-					f = frame.frames[frame.current][s]
-					var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
-					render2D(taskscreen,s,f,gr,fr,sc,ob,id,OFFSCREENCANVAS)	
-					//------------------- DISPLAY THE FRAME 3D ---------------------//
-					if (taskscreen=="Sample" || taskscreen=="Test"){
-						render3D(taskscreen,s,f,gr,fr,sc,ob,id)
-					} //IF sample || test
-					else {
-						updated3d = 0
-					}
-					if (taskscreen=="Touchfix" || taskscreen=="Sample"){
-						//Overlay fixation dot
-						renderShape2D("FixationDot",gr[f],OFFSCREENCANVAS)
-
-						if (port.connected && TASK.Photodiode > 0){
-							renderShape2D("PhotodiodeSquare",
-								[ ENV.PhotodiodeSquareX, ENV.PhotodiodeSquareY ], OFFSCREENCANVAS)
-						}
-					}//IF
-				}//FOR s screens
-			//}
-			}//IF 2D offscreenAvailable, pre-render next frame
 			window.requestAnimationFrame(updateCanvas);
 		}//IF frames left to show
 		else {
@@ -386,8 +315,12 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 			}
 			resolveFunc(CURRTRIAL.tsequenceactual);
 		}//ELSE all frames shown, promise resolve, exit animation loop
+
 	}//FUNCTION updateCanvas
-	window.requestAnimationFrame(updateCanvas); // kick off async work, requestAnimationFrame: goes on next screen refresh and syncs to browser's refresh rate on separate clock (not js clock)
+
+	//Kick off async work with window.requestAnimationFrame: 
+	//Goes on next screen refresh and syncs to browser's refresh rate on separate clock (not js clock)
+	window.requestAnimationFrame(updateCanvas);
 	return p
 }//FUNCTION displayTrial
 
