@@ -33,7 +33,7 @@ ENV.AgentRFID = "XX"
 ENV.CurrentDate = new Date;
 ENV.CanvasRatio = 1
 ENV.DevicePixelRatio = 1
-ENV.THREEJStoInches = 1
+ENV.ThreeJSRenderRatio = 2
 ENV.FixationRadius = 0
 ENV.FixationWindowRadius = 0
 ENV.FixationColor = ''
@@ -111,7 +111,7 @@ ENV.Eye.NCalibPointsTest = 0
 ENV.Eye.CalibTrainMSE = []
 ENV.Eye.CalibTestMSE = []
 
-ENV.PhotodiodeSquareSizeInches = 0.25
+ENV.PhotodiodeSquareSizeInches = 1
 ENV.PhotodiodeSquareX = 0
 ENV.PhotodiodeSquareY = 0
 
