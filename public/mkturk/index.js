@@ -151,11 +151,12 @@ if (ENV.BatteryAPIAvailable) {
 
 
 	//====================== Retrieve device's screen properties ===========================//
-	ENV.UserAgent = window.navigator.userAgent
-	ENV.DeviceScreenWidth = window.screen.width
-	ENV.DeviceScreenHeight = window.screen.height
+  ENV.WebAppUrl = window.location.href;
+	ENV.UserAgent = window.navigator.userAgent;
+	ENV.DeviceScreenWidth = window.screen.width;
+	ENV.DeviceScreenHeight = window.screen.height;
 
-	var deviceProperties = await deviceDetect()
+	var deviceProperties = await deviceDetect();
 	ENV.DeviceType = deviceProperties.data.device.type
 	ENV.DeviceBrand = deviceProperties.data.device.brand
 	ENV.DeviceName = deviceProperties.data.device.model
@@ -504,15 +505,15 @@ if (ENV.BatteryAPIAvailable) {
       }//IF SaveImages
 
       if (typeof(TASK.DragtoRespond) == 'undefined') {
-        if (FLAGS.trackeye == 0) { // IF touch, then only clicking
+        if (ENV.Eye.TrackEye == 0) { // IF touch, then only clicking
           TASK.DragtoRespond = 0; // click in box
-        } else if (FLAGS.trackeye != 0) { // ELSE IF eyetracker, allow dragging
+        } else if (ENV.Eye.TrackEye != 0) { // ELSE IF eyetracker, allow dragging
           TASK.DragtoRespond = 1; // drag into box
         }
       }
 
       //load previous calibration if available
-      if (FLAGS.trackeye > 0){ // IF trackeye
+      if (ENV.Eye.TrackEye > 0){ // IF trackeye
         //Calibration
         ENV.Eye.calibration = 0;
         ENV.Eye.CalibXTransform = [];
@@ -1136,7 +1137,7 @@ if (ENV.BatteryAPIAvailable) {
       }
 
       let touchhold_return; 
-      if (FLAGS.stressTest == 1) { //IF automated stress test
+      if (ENV.StressTest == 1) { //IF automated stress test
         if (TASK.Species == 'model') {
           
           // let ctx = mkm.cvs.getContext('2d');
@@ -1365,7 +1366,7 @@ if (ENV.BatteryAPIAvailable) {
         FLAGS.punishOutsideTouch = 1;
         FLAGS.waitingforTouches = 1;
         FLAGS.acquiredTouch = 1;
-        if (FLAGS.trackeye) {
+        if (ENV.Eye.TrackEye) {
           ENV.Eye.EventType = 'eyemove';
         }
                
@@ -1389,7 +1390,13 @@ if (ENV.BatteryAPIAvailable) {
         }
 
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
-        CURRTRIAL.samplestarttime_string = new Date().toJSON();
+        console.log('[SAMPLE START TIME LOGGED]:', Date.now());
+        CURRTRIAL.samplestarttime_string = (
+          new Date(
+            CURRTRIAL.samplestarttime
+            + ENV.CurrentDate.valueOf()
+          ).toJSON()
+        );
         let race_return = await Promise.race([p1, p2]);
         FLAGS.acquiredTouch = 0;
         FLAGS.waitingforTouches = 0;
@@ -1407,7 +1414,7 @@ if (ENV.BatteryAPIAvailable) {
           await moviefinish_promise();
         }
 
-        if (FLAGS.trackeye > 0) {
+        if (ENV.Eye.TrackEye > 0) {
           ENV.Eye.EventType = 'eyestart'; // Reset eye state
         }
 
@@ -1443,7 +1450,8 @@ if (ENV.BatteryAPIAvailable) {
         }
 
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
-        CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime).toJSON();
+        console.log('[SAMPLE START TIME LOGGED [!RSVP]]:', Date.now());
+        CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime + ENV.CurrentDate.valueOf()).toJSON();
         
         await displayTrial(
           CURRTRIAL.tsequence,
@@ -1529,7 +1537,7 @@ if (ENV.BatteryAPIAvailable) {
 
       let race_return = { type: 'theld' };
       let currchoice;
-      if (FLAGS.stressTest == 1) {
+      if (ENV.StressTest == 1) {
         let nchoices = boundingBoxesChoice3D.x.length;
         let distractor_array;
         let x;
@@ -1699,7 +1707,7 @@ if (ENV.BatteryAPIAvailable) {
         ];
         FLAGS.waitingforTouches--
 
-      } else { // ELSE !FLAGS.stressTest
+      } else { // ELSE !ENV.StressTest
         if (TASK.NRSVP > 0) { // IF RSVP, skip choice
           CURRTRIAL.correctitem = 1;
           if (TASK.FixationWindowSizeInches <= 0) { // IF no fixation required
@@ -1921,7 +1929,8 @@ if (ENV.BatteryAPIAvailable) {
       playSound(3);
 
       CURRTRIAL.reinforcementtime = Date.now() - ENV.CurrentDate.valueOf();
-			logEVENTS("ReinforcementTime", CURRTRIAL.reinforcementtime, "trialseries")
+			logEVENTS("ReinforcementTime", CURRTRIAL.reinforcementtime, "trialseries");
+      console.log('[REINFORCEMENT TIME LOGGED]:', Date.now());
       
       await Promise.all([p1, p2]);
     }
@@ -1933,6 +1942,7 @@ if (ENV.BatteryAPIAvailable) {
 
     // Log trial end time
     CURRTRIAL.endtime = Date.now() - ENV.CurrentDate.valueOf();
+    console.log('[END TIME LOGGED]:', Date.now());
 		logEVENTS("EndTime", CURRTRIAL.endtime, "trialseries")
 
     //============ (end) DELIVER REWARD/PUNISH ============//
@@ -2010,7 +2020,7 @@ if (ENV.BatteryAPIAvailable) {
     // }
 
     // Calibrate eye
-    if (FLAGS.trackeye > 0) { // IF track eye
+    if (ENV.Eye.TrackEye > 0) { // IF track eye
       /**
        * Can manually adjust params only when on practice screen
        * Can automatically calibrate when on test screen
@@ -2068,6 +2078,20 @@ if (ENV.BatteryAPIAvailable) {
         }
 
       }
+
+      let firstTimestamp = new Date(EVENTS['timeseries']['EyeData'][0][1]);
+      let lastIdx = Object.keys(EVENTS['timeseries']['EyeData']).length - 1;
+      let lastTimestamp = new Date(
+        EVENTS['timeseries']['EyeData'][lastIdx][1]
+      );
+      
+      let interval = (
+        (lastTimestamp.valueOf() - firstTimestamp.valueOf()) / lastIdx
+      );
+      console.log('[EyetrackerSampleInterval]::trialNum:', CURRTRIAL.num);
+      console.log('[EyetrackerSampleInterval]::interval:', interval);
+      
+      logEVENTS('EyetrackerSampleInterval', interval, 'trialseries');
     }
     
     //clear tracker canvas at end of trial
@@ -2104,10 +2128,11 @@ if (ENV.BatteryAPIAvailable) {
           pingBigQueryDisplayTimesTable(); //uploads eyedata to bigquery every 10 seconds        
         }//IF first trial, kick-off bigquery writes
 
-        // Save eye data asynchronously to BigQuery
-        if (FLAGS.trackeye > 0 && CURRTRIAL.num == 0) {
-          pingBigQueryEyeTable(); //uploads eyedata to bigquery every 10 seconds        
-        }//IF first trial, kick-off bigquery writes
+        if (ENV.Eye.TrackEye > 0) {
+          if (CURRTRIAL.num == 0) {
+            pingBigQueryEyeTable(); // uploads eyedata to BigQuery every 10 seconds
+          } // IF first trial, kick-off bigquery writes
+        }
       }//IF not saving images, save data
     }//IF savedata
 

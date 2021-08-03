@@ -497,7 +497,7 @@ async function render2D(taskscreen,s,f,gr,fr,sc,ob,id,canvasobj){
 	}//IF new taskscreen
 }//FUNCTION render2D
 
-function renderImage2D(im,sc,ob,id,fr,gr,imgFilterSingleFrame,canvasobj){
+function renderImage2D(im,sc,ob,id,fr,gr,imgFilterSingleFrame,canvasobj) {
 	var sz = chooseArrayElement(IMAGES[sc][ob].IMAGES.sizeInches,id,0)
 	var wdpixels = 	sz*ENV.ViewportPPI/ENV.CanvasRatio
 	var htpixels = 	wdpixels*im.height/im.width
