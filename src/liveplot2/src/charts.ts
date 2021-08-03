@@ -1543,22 +1543,43 @@ export class Charts {
       for (let i = 0; i < data.TSequenceActualClip[lastIdx].length; i++) {
         let dt: any;
         let dt2: any;
+
         if (data.TSequenceActualClip[lastIdx][i] < 0) {
           dt = null;
-          dt2 = null;
         } else {
           dt = (
             data.TSequenceActualClip[lastIdx][i]
             - data.TSequenceDesiredClip[lastIdx][i]
           );
           dt = Math.abs(Math.round(dt));
+        }
 
+        if (data.TSequenceActualClip[1][i] < 0) {
+          dt2 = null;
+        } else {
           dt2 = (
             data.TSequenceActualClip[1][i]
             - data.TSequenceDesiredClip[1][i]
           );
           dt2 = Math.abs(Math.round(dt2));
         }
+
+        // if (data.TSequenceActualClip[lastIdx][i] < 0) {
+        //   dt = null;
+        //   dt2 = null;
+        // } else {
+        //   dt = (
+        //     data.TSequenceActualClip[lastIdx][i]
+        //     - data.TSequenceDesiredClip[lastIdx][i]
+        //   );
+        //   dt = Math.abs(Math.round(dt));
+
+        //   dt2 = (
+        //     data.TSequenceActualClip[1][i]
+        //     - data.TSequenceDesiredClip[1][i]
+        //   );
+        //   dt2 = Math.abs(Math.round(dt2));
+        // }
         
         let sampleCmdInterval: any;
         if (

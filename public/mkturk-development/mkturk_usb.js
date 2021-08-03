@@ -164,6 +164,18 @@ serial.Port.prototype.onReceive = data => {
 	let textReceived = textDecoder.decode(data);
 	port.statustext_received = textDecoder.decode(data);
 
+	if (textReceived.includes('sa')) {
+		console.log('[SAMPLE COMMAND::onReceive] textReceived:', textReceived);
+		console.log('[SAMPLE COMMAND::onReceive] Time Received:', onReceiveTime - ENV.CurrentDate.valueOf());
+		if (textReceived.includes('1')) {
+			logEVENTS(
+				'SampleCommandReturnTime',
+				onReceiveTime - ENV.CurrentDate.valueOf(),
+				'trialseries'
+			);
+		}
+	}
+
 	//rfid
 	var tagstart = port.statustext_received.indexOf('{tag',0);
 
@@ -343,29 +355,29 @@ serial.Port.prototype.onReceive = data => {
 			eyebuffer.dt = 0
 			eyebuffer.tstart = performance.now()
 		}// IF display eye stats
-		if (Math.random() <= 0.001) {
-			console.log('[EYE PROCESS TIME] StartTimer:', StartTimer);
-			let EndTimer = Date.now();
-			console.log('[EYE PROCESS TIME] EndTimer:', EndTimer)
-			console.log('[EYE PROCESS TIME]: Date.now() - StartTimer', EndTimer - StartTimer);
-		}
+		// if (Math.random() <= 0.001) {
+		// 	console.log('[EYE PROCESS TIME] StartTimer:', StartTimer);
+		// 	let EndTimer = Date.now();
+		// 	console.log('[EYE PROCESS TIME] EndTimer:', EndTimer)
+		// 	console.log('[EYE PROCESS TIME]: Date.now() - StartTimer', EndTimer - StartTimer);
+		// }
 		// console.log('[EYE PROCESS TIME]:', Date.now() - StartTimer)
 	}//IF EYE
 
 	//=============== NOT RFID/EYE ===============//
 	else {
 
-		if (textReceived.includes('sa')) {
-			console.log('[SAMPLE COMMAND::onReceive] textReceived:', textReceived);
-			console.log('[SAMPLE COMMAND::onReceive] Time Received:', onReceiveTime - ENV.CurrentDate.valueOf());
-			if (textReceived.includes('1')) {
-				logEVENTS(
-					'SampleCommandReturnTime',
-					onReceiveTime - ENV.CurrentDate.valueOf(),
-					'trialseries'
-				);
-			}
-		}
+		// if (textReceived.includes('sa')) {
+		// 	console.log('[SAMPLE COMMAND::onReceive] textReceived:', textReceived);
+		// 	console.log('[SAMPLE COMMAND::onReceive] Time Received:', onReceiveTime - ENV.CurrentDate.valueOf());
+		// 	if (textReceived.includes('1')) {
+		// 		logEVENTS(
+		// 			'SampleCommandReturnTime',
+		// 			onReceiveTime - ENV.CurrentDate.valueOf(),
+		// 			'trialseries'
+		// 		);
+		// 	}
+		// }
 
 		// if (textReceived.includes('sa')) {
 		// 	console.log('[SAMPLE COMMAND::onReceive] Time Received:', onReceiveTime);

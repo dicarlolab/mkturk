@@ -164,6 +164,18 @@ serial.Port.prototype.onReceive = data => {
 	let textReceived = textDecoder.decode(data);
 	port.statustext_received = textDecoder.decode(data);
 
+	if (textReceived.includes('sa')) {
+		console.log('[SAMPLE COMMAND::onReceive] textReceived:', textReceived);
+		console.log('[SAMPLE COMMAND::onReceive] Time Received:', onReceiveTime - ENV.CurrentDate.valueOf());
+		if (textReceived.includes('1')) {
+			logEVENTS(
+				'SampleCommandReturnTime',
+				onReceiveTime - ENV.CurrentDate.valueOf(),
+				'trialseries'
+			);
+		}
+	}
+
 	//rfid
 	var tagstart = port.statustext_received.indexOf('{tag',0);
 
@@ -347,17 +359,17 @@ serial.Port.prototype.onReceive = data => {
 	//=============== NOT RFID/EYE ===============//
 	else {
 
-		if (textReceived.includes('sa')) {
-			console.log('[SAMPLE COMMAND::onReceive] textReceived:', textReceived);
-			console.log('[SAMPLE COMMAND::onReceive] Time Received:', onReceiveTime - ENV.CurrentDate.valueOf());
-			if (textReceived.includes('1')) {
-				logEVENTS(
-					'SampleCommandReturnTime',
-					onReceiveTime - ENV.CurrentDate.valueOf(),
-					'trialseries'
-				);
-			}
-		}
+		// if (textReceived.includes('sa')) {
+		// 	console.log('[SAMPLE COMMAND::onReceive] textReceived:', textReceived);
+		// 	console.log('[SAMPLE COMMAND::onReceive] Time Received:', onReceiveTime - ENV.CurrentDate.valueOf());
+		// 	if (textReceived.includes('1')) {
+		// 		logEVENTS(
+		// 			'SampleCommandReturnTime',
+		// 			onReceiveTime - ENV.CurrentDate.valueOf(),
+		// 			'trialseries'
+		// 		);
+		// 	}
+		// }
 		updateHeadsUpDisplayDevices()
 	}//ELSE not RFID or EYE
 } //port.onReceive
