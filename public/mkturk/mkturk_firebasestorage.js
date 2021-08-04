@@ -13,27 +13,6 @@ async function loadTextfromFirebase(textfile_path){
 //------------- LOAD IMAGE --------------//
 async function loadImagefromFirebase(imagefile_path){
 try{
-	// var imagefileRef = await storage.ref().child(imagefile_path)
-	// var url = await imagefileRef.getDownloadURL()
-	// .catch((error) => console.log(error));
-
-	// return new Promise(
-	// 	function(resolve, reject){
-	// 		try {
-	// 			var image = new Image(); 
-	// 			image.crossOrigin = "Anonymous"; //to allow saving of a 'tainted canvas', see https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_enabled_image
-	// 			image.onload = function(){
-	// 				updateImageLoadingAndDisplayText('Loaded: ' + imagefile_path)
-	// 				resolve(image)				
-	// 			}
-	// 			image.src = url
-	// 		} //try
-	// 		catch (error){
-	// 			console.log(error)
-	// 		} //catch
-	// 	}
-	// ) //Promise
-
 	var texturefileRef = await storage.ref().child(imagefile_path)
 	var url = await texturefileRef.getDownloadURL().catch((error) => console.log(error))
 
@@ -217,19 +196,6 @@ async function getFileListFirebase(dir){
 
 //------- LIST IMAGES FROM MULTIPLE FOLDERS -------//
 async function loadImageBagPathsParallelFirebase(imagebagroots){
-
-	
-		// var imagepath_promises = imagebagroots.map(file => getFileListRecursiveFirebase(file,'.png')); //create array of recursive path load Promises
-		// var funcreturn = await Promise.all(imagepath_promises);
-		// //Assemble images and add labels
-		// var bagitems_paths = [] // Can also be paths to a single .png file. 
-		// var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
-		// for (var i=0; i<=funcreturn.length-1; i++){
-		// 	bagitems_paths.push(... funcreturn[i])
-		// 	for (var j=0; j<= funcreturn[i].length-1; j++){
-		// 		bagitems_labels.push(i)
-		// 	}
-		// } //for i labels
 		var imagepath_promises = imagebagroots.map(file => getFileListFirebase(file)); // returns a nested array of paths for the backgroundCube
 		var funcreturn = await Promise.all(imagepath_promises);
 		//Assemble images and add labels
