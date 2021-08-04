@@ -168,7 +168,6 @@ if (ENV.BatteryAPIAvailable) {
 	ENV.DeviceTouchscreen = deviceProperties.data.touchscreen
 
 	var screenSpecs = await queryDeviceonFirestore(ENV.DeviceName);
-
 	//if device not identified by deviceAPI or no matching firestore devices record found for an identified device
 	if (screenSpecs.screenSizeInches < 0 && ENV.DeviceType == "desktop") {
 		var screenSpecs = await queryDeviceonFirestore('32ul750'); //default to desktop monitor
@@ -646,7 +645,7 @@ if (ENV.BatteryAPIAvailable) {
   
       //Fixation dot, if >0, will appear on both fixation & sample screens
       ENV.FixationDotRadius = TASK.FixationDotSizeInches / 2 * ENV.ViewportPPI;
-    
+  
       //Fixation window, if specified, operates on both fixation & sample screens
       ENV.FixationWindowRadius = TASK.FixationWindowSizeInches / 2 * ENV.ViewportPPI;
 
@@ -689,7 +688,6 @@ if (ENV.BatteryAPIAvailable) {
 
 
     //======================== 3D SCENE SET-UP =======================//
-    ENV.ThreeJSRenderRatio = ENV.ThreeJSRenderRatio | TASK.THREEJSRenderRatio
     if (FLAGS.need2loadScenes) {
       IMAGES = { Sample: [], Test: [] };
       IMAGEMETA = {};
@@ -1387,7 +1385,9 @@ if (ENV.BatteryAPIAvailable) {
           mkm
         );
 
-        
+        if (port.connected && FLAGS.savedata) {
+          port.writeSampleCommandTriggertoUSB('1');
+        }
 
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
         console.log('[SAMPLE START TIME LOGGED]:', Date.now());
