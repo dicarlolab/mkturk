@@ -688,6 +688,7 @@ if (ENV.BatteryAPIAvailable) {
 
 
     //======================== 3D SCENE SET-UP =======================//
+    ENV.ThreeJSRenderRatio = ENV.ThreeJSRenderRatio | TASK.THREEJSRenderRatio
     if (FLAGS.need2loadScenes) {
       IMAGES = { Sample: [], Test: [] };
       IMAGEMETA = {};

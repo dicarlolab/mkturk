@@ -341,13 +341,6 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 	for (var j = 0; j < ob[f].length; j++) {
 		renderer.clear();
 	
-		// var boundingBox = updateSingleFrame3D(
-		// 	taskscreen,
-		// 	ob[f][j],
-		// 	id[f][j],
-		// 	fr[f],
-		// 	gr[f][j]
-		// );
 		var [boundingBox,boundingBoxCube,crop] = updateSingleFrame3D(
 			taskscreen,
 			ob[f][j],
@@ -382,13 +375,7 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 		var camera = scene[taskscreen].getObjectByName("cam"+ob[f][j])
 
  		// render in THREEJS
-		//console.time( CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() +  'render')
  		renderer.render(scene[taskscreen],camera) //takes >1ms, do before the fast 2D swap (<1ms)
-		//  console.log("Scene polycount:", renderer.info.render.triangles)
-		//  console.log("Active Drawcalls:", renderer.info.render.calls)
-		//  console.log("Textures in Memory", renderer.info.memory.textures)
-		//  console.log("Geometries in Memory", renderer.info.memory.geometries)
-		//console.timeEnd(CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() + 'render')
 		if ((taskscreen == "Test" || taskscreen == "Sample") && TASK.Agent == "SaveImages" && FLAGS.savedata == 1){
 			if ((FLAGS.movieper[taskscreen][ob[frame.current][0]][id[frame.current][0]] < 1 
 					&& (frame.current == 0 
@@ -408,16 +395,13 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 			}//IF movie
 		}//IF taskscreen
 
-
 		//Post-render 2D filtering in pixel space
 		var [objFilterSingleFrame, imgFilterSingleFrame] = updateFilterSingleFrame(taskscreen,ob[f][j],id[f][j],
 			fr[f],
 			gr[f][j])
 			
-	  OFFSCREENCANVAS.getContext('2d').filter = objFilterSingleFrame;
+	  	OFFSCREENCANVAS.getContext('2d').filter = objFilterSingleFrame;
 
-	//console.time(CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() + 'transfer')
-	
 		// 3D Canvas coordinates	
 		var sx = renderer.domElement.width/2
 		var sy = renderer.domElement.height/2
@@ -432,8 +416,8 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 		sy = sy - sheight/2
 
 		// 2D Canvas coordinates
-		var swidth_2d = swidth /TASK.THREEJSRenderRatio /ENV.CanvasRatio
-		var sheight_2d = sheight/TASK.THREEJSRenderRatio /ENV.CanvasRatio
+		var swidth_2d = swidth /ENV.ThreeJSRenderRatio /ENV.CanvasRatio
+		var sheight_2d = sheight/ENV.ThreeJSRenderRatio /ENV.CanvasRatio
 
 		var scenecenterX = ENV.XGridCenter[gr[f][j]] 
 		var scenecenterY = ENV.YGridCenter[gr[f][j]]
@@ -449,7 +433,6 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 			boundingBoxesChoice3JS.y[j] = [top*ENV.CanvasRatio + CANVAS.offsettop,(top+sheight_2d)*ENV.CanvasRatio + CANVAS.offsettop]
 		}
 
-		//console.timeEnd(CURRTRIAL.num.toString() + taskscreen + s.toString() + f.toString()+ j.toString() + 'transfer')
 	}//FOR j display items
 
 }//FUNCTION render3D
@@ -466,33 +449,6 @@ async function render2D(taskscreen,s,f,gr,fr,sc,ob,id,canvasobj){
 	
 	if (f==0  || taskscreen != sc[f-1] || id[f] != id[f-1] || fr[f] != fr[f-1]){
 		if (taskscreen=="Sample" || taskscreen=="Test"){
-			if (taskscreen == "Sample"){
-				var ims = [ CURRTRIAL.sampleimage[CURRTRIAL.sequenceclip[f]][fr[f]] ] //fr[f] frame within clip
-			}
-			else if (taskscreen == "Test"){
-				var clip = 0
-				var ims = CURRTRIAL.testimages[clip][fr[f]]
-			}
-			if (typeof(ims) != "undefined" && typeof(ims[0])=="object"){
-				for (var j = 0; j<=ob[f].length - 1; j++){
-					// var [objFilterSingleFrame,imgFilterSingleFrame] = updateFilterSingleFrame(taskscreen,ob[f][j],id[f][j],
-					// 	fr[f],
-					// 	gr[f][j])
-
-					// var boundingBox = renderImage2D(ims[j],taskscreen,
-					// 								ob[f][j],
-					// 								id[f][j],
-					// 								fr[f],
-					// 								gr[f][j],
-					// 								imgFilterSingleFrame,
-					// 								canvasobj) //render 2D image offscreen prior to next frame draw						
-// 					if (s==0 && typeof(boundingBox[0]) != "undefined" && boundingBox[0].length>0){
-// 						boundingBoxesChoice2D.x[j] = boundingBox[0]
-// 						boundingBoxesChoice2D.y[j] = boundingBox[1]
-// 					}
-					updated2d=1
-				}//FOR j display items
-			}//IF image available
 		}//IF 2D image
 		else{
 			var boundingBox = renderShape2D(taskscreen,gr[f],canvasobj)
@@ -1178,8 +1134,8 @@ function setupCanvas(canvasobj){
 		var webglcanvasSizeInches = cameraHeightatOrigin * ENV.THREEJStoInches
 		var webglcanvasSizePixel = webglcanvasSizeInches * ENV.ViewportPPI / ENV.CanvasRatio
 
-		canvasobj.width = webglcanvasSizePixel/TASK.THREEJSRenderRatio
-		canvasobj.height = webglcanvasSizePixel/TASK.THREEJSRenderRatio
+		canvasobj.width = webglcanvasSizePixel/ENV.ThreeJSRenderRatio
+		canvasobj.height = webglcanvasSizePixel/ENV.ThreeJSRenderRatio
 		canvasobj.style.top = (windowHeight - CANVAS.offsettop)/2 + CANVAS.offsettop - canvasobj.height/2  + 'px'
 		canvasobj.style.left = (windowWidth- CANVAS.offsetleft)/2 + CANVAS.offsetleft - canvasobj.width/2 + 'px'
 		canvasobj.style.margin="0 auto";

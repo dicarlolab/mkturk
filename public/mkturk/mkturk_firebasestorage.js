@@ -43,7 +43,10 @@ try{
 		function(resolve, reject){
 			try {
 				loader.load(url, function(texture){
-					resolve(texture)		
+					resolve(texture)
+					texture.encoding = THREE.sRGBEncoding
+					texture.wrapS = THREE.RepeatWrapping;
+					texture.repeat.x = - 1;		
 				})
 			} //try
 			catch (error){

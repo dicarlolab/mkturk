@@ -16,7 +16,7 @@ async function initThreeJS(scenedata) {
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.autoClear = false;
     renderer.setPixelRatio(TASK.THREEJSRenderRatio)
-    var rendererWidth = Math.max(VISIBLECANVASWEBGL.height,VISIBLECANVASWEBGL.width)/TASK.THREEJSRenderRatio
+    var rendererWidth = Math.max(VISIBLECANVASWEBGL.height,VISIBLECANVASWEBGL.width)/ENV.THREEJSRenderRatio
     var rendererHeight = rendererWidth
     renderer.setSize(rendererWidth,rendererHeight)
     document.body.append(renderer.domElement);
@@ -104,7 +104,7 @@ async function addToScene(taskscreen){
                     if (IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS ==undefined){
                         IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS = {}
                         for (keys in IMAGES[taskscreen][classlabel].CAMERAS[cam].targetInches){
-                            IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS[keys] = rescaleArrayInchestoTHREEJS(IMAGES[taskscreen][classlabel].CAMERAS[cam].targetInches[keys],IMAGEMETA[taskscreen + "THREEJStoInches"])
+                            IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS[keys] = rescaleArrayInchestoTHREEJS(IMAGES[taskscreen][classlabel].CAMERAS[cam].targetInches[keys],ENV.THREEJStoInches)
                         }
                     }
 
@@ -233,13 +233,13 @@ async function addToScene(taskscreen){
         // Future scenefiles will only have sizeTHREEJS and positionTHREEJS
         if (IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS == undefined){
             var objSize = IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeInches
-            IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS = rescaleArrayInchestoTHREEJS(objSize,IMAGEMETA[taskscreen + "THREEJStoInches"])
+            IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS = rescaleArrayInchestoTHREEJS(objSize,ENV.THREEJStoInches)
         }
          
         if (IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS == undefined){
             IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS = {}
             for (keys in IMAGES[taskscreen][classlabel].OBJECTS[obj].positionInches){
-                IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS[keys] = rescaleArrayInchestoTHREEJS(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionInches[keys],IMAGEMETA[taskscreen + "THREEJStoInches"])
+                IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS[keys] = rescaleArrayInchestoTHREEJS(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionInches[keys],ENV.THREEJStoInches)
             }
         }
 
@@ -511,7 +511,7 @@ async function addToScene(taskscreen){
 	   scene[taskscreen].add(backgroundCube)
 
        if (IMAGES[taskscreen][classlabel].IMAGES.sizeTHREEJS == undefined){
-            IMAGES[taskscreen][classlabel].IMAGES.sizeTHREEJS = rescaleArrayInchestoTHREEJS([IMAGES[taskscreen][classlabel].IMAGES.sizeInches],IMAGEMETA[taskscreen + "THREEJStoInches"])
+            IMAGES[taskscreen][classlabel].IMAGES.sizeTHREEJS = rescaleArrayInchestoTHREEJS([IMAGES[taskscreen][classlabel].IMAGES.sizeInches],ENV.THREEJStoInches)
        }
  
         for (var i = 0; i<IMAGES[taskscreen][classlabel].nimages; i++){
@@ -1064,8 +1064,8 @@ function toTHREEJSOffset(x,y,taskscreen){
     var ydisp = heightHalf-y
 
     return [
-        xdisp/IMAGEMETA[taskscreen + "THREEJStoPixels"],
-        ydisp/IMAGEMETA[taskscreen + "THREEJStoPixels"]
+        xdisp/IMAGEMETA["THREEJStoPixels"],
+        ydisp/IMAGEMETA["THREEJStoPixels"]
     ]
 }//FUNCTION toTHREEJSOffset
 
