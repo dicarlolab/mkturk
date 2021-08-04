@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import _, { last, sample } from 'lodash';
 import { FileType, LiveplotDataType } from './types';
 import { Utils } from './utils';
 
@@ -35,9 +35,11 @@ export class Charts {
   public choiceDataTable: google.visualization.DataTable;
   public objPerfDataTable: google.visualization.DataTable;
   public realtimeDataTable: google.visualization.DataTable;
+  public healthDataTable: google.visualization.DataTable;
 
   public perfDashboard: google.visualization.Dashboard;
   public trialDashboard: google.visualization.Dashboard;
+  public healthDashboard: google.visualization.Dashboard;
 
   public perfPlot: google.visualization.ChartWrapper;
   public perfPlotConfig: google.visualization.ChartSpecs;
@@ -52,6 +54,13 @@ export class Charts {
   public trialFilter: google.visualization.ControlWrapper;
   public trialFilterConfig: google.visualization.ControlWrapperOptions;
   public trialFilterOptions: Object;
+
+  public healthPlot: google.visualization.ChartWrapper;
+  public healthPlotConfig: google.visualization.ChartSpecs;
+  public healthPlotOptions: google.visualization.ScatterChartOptions;
+  public healthFilter: google.visualization.ControlWrapper;
+  public healthFilterConfig: google.visualization.ControlWrapperOptions;
+  public healthFilterOptions: Object;
 
   public screenPlot: google.visualization.ComboChart;
   public screenPlotOptions: google.visualization.ComboChartOptions;
@@ -74,6 +83,7 @@ export class Charts {
 
   public objPerfPlot: google.visualization.ColumnChart;
   public objPerfPlotOptions: google.visualization.ColumnChartOptions;
+
 
   private vitals: any;
   private nTrials: number;
@@ -104,6 +114,7 @@ export class Charts {
 
   public setupDataTables() {
     this.perfDataTable = new google.visualization.DataTable();
+    this.healthDataTable = new google.visualization.DataTable();
     this.cumulDataTable = new google.visualization.DataTable();
     this.xyPosDataTable = new google.visualization.DataTable();
     this.rxnTimeDataTable = new google.visualization.DataTable();
@@ -116,7 +127,7 @@ export class Charts {
   }
 
   public async setupCharts() {
-    await google.charts.load('current', { packages: ['corechart', 'controls'] });
+    await google.charts.load('50', { packages: ['corechart', 'controls'] });
     this.setupChartOptions();
     this.setupDataTables();
 
@@ -140,8 +151,19 @@ export class Charts {
       new google.visualization.ControlWrapper(this.trialFilterConfig)
     );
 
+    this.healthDashboard = (
+      new google.visualization.Dashboard(this.elemObject.healthDiv)
+    );
+    this.healthPlot = (
+      new google.visualization.ChartWrapper(this.healthPlotConfig)
+    );
+    this.healthFilter = (
+      new google.visualization.ControlWrapper(this.healthFilterConfig)
+    );
+
     this.perfDashboard.bind(this.perfFilter, this.perfPlot);
     this.trialDashboard.bind(this.trialFilter, this.trialPlot);
+    this.healthDashboard.bind(this.healthFilter, this.healthPlot);
 
     this.screenPlot = (
       new google.visualization.ComboChart(this.elemObject.screenPlot)
@@ -181,6 +203,7 @@ export class Charts {
         1: { color: '#e2431e' }
       }
     };
+
     this.perfPlotConfig = {
       chartType: 'LineChart',
       containerId: 'performance-plot',
@@ -222,7 +245,6 @@ export class Charts {
       animation: {
         duration: 500,
         easing: 'linear',
-        startup: true
       },
       series: {
         0: { targetAxisIndex: 0 },
@@ -257,6 +279,108 @@ export class Charts {
       state: { range: { start: 0, end: 100 } },
       options: this.trialFilterOptions
     };
+
+
+
+
+
+    this.healthPlotOptions = {
+      width: this.elemObject.healthPlot.clientWidth,
+      height: this.elemObject.healthPlot.clientHeight,
+      hAxis: { title: 'Trial#' },
+      vAxis: { title: 'Time (ms)' },
+      // animation: {
+      //   duration: 500,
+      //   easing: 'linear',
+      //   startup: true
+      // }
+    };
+
+    this.healthPlotConfig = {
+      chartType: 'ScatterChart',
+      containerId: 'health-plot',
+      options: this.healthPlotOptions
+    };
+    this.healthFilterOptions = {
+      filterColumnLabel: 'trial',
+      ui: {
+        chartType: 'ScatterChart',
+        chartOptions: {
+          smooth: 20,
+          hAxis: { baselineColor: 'none', title: 'Trial#' },
+          vAxis: { title: 'ms' },
+          width: this.elemObject.healthFilter.clientWidth,
+          height: this.elemObject.healthFilter.clientHeight,
+          // animation: { duration: 1000, easing: 'linear' }
+        }
+      }
+    };
+    this.healthFilterConfig = {
+      controlType: 'ChartRangeFilter',
+      containerId: 'health-filter',
+      state: { range: { start: 0, end: 100 } },
+      options: this.healthFilterOptions 
+    };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // this.healthPlotOptions = {
+    //   width: this.elemObject.healthPlot.clientWidth,
+    //   height: this.elemObject.healthPlot.clientHeight,
+    //   hAxis: { title: 'Trial #' },
+    //   vAxis: { title: 'Time (ms)' },
+    //   animation: {
+    //     duration: 500,
+    //     easing: 'linear',
+    //     startup: true
+    //   }
+    // };
+    // this.healthPlotConfig = {
+    //   chartType: 'ScatterChart',
+    //   containerId: 'health-plot',
+    //   options: this.healthPlotOptions
+    // };
+    // this.healthFilterOptions = {
+    //   filterColumnLabel: 'trial',
+    //   ui: {
+    //     chartType: 'ScatterChart',
+    //     chartOptions: {
+    //       hAxis: { baselineColor: 'none', title: 'Trial #' },
+    //       vAxis: { title: 'ms' },
+    //       width: this.elemObject.healthFilter.clientWidth,
+    //       height: this.elemObject.healthFilter.clientHeight,
+    //       animation: { duration: 1000, easing: 'out' }
+    //     },
+    //     minRangeSize: 2
+    //   }
+    // };
+    // this.healthFilterConfig = {
+    //   controlType: 'ChartRangeFilter',
+    //   containerId: 'health-filter',
+    //   state: { range: { start: 0, end: 100 } },
+    //   options: this.healthFilterOptions
+    // };
 
 
     this.screenPlotOptions = {
@@ -312,6 +436,11 @@ export class Charts {
       .removeRows(0, this.cumulDataTable.getNumberOfRows());
     this.cumulDataTable
       .removeColumns(0, this.cumulDataTable.getNumberOfColumns());
+
+    this.healthDataTable
+      .removeRows(0, this.healthDataTable.getNumberOfRows());
+    this.healthDataTable
+      .removeColumns(0, this.healthDataTable.getNumberOfColumns());
 
     this.xyPosDataTable
       .removeRows(0, this.xyPosDataTable.getNumberOfRows());
@@ -409,6 +538,13 @@ export class Charts {
 
     this.objPerfDataTable.addColumn('string', 'object');
     this.objPerfDataTable.addColumn('number', 'performance');
+
+    this.healthDataTable.addColumn('number', 'trial');
+    this.healthDataTable.addColumn('number', 'sample command');
+    this.healthDataTable.addColumn('number', 'tdisplay_last');
+    this.healthDataTable.addColumn('number', 'tdisplay_first');
+    this.healthDataTable.addColumn('number', 'eye interval');
+
     this.updatePlots(file, plotOptions);
 
   }
@@ -425,11 +561,13 @@ export class Charts {
     this.loadVitalsText(file);
     // console.log('vitals', this.vitals);
     this.loadPerformanceData(file);
+    this.loadHealthData(fileData);
     this.loadObjPerfData(fileData);
     this.loadChoiceData(fileData);
     this.loadRewardData(fileData);
     this.drawPerformancePlot(file);
     this.drawTrialPlot(file);
+    this.drawHealthPlot(file);
     this.drawObjPerfPlot();
     this.drawRxnTimePlot();
     this.drawChoicePlot();
@@ -1395,6 +1533,92 @@ export class Charts {
     }
   }
 
+  private loadHealthData(data: LiveplotDataType) {
+    // console.log('[loadHealthData::fileData]', data);
+    this.healthDataTable.removeRows(0, this.healthDataTable.getNumberOfRows());
+
+    if (data.Eye.TrackEye > 0 && data.RewardStage > 0) { // EYETRACKING
+      let lastIdx = Object.keys(data.TSequenceActualClip).length - 1;
+      
+      for (let i = 0; i < data.TSequenceActualClip[lastIdx].length; i++) {
+        let dt: any;
+        let dt2: any;
+
+        if (data.TSequenceActualClip[lastIdx][i] < 0) {
+          dt = null;
+        } else {
+          dt = (
+            data.TSequenceActualClip[lastIdx][i]
+            - data.TSequenceDesiredClip[lastIdx][i]
+          );
+          dt = Math.abs(Math.round(dt));
+        }
+
+        if (data.TSequenceActualClip[1][i] < 0) {
+          dt2 = null;
+        } else {
+          dt2 = (
+            data.TSequenceActualClip[1][i]
+            - data.TSequenceDesiredClip[1][i]
+          );
+          dt2 = Math.abs(Math.round(dt2));
+        }
+
+        // if (data.TSequenceActualClip[lastIdx][i] < 0) {
+        //   dt = null;
+        //   dt2 = null;
+        // } else {
+        //   dt = (
+        //     data.TSequenceActualClip[lastIdx][i]
+        //     - data.TSequenceDesiredClip[lastIdx][i]
+        //   );
+        //   dt = Math.abs(Math.round(dt));
+
+        //   dt2 = (
+        //     data.TSequenceActualClip[1][i]
+        //     - data.TSequenceDesiredClip[1][i]
+        //   );
+        //   dt2 = Math.abs(Math.round(dt2));
+        // }
+        
+        let sampleCmdInterval: any;
+        if (
+          data.SampleCommandReturnTime[i] == null
+          || data.SampleCommandReturnTime[i] < 0
+        ) {
+          sampleCmdInterval = null;
+        } else {
+          sampleCmdInterval = (
+            data.SampleCommandReturnTime[i] - data.SampleStartTime[i]
+          );  
+        }
+        this.healthDataTable.addRows(
+          [[i, sampleCmdInterval, dt, dt2, data.EyetrackerSampleInterval[i]]]
+        );
+      }
+    } else if (data.Eye.TrackEye == 0 && data.RewardStage > 0) {
+      let lastIdx = Object.keys(data.TSequenceActualClip).length - 1;
+      for (let i = 0; i < data.TSequenceActualClip[lastIdx].length; i++) {
+        let dt = (
+          data.TSequenceActualClip[lastIdx][i]
+          - data.TSequenceDesiredClip[lastIdx][i]
+        );
+        dt = Math.abs(Math.round(dt));
+
+        let dt2 = (
+          data.TSequenceActualClip[1][i]
+          - data.TSequenceDesiredClip[1][i]
+        );
+        dt2 = Math.abs(Math.round(dt2));
+        this.healthDataTable.addRows(
+          [[i, null, dt, dt2, null]]
+        );
+        
+      }
+    }
+
+  }
+
   private drawPerformancePlot(file: FileType) {
     let numRows = this.perfDataTable.getNumberOfRows();
     this.nTrials = numRows;
@@ -1405,7 +1629,7 @@ export class Charts {
       if (numRows <= 100) {
         // expand window size automatically up to 100
         perfFilterState.range.start = 0;
-        perfFilterState.range.end = numRows;   
+        perfFilterState.range.end = numRows; 
       } else {
         let dTrials = numRows - _.size(file.data?.FixationGridIndex);
         console.log('dtrials', dTrials);
@@ -1429,6 +1653,39 @@ export class Charts {
       }
     });
     this.perfDashboard.draw(this.perfDataTable);
+  }
+
+  private drawHealthPlot(file: FileType) {
+    let numRows = this.healthDataTable.getNumberOfRows();
+    // console.log('[drawHealthPlot::numRows]:', numRows);
+    let healthFilterState: any = this.healthFilter.getState();
+    // console.log('[drawHealthPlot::healthFilterState]:', healthFilterState);
+
+    if (file.dataChanged && !file.fileChanged) {
+      if (numRows <= 100) {
+        healthFilterState.range.start = 0;
+        healthFilterState.range.end = numRows;
+      } else {
+        healthFilterState.range.start = numRows - 100;
+        healthFilterState.range.end = numRows;
+      }
+    } else if (file.fileChanged) {
+      let dSlider = 100;
+      healthFilterState.range.start = numRows - dSlider;
+      healthFilterState.range.end = numRows;
+      if (healthFilterState.range.start < 0) {
+        healthFilterState.range.start = 0;
+      }
+    }
+
+    this.healthPlot.setOptions(this.healthPlotOptions);
+    this.healthFilter.setState({
+      range: {
+        start: healthFilterState.range.start,
+        end: healthFilterState.range.end
+      }
+    });
+    this.healthDashboard.draw(this.healthDataTable);
   }
 
   private drawTrialPlot(file: FileType) {
