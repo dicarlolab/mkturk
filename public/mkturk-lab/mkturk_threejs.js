@@ -1,8 +1,4 @@
 async function initThreeJS(scenedata) {
-    // const canvaswebgl = document.querySelector("canvasvisiblewebgl");
-    // const offscreencanvaswebgl = ('OffscreenCanvas' in window) ? canvaswebgl.transferControlToOffscreen() : canvaswebgl;
-    // offscreencanvaswebgl.style = { width: 0, height: 0 }
-
     // init renderer
     renderer = new THREE.WebGLRenderer({canvas: VISIBLECANVASWEBGL, antialias: false, alpha: true,preserveDrawingBuffer: false}) //WebGL uses 2 canvases and it's faster to swap them
     //https://stackoverflow.com/questions/27746091/preservedrawingbuffer-false-is-it-worth-the-effort
@@ -15,8 +11,8 @@ async function initThreeJS(scenedata) {
     // renderer.toneMappingExposure = 10;   // set exposure to light
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.autoClear = false;
-    renderer.setPixelRatio(ENV.ThreeJSRenderRatio)
-    var rendererWidth = Math.max(VISIBLECANVASWEBGL.height,VISIBLECANVASWEBGL.width)/ENV.ThreeJSRenderRatio
+    renderer.setPixelRatio(TASK.ThreeJSRenderRatio)
+    var rendererWidth = Math.max(VISIBLECANVASWEBGL.height,VISIBLECANVASWEBGL.width)/TASK.ThreeJSRenderRatio
     var rendererHeight = rendererWidth
     renderer.setSize(rendererWidth,rendererHeight)
     document.body.append(renderer.domElement);
@@ -24,8 +20,8 @@ async function initThreeJS(scenedata) {
     // renderer.domElement.style.width =  VISIBLECANVAS.clientWidth+ 'px'; //keeps CSS size unchanged
     // renderer.domElement.style.height =  VISIBLECANVAS.clientHeight+ 'px'; //keeps CSS size unchanged
 
-    renderer.domElement.style.width = VISIBLECANVASWEBGL.width/ENV.ThreeJSRenderRatio+ 'px'
-    renderer.domElement.style.height = VISIBLECANVASWEBGL.height/ENV.ThreeJSRenderRatio + 'px'
+    renderer.domElement.style.width = VISIBLECANVASWEBGL.width/TASK.ThreeJSRenderRatio+ 'px'
+    renderer.domElement.style.height = VISIBLECANVASWEBGL.height/TASK.ThreeJSRenderRatio + 'px'
 
     console.log(VISIBLECANVAS.clientWidth, VISIBLECANVAS.clientHeight);
 

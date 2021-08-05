@@ -165,16 +165,14 @@ serial.Port.prototype.onReceive = data => {
 	port.statustext_received = textDecoder.decode(data);
 
 	if (textReceived.includes('sa')) {
-		console.log('[SAMPLE COMMAND::onReceive] textReceived:', textReceived);
-		console.log('[SAMPLE COMMAND::onReceive] Time Received:', onReceiveTime - ENV.CurrentDate.valueOf());
 		if (textReceived.includes('1')) {
 			logEVENTS(
 				'SampleCommandReturnTime',
 				onReceiveTime - ENV.CurrentDate.valueOf(),
 				'trialseries'
 			);
-		}
-	}
+		}//IF 1
+	}//IF samplecommand
 
 	//rfid
 	var tagstart = port.statustext_received.indexOf('{tag',0);
@@ -358,18 +356,6 @@ serial.Port.prototype.onReceive = data => {
 
 	//=============== NOT RFID/EYE ===============//
 	else {
-
-		// if (textReceived.includes('sa')) {
-		// 	console.log('[SAMPLE COMMAND::onReceive] textReceived:', textReceived);
-		// 	console.log('[SAMPLE COMMAND::onReceive] Time Received:', onReceiveTime - ENV.CurrentDate.valueOf());
-		// 	if (textReceived.includes('1')) {
-		// 		logEVENTS(
-		// 			'SampleCommandReturnTime',
-		// 			onReceiveTime - ENV.CurrentDate.valueOf(),
-		// 			'trialseries'
-		// 		);
-		// 	}
-		// }
 		updateHeadsUpDisplayDevices()
 	}//ELSE not RFID or EYE
 } //port.onReceive
@@ -396,11 +382,7 @@ serial.Port.prototype.writeSampleCommandTriggertoUSB = async function(data){
     let msgstr = "$" + data.toString() + "%" // start($), end(%) characters
     let textEncoder = new TextEncoder();
 
-	console.log('[SAMPLE COMMAND::writeSampleCommandTriggertoUSB] Before Await:', Date.now(), 'Trigger:', data);
-
   await this.device_.transferOut(4, textEncoder.encode(msgstr)); //SANITY CHECK what the 4 is
-
-	console.log('[SAMPLE COMMAND::writeSampleCommandTriggertoUSB] After Await:', Date.now(), 'Trigger:', data);
 
   port.statustext_sent = "TRANSFERRED SampleCommandSignal --> USB:" + msgstr
   console.log(port.statustext_sent)
