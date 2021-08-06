@@ -11,8 +11,8 @@ async function initThreeJS(scenedata) {
     // renderer.toneMappingExposure = 10;   // set exposure to light
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.autoClear = false;
-    renderer.setPixelRatio(TASK.ThreeJSRenderRatio)
-    var rendererWidth = Math.max(VISIBLECANVASWEBGL.height,VISIBLECANVASWEBGL.width)/TASK.ThreeJSRenderRatio
+    renderer.setPixelRatio(TASK.THREEJSRenderRatio)
+    var rendererWidth = Math.max(VISIBLECANVASWEBGL.height,VISIBLECANVASWEBGL.width)/TASK.THREEJSRenderRatio
     var rendererHeight = rendererWidth
     renderer.setSize(rendererWidth,rendererHeight)
     document.body.append(renderer.domElement);
@@ -20,8 +20,8 @@ async function initThreeJS(scenedata) {
     // renderer.domElement.style.width =  VISIBLECANVAS.clientWidth+ 'px'; //keeps CSS size unchanged
     // renderer.domElement.style.height =  VISIBLECANVAS.clientHeight+ 'px'; //keeps CSS size unchanged
 
-    renderer.domElement.style.width = VISIBLECANVASWEBGL.width/TASK.ThreeJSRenderRatio+ 'px'
-    renderer.domElement.style.height = VISIBLECANVASWEBGL.height/TASK.ThreeJSRenderRatio + 'px'
+    renderer.domElement.style.width = VISIBLECANVASWEBGL.width/TASK.THREEJSRenderRatio+ 'px'
+    renderer.domElement.style.height = VISIBLECANVASWEBGL.height/TASK.THREEJSRenderRatio + 'px'
 
     console.log(VISIBLECANVAS.clientWidth, VISIBLECANVAS.clientHeight);
 
