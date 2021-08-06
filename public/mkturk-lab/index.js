@@ -7,8 +7,6 @@
 if (typeof(navigator.usb) == "object"){ ENV.WebUSBAvailable = 1 }
 if (typeof(navigator.bluetooth) == "object"){ ENV.WebBluetoothAvailable = 1 }
 if (typeof(navigator.getBattery) == "function"){ ENV.BatteryAPIAvailable = 1 }
-if (typeof(OffscreenCanvas) == "function"){ ENV.OffscreenCanvasAvailable = 1 }
-ENV.OffscreenCanvasAvailable = 0;
 
 // Button callbacks for inline connection to arduino device
 document.querySelector("button[id=googlesignin]").style.display = "block";
@@ -55,15 +53,10 @@ var audiocontext = new (window.AudioContext || window.webkitAudioContext)();
 var gainNode = audiocontext.createGain();
 gainNode.connect(audiocontext.destination);
 
-// Check availability of OffScreenCanvas API
-// ENV.DevicePixelRatio = window.devicePixelRatio || 1;
 ENV.DevicePixelRatio = window.devicePixelRatio ? window.devicePixelRatio : 1;
 
-if (ENV.OffscreenCanvasAvailable) {
-	var visiblecontext = VISIBLECANVAS.getContext("bitmaprenderer");
-}	else {
-	var visiblecontext = VISIBLECANVAS.getContext("2d");
-}
+var visiblecontext = VISIBLECANVAS.getContext("2d");
+
 var backingStoreRatio = visiblecontext.webkitBackingStorePixelRatio
   || visiblecontext.mozBackingStorePixelRatio
   || visiblecontext.msBackingStorePixelRatio
@@ -580,35 +573,6 @@ if (ENV.BatteryAPIAvailable) {
         scaleCanvasforHiDPI(VISIBLECANVAS);
         scaleCanvasforHiDPI(EYETRACKERCANVAS);
       }
-      
-      if (ENV.OffscreenCanvasAvailable) {
-        OFFSCREENCANVAS = new OffscreenCanvas(VISIBLECANVAS.width, VISIBLECANVAS.height);
-        OFFSCREENCANVAS.commitTo = (dest) => {
-          try {
-            let bitmap = OFFSCREENCANVAS.transferToImageBitmap();
-            dest.transferFromImageBitmap(bitmap);
-            return { status: 'succeeded' };
-          } catch (e) {
-            console.error('[OFFSCREENCANVAS.commitTo] Error:', e);
-            return { status: 'failed' };
-          }
-        }
-        // OFFSCREENCANVAS.commitTo = function(dest) {
-        //   try {
-        //     var bitmap = this.transferToImageBitmap()
-        //     dest.transferFromImageBitmap(bitmap)
-        //     str = {status: "succeeded"}
-        //     return str
-        //   }
-        //   catch(error){
-        //     console.log(error)
-        //     str = {status: "failed"}
-        //     return str				
-        //   }
-        // }
-      } else {
-        OFFSCREENCANVAS = VISIBLECANVAS;
-      }
 
       CANVAS.workspace = [
         0,
@@ -689,7 +653,16 @@ if (ENV.BatteryAPIAvailable) {
 
 
     //======================== 3D SCENE SET-UP =======================//
-    ENV.ThreeJSRenderRatio = ENV.ThreeJSRenderRatio | TASK.THREEJSRenderRatio
+    if (typeof(TASK.THREEJSRenderRatio) == "undefined" || TASK.ThreeJSRenderRatio < 0){
+	    TASK.ThreeJSRenderRatio = 2
+    }
+    if (typeof(TASK.THREEJScameraZDist) == "undefined"){
+    	TASK.THREEJScameraZDist = 10
+    }
+    if (typeof(TASK.THREEJScameraFOV) == "undefined"){
+    	TASK.THREEJScameraFOV = 45
+    }
+
     if (FLAGS.need2loadScenes) {
       IMAGES = { Sample: [], Test: [] };
       IMAGEMETA = {};
@@ -1844,7 +1817,7 @@ if (ENV.BatteryAPIAvailable) {
         frame.frames[q] = [q];
       }
 
-      renderShape2D(CANVAS.sequencepost[0], -1, OFFSCREENCANVAS);
+      renderShape2D(CANVAS.sequencepost[0], -1, VISIBLECANVAS);
 
       let lenTsequencePost = CANVAS.tsequencepost.length;
       // displayTrial(time, grid, frame, screen, obj, idx)
@@ -1872,7 +1845,7 @@ if (ENV.BatteryAPIAvailable) {
         }
 
         playSound(2);
-        renderShape2D(CANVAS.sequencepost[0], -1, OFFSCREENCANVAS);
+        renderShape2D(CANVAS.sequencepost[0], -1, VISIBLECANVAS);
         let lenTsequencePost = CANVAS.tsequencepost.length;
         // displayTrial(time, grid, frame, screen, obj, idx);
         let p1 = displayTrial(
@@ -1911,7 +1884,7 @@ if (ENV.BatteryAPIAvailable) {
         frame.frames[q] = [q];
       }
 
-      renderShape2D(CANVAS.sequencepost[0], -1, OFFSCREENCANVAS);
+      renderShape2D(CANVAS.sequencepost[0], -1, VISIBLECANVAS);
       let lenSequencepost = CANVAS.sequencepost.length
       // displayTrial(time, grid, frame, screen, obj, idx);
 		  let p1 = displayTrial(
@@ -2087,10 +2060,7 @@ if (ENV.BatteryAPIAvailable) {
       
       let interval = (
         (lastTimestamp.valueOf() - firstTimestamp.valueOf()) / lastIdx
-      );
-      console.log('[EyetrackerSampleInterval]::trialNum:', CURRTRIAL.num);
-      console.log('[EyetrackerSampleInterval]::interval:', interval);
-      
+      );      
       logEVENTS('EyetrackerSampleInterval', interval, 'trialseries');
     }
     

@@ -33,7 +33,6 @@ ENV.AgentRFID = "XX"
 ENV.CurrentDate = new Date;
 ENV.CanvasRatio = 1
 ENV.DevicePixelRatio = 1
-ENV.ThreeJSRenderRatio = 2
 ENV.THREEJStoInches = 1
 ENV.FixationRadius = 0
 ENV.FixationWindowRadius = 0
@@ -162,7 +161,6 @@ var CANVAS = {
 	offsettop: 0,
 }
 
-var OFFSCREENCANVAS = null
 var VISIBLECANVAS = document.getElementById("canvasvisible")
 var VISIBLECANVASWEBGL = document.getElementById("canvasvisiblewebgl")
 var EYETRACKERCANVAS = document.getElementById("canvaseyetracker")

@@ -31,7 +31,7 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 		if (timestamp - start > ti[frame.current]) {
 				
 			//----- RENDER ALL ELEMENTS
-			renderShape2D('Blank', [-1], OFFSCREENCANVAS);
+			renderShape2D('Blank', [-1], VISIBLECANVAS);
 
 			if (frame.current <= frame.shown.length-1){ //Skip rendering if already did last frame and just waiting for it to show
 				for (var s = 0; s<=frame.frames[frame.current].length-1; s++){
@@ -45,7 +45,7 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 
 //------------------- DISPLAY THE FRAME 2D ---------------------//
 					//RENDER 2D directly onscreen
-					render2D(taskscreen,s,f,gr,fr,sc,ob,id,OFFSCREENCANVAS)
+					render2D(taskscreen,s,f,gr,fr,sc,ob,id,VISIBLECANVAS)
 
 					//------------------- DISPLAY THE FRAME 3D ---------------------//
 					if (taskscreen=="Sample" || taskscreen=="Test"){
@@ -57,11 +57,11 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 					
 					if (taskscreen=="Touchfix" || taskscreen=="Sample"){
 						//Overlay fixation dot
-						renderShape2D("FixationDot",gr[f],OFFSCREENCANVAS)
+						renderShape2D("FixationDot",gr[f],VISIBLECANVAS)
 
 						if (port.connected && TASK.Photodiode > 0){
 							renderShape2D("PhotodiodeSquare",
-								[ ENV.PhotodiodeSquareX, ENV.PhotodiodeSquareY ], OFFSCREENCANVAS)
+								[ ENV.PhotodiodeSquareX, ENV.PhotodiodeSquareY ], VISIBLECANVAS)
 						}//IF port.connected
 					}//IF touchfix || sample
 				}//FOR s screens within frame
@@ -400,7 +400,7 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 			fr[f],
 			gr[f][j])
 			
-	  	OFFSCREENCANVAS.getContext('2d').filter = objFilterSingleFrame;
+	  	VISIBLECANVAS.getContext('2d').filter = objFilterSingleFrame;
 
 		// 3D Canvas coordinates	
 		var sx = renderer.domElement.width/2
@@ -416,8 +416,8 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 		sy = sy - sheight/2
 
 		// 2D Canvas coordinates
-		var swidth_2d = swidth /ENV.ThreeJSRenderRatio /ENV.CanvasRatio
-		var sheight_2d = sheight/ENV.ThreeJSRenderRatio /ENV.CanvasRatio
+		var swidth_2d = swidth /TASK.ThreeJSRenderRatio /ENV.CanvasRatio
+		var sheight_2d = sheight/TASK.ThreeJSRenderRatio /ENV.CanvasRatio
 
 		var scenecenterX = ENV.XGridCenter[gr[f][j]] 
 		var scenecenterY = ENV.YGridCenter[gr[f][j]]
@@ -426,7 +426,7 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 		var top = Math.round(scenecenterY/ENV.CanvasRatio-sheight_2d/2)
 
 		// Transfer 3D Canvas to 2D Canvas
-		OFFSCREENCANVAS.getContext('2d').drawImage(renderer.domElement,sx,sy,swidth,sheight,left,top,swidth_2d,sheight_2d);	
+		VISIBLECANVAS.getContext('2d').drawImage(renderer.domElement,sx,sy,swidth,sheight,left,top,swidth_2d,sheight_2d);	
 		// update bounding boxes if crop bounding box is smaller than the boundingbox 
 		if (s ==0 && (swidth_2d * ENV.CanvasRatio < boundingBoxesChoice3JS.x[j][1]-boundingBoxesChoice3JS.x[j][0])){
 			boundingBoxesChoice3JS.x[j] = [left*ENV.CanvasRatio,(left+swidth_2d)*ENV.CanvasRatio]
@@ -924,69 +924,36 @@ async function saveScreenshot(canvasobj,currtrial,taskscreen,framenum,objectlabe
 	currtrial = String(currtrial).padStart(3, '0')
 	framenum = String(framenum).padStart(3, '0')
 
-	if (canvasobj == OFFSCREENCANVAS){
-		canvasobj.convertToBlob().then(function(blob){
-			var fullpath = storage_path + '/'
-							+ 'offscreencanvas'
-							+ '_' + 'trialnum' + currtrial
-							+ '_' + taskscreen 
-							+ '_' + 'framenum' + framenum
-	
-			if (objectlabel.length >1){
-				for (var i=0; i<=objectlabel.length-1; i++){
-					fullpath = fullpath
-								+ '_' + 'label' + objectlabel[i]
-								+ '_' + 'index' + objectind[i]
-				}//FOR i objects
-			} else{
-				fullpath = fullpath
-								+ '_' + 'label' + objectlabel
-								+ '_' + 'index' + objectind
-			}
-
-			fullpath = fullpath + '.png'
-			
-			try {
-				var response = storage.ref().child(fullpath).put(blob)
-				console.log("saved image: " + fullpath);
-				console.log("FIREBASE: Successful image file upload. Size:" + Math.round(response.blob_.size_/1000) + 'kb')
-			}//TRY
-			catch (error){
-				console.log(error)
-			}
-		})//.toBlob function
-	} else{
-		canvasobj.toBlob(function(blob){
-			var fullpath = storage_path + '/'
-							+ canvasobj.id 
-							+ '_' + 'trialnum' + currtrial
-							+ '_' + taskscreen 
-							+ '_' + 'framenum' + framenum
-			
-			if (objectlabel.length >1){
-			for (var i=0; i<=objectlabel.length-1; i++){
-				fullpath = fullpath
-							+ '_' + 'label' + objectlabel[i]
-							+ '_' + 'index' + objectind[i]
-			}//FOR i objects
-		} else{
+	canvasobj.toBlob(function(blob){
+		var fullpath = storage_path + '/'
+						+ canvasobj.id 
+						+ '_' + 'trialnum' + currtrial
+						+ '_' + taskscreen 
+						+ '_' + 'framenum' + framenum
+		
+		if (objectlabel.length >1){
+		for (var i=0; i<=objectlabel.length-1; i++){
 			fullpath = fullpath
-							+ '_' + 'label' + objectlabel
-							+ '_' + 'index' + objectind
-		}
-
-			fullpath = fullpath + '.png'
-			
-			try {
-				var response = storage.ref().child(fullpath).put(blob)
-				console.log("saved image: " + fullpath);
-				console.log("FIREBASE: Successful image file upload. Size:" + Math.round(response.blob_.size_/1000) + 'kb')
-			}//TRY
-			catch (error){
-				console.log(error)
-			}
-		})//.toBlob function
+						+ '_' + 'label' + objectlabel[i]
+						+ '_' + 'index' + objectind[i]
+		}//FOR i objects
+	} else{
+		fullpath = fullpath
+						+ '_' + 'label' + objectlabel
+						+ '_' + 'index' + objectind
 	}
+
+		fullpath = fullpath + '.png'
+		
+		try {
+			var response = storage.ref().child(fullpath).put(blob)
+			console.log("saved image: " + fullpath);
+			console.log("FIREBASE: Successful image file upload. Size:" + Math.round(response.blob_.size_/1000) + 'kb')
+		}//TRY
+		catch (error){
+			console.log(error)
+		}
+	})//.toBlob function
 	
 }//FUNCTION saveScreenshot
 
@@ -1134,8 +1101,8 @@ function setupCanvas(canvasobj){
 		var webglcanvasSizeInches = cameraHeightatOrigin * ENV.THREEJStoInches
 		var webglcanvasSizePixel = webglcanvasSizeInches * ENV.ViewportPPI / ENV.CanvasRatio
 
-		canvasobj.width = webglcanvasSizePixel/ENV.ThreeJSRenderRatio
-		canvasobj.height = webglcanvasSizePixel/ENV.ThreeJSRenderRatio
+		canvasobj.width = webglcanvasSizePixel/TASK.ThreeJSRenderRatio
+		canvasobj.height = webglcanvasSizePixel/TASK.ThreeJSRenderRatio
 		canvasobj.style.top = (windowHeight - CANVAS.offsettop)/2 + CANVAS.offsettop - canvasobj.height/2  + 'px'
 		canvasobj.style.left = (windowWidth- CANVAS.offsetleft)/2 + CANVAS.offsetleft - canvasobj.width/2 + 'px'
 		canvasobj.style.margin="0 auto";
