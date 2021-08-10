@@ -653,8 +653,8 @@ if (ENV.BatteryAPIAvailable) {
 
 
     //======================== 3D SCENE SET-UP =======================//
-    if (typeof(TASK.THREEJSRenderRatio) == "undefined" || TASK.ThreeJSRenderRatio < 0){
-	    TASK.ThreeJSRenderRatio = 2
+    if (typeof(TASK.THREEJSRenderRatio) == "undefined" || TASK.THREEJSRenderRatio < 0){
+	    TASK.THREEJSRenderRatio = 2
     }
     if (typeof(TASK.THREEJScameraZDist) == "undefined"){
     	TASK.THREEJScameraZDist = 10

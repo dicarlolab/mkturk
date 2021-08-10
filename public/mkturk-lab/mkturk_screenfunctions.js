@@ -44,8 +44,6 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 					}//IF primary screen
 
 //------------------- DISPLAY THE FRAME 2D ---------------------//
-					//RENDER 2D directly onscreen
-					render2D(taskscreen,s,f,gr,fr,sc,ob,id,VISIBLECANVAS)
 
 					//------------------- DISPLAY THE FRAME 3D ---------------------//
 					if (taskscreen=="Sample" || taskscreen=="Test"){
@@ -55,6 +53,9 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 						updated3d = 0
 					}//ELSE hide 3D when plotting 2D elements like buttons and not keeping (overlaying) sample/test
 					
+					//RENDER 2D directly onscreen
+					render2D(taskscreen,s,f,gr,fr,sc,ob,id,VISIBLECANVAS)
+
 					if (taskscreen=="Touchfix" || taskscreen=="Sample"){
 						//Overlay fixation dot
 						renderShape2D("FixationDot",gr[f],VISIBLECANVAS)
@@ -416,8 +417,8 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 		sy = sy - sheight/2
 
 		// 2D Canvas coordinates
-		var swidth_2d = swidth /TASK.ThreeJSRenderRatio /ENV.CanvasRatio
-		var sheight_2d = sheight/TASK.ThreeJSRenderRatio /ENV.CanvasRatio
+		var swidth_2d = swidth /TASK.THREEJSRenderRatio /ENV.CanvasRatio
+		var sheight_2d = sheight/TASK.THREEJSRenderRatio /ENV.CanvasRatio
 
 		var scenecenterX = ENV.XGridCenter[gr[f][j]] 
 		var scenecenterY = ENV.YGridCenter[gr[f][j]]
@@ -459,35 +460,6 @@ async function render2D(taskscreen,s,f,gr,fr,sc,ob,id,canvasobj){
 		}//ELSE 2D shape
 	}//IF new taskscreen
 }//FUNCTION render2D
-
-function renderImage2D(im,sc,ob,id,fr,gr,imgFilterSingleFrame,canvasobj) {
-	var sz = chooseArrayElement(IMAGES[sc][ob].IMAGES.sizeInches,id,0)
-	var wdpixels = 	sz*ENV.ViewportPPI/ENV.CanvasRatio
-	var htpixels = 	wdpixels*im.height/im.width
-	var context=canvasobj.getContext('2d');
-	var xleft=NaN;
-	var ytop=NaN;
-	var xbound=[];
-	var ybound=[];
-	xleft = Math.round(ENV.XGridCenter[gr]/ENV.CanvasRatio - 0.5*wdpixels);
-	ytop = Math.round(ENV.YGridCenter[gr]/ENV.CanvasRatio - 0.5*htpixels);
-			
-	context.filter = imgFilterSingleFrame
-	context.drawImage(im,xleft,ytop,wdpixels,htpixels);
-	context.filter = 'none'
-	
-	// Bounding boxes of images on canvas
-	xbound=[xleft*ENV.CanvasRatio, (xleft+wdpixels)*ENV.CanvasRatio];
-	ybound=[ytop*ENV.CanvasRatio, (ytop+htpixels)*ENV.CanvasRatio];
-
-	xbound[0]=xbound[0]+CANVAS.offsetleft;
-	xbound[1]=xbound[1]+CANVAS.offsetleft;
-	ybound[0]=ybound[0]+CANVAS.offsettop;
-	ybound[1]=ybound[1]+CANVAS.offsettop;
-
-	return [xbound, ybound]
-}//FUNCTION renderImage2D
-//XX hidetestdistractors needs to go somewhere
 
 function renderShape2D(sc,gr,canvasobj){
 	switch (sc) {
@@ -689,7 +661,6 @@ function renderBlankWithGridMarkers(gridx,gridy,fixationgridindex,samplegridinde
 {
 	var outofbounds_str = ''
 	var context=canvasobj.getContext('2d');
-	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 
 	//Display grid (red)
 	for (var i = 0; i <= gridx.length-1; i++){
@@ -1101,8 +1072,8 @@ function setupCanvas(canvasobj){
 		var webglcanvasSizeInches = cameraHeightatOrigin * ENV.THREEJStoInches
 		var webglcanvasSizePixel = webglcanvasSizeInches * ENV.ViewportPPI / ENV.CanvasRatio
 
-		canvasobj.width = webglcanvasSizePixel/TASK.ThreeJSRenderRatio
-		canvasobj.height = webglcanvasSizePixel/TASK.ThreeJSRenderRatio
+		canvasobj.width = webglcanvasSizePixel/TASK.THREEJSRenderRatio
+		canvasobj.height = webglcanvasSizePixel/TASK.THREEJSRenderRatio
 		canvasobj.style.top = (windowHeight - CANVAS.offsettop)/2 + CANVAS.offsettop - canvasobj.height/2  + 'px'
 		canvasobj.style.left = (windowWidth- CANVAS.offsetleft)/2 + CANVAS.offsetleft - canvasobj.width/2 + 'px'
 		canvasobj.style.margin="0 auto";
