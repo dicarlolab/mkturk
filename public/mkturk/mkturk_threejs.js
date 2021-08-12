@@ -100,6 +100,13 @@ async function addToScene(taskscreen){
                 camera.updateMatrixWorld(); // FIX
                 camera.updateProjectionMatrix(); // FIX
 
+                console.log('BEFORE:::originvec:', originvec, 'unitvec:', unitvec);
+                let neworiginvec = originvec.clone();
+                let newunitvec = unitvec.clone();
+                neworiginvec.project(camera);
+                newunitvec.project(camera);
+                console.log('AFTER:::originvec:', neworiginvec, 'unitvec:', newunitvec);
+
                 // Given scene camera, find scaling 3D scene -> 2D canvas
                 var originscreen = toScreenPosition(originvec,camera)
                 var unitscreen = toScreenPosition(unitvec,camera)
@@ -835,39 +842,83 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
     }
     box.name = taskscreen
 	scene[taskscreen].add(box);
-    // let bbox = new THREE.Box3(box.geometry.min, box.geometry.max);
-
-
-
-
 
     var bbox = new THREE.Box3();
-    box.update();
     bbox.setFromObject( box );
-    // bbox.setFromObject(objects);
-    var bbdim = new THREE.Vector3();
+    let vertices2 = [];
+    let vertices = [
+        new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 0),
+        new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 1),
+        new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 2),
+        new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 3),
+        new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 4),
+        new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 5),
+        new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 6),
+        new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 7),
+    ];
+
+    vertices.forEach(vertex => {
+        vertex.applyMatrix4(box.matrixWorld);
+        vertex.project(camera);
+        vertices2.push(new THREE.Vector2(vertex.x, vertex.y));
+    });
+
+    let minVec = vertices2[0].clone();
+    let maxVec = vertices2[0].clone();
+
+    for (let i = 0; i < vertices.length; i++) {
+        minVec.min(vertices[i]);
+        maxVec.max(vertices[i]);
+    }
+    console.log('minVec:', minVec);
+    console.log('maxVec:', maxVec);
+
+    minVec.x = (minVec.x + 1) / 2 * 1800;
+    minVec.y = (-minVec.y + 1) / 2 * 1860;
+    maxVec.x = (maxVec.x + 1) / 2 * 1800;
+    maxVec.y = (-maxVec.y + 1) / 2 * 1860;
+    
+    console.log('minVec:', minVec);
+    console.log('maxVec:', maxVec);
+     
+    // console.log('finale:', finale);
+
+    // var bbdim = new THREE.Vector3();
 
     console.log('taskscreen:', taskscreen, 'box:', box, 'bbox:', bbox, 'objects:', objects);
 
     twodcoord_max = toScreenPosition(bbox.max, camera, objects, taskscreen);
     twodcoord_min = toScreenPosition(bbox.min, camera, objects, taskscreen);
 
+    console.log(twodcoord_max);
+
     var boundingBox = {
-    	"x": [twodcoord_min.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x),
-            	twodcoord_max.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x)].sort(function(a, b){return a-b}),
-    	"y": [twodcoord_max.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y),
-				twodcoord_min.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y)].sort(function(a, b){return a-b})
+    	"x": [minVec.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x),
+            	maxVec.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x)].sort(function(a, b){return a-b}),
+    	"y": [maxVec.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y),
+				minVec.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y)].sort(function(a, b){return a-b})
     }
+
+    // var boundingBox = {
+    // 	"x": [twodcoord_min.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x),
+    //         	twodcoord_max.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x)].sort(function(a, b){return a-b}),
+    // 	"y": [twodcoord_max.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y),
+	// 			twodcoord_min.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y)].sort(function(a, b){return a-b})
+    // }
 
     return [objPosition,objSize,boundingBox]
 }//FUNCTION updateObjectSingleFrame
 
+function vectorToScreen(vec, cam) {
+    vec.project(cam);
+    vec.x = (vec.x + 1) / 2 * renderer.getContext().canvas.width;
+    vec.y = (-vec.y + 1) / 2 * renderer.getContext().canvas.height;
+    return { x: vec.x, y: vec.y };
+}
+
 function toScreenPosition(vector, camera, objects, taskscreen) {
-    // console.log('[toScreenPos]:', taskscreen, objects, vector, camera);
-    // console.log('[toScreenPos::beforeUpdate]:', camera.projectionMatrix.elements);
     camera.updateMatrixWorld();
     camera.updateProjectionMatrix();
-    // console.log('[toScreenPos::afterUpdate]:', camera.projectionMatrix.elements);
 
     let width = renderer.getContext().canvas.width;
     let height = renderer.getContext().canvas.height;
@@ -894,19 +945,27 @@ function toScreenPosition(vector, camera, objects, taskscreen) {
             vector.y = vector.y * height;
             console.log('AFTER:', taskscreen, 'vector', vector);
         } else {
+            // vector.applyMatrix4(camera.matrixWorld);
+            // console.log('vector::applyMatrix4:', vector);
+            // vector.project(camera);
+            // console.log('vector::project:', vector);
+            // vector.x = (vector.x + 1) / 2;
+            // vector.y = (-vector.y + 1) / 2;
+            // vector.x = vector.x * width;
+            // vector.y = vector.y * height;
             vector.x = (vector.x - camera.left) / (camera.right - camera.left);
             vector.y = 1 - ((vector.y - camera.bottom) / (camera.top - camera.bottom));
             vector.x = vector.x * width;
             vector.y = vector.y * height;
         }
     } else {
+        // vector.applyMatrix4(camera.matrixWorld);
         vector.project(camera);
         vector.x = (vector.x + 1) / 2;
         vector.y = (-vector.y + 1) / 2;
+        vector.x = vector.x * width;
+        vector.y = vector.y * height;
     }
-
-    // vector.x = vector.x * width;
-    // vector.y = vector.y * height;
 
     return {
         x: vector.x,
