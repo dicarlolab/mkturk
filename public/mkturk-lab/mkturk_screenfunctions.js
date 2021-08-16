@@ -58,7 +58,12 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 
 					if (taskscreen=="Touchfix" || taskscreen=="Sample"){
 						//Overlay fixation dot
-						renderShape2D("FixationDot",gr[f],VISIBLECANVAS)
+						if (typeof(gr[f]) == 'number'){
+							renderShape2D("FixationDot",gr[f],VISIBLECANVAS)						
+						}
+						else{
+							renderShape2D("FixationDot",gr[f][0],VISIBLECANVAS)
+						}
 
 						if (port.connected && TASK.Photodiode > 0){
 							renderShape2D("PhotodiodeSquare",
