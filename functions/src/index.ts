@@ -43,6 +43,15 @@ interface displayTimesData {
   t_actual: Array<number>
 };
 
+interface touchData {
+  agent: string,
+  timestamp: any,
+  trial_num: number,
+  touch_x: number,
+  touch_y: number,
+  meta: number
+};
+
 interface MturkUserData {
   aid: string,
   hid: string,

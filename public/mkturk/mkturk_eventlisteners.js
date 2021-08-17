@@ -13,6 +13,7 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 			}
 		}
 	}
+	console.log('boundingBoxes:', boundingBoxes);
 	// console.log('boundingboxes top:', boundingBoxes);
 	if (FLAGS.rtdbAgentNumConnections > 0) {
 		let metaStr = 2;
@@ -91,16 +92,23 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 				}//for q boxes
 				touchcxyt[0] = chosenbox
 
-				if (FLAGS.rtdbAgentNumConnections > 0) {
+				if (FLAGS.rtdbAgentNumConnections > 0 || TASK.VisualSearch > 0) {
 					let metaStr = chosenbox >= 0 ? 1 : 0;
 					if (!isNaN(x) && !isNaN(y)) {
-						FLAGS.rtdbDataRef.set({
+						let touchObj = {
 							x: x - CANVAS.offsetleft,
 							y: ENV.ViewportPixels[1] - y,
 							boundingBoxes: boundingBoxesRtdb,
 							meta: metaStr,
 							timestamp: new Date().toJSON()
-						});	
+						};
+						if (FLAGS.rtdbAgentNumConnections > 0) {
+							FLAGS.rtdbDataRef.set(touchObj);
+						}
+
+						if (TASK.VisualSearch > 0) {
+							logEVENTS('TouchData', [touchObj.x, touchObj.y, touchObj.meta], 'timeseries');
+						}
 					}
 				}
 

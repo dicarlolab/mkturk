@@ -34,7 +34,7 @@ async function initThreeJS(scenedata) {
 }// FUNCTION initThreeJS
 
 async function addToScene(taskscreen){
-    console.log('[taskscreen]',taskscreen);
+    // console.log('[taskscreen]',taskscreen);
 
     for (var classlabel = 0; classlabel<=IMAGES[taskscreen].length-1; classlabel++){
 
@@ -46,11 +46,12 @@ async function addToScene(taskscreen){
 
         //DEFAULTING TO CAMERA FOR FIRST CLASS'S SCENE
         CAMERAS[taskscreen][classlabel]= []
-        for (cam in IMAGES[taskscreen][classlabel].CAMERAS){
-            var originvec = new THREE.Vector3(0,0,0)
-            var unitvec = new THREE.Vector3(1,1,1)
+        for (cam in IMAGES[taskscreen][classlabel].CAMERAS) {
+            let originvec = new THREE.Vector3(0, 0, 0);
+            let unitvec = new THREE.Vector3(1.0, 0, 0);
+            
 
-            cameraLookAtOriginByDefault = originvec.clone()
+            let cameraLookAtOriginByDefault = originvec.clone()
 
                 // var camera = new THREE.PerspectiveCamera(IMAGES[taskscreen][classlabel].CAMERAS[cam].fieldOfVIEW,VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height,
                 //                 IMAGES[taskscreen][classlabel].CAMERAS[cam].near,IMAGES[taskscreen][classlabel].CAMERAS[cam].far)
@@ -78,39 +79,56 @@ async function addToScene(taskscreen){
                 );
             }
 
-            if (taskscreen == 'Test') {
-                console.log('[mkturk_threejs::camera] TEST:', camera);
-            }
-            
-
             let campos = [
 	            chooseArrayElement(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x,index,0),
 	            chooseArrayElement(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y,index,0),
-	            chooseArrayElement(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z,index,0) ,
+	            chooseArrayElement(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z,index,0)
 	        ];
 
         // Do the math // when camera is positioned at (0,0,10) and looks at (0,0,0)
-                // camera.position.set(0,0,10)
+                // camera.position.set(10,10,10)
                 // camera.lookAt(cameraLookAtOriginByDefault)
                 console.log(campos);
                 camera.position.set(campos[0], campos[1], campos[2]);
+                // camera.position.set(0, 0, 10);
                 camera.lookAt(cameraLookAtOriginByDefault);
                 camera.name = "cam"+classlabel
                 scene[taskscreen].add(camera)
+                // console.log('camera:', camera);
                 camera.updateMatrixWorld(); // FIX
                 camera.updateProjectionMatrix(); // FIX
 
-                console.log('BEFORE:::originvec:', originvec, 'unitvec:', unitvec);
+                let cameraWorldMat = camera.matrixWorld.clone();
+                let cameraWorldMatInv = camera.matrixWorldInverse.clone();
+
+                // console.log(taskscreen, 'cameraWorldMat:', cameraWorldMat);
+                // console.log(taskscreen, 'cameraWorldMatInv:', cameraWorldMatInv);
+
+                cameraWorldMatInv.multiply(cameraWorldMat);
+                // console.log('worldMat * worldMatInv:', cameraWorldMat);
+
+                // console.log('BEFORE:::originvec:', originvec, 'unitvec:', unitvec);
                 let neworiginvec = originvec.clone();
                 let newunitvec = unitvec.clone();
+                let neworiginvec2 = originvec.clone();
+                let newunitvec2 = unitvec.clone();
                 neworiginvec.project(camera);
                 newunitvec.project(camera);
-                console.log('AFTER:::originvec:', neworiginvec, 'unitvec:', newunitvec);
+                // console.log('AFTER ONLY .PROJECT() :::originvec:', neworiginvec, 'unitvec:', newunitvec);
+                neworiginvec2.applyMatrix4(camera.matrixWorld);
+                newunitvec2.applyMatrix4(camera.matrixWorld);
+                // console.log('AFTER ONLY .APPLYMATRIX() ::: originvec:', neworiginvec2, 'unitvec:', newunitvec2);
+                neworiginvec2.project(camera);
+                newunitvec2.project(camera);
+                // console.log('AFTER .APPLYMATRIX() && .PROJECT() ::: originvec:', neworiginvec2, 'unitvec:', newunitvec2);
+                
 
                 // Given scene camera, find scaling 3D scene -> 2D canvas
                 var originscreen = toScreenPosition(originvec,camera)
                 var unitscreen = toScreenPosition(unitvec,camera)
-                var deltavec = [unitscreen.x - originscreen.x, unitscreen.y - originscreen.y]
+                console.log('originscreen:', originscreen, 'unitscreen:', unitscreen);
+                var deltavec = [unitscreen.x - originscreen.x, unitscreen.x - originscreen.y]
+                console.log(taskscreen, 'DELTAVEC:', deltavec);
                 IMAGEMETA[taskscreen + "OriginScreenPixels"] = originscreen
                 // IMAGES[taskscreen].originscreenPixels = originscreen
                 IMAGEMETA[taskscreen + "THREEJStoPixels"] = Math.max.apply(null,deltavec)
@@ -591,6 +609,8 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
 	            chooseArrayElement(IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.z,index,0),
 	        ]
 
+            console.log(taskscreen, 'NEXTCAMTARGET:', nextcamTarget);
+
 	        if (nextvisible ==1){
 	            camera.visible = true
 	        }
@@ -756,13 +776,14 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
 	        	updateObjectSingleFrame(taskscreen,objects,nextobjPosition,nextobjRotation,nextobjSize,nexttransparent,nextmorph,maxlength,camera,scenecenterX,scenecenterY)
                 allBoundingBoxes[classlabel].push(boundingBox)
 
-            console.log('[updateObject::allBoundingBoxes]:', allBoundingBoxes);
+            console.log('[updateObject::allBoundingBoxes]:', taskscreen, allBoundingBoxes);
         }//FOR obj in scene
 	}//FOR classlabel in classlabels
 	return allBoundingBoxes
 }//FUNCTION updateSingleFrame3D
 
-function updateCameraSingleFrame(camera,cameraPosition,camTarget){
+function updateCameraSingleFrame(camera,cameraPosition,camTarget) {
+    // console.log('CAMERA:', camera, cameraPosition, camTarget);
     camera.position.set(cameraPosition[0],cameraPosition[1],cameraPosition[2])
     camera.lookAt(camTarget[0],camTarget[1],camTarget[2])
     camera.updateMatrixWorld( true );
@@ -857,8 +878,10 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
         new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 7),
     ];
 
+    console.log(taskscreen, camera.matrixWorld);
+
     vertices.forEach(vertex => {
-        vertex.applyMatrix4(box.matrixWorld);
+        // vertex.applyMatrix4(box.matrixWorld);
         vertex.project(camera);
         vertices2.push(new THREE.Vector2(vertex.x, vertex.y));
     });
@@ -870,22 +893,22 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
         minVec.min(vertices[i]);
         maxVec.max(vertices[i]);
     }
-    console.log('minVec:', minVec);
-    console.log('maxVec:', maxVec);
+    // console.log('minVec:', minVec);
+    // console.log('maxVec:', maxVec);
 
     minVec.x = (minVec.x + 1) / 2 * 1800;
     minVec.y = (-minVec.y + 1) / 2 * 1860;
     maxVec.x = (maxVec.x + 1) / 2 * 1800;
     maxVec.y = (-maxVec.y + 1) / 2 * 1860;
     
-    console.log('minVec:', minVec);
-    console.log('maxVec:', maxVec);
+    // console.log('minVec:', minVec);
+    // console.log('maxVec:', maxVec);
      
     // console.log('finale:', finale);
 
     // var bbdim = new THREE.Vector3();
 
-    console.log('taskscreen:', taskscreen, 'box:', box, 'bbox:', bbox, 'objects:', objects);
+    // console.log('taskscreen:', taskscreen, 'box:', box, 'bbox:', bbox, 'objects:', objects);
 
     twodcoord_max = toScreenPosition(bbox.max, camera, objects, taskscreen);
     twodcoord_min = toScreenPosition(bbox.min, camera, objects, taskscreen);
@@ -916,56 +939,83 @@ function vectorToScreen(vec, cam) {
     return { x: vec.x, y: vec.y };
 }
 
-function toScreenPosition(vector, camera, objects, taskscreen) {
-    camera.updateMatrixWorld();
-    camera.updateProjectionMatrix();
+// function toScreenPosition(vector, camera, objects, taskscreen) {
+//     // camera.updateMatrixWorld();
+//     // camera.updateProjectionMatrix();
 
-    let width = renderer.getContext().canvas.width;
-    let height = renderer.getContext().canvas.height;
+//     let width = renderer.getContext().canvas.width;
+//     let height = renderer.getContext().canvas.height;
 
-    console.log(width, height);
+//     console.log(width, height);
 
-    if (camera.isOrthographicCamera) {
-        if (objects) {
-            // let pos = new THREE.Vector3();
-            // pos = pos.setFromMatrixPosition(objects.matrixWorld);
-            // pos.project(camera);
-            // vector.project(camera);
-            console.log('BEFORE:', taskscreen, 'vector', vector);
-            vector.project(camera);
-            // vector.x = (pos.x + 1) / 2;
-            // vector.y = (-pos.y + 1) / 2;
-            console.log(vector);
-            vector.x = (vector.x + 1) / 2;
-            vector.y = (-vector.y + 1) / 2;
-            // vector.x = (vector.x - camera.left) / (camera.right - camera.left);
-            // vector.y = 1 - ((vector.y - camera.bottom) / (camera.top - camera.bottom));
-            // console.log('AFTER:', taskscreen, pos, vector);
-            vector.x = vector.x * width;
-            vector.y = vector.y * height;
-            console.log('AFTER:', taskscreen, 'vector', vector);
-        } else {
-            // vector.applyMatrix4(camera.matrixWorld);
-            // console.log('vector::applyMatrix4:', vector);
-            // vector.project(camera);
-            // console.log('vector::project:', vector);
-            // vector.x = (vector.x + 1) / 2;
-            // vector.y = (-vector.y + 1) / 2;
-            // vector.x = vector.x * width;
-            // vector.y = vector.y * height;
-            vector.x = (vector.x - camera.left) / (camera.right - camera.left);
-            vector.y = 1 - ((vector.y - camera.bottom) / (camera.top - camera.bottom));
-            vector.x = vector.x * width;
-            vector.y = vector.y * height;
-        }
-    } else {
-        // vector.applyMatrix4(camera.matrixWorld);
-        vector.project(camera);
-        vector.x = (vector.x + 1) / 2;
-        vector.y = (-vector.y + 1) / 2;
-        vector.x = vector.x * width;
-        vector.y = vector.y * height;
-    }
+//     if (camera.isOrthographicCamera) {
+//         if (objects) {
+            
+//             // let pos = new THREE.Vector3();
+//             // pos = pos.setFromMatrixPosition(objects.matrixWorld);
+//             // pos.project(camera);
+//             // vector.project(camera);
+//             vector.applyMatrix4(camera.matrixWorld);
+//             console.log('BEFORE:', taskscreen, 'vector', vector);
+//             vector.project(camera);
+//             // vector.x = (pos.x + 1) / 2;
+//             // vector.y = (-pos.y + 1) / 2;
+//             console.log(vector);
+//             vector.x = (vector.x + 1) / 2;
+//             vector.y = (-vector.y + 1) / 2;
+//             // vector.x = (vector.x - camera.left) / (camera.right - camera.left);
+//             // vector.y = 1 - ((vector.y - camera.bottom) / (camera.top - camera.bottom));
+//             // console.log('AFTER:', taskscreen, pos, vector);
+//             vector.x = vector.x * width;
+//             vector.y = vector.y * height;
+//             console.log('AFTER:', taskscreen, 'vector', vector);
+//         } else {
+
+//             console.log('toscreenpos camera:', camera);
+//             console.log('origin/unit after applying camera world coor:', vector);
+//             // vector.applyMatrix4(camera.matrixWorld);
+//             vector.project(camera);
+//             console.log('origin/unit after projecting to camera ndc:', vector);
+//             vector.x = (vector.x + 1) / 2;
+//             vector.y = (-vector.y + 1) / 2;
+//             // vector.x = (vector.x - camera.left) / (camera.right - camera.left);
+//             // vector.y = 1 - ((vector.y - camera.bottom) / (camera.top - camera.bottom));
+//             vector.x = vector.x * width;
+//             vector.y = vector.y * height;
+//         }
+//     } else {
+//         let vecMin = new THREE.Vector3(-1, -1, -1);
+//         let vecMax = new THREE.Vector3(1, 1, 1);
+//         vecMin.applyMatrix4(camera.matrixWorld);
+//         vecMax.applyMatrix4(camera.matrixWorld);
+//         console.log('vecMin:', vecMin, 'vecMax:', vecMax);
+//         console.log('toscreenpos camera:', camera);
+//         // vector.applyMatrix4(camera.matrixWorld);
+//         console.log('origin/unit after applying camera world coor:', vector);
+//         vector.project(camera);
+//         console.log('origin/unit after projecting to camera ndc:', vector);
+//         vector.x = (vector.x + 1) / 2;
+//         vector.y = (-vector.y + 1) / 2;
+//         vector.x = vector.x * width;
+//         vector.y = vector.y * height;
+//     }
+
+//     return {
+//         x: vector.x,
+//         y: vector.y
+//     };
+// };//FUNCTION toScreenPosition(vector,camera)
+
+
+function toScreenPosition(vector, camera){
+
+    var widthHalf = 0.5*renderer.getContext().canvas.width;
+    var heightHalf = 0.5*renderer.getContext().canvas.height;
+    // vector.applyMatrix4(camera.matrixWorld);
+    vector.project(camera);
+
+    vector.x = ( vector.x * widthHalf ) + widthHalf;
+    vector.y = - ( vector.y * heightHalf ) + heightHalf;
 
     return {
         x: vector.x,
