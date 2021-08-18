@@ -2052,17 +2052,22 @@ if (ENV.BatteryAPIAvailable) {
 
       }
 
-      let firstTimestamp = new Date(EVENTS['timeseries']['EyeData'][0][1]);
-      let lastIdx = Object.keys(EVENTS['timeseries']['EyeData']).length - 1;
-      let lastTimestamp = new Date(
-        EVENTS['timeseries']['EyeData'][lastIdx][1]
-      );
-      
-      let interval = (
-        (lastTimestamp.valueOf() - firstTimestamp.valueOf()) / lastIdx
-      );      
-      logEVENTS('EyetrackerSampleInterval', interval, 'trialseries');
-    }
+      if (typeof(EVENTS['timeseries']['EyeData'][0]) != "undefined"){
+	      let firstTimestamp = new Date(EVENTS['timeseries']['EyeData'][0][1]);
+	      let lastIdx = Object.keys(EVENTS['timeseries']['EyeData']).length - 1;
+	      let lastTimestamp = new Date(
+	        EVENTS['timeseries']['EyeData'][lastIdx][1]
+	      );
+	      
+	      let interval = (
+	        (lastTimestamp.valueOf() - firstTimestamp.valueOf()) / lastIdx
+	      );      
+	      logEVENTS('EyetrackerSampleInterval', interval, 'trialseries');
+      }//IF defined
+      else{
+      	logEVENTS('EyetrackerSampleInterval', 0, 'trialseries');
+      }//ELSE
+    }//IF trackeye
     
     //clear tracker canvas at end of trial
     if (FLAGS.savedata == 0 || CURRTRIAL.num <= 1) { //IF practice screen
