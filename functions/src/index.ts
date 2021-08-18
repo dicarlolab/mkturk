@@ -166,10 +166,36 @@ export const bqInserTouchData = functions.https.onCall((rows: touchData[]) => {
     if (exists) {
       rows.forEach((row: any) => {
         console.log('row:', row);
-      })
+        delete row.agent;
+        row.timestamp = new Date(row.timestamp);
+        for (let key in row) {
+          if (Number.isNaN(row[key])) {
+            row[key] = null;
+          }
+        }
+      });
+      table.insert(rows, {}, insertHandler);
+      return;
+    } else {
+      const [newTable] = await dataset.createTable(rows[0].agent, touchDataTableOptions);
+      console.log(`TouchData Table ${newTable.id} created with partitioning: `);
+      rows.forEach((row: any) => {
+        console.log('row', row);
+        delete row.agent;
+        row.timestamp = new Date(row.timestamp);
+        for (let key in row) {
+          if (Number.isNaN(row[key])) {
+            row[key] = null;
+          }
+        }
+      });
+      newTable.insert(rows, {}, insertHandler);
+      return;
     }
-  })
-})
+  }).catch(error => {
+    console.error("Exists function error:", error);
+  });
+});
 
 /* caller must guarantee that all rows belong to the same agent */
 export const bqInsertEyeData = functions.https.onCall((rows: fixationData[]) => {
