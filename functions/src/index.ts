@@ -19,6 +19,7 @@ function insertHandler(err: any, apiResp: any) {
     }
   }
 }
+
 interface fixationData {
   agent: string,
   timestamp: any,
@@ -155,7 +156,7 @@ const createTableOptions = {
   }
 };
 
-export const bqInserTouchData = functions.https.onCall((rows: touchData[]) => {
+export const bqInsertTouchData = functions.https.onCall((rows: touchData[]) => {
   const bq = new BigQuery();
   const dataset = bq.dataset('touchdata');
   const table = dataset.table(rows[0].agent);
@@ -175,7 +176,7 @@ export const bqInserTouchData = functions.https.onCall((rows: touchData[]) => {
         }
       });
       table.insert(rows, {}, insertHandler);
-      return;
+      return rows;
     } else {
       const [newTable] = await dataset.createTable(rows[0].agent, touchDataTableOptions);
       console.log(`TouchData Table ${newTable.id} created with partitioning: `);
@@ -190,7 +191,7 @@ export const bqInserTouchData = functions.https.onCall((rows: touchData[]) => {
         }
       });
       newTable.insert(rows, {}, insertHandler);
-      return;
+      return rows;
     }
   }).catch(error => {
     console.error("Exists function error:", error);
@@ -736,11 +737,6 @@ const displayTimeTableOptions = {
 
 const touchDataSchema = {
   'fields': [
-    {
-      'name': 'agent',
-      'type': 'STRING',
-      'mode': 'REQUIRED'
-    },
     {
       'name': 'trial_num',
       'type': 'INTEGER',

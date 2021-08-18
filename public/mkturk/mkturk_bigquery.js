@@ -110,8 +110,10 @@ function bigQuerySaveTouchData() {
 
 		touchDataArr.push(touchDataObj);
 	}
+	console.log('TOUCH DATA:', touchDataArr);
 
-	bqInsertTouchData(touchDataArr);
+	let hello = bqInsertTouchData(touchDataArr);
+	console.log('TOUCHTOUCHTOUCHTOUCH:', hello);
 
 	console.log('BIGQUERY::Upload TouchData');
 
