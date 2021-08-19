@@ -110,11 +110,9 @@ function bigQuerySaveTouchData() {
 
 		touchDataArr.push(touchDataObj);
 	}
-	console.log('TOUCH DATA:', touchDataArr);
 
-	let hello = bqInsertTouchData(touchDataArr);
-	console.log('TOUCHTOUCHTOUCHTOUCH:', hello);
-
+	bqInsertTouchData(touchDataArr);
+	
 	console.log('BIGQUERY::Upload TouchData');
 
 	// RESET TOUCH DATA ACCUMULATION IN MKTURK

@@ -98,39 +98,12 @@ async function addToScene(taskscreen){
                 camera.updateMatrixWorld(); // FIX
                 camera.updateProjectionMatrix(); // FIX
 
-                let cameraWorldMat = camera.matrixWorld.clone();
-                let cameraWorldMatInv = camera.matrixWorldInverse.clone();
-
-                // console.log(taskscreen, 'cameraWorldMat:', cameraWorldMat);
-                // console.log(taskscreen, 'cameraWorldMatInv:', cameraWorldMatInv);
-
-                cameraWorldMatInv.multiply(cameraWorldMat);
-                // console.log('worldMat * worldMatInv:', cameraWorldMat);
-
-                // console.log('BEFORE:::originvec:', originvec, 'unitvec:', unitvec);
-                let neworiginvec = originvec.clone();
-                let newunitvec = unitvec.clone();
-                let neworiginvec2 = originvec.clone();
-                let newunitvec2 = unitvec.clone();
-                neworiginvec.project(camera);
-                newunitvec.project(camera);
-                // console.log('AFTER ONLY .PROJECT() :::originvec:', neworiginvec, 'unitvec:', newunitvec);
-                neworiginvec2.applyMatrix4(camera.matrixWorld);
-                newunitvec2.applyMatrix4(camera.matrixWorld);
-                // console.log('AFTER ONLY .APPLYMATRIX() ::: originvec:', neworiginvec2, 'unitvec:', newunitvec2);
-                neworiginvec2.project(camera);
-                newunitvec2.project(camera);
-                // console.log('AFTER .APPLYMATRIX() && .PROJECT() ::: originvec:', neworiginvec2, 'unitvec:', newunitvec2);
-                
-
                 // Given scene camera, find scaling 3D scene -> 2D canvas
                 var originscreen = toScreenPosition(originvec,camera)
                 var unitscreen = toScreenPosition(unitvec,camera)
-                console.log('originscreen:', originscreen, 'unitscreen:', unitscreen);
                 var deltavec = [unitscreen.x - originscreen.x, unitscreen.x - originscreen.y]
-                console.log(taskscreen, 'DELTAVEC:', deltavec);
+                
                 IMAGEMETA[taskscreen + "OriginScreenPixels"] = originscreen
-                // IMAGES[taskscreen].originscreenPixels = originscreen
                 IMAGEMETA[taskscreen + "THREEJStoPixels"] = Math.max.apply(null,deltavec)
                 IMAGEMETA[taskscreen + "THREEJStoInches"] = (IMAGEMETA[taskscreen+ "THREEJStoPixels"])/ENV.ViewportPPI
 
@@ -609,8 +582,6 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
 	            chooseArrayElement(IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.z,index,0),
 	        ]
 
-            console.log(taskscreen, 'NEXTCAMTARGET:', nextcamTarget);
-
 	        if (nextvisible ==1){
 	            camera.visible = true
 	        }
@@ -775,8 +746,6 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
 	        var [objPosition, objSize, boundingBox] =
 	        	updateObjectSingleFrame(taskscreen,objects,nextobjPosition,nextobjRotation,nextobjSize,nexttransparent,nextmorph,maxlength,camera,scenecenterX,scenecenterY)
                 allBoundingBoxes[classlabel].push(boundingBox)
-
-            console.log('[updateObject::allBoundingBoxes]:', taskscreen, allBoundingBoxes);
         }//FOR obj in scene
 	}//FOR classlabel in classlabels
 	return allBoundingBoxes
@@ -878,8 +847,6 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
         new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 7),
     ];
 
-    console.log(taskscreen, camera.matrixWorld);
-
     vertices.forEach(vertex => {
         // vertex.applyMatrix4(box.matrixWorld);
         vertex.project(camera);
@@ -893,27 +860,11 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
         minVec.min(vertices[i]);
         maxVec.max(vertices[i]);
     }
-    // console.log('minVec:', minVec);
-    // console.log('maxVec:', maxVec);
 
-    minVec.x = (minVec.x + 1) / 2 * 1800;
-    minVec.y = (-minVec.y + 1) / 2 * 1860;
-    maxVec.x = (maxVec.x + 1) / 2 * 1800;
-    maxVec.y = (-maxVec.y + 1) / 2 * 1860;
-    
-    // console.log('minVec:', minVec);
-    // console.log('maxVec:', maxVec);
-     
-    // console.log('finale:', finale);
-
-    // var bbdim = new THREE.Vector3();
-
-    // console.log('taskscreen:', taskscreen, 'box:', box, 'bbox:', bbox, 'objects:', objects);
-
-    twodcoord_max = toScreenPosition(bbox.max, camera, objects, taskscreen);
-    twodcoord_min = toScreenPosition(bbox.min, camera, objects, taskscreen);
-
-    console.log(twodcoord_max);
+    minVec.x = (minVec.x + 1) / 2 * renderer.getContext().canvas.width;
+    minVec.y = (-minVec.y + 1) / 2 * renderer.getContext().canvas.height;
+    maxVec.x = (maxVec.x + 1) / 2 * renderer.getContext().canvas.width;
+    maxVec.y = (-maxVec.y + 1) / 2 * renderer.getContext().canvas.height;
 
     var boundingBox = {
     	"x": [minVec.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x),
@@ -921,6 +872,9 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
     	"y": [maxVec.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y),
 				minVec.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y)].sort(function(a, b){return a-b})
     }
+
+    // twodcoord_max = toScreenPosition(bbox.max, camera, objects, taskscreen);
+    // twodcoord_min = toScreenPosition(bbox.min, camera, objects, taskscreen);
 
     // var boundingBox = {
     // 	"x": [twodcoord_min.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x),

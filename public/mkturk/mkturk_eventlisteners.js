@@ -13,8 +13,7 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 			}
 		}
 	}
-	console.log('boundingBoxes:', boundingBoxes);
-	// console.log('boundingboxes top:', boundingBoxes);
+	
 	if (FLAGS.rtdbAgentNumConnections > 0) {
 		let metaStr = 2;
 		FLAGS.rtdbDataRef.set({
@@ -100,13 +99,17 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 					timestamp: new Date().toJSON()
 				};
 
-				if (!isNaN(touchObj.x) && !isNaN(touchObj.y)) {
+				if (!isNaN(touchDataObj.x) && !isNaN(touchDataObj.y)) {
 					if (FLAGS.rtdbAgentNumConnections > 0) {
 						FLAGS.rtdbDataRef.set(touchDataObj);
 					}
 
 					if (TASK.BQSaveTouch > 0) {
-						logEVENTS('TouchData', [touchObj.x, touchObj.y, touchObj.meta], 'timeseries');
+						logEVENTS(
+							'TouchData',
+							[touchDataObj.x, touchDataObj.y, touchDataObj.meta],
+							'timeseries'
+						);
 					}
 				}
 
