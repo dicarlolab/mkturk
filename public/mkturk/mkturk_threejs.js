@@ -16,20 +16,18 @@ async function initThreeJS(scenedata) {
     renderer.outputEncoding = THREE.sRGBEncoding;
 
     renderer.autoClear = false;
-    renderer.setPixelRatio(ENV.ThreeJSRenderRatio)
+    renderer.setPixelRatio(ENV.ThreeJSRenderRatio);
     document.body.append(renderer.domElement);
 
     renderer.domElement.style.width =  VISIBLECANVAS.clientWidth+ 'px'; //keeps CSS size unchanged
     renderer.domElement.style.height =  VISIBLECANVAS.clientHeight+ 'px'; //keeps CSS size unchanged
-
-    console.log(VISIBLECANVAS.clientWidth, VISIBLECANVAS.clientHeight);
 
     // init scene
     scene = {}
 
     for (const scenetype in scenedata){
         var indiv_scene = new THREE.Scene();
-        scene[scenetype] = indiv_scene
+        scene[scenetype] = indiv_scene;
     } // FOR n scenes
 }// FUNCTION initThreeJS
 
@@ -48,16 +46,11 @@ async function addToScene(taskscreen){
         CAMERAS[taskscreen][classlabel]= []
         for (cam in IMAGES[taskscreen][classlabel].CAMERAS) {
             let originvec = new THREE.Vector3(0, 0, 0);
-            let unitvec = new THREE.Vector3(1.0, 0, 0);
+            let unitvecX = new THREE.Vector3(1, 0, 0);
+            let unitvecY = new THREE.Vector3(0, 1, 0);
             
 
             let cameraLookAtOriginByDefault = originvec.clone()
-
-                // var camera = new THREE.PerspectiveCamera(IMAGES[taskscreen][classlabel].CAMERAS[cam].fieldOfVIEW,VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height,
-                //                 IMAGES[taskscreen][classlabel].CAMERAS[cam].near,IMAGES[taskscreen][classlabel].CAMERAS[cam].far)
-
-            //    var camera = new THREE.OrthographicCamera(VISIBLECANVASWEBGL.width/-2, VISIBLECANVASWEBGL.width/2, VISIBLECANVASWEBGL.height/2,VISIBLECANVASWEBGL.height/-2,
-            //                   IMAGES[taskscreen][classlabel].CAMERAS[cam].near,IMAGES[taskscreen][classlabel].CAMERAS[cam].far)
 
             var camera;
 
@@ -100,8 +93,9 @@ async function addToScene(taskscreen){
 
                 // Given scene camera, find scaling 3D scene -> 2D canvas
                 var originscreen = toScreenPosition(originvec,camera)
-                var unitscreen = toScreenPosition(unitvec,camera)
-                var deltavec = [unitscreen.x - originscreen.x, unitscreen.x - originscreen.y]
+                var unitscreenX = toScreenPosition(unitvecX,camera);
+                var unitscreenY = toScreenPosition(unitvecY,camera)
+                var deltavec = [unitscreenX.x - originscreen.x, unitscreenY.y - originscreen.y]
                 
                 IMAGEMETA[taskscreen + "OriginScreenPixels"] = originscreen
                 IMAGEMETA[taskscreen + "THREEJStoPixels"] = Math.max.apply(null,deltavec)
@@ -752,18 +746,15 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
 }//FUNCTION updateSingleFrame3D
 
 function updateCameraSingleFrame(camera,cameraPosition,camTarget) {
-    // console.log('CAMERA:', camera, cameraPosition, camTarget);
     camera.position.set(cameraPosition[0],cameraPosition[1],cameraPosition[2])
     camera.lookAt(camTarget[0],camTarget[1],camTarget[2])
     camera.updateMatrixWorld( true );
     camera.updateProjectionMatrix(); // FIX
 }//FUNCTION updateCameraSingleFrame
 
-function updateLightSingleFrame(light,lightPosition,lightIntensity){
-    light.position.set(lightPosition[0],lightPosition[1],lightPosition[2])
+function updateLightSingleFrame(light, lightPosition, lightIntensity) {
+    light.position.set(lightPosition[0], lightPosition[1], lightPosition[2]);
     light.intensity = lightIntensity
-//     console.log('3js: light position change')
-//     console.log(lightPosition)
 }//FUNCTION updateLightSingleFrame
 
 function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objSize,objOpacity,objMorph,maxlength,camera,scenecenterX,scenecenterY){

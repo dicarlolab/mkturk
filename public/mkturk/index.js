@@ -2138,20 +2138,6 @@ if (ENV.BatteryAPIAvailable) {
             pingBigQueryTouchTable();
           }
         }
-
-        // BigQuery Table
-        // Save display times asynchronously to BigQuery
-        // if (CURRTRIAL.num == 0) {
-        //   pingBigQueryDisplayTimesTable(); //uploads eyedata to bigquery every 10 seconds
-        //   pingBigQueryTouchTable();
-        // }//IF first trial, kick-off bigquery writes
-
-        // if (ENV.Eye.TrackEye > 0) {
-        //   if (CURRTRIAL.num == 0) {
-        //     pingBigQueryEyeTable(); // uploads eyedata to BigQuery every 10 seconds
-        //   } // IF first trial, kick-off bigquery writes
-        // }
-
         
       }//IF not saving images, save data
     }//IF savedata
