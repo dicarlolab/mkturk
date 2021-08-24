@@ -2080,10 +2080,18 @@ if (ENV.BatteryAPIAvailable) {
       }
 
       if (typeof(EVENTS['timeseries']['EyeData'][0]) != "undefined"){
-	      let firstTimestamp = new Date(EVENTS['timeseries']['EyeData'][0][1]);
-	      let lastIdx = Object.keys(EVENTS['timeseries']['EyeData']).length - 1;
+        let intervalArr = [];
+        for (let i = 0; i < Object.keys(EVENTS['timeseries']['EyeData']).length; i++) {
+          if (EVENTS['timeseries']['EyeData'][i][0] == CURRTRIAL.num) {
+            intervalArr.push(EVENTS['timeseries']['EyeData'][i][1]);
+          }
+        }
+
+
+	      let firstTimestamp = new Date(intervalArr[0]);
+	      let lastIdx = Object.keys(intervalArr).length - 1;
 	      let lastTimestamp = new Date(
-	        EVENTS['timeseries']['EyeData'][lastIdx][1]
+	        intervalArr[lastIdx]
 	      );
 	      
 	      let interval = (
@@ -2127,17 +2135,20 @@ if (ENV.BatteryAPIAvailable) {
         // BigQuery Data Stream
         if (CURRTRIAL.num == 0) {
           if (TASK.BQSaveEye > 0) {
+            // uploads eyedata to BigQuery every 10 seconds
             pingBigQueryEyeTable();
           }
 
           if (TASK.BQSaveTouch > 0) {
+            // uploads touch data to BigQuery every 10 seconds
             pingBigQueryTouchTable();
           }
 
           if (TASK.BQSaveDisplayTimes > 0) {
-            pingBigQueryTouchTable();
+            //uploads display times data to bigquery every 10 seconds 
+            pingBigQueryDisplayTimesTable(); 
           }
-        }
+        }// IF first trial, kick-off bigquery writes
         
       }//IF not saving images, save data
     }//IF savedata

@@ -113,26 +113,6 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 					}
 				}
 
-				// if (FLAGS.rtdbAgentNumConnections > 0 || TASK.VisualSearch > 0) {
-				// 	let metaStr = chosenbox >= 0 ? 1 : 0;
-				// 	if (!isNaN(x) && !isNaN(y)) {
-				// 		let touchObj = {
-				// 			x: x - CANVAS.offsetleft,
-				// 			y: ENV.ViewportPixels[1] - y,
-				// 			boundingBoxes: boundingBoxesRtdb,
-				// 			meta: metaStr,
-				// 			timestamp: new Date().toJSON()
-				// 		};
-				// 		if (FLAGS.rtdbAgentNumConnections > 0) {
-				// 			FLAGS.rtdbDataRef.set(touchObj);
-				// 		}
-
-				// 		if (TASK.VisualSearch > 0) {
-				// 			logEVENTS('TouchData', [touchObj.x, touchObj.y, touchObj.meta], 'timeseries');
-				// 		}
-				// 	}
-				// }
-
 				//Accumulate cxyt in box for greater eyetracker accuracy
 				if (chosenbox != -1){
 					CURRTRIAL.cxyt.push(touchcxyt) //also accumulate for current trial			
