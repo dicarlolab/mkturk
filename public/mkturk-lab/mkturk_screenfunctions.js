@@ -899,9 +899,7 @@ async function saveScreenshot(canvasobj,currtrial,taskscreen,framenum,objectlabe
 
 	currtrial = String(currtrial).padStart(3, '0')
 	framenum = String(framenum).padStart(3, '0')
-
-	canvasobj.toBlob(function(blob){
-		var fullpath = storage_path + '/'
+	var fullpath = storage_path + '/'
 						+ canvasobj.id 
 						+ '_' + 'trialnum' + currtrial
 						+ '_' + taskscreen 
@@ -918,9 +916,10 @@ async function saveScreenshot(canvasobj,currtrial,taskscreen,framenum,objectlabe
 						+ '_' + 'label' + objectlabel
 						+ '_' + 'index' + objectind
 	}
-
+		fullpath_mesh = fullpath + '.glb'
 		fullpath = fullpath + '.png'
 		
+	canvasobj.toBlob(function(blob){
 		try {
 			var response = storage.ref().child(fullpath).put(blob)
 			console.log("saved image: " + fullpath);
@@ -931,7 +930,80 @@ async function saveScreenshot(canvasobj,currtrial,taskscreen,framenum,objectlabe
 		}
 	})//.toBlob function
 	
+	// save mesh if morph	
+	var objtoSave = Object.keys(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS)[0]
+	if (typeof(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[objtoSave].morphTargetdelta) != 'undefined'){
+		if (IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[objtoSave].morphTargetdelta.length>0){
+			try{
+				var meshtoSave = OBJECTS[taskscreen][CURRTRIAL.sample_scenebag_label[0]].meshes[objtoSave].scene
+				const exporter = new THREE.GLTFExporter();
+				const glb = await new Promise(resolve =>
+						exporter.parse(meshtoSave, resolve, {
+						binary: true,
+						truncateDrawRange: false
+					})
+				);
+				const blobmesh = new Blob([glb], { type: 'application/octet-stream' });
+				storage.ref().child(fullpath_mesh).put(blobmesh)
+				
+			} catch(error){
+				console.log(error)
+			}
+		}
+	}
+
 }//FUNCTION saveScreenshot
+
+async function saveMeshGLB(currtrial,taskscreen,framenum,objectlabel,objectind){
+
+	if (taskscreen == "Sample"){
+		var currtrial_samplepath = TASK.ImageBagsSample[objectlabel]	
+	}
+	else if (taskscreen == "Test"){
+		var currtrial_samplepath = TASK.ImageBagsSample[CURRTRIAL.sample_scenebag_label]
+	}
+	var currtrial_date = ENV.DataFileName
+	var currtrial_parampath = ENV.ParamFileName
+
+	//path to scene folder
+	var ind_start = currtrial_samplepath.lastIndexOf('/')
+	var ind_end = currtrial_samplepath.indexOf('.js')
+	var scenefolder = currtrial_samplepath.substring(0,ind_end)
+
+	//paramfolder name
+	var ind_start = currtrial_parampath.lastIndexOf('/')
+	var ind_end = currtrial_parampath.indexOf('.json')
+	var paramfolder = currtrial_parampath.substring(ind_start+1,ind_end)
+
+	//date 
+	var ind_start = currtrial_date.lastIndexOf('/')
+	var ind_end = currtrial_date.indexOf('T')
+	var date = currtrial_date.substring(ind_start+1,ind_end) 
+
+	var storage_path = scenefolder + '_scene_'
+							+ date + '_' + paramfolder + '_'
+						+ ENV.DeviceName + '_device'
+	// save mesh to gltf file if morph 
+	if (taskscreen == "Sample"){
+		var objtoSave = Object.keys(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS)[0]
+		if (typeof(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[objtoSave].morphTargetDelta) != 'undefined'){
+			if (IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[objtoSave].morphTargetDelta.length>0){
+				var meshtoSave = OBJECTS[taskscreen][CURRTRIAL.sample_scenebag_label[0]].meshes[objtoSave].scene
+				const exporter = new THREE.GLTFExporter();
+  				const glb = await new Promise(resolve =>
+   					 exporter.parse(meshtoSave, resolve, {
+      					binary: true,
+      					truncateDrawRange: false
+    				})
+  				);
+  				const blob = new Blob([glb], { type: 'model/gltf-binary' });
+				storage.ref().child(fullpath).put(blob)
+			}
+	      
+		}
+			
+	}
+}
 
 // Estimate max software fps
 function estimatefps(){
@@ -1075,10 +1147,9 @@ function setupCanvas(canvasobj){
 	if (canvasobj == VISIBLECANVASWEBGL){
 		var cameraHeightatOrigin = Math.tan(TASK.THREEJScameraFOV/2 * Math.PI/180) * TASK.THREEJScameraZDist * 2 
 		var webglcanvasSizeInches = cameraHeightatOrigin * ENV.THREEJStoInches
-		var webglcanvasSizePixel = webglcanvasSizeInches * ENV.ViewportPPI / ENV.CanvasRatio
-
-		canvasobj.width = webglcanvasSizePixel/TASK.THREEJSRenderRatio
-		canvasobj.height = webglcanvasSizePixel/TASK.THREEJSRenderRatio
+		var webglcanvasSizePixel = webglcanvasSizeInches * ENV.ViewportPPI 
+		canvasobj.width = webglcanvasSizePixel
+		canvasobj.height = webglcanvasSizePixel
 		canvasobj.style.top = (windowHeight - CANVAS.offsettop)/2 + CANVAS.offsettop - canvasobj.height/2  + 'px'
 		canvasobj.style.left = (windowWidth- CANVAS.offsetleft)/2 + CANVAS.offsetleft - canvasobj.width/2 + 'px'
 		canvasobj.style.margin="0 auto";
