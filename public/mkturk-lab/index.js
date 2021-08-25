@@ -463,7 +463,7 @@ if (ENV.BatteryAPIAvailable) {
   //============= AWAIT ESTIMATE SCREEN REFRESH RATE =========//
   var fps = await estimatefps();
   ENV.FrameRateDisplay = fps;
-  ENV.FrameRateMovie = fps / 2;
+  // ENV.FrameRateMovie = fps / 2;
 
 	//========= Start in TEST mode =======//
 	document.querySelector("button[id=googlesignin]").style.display = "none"; //if do style.visibility=hidden, element will still occupy space
