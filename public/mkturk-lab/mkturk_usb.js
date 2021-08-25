@@ -172,7 +172,8 @@ serial.Port.prototype.onReceive = data => {
 				'trialseries'
 			);
 		}//IF 1
-	}//IF samplecommand
+		return
+	}//IF "sa", samplecommand
 
 	//rfid
 	var tagstart = port.statustext_received.indexOf('{tag',0);

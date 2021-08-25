@@ -290,7 +290,7 @@ async get_next_trial(){
 				if (sample_filename[i] !=""){
 					if (Array.isArray(sample_filename[i])){
 						var cubeTexture = []
-						for (var j = 0; i < sample_filename[i].length; j++) {
+						for (var j = 0; j < sample_filename[i].length; j++) {
 							cubeTexture.push(await this.IB.get_by_name(sample_filename[i][j]));
 						}
 						sample_image.push(cubeTexture);
