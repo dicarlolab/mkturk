@@ -255,8 +255,14 @@ serial.Port.prototype.onReceive = data => {
 			}
 
 			// STORE calibrated eye signal
-			logEVENTS("EyeData",[eyebuffer.numeyes_HARDCODED,
-						xy[0],xy[1],w,a,null,null,null,null],"timeseries");
+			if (TASK.LogEyeData > 0) {
+				logEVENTS(
+					"EyeData",
+					[eyebuffer.numeyes_HARDCODED, xy[0], xy[1], w, a, null, null, null, null],
+					"timeseries"
+				);
+			}
+			
 
 
 			if (FLAGS.touchGeneratorCreated == 1 && ENV.Eye.TrackEye > 0){

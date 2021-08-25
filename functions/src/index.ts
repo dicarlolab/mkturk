@@ -11,14 +11,15 @@ admin.initializeApp();
 //  response.send("Hello from Firebase!");
 // });
 
-// function insertHandler(err: any, apiResp: any) {
-//   if (err) {
-//     console.log(err);
-//     if (err.name === 'PartialFailureError') {
-//       console.log(err);
-//     }
-//   }
-// }
+function insertHandler(err: any, apiResp: any) {
+  if (err) {
+    console.log(err);
+    if (err.name === 'PartialFailureError') {
+      console.log(err);
+    }
+  }
+}
+
 interface fixationData {
   agent: string,
   timestamp: any,
@@ -41,6 +42,15 @@ interface displayTimesData {
   frame_num: Array<number>,
   t_desired: Array<number>,
   t_actual: Array<number>
+};
+
+interface touchData {
+  agent: string,
+  timestamp: any,
+  trial_num: number,
+  touch_x: number,
+  touch_y: number,
+  meta: number
 };
 
 interface MturkUserData {
@@ -78,121 +88,163 @@ interface MturkUserAssignmentData {
 };
 
 
-// const schema = {
-//   "fields": [
-//     {
-//       "name": "timestamp",
-//       "type": "TIMESTAMP",
-//       "mode": "REQUIRED"
-//     },
-//     {
-//       "name": "trial_num",
-//       "type": "INTEGER",
-//       "mode": "REQUIRED"
-//     },
-//     {
-//       "name": "num_eyes",
-//       "type": "INTEGER",
-//       "mode": "REQUIRED"
-//     },
-//     {
-//       "name": "left_x",
-//       "type": "FLOAT",
-//       "mode": "NULLABLE"
-//     },
-//     {
-//       "name": "left_y",
-//       "type": "FLOAT",
-//       "mode": "NULLABLE"
-//     },
-//     {
-//       "name": "left_aux_0",
-//       "type": "FLOAT",
-//       "mode": "NULLABLE"
-//     },
-//     {
-//       "name": "left_aux_1",
-//       "type": "FLOAT",
-//       "mode": "NULLABLE"
-//     },
-//     {
-//       "name": "right_x",
-//       "type": "FLOAT",
-//       "mode": "NULLABLE"
-//     },
-//     {
-//       "name": "right_y",
-//       "type": "FLOAT",
-//       "mode": "NULLABLE"
-//     },
-//     {
-//       "name": "right_aux_0",
-//       "type": "FLOAT",
-//       "mode": "NULLABLE"
-//     },
-//     {
-//       "name": "right_aux_1",
-//       "type": "FLOAT",
-//       "mode": "NULLABLE"
-//     }
-//   ]
-// };
+const schema = {
+  "fields": [
+    {
+      "name": "timestamp",
+      "type": "TIMESTAMP",
+      "mode": "REQUIRED"
+    },
+    {
+      "name": "trial_num",
+      "type": "INTEGER",
+      "mode": "REQUIRED"
+    },
+    {
+      "name": "num_eyes",
+      "type": "INTEGER",
+      "mode": "REQUIRED"
+    },
+    {
+      "name": "left_x",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+    },
+    {
+      "name": "left_y",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+    },
+    {
+      "name": "left_aux_0",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+    },
+    {
+      "name": "left_aux_1",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+    },
+    {
+      "name": "right_x",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+    },
+    {
+      "name": "right_y",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+    },
+    {
+      "name": "right_aux_0",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+    },
+    {
+      "name": "right_aux_1",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+    }
+  ]
+};
 
-// const createTableOptions = {
-//   "schema": schema,
-//   "timePartitioning": {
-//     "type": "DAY",
-//     "field": "timestamp"
-//   }
-// };
+const createTableOptions = {
+  "schema": schema,
+  "timePartitioning": {
+    "type": "DAY",
+    "field": "timestamp"
+  }
+};
+
+export const bqInsertTouchData = functions.https.onCall((rows: touchData[]) => {
+  const bq = new BigQuery();
+  const dataset = bq.dataset('touchdata');
+  const table = dataset.table(rows[0].agent);
+  console.log('bqInsertTouchData rows received:', rows);
+
+  table.exists().then(async (existsData) => {
+    const exists = existsData[0];
+    if (exists) {
+      rows.forEach((row: any) => {
+        console.log('row:', row);
+        delete row.agent;
+        row.timestamp = new Date(row.timestamp);
+        for (let key in row) {
+          if (Number.isNaN(row[key])) {
+            row[key] = null;
+          }
+        }
+      });
+      table.insert(rows, {}, insertHandler);
+      return rows;
+    } else {
+      const [newTable] = await dataset.createTable(rows[0].agent, touchDataTableOptions);
+      console.log(`TouchData Table ${newTable.id} created with partitioning: `);
+      rows.forEach((row: any) => {
+        console.log('row', row);
+        delete row.agent;
+        row.timestamp = new Date(row.timestamp);
+        for (let key in row) {
+          if (Number.isNaN(row[key])) {
+            row[key] = null;
+          }
+        }
+      });
+      newTable.insert(rows, {}, insertHandler);
+      return rows;
+    }
+  }).catch(error => {
+    console.error("Exists function error:", error);
+  });
+});
 
 /* caller must guarantee that all rows belong to the same agent */
 export const bqInsertEyeData = functions.https.onCall((rows: fixationData[]) => {
-  // const bq = new BigQuery();
-  // const dataset = bq.dataset('eyedata');
-  // const table = dataset.table(rows[0].agent);
+  const bq = new BigQuery();
+  const dataset = bq.dataset('eyedata');
+  const table = dataset.table(rows[0].agent);
   console.log("bqinserteyedata rows received:", rows);
   // console.log('bqinserteyedata AGENT:', rows[0].agent);
 
-  // table.exists().then(async (existsData) => {
-  //   const exists = existsData[0];
-  //   if (exists) {
-  //     rows.forEach((row: any) => {
-  //       console.log('row', row);
-  //       delete row.agent;
-  //       row.timestamp = new Date(row.timestamp);
-  //       for (let key in row) {
-  //         if (Number.isNaN(row[key])) {
-  //           row[key] = null;
-  //         }
-  //       }
-  //     });
-  //     console.log('existing table entire rows:', rows);
-  //     table.insert(rows, {}, insertHandler);
-  //     console.log('exists table insert');
-  //     return;
-  //   } else {
-  //     const [newTable] = await dataset.createTable(rows[0].agent, createTableOptions);
-  //     console.log(`Table ${newTable.id} created with partitioning: `);
-  //     console.log(newTable.metadata.timePartitioning);
-  //     rows.forEach((row: any) => {
-  //       console.log('row', row);
-  //       delete row.agent;
-  //       row.timestamp = new Date(row.timestamp);
-  //       for (let key in row) {
-  //         if (Number.isNaN(row[key])) {
-  //           row[key] = null;
-  //         }
-  //       }
-  //     });
-  //     console.log('new table entire rows:', rows);
-  //     newTable.insert(rows, {}, insertHandler);
-  //     console.log('new table insert');
-  //     return;
-  //   }
-  // }).catch(error => {
-  //   console.error("Exists function error:", error);
-  // });
+  table.exists().then(async (existsData) => {
+    const exists = existsData[0];
+    if (exists) {
+      rows.forEach((row: any) => {
+        console.log('row', row);
+        delete row.agent;
+        row.timestamp = new Date(row.timestamp);
+        for (let key in row) {
+          if (Number.isNaN(row[key])) {
+            row[key] = null;
+          }
+        }
+      });
+      console.log('existing table entire rows:', rows);
+      table.insert(rows, {}, insertHandler);
+      console.log('exists table insert');
+      return;
+    } else {
+      const [newTable] = await dataset.createTable(rows[0].agent, createTableOptions);
+      console.log(`Table ${newTable.id} created with partitioning: `);
+      console.log(newTable.metadata.timePartitioning);
+      rows.forEach((row: any) => {
+        console.log('row', row);
+        delete row.agent;
+        row.timestamp = new Date(row.timestamp);
+        for (let key in row) {
+          if (Number.isNaN(row[key])) {
+            row[key] = null;
+          }
+        }
+      });
+      console.log('new table entire rows:', rows);
+      newTable.insert(rows, {}, insertHandler);
+      console.log('new table insert');
+      return;
+    }
+  }).catch(error => {
+    console.error("Exists function error:", error);
+  });
 });
 
 export const bqQuery = functions.https.onCall(async (query: any) => {
@@ -645,82 +697,120 @@ export const submitAssignment = functions.https.onCall(async (data: any) => {
   }
 });
 
-// const displayTimeSchema = {
-//   'fields': [
-//     {
-//       'name': 'timestamp',
-//       'type': 'TIMESTAMP',
-//       'mode': 'REQUIRED'
-//     },
-//     {
-//       'name': 'trial_num',
-//       'type': 'INTEGER',
-//       'mode': 'REQUIRED'
-//     },
-//     {
-//       'name': 'frame_num',
-//       'type': 'INTEGER',
-//       'mode': 'REPEATED'
-//     },
-//     {
-//       'name': 't_desired',
-//       'type': 'FLOAT',
-//       'mode': 'REPEATED'
-//     },
-//     {
-//       'name': 't_actual',
-//       'type': 'FLOAT',
-//       'mode': 'REPEATED'
-//     }
-//   ]
-// };
+const displayTimeSchema = {
+  'fields': [
+    {
+      'name': 'timestamp',
+      'type': 'TIMESTAMP',
+      'mode': 'REQUIRED'
+    },
+    {
+      'name': 'trial_num',
+      'type': 'INTEGER',
+      'mode': 'REQUIRED'
+    },
+    {
+      'name': 'frame_num',
+      'type': 'INTEGER',
+      'mode': 'REPEATED'
+    },
+    {
+      'name': 't_desired',
+      'type': 'FLOAT',
+      'mode': 'REPEATED'
+    },
+    {
+      'name': 't_actual',
+      'type': 'FLOAT',
+      'mode': 'REPEATED'
+    }
+  ]
+};
 
-// const displayTimeTableOptions = {
-//   'schema': displayTimeSchema,
-//   'timePartitioning': {
-//     'type': 'DAY',
-//     'field': 'timestamp'
-//   }
-// };
+const displayTimeTableOptions = {
+  'schema': displayTimeSchema,
+  'timePartitioning': {
+    'type': 'DAY',
+    'field': 'timestamp'
+  }
+};
+
+const touchDataSchema = {
+  'fields': [
+    {
+      'name': 'trial_num',
+      'type': 'INTEGER',
+      'mode': 'REQUIRED'
+    },
+    {
+      'name': 'timestamp',
+      'type': 'TIMESTAMP',
+      'mode': 'REQUIRED'
+    },
+    {
+      'name': 'touch_x',
+      'type': 'FLOAT',
+      'mode': 'NULLABLE'
+    },
+    {
+      'name': 'touch_y',
+      'type': 'FLOAT',
+      'mode': 'NULLABLE'
+    },
+    {
+      'name': 'meta',
+      'type': 'INTEGER',
+      'mode': 'NULLABLE'
+    }
+  ] 
+};
+
+const touchDataTableOptions = {
+  'schema': touchDataSchema,
+  'timePartitioning': {
+    'type': 'DAY',
+    'field': 'timestamp'
+  }
+};
 
 export const bqInsertDisplayTimes = functions.https.onCall((rows: displayTimesData[]) => {
-  // const bq = new BigQuery();
-  // const dataset = bq.dataset('displaytimedata');
-  // const table = dataset.table(rows[0].agent);
+  const bq = new BigQuery();
+  const dataset = bq.dataset('displaytimedata');
+  const table = dataset.table(rows[0].agent);
   console.log('AGENT', rows[0].agent);
   console.log('bqinsertdisplaytimes rows:', rows);
 
-  // table.exists().then(async (existsData) => {
-  //   const exists = existsData[0];
-  //   if (exists) {
-  //     rows.forEach((row: any) => {
-  //       delete row.agent;
-  //       row.timestamp = new Date(row.timestamp);
-  //       for (let key in row) {
-  //         if (Number.isNaN(row[key])) {
-  //           row[key] = null;
-  //         }
-  //       }
-  //     });
-  //     table.insert(rows, {}, insertHandler);
-  //     console.log('Rows inserted to existing table');
-  //   } else {
-  //     const [newTable] = await dataset.createTable(rows[0].agent, displayTimeTableOptions);
-  //     console.log(`Table ${newTable.id} created with partitioning: `);
-  //     console.log(newTable.metadata.timePartitioning);
-  //     rows.forEach((row: any) => {
-  //       delete row.agent;
-  //       row.timestamp = new Date(row.timestamp);
-  //       for (let key in row) {
-  //         if (Number.isNaN(row[key])) {
-  //           row[key] = null;
-  //         }
-  //       }
-  //     });
-  //     newTable.insert(rows, {}, insertHandler);
-  //     console.log('Row inserted to newly created table');
-  //   }
-  // }).catch(error => {
-  //   console.log('Exists function error:', error);
-  // });
+  table.exists().then(async (existsData) => {
+    const exists = existsData[0];
+    if (exists) {
+      rows.forEach((row: any) => {
+        delete row.agent;
+        row.timestamp = new Date(row.timestamp);
+        for (let key in row) {
+          if (Number.isNaN(row[key])) {
+            row[key] = null;
+          }
+        }
+      });
+      table.insert(rows, {}, insertHandler);
+      console.log('Rows inserted to existing table');
+    } else {
+      const [newTable] = await dataset.createTable(rows[0].agent, displayTimeTableOptions);
+      console.log(`Table ${newTable.id} created with partitioning: `);
+      console.log(newTable.metadata.timePartitioning);
+      rows.forEach((row: any) => {
+        delete row.agent;
+        row.timestamp = new Date(row.timestamp);
+        for (let key in row) {
+          if (Number.isNaN(row[key])) {
+            row[key] = null;
+          }
+        }
+      });
+      newTable.insert(rows, {}, insertHandler);
+      console.log('Row inserted to newly created table');
+    }
+  }).catch(error => {
+    console.log('Exists function error:', error);
+  });
 });

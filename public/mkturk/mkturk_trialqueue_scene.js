@@ -189,8 +189,15 @@ async generate_trials(n_trials){
 
 		this.ndrawn_per_bag[sample_scenebag_label] = this.ndrawn_per_bag[sample_scenebag_label] + 1
 				
-		// Select appropriate test images (correct one and distractors) 
-		var funcreturn = this.selectTestImages(sample_scenebag_label, this.testbag_labels) 
+		// Select appropriate test images (correct one and distractors)
+		// var funcreturn = this.selectTestImages(sample_scenebag_label, this.testbag_labels)
+		var funcreturn;
+		if (TASK.VisualSearch > 0) {
+			funcreturn = [[sample_index], 0];
+		} else {
+			funcreturn = this.selectTestImages(sample_scenebag_label, this.testbag_labels);
+		}
+
 		var test_filenames = []
 		if (TASK.SameDifferent <= 0){
 			var test_indices = funcreturn[0]

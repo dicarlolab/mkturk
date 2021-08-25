@@ -1360,7 +1360,9 @@ if (ENV.BatteryAPIAvailable) {
           mkm
         );
 
-        
+        if (port.connected && FLAGS.savedata) {
+          port.writeSampleCommandTriggertoUSB('1');
+        }
 
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
         console.log('[SAMPLE START TIME LOGGED]:', Date.now());
@@ -2097,17 +2099,26 @@ if (ENV.BatteryAPIAvailable) {
           pingFirestore() //every 10 seconds, will check for data updates to upload to firestore
         }//IF new firestore, kick off firestore database writes
 
-        // BigQuery Table
-        // Save display times asynchronously to BigQuery
+        // BigQuery Data Stream
         if (CURRTRIAL.num == 0) {
-          pingBigQueryDisplayTimesTable(); //uploads eyedata to bigquery every 10 seconds        
-        }//IF first trial, kick-off bigquery writes
+          if (ENV.Eye.TrackEye > 0) {
+            if (TASK.BQSaveEye === undefined || TASK.BQSaveEye > 0) {
+              // uploads eyedata to BigQuery every 10 seconds
+              pingBigQueryEyeTable();
+            }
+          } else {
+            if (TASK.BQSaveTouch === undefined || TASK.BQSaveTouch > 0) {
+              // uploads touch data to BigQuery every 10 seconds
+              pingBigQueryTouchTable();
+            }
+          }
 
-        if (ENV.Eye.TrackEye > 0) {
-          if (CURRTRIAL.num == 0) {
-            pingBigQueryEyeTable(); // uploads eyedata to BigQuery every 10 seconds
-          } // IF first trial, kick-off bigquery writes
+          if (TASK.BQSaveDisplayTimes === undefined || TASK.BQSaveDisplayTimes > 0) {
+            //uploads display times data to bigquery every 10 seconds
+            pingBigQueryDisplayTimesTable();
+          }
         }
+
       }//IF not saving images, save data
     }//IF savedata
 

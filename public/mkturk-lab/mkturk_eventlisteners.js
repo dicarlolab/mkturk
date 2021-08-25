@@ -13,7 +13,7 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 			}
 		}
 	}
-	// console.log('boundingboxes top:', boundingBoxes);
+
 	if (FLAGS.rtdbAgentNumConnections > 0) {
 		let metaStr = 2;
 		FLAGS.rtdbDataRef.set({
@@ -91,16 +91,25 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 				}//for q boxes
 				touchcxyt[0] = chosenbox
 
-				if (FLAGS.rtdbAgentNumConnections > 0) {
-					let metaStr = chosenbox >= 0 ? 1 : 0;
-					if (!isNaN(x) && !isNaN(y)) {
-						FLAGS.rtdbDataRef.set({
-							x: x - CANVAS.offsetleft,
-							y: ENV.ViewportPixels[1] - y,
-							boundingBoxes: boundingBoxesRtdb,
-							meta: metaStr,
-							timestamp: new Date().toJSON()
-						});	
+				let touchDataObj = {
+					x: x - CANVAS.offsetleft,
+					y: ENV.ViewportPixels[1] - y,
+					boundingBoxes: boundingBoxesRtdb,
+					meta: chosenbox >= 0 ? 1 : 0,
+					timestamp: new Date().toJSON()
+				};
+
+				if (!isNaN(touchDataObj.x) && !isNaN(touchDataObj.y)) {
+					if (FLAGS.rtdbAgentNumConnections > 0) {
+						FLAGS.rtdbDataRef.set(touchDataObj);
+					}
+
+					if (TASK.BQSaveTouch === undefined || TASK.BQSaveTouch > 0) {
+						logEVENTS(
+							'TouchData',
+							[touchDataObj.x, touchDataObj.y, touchDataObj.meta],
+							'timeseries'
+						);
 					}
 				}
 

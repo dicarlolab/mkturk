@@ -2080,10 +2080,18 @@ if (ENV.BatteryAPIAvailable) {
       }
 
       if (typeof(EVENTS['timeseries']['EyeData'][0]) != "undefined"){
-	      let firstTimestamp = new Date(EVENTS['timeseries']['EyeData'][0][1]);
-	      let lastIdx = Object.keys(EVENTS['timeseries']['EyeData']).length - 1;
+        let intervalArr = [];
+        for (let i = 0; i < Object.keys(EVENTS['timeseries']['EyeData']).length; i++) {
+          if (EVENTS['timeseries']['EyeData'][i][0] == CURRTRIAL.num) {
+            intervalArr.push(EVENTS['timeseries']['EyeData'][i][1]);
+          }
+        }
+
+
+	      let firstTimestamp = new Date(intervalArr[0]);
+	      let lastIdx = Object.keys(intervalArr).length - 1;
 	      let lastTimestamp = new Date(
-	        EVENTS['timeseries']['EyeData'][lastIdx][1]
+	        intervalArr[lastIdx]
 	      );
 	      
 	      let interval = (
@@ -2124,17 +2132,26 @@ if (ENV.BatteryAPIAvailable) {
           pingFirestore() //every 10 seconds, will check for data updates to upload to firestore
         }//IF new firestore, kick off firestore database writes
 
-        // BigQuery Table
-        // Save display times asynchronously to BigQuery
+        // BigQuery Data Stream
         if (CURRTRIAL.num == 0) {
-          pingBigQueryDisplayTimesTable(); //uploads eyedata to bigquery every 10 seconds        
-        }//IF first trial, kick-off bigquery writes
+          if (ENV.Eye.TrackEye > 0) {
+            if (TASK.BQSaveEye === undefined || TASK.BQSaveEye > 0) {
+              // uploads eyedata to BigQuery every 10 seconds
+              pingBigQueryEyeTable();
+            }
+          } else {
+            if (TASK.BQSaveTouch === undefined || TASK.BQSaveTouch > 0) {
+              // uploads touch data to BigQuery every 10 seconds
+              pingBigQueryTouchTable();
+            }
+          }
 
-        if (ENV.Eye.TrackEye > 0) {
-          if (CURRTRIAL.num == 0) {
-            pingBigQueryEyeTable(); // uploads eyedata to BigQuery every 10 seconds
-          } // IF first trial, kick-off bigquery writes
+          if (TASK.BQSaveDisplayTimes === undefined || TASK.BQSaveDisplayTimes > 0) {
+            //uploads display times data to bigquery every 10 seconds
+            pingBigQueryDisplayTimesTable();
+          }
         }
+        
       }//IF not saving images, save data
     }//IF savedata
 
