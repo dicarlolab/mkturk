@@ -2137,17 +2137,20 @@ if (ENV.BatteryAPIAvailable) {
           if (ENV.Eye.TrackEye > 0) {
             if (TASK.BQSaveEye === undefined || TASK.BQSaveEye > 0) {
               // uploads eyedata to BigQuery every 10 seconds
+              console.log('BIGQUERY::START EYE TABLE');
               pingBigQueryEyeTable();
             }
           } else {
             if (TASK.BQSaveTouch === undefined || TASK.BQSaveTouch > 0) {
               // uploads touch data to BigQuery every 10 seconds
+              console.log('BIGQUERY::START TOUCH TABLE');
               pingBigQueryTouchTable();
             }
           }
 
           if (TASK.BQSaveDisplayTimes === undefined || TASK.BQSaveDisplayTimes > 0) {
             //uploads display times data to bigquery every 10 seconds
+            console.log('BIGQUERY::START DISPLAY TABLE');
             pingBigQueryDisplayTimesTable();
           }
         }

@@ -174,6 +174,7 @@ serial.Port.prototype.onReceive = data => {
 				'trialseries'
 			);
 		}
+		return;
 	}
 
 	//rfid
