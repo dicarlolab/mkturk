@@ -190,7 +190,14 @@ async generate_trials(n_trials){
 		this.ndrawn_per_bag[sample_scenebag_label] = this.ndrawn_per_bag[sample_scenebag_label] + 1
 				
 		// Select appropriate test images (correct one and distractors) 
-		var funcreturn = this.selectTestImages(sample_scenebag_label, this.testbag_labels) 
+		// var funcreturn = this.selectTestImages(sample_scenebag_label, this.testbag_labels)
+		var funcreturn;
+		if (TASK.VisualSearch > 0) {
+			funcreturn = [[sample_index], 0];
+		} else {
+			funcreturn = this.selectTestImages(sample_scenebag_label, this.testbag_labels);
+		}
+
 		var test_filenames = []
 		if (TASK.SameDifferent <= 0){
 			var test_indices = funcreturn[0]
@@ -283,14 +290,13 @@ async get_next_trial(){
 				if (sample_filename[i] !=""){
 					if (Array.isArray(sample_filename[i])){
 						var cubeTexture = []
-                        for (var j=0; j<sample_filename[i].length;j++){
-                        	cubeTexture.push(await this.IB.get_by_name(sample_filename[i][j]));
-                        }
-						sample_image.push(cubeTexture)
+						for (var j = 0; i < sample_filename[i].length; j++) {
+							cubeTexture.push(await this.IB.get_by_name(sample_filename[i][j]));
+						}
+						sample_image.push(cubeTexture);
 					} else{
 						sample_image.push(await this.IB.get_by_name(sample_filename[i])); 
 					}
-					
 				}
 			}
 		}//IF isArray sample filenames

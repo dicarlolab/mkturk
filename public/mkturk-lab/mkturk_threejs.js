@@ -1,42 +1,43 @@
 async function initThreeJS(scenedata) {
-    // init renderer
-    renderer = new THREE.WebGLRenderer({canvas: VISIBLECANVASWEBGL, antialias: false, alpha: true,preserveDrawingBuffer: false}) //WebGL uses 2 canvases and it's faster to swap them
-    //https://stackoverflow.com/questions/27746091/preservedrawingbuffer-false-is-it-worth-the-effort
+  // init renderer
+  renderer = new THREE.WebGLRenderer({canvas: VISIBLECANVASWEBGL, antialias: false, alpha: true,preserveDrawingBuffer: false}) //WebGL uses 2 canvases and it's faster to swap them
+  //https://stackoverflow.com/questions/27746091/preservedrawingbuffer-false-is-it-worth-the-effort
 
-    //renderer.setPixelRatio(window.devicePixelRatio);
-    //renderer.setSize(VISIBLECANVASWEBGL.width,VISIBLECANVASWEBGL.height)
+  //renderer.setPixelRatio(window.devicePixelRatio);
+  //renderer.setSize(VISIBLECANVASWEBGL.width,VISIBLECANVASWEBGL.height)
 
-    renderer.setClearColor(0x7F7F7F,0);
-    renderer.physicallyCorrectLights = true;
-    // renderer.toneMappingExposure = 10;   // set exposure to light
-    renderer.outputEncoding = THREE.sRGBEncoding;
-    renderer.autoClear = false;
-    renderer.setPixelRatio(TASK.THREEJSRenderRatio)
-    var rendererWidth = Math.max(VISIBLECANVASWEBGL.height,VISIBLECANVASWEBGL.width)/TASK.THREEJSRenderRatio
-    var rendererHeight = rendererWidth
-    renderer.setSize(rendererWidth,rendererHeight)
-    document.body.append(renderer.domElement);
+  renderer.setClearColor(0x7F7F7F,0);
+  renderer.physicallyCorrectLights = true;
+  // renderer.toneMappingExposure = 10;   // set exposure to light
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.autoClear = false;
+  renderer.setPixelRatio(TASK.THREEJSRenderRatio)
+  var rendererWidth = Math.max(VISIBLECANVASWEBGL.height,VISIBLECANVASWEBGL.width)/TASK.THREEJSRenderRatio
+  var rendererHeight = rendererWidth
+  renderer.setSize(rendererWidth,rendererHeight)
+  document.body.append(renderer.domElement);
 
-    // renderer.domElement.style.width =  VISIBLECANVAS.clientWidth+ 'px'; //keeps CSS size unchanged
-    // renderer.domElement.style.height =  VISIBLECANVAS.clientHeight+ 'px'; //keeps CSS size unchanged
+  // renderer.domElement.style.width =  VISIBLECANVAS.clientWidth+ 'px'; //keeps CSS size unchanged
+  // renderer.domElement.style.height =  VISIBLECANVAS.clientHeight+ 'px'; //keeps CSS size unchanged
 
-    renderer.domElement.style.width = VISIBLECANVASWEBGL.width/TASK.THREEJSRenderRatio+ 'px'
-    renderer.domElement.style.height = VISIBLECANVASWEBGL.height/TASK.THREEJSRenderRatio + 'px'
+  renderer.domElement.style.width = VISIBLECANVASWEBGL.width/TASK.THREEJSRenderRatio+ 'px'
+  renderer.domElement.style.height = VISIBLECANVASWEBGL.height/TASK.THREEJSRenderRatio + 'px'
 
-    console.log(VISIBLECANVAS.clientWidth, VISIBLECANVAS.clientHeight);
+  console.log(VISIBLECANVAS.clientWidth, VISIBLECANVAS.clientHeight);
 
-    // init scene
-    scene = {}
+  // init scene
+  scene = {}
 
-    for (const scenetype in scenedata){
-        var indiv_scene = new THREE.Scene();
-        scene[scenetype] = indiv_scene
-    } // FOR n scenes
+  for (const scenetype in scenedata) {
+    var indiv_scene = new THREE.Scene();
+    scene[scenetype] = indiv_scene
+  } // FOR n scenes
 }// FUNCTION initThreeJS
 
 async function addToScene(taskscreen){
 
-    // Do the math // when camera is positioned at (0,0,10) and looks at (0,0,0), and has fov = 45
+  // Do the math // when camera is positioned at (0,0,10) and looks at (0,0,0), and has fov = 45
+  // var defaultcamera;
 	var defaultcamera = new THREE.PerspectiveCamera(TASK.THREEJScameraFOV,1,0.1,2000)
 	defaultcamera.position.set(0,0,TASK.THREEJScameraZDist)
 	defaultcamera.lookAt(0,0,0)
@@ -48,7 +49,7 @@ async function addToScene(taskscreen){
 	var unitvec2d = toScreenPosition(unitvec,defaultcamera)
 	IMAGEMETA["THREEJStoPixels"] = unitvec2d.x - renderer.domElement.width/2
 
-    for (var classlabel = 0; classlabel<=IMAGES[taskscreen].length-1; classlabel++){
+  for (var classlabel = 0; classlabel<=IMAGES[taskscreen].length-1; classlabel++) {
 
     //==== CAMERAS
         // init camera
@@ -56,10 +57,27 @@ async function addToScene(taskscreen){
         // but it's better to have only one camera in the scene
         // add cameras if visible == 1
 
-        CAMERAS[taskscreen][classlabel]= []
-        for (cam in IMAGES[taskscreen][classlabel].CAMERAS){
-                var camera = new THREE.PerspectiveCamera(TASK.THREEJScameraFOV,VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height,
-                    IMAGES[taskscreen][classlabel].CAMERAS[cam].near,IMAGES[taskscreen][classlabel].CAMERAS[cam].far)
+    CAMERAS[taskscreen][classlabel]= []
+    for (cam in IMAGES[taskscreen][classlabel].CAMERAS) {
+      var camera;
+
+        if (IMAGES[taskscreen][classlabel].CAMERAS[cam].type == 'PerspectiveCamera') {
+          camera = new THREE.PerspectiveCamera(
+            TASK.THREEJScameraFOV,
+            VISIBLECANVASWEBGL.width / VISIBLECANVASWEBGL.height,
+            IMAGES[taskscreen][classlabel].CAMERAS[cam].near,
+            IMAGES[taskscreen][classlabel].CAMERAS[cam].far
+          );
+        } else if (IMAGES[taskscreen][classlabel].CAMERAS[cam].type == 'OrthographicCamera') {
+          camera = new THREE.OrthographicCamera(
+            VISIBLECANVASWEBGL.width / -2,
+            VISIBLECANVASWEBGL.width / 2,
+            VISIBLECANVASWEBGL.height / 2,
+            VISIBLECANVASWEBGL.height / -2,
+            IMAGES[taskscreen][classlabel].CAMERAS[cam].near,
+            IMAGES[taskscreen][classlabel].CAMERAS[cam].far
+          )
+        }
                                 
                // var camera = new THREE.OrthographicCamera(VISIBLECANVASWEBGL.width/-2, VISIBLECANVASWEBGL.width/2, VISIBLECANVASWEBGL.height/2,VISIBLECANVASWEBGL.height/-2,
                              //  IMAGES[taskscreen][classlabel].CAMERAS[cam].near,IMAGES[taskscreen][classlabel].CAMERAS[cam].far)
@@ -593,7 +611,7 @@ async function addToScene(taskscreen){
             }// if background image filter exists
         }//FOR i images
     }//IF  Sample
-}//FOR classlabels
+  }//FOR classlabels
 
 //==== GridCenters in 3JS (==> POSSIBLE CAMERA OFFSETS FOR SAMPLE,TEST,CHOICE "ROOMS")
     IMAGEMETA[taskscreen + "XGridCenterTHREEJS"] = []

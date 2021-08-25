@@ -25,6 +25,20 @@ function pingBigQueryDisplayTimesTable(){
 	} //else check again in 10 seconds
 }//FUNCTION pingBigQueryEyeTable()
 
+function pingBigQueryTouchTable() {
+	if (
+		Object.keys(EVENTS['timeseries']['TouchData']).length > 0
+		&& typeof(bigQueryTouchTimer) != 'undefined'
+	) {
+		bigQuerySaveTouchData();
+	} else {
+		bigQueryTouchTimer = setTimeout(() => {
+			clearTimeout(bigQueryTouchTimer);
+			pingBigQueryTouchTable()
+		}, 10000);
+	}
+}
+
 function saveEyeDatatoBigQuery() {
 	eventtype = 'timeseries';
 	eventname = 'EyeData';
@@ -72,6 +86,42 @@ function saveEyeDatatoBigQuery() {
 	pingBigQueryEyeTable();
 }//FUNCTION saveEyeDatatoBigQuery
 
+function bigQuerySaveTouchData() {
+	let numSamples = Object.keys(EVENTS['timeseries']['TouchData']).length;
+
+	let touchDataArr = [];
+
+	for (let i = 0; i < numSamples; i++) {
+		let touchDataObj = {
+			'agent': ENV.Subject,
+			'timestamp': EVENTS['timeseries']['TouchData'][i][1],
+			'trial_num': EVENTS['timeseries']['TouchData'][i][0],
+			'touch_x': EVENTS['timeseries']['TouchData'][i][2],
+			'touch_y': EVENTS['timeseries']['TouchData'][i][3],
+			'meta': EVENTS['timeseries']['TouchData'][i][4],
+		};
+
+		for (let key in touchDataObj) {
+			if (Number.isNaN(touchDataObj[key])) {
+				console.error('TouchData contains NaN:', touchDataObj, key);
+				touchDataObj[key] = -10000;
+			}
+		}
+
+		touchDataArr.push(touchDataObj);
+	}
+
+	bqInsertTouchData(touchDataArr);
+	
+	console.log('BIGQUERY::Upload TouchData');
+
+	// RESET TOUCH DATA ACCUMULATION IN MKTURK
+	EVENTS['timeseries']['TouchData'] = {};
+
+	delete bigQueryTouchTimer;
+	pingBigQueryTouchTable();
+}
+
 function saveDisplayTimestoBigQuery() {
 	eventtype = 'timeseries';
 	eventname1 = 'FrameNum';
@@ -91,7 +141,7 @@ function saveDisplayTimestoBigQuery() {
 		};
 		for (let key in obj) {
 			if (Number.isNaN(obj[key])) {
-				console.error('Eyedata contains NaN:', obj, key);
+				console.error('DisplayTimesData contains NaN:', obj, key);
 				obj[key] = -10000;
 			}
 		}

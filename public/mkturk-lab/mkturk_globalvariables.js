@@ -248,6 +248,7 @@ EVENTS.reset_timeseries = function(){
 	this.timeseries.TSequenceActual = {}
 	this.timeseries.EyeData = {}
 	this.timeseries.Arduino = {}
+	this.timeseries.TouchData = {};
 
 	// Initialize battery value
 	if (ENV.BatteryAPIAvailable){

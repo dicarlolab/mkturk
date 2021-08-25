@@ -104,7 +104,7 @@ function hold_promise(touchduration,boundingBoxes,punishOutsideTouch){
 						FLAGS.rtdbDataRef.set(touchDataObj);
 					}
 
-					if (TASK.BQSaveTouch > 0) {
+					if (TASK.BQSaveTouch === undefined || TASK.BQSaveTouch > 0) {
 						logEVENTS(
 							'TouchData',
 							[touchDataObj.x, touchDataObj.y, touchDataObj.meta],

@@ -14,6 +14,7 @@ const functions = firebase.functions();
 
 const bqInsertEyeData = functions.httpsCallable('bqInsertEyeData');
 const bqInsertDisplayTimes = functions.httpsCallable('bqInsertDisplayTimes');
+const bqInsertTouchData = functions.httpsCallable('bqInsertTouchData');
 const detectDevice = functions.httpsCallable('detectDevice');
 const processMturkUser = functions.httpsCallable('processMturkUser');
 const submitAssignment = functions.httpsCallable('submitAssignment');

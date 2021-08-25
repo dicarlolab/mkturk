@@ -2134,21 +2134,23 @@ if (ENV.BatteryAPIAvailable) {
 
         // BigQuery Data Stream
         if (CURRTRIAL.num == 0) {
-          if (TASK.BQSaveEye > 0) {
-            // uploads eyedata to BigQuery every 10 seconds
-            pingBigQueryEyeTable();
+          if (ENV.Eye.TrackEye > 0) {
+            if (TASK.BQSaveEye === undefined || TASK.BQSaveEye > 0) {
+              // uploads eyedata to BigQuery every 10 seconds
+              pingBigQueryEyeTable();
+            }
+          } else {
+            if (TASK.BQSaveTouch === undefined || TASK.BQSaveTouch > 0) {
+              // uploads touch data to BigQuery every 10 seconds
+              pingBigQueryTouchTable();
+            }
           }
 
-          if (TASK.BQSaveTouch > 0) {
-            // uploads touch data to BigQuery every 10 seconds
-            pingBigQueryTouchTable();
+          if (TASK.BQSaveDisplayTimes === undefined || TASK.BQSaveDisplayTimes > 0) {
+            //uploads display times data to bigquery every 10 seconds
+            pingBigQueryDisplayTimesTable();
           }
-
-          if (TASK.BQSaveDisplayTimes > 0) {
-            //uploads display times data to bigquery every 10 seconds 
-            pingBigQueryDisplayTimesTable(); 
-          }
-        }// IF first trial, kick-off bigquery writes
+        }
         
       }//IF not saving images, save data
     }//IF savedata
