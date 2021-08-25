@@ -512,7 +512,7 @@ async function addToScene(taskscreen){
 	   var backgroundCube = new THREE.Mesh(boxGeometry,material)
 	   backgroundCube.name = 'backgroundCube' + classlabel
 	   backgroundCube.material.needsUpdate = true
-       
+
 	   scene[taskscreen].add(backgroundCube)
 
        if (IMAGES[taskscreen][classlabel].IMAGES.sizeTHREEJS == undefined){
@@ -977,37 +977,22 @@ function updateObjectSingleFrame(taskscreen,objects,box,objPosition,objRotation,
 function updateImageSingleFrame(taskscreen,backgroundCube,cubeTexture,imsize,camera,scenecenterX,scenecenterY){
     // cubeTexture : ['zfront','zback','ytop','ybottom','xright','xleft']
     var textureOrder = [4,5,2,3,0,1]
-    var materialArray = []
     if (cubeTexture != undefined){
 
         textureOrder.map(function(t,index){
             if (cubeTexture[t] == "" || cubeTexture[t] == undefined){ 
-                backgroundCube.material[index].color = TASK.BackgroundColor2D
+                backgroundCube.material[index].color = new THREE.Color(TASK.BackgroundColor2D)
                 backgroundCube.material[index].transparent = true
                 backgroundCube.material[index].opacity = 0
                 backgroundCube.material[index].side = THREE.BackSide
             } else{
                 cubeTexture[t].wrapT = THREE.ClampToEdgeWrapping
+                backgroundCube.material[index].opacity = 1
                 backgroundCube.material[index].map = cubeTexture[t]
                 backgroundCube.material[index].side = THREE.BackSide
             }
         })
-
-
-        // for (var t of textureOrder){
-        //     if (cubeTexture[t] == "" || cubeTexture[t] == undefined){
-        //         materialArray.push(new THREE.MeshBasicMaterial({color: TASK.BackgroundColor2D,transparent:true,opacity:0}))
-        //     } else{
-        //         cubeTexture[t].wrapT = THREE.ClampToEdgeWrapping
-        //         materialArray.push(new THREE.MeshBasicMaterial({map:cubeTexture[t]}))
-        //     } 
-        // }
-    
-        // for (var i = 0; i<6; i++){
-        //     materialArray[i].side = THREE.BackSide;  
-        // }
         
-        //backgroundCube.material = materialArray
         //backgroundCube size
         backgroundCube.scale.set(1,1,1)
         backgroundCube.scale.set(imsize,imsize,imsize)
