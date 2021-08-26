@@ -1421,7 +1421,7 @@ if (ENV.BatteryAPIAvailable) {
         CURRTRIAL.samplefixationxyt = [];
 
         if (port.connected && FLAGS.savedata) {
-          await port.writeSampleCommandTriggertoUSB('1');
+          port.writeSampleCommandTriggertoUSB('1');
         }
 
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
@@ -1870,8 +1870,8 @@ if (ENV.BatteryAPIAvailable) {
           let p2 = writepumpdurationtoBLE(Math.round(ENV.RewardDuration * 1000));
           await Promise.all([p1, p2]);
         } else if (port.connected == true) {
-          let p2 = port.writepumpdurationtoUSB(Math.round(ENV.RewardDuration * 1000));
-          await Promise.all([p1, p2]);
+          port.writepumpdurationtoUSB(Math.round(ENV.RewardDuration * 1000));
+          await Promise.all([p1]);
         }
 
       }
