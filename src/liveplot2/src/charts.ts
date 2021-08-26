@@ -1585,6 +1585,7 @@ export class Charts {
         if (
           data.SampleCommandReturnTime[i] == null
           || data.SampleCommandReturnTime[i] < 0
+          || data.SampleCommandReturnTime[i] === undefined
         ) {
           sampleCmdInterval = null;
         } else {
