@@ -1446,7 +1446,7 @@ if (ENV.BatteryAPIAvailable) {
         CURRTRIAL.samplefixationxyt = [];
 
         if (port.connected && FLAGS.savedata) {
-          await port.writeSampleCommandTriggertoUSB('1');
+          port.writeSampleCommandTriggertoUSB('1');
         }
 
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();

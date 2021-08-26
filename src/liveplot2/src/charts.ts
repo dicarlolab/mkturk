@@ -1593,6 +1593,7 @@ export class Charts {
             data.SampleCommandReturnTime[i] - data.SampleStartTime[i]
           );  
         }
+        
         this.healthDataTable.addRows(
           [[i, sampleCmdInterval, dt, dt2, data.EyetrackerSampleInterval[i]]]
         );
