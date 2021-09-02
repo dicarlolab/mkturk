@@ -147,6 +147,7 @@ class MkModels {
   }
 
   getMkModelBoundingBox(params) {
+    console.log('PARAMS:', params);
     let srcX, srcY, srcWidth, srcHeight;
     if (!params.image.imageidx.includes(NaN) && !params.image.imageidx[0].includes(NaN) && params.image.imagebag) { // IF background image
       srcX = params.boundingBoxes2D.x[0][0] * params.ScreenRatio;

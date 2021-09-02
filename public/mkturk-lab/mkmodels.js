@@ -15,6 +15,8 @@ class MkModels {
     this.units; // units (number);
     this.oneHotArr;
     this.outputNode;
+    this.boundingBoxVisibleCanvas = []; //[dx, dy, dWidth, dHeight]
+    this.boundingBoxVisibleCanvasWebGL = []; //[dx, dy, dWidth, dHeight]
     // this.loss; // loss (string): 'categoricalCrossentropy'|'binaryCrossentropy';
     // this.activation; // activation (string): 'softmax'|'sigmoid';
     // this.optimizer;
@@ -148,9 +150,10 @@ class MkModels {
 
   getMkModelBoundingBox(params) {
     let srcX, srcY, srcWidth, srcHeight;
+    console.log('PARAMS:', params);
     if (!params.image.imageidx.includes(NaN) && !params.image.imageidx[0].includes(NaN) && params.image.imagebag) { // IF background image
-      srcX = params.boundingBoxes2D.x[0][0] * params.ScreenRatio;
-      srcY = (params.boundingBoxes2D.y[0][0] - params.offsettop) * params.ScreenRatio;
+      srcX = params.boundingBoxes3D.x[0][0] * params.ScreenRatio;
+      srcY = (params.boundingBoxes3D.y[0][0] - params.offsettop) * params.ScreenRatio;
       if (Array.isArray(params.image.sizeInches)) {
         srcWidth = Math.round(
           Math.max(...params.image.sizeInches)
@@ -196,7 +199,8 @@ class MkModels {
       srcWidth = srcHeight;
     }
 
-    return { sx: srcX, sy: srcY, sWidth: srcWidth, sHeight: srcHeight };
+    // return { sx: srcX, sy: srcY, sWidth: srcWidth, sHeight: srcHeight };
+    return { sx: this.boundingBoxVisibleCanvas[0], sy: this.boundingBoxVisibleCanvas[1], sWidth: this.boundingBoxVisibleCanvas[2], sHeight: this.boundingBoxVisibleCanvas[3] };
   }
 
   removeItemOnce(arr, idx) {

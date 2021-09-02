@@ -533,6 +533,11 @@ async function addToScene(taskscreen){
 
 	   scene[taskscreen].add(backgroundCube)
 
+       var box = new THREE.BoxHelper(backgroundCube,0xff0000)
+       box.name = backgroundCube.name + 'boxhelper'
+       box.material.needsUpdate = true
+       scene[taskscreen].add(box)
+
        if (IMAGES[taskscreen][classlabel].IMAGES.sizeTHREEJS == undefined){
             IMAGES[taskscreen][classlabel].IMAGES.sizeTHREEJS = rescaleArrayInchestoTHREEJS([IMAGES[taskscreen][classlabel].IMAGES.sizeInches],ENV.THREEJStoInches)
        }

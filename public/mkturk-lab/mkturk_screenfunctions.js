@@ -101,6 +101,7 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 							};
 		
 							let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
+							console.log('mkmBoundingBox:', mkmBoundingBox);
 
 							// mkmBoundingBox SANITY CHECK CODE
 							// console.log(`SAMPLE sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
@@ -228,6 +229,11 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 							};
 		
 							let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
+							console.log('IMAGEMETA:', IMAGEMETA);
+							console.log('mkmBoundingBox Sample:', mkmBoundingBox);
+							console.log('boundingBoxesChoice3JS0:', boundingBoxesChoice3JS.x[0]);
+							console.log('boundingBoxesChoice3JS1:', boundingBoxesChoice3JS.x[1]);
+							console.log('boundingBoxesChoice3JS Y:', boundingBoxesChoice3JS.y[0]);
 
 							// mkmBoundingBox SANITY CHECK CODE
 							// console.log(`SAMPLE sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
@@ -430,6 +436,8 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 		
 		var left = Math.round(scenecenterX/ENV.CanvasRatio - swidth_2d/2)
 		var top = Math.round(scenecenterY/ENV.CanvasRatio-sheight_2d/2)
+
+		mkm.boundingBoxVisibleCanvas = [left, top, swidth_2d, sheight_2d];
 
 		// Transfer 3D Canvas to 2D Canvas
 		VISIBLECANVAS.getContext('2d').drawImage(renderer.domElement,sx,sy,swidth,sheight,left,top,swidth_2d,sheight_2d);	
