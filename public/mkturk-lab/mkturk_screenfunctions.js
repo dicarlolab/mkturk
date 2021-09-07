@@ -229,20 +229,28 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 							};
 		
 							let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
+							console.log('SAMPLE BOUNDINGBOX:', boundingBoxesChoice3D.x);
 							console.log('IMAGEMETA:', IMAGEMETA);
 							console.log('mkmBoundingBox Sample:', mkmBoundingBox);
-							console.log('boundingBoxesChoice3JS0:', boundingBoxesChoice3JS.x[0]);
-							console.log('boundingBoxesChoice3JS1:', boundingBoxesChoice3JS.x[1]);
-							console.log('boundingBoxesChoice3JS Y:', boundingBoxesChoice3JS.y[0]);
+							// console.log('boundingBoxesChoice3JS0:', boundingBoxesChoice3JS.x[0]);
+							// console.log('boundingBoxesChoice3JS1:', boundingBoxesChoice3JS.x[1]);
+							// console.log('boundingBoxesChoice3JS Y:', boundingBoxesChoice3JS.y[0]);
 
 							// mkmBoundingBox SANITY CHECK CODE
 							// console.log(`SAMPLE sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
-							// let visiblecvs = document.getElementById("canvaseyetracker");
-							// let ctx2 = visiblecvs.getContext('2d');
+							// let visiblecvs = document.getElementById('canvasvisiblewebgl');
+							// let ctx2 = visiblecvs.getContext('webgl2');
 							// ctx2.rect(mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight);
 							// ctx2.stroke();
 							
-							ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
+							// ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
+							// ctx.drawImage(VISIBLECANVASWEBGL, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
+							let sx = Math.round(boundingBoxesChoice3D.x[0][0] + IMAGEMETA.THREEJStoPixels) * 2 + 15;
+							let sy = (boundingBoxesChoice3D.y[0][0] + 160) * 2 + 34;
+							let sw = 1100;
+							let sh = sw;
+							console.log('sx:', sx, 'sy:', sy, 'sw:', sw, 'sh:', sh);
+							ctx.drawImage(VISIBLECANVASWEBGL, sx, sy, sw, sh, 0, 0, 224, 224);
 							// console.log(mkm.featureExtractor);
 							let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), mkm.ouputNode);
 							// console.log('featureVec:', featureVec);
@@ -437,10 +445,10 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 		var left = Math.round(scenecenterX/ENV.CanvasRatio - swidth_2d/2)
 		var top = Math.round(scenecenterY/ENV.CanvasRatio-sheight_2d/2)
 
-		mkm.boundingBoxVisibleCanvas = [left, top, swidth_2d, sheight_2d];
+		// mkm.boundingBoxVisibleCanvas = [left, top, swidth_2d, sheight_2d];
 
 		// Transfer 3D Canvas to 2D Canvas
-		VISIBLECANVAS.getContext('2d').drawImage(renderer.domElement,sx,sy,swidth,sheight,left,top,swidth_2d,sheight_2d);	
+		VISIBLECANVAS.getContext('2d').drawImage(renderer.domElement,sx,sy,swidth,sheight,left,top,swidth_2d,sheight_2d);
 		// update bounding boxes if crop bounding box is smaller than the boundingbox 
 		if (s ==0 && (swidth_2d * ENV.CanvasRatio < boundingBoxesChoice3JS.x[j][1]-boundingBoxesChoice3JS.x[j][0])){
 			boundingBoxesChoice3JS.x[j] = [left*ENV.CanvasRatio,(left+swidth_2d)*ENV.CanvasRatio]

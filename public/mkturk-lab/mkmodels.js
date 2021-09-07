@@ -150,36 +150,59 @@ class MkModels {
 
   getMkModelBoundingBox(params) {
     let srcX, srcY, srcWidth, srcHeight;
-    console.log('PARAMS:', params);
+    console.log('PARAMS:', params.boundingBoxes3D);
     if (!params.image.imageidx.includes(NaN) && !params.image.imageidx[0].includes(NaN) && params.image.imagebag) { // IF background image
       srcX = params.boundingBoxes3D.x[0][0] * params.ScreenRatio;
       srcY = (params.boundingBoxes3D.y[0][0] - params.offsettop) * params.ScreenRatio;
-      if (Array.isArray(params.image.sizeInches)) {
+      // if (Array.isArray(params.image.sizeInches)) {
+      //   srcWidth = Math.round(
+      //     Math.max(...params.image.sizeInches)
+      //     * params.ViewportPPI
+      //     * params.ScreenRatio
+      //   );
+      // } else {
+      //   srcWidth = Math.round(
+      //     params.image.sizeInches
+      //     * params.ViewportPPI
+      //     * params.ScreenRatio
+      //   );
+      // }
+
+      if (Array.isArray(params.image.sizeTHREEJS)) {
         srcWidth = Math.round(
-          Math.max(...params.image.sizeInches)
-          * params.ViewportPPI
+          Math.max(...params.image.sizeTHREEJS)
+          * IMAGEMETA.THREEJStoPixels
           * params.ScreenRatio
         );
       } else {
         srcWidth = Math.round(
-          params.image.sizeInches
-          * params.ViewportPPI
+          params.image.sizeTHREEJS
+          * IMAGEMETA.THREEJStoPixels
           * params.ScreenRatio
         );
       }
       srcHeight = srcWidth;
     } else { // NO background image. 
       let offsetX;
-      if (Array.isArray(params.object[Object.keys(params.object)[0]].sizeInches)) {
-        // offsetX = (
-        //   params.object[Object.keys(params.object)[0]].sizeInches[params.idx] * params.ViewportPPI
-        // );
+      // if (Array.isArray(params.object[Object.keys(params.object)[0]].sizeInches)) {
+      //   // offsetX = (
+      //   //   params.object[Object.keys(params.object)[0]].sizeInches[params.idx] * params.ViewportPPI
+      //   // );
+      //   offsetX = (
+      //     Math.max(...params.object[Object.keys(params.object)[0]].sizeInches) * params.ViewportPPI
+      //   );
+      // } else {
+      //   offsetX = (
+      //     params.object[Object.keys(params.object)[0]].sizeInches * params.ViewportPPI
+      //   );
+      // }
+      if (Array.isArray(params.object[Object.keys(params.object)[0]].sizeTHREEJS)) {
         offsetX = (
-          Math.max(...params.object[Object.keys(params.object)[0]].sizeInches) * params.ViewportPPI
+          Math.max(...params.object[Object.keys(params.object)[0]].sizeTHREEJS) * IMAGEMETA.THREEJStoPixels
         );
       } else {
         offsetX = (
-          params.object[Object.keys(params.object)[0]].sizeInches * params.ViewportPPI
+          params.object[Object.keys(params.object)[0]].sizeTHREEJS * IMAGEMETA.THREEJStoPixels
         );
       }
       let offsetY = offsetX;
@@ -199,8 +222,8 @@ class MkModels {
       srcWidth = srcHeight;
     }
 
-    // return { sx: srcX, sy: srcY, sWidth: srcWidth, sHeight: srcHeight };
-    return { sx: this.boundingBoxVisibleCanvas[0], sy: this.boundingBoxVisibleCanvas[1], sWidth: this.boundingBoxVisibleCanvas[2], sHeight: this.boundingBoxVisibleCanvas[3] };
+    return { sx: srcX, sy: srcY, sWidth: srcWidth, sHeight: srcHeight };
+    // return { sx: this.boundingBoxVisibleCanvas[0], sy: this.boundingBoxVisibleCanvas[1], sWidth: this.boundingBoxVisibleCanvas[2], sHeight: this.boundingBoxVisibleCanvas[3] };
   }
 
   removeItemOnce(arr, idx) {
