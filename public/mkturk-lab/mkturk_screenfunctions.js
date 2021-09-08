@@ -229,8 +229,12 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 							};
 		
 							let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
-							console.log('SAMPLE BOUNDINGBOX:', boundingBoxesChoice3D.x);
+							console.log('SAMPLE BOUNDINGBOX X:', boundingBoxesChoice3D.x[0]);
+							console.log('SAMPLE BOUNDINGBOX X:', boundingBoxesChoice3D.x[1]);
+							console.log('SAMPLE BOUNDINGBOX Y:', boundingBoxesChoice3D.y[0]);
+							console.log('SAMPLE BOUNDINGBOX Y:', boundingBoxesChoice3D.y[1]);
 							console.log('IMAGEMETA:', IMAGEMETA);
+							console.log('CAMERAS:', CAMERAS);
 							console.log('mkmBoundingBox Sample:', mkmBoundingBox);
 							// console.log('boundingBoxesChoice3JS0:', boundingBoxesChoice3JS.x[0]);
 							// console.log('boundingBoxesChoice3JS1:', boundingBoxesChoice3JS.x[1]);
@@ -245,12 +249,21 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 							
 							// ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
 							// ctx.drawImage(VISIBLECANVASWEBGL, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
-							let sx = Math.round(boundingBoxesChoice3D.x[0][0] + IMAGEMETA.THREEJStoPixels) * 2 + 15;
-							let sy = (boundingBoxesChoice3D.y[0][0] + 160) * 2 + 34;
-							let sw = 1100;
+							// let sx = Math.round(boundingBoxesChoice3D.x[0][0] + IMAGEMETA.THREEJStoPixels) * 2 + 10;
+							let sx = 900 - 1082/2;
+							let sy = 808 - 1082/2;
+							let sw = 1082;
 							let sh = sw;
 							console.log('sx:', sx, 'sy:', sy, 'sw:', sw, 'sh:', sh);
-							ctx.drawImage(VISIBLECANVASWEBGL, sx, sy, sw, sh, 0, 0, 224, 224);
+							ctx.drawImage(VISIBLECANVAS, sx, sy, sw, sh, 0, 0, 224, 224);
+							let path = `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`;
+							let pathWebgl = `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample_webgl.png`;
+							let canvasDataWebgl = VISIBLECANVASWEBGL.toDataURL();
+							let canvasData = VISIBLECANVAS.toDataURL();
+							storageRef.child('mkturkfiles/mkmodels/').child(path).putString(canvasData, 'data_url');
+							storageRef.child('mkturkfiles/mkmodels/').child(pathWebgl).putString(canvasDataWebgl, 'data_url');
+							
+
 							// console.log(mkm.featureExtractor);
 							let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), mkm.ouputNode);
 							// console.log('featureVec:', featureVec);
@@ -369,6 +382,14 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 			gr[f][j],
 			ims[j]
 		);
+
+		if (taskscreen == 'Sample') {
+			console.log('boundingBox:', boundingBox);
+			console.log('boundingBox:', boundingBox[0]);
+			console.log('boundingBoxCube:', boundingBoxCube);
+			console.log('boundingBoxCube:', boundingBoxCube[0]);
+			console.log('crop:', crop);
+		}
 		
 		if (s==0 && typeof(boundingBox) != "undefined" && typeof(boundingBox[ob[f][j]]) != "undefined" && typeof(boundingBox[ob[f][j]][0]) != "undefined"){
 			
@@ -444,6 +465,11 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 		
 		var left = Math.round(scenecenterX/ENV.CanvasRatio - swidth_2d/2)
 		var top = Math.round(scenecenterY/ENV.CanvasRatio-sheight_2d/2)
+
+		if (taskscreen == 'Sample') {
+			console.log('sx:', sx, 'sy:', sy, 'swidth:', swidth, 'sheight:', sheight);
+			console.log('left:', left, 'top:', top, 'swidth_2d:', swidth_2d, 'sheight_2d:', sheight_2d);
+		}
 
 		// mkm.boundingBoxVisibleCanvas = [left, top, swidth_2d, sheight_2d];
 

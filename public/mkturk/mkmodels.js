@@ -197,6 +197,8 @@ class MkModels {
       srcWidth = srcHeight;
     }
 
+    console.log('sx:', srcX, 'sy:', srcY, 'sWidth:', srcWidth, 'sHeight:', srcHeight);
+
     return { sx: srcX, sy: srcY, sWidth: srcWidth, sHeight: srcHeight };
   }
 
