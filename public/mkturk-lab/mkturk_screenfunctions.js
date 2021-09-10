@@ -100,8 +100,8 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 								boundingBoxes2D: boundingBoxesChoice2D
 							};
 		
-							let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
-							console.log('mkmBoundingBox:', mkmBoundingBox);
+							// let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
+							// console.log('mkmBoundingBox:', mkmBoundingBox);
 
 							// mkmBoundingBox SANITY CHECK CODE
 							// console.log(`SAMPLE sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
@@ -162,7 +162,7 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 								boundingBoxes2D: boundingBoxesChoice2D
 							};
 		
-							let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
+							// let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
 
 							// mkmBoundingBox SANITY CHECK CODE
 							// console.log(`TEST sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
@@ -228,17 +228,22 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 								boundingBoxes2D: boundingBoxesChoice2D
 							};
 		
-							let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
-							console.log('SAMPLE BOUNDINGBOX X:', boundingBoxesChoice3D.x[0]);
-							console.log('SAMPLE BOUNDINGBOX X:', boundingBoxesChoice3D.x[1]);
-							console.log('SAMPLE BOUNDINGBOX Y:', boundingBoxesChoice3D.y[0]);
-							console.log('SAMPLE BOUNDINGBOX Y:', boundingBoxesChoice3D.y[1]);
-							console.log('IMAGEMETA:', IMAGEMETA);
-							console.log('CAMERAS:', CAMERAS);
-							console.log('mkmBoundingBox Sample:', mkmBoundingBox);
-							// console.log('boundingBoxesChoice3JS0:', boundingBoxesChoice3JS.x[0]);
-							// console.log('boundingBoxesChoice3JS1:', boundingBoxesChoice3JS.x[1]);
-							// console.log('boundingBoxesChoice3JS Y:', boundingBoxesChoice3JS.y[0]);
+							// let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
+							let camName = Object.keys(IMAGES['Sample'][label].CAMERAS)[0];
+							
+							let cam = CAMERAS['Sample'][label][camName];
+							
+							let img = IMAGES['Sample'][label];
+							let fov = cam.fov * Math.PI / 180;
+							let heightThreeJS = (
+								2 * Math.tan(fov / 2)
+								* (cam.position.z + img.IMAGES.sizeTHREEJS / 2)
+							);
+							let srcHeight = (
+								img.IMAGES.sizeTHREEJS
+								/ heightThreeJS
+								* VISIBLECANVASWEBGL.height
+							);
 
 							// mkmBoundingBox SANITY CHECK CODE
 							// console.log(`SAMPLE sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
@@ -250,18 +255,28 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 							// ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
 							// ctx.drawImage(VISIBLECANVASWEBGL, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
 							// let sx = Math.round(boundingBoxesChoice3D.x[0][0] + IMAGEMETA.THREEJStoPixels) * 2 + 10;
-							let sx = 900 - 1082/2;
-							let sy = 808 - 1082/2;
-							let sw = 1082;
+
+							let sx = ENV.XGridCenter[CURRTRIAL.samplegridindex] * 2 - srcHeight / 2;
+							let sy = ENV.YGridCenter[CURRTRIAL.samplegridindex] * 2 - srcHeight / 2;
+							let sw = srcHeight;
 							let sh = sw;
 							console.log('sx:', sx, 'sy:', sy, 'sw:', sw, 'sh:', sh);
 							ctx.drawImage(VISIBLECANVAS, sx, sy, sw, sh, 0, 0, 224, 224);
-							let path = `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`;
-							let pathWebgl = `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample_webgl.png`;
-							let canvasDataWebgl = VISIBLECANVASWEBGL.toDataURL();
-							let canvasData = VISIBLECANVAS.toDataURL();
-							storageRef.child('mkturkfiles/mkmodels/').child(path).putString(canvasData, 'data_url');
-							storageRef.child('mkturkfiles/mkmodels/').child(pathWebgl).putString(canvasDataWebgl, 'data_url');
+
+							if (TASK.ModelConfig.saveImages == 3 && CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
+								let path = `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/sample_train_${CURRTRIAL.num}.png`;
+								// let modelCvs = mkm.cvs.toDataURL();
+								storageRef
+									.child('mkturkfiles/mkmodels/')
+									.child(path)
+									.putString(mkm.cvs.toDataURL(), 'data_url');
+							}
+							// let path = `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`;
+							// let pathWebgl = `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample_webgl.png`;
+							// let canvasDataWebgl = VISIBLECANVASWEBGL.toDataURL();
+							// let canvasData = VISIBLECANVAS.toDataURL();
+							// storageRef.child('mkturkfiles/mkmodels/').child(path).putString(canvasData, 'data_url');
+							// storageRef.child('mkturkfiles/mkmodels/').child(pathWebgl).putString(canvasDataWebgl, 'data_url');
 							
 
 							// console.log(mkm.featureExtractor);
@@ -383,13 +398,13 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 			ims[j]
 		);
 
-		if (taskscreen == 'Sample') {
-			console.log('boundingBox:', boundingBox);
-			console.log('boundingBox:', boundingBox[0]);
-			console.log('boundingBoxCube:', boundingBoxCube);
-			console.log('boundingBoxCube:', boundingBoxCube[0]);
-			console.log('crop:', crop);
-		}
+		// if (taskscreen == 'Sample') {
+		// 	console.log('boundingBox:', boundingBox);
+		// 	console.log('boundingBox:', boundingBox[0]);
+		// 	console.log('boundingBoxCube:', boundingBoxCube);
+		// 	console.log('boundingBoxCube:', boundingBoxCube[0]);
+		// 	console.log('crop:', crop);
+		// }
 		
 		if (s==0 && typeof(boundingBox) != "undefined" && typeof(boundingBox[ob[f][j]]) != "undefined" && typeof(boundingBox[ob[f][j]][0]) != "undefined"){
 			
@@ -466,10 +481,10 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 		var left = Math.round(scenecenterX/ENV.CanvasRatio - swidth_2d/2)
 		var top = Math.round(scenecenterY/ENV.CanvasRatio-sheight_2d/2)
 
-		if (taskscreen == 'Sample') {
-			console.log('sx:', sx, 'sy:', sy, 'swidth:', swidth, 'sheight:', sheight);
-			console.log('left:', left, 'top:', top, 'swidth_2d:', swidth_2d, 'sheight_2d:', sheight_2d);
-		}
+		// if (taskscreen == 'Sample') {
+		// 	console.log('sx:', sx, 'sy:', sy, 'swidth:', swidth, 'sheight:', sheight);
+		// 	console.log('left:', left, 'top:', top, 'swidth_2d:', swidth_2d, 'sheight_2d:', sheight_2d);
+		// }
 
 		// mkm.boundingBoxVisibleCanvas = [left, top, swidth_2d, sheight_2d];
 

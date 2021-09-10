@@ -57,7 +57,7 @@ async function addToScene(taskscreen){
         // but it's better to have only one camera in the scene
         // add cameras if visible == 1
 
-    CAMERAS[taskscreen][classlabel]= []
+    CAMERAS[taskscreen][classlabel] = {};
     for (cam in IMAGES[taskscreen][classlabel].CAMERAS) {
       var camera;
 

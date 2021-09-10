@@ -1611,13 +1611,13 @@ if (ENV.BatteryAPIAvailable) {
                 );
                 mkmodelsRef.child(path).putString(cvsData, 'data_url');
               }
-            } else if (TASK.ModelConfig.saveImages == 2) {
+            } else if (TASK.ModelConfig.saveImages == 2 || TASK.ModelConfig.saveImages == 3) {
               let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
               let cvsData = mkm.cvs.toDataURL();
               let path = (
                 (currchoice == CURRTRIAL.correctitem) 
-                ? `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_correct.png`
-                : `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_incorrect.png`
+                ? `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_correct_yTrue-${CURRTRIAL.correctitem}_yPred-${currchoice}.png`
+                : `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_incorrect_yTrue-${CURRTRIAL.correctitem}_yPred-${currchoice}.png`
               );
               // if (currchoice != CURRTRIAL.correctitem) {
               //   let path = (
@@ -2150,6 +2150,13 @@ if (ENV.BatteryAPIAvailable) {
     ) {
       return;
     }//IF saved all images
+
+    if (
+      TASK.Species == 'model'
+      && CURRTRIAL.num >= TQS.samplebag_indices.length - 1
+    ) {
+      return;
+    }
 
     // Run automator only after everything is saved
     if (TASK.Automator != 0) {
