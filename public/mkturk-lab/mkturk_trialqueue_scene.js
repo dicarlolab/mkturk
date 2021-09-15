@@ -370,14 +370,14 @@ selectSampleImage(SampleBucket, SamplingStrategy){
 	}
 	else if (SamplingStrategy == 'uniform_without_replacement') {
 		let randIdx;
+		let numSamples = 0;
+		for (let i = 0; i < IMAGES['Sample'].length; i++) {
+			numSamples += IMAGES['Sample'][i].nimages;
+		}
 		if (
 			TASK.Species == 'model'
 			&& numSamples - SampleBucket.length < TASK.ModelConfig.trainIdx
 		) {
-			let numSamples = 0;
-			for (let i = 0; i < IMAGES['Sample'].length; i++) {
-				numSamples += IMAGES['Sample'][i].nimages;
-			}
 			let label = SampleBucket.length % IMAGES['Sample'].length;
 			do {
 				randIdx = Math.floor((SampleBucket.length) * Math.random());

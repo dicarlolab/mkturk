@@ -280,8 +280,11 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 							
 
 							// console.log(mkm.featureExtractor);
+							let hello = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), "module_apply_default/resnet_v2_50/block4/unit_3/bottleneck_v2/conv2/Relu");
+							console.log('last conv:', hello);
 							let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), mkm.ouputNode);
-							// console.log('featureVec:', featureVec);
+							console.log('featureVec:', featureVec);
+							console.log('mkm.outputNode:', mkm.outputNode);
 
 							featureVec = featureVec.reshape(mkm.inputShape);
 							if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {

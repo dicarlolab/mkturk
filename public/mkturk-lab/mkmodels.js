@@ -28,6 +28,7 @@ class MkModels {
 
   async loadFeatureExtractor(url, tfhub) {
     this.featureExtractor = await tf.loadGraphModel(url, tfhub);
+    console.log('this.featureExtractor:', this.featureExtractor);
   }
 
   normalizePixelValues(canvas) {
