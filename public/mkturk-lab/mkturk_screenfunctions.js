@@ -405,7 +405,9 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 		var [objFilterSingleFrame, imgFilterSingleFrame] = updateFilterSingleFrame(taskscreen,ob[f][j],id[f][j],
 			fr[f],
 			gr[f][j])
-			
+
+		console.log(taskscreen,objFilterSingleFrame)
+		
 	  	VISIBLECANVAS.getContext('2d').filter = objFilterSingleFrame;
 
 		// 3D Canvas coordinates	
@@ -1406,12 +1408,11 @@ function defineImageGrid(ngridpoints, gridspacing,xoffset,yoffset){
 }//FUNCTION defineImageGrid
 
 function updateFilterSingleFrame(taskscreen,classlabel,index,movieframe,gridindex){
-
+  // ======= OBJECT FILTERS
+	var objFilterSingleFrame = {blur: 0, brightness: 100, contrast: 100, grayscale: 0, huerotate: 0, invert: 0, opacity: 100,
+		saturate: 100, sepia: 0}
 if (typeof(IMAGES[taskscreen][classlabel].OBJECTFILTERS) != "undefined"){
-    // ======= OBJECT FILTERS
-    var objFilterSingleFrame = {blur: 0, brightness: 100, contrast: 100, grayscale: 0, huerotate: 0, invert: 0, opacity: 100,
-    saturate: 100, sepia: 0}
-
+  
     var nextblur = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.blur,index,0)
 	if (Number.isInteger(movieframe) && nextblur != undefined){
 		nextblur = chooseArrayElement(nextblur,movieframe,nextblur.length-1)
@@ -1489,18 +1490,18 @@ if (typeof(IMAGES[taskscreen][classlabel].OBJECTFILTERS) != "undefined"){
         objFilterSingleFrame.sepia = nextsepia
     }
 
-    var objFilterstr = 'blur(' + objFilterSingleFrame.blur + 'px) ' + 'brightness(' + objFilterSingleFrame.brightness + '%) ' + 
+}//IF OBJECTFILTERS defined
+ var objFilterstr = 'blur(' + objFilterSingleFrame.blur + 'px) ' + 'brightness(' + objFilterSingleFrame.brightness + '%) ' + 
     'contrast(' + objFilterSingleFrame.contrast + '%) ' + 'grayscale(' + objFilterSingleFrame.grayscale + '%) ' + 
     'hue-rotate(' + objFilterSingleFrame.huerotate + 'deg) ' + 'invert(' + objFilterSingleFrame.invert + '%) ' + 
     'opacity(' + objFilterSingleFrame.opacity + '%) ' + 'saturate(' + objFilterSingleFrame.saturate + '%) ' +
     'sepia(' + objFilterSingleFrame.sepia + '%)'
-}//IF OBJECTFILTERS defined
     
+//===== 2D IMAGE FILTERS 
+var imgFilterSingleFrame = {blur: 0, brightness: 100, contrast: 100, grayscale: 0, huerotate: 0, invert: 0, opacity: 100,
+	saturate: 100, sepia: 0}
 
 if (typeof(IMAGES[taskscreen][classlabel].IMAGEFILTERS) != "undefined"){
-    //===== 2D IMAGE FILTERS 
-    var imgFilterSingleFrame = {blur: 0, brightness: 100, contrast: 100, grayscale: 0, huerotate: 0, invert: 0, opacity: 100,
-        saturate: 100, sepia: 0}
     
     var nextblur = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur,index,0)
 	if (Number.isInteger(movieframe) && nextblur != undefined){
@@ -1579,13 +1580,12 @@ if (typeof(IMAGES[taskscreen][classlabel].IMAGEFILTERS) != "undefined"){
         imgFilterSingleFrame.sepia = nextsepia
     }
 
-    var imgFilterstr = 'blur(' + imgFilterSingleFrame.blur + 'px) ' + 'brightness(' + imgFilterSingleFrame.brightness + '%) ' + 
+}//IF IMAGEFILTERS defined
+   var imgFilterstr = 'blur(' + imgFilterSingleFrame.blur + 'px) ' + 'brightness(' + imgFilterSingleFrame.brightness + '%) ' + 
     'contrast(' + imgFilterSingleFrame.contrast + '%) ' + 'grayscale(' + imgFilterSingleFrame.grayscale + '%) ' + 
     'hue-rotate(' + imgFilterSingleFrame.huerotate + 'deg) ' + 'invert(' + imgFilterSingleFrame.invert + '%) ' + 
     'opacity(' + imgFilterSingleFrame.opacity + '%) ' + 'saturate(' + imgFilterSingleFrame.saturate + '%) ' +
     'sepia(' + imgFilterSingleFrame.sepia + '%)'
-
-}//IF IMAGEFILTERS defined
 
     return [objFilterstr,imgFilterstr]
 }
