@@ -419,7 +419,7 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
         );
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     return { status: 'error', message: error.message };
   }
 
@@ -515,7 +515,7 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
           );
         });
     })
-  } catch (error) {
+  } catch (error: any) {
     return { status: 'error', message: error.message };
   }
 
@@ -549,6 +549,18 @@ export const sayHello = functions.https.onRequest((req, res) => {
   res.send({aid: aid, hid: hid, wid: wid});
   res.json({aid: aid, hid: hid, wid: wid});
   return;
+});
+
+export const testOnRequest = functions.https.onRequest((req, res) => {
+  let tmp;
+  tmp = 'testOnRequest';
+
+  res.send({tmp: tmp});
+  return;
+});
+
+export const testOnCall = functions.https.onCall(() => {
+  return 'testOnCall';
 });
 
 export const submitSurvey = functions.https.onCall(async (data: any) => {
@@ -622,7 +634,7 @@ export const submitSurvey = functions.https.onCall(async (data: any) => {
         '[submitSurvey] More than one document with the same workerId'
       );
     }
-  } catch (e) {
+  } catch (e: any) {
     return { status: 500, message: e.message };
   }
 
@@ -692,7 +704,7 @@ export const submitAssignment = functions.https.onCall(async (data: any) => {
         '[submitAssignment] More than one document with the same workerId'
       );
     }
-  } catch (error) {
+  } catch (error: any) {
     return { status: 'error', message: error.message };
   }
 });
