@@ -525,6 +525,7 @@ async function addToScene(taskscreen){
         	var material = new THREE.MeshBasicMaterial(
             {map: new THREE.Texture(),color: ""})
         }
+
         material = Array(6).fill(material)
 
 	   var backgroundCube = new THREE.Mesh(boxGeometry,material)
@@ -1000,22 +1001,19 @@ function updateObjectSingleFrame(taskscreen,objects,box,objPosition,objRotation,
 function updateImageSingleFrame(taskscreen,backgroundCube,cubeTexture,imsize,camera,scenecenterX,scenecenterY){
     // cubeTexture : ['zfront','zback','ytop','ybottom','xright','xleft']
     var textureOrder = [4,5,2,3,0,1]
+   
     if (cubeTexture != undefined){
-
+        var transparentFace = new THREE.MeshBasicMaterial({transparent:true, opacity:0, side:THREE.BackSide})
         textureOrder.map(function(t,index){
-            if (cubeTexture[t] == "" || cubeTexture[t] == undefined){ 
-                backgroundCube.material[index].color = new THREE.Color(TASK.BackgroundColor2D)
-                backgroundCube.material[index].transparent = true
-                backgroundCube.material[index].opacity = 0
-                backgroundCube.material[index].side = THREE.BackSide
-            } else{
+            if (cubeTexture[t] != "" & typeof(cubeTexture[t])!="undefined"){
                 cubeTexture[t].wrapT = THREE.ClampToEdgeWrapping
-                backgroundCube.material[index].opacity = 1
                 backgroundCube.material[index].map = cubeTexture[t]
                 backgroundCube.material[index].side = THREE.BackSide
+            } else{
+                backgroundCube.material[index] = transparentFace
             }
         })
-        
+    
         //backgroundCube size
         backgroundCube.scale.set(1,1,1)
         backgroundCube.scale.set(imsize,imsize,imsize)
