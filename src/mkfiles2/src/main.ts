@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, collection, Query } from "firebase/firestore";
+import { getFirestore, doc, collection, Query, query, where } from "firebase/firestore";
 import { getStorage, StorageReference, ref } from "firebase/storage";
 import { getAuth, GoogleAuthProvider, getRedirectResult, signInWithRedirect } from "firebase/auth";
 import { getFunctions, httpsCallable } from "firebase/functions";
@@ -219,7 +219,7 @@ qryLocSelc!.addEventListener("change", ev => {
       fs.style.visibility = "visible";
       ki0.style.visibility = "visible";
       ki1.style.visibility = "visible";
-      ki2.style.visibility = "visible";
+      ki2.style.visibility = "hidden";
       goBtn.style.visibility = "visible";
       plotX.style.visibility = "hidden";
       plotY.style.visibility = "hidden";
@@ -232,7 +232,7 @@ qryLocSelc!.addEventListener("change", ev => {
       agentTypeCurDate.setAttribute("class", "field-options");
       agentTypeCurDate.setAttribute("value", "agentTypeCurDate");
       agentTypeCurDate.setAttribute("selected", "true");
-      agentTypeCurDate.textContent = "Agent & Doctype & CurrentDate";
+      agentTypeCurDate.textContent = "Agent & CurrentDate";
 
       let fieldSelectorMkturk 
         = document.querySelector("#field-selector") as HTMLSelectElement;
@@ -460,8 +460,7 @@ fieldSelector?.addEventListener("change", ev => {
 
     case "agentTypeCurDate":
       ki0.setAttribute("placeholder", "Agent");
-      ki1.setAttribute("placeholder", "Doctype");
-      ki2.setAttribute(
+      ki1.setAttribute(
         "placeholder", "CurrentDate (e.g. 04/17/2019; +-7)"
       );
       plotX.style.visibility = "hidden";
@@ -497,7 +496,7 @@ queryForm?.addEventListener("submit", async ev => {
 
   let queryParam: { field: string, keyword: string}[] = [];
   let queryStr: string = "";
-  let query: Query;
+  let queryResult: Query;
 
 
   switch(qryLoc) {
@@ -508,18 +507,41 @@ queryForm?.addEventListener("submit", async ev => {
         console.error("No query arguments!");
         alert("No query arguments!");
       }
-      queryStr = "db.collection('marmosets')" + mkq.mkquery(queryParam);
+      queryResult = query(collection(db, 'marmosets'), where(queryParam[0].field, '==', queryParam[0].keyword));
+      // queryStr = "db.collection('marmosets')" + mkq.mkquery(queryParam);
+      // queryStr = "query(collection(db, 'marmosets')"
+      queryStr = `query(collection(db, 'marmosets'), ${mkq.mkquery(queryParam)})`;
       break;
 
     case "mkturkdata":
       if (k0) {
         queryParam.push({ field: "Agent", keyword: k0});
       }
+      // if (k1) {
+      //   queryParam.push({ field: "Doctype", keyword: k1 });
+      // }
       if (k1) {
-        queryParam.push({ field: "Doctype", keyword: k1 });
+        queryParam.push({ field: "CurrentDate", keyword: k1 });
       }
-      if (k2) {
-        queryParam.push({ field: "CurrentDate", keyword: k2 });
+
+      if (queryParam.length == 0) {
+        console.error('No query arguments!');
+        alert('No query arguments!');
+      } else if (queryParam.length == 1) {
+        queryResult = query(collection(db, 'mkturkdata'), where(queryParam[0].field, '==', queryParam[0].keyword));
+      } else if (queryParam.length == 2) {
+        queryResult = query(
+          collection(db, 'mkturkdata'),
+          where(queryParam[0].field, '==', queryParam[0].keyword),
+          where(queryParam[1].field, '==', queryParam[1].keyword)
+        );
+      } else if (queryParam.length == 3) {
+        queryResult = query(
+          collection(db, 'mkturkdata'),
+          where(queryParam[0].field, '==', queryParam[0].keyword),
+          where(queryParam[1].field, '==', queryParam[1].keyword),
+          where(queryParam[2].field, '==', queryParam[2].keyword)
+        );
       }
 
       if (queryParam.length > 0) {
@@ -567,9 +589,11 @@ queryForm?.addEventListener("submit", async ev => {
   }
   
 
-  if (queryStr.startsWith('db.collection')) {
-    query = eval(queryStr);
-    let ret = mkq.decodeQuery(query);
+  if (queryStr.startsWith('query')) {
+    console.log(queryStr);
+    // query = eval(queryStr);
+    
+    let ret = mkq.decodeQuery(queryResult!);
     ret.then(docs => {
       mkf.listFirestoreDocs(docs, qryLoc!);
       if (rfidToggle.checked) {

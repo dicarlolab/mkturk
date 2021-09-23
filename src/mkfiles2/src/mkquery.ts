@@ -112,7 +112,8 @@ export class Mkquery {
     else {
       let queryStr: string;
 
-      queryStr = ".where(" + `"${field}"` + ", '==', " + `"${keyword}"` + ")";
+      // queryStr = ".where(" + `"${field}"` + ", '==', " + `"${keyword}"` + ")";
+      queryStr = `where('${field}', '==', '${keyword}')`;
 
       return queryStr;
     }
