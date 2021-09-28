@@ -983,17 +983,77 @@ function updateObjectSingleFrame(taskscreen,objects,box,objPosition,objRotation,
     }
     
     var bbox = new THREE.Box3();
-    bbox.setFromObject( box );
+    // bbox.setFromObject( box );
+    bbox.setFromObject(objects);
+
+    let vertices2 = [];
+    let vertices = [
+      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 0),
+      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 1),
+      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 2),
+      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 3),
+      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 4),
+      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 5),
+      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 6),
+      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 7),
+    ];
+
+    vertices.forEach(vertex => {
+      vertex.project(camera);
+      vertices2.push(new THREE.Vector2(vertex.x, vertex.y));
+    });
+
+    let minVec = vertices2[0].clone();
+    let maxVec = vertices2[0].clone();
+
+    for (let i = 0; i < vertices.length; i++) {
+      minVec.min(vertices[i]);
+      maxVec.max(vertices[i]);
+    }
+
+    minVec.x = (minVec.x + 1) / 2 * renderer.getContext().canvas.width;
+    minVec.y = (-minVec.y + 1) / 2 * renderer.getContext().canvas.height;
+    maxVec.x = (maxVec.x + 1) / 2 * renderer.getContext().canvas.width;
+    maxVec.y = (-maxVec.y + 1) / 2 * renderer.getContext().canvas.height;
 
     var twodcoord_max = toScreenPosition(bbox.max,camera)
     var twodcoord_min = toScreenPosition(bbox.min,camera)
 
-    var boundingBox = {
-    	"x": [twodcoord_min.x + (scenecenterX - renderer.domElement.width/2),
-            	twodcoord_max.x + (scenecenterX - renderer.domElement.width/2)].sort(function(a, b){return a-b}),
-    	"y": [twodcoord_max.y + CANVAS.offsettop + (scenecenterY - renderer.domElement.height/2),
-				twodcoord_min.y + CANVAS.offsettop + (scenecenterY - renderer.domElement.height/2)].sort(function(a, b){return a-b})
-    }
+    // var boundingBox = {
+    // 	"x": [twodcoord_min.x + (scenecenterX - renderer.domElement.width/2),
+    //         	twodcoord_max.x + (scenecenterX - renderer.domElement.width/2)].sort(function(a, b){return a-b}),
+    // 	"y": [twodcoord_max.y + CANVAS.offsettop + (scenecenterY - renderer.domElement.height/2),
+		// 		twodcoord_min.y + CANVAS.offsettop + (scenecenterY - renderer.domElement.height/2)].sort(function(a, b){return a-b})
+    // }
+
+    let left = Math.round(
+      scenecenterX / ENV.CanvasRatio
+      - renderer.domElement.width / TASK.THREEJSRenderRatio / ENV.CanvasRatio / 2
+    );
+
+    let top = Math.round(
+      scenecenterY / ENV.CanvasRatio
+      - renderer.domElement.height / TASK.THREEJSRenderRatio / ENV.CanvasRatio / 2
+    );
+
+    let boundingBox = {
+      x: [
+        (minVec.x / TASK.THREEJSRenderRatio / ENV.CanvasRatio + left) * ENV.CanvasRatio,
+        (maxVec.x / TASK.THREEJSRenderRatio / ENV.CanvasRatio + left) * ENV.CanvasRatio
+      ].sort((a, b) => { return a - b }),
+      y: [
+        (maxVec.y / TASK.THREEJSRenderRatio / ENV.CanvasRatio + top) * ENV.CanvasRatio + CANVAS.offsettop,
+        (minVec.y / TASK.THREEJSRenderRatio / ENV.CanvasRatio + top) * ENV.CanvasRatio + CANVAS.offsettop
+      ].sort((a, b) => { return a - b })
+    };
+
+    // var boundingBox = {
+    //     x: [
+    //         ENV.CanvasRatio 
+    //         * (twodcoord_min / TASK.THREEJSRenderRatio / ENV.CanvasRatio + left),
+    //         (twodcoord_max)
+    //     ]
+    // }
 
     return [objPosition,objSize,boundingBox]
 }//FUNCTION updateObjectSingleFrame

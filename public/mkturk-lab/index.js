@@ -1377,7 +1377,11 @@ if (ENV.BatteryAPIAvailable) {
         FLAGS.waitingforTouches = 0;
 
         //Determine number of clips fixated
-       	var nclipshown = CURRTRIAL.sequenceclip[frame.shown.lastIndexOf(1)]
+       	// var nclipshown = CURRTRIAL.sequenceclip[frame.shown.lastIndexOf(1)]
+        var nclipshown = (
+          (frame.shown.lastIndexOf(1) !== undefined) 
+          ? CURRTRIAL.sequenceclip[frame.shown.lastIndexOf(1)] : 0
+        );
        	if (typeof(race_return.type) == 'undefined') {
        		nclipshown++
        	}//IF held until completeion, count all i clips; otw only count i-1
@@ -1454,8 +1458,11 @@ if (ENV.BatteryAPIAvailable) {
           || CURRTRIAL.sequencetaskscreen[f] != CURRTRIAL.sequencetaskscreen[f - 1]
           || CURRTRIAL.sequenceclip[f] != CURRTRIAL.sequenceclip[f - 1]
         ) {
-          CURRTRIAL.tsequencedesiredclip.push(CURRTRIAL.tsequence[f])
-          if (f > CURRTRIAL.tsequenceactual.length - 1) { // IF clip not shown
+          CURRTRIAL.tsequencedesiredclip.push(CURRTRIAL.tsequence[f]);
+          if (
+            f > CURRTRIAL.tsequenceactual.length - 1
+            || CURRTRIAL.tsequenceactual[f] === undefined
+          ) { // IF clip not shown OR tsequenceactual[f] undefined
             CURRTRIAL.tsequenceactualclip.push(-1);
           } else {
             CURRTRIAL.tsequenceactualclip.push(CURRTRIAL.tsequenceactual[f]);
@@ -1766,10 +1773,14 @@ if (ENV.BatteryAPIAvailable) {
     	}
     	else {
     		// exponential reward = 1*exp(a*(nseen - nmin)), where a = ln(rmax)/(nmax-nmin)
-    		CURRTRIAL.nreward = Math.exp(
-    			( Math.log1p(TASK.NRewardMax)/(ENV.NRSVPMax - ENV.NRSVPMin) ) * (nclipshown - ENV.NRSVPMin) )
+    		// CURRTRIAL.nreward = Math.exp(
+    		// 	( Math.log1p(TASK.NRewardMax)/(ENV.NRSVPMax - ENV.NRSVPMin) ) * (nclipshown - ENV.NRSVPMin) )
+        CURRTRIAL.nreward = Math.exp(
+          Math.log1p(TASK.NRewardMax)/(ENV.NRSVPMax - ENV.NRSVPMin)
+          * (nclipshown - ENV.NRSVPMin)
+        );
 
-    		CURRTRIAL.nreward = Math.round(CURRTRIAL.nreward)
+    		CURRTRIAL.nreward = Math.round(CURRTRIAL.nreward);
     	}
     }//IF NRSVP && reward based on nclips fixated before break
     else if (
