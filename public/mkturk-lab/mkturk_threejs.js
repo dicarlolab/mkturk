@@ -76,16 +76,95 @@ async function addToScene(taskscreen){
             VISIBLECANVASWEBGL.height / -2,
             IMAGES[taskscreen][classlabel].CAMERAS[cam].near,
             IMAGES[taskscreen][classlabel].CAMERAS[cam].far
-          )
+          );
+          console.log('camera:', camera);
         }
                                 
                // var camera = new THREE.OrthographicCamera(VISIBLECANVASWEBGL.width/-2, VISIBLECANVASWEBGL.width/2, VISIBLECANVASWEBGL.height/2,VISIBLECANVASWEBGL.height/-2,
                              //  IMAGES[taskscreen][classlabel].CAMERAS[cam].near,IMAGES[taskscreen][classlabel].CAMERAS[cam].far)
 
-                camera.name = "cam"+classlabel
-                scene[taskscreen].add(camera)
+        camera.name = "cam"+classlabel
+        scene[taskscreen].add(camera)
 
-                var durationMS = chooseArrayElement(IMAGES[taskscreen][classlabel].durationMS,i,0)
+        var durationMS = chooseArrayElement(IMAGES[taskscreen][classlabel].durationMS,i,0);
+        // for (let i = 0; i < IMAGES[taskscreen][classlabel].nimages; i++) {
+        //   // FOR CAMERA position (THREEJS coordinate)
+        //   if (Array.isArray(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[i])) {
+        //     IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[i] = (
+        //       interpParam(
+        //         IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[i],
+        //         "continuous",
+        //         durationMS,
+        //         framerate
+        //       )
+        //     );
+        //     var cameraFirstposition_x = (
+        //       IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[0][0]
+        //     );
+        //   } else { // IF isArray CAMERAS.position.x
+        //     var cameraFirstposition_x = (
+        //       IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[0]
+        //     );
+        //   }
+
+        //   if (Array.isArray(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y[i])) {
+        //     IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y[i] = (
+        //       interpParam(
+        //         IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y[i],
+        //         "continuous",
+        //         durationMS,
+        //         framerate
+        //       )
+        //     );
+        //     var cameraFirstposition_y = (
+        //       IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y[0][0]
+        //     );
+        //   } else {
+        //     var cameraFirstposition_y = (
+        //       IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y[0]
+        //     );
+        //   }
+
+        //   if (Array.isArray(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z[i])) {
+        //     IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z[i] = (
+        //       interpParam(
+        //         IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z[i],
+        //         'continuous',
+        //         durationMS,
+        //         framerate
+        //       )
+        //     );
+        //     var cameraFirstposition_z = (
+        //       IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z[0][0]
+        //     );
+        //   } else {
+        //     var cameraFirstposition_z = (
+        //       IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z[0]
+        //     );
+        //   }
+
+        //   /**
+        //    * FOR LOOKAT target
+        //    * Previous scenefile had targetInches. This number is transformed into THREEJS unit
+        //    * New scenefile will only have THREEJS unit or MkTurk will treat all numbers as THREEJS units
+        //    */
+
+        //   if (IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS === undefined) {
+        //     IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS = {};
+        //     for (keys in IMAGES[taskscreen][classlabel].CAMERAS[cam].targetInches) {
+        //       IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS[keys] = (
+        //         rescaleArrayInchestoTHREEJS(
+        //           IMAGES[taskscreen][classlabel].CAMERAS[cam].targetInches[keys],
+        //           ENV.THREEJStoInches
+        //         )
+        //       );
+        //     }
+        //   }
+
+        //   if (Array.isArray(IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.x[i])) {
+
+        //   }
+        // }
 
                 for (var i=0; i<IMAGES[taskscreen][classlabel].nimages; i++) {
                     //FOR CAMERA position (THREEJS coordinate)
@@ -147,6 +226,8 @@ async function addToScene(taskscreen){
                         var cameraFirsttarget_z = IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.z[0]
                     }
                 }
+
+                console.log('campos:', cameraFirstposition_x,cameraFirstposition_y,cameraFirstposition_z);
 
                 camera.position.set(cameraFirstposition_x,cameraFirstposition_y,cameraFirstposition_z)
                 //camera.lookAt(IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.x[0],IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.y[0],IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.z[0])
@@ -763,7 +844,8 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex,c
 	            chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.x,index,0),
 	            chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.y,index,0),
 	            chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.z,index,0)
-	        ]
+	        ];
+          console.log('nextobjPosition:', nextobjPosition);
 	        if (Number.isInteger(movieframe)){
 	            nextobjPosition = [
 	                chooseArrayElement(nextobjPosition[0],movieframe,nextobjPosition[0].length-1),
@@ -952,6 +1034,7 @@ function updateObjectSingleFrame(taskscreen,objects,box,objPosition,objRotation,
 
 //====TRANSLATION
     objects.position.set(objPosition[0],objPosition[1],objPosition[2])
+    console.log('objPosition:', objPosition[0],objPosition[1],objPosition[2]);
 
 //==== SCALE
     //set size from parameters file
@@ -986,16 +1069,23 @@ function updateObjectSingleFrame(taskscreen,objects,box,objPosition,objRotation,
     // bbox.setFromObject( box );
     bbox.setFromObject(objects);
 
+    console.log('BOX:', box);
+    console.log('OBJECTS:', objects);
+
+    let bbbox = new THREE.BoxHelper(objects, 0xff0000);
+    console.log('BBBOX', bbbox);
+    bbbox.update();
+
     let vertices2 = [];
     let vertices = [
-      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 0),
-      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 1),
-      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 2),
-      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 3),
-      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 4),
-      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 5),
-      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 6),
-      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 7),
+      new THREE.Vector3().fromBufferAttribute(bbbox.geometry.attributes.position, 0),
+      new THREE.Vector3().fromBufferAttribute(bbbox.geometry.attributes.position, 1),
+      new THREE.Vector3().fromBufferAttribute(bbbox.geometry.attributes.position, 2),
+      new THREE.Vector3().fromBufferAttribute(bbbox.geometry.attributes.position, 3),
+      new THREE.Vector3().fromBufferAttribute(bbbox.geometry.attributes.position, 4),
+      new THREE.Vector3().fromBufferAttribute(bbbox.geometry.attributes.position, 5),
+      new THREE.Vector3().fromBufferAttribute(bbbox.geometry.attributes.position, 6),
+      new THREE.Vector3().fromBufferAttribute(bbbox.geometry.attributes.position, 7),
     ];
 
     vertices.forEach(vertex => {
@@ -1015,6 +1105,9 @@ function updateObjectSingleFrame(taskscreen,objects,box,objPosition,objRotation,
     minVec.y = (-minVec.y + 1) / 2 * renderer.getContext().canvas.height;
     maxVec.x = (maxVec.x + 1) / 2 * renderer.getContext().canvas.width;
     maxVec.y = (-maxVec.y + 1) / 2 * renderer.getContext().canvas.height;
+
+    console.log('maxVec:', maxVec);
+    console.log('minVec:', minVec);
 
     var twodcoord_max = toScreenPosition(bbox.max,camera)
     var twodcoord_min = toScreenPosition(bbox.min,camera)
@@ -1046,6 +1139,8 @@ function updateObjectSingleFrame(taskscreen,objects,box,objPosition,objRotation,
         (minVec.y / TASK.THREEJSRenderRatio / ENV.CanvasRatio + top) * ENV.CanvasRatio + CANVAS.offsettop
       ].sort((a, b) => { return a - b })
     };
+
+    console.log('boundingBox:', boundingBox);
 
     // var boundingBox = {
     //     x: [
@@ -1083,15 +1178,69 @@ function updateImageSingleFrame(taskscreen,backgroundCube,cubeTexture,imsize,cam
         var bbox = new THREE.Box3();
         bbox.setFromObject( backgroundCube );
 
-        var twodcoord_max = toScreenPosition(bbox.max,camera)
-        var twodcoord_min = toScreenPosition(bbox.min,camera)
+        // console.log('backgroundCube:', backgroundCube);
+        // console.log('bbox:', bbox);
 
-        var boundingBoxCube = {
-            "x": [twodcoord_min.x + (scenecenterX - renderer.domElement.width/2),
-                    twodcoord_max.x + (scenecenterX - renderer.domElement.width/2)].sort(function(a, b){return a-b}),
-            "y": [twodcoord_max.y + CANVAS.offsettop + (scenecenterY - renderer.domElement.height/2),
-                    twodcoord_min.y + CANVAS.offsettop + (scenecenterY - renderer.domElement.height/2)].sort(function(a, b){return a-b})
+        let vertices2 = [];
+        let vertices = [
+          new THREE.Vector3().fromBufferAttribute(backgroundCube.geometry.attributes.position, 0),
+          new THREE.Vector3().fromBufferAttribute(backgroundCube.geometry.attributes.position, 1),
+          new THREE.Vector3().fromBufferAttribute(backgroundCube.geometry.attributes.position, 2),
+          new THREE.Vector3().fromBufferAttribute(backgroundCube.geometry.attributes.position, 3),
+          new THREE.Vector3().fromBufferAttribute(backgroundCube.geometry.attributes.position, 4),
+          new THREE.Vector3().fromBufferAttribute(backgroundCube.geometry.attributes.position, 5),
+          new THREE.Vector3().fromBufferAttribute(backgroundCube.geometry.attributes.position, 6),
+          new THREE.Vector3().fromBufferAttribute(backgroundCube.geometry.attributes.position, 7),
+        ];
+
+        vertices.forEach(vertex => {
+          vertex.project(camera);
+          vertices2.push(new THREE.Vector2(vertex.x, vertex.y));
+        });
+    
+        let minVec = vertices2[0].clone();
+        let maxVec = vertices2[0].clone();
+    
+        for (let i = 0; i < vertices.length; i++) {
+          minVec.min(vertices[i]);
+          maxVec.max(vertices[i]);
         }
+    
+        minVec.x = (minVec.x + 1) / 2 * renderer.getContext().canvas.width;
+        minVec.y = (-minVec.y + 1) / 2 * renderer.getContext().canvas.height;
+        maxVec.x = (maxVec.x + 1) / 2 * renderer.getContext().canvas.width;
+        maxVec.y = (-maxVec.y + 1) / 2 * renderer.getContext().canvas.height;
+
+        let left = Math.round(
+          scenecenterX / ENV.CanvasRatio
+          - renderer.domElement.width / TASK.THREEJSRenderRatio / ENV.CanvasRatio / 2
+        );
+    
+        let top = Math.round(
+          scenecenterY / ENV.CanvasRatio
+          - renderer.domElement.height / TASK.THREEJSRenderRatio / ENV.CanvasRatio / 2
+        );
+    
+        var boundingBoxCube = {
+          x: [
+            (minVec.x / TASK.THREEJSRenderRatio / ENV.CanvasRatio + left) * ENV.CanvasRatio,
+            (maxVec.x / TASK.THREEJSRenderRatio / ENV.CanvasRatio + left) * ENV.CanvasRatio
+          ].sort((a, b) => { return a - b }),
+          y: [
+            (maxVec.y / TASK.THREEJSRenderRatio / ENV.CanvasRatio + top) * ENV.CanvasRatio + CANVAS.offsettop,
+            (minVec.y / TASK.THREEJSRenderRatio / ENV.CanvasRatio + top) * ENV.CanvasRatio + CANVAS.offsettop
+          ].sort((a, b) => { return a - b })
+        };
+
+        // var twodcoord_max = toScreenPosition(bbox.max,camera)
+        // var twodcoord_min = toScreenPosition(bbox.min,camera)
+
+        // var boundingBoxCube = {
+        //     "x": [twodcoord_min.x + (scenecenterX - renderer.domElement.width/2),
+        //             twodcoord_max.x + (scenecenterX - renderer.domElement.width/2)].sort(function(a, b){return a-b}),
+        //     "y": [twodcoord_max.y + CANVAS.offsettop + (scenecenterY - renderer.domElement.height/2),
+        //             twodcoord_min.y + CANVAS.offsettop + (scenecenterY - renderer.domElement.height/2)].sort(function(a, b){return a-b})
+        // }
 
     }
     return boundingBoxCube

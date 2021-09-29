@@ -81,7 +81,7 @@ async function addToScene(taskscreen){
         // Do the math // when camera is positioned at (0,0,10) and looks at (0,0,0)
                 // camera.position.set(10,10,10)
                 // camera.lookAt(cameraLookAtOriginByDefault)
-                console.log(campos);
+                console.log('campos:', campos);
                 camera.position.set(campos[0], campos[1], campos[2]);
                 // camera.position.set(0, 0, 10);
                 camera.lookAt(cameraLookAtOriginByDefault);
@@ -635,7 +635,8 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
 	            chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.x,index,0),
 	            chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.y,index,0),
 	            chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.z,index,0)
-	        ]
+	        ];
+            console.log('nextobjPosition:', nextobjPosition);
 	        if (Number.isInteger(movieframe)){
 	            nextobjPosition = [
 	                chooseArrayElement(nextobjPosition[0],movieframe,nextobjPosition[0].length-1),
@@ -792,6 +793,7 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
 
 //====TRANSLATION
     objects.position.set(objPosition[0],objPosition[1],objPosition[2])
+    console.log('objPosition:', objPosition[0],objPosition[1],objPosition[2]);
 
 //==== SCALE
     //set size from parameters file
@@ -826,6 +828,9 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
 
     var bbox = new THREE.Box3();
     bbox.setFromObject( box );
+
+    console.log('BOX:', box);
+    console.log('OBJECTS:', objects);
     let vertices2 = [];
     let vertices = [
         new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 0),
@@ -863,6 +868,8 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
     	"y": [maxVec.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y),
 				minVec.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y)].sort(function(a, b){return a-b})
     }
+
+    console.log('boundingBox:', boundingBox);
 
     // twodcoord_max = toScreenPosition(bbox.max, camera, objects, taskscreen);
     // twodcoord_min = toScreenPosition(bbox.min, camera, objects, taskscreen);
