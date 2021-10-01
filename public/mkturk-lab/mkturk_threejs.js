@@ -56,7 +56,7 @@ async function addToScene(taskscreen) {
   var unitvec2d = toScreenPosition(unitvec, defaultcamera);
   IMAGEMETA["THREEJStoPixels"] = unitvec2d.x - renderer.domElement.width / 2;
 
-  for (var classlabel = 0; classlabel<=IMAGES[taskscreen].length-1; classlabel++) {
+  for (let classlabel = 0; classlabel < IMAGES[taskscreen].length; classlabel++) {
 
     //==== CAMERAS
         // init camera
@@ -65,7 +65,7 @@ async function addToScene(taskscreen) {
         // add cameras if visible == 1
 
     CAMERAS[taskscreen][classlabel] = {};
-    for (cam in IMAGES[taskscreen][classlabel].CAMERAS) {
+    for (let cam in IMAGES[taskscreen][classlabel].CAMERAS) {
       var camera;
 
       if (IMAGES[taskscreen][classlabel].CAMERAS[cam].type == 'PerspectiveCamera') {
@@ -86,11 +86,16 @@ async function addToScene(taskscreen) {
         );
       }
                                 
-      camera.name = "cam" + classlabel;
+      camera.name = `cam${classlabel}`;
       scene[taskscreen].add(camera);
 
-      var durationMS = chooseArrayElement(IMAGES[taskscreen][classlabel].durationMS,i,0);
+      
       for (let i = 0; i < IMAGES[taskscreen][classlabel].nimages; i++) {
+        let durationMS = chooseArrayElement(
+          IMAGES[taskscreen][classlabel].durationMS,
+          i,
+          0
+        );
         // FOR CAMERA position (THREEJS coordinate)
         if (Array.isArray(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[i])) {
           IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[i] = (
@@ -227,11 +232,11 @@ async function addToScene(taskscreen) {
             IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.z[i].length
           );
 
-          var cameraFirsttarget_y = (
+          var cameraFirsttarget_z = (
             IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.z[0][0]
           );
         } else {
-          var cameraFirsttarget_y = (
+          var cameraFirsttarget_z = (
             IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.z[0]
           );
         }
@@ -395,6 +400,311 @@ async function addToScene(taskscreen) {
           child.material.transparent = true;
         } // IF child.material
       }); // objects.traverse (material)
+
+      let bbox = new THREE.Box3();
+      bbox.setFromObject(objects);
+      let bbdim = new THREE.Vector3();
+      bbox.getSize(bbdim);
+
+      let dimArr = [
+        bbdim.x, bbdim.y, bbdim.z
+      ];
+      let maxLen = Math.max.apply(null, dimArr);
+
+      IMAGES[taskscreen][classlabel].OBJECTS[obj].intrinsicMeshBoundingBox = dimArr;
+      IMAGES[taskscreen][classlabel].OBJECTS[obj].intrinsicMeshMaxDim = maxLen;
+
+      /**
+       * Previous scenefile has sizeInches and positionInches
+       * which is transformed to THREEJS units.
+       * Future scenefile will only have sizeTHREEJS and positionTHREEJS
+       */
+
+      if (IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS === undefined) {
+        let objSize = IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeInches;
+        IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS = (
+          rescaleArrayInchestoTHREEJS(
+            objSize,
+            ENV.THREEJStoInches
+          )
+        );
+      }
+
+      if (IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS === undefined) {
+        IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS = {};
+        for (let key in IMAGES[taskscreen][classlabel].OBJECTS[obj].positionInches) {
+          IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS[key] = (
+            rescaleArrayInchestoTHREEJS(
+              IMAGES[taskscreen][classlabel].OBJECTS[obj].positionInches[key],
+              ENV.THREEJStoInches
+            )
+          );
+        }
+      }
+
+      objects.name = classlabel + obj;
+      scene[taskscreen].add(objects);
+      // stores delta (Target mesh-origin mesh); same length as morphTarget
+      IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetdelta = [];
+
+      // stores multiplier that is multiplied to the morphTargetvertdelta
+      IMAGES[taskscreen][classlabel].OBJECTS[obj].morphMultiplier = [];
+
+      // add boxhelper for each object
+      let box = new THREE.BoxHelper(objects, 0xff0000);
+      box.name = `${obj}_${taskscreen}_${classlabel}_boxhelper`;
+      box.material.needsUpdate = true;
+      scene[taskscreen].add(box);
+
+      // Expand movie frames if object latent variables vary over time
+
+      if (taskscreen == 'Sample' || taskscreen == 'Test') {
+        for (let i = 0; i < IMAGES[taskscreen][classlabel].nimages; i++) {
+          let durationMS = chooseArrayElement(
+            IMAGES[taskscreen][classlabel].durationMS,
+            i,
+            0
+          );
+          
+          
+          for (let key in IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS) {
+            if (
+              IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS[key] !== undefined
+              && Array.isArray(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS[key][i])
+            ) {
+              IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS[key][i] = (
+                interpParam(
+                  IMAGES[taskscreen][classlabel].OBJECTS[obj][key][i],
+                  'continuous',
+                  durationMS,
+                  framerate
+                )
+              );
+              FLAGS.movieper[taskscreen][classlabel][i] = (
+                IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS[key][i].length
+              );
+            }
+          } // FOR Object.position.{x, y, z}
+
+          for (let key in IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees) {
+            if (
+              IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees[key] !== undefined
+              && Array.isArray(IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees[key][i])
+            ) {
+              IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees[key][i] = (
+                interpParam(
+                  IMAGES[taskscreen][classlabel].OBJECTS[obj][key][i],
+                  'continuous',
+                  durationMS,
+                  framerate
+                )
+              );
+              FLAGS.movieper[taskscreen][classlabel][i] = (
+                IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees[key][i].length
+              );
+            }
+          } // FOR Object.rotation.{x, y, z}
+
+          if (
+            IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS !== undefined
+            && Array.isArray(IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS[i])
+          ) {
+            IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS[i] = (
+              interpParam(
+                IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS[i],
+                "continuous",
+                durationMS,
+                framerate
+              )
+            );
+            FLAGS.movieper[taskscreen][classlabel][i] = (
+              IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS[i].length
+            );
+          } // IF isArray Object.size
+          
+          if (
+            IMAGES[taskscreen][classlabel].OBJECTS[obj].visible !== undefined
+            && Array.isArray(IMAGES[taskscreen][classlabel].OBJECTS[obj].visible[i])
+          ) {
+            IMAGES[taskscreen][classlabel].OBJECTS[obj].visible[i] = (
+              interpParam(
+                IMAGES[taskscreen][classlabel].OBJECTS[obj].visible[i],
+                "binary",
+                durationMS,
+                framerate
+              )
+            );
+            FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].OBJECTS[obj].visible[i].length
+          }//IF isArray Object.visible
+          
+          if (
+            IMAGES[taskscreen][classlabel].OBJECTS[obj].material.opacity !== undefined
+            && Array.isArray(IMAGES[taskscreen][classlabel].OBJECTS[obj].material.opacity[i])
+          ) {
+            IMAGES[taskscreen][classlabel].OBJECTS[obj].material.opacity[i] = (
+              interpParam(
+                IMAGES[taskscreen][classlabel].OBJECTS[obj].material.opacity[i],
+                "continuous",
+                durationMS,
+                framerate
+              )
+            );
+            FLAGS.movieper[taskscreen][classlabel][i] = (
+              IMAGES[taskscreen][classlabel].OBJECTS[obj].material.opacity[i].length
+            );
+          }//IF isArray Object.opacity
+
+          // ∆mesh for morphing
+
+          if (IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget !== undefined) {
+            IMAGES[taskscreen][classlabel].OBJECTS[obj].originmesh = {};
+
+            for (let m = 0; m < meshpartnames.length; m++) {
+              IMAGES[taskscreen][classlabel].OBJECTS[obj].originmesh[meshpartnames[m]] = {
+                position: [],
+                normal: []
+              };
+              IMAGES[taskscreen][classlabel].OBJECTS[obj].originmesh[meshpartnames[m]].position = (
+                math.matrix(
+                  Array.from(objects.getObjectByName(meshpartnames[m]).geometry.attributes.position.array)
+                )
+              );
+
+              if (meshpartnames[m] == 'Base') {
+                IMAGES[taskscreen][classlabel].OBJECTS[obj].originmesh[meshpartnames[m]].normal =  (
+                  math.matrix(
+                    Array.from(objects.getObjectByName(meshpartnames[m]).geometry.attributes.normal.array)
+                  )
+                );
+              } else {
+                IMAGES[taskscreen][classlabel].OBJECTS[obj].originmesh[meshpartnames[m]].normal = [];
+              }
+            } // FOR m meshes, store original mesh vertices to reset on next trial
+
+            if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i])) {
+
+              /**
+               * change morphTarget string to an array of appropriate integers
+               * For example, morphTarget[i] = ['neptune', 'neptune'] means
+               * that original object will reach neptune at durationMS / 2
+               * and stay neptune until durationMS ==> morphTime = [0, 1, 1]
+               * 
+               * if morphTarget[i] = ['neptune', 'elias', 'elias'] it means
+               * that the original object will reach neptune at durationMS / 3,
+               * elias at durationMS * 2 / 3, and stay as elias until
+               * durationMS ==> morphTime = [0, 1, 2, 2]
+               */
+
+              let morphTime = [0];
+              for (let j = 0; j < IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i].length; j++) {
+                if (
+                  j == 0
+                  && IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i][j] == obj
+                ) {
+                  morphTime.push(j);
+                } else if (
+                  j != 0
+                  && IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i][j] == IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i][j-1]
+                ) {
+                  morphTime.push(morphTime[j]);
+                } else {
+                  morphTime.push(morphTime[j] + 1);
+                }
+              }
+
+              let morphTargetIdx = math.setDistinct(morphTime);
+              morphTime = interpParam(
+                morphTime, 'continuous', durationMS, framerate
+              );
+              FLAGS.movieper[taskscreen][classlabel][i] = morphTime.length;
+              IMAGES[taskscreen][classlabel].OBJECTS[obj].morphMultiplier[i] = [];
+
+              for (let j = 0; j < morphTargetIdx.length - 1; j++) { // maybe morphTargetIdx.length not length - 1
+                IMAGES[taskscreen][classlabel].OBJECTS[obj].morphMultiplier[i][j] = [];
+                let arr = math.zeros(morphTime.length)._data;
+                let idx = [];
+
+                for (let k = 0; k < morphTime.length; k++) {
+                  if (
+                    j == 0 
+                    && morphTime[k] >= morphTargetIdx[j] 
+                    && morphTime[k] <= morphTargetIdx[j + 1]
+                  ) {
+                    arr[k] = morphTime[k];
+                    idx.push(k);
+                  } else if (
+                    j != 0 
+                    && morphTime[k] > morphTargetIdx[j]
+                    && morphTime[k] <= morphTargetIdx[j + 1]
+                  ) {
+                    arr[k] = morphTime[k] - j;
+                    idx.push(k);
+                  }
+                }
+
+                if (idx[idx.length - 1] < arr.length - 1) {
+                  arr =  math.subset(
+                    arr,
+                    math.index(range(idx[idx.length-1],arr.length-1,1)),
+                    Array(arr.length-idx[idx.length-1]).fill(arr[idx[idx.length-1]])
+                  );
+                }
+                IMAGES[taskscreen][classlabel].OBJECTS[obj].morphMultiplier[i][j] = arr;
+              }
+
+              IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetdelta[i] = [];
+              for (let j = 0; j <  IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i].length; j++) {
+                let morphTargetDelta = {};
+                let morphOriginName;
+                
+                if (j == 0) {
+                  morphOriginName = obj;
+                } else {
+                  morphOriginName =  (
+                    IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i][j - 1]
+                  );
+                }
+
+                let morphTargetName = (
+                  IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i][j]
+                );
+
+                if (morphTargetName != morphOriginName) {
+                  let morphOrigin = (
+                    OBJECTS[taskscreen][classlabel].meshes[morphOriginName].scene
+                  );
+                  let morphTarget = (
+                    OBJECTS[taskscreen][classlabel].meshes[morphTargetName].scene
+                  );
+                  
+                  for (let m = 0; m < meshpartnames.length; m++) {
+                    morphTargetDelta[meshpartnames[m]] = {
+                      position: [],
+                      normal: []
+                    };
+  
+                    let morphTargetVert = (
+                      math.matrix(
+                        Array.from(morphTarget.getObjectByName(meshpartnames[m]).geometry.attributes.position.array)
+                      )
+                    );
+                    let morphOriginVert = (
+                      math.matrix(
+                        Array.from(morphOrigin.getObjectByName(meshpartnames[m]).geometry.attributes.position.array)
+                      )
+                    );
+                  }
+                
+                
+                }
+              }
+            }
+          }
+        }
+      }
+
+
+
     } // FOR obj objects
 
     /**
@@ -409,8 +719,11 @@ async function addToScene(taskscreen) {
     if (IMAGES[taskscreen][classlabel].OBJECTFILTERS !== undefined) {
       if (taskscreen == 'Sample' || taskscreen == 'Test') {
         for (let i = 0; i < IMAGES[taskscreen][classlabel].nimages; i++) {
-          for (key in Object.keys(IMAGES[taskscreen][classlabel].OBJECTFILTERS)) {
-            if (Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS[key][i])) {
+          for (let key in IMAGES[taskscreen][classlabel].OBJECTFILTERS) {
+            if (
+              IMAGES[taskscreen][classlabel].OBJECTFILTERS[key] !== undefined
+              && Array.isArray(IMAGES[taskscreen][classlabel].OBJECTFILTERS[key][i])
+            ) {
               IMAGES[taskscreen][classlabel].OBJECTFILTERS[key][i] = (
                 interpParam(
                   IMAGES[taskscreen][classlabel].OBJECTFILTERS[key][i],
@@ -431,128 +744,134 @@ async function addToScene(taskscreen) {
 
     //BACKGROUND 2D IMAGE
     if (taskscreen == "Sample" || taskscreen == "Test") {
-       var boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+      var boxGeometry = new THREE.BoxGeometry(1, 1, 1);
 
-       /**
-        * set MeshPhysicalTexture if materials other than BasicMaterial is provided
-        * cubeBackground is now affected by lighting
-        */
-        if (IMAGES[taskscreen][classlabel].IMAGES.material !== undefined) {
-            if (IMAGES[taskscreen][classlabel].IMAGES.material.type != "MeshBasicMaterial") {
-              var material = new THREE.MeshPhysicalMaterial({map: new THREE.Texture(),color: ""})
-            } else {
-              var material = new THREE.MeshBasicMaterial(
-                {
-                  map: new THREE.Texture(),
-                  color: ''
-                }
+      /**
+       * set MeshPhysicalTexture if materials other than BasicMaterial is provided
+       * cubeBackground is now affected by lighting
+       */
+
+      let material;
+
+      if (
+        IMAGES[taskscreen][classlabel].IMAGES.material !== undefined
+        && IMAGES[taskscreen][classlabel].IMAGES.material.type != "MeshBasicMaterial"
+      ) {
+        material = new THREE.MeshPhysicalMaterial(
+          { map: new THREE.Texture(), color: '' }
+        );
+      } else {
+        material = new THREE.MeshBasicMaterial(
+          { map: new THREE.Texture(), color: '' }
+        );
+      }
+
+      material = Array(6).fill(material);
+
+      let backgroundCube = new THREE.Mesh(boxGeometry, material);
+      backgroundCube.name = 'backgroundCube' + classlabel;
+      backgroundCube.material.needsUpdate = true;
+
+      scene[taskscreen].add(backgroundCube);
+
+      let box = new THREE.BoxHelper(backgroundCube, 0xff0000);
+      box.name = backgroundCube.name + 'boxhelper';
+      box.material.needsUpdate = true;
+      scene[taskscreen].add(box);
+
+      if (IMAGES[taskscreen][classlabel].IMAGES.sizeTHREEJS === undefined) {
+        IMAGES[taskscreen][classlabel].IMAGES.sizeTHREEJS = (
+          rescaleArrayInchestoTHREEJS(
+            [IMAGES[taskscreen][classlabel].IMAGES.sizeInches],
+            ENV.THREEJStoInches
+          )
+        );
+      }
+
+      for (let i = 0; i < IMAGES[taskscreen][classlabel].nimages; i++) {
+        // IF background image idx isArray
+        let imgIdx;
+        if (!Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i])) {
+          imgIdx = [
+            IMAGES[taskscreen][classlabel].IMAGES.imageidx[i],
+            IMAGES[taskscreen][classlabel].IMAGES.imageidx[i]
+          ];
+        } else { // ELSE !isArray
+          imgIdx = IMAGES[taskscreen][classlabel].IMAGES.imageidx[i];
+        }
+
+        let durationMS = chooseArrayElement(
+          IMAGES[taskscreen][classlabel].durationMS,
+          i,
+          0
+        );
+
+        IMAGES[taskscreen][classlabel].IMAGES.imageidx[i] = interpParam(
+          imgIdx,
+          'binary',
+          durationMS,
+          framerate
+        );
+
+        for (let j = 0; j < IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].length; j++) {
+          if (IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j] !== "") {
+            IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j] = (
+              Math.round(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j])
+            );
+          }
+        } // FOR j img indices, round
+
+        if (
+          !IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].every((val, i, arr) => val === arr[0])
+        ) {
+          FLAGS.movieper[taskscreen][classlabel][i] = (
+            IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].length
+          );
+        }
+        
+        if (IMAGES[taskscreen][classlabel].IMAGES.visible !== undefined) {
+          // IF IMAGES.visible isArray
+          if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.visible[i])) {
+            IMAGES[taskscreen][classlabel].IMAGES.visible[i] = interpParam(
+              IMAGES[taskscreen][classlabel].IMAGES.visible[i],
+              "binary",
+              durationMS,
+              framerate
+            );
+          }
+        } else { // ELSE IMAGES.visible exists
+          IMAGES[taskscreen][classlabel].IMAGES.visible = [1]
+        }
+
+        /**
+         * 2D Filters
+         * available filters:
+         * blur(), brightness(), contrast(),
+         * grayscale(), hue-rotate(), invert(),
+         * opacity(), saturate(), sepia()
+         * reference: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/filter
+         */
+
+        if (IMAGES[taskscreen][classlabel].IMAGEFILTERS !== undefined) {
+          for (let key in IMAGES[taskscreen][classlabel].IMAGEFILTERS) {
+            if (
+              IMAGES[taskscreen][classlabel].IMAGEFILTERS[key] !== undefined
+              && Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS[key][i])
+            ) {
+              IMAGES[taskscreen][classlabel].IMAGEFILTERS[key][i] = interpParam(
+                IMAGES[taskscreen][classlabel].IMAGEFILTERS[key][i],
+                'continuous',
+                durationMS,
+                framerate
               );
-            }
-        }
-        else{
-          var material = new THREE.MeshBasicMaterial(
-            {map: new THREE.Texture(),color: ""})
-        }
 
-        material = Array(6).fill(material)
-
-     var backgroundCube = new THREE.Mesh(boxGeometry,material)
-     backgroundCube.name = 'backgroundCube' + classlabel
-     backgroundCube.material.needsUpdate = true
-
-     scene[taskscreen].add(backgroundCube)
-
-       var box = new THREE.BoxHelper(backgroundCube,0xff0000)
-       box.name = backgroundCube.name + 'boxhelper'
-       box.material.needsUpdate = true
-       scene[taskscreen].add(box)
-
-       if (IMAGES[taskscreen][classlabel].IMAGES.sizeTHREEJS == undefined){
-            IMAGES[taskscreen][classlabel].IMAGES.sizeTHREEJS = rescaleArrayInchestoTHREEJS([IMAGES[taskscreen][classlabel].IMAGES.sizeInches],ENV.THREEJStoInches)
-       }
- 
-        for (var i = 0; i<IMAGES[taskscreen][classlabel].nimages; i++){
-            if (!Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i])){
-                var imind = [IMAGES[taskscreen][classlabel].IMAGES.imageidx[i], IMAGES[taskscreen][classlabel].IMAGES.imageidx[i]]
-            }//IF isArray background image index
-            else {
-                var imind = IMAGES[taskscreen][classlabel].IMAGES.imageidx[i]
-            }//ELSE !isArray
-            var durationMS = chooseArrayElement(IMAGES[taskscreen][classlabel].durationMS,i,0)
-            IMAGES[taskscreen][classlabel].IMAGES.imageidx[i] = 
-                interpParam(imind,"binary",durationMS,framerate)
-
-            for (var j = 0; j<= IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].length-1; j++){
-              if (IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j] !== ""){
-                IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j] = Math.round(IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j])
-              }
-            }//FOR j img indices, round
-
-            if (!IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].every( (val, i, arr) => val === arr[0])){
-                FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].length
-            } 
-
-            if (IMAGES[taskscreen][classlabel].IMAGES.visible != undefined){
-                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.visible[i])){
-                    IMAGES[taskscreen][classlabel].IMAGES.visible[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGES.visible[i],"binary",durationMS,framerate)
-                }//IF isArray IMAGES.visible
-            } else{
-                IMAGES[taskscreen][classlabel].IMAGES.visible = [1]
-                            }                // IF IMAGES.visible exists
-
-
-            //2D FILTERS
-            //available filters are blur(), brightness(), contrast(), grayscale(), hue-rotate(), invert(), opacity(), saturate(), and sepia()
-            // refer to https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/filter
-            if (typeof IMAGES[taskscreen][classlabel].IMAGEFILTERS != "undefined"){
-                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur[i])){
-                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur[i],"continuous",durationMS,framerate)
-                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur[i].length
-                }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.brightness[i])){
-                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.brightness[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.brightness[i],"continuous",durationMS,framerate)
-                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.brightness[i].length
-                }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.contrast[i])){
-                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.contrast[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.contrast[i],"continuous",durationMS,framerate)
-                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.contrast[i].length
-                }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.grayscale[i])){
-                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.grayscale[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.grayscale[i],"continuous",durationMS,framerate)
-                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.grayscale[i].length
-                }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.huerotate[i])){
-                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.huerotate[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.huerotate[i],"continuous",durationMS,framerate)
-                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.huerotate[i].length
-                }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.invert[i])){
-                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.invert[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.invert[i],"continuous",durationMS,framerate)
-                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.invert[i].length
-                }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.opacity[i])){
-                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.opacity[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.opacity[i],"continuous",durationMS,framerate)
-                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.opacity[i].length
-                }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.saturate[i])){
-                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.saturate[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.saturate[i],"continuous",durationMS,framerate)
-                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.saturate[i].length
-                }
-                if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGEFILTERS.sepia[i])){
-                    IMAGES[taskscreen][classlabel].IMAGEFILTERS.sepia[i] =
-                        interpParam(IMAGES[taskscreen][classlabel].IMAGEFILTERS.sepia[i],"continuous",durationMS,framerate)
-                    FLAGS.movieper[taskscreen][classlabel][i] = IMAGES[taskscreen][classlabel].IMAGEFILTERS.sepia[i].length
-                }
-            }// if background image filter exists
-        }//FOR i images
+              FLAGS.movieper[taskscreen][classlabel][i] = (
+                IMAGES[taskscreen][classlabel].IMAGEFILTERS[key][i].length
+              );
+            } // IF IMAGEFILTERS[key][i] isArray
+          } // FOR each filter in IMAGEFILTERS
+        } // IF background image filter exists
+      } // FOR n images
     }//IF  Sample
   }//FOR classlabels
 
@@ -563,7 +882,7 @@ async function addToScene(taskscreen) {
   // FOR each grid index
   for (let gridIdx = 0; gridIdx < ENV.XGridCenter.length; gridIdx++) {
     let funcreturn = toTHREEJSOffset(
-      ENV.XGridCenter[gridind],
+      ENV.XGridCenter[gridIdx],
       ENV.YGridCenter[gridIdx],
       taskscreen
     );
