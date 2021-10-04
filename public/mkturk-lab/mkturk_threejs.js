@@ -1,36 +1,41 @@
-async function initThreeJS(scenedata) {
-  // init renderer
-  renderer = new THREE.WebGLRenderer({canvas: VISIBLECANVASWEBGL, antialias: false, alpha: true,preserveDrawingBuffer: false}) //WebGL uses 2 canvases and it's faster to swap them
-  //https://stackoverflow.com/questions/27746091/preservedrawingbuffer-false-is-it-worth-the-effort
+async function initThreeJS(sceneData) {
+  /**
+   * INIT RENDERER
+   * WebGL uses 2 Canvases and it's faster to swap them
+   * Reference: https://stackoverflow.com/questions/27746091/preservedrawingbuffer-false-is-it-worth-the-effort
+   */
 
-  //renderer.setPixelRatio(window.devicePixelRatio);
-  //renderer.setSize(VISIBLECANVASWEBGL.width,VISIBLECANVASWEBGL.height)
+  renderer = new THREE.WebGLRenderer(
+    {
+      canvas: VISIBLECANVASWEBGL,
+      antialias: false,
+      alpha: true,
+      preserveDrawingBuffer: false
+    }
+  );
 
-  renderer.setClearColor(0x7F7F7F,0);
+  renderer.setClearColor(0x7F7F7F, 0);
   renderer.physicallyCorrectLights = true;
-  // renderer.toneMappingExposure = 10;   // set exposure to light
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.autoClear = false;
-  renderer.setPixelRatio(TASK.THREEJSRenderRatio)
-  // var rendererWidth = Math.max(VISIBLECANVASWEBGL.height,VISIBLECANVASWEBGL.width)/TASK.THREEJSRenderRatio
-  // var rendererHeight = rendererWidth
-  // renderer.setSize(rendererWidth,rendererHeight)
+  renderer.setPixelRatio(TASK.THREEJSRenderRatio);
   document.body.append(renderer.domElement);
 
-  // renderer.domElement.style.width =  VISIBLECANVAS.clientWidth+ 'px'; //keeps CSS size unchanged
-  // renderer.domElement.style.height =  VISIBLECANVAS.clientHeight+ 'px'; //keeps CSS size unchanged
-
-  renderer.domElement.style.width = VISIBLECANVASWEBGL.width/TASK.THREEJSRenderRatio+ 'px'
-  renderer.domElement.style.height = VISIBLECANVASWEBGL.height/TASK.THREEJSRenderRatio + 'px'
+  renderer.domElement.style.width = (
+    VISIBLECANVASWEBGL.width / TASK.THREEJSRenderRatio + 'px'
+  );
+  renderer.domElement.style.height = (
+    VISIBLECANVASWEBGL.height / TASK.THREEJSRenderRatio + 'px'
+  );
 
   console.log(VISIBLECANVAS.clientWidth, VISIBLECANVAS.clientHeight);
 
-  // init scene
-  scene = {}
+  // INIT SCENE
+  scene = {};
 
-  for (let scenetype in scenedata) {
-    var indiv_scene = new THREE.Scene();
-    scene[scenetype] = indiv_scene;
+  for (let sceneType in sceneData) {
+    let sceneInstance = new THREE.Scene();
+    scene[sceneType] = sceneInstance;
   } // FOR n scenes
 }// FUNCTION initThreeJS
 
@@ -445,7 +450,7 @@ async function addToScene(taskscreen) {
       objects.name = classlabel + obj;
       scene[taskscreen].add(objects);
       // stores delta (Target mesh-origin mesh); same length as morphTarget
-      IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetdelta = [];
+      IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetDelta = [];
 
       // stores multiplier that is multiplied to the morphTargetvertdelta
       IMAGES[taskscreen][classlabel].OBJECTS[obj].morphMultiplier = [];
@@ -652,7 +657,7 @@ async function addToScene(taskscreen) {
                 IMAGES[taskscreen][classlabel].OBJECTS[obj].morphMultiplier[i][j] = arr;
               }
 
-              IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetdelta[i] = [];
+              IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetDelta[i] = [];
               for (let j = 0; j <  IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTarget[i].length; j++) {
                 let morphTargetDelta = {};
                 let morphOriginName;
@@ -693,15 +698,128 @@ async function addToScene(taskscreen) {
                         Array.from(morphOrigin.getObjectByName(meshpartnames[m]).geometry.attributes.position.array)
                       )
                     );
-                  }
+
+                    if (
+                      meshpartnames[m] == 'Base'
+                      && IMAGES[taskscreen][classlabel].OBJECTS[obj].baseVertexInd !== undefined
+                      && IMAGES[taskscreen][classlabel].OBJECTS[obj].baseVertexInd != []
+                    ) {
+                      let objectOriginVert = (
+                        objects.getObjectByName(meshpartnames[m]).geometry.attributes.position.array
+                      );
+
+                      let objectOriginVertIdx = (
+                        IMAGES[taskscreen][classlabel].OBJECTS[obj].baseVertexInd
+                      );
+
+                      let morphTargetVertIdx = (
+                        IMAGES[taskscreen][classlabel].OBJECTS[morphTargetname].baseVertexInd
+                      );
+                      let morphOriginVertIdx = (
+                        IMAGES[taskscreen][classlabel].OBJECTS[morphOriginname].baseVertexInd
+                      );
+
+                      morphTargetVertIdx = morphTargetVertIdx.map((num) => {
+                        return [...[num * 3 - 3, num * 3 - 2, num * 3 - 1]]
+                      }).flat();
+
+                      morphOriginVertIdx = morphOriginVertIdx.map((num) => {
+                        return [...[num * 3 - 3, num * 3 - 2, num * 3 - 1]]
+                      }).flat();
+
+                      objectOriginVertIdx = objectOriginVertIdx.map((num) => {
+                        return [...[num * 3 - 3, num * 3 - 2, num * 3 - 1]]
+                      }).flat();
+
+                      morphTargetVert = (
+                        morphTargetVert.subset(math.index(morphTargetVertIdx))
+                      );
+
+                      morphOriginVert = (
+                        morphOriginVert.subset(math.index(morphOriginVertIdx))
+                      );
+
+                      let objectOriginVertDelta = (
+                        math.zeros(objectOriginVert.length)
+                      );
+
+                      objectOriginVertDelta.subset(
+                        math.index(objectOriginVertIdx),
+                        math.subtract(morphTargetVert, morphOriginVert)._data
+                      );
+
+                      morphTargetDelta[meshpartnames[m]].position = (
+                        objectOriginVertDelta
+                      );
+
+                      // normals
+                      let morphTargetNormal = math.matrix(
+                        Array.from(
+                          morphTarget
+                            .getObjectByName(meshpartnames[m])
+                            .geometry.attributes.normal.array
+                        )
+                      );
+
+                      let morphOriginNormal = math.matrix(
+                        Array.from(
+                          morphOrigin
+                            .getObjectByName(meshpartnames[m])
+                            .geometry.attributes.normal.array
+                        )
+                      );
+
+                      let objectOriginNormal = (
+                        objects
+                          .getObjectByName(meshpartnames[m])
+                          .geometry.attributes.normal.array
+                      );
+
+                      morphTargetNormal = morphTargetNormal.subset(
+                        math.index(morphTargetVertIdx)
+                      );
+
+                      morphOriginNormal = morphOriginNormal.subset(
+                        math.index(morphOriginVertIdx)
+                      );
+
+                      let objectOriginNormalDelta = (
+                        math.zeros(objectOriginNormal.length)
+                      );
+
+                      objectOriginNormalDelta.subset(
+                        math.index(objectOriginVertIdx),
+                        math.subtract(morphTargetNormal, morphOriginNormal)
+                          ._data
+                      );
+
+                      morphTargetDelta[meshpartnames[m]].normal = (
+                        objectOriginNormalDelta
+                      );
+                      /**
+                       * IF only morph specific vertices of Base, only move
+                       * appleface portion of the mesh (Base mesh will have
+                       * different number of vertices)
+                       */
+                    } else {
+                      morphTargetDelta[meshpartnames[m]].position = (
+                        math.subtract(morphTargetVert, morphOriginVert)
+                      );
+                      morphTargetDelta[meshpartnames[m]].normal = [];
+                    } // ELSE morph all vertices
+                  } // FOR m meshparts
+
+                  IMAGES[taskscreen][classlabel]
+                      .OBJECTS[obj]
+                      .morphTargetDelta[i]
+                    .push(morphTargetDelta);
                 
-                
-                }
-              }
-            }
-          }
-        }
-      }
+                } // FOR j morphTargets
+              } // IF morphTarget isArray
+            } // IF morphTarget exists
+          } // FOR i images
+        } // IF Sample
+      } // FOR obj objects
 
 
 
@@ -893,16 +1011,17 @@ async function addToScene(taskscreen) {
 } //FUNCTION addToScene(taskscreen)
 
 
-function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex,cubeTexture){
+function updateSingleFrame3D(taskscreen, classlabels, index, movieframe, gridindex, cubeTexture) {
   //==== TURN OFF ALL ITEMS
-  for ( var sceneElement in scene[taskscreen]["children"] ){
-    scene[taskscreen]["children"][sceneElement].visible = false
+  for (let sceneElem in scene[taskscreen]['children']) {
+    scene[taskscreen]['children'][sceneElem].visible = false;
 
-    //==== REMOVE BoxHelper
-      if (scene[taskscreen]["children"][sceneElement].type == "LineSegments"){
-          scene[taskscreen].remove(scene[taskscreen]["children"][sceneElement])
-      }
-    }//FOR sceneElements
+    // REMOVE BoxHelper
+    if (scene[taskscreen]['children'][sceneElem].type == 'LineSegments') {
+      scene[taskscreen].remove(scene[taskscreen]['children'][sceneElem]);
+    }
+  } // FOR sceneElements
+
 
   //==== TURN BACK ON THE CURRENT DISPLAY ITEMS
     var allBoundingBoxes = []
@@ -1018,7 +1137,7 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex,c
               chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.y,index,0),
               chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.z,index,0)
           ];
-          console.log('nextobjPosition:', nextobjPosition);
+      
           if (Number.isInteger(movieframe)){
               nextobjPosition = [
                   chooseArrayElement(nextobjPosition[0],movieframe,nextobjPosition[0].length-1),
@@ -1062,7 +1181,7 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex,c
 
 
             //MORPH
-            var morphDelta = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetdelta,index,0)
+            var morphDelta = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].morphTargetDelta,index,0)
             var morphMultiplier= chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].morphMultiplier,index,0)
 
             var nextmorph = {}
@@ -1207,7 +1326,6 @@ function updateObjectSingleFrame(taskscreen,objects,box,objPosition,objRotation,
 
 //====TRANSLATION
     objects.position.set(objPosition[0],objPosition[1],objPosition[2])
-    console.log('objPosition:', objPosition[0],objPosition[1],objPosition[2]);
 
 //==== SCALE
     //set size from parameters file
@@ -1238,27 +1356,19 @@ function updateObjectSingleFrame(taskscreen,objects,box,objPosition,objRotation,
 //         box.material.transparent = true //hide the bounding boxes during testing
     }
     
-    var bbox = new THREE.Box3();
-    // bbox.setFromObject( box );
-    bbox.setFromObject(objects);
-
-    console.log('BOX:', box);
-    console.log('OBJECTS:', objects);
-
-    let bbbox = new THREE.BoxHelper(objects, 0xff0000);
-    console.log('BBBOX', bbbox);
-    bbbox.update();
+    // var bbox = new THREE.Box3();
+    // bbox.setFromObject(objects);
 
     let vertices2 = [];
     let vertices = [
-      new THREE.Vector3().fromBufferAttribute(bbbox.geometry.attributes.position, 0),
-      new THREE.Vector3().fromBufferAttribute(bbbox.geometry.attributes.position, 1),
-      new THREE.Vector3().fromBufferAttribute(bbbox.geometry.attributes.position, 2),
-      new THREE.Vector3().fromBufferAttribute(bbbox.geometry.attributes.position, 3),
-      new THREE.Vector3().fromBufferAttribute(bbbox.geometry.attributes.position, 4),
-      new THREE.Vector3().fromBufferAttribute(bbbox.geometry.attributes.position, 5),
-      new THREE.Vector3().fromBufferAttribute(bbbox.geometry.attributes.position, 6),
-      new THREE.Vector3().fromBufferAttribute(bbbox.geometry.attributes.position, 7),
+      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 0),
+      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 1),
+      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 2),
+      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 3),
+      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 4),
+      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 5),
+      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 6),
+      new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 7),
     ];
 
     vertices.forEach(vertex => {
@@ -1279,11 +1389,8 @@ function updateObjectSingleFrame(taskscreen,objects,box,objPosition,objRotation,
     maxVec.x = (maxVec.x + 1) / 2 * renderer.getContext().canvas.width;
     maxVec.y = (-maxVec.y + 1) / 2 * renderer.getContext().canvas.height;
 
-    console.log('maxVec:', maxVec);
-    console.log('minVec:', minVec);
-
-    var twodcoord_max = toScreenPosition(bbox.max,camera)
-    var twodcoord_min = toScreenPosition(bbox.min,camera)
+    // var twodcoord_max = toScreenPosition(bbox.max,camera)
+    // var twodcoord_min = toScreenPosition(bbox.min,camera)
 
     // var boundingBox = {
     // 	"x": [twodcoord_min.x + (scenecenterX - renderer.domElement.width/2),
@@ -1312,16 +1419,6 @@ function updateObjectSingleFrame(taskscreen,objects,box,objPosition,objRotation,
         (minVec.y / TASK.THREEJSRenderRatio / ENV.CanvasRatio + top) * ENV.CanvasRatio + CANVAS.offsettop
       ].sort((a, b) => { return a - b })
     };
-
-    console.log('boundingBox:', boundingBox);
-
-    // var boundingBox = {
-    //     x: [
-    //         ENV.CanvasRatio 
-    //         * (twodcoord_min / TASK.THREEJSRenderRatio / ENV.CanvasRatio + left),
-    //         (twodcoord_max)
-    //     ]
-    // }
 
     return [objPosition,objSize,boundingBox]
 }//FUNCTION updateObjectSingleFrame
@@ -1435,20 +1532,21 @@ function toScreenPosition(vector, camera){
     };
 };//FUNCTION toScreenPosition(vector,camera)
 
-function chooseArrayElement(x,idx,idx_default){
-    if (x != undefined && x[idx] == undefined && x.length >0){
-        return x[idx_default]
-    }
-    else if (x!= undefined && x.length == undefined){
-        return x
-    }
-    else if (x == undefined){
-        return undefined
-    }
-    else {
-        return x[idx]
-    }
-}//FUNCTION chooseArrayElement
+function chooseArrayElement(x, idx, defaultIdx) {
+  if (
+    x !== undefined
+    && x[idx] === undefined
+    && x.length > 0
+  ) {
+    return x[defaultIdx];
+  } else if (x !== undefined && x.length === undefined) {
+    return x;
+  } else if (x === undefined) {
+    return undefined;
+  } else {
+    return x[idx];
+  }
+} // FUNCTION chooseArrayElement
 
 function rescaleArrayInchestoTHREEJS(sizeInchesArr,THREEJStoInches){
     var sizeTHREEJS = []

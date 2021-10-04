@@ -459,9 +459,9 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 			fr[f],
 			gr[f][j])
 
-		console.log(taskscreen,objFilterSingleFrame)
+		// console.log(taskscreen,objFilterSingleFrame)
 		
-	  	VISIBLECANVAS.getContext('2d').filter = objFilterSingleFrame;
+	  VISIBLECANVAS.getContext('2d').filter = objFilterSingleFrame;
 
 		// 3D Canvas coordinates	
 		var sx = renderer.domElement.width/2
@@ -993,26 +993,42 @@ async function saveScreenshot(canvasobj,currtrial,taskscreen,framenum,objectlabe
 	})//.toBlob function
 	
 	// save mesh if morph	
-	var objtoSave = Object.keys(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS)[0]
-	if (typeof(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[objtoSave].morphTargetdelta) != 'undefined'){
-		if (IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[objtoSave].morphTargetdelta.length>0){
-			try{
-				var meshtoSave = OBJECTS[taskscreen][CURRTRIAL.sample_scenebag_label[0]].meshes[objtoSave].scene
+	let objToSave = Object.keys(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS)[0]
+	let morphTargetDelta = IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]]
+		.OBJECTS[objToSave]
+		.morphTargetDelta;
+
+	if (morphTargetDelta !== undefined) {
+		let lenMorphTargetDelta = (
+			IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]]
+				.OBJECTS[objToSave]
+				.morphTargetDelta
+				.length
+		);
+
+		if (lenMorphTargetDelta > 0) {
+			try {
+				let meshToSave = (
+					OBJECTS[taskscreen][CURRTRIAL.sample_scenebag_label[0]]
+						.meshes[objToSave]
+						.scene
+				);
+
 				const exporter = new THREE.GLTFExporter();
-				const glb = await new Promise(resolve =>
-						exporter.parse(meshtoSave, resolve, {
+				const glb = await new Promise((resolve) => {
+					exporter.parse(meshToSave, resolve, {
 						binary: true,
 						truncateDrawRange: false
-					})
-				);
-				const blobmesh = new Blob([glb], { type: 'application/octet-stream' });
-				storage.ref().child(fullpath_mesh).put(blobmesh)
-				
-			} catch(error){
-				console.log(error)
+					});
+				});
+
+				let meshBlob = new Blob([glb], { type: 'application/octet-stream' });
+				storage.ref().child(fullpath_mesh).put(meshBlob);
+			} catch (error) {
+				console.log('[ERROR SAVING MORPHED MESH]:', error);
 			}
 		}
-	}
+	} 
 
 }//FUNCTION saveScreenshot
 
@@ -1047,10 +1063,10 @@ async function saveMeshGLB(currtrial,taskscreen,framenum,objectlabel,objectind){
 						+ ENV.DeviceName + '_device'
 	// save mesh to gltf file if morph 
 	if (taskscreen == "Sample"){
-		var objtoSave = Object.keys(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS)[0]
-		if (typeof(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[objtoSave].morphTargetDelta) != 'undefined'){
-			if (IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[objtoSave].morphTargetDelta.length>0){
-				var meshtoSave = OBJECTS[taskscreen][CURRTRIAL.sample_scenebag_label[0]].meshes[objtoSave].scene
+		let objToSave = Object.keys(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS)[0]
+		if (typeof(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[objToSave].morphTargetDelta) != 'undefined'){
+			if (IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[objToSave].morphTargetDelta.length>0){
+				var meshtoSave = OBJECTS[taskscreen][CURRTRIAL.sample_scenebag_label[0]].meshes[objToSave].scene
 				const exporter = new THREE.GLTFExporter();
   				const glb = await new Promise(resolve =>
    					 exporter.parse(meshtoSave, resolve, {
