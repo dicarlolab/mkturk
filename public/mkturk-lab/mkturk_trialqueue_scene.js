@@ -368,10 +368,25 @@ selectSampleImage(SampleBucket, SamplingStrategy){
 	if(SamplingStrategy == 'uniform_with_replacement'){
 		sample_image_index = SampleBucket[Math.floor((SampleBucket.length)*Math.random())];
 	}
-	else if (SamplingStrategy == 'uniform_without_replacement'){
-		var randind = Math.floor((SampleBucket.length)*Math.random())
-		sample_image_index = SampleBucket[randind]
-		SampleBucket.splice(randind,1)
+	else if (SamplingStrategy == 'uniform_without_replacement') {
+		let randIdx;
+		let numSamples = 0;
+		for (let i = 0; i < IMAGES['Sample'].length; i++) {
+			numSamples += IMAGES['Sample'][i].nimages;
+		}
+		if (
+			TASK.Species == 'model'
+			&& numSamples - SampleBucket.length < TASK.ModelConfig.trainIdx
+		) {
+			let label = SampleBucket.length % IMAGES['Sample'].length;
+			do {
+				randIdx = Math.floor((SampleBucket.length) * Math.random());
+			} while (this.samplebag_labels[SampleBucket[randIdx]] != label);
+		} else {
+			randIdx = Math.floor((SampleBucket.length)*Math.random());
+		}
+		sample_image_index = SampleBucket[randIdx];
+		SampleBucket.splice(randIdx, 1);
 	}
 	else if (SamplingStrategy == 'sequential'){
 		sample_image_index = SampleBucket[0] //take next image

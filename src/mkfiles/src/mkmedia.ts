@@ -370,6 +370,7 @@ export class Mkeditor {
         // this.genSceneParamBtn.style.display = 'none';
       }
     } else if (fileRef.fullPath.includes(taskParamPath)) {
+      console.log('FILEEEE:', file);
       this.fileDupBtn.style.display = 'inline-block';
       options = taskParamOptions;
       let taskParamKeys = Object.keys(JSON.parse(JSON.stringify(EditorParams.taskParamSchema, null, 1)).properties);
@@ -380,7 +381,9 @@ export class Mkeditor {
           json2[key] = file[key];
         }
       });
+      console.log('json:', json, 'json2:', json2);
       file = Object.assign(json, json2);
+      console.log('file:', file);
       // this.genSceneParamBtn.style.display = 'none';
     } else {
       this.fileDupBtn.style.display = 'none';
@@ -612,6 +615,7 @@ export class Mkeditor {
           contentType: "application/json"
         };
         id.put(updatedFile, metadata).then(snapshot => {
+          console.log(this.editor.get());
           console.log("[DOCUMENT UPDATED]:", snapshot.metadata.name);
           alert("Document Updated");
           document.dispatchEvent(new Event('storageFileChanged'));

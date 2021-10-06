@@ -7,7 +7,7 @@ function pingBigQueryEyeTable(){
 		bigqueryEyeTimer = setTimeout(function(){
 			clearTimeout(bigqueryEyeTimer)
 			pingBigQueryEyeTable()
-		}, TASK.BQEyeTimer)
+		}, 10000)
 	} //else check again in 10 seconds
 }//FUNCTION pingBigQueryEyeTable
 
@@ -21,7 +21,7 @@ function pingBigQueryDisplayTimesTable(){
 		bigqueryDisplayTimer = setTimeout(function(){
 			clearTimeout(bigqueryDisplayTimer)
 			pingBigQueryDisplayTimesTable()
-		},TASK.BQDisplayTimer)
+		}, 10000)
 	} //else check again in 10 seconds
 }//FUNCTION pingBigQueryEyeTable()
 
@@ -35,7 +35,7 @@ function pingBigQueryTouchTable() {
 		bigQueryTouchTimer = setTimeout(() => {
 			clearTimeout(bigQueryTouchTimer);
 			pingBigQueryTouchTable()
-		}, TASK.BQTouchTimer);
+		}, 10000);
 	}
 }
 

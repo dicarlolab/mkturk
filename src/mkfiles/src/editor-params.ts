@@ -1,7 +1,7 @@
 export const taskParamSchema = {
   "title": "MkTurk Task Params",
   "description": "Object containing MkTurk task parameters",
-  "type": "object",
+  "type": ["object", "array"],
   "properties": {
     "Agent": {
       "type": "string"

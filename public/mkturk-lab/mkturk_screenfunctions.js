@@ -100,7 +100,8 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 								boundingBoxes2D: boundingBoxesChoice2D
 							};
 		
-							let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
+							// let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
+							// console.log('mkmBoundingBox:', mkmBoundingBox);
 
 							// mkmBoundingBox SANITY CHECK CODE
 							// console.log(`SAMPLE sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
@@ -161,7 +162,7 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 								boundingBoxes2D: boundingBoxesChoice2D
 							};
 		
-							let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
+							// let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
 
 							// mkmBoundingBox SANITY CHECK CODE
 							// console.log(`TEST sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
@@ -227,19 +228,63 @@ function displayTrial(ti,gr,fr,sc,ob,id,mkm){
 								boundingBoxes2D: boundingBoxesChoice2D
 							};
 		
-							let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
+							// let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
+							let camName = Object.keys(IMAGES['Sample'][label].CAMERAS)[0];
+							
+							let cam = CAMERAS['Sample'][label][camName];
+							
+							let img = IMAGES['Sample'][label];
+							let fov = cam.fov * Math.PI / 180;
+							let heightThreeJS = (
+								2 * Math.tan(fov / 2)
+								* (cam.position.z + img.IMAGES.sizeTHREEJS / 2)
+							);
+							let srcHeight = (
+								img.IMAGES.sizeTHREEJS
+								/ heightThreeJS
+								* VISIBLECANVASWEBGL.height
+							);
 
 							// mkmBoundingBox SANITY CHECK CODE
 							// console.log(`SAMPLE sx=${mkmBoundingBox.sx}; sy=${mkmBoundingBox.sy}; sWidth=${mkmBoundingBox.sWidth}; sHeight=${mkmBoundingBox.sHeight}`);
-							// let visiblecvs = document.getElementById("canvaseyetracker");
-							// let ctx2 = visiblecvs.getContext('2d');
+							// let visiblecvs = document.getElementById('canvasvisiblewebgl');
+							// let ctx2 = visiblecvs.getContext('webgl2');
 							// ctx2.rect(mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight);
 							// ctx2.stroke();
 							
-							ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
+							// ctx.drawImage(VISIBLECANVAS, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
+							// ctx.drawImage(VISIBLECANVASWEBGL, mkmBoundingBox.sx, mkmBoundingBox.sy, mkmBoundingBox.sWidth, mkmBoundingBox.sHeight, 0, 0, 224, 224);
+							// let sx = Math.round(boundingBoxesChoice3D.x[0][0] + IMAGEMETA.THREEJStoPixels) * 2 + 10;
+
+							let sx = ENV.XGridCenter[CURRTRIAL.samplegridindex] * 2 - srcHeight / 2;
+							let sy = ENV.YGridCenter[CURRTRIAL.samplegridindex] * 2 - srcHeight / 2;
+							let sw = srcHeight;
+							let sh = sw;
+							console.log('sx:', sx, 'sy:', sy, 'sw:', sw, 'sh:', sh);
+							ctx.drawImage(VISIBLECANVAS, sx, sy, sw, sh, 0, 0, 224, 224);
+
+							if (TASK.ModelConfig.saveImages == 3 && CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
+								let path = `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/sample_train_${CURRTRIAL.num}.png`;
+								// let modelCvs = mkm.cvs.toDataURL();
+								storageRef
+									.child('mkturkfiles/mkmodels/')
+									.child(path)
+									.putString(mkm.cvs.toDataURL(), 'data_url');
+							}
+							// let path = `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`;
+							// let pathWebgl = `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample_webgl.png`;
+							// let canvasDataWebgl = VISIBLECANVASWEBGL.toDataURL();
+							// let canvasData = VISIBLECANVAS.toDataURL();
+							// storageRef.child('mkturkfiles/mkmodels/').child(path).putString(canvasData, 'data_url');
+							// storageRef.child('mkturkfiles/mkmodels/').child(pathWebgl).putString(canvasDataWebgl, 'data_url');
+							
+
 							// console.log(mkm.featureExtractor);
+							let hello = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), "module_apply_default/resnet_v2_50/block4/unit_3/bottleneck_v2/conv2/Relu");
+							console.log('last conv:', hello);
 							let featureVec = mkm.featureExtractor.execute(mkm.normalizePixelValues(mkm.cvs), mkm.ouputNode);
-							// console.log('featureVec:', featureVec);
+							console.log('featureVec:', featureVec);
+							console.log('mkm.outputNode:', mkm.outputNode);
 
 							featureVec = featureVec.reshape(mkm.inputShape);
 							if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
@@ -355,6 +400,14 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 			gr[f][j],
 			ims[j]
 		);
+
+		// if (taskscreen == 'Sample') {
+		// 	console.log('boundingBox:', boundingBox);
+		// 	console.log('boundingBox:', boundingBox[0]);
+		// 	console.log('boundingBoxCube:', boundingBoxCube);
+		// 	console.log('boundingBoxCube:', boundingBoxCube[0]);
+		// 	console.log('crop:', crop);
+		// }
 		
 		if (s==0 && typeof(boundingBox) != "undefined" && typeof(boundingBox[ob[f][j]]) != "undefined" && typeof(boundingBox[ob[f][j]][0]) != "undefined"){
 			
@@ -405,8 +458,10 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 		var [objFilterSingleFrame, imgFilterSingleFrame] = updateFilterSingleFrame(taskscreen,ob[f][j],id[f][j],
 			fr[f],
 			gr[f][j])
-			
-	  	VISIBLECANVAS.getContext('2d').filter = objFilterSingleFrame;
+
+		// console.log(taskscreen,objFilterSingleFrame)
+		
+	  VISIBLECANVAS.getContext('2d').filter = objFilterSingleFrame;
 
 		// 3D Canvas coordinates	
 		var sx = renderer.domElement.width/2
@@ -431,8 +486,15 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 		var left = Math.round(scenecenterX/ENV.CanvasRatio - swidth_2d/2)
 		var top = Math.round(scenecenterY/ENV.CanvasRatio-sheight_2d/2)
 
+		// if (taskscreen == 'Sample') {
+		// 	console.log('sx:', sx, 'sy:', sy, 'swidth:', swidth, 'sheight:', sheight);
+		// 	console.log('left:', left, 'top:', top, 'swidth_2d:', swidth_2d, 'sheight_2d:', sheight_2d);
+		// }
+
+		// mkm.boundingBoxVisibleCanvas = [left, top, swidth_2d, sheight_2d];
+
 		// Transfer 3D Canvas to 2D Canvas
-		VISIBLECANVAS.getContext('2d').drawImage(renderer.domElement,sx,sy,swidth,sheight,left,top,swidth_2d,sheight_2d);	
+		VISIBLECANVAS.getContext('2d').drawImage(renderer.domElement,sx,sy,swidth,sheight,left,top,swidth_2d,sheight_2d);
 		// update bounding boxes if crop bounding box is smaller than the boundingbox 
 		if (s ==0 && (swidth_2d * ENV.CanvasRatio < boundingBoxesChoice3JS.x[j][1]-boundingBoxesChoice3JS.x[j][0])){
 			boundingBoxesChoice3JS.x[j] = [left*ENV.CanvasRatio,(left+swidth_2d)*ENV.CanvasRatio]
@@ -931,26 +993,42 @@ async function saveScreenshot(canvasobj,currtrial,taskscreen,framenum,objectlabe
 	})//.toBlob function
 	
 	// save mesh if morph	
-	var objtoSave = Object.keys(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS)[0]
-	if (typeof(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[objtoSave].morphTargetdelta) != 'undefined'){
-		if (IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[objtoSave].morphTargetdelta.length>0){
-			try{
-				var meshtoSave = OBJECTS[taskscreen][CURRTRIAL.sample_scenebag_label[0]].meshes[objtoSave].scene
+	let objToSave = Object.keys(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS)[0]
+	let morphTargetDelta = IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]]
+		.OBJECTS[objToSave]
+		.morphTargetDelta;
+
+	if (morphTargetDelta !== undefined) {
+		let lenMorphTargetDelta = (
+			IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]]
+				.OBJECTS[objToSave]
+				.morphTargetDelta
+				.length
+		);
+
+		if (lenMorphTargetDelta > 0) {
+			try {
+				let meshToSave = (
+					OBJECTS[taskscreen][CURRTRIAL.sample_scenebag_label[0]]
+						.meshes[objToSave]
+						.scene
+				);
+
 				const exporter = new THREE.GLTFExporter();
-				const glb = await new Promise(resolve =>
-						exporter.parse(meshtoSave, resolve, {
+				const glb = await new Promise((resolve) => {
+					exporter.parse(meshToSave, resolve, {
 						binary: true,
 						truncateDrawRange: false
-					})
-				);
-				const blobmesh = new Blob([glb], { type: 'application/octet-stream' });
-				storage.ref().child(fullpath_mesh).put(blobmesh)
-				
-			} catch(error){
-				console.log(error)
+					});
+				});
+
+				let meshBlob = new Blob([glb], { type: 'application/octet-stream' });
+				storage.ref().child(fullpath_mesh).put(meshBlob);
+			} catch (error) {
+				console.log('[ERROR SAVING MORPHED MESH]:', error);
 			}
 		}
-	}
+	} 
 
 }//FUNCTION saveScreenshot
 
@@ -985,10 +1063,10 @@ async function saveMeshGLB(currtrial,taskscreen,framenum,objectlabel,objectind){
 						+ ENV.DeviceName + '_device'
 	// save mesh to gltf file if morph 
 	if (taskscreen == "Sample"){
-		var objtoSave = Object.keys(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS)[0]
-		if (typeof(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[objtoSave].morphTargetDelta) != 'undefined'){
-			if (IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[objtoSave].morphTargetDelta.length>0){
-				var meshtoSave = OBJECTS[taskscreen][CURRTRIAL.sample_scenebag_label[0]].meshes[objtoSave].scene
+		let objToSave = Object.keys(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS)[0]
+		if (typeof(IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[objToSave].morphTargetDelta) != 'undefined'){
+			if (IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[objToSave].morphTargetDelta.length>0){
+				var meshtoSave = OBJECTS[taskscreen][CURRTRIAL.sample_scenebag_label[0]].meshes[objToSave].scene
 				const exporter = new THREE.GLTFExporter();
   				const glb = await new Promise(resolve =>
    					 exporter.parse(meshtoSave, resolve, {
@@ -1406,12 +1484,11 @@ function defineImageGrid(ngridpoints, gridspacing,xoffset,yoffset){
 }//FUNCTION defineImageGrid
 
 function updateFilterSingleFrame(taskscreen,classlabel,index,movieframe,gridindex){
-
+  // ======= OBJECT FILTERS
+	var objFilterSingleFrame = {blur: 0, brightness: 100, contrast: 100, grayscale: 0, huerotate: 0, invert: 0, opacity: 100,
+		saturate: 100, sepia: 0}
 if (typeof(IMAGES[taskscreen][classlabel].OBJECTFILTERS) != "undefined"){
-    // ======= OBJECT FILTERS
-    var objFilterSingleFrame = {blur: 0, brightness: 100, contrast: 100, grayscale: 0, huerotate: 0, invert: 0, opacity: 100,
-    saturate: 100, sepia: 0}
-
+  
     var nextblur = chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTFILTERS.blur,index,0)
 	if (Number.isInteger(movieframe) && nextblur != undefined){
 		nextblur = chooseArrayElement(nextblur,movieframe,nextblur.length-1)
@@ -1489,18 +1566,18 @@ if (typeof(IMAGES[taskscreen][classlabel].OBJECTFILTERS) != "undefined"){
         objFilterSingleFrame.sepia = nextsepia
     }
 
-    var objFilterstr = 'blur(' + objFilterSingleFrame.blur + 'px) ' + 'brightness(' + objFilterSingleFrame.brightness + '%) ' + 
+}//IF OBJECTFILTERS defined
+ var objFilterstr = 'blur(' + objFilterSingleFrame.blur + 'px) ' + 'brightness(' + objFilterSingleFrame.brightness + '%) ' + 
     'contrast(' + objFilterSingleFrame.contrast + '%) ' + 'grayscale(' + objFilterSingleFrame.grayscale + '%) ' + 
     'hue-rotate(' + objFilterSingleFrame.huerotate + 'deg) ' + 'invert(' + objFilterSingleFrame.invert + '%) ' + 
     'opacity(' + objFilterSingleFrame.opacity + '%) ' + 'saturate(' + objFilterSingleFrame.saturate + '%) ' +
     'sepia(' + objFilterSingleFrame.sepia + '%)'
-}//IF OBJECTFILTERS defined
     
+//===== 2D IMAGE FILTERS 
+var imgFilterSingleFrame = {blur: 0, brightness: 100, contrast: 100, grayscale: 0, huerotate: 0, invert: 0, opacity: 100,
+	saturate: 100, sepia: 0}
 
 if (typeof(IMAGES[taskscreen][classlabel].IMAGEFILTERS) != "undefined"){
-    //===== 2D IMAGE FILTERS 
-    var imgFilterSingleFrame = {blur: 0, brightness: 100, contrast: 100, grayscale: 0, huerotate: 0, invert: 0, opacity: 100,
-        saturate: 100, sepia: 0}
     
     var nextblur = chooseArrayElement(IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur,index,0)
 	if (Number.isInteger(movieframe) && nextblur != undefined){
@@ -1579,13 +1656,12 @@ if (typeof(IMAGES[taskscreen][classlabel].IMAGEFILTERS) != "undefined"){
         imgFilterSingleFrame.sepia = nextsepia
     }
 
-    var imgFilterstr = 'blur(' + imgFilterSingleFrame.blur + 'px) ' + 'brightness(' + imgFilterSingleFrame.brightness + '%) ' + 
+}//IF IMAGEFILTERS defined
+   var imgFilterstr = 'blur(' + imgFilterSingleFrame.blur + 'px) ' + 'brightness(' + imgFilterSingleFrame.brightness + '%) ' + 
     'contrast(' + imgFilterSingleFrame.contrast + '%) ' + 'grayscale(' + imgFilterSingleFrame.grayscale + '%) ' + 
     'hue-rotate(' + imgFilterSingleFrame.huerotate + 'deg) ' + 'invert(' + imgFilterSingleFrame.invert + '%) ' + 
     'opacity(' + imgFilterSingleFrame.opacity + '%) ' + 'saturate(' + imgFilterSingleFrame.saturate + '%) ' +
     'sepia(' + imgFilterSingleFrame.sepia + '%)'
-
-}//IF IMAGEFILTERS defined
 
     return [objFilterstr,imgFilterstr]
 }

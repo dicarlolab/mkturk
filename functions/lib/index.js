@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.bqInsertDisplayTimes = exports.submitAssignment = exports.submitSurvey = exports.sayHello = exports.listAllUsers = exports.copyParamFile = exports.processMturkUser = exports.isMturkUser = exports.isLabMember = exports.detectDevice = exports.bqListDatasets = exports.listTables = exports.bqQuery = exports.bqInsertEyeData = exports.bqInsertTouchData = void 0;
+exports.bqInsertDisplayTimes = exports.submitAssignment = exports.submitSurvey = exports.testOnCall = exports.testOnRequest = exports.sayHello = exports.listAllUsers = exports.copyParamFile = exports.processMturkUser = exports.isMturkUser = exports.isLabMember = exports.detectDevice = exports.bqListDatasets = exports.listTables = exports.bqQuery = exports.bqInsertEyeData = exports.bqInsertTouchData = void 0;
 const functions = require("firebase-functions");
 const bigquery_1 = require("@google-cloud/bigquery");
 const DeviceDetector = require("device-detector-js");
@@ -437,6 +437,15 @@ exports.sayHello = functions.https.onRequest((req, res) => {
     res.send({ aid: aid, hid: hid, wid: wid });
     res.json({ aid: aid, hid: hid, wid: wid });
     return;
+});
+exports.testOnRequest = functions.https.onRequest((req, res) => {
+    let tmp;
+    tmp = 'testOnRequest';
+    res.send({ tmp: tmp });
+    return;
+});
+exports.testOnCall = functions.https.onCall(() => {
+    return 'testOnCall';
 });
 exports.submitSurvey = functions.https.onCall(async (data) => {
     const surveySubmitTime = new Date();
