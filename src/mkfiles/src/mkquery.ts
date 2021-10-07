@@ -1,9 +1,15 @@
-import firebase from "firebase/app";
-import "firebase/functions";
+import { getApp } from "firebase/app";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { Query, doc, getDoc, getDocs } from 'firebase/firestore';
 
-const functions = firebase.functions();
-const listTables = functions.httpsCallable('listTables');
-const bqQuery = functions.httpsCallable('bqQuery');
+const functions = getFunctions(getApp());
+// const functions = firebase.functions();
+
+// const listTables = functions.httpsCallable('listTables');
+const listTables = httpsCallable(functions, 'listTables');
+
+// const bqQuery = functions.httpsCallable('bqQuery');
+const bqQuery = httpsCallable(functions, 'bqQuery');
 
 export class Mkquery {
   public rfidMode: boolean;
@@ -106,7 +112,8 @@ export class Mkquery {
     else {
       let queryStr: string;
 
-      queryStr = ".where(" + `"${field}"` + ", '==', " + `"${keyword}"` + ")";
+      // queryStr = ".where(" + `"${field}"` + ", '==', " + `"${keyword}"` + ")";
+      queryStr = `where('${field}', '==', '${keyword}')`;
 
       return queryStr;
     }
@@ -114,28 +121,42 @@ export class Mkquery {
 
 
 
-  public async decodeQuery(query: firebase.firestore.Query) {
+  public async decodeQuery(query: Query) {
     async function loadData(doc: any, arr: any[]) {
       await arr.push(doc.data());
     }
 
     let arr = new Array();
 
-    await query.get().then(async querySnapshot => {
+    await getDocs(query).then(async (querySnapshot) => {
       if (!querySnapshot.empty) {
         let promises = querySnapshot.docs.map(doc => loadData(doc, arr));
         await Promise.all(promises);
+      } else {
+        console.log('Found No Documents');
+        alert('Found No Documents');
       }
-      
-      else {
-        console.log("Found No Documents");
-        alert("Found No Documents");
-      }
-    }).catch(e => {
-      console.error("Error getting documents:", e);
+    }).catch((e: Error) => {
+      console.error('Error Getting Documents:', e);
     });
 
     return arr;
+
+    // await query.get().then(async querySnapshot => {
+    //   if (!querySnapshot.empty) {
+    //     let promises = querySnapshot.docs.map(doc => loadData(doc, arr));
+    //     await Promise.all(promises);
+    //   }
+      
+    //   else {
+    //     console.log("Found No Documents");
+    //     alert("Found No Documents");
+    //   }
+    // }).catch(e => {
+    //   console.error("Error getting documents:", e);
+    // });
+
+    // return arr;
   }
   
   public mkbquery(dataset: string, agent: string, date: string) {

@@ -1,8 +1,8 @@
-import firebase from "firebase/app";
-import "firebase/firestore";
-import "firebase/storage";
-import "firebase/auth";
-import "firebase/functions";
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, collection, Query, query, where } from "firebase/firestore";
+import { getStorage, StorageReference, ref } from "firebase/storage";
+import { getAuth, GoogleAuthProvider, getRedirectResult, signInWithRedirect } from "firebase/auth";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import './mkfiles.css';
 
 const firebaseConfig = {
@@ -13,34 +13,37 @@ const firebaseConfig = {
   storageBucket: "sandbox-ce2c5.appspot.com",
   messagingSenderId: "1003719887944"
 };
-firebase.initializeApp(firebaseConfig);
+let firebaseApp = initializeApp(firebaseConfig);
 
 import { Mkquery } from "./mkquery";
 import { Mkfinder } from "./mkfinder";
 
-let provider = new firebase.auth.GoogleAuthProvider();
+const auth = getAuth(firebaseApp);
+
+const provider = new GoogleAuthProvider();
 provider.addScope("https://www.googleapis.com/auth/contacts.readonly");
-firebase.auth().getRedirectResult().then(result => {
-  if (result.user) {
+getRedirectResult(auth).then(result => {
+  if (result) {
     console.log("Sign-In Redirect Result, USER:", result.user.email, "is signed in");
-  } else if (firebase.auth().currentUser) {
+  } else if (auth.currentUser) {
     console.log("Sign-In Redirect Result, USER:", "is signed in");
   } else {
-    firebase.auth().signInWithRedirect(provider);
+    signInWithRedirect(auth, provider)
   }
 });
 
-const functions = firebase.functions();
-const db = firebase.firestore();
-const storage = firebase.storage();
-const storageRef = storage.ref(); 
-const rootRef = storageRef.child("mkturkfiles/");
+
+const functions = getFunctions(firebaseApp);
+const db = getFirestore(firebaseApp);
+const storage = getStorage(firebaseApp);
+const storageRef = ref(storage); 
+const rootRef = ref(storageRef, 'mkturkfiles');
 let isRoot = true;
 
 let mkq = new Mkquery();
 let mkf = new Mkfinder();
 
-let bqListDatasets = functions.httpsCallable('bqListDatasets');
+let bqListDatasets = httpsCallable(functions, 'bqListDatasets');
 
 let bqDatasetList = bqListDatasets();
 bqDatasetList.then((datasetList: any) => {
@@ -82,7 +85,7 @@ window.addEventListener('load', (evt: Event) => {
   isRoot = false;
   qryLocSelc.value = "mkturkfiles";
   qryLocSelc.dispatchEvent(new Event("change"));
-  mkf.listStorageFiles(storageRef.child("mkturkfiles"));
+  mkf.listStorageFiles(rootRef);
 });
 
 
@@ -94,7 +97,7 @@ marmosetsLink.addEventListener("click", (ev: Event) => {
   qryLocSelc!.dispatchEvent(new Event("change"));
   fieldSelector!.dispatchEvent(new Event("change"));
 
-  let ret = mkq.decodeQuery(db.collection("marmosets"));
+  let ret = mkq.decodeQuery(collection(db, "marmosets"));
   ret.then(docs => {
     mkf.listFirestoreDocs(docs, "marmosets");
   });
@@ -107,7 +110,7 @@ paramsLink.addEventListener("click" || "pointerup", (ev: Event) => {
   isRoot = false;
   qryLocSelc.value = "mkturkfiles";
   qryLocSelc.dispatchEvent(new Event("change"));
-  mkf.listStorageFiles(storageRef.child("mkturkfiles/parameterfiles/subjects"));
+  mkf.listStorageFiles(ref(storageRef, 'mkturkfiles/parameterfiles/subjects'));
 
 });
 
@@ -117,7 +120,7 @@ paramstorageLink.addEventListener('click' || 'pointerup', (ev: Event) => {
   isRoot = false;
   qryLocSelc.value = 'mkturkfiles';
   qryLocSelc.dispatchEvent(new Event('change'));
-  mkf.listStorageFiles(storageRef.child('mkturkfiles/parameterfiles/params_storage'));
+  mkf.listStorageFiles(ref(storageRef, 'mkturkfiles/parameterfiles/params_storage'));
 });
 
 homeLink.addEventListener("click" || "pointerup", (ev: Event) => {
@@ -126,7 +129,8 @@ homeLink.addEventListener("click" || "pointerup", (ev: Event) => {
   isRoot = false;
   qryLocSelc.value = "mkturkfiles";
   qryLocSelc.dispatchEvent(new Event("change"));
-  mkf.listStorageFiles(storageRef.child("mkturkfiles"));
+  // mkf.listStorageFiles(storageRef.child("mkturkfiles"));
+  mkf.listStorageFiles(rootRef);
 
 });
 
@@ -136,7 +140,8 @@ sceneParamsLink.addEventListener("click" || "pointerup", (ev: Event) => {
   isRoot = false;
   qryLocSelc.value = "mkturkfiles";
   qryLocSelc.dispatchEvent(new Event("change"));
-  mkf.listStorageFiles(storageRef.child("mkturkfiles/scenebags/objectome3d"));
+  // mkf.listStorageFiles(storageRef.child("mkturkfiles/scenebags/objectome3d"));
+  mkf.listStorageFiles(ref(rootRef, 'scenebags/objectome3d'));
 
 });
 
@@ -145,7 +150,8 @@ dailyDataLink.addEventListener('click' || 'pointerup', (ev: Event) => {
   isRoot = false;
   qryLocSelc.value = "mkturkfiles";
   qryLocSelc.dispatchEvent(new Event('change'));
-  mkf.listStorageFiles(storageRef.child('mkturkfiles/mkdailydata'));
+  // mkf.listStorageFiles(storageRef.child('mkturkfiles/mkdailydata'));
+  mkf.listStorageFiles(ref(rootRef, 'mkdailydata'));
 });
 
 qryLocSelc!.addEventListener("change", ev => {
@@ -213,7 +219,7 @@ qryLocSelc!.addEventListener("change", ev => {
       fs.style.visibility = "visible";
       ki0.style.visibility = "visible";
       ki1.style.visibility = "visible";
-      ki2.style.visibility = "visible";
+      ki2.style.visibility = "hidden";
       goBtn.style.visibility = "visible";
       plotX.style.visibility = "hidden";
       plotY.style.visibility = "hidden";
@@ -226,7 +232,7 @@ qryLocSelc!.addEventListener("change", ev => {
       agentTypeCurDate.setAttribute("class", "field-options");
       agentTypeCurDate.setAttribute("value", "agentTypeCurDate");
       agentTypeCurDate.setAttribute("selected", "true");
-      agentTypeCurDate.textContent = "Agent & Doctype & CurrentDate";
+      agentTypeCurDate.textContent = "Agent & CurrentDate";
 
       let fieldSelectorMkturk 
         = document.querySelector("#field-selector") as HTMLSelectElement;
@@ -274,20 +280,21 @@ qryLocSelc!.addEventListener("change", ev => {
       break;
 
     case "mkdailydata":
-      let ret = mkq.decodeQuery(db.collection('mkdailydata'));
+      // let ret = mkq.decodeQuery(db.collection('mkdailydata'));
+      let ret = mkq.decodeQuery(collection(db, 'mkdailydata'));
       ret.then(docs => {
         mkf.listFirestoreDocs(docs, 'mkdailydata');
       });
 
       break;
 
-    case "mkdailydatatest":
-      let retTest = mkq.decodeQuery(db.collection('mkdailydatatest'));
-      retTest.then(docs => {
-        mkf.listFirestoreDocs(docs, 'mkdailydatatest');
-      });
+    // case "mkdailydatatest":
+    //   let retTest = mkq.decodeQuery(db.collection('mkdailydatatest'));
+    //   retTest.then(docs => {
+    //     mkf.listFirestoreDocs(docs, 'mkdailydatatest');
+    //   });
 
-      break;
+    //   break;
 
     case "mkturkfiles":
       fs.style.visibility = "hidden";
@@ -318,7 +325,8 @@ qryLocSelc!.addEventListener("change", ev => {
       resetPlaceholder();
       removeElementsByClassName("field-options");
 
-      queryResult = mkq.decodeQuery(db.collection("devices"));
+      // queryResult = mkq.decodeQuery(db.collection("devices"));
+      queryResult = mkq.decodeQuery(collection(db, 'devices'));
       queryResult.then(docs => {
         mkf.listFirestoreDocs(docs, "devices");
       });
@@ -339,7 +347,8 @@ qryLocSelc!.addEventListener("change", ev => {
       resetPlaceholder();
       removeElementsByClassName("field-options");
 
-      queryResult = mkq.decodeQuery(db.collection("eyecalibrations"));
+      // queryResult = mkq.decodeQuery(db.collection("eyecalibrations"));
+      queryResult = mkq.decodeQuery(collection(db, 'eyecalibrations'));
       queryResult.then(docs => {
         mkf.listFirestoreDocs(docs, "eyecalibrations");
       });
@@ -451,8 +460,7 @@ fieldSelector?.addEventListener("change", ev => {
 
     case "agentTypeCurDate":
       ki0.setAttribute("placeholder", "Agent");
-      ki1.setAttribute("placeholder", "Doctype");
-      ki2.setAttribute(
+      ki1.setAttribute(
         "placeholder", "CurrentDate (e.g. 04/17/2019; +-7)"
       );
       plotX.style.visibility = "hidden";
@@ -488,7 +496,7 @@ queryForm?.addEventListener("submit", async ev => {
 
   let queryParam: { field: string, keyword: string}[] = [];
   let queryStr: string = "";
-  let query: firebase.firestore.Query;
+  let queryResult: Query;
 
 
   switch(qryLoc) {
@@ -499,18 +507,41 @@ queryForm?.addEventListener("submit", async ev => {
         console.error("No query arguments!");
         alert("No query arguments!");
       }
-      queryStr = "db.collection('marmosets')" + mkq.mkquery(queryParam);
+      queryResult = query(collection(db, 'marmosets'), where(queryParam[0].field, '==', queryParam[0].keyword));
+      // queryStr = "db.collection('marmosets')" + mkq.mkquery(queryParam);
+      // queryStr = "query(collection(db, 'marmosets')"
+      queryStr = `query(collection(db, 'marmosets'), ${mkq.mkquery(queryParam)})`;
       break;
 
     case "mkturkdata":
       if (k0) {
         queryParam.push({ field: "Agent", keyword: k0});
       }
+      // if (k1) {
+      //   queryParam.push({ field: "Doctype", keyword: k1 });
+      // }
       if (k1) {
-        queryParam.push({ field: "Doctype", keyword: k1 });
+        queryParam.push({ field: "CurrentDate", keyword: k1 });
       }
-      if (k2) {
-        queryParam.push({ field: "CurrentDate", keyword: k2 });
+
+      if (queryParam.length == 0) {
+        console.error('No query arguments!');
+        alert('No query arguments!');
+      } else if (queryParam.length == 1) {
+        queryResult = query(collection(db, 'mkturkdata'), where(queryParam[0].field, '==', queryParam[0].keyword));
+      } else if (queryParam.length == 2) {
+        queryResult = query(
+          collection(db, 'mkturkdata'),
+          where(queryParam[0].field, '==', queryParam[0].keyword),
+          where(queryParam[1].field, '==', queryParam[1].keyword)
+        );
+      } else if (queryParam.length == 3) {
+        queryResult = query(
+          collection(db, 'mkturkdata'),
+          where(queryParam[0].field, '==', queryParam[0].keyword),
+          where(queryParam[1].field, '==', queryParam[1].keyword),
+          where(queryParam[2].field, '==', queryParam[2].keyword)
+        );
       }
 
       if (queryParam.length > 0) {
@@ -558,9 +589,11 @@ queryForm?.addEventListener("submit", async ev => {
   }
   
 
-  if (queryStr.startsWith('db.collection')) {
-    query = eval(queryStr);
-    let ret = mkq.decodeQuery(query);
+  if (queryStr.startsWith('query')) {
+    console.log(queryStr);
+    // query = eval(queryStr);
+    
+    let ret = mkq.decodeQuery(queryResult!);
     ret.then(docs => {
       mkf.listFirestoreDocs(docs, qryLoc!);
       if (rfidToggle.checked) {
@@ -573,8 +606,11 @@ queryForm?.addEventListener("submit", async ev => {
   else if (queryStr.startsWith('SELECT *')) {
     let test = mkq.decodeBigQuery(queryStr);
     console.log(test);
-    test.then(data => {
-      mkf.listBigQueryTable(data.data, qryLoc, k0!);
+    test.then((data: any) => {
+      if (Array.isArray(data.data)) {
+        mkf.listBigQueryTable(data.data, qryLoc, k0!);
+      }
+      // mkf.listBigQueryTable(data.data, qryLoc, k0!);
     })
   }
   

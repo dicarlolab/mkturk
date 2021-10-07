@@ -17,7 +17,7 @@ module.exports = {
       cleanOnceBeforeBuildPatterns: ['**/*', '!mkfiles_rfid.js', '!mkfiles_extendKeys.js']
     }),
     new HtmlWebpackPlugin({
-      title: 'MkFiles',
+      title: 'MkFiles2',
       template: './src/index.html'
     }),
     new MiniCssExtractPlugin({
