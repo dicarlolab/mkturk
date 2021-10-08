@@ -1,0 +1,277 @@
+node_modules/@popperjs/core/lib/createPopper.d.ts(1,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/createPopper.d.ts(1,73): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/modifiers/applyStyles.d.ts(1,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/modifiers/applyStyles.d.ts(1,31): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/modifiers/arrow.d.ts(1,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/modifiers/arrow.d.ts(1,46): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/modifiers/arrow.d.ts(2,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/modifiers/arrow.d.ts(2,32): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/modifiers/computeStyles.d.ts(1,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/modifiers/computeStyles.d.ts(1,67): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/modifiers/eventListeners.d.ts(1,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/modifiers/eventListeners.d.ts(1,31): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/modifiers/flip.d.ts(1,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/modifiers/flip.d.ts(1,56): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/modifiers/flip.d.ts(2,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/modifiers/flip.d.ts(2,40): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/modifiers/hide.d.ts(1,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/modifiers/hide.d.ts(1,31): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/modifiers/offset.d.ts(1,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/modifiers/offset.d.ts(1,32): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/modifiers/offset.d.ts(2,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/modifiers/offset.d.ts(2,46): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/modifiers/popperOffsets.d.ts(1,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/modifiers/popperOffsets.d.ts(1,31): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/modifiers/preventOverflow.d.ts(1,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/modifiers/preventOverflow.d.ts(1,56): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/modifiers/preventOverflow.d.ts(2,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/modifiers/preventOverflow.d.ts(2,46): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/types.d.ts(1,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/types.d.ts(1,48): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/types.d.ts(2,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/types.d.ts(2,44): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/types.d.ts(3,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/types.d.ts(3,35): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/types.d.ts(4,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/types.d.ts(4,35): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/types.d.ts(5,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/types.d.ts(5,37): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/types.d.ts(6,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/types.d.ts(6,45): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/types.d.ts(7,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/types.d.ts(7,44): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/types.d.ts(8,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/types.d.ts(8,36): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/types.d.ts(9,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/types.d.ts(9,46): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/types.d.ts(10,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/types.d.ts(10,42): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/utils/detectOverflow.d.ts(1,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/utils/detectOverflow.d.ts(1,49): error TS1005: ';' expected.
+node_modules/@popperjs/core/lib/utils/detectOverflow.d.ts(2,13): error TS1005: '=' expected.
+node_modules/@popperjs/core/lib/utils/detectOverflow.d.ts(2,65): error TS1005: ';' expected.
+node_modules/@restart/ui/esm/Dropdown.d.ts(7,1): error TS1128: Declaration or statement expected.
+node_modules/@restart/ui/esm/Dropdown.d.ts(7,13): error TS1005: ';' expected.
+node_modules/@restart/ui/esm/Dropdown.d.ts(7,150): error TS1109: Expression expected.
+node_modules/@restart/ui/esm/DropdownContext.d.ts(2,13): error TS1005: '=' expected.
+node_modules/@restart/ui/esm/DropdownContext.d.ts(2,32): error TS1005: ';' expected.
+node_modules/@restart/ui/esm/Nav.d.ts(4,1): error TS1128: Declaration or statement expected.
+node_modules/@restart/ui/esm/Nav.d.ts(4,13): error TS1005: ';' expected.
+node_modules/@restart/ui/esm/ssr.d.ts(2,1): error TS1128: Declaration or statement expected.
+node_modules/@restart/ui/esm/ssr.d.ts(2,13): error TS1005: ';' expected.
+node_modules/@restart/ui/esm/Tabs.d.ts(4,1): error TS1128: Declaration or statement expected.
+node_modules/@restart/ui/esm/Tabs.d.ts(4,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/Anchor.d.ts(2,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/Anchor.d.ts(2,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(2,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(2,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(2,37): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(5,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(5,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(5,45): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(7,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(7,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(7,43): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(9,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(9,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(9,33): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(11,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(11,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(11,34): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(13,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(13,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(13,33): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(15,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(15,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(15,38): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(17,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(17,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(17,42): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(19,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(19,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(19,34): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(21,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(21,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(21,39): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(23,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(23,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(23,41): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(25,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(25,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(25,32): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(27,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(27,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(27,35): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(30,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(30,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(30,36): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(32,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(32,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(32,40): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(34,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(34,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(34,39): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(36,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(36,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(36,31): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(38,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(38,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(38,36): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(40,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(40,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(40,36): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(42,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(42,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(42,42): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(44,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(44,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(44,32): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(46,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(46,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(46,32): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(48,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(48,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(48,39): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(50,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(50,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(50,37): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(53,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(53,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(53,41): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(55,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(55,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(55,37): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(57,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(57,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(57,37): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(59,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(59,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(59,36): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(61,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(61,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(61,38): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(63,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(63,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(63,37): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(65,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(65,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(65,33): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(68,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(68,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(68,38): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(70,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(70,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(70,37): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(72,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(72,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(72,41): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(74,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(74,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(74,33): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(77,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(77,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(77,39): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(81,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(81,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(81,31): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(83,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(83,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(83,34): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(85,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(85,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(85,39): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(87,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(87,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(87,39): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(90,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(90,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(90,35): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(92,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(92,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(92,37): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(94,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(94,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(94,43): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(98,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(98,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(98,35): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(100,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(100,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(100,42): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(102,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(102,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(102,36): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(104,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(104,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(104,38): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(106,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(106,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(106,39): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(108,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(108,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(108,45): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(110,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(110,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(110,35): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(114,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(114,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(114,39): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(116,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(116,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(116,33): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(118,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(118,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(118,31): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(120,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(120,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(120,35): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(122,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(122,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(122,39): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(124,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(124,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(124,39): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(126,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(126,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(126,33): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(128,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(128,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(128,31): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(130,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(130,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(130,40): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(133,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(133,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(133,33): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(135,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(135,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(135,35): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(137,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(137,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(137,32): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(139,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(139,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(139,41): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(141,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(141,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(141,33): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(144,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(144,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(144,39): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(146,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(146,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(146,42): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(148,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(148,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(148,40): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(150,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(150,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(150,90): error TS1109: Expression expected.
+node_modules/react-bootstrap/esm/index.d.ts(150,97): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(152,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/index.d.ts(152,13): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/index.d.ts(152,35): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/SSRProvider.d.ts(2,13): error TS1005: '=' expected.
+node_modules/react-bootstrap/esm/SSRProvider.d.ts(2,39): error TS1005: ';' expected.
+node_modules/react-bootstrap/esm/SSRProvider.d.ts(3,1): error TS1128: Declaration or statement expected.
+node_modules/react-bootstrap/esm/SSRProvider.d.ts(3,13): error TS1005: ';' expected.
