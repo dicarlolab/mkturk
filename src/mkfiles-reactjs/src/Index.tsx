@@ -12,6 +12,6 @@ ReactDOM.render(
     <App />
     <FirstComponent />
   </div>,
-  
-  document.getElementById('app'),
+
+  document.getElementById('app')
 );
