@@ -1,34 +1,21 @@
 import React from 'react';
 import 'react-tabulator/lib/styles.css';
-import 'react-tabulator/lib/css/bootstrap/tabulator_bootstrap4.min.css';
+// import 'react-tabulator/lib/css/bootstrap/tabulator_bootstrap4.min.css';
+import 'react-tabulator/lib/css/tabulator.min.css';
 import { ReactTabulator } from 'react-tabulator';
+import '../util/storage';
+import { listStuff } from '../util/storage';
 
-export default class FrontDoor extends React.Component<{}, { date: string }> {
-  private interval: any;
+export default class MkFinder extends React.Component {
 
-  constructor(props: any) {
-    super(props);
-    // this.state = { date: new Date().toJSON() };
-  }
-
-  // tick() {
-  //   this.setState((state: any) => ({
-  //     date: new Date().toJSON(),
-  //   }));
-  // }
-
-  // componentDidMount() {
-  //   this.interval = setInterval(() => {
-  //     this.tick();
-  //   }, 1000);
-  // }
-
-  // componentWillUnmount() {
-  //   clearInterval(this.interval);
-  // }
 
   render() {
     // return <div>RIGHT NOW: {this.state.date}</div>;
+
+    let stuff = listStuff();
+    console.log(stuff);
+    
+    
 
     const columns = [
       { title: 'Name', field: 'name', width: 150 },

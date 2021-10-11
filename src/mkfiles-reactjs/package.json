@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npx webpack --config webpack.config.js",
+    "dev": "npx webpack --watch --config webpack.config.js"
   },
   "author": "",
   "license": "ISC",
@@ -38,10 +40,14 @@
   },
   "dependencies": {
     "@types/bootstrap": "^5.1.6",
+    "@types/tabulator-tables": "^4.9.4",
     "bootstrap": "^5.1.1",
     "firebase": "^9.1.2",
     "react": "^17.0.2",
     "react-bootstrap": "^2.0.0-rc.0",
-    "react-dom": "^17.0.2"
+    "react-dom": "^17.0.2",
+    "react-redux": "^7.2.5",
+    "react-tabulator": "^0.15.0",
+    "tabulator-tables": "^4.9.3"
   }
 }

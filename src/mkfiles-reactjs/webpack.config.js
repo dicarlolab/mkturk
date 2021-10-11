@@ -32,7 +32,9 @@ module.exports = {
         use: [ 'style-loader', 'css-loader' ],
         include: [
           path.resolve(__dirname, 'src'),
-          path.resolve(__dirname, 'node_modules/bootstrap/dist/css')
+          path.resolve(__dirname, 'node_modules/bootstrap/dist/css'),
+          path.resolve(__dirname, 'node_modules/tabulator-tables/dist/css'),
+          path.resolve(__dirname, 'node_modules/react-tabulator/lib')
         ],
         sideEffects: true
       },
