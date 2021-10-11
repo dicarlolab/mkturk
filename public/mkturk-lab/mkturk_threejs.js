@@ -61,6 +61,8 @@ async function addToScene(taskscreen) {
   var unitvec2d = toScreenPosition(unitvec, defaultcamera);
   IMAGEMETA["THREEJStoPixels"] = unitvec2d.x - renderer.domElement.width / 2;
 
+  let framerate = ENV.FrameRateMovie;
+
   for (let classlabel = 0; classlabel < IMAGES[taskscreen].length; classlabel++) {
 
     //==== CAMERAS
@@ -270,7 +272,6 @@ async function addToScene(taskscreen) {
         Array(IMAGES[taskscreen][classlabel].nimages).fill(0)
       );
     }
-    var framerate = ENV.FrameRateMovie;
 
     //==== LIGHTS
     LIGHTS[taskscreen][classlabel] = [];
