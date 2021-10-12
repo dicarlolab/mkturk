@@ -1,8 +1,6 @@
 // App.tsx
 
-import React from "react";
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import React from 'react';
+import { useAppDispatch, useAppSelector } from './hooks';
 
-export const App: React.FC<{}> = () => (
-  <h1>HI</h1>
-);
+export const App: React.FC<{}> = () => <h1>HI</h1>;
