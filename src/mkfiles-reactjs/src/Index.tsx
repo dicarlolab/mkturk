@@ -8,12 +8,14 @@ import Dashboard from './components/Dashboard';
 
 import { Provider } from 'react-redux';
 import { store } from './app/store';
+import App from './App';
 
 ReactDOM.render(
   <React.StrictMode>
     <Provider store={store}>
       <MkfilesNavbar />
       <Dashboard />
+      <App />
     </Provider>
   </React.StrictMode>,
   document.getElementById('app')
