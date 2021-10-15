@@ -1,4 +1,5 @@
 // src/main.js
+import { firebaseApp } from './Auth';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import React from 'react';

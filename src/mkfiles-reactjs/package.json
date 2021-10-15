@@ -41,9 +41,11 @@
   "dependencies": {
     "@reduxjs/toolkit": "^1.6.2",
     "@types/bootstrap": "^5.1.6",
+    "@types/lodash": "^4.14.175",
     "@types/tabulator-tables": "^4.9.4",
     "bootstrap": "^5.1.1",
     "firebase": "^9.1.2",
+    "lodash": "^4.17.21",
     "react": "^17.0.2",
     "react-bootstrap": "^2.0.0-rc.0",
     "react-dom": "^17.0.2",
