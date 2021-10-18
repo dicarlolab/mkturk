@@ -8,17 +8,17 @@ import React from 'react';
 import { useAppSelector } from '../app/hooks';
 
 function Dashboard() {
-  let oldCount = 10;
-  let newCount = useAppSelector((state) => state.counter.value);
+  // let oldCount = 10;
+  // let newCount = useAppSelector((state) => state.counter.value);
 
-  let newText = '';
-  console.log(oldCount, newCount);
-  if (oldCount == newCount) {
-    newText = 'nothing has changed';
-  } else {
-    oldCount = newCount;
-    newText = 'count has been updated';
-  }
+  // let newText = '';
+  // console.log(oldCount, newCount);
+  // if (oldCount == newCount) {
+  //   newText = 'nothing has changed';
+  // } else {
+  //   oldCount = newCount;
+  //   newText = 'count has been updated';
+  // }
   return (
     <Container>
       <Row className="mb-3">
@@ -26,9 +26,7 @@ function Dashboard() {
           <Card>
             <Card.Body>
               <Card.Title>QUERY BOX</Card.Title>
-              <Card.Text>
-                This is where the query box will be located {newText}
-              </Card.Text>
+              <Card.Text>This is where the query box will be located</Card.Text>
             </Card.Body>
           </Card>
         </Col>
