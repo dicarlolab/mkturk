@@ -1,40 +1,53 @@
 import React, { useState, useEffect } from 'react';
 import { cloneDeep } from 'lodash';
-import { DocumentData } from 'firebase/firestore';
-import DataGrid, { Column } from 'react-data-grid';
-// import 'react-tabulator/lib/styles.css';
-// import 'react-tabulator/lib/css/tabulator.min.css';
-// import { ReactTabulator } from 'react-tabulator';
-// import TabulatorTables from 'tabulator-tables';
-
+// import { DocumentData } from 'firebase/firestore';
+import {
+  FileArray,
+  FileBrowser,
+  FileContextMenu,
+  FileList,
+  FileNavbar,
+  FileToolbar,
+  setChonkyDefaults,
+} from 'chonky';
+import { ChonkyIconFA } from 'chonky-icon-fontawesome';
 import { useAppSelector } from '../app/hooks';
+
+setChonkyDefaults({ iconComponent: ChonkyIconFA });
 
 function Mkfinder(): JSX.Element {
   const firestoreData = useAppSelector((state) => state.data.list);
   const firestoreLocation = useAppSelector((state) => state.data.collection);
   // // let tableRefs: any = null;
   // // const [selectedName, setSelectedName] = useState('');
-  const [tableData, setTableData] = useState([] as DocumentData[]);
-  const [tableColumns, setTableColumns] = useState([
-    {},
-  ] as unknown as readonly Column<DocumentData, unknown>[]);
+  const [tableData, setTableData] = useState([] as FileArray);
+  // const [tableColumns, setTableColumns] = useState([
+  //   {},
+  // ] as unknown as readonly Column<DocumentData, unknown>[]);
   // const [tableIndex, setTableIndex] = useState('');
   // // const [tableRef, setTableRef] = useState(tableRefs);
   useEffect(() => {
-    setTableData(cloneDeep(firestoreData));
-    if (firestoreLocation === 'marmosets') {
-      const columns = [
-        {
-          key: 'name',
-          name: 'Name',
-        },
-        { key: 'sex', name: 'Sex' },
-      ];
-      setTableColumns(columns);
-    }
+    setTableData(cloneDeep(firestoreData) as FileArray);
+    // if (firestoreLocation === 'marmosets') {
+    //   const columns = [
+    //     {
+    //       key: 'name',
+    //       name: 'Name',
+    //     },
+    //     { key: 'sex', name: 'Sex' },
+    //   ];
+    //   setTableColumns(columns);
+    // }
   }, [firestoreData, firestoreLocation]);
 
-  return <DataGrid columns={tableColumns} rows={tableData} />;
+  return (
+    <FileBrowser files={tableData}>
+      <FileNavbar />
+      <FileToolbar />
+      <FileList />
+      <FileContextMenu />
+    </FileBrowser>
+  );
 
   // useEffect(() => {
   //   setTableData(cloneDeep(firestoreData));

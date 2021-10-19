@@ -1,13 +1,13 @@
+import React from 'react';
 import Container from 'react-bootstrap/Container';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 import Card from 'react-bootstrap/Card';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import MkFinder from './Mkfinder';
-import React from 'react';
-import { useAppSelector } from '../app/hooks';
+// import { useAppSelector } from '../app/hooks';
 
-function Dashboard() {
+function Dashboard(): JSX.Element {
   // let oldCount = 10;
   // let newCount = useAppSelector((state) => state.counter.value);
 

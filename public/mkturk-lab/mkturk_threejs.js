@@ -293,11 +293,29 @@ async function addToScene(taskscreen) {
       let lightIdx = Object.keys(IMAGES[taskscreen][classlabel].LIGHTS).indexOf(
         lt
       );
-      let light = new THREE.DirectionalLight(
-        Number(IMAGES[taskscreen][classlabel].LIGHTS[lt].color), // LIGHT COLOR
-        IMAGES[taskscreen][classlabel].LIGHTS[lt].intensity // LIGHT INTENSITY
-      );
-      light.name = classlabel;
+      // let light = new THREE.DirectionalLight(
+      //   Number(IMAGES[taskscreen][classlabel].LIGHTS[lt].color), // LIGHT COLOR
+      //   IMAGES[taskscreen][classlabel].LIGHTS[lt].intensity // LIGHT INTENSITY
+      // );
+
+      let light;
+      if (
+        IMAGES[taskscreen][classlabel].LIGHTS[lt].type === "DirectionalLight"
+      ) {
+        light = new THREE.DirectionalLight(
+          Number(IMAGES[taskscreen][classlabel].LIGHTS[lt].color), // LIGHT COLOR
+          IMAGES[taskscreen][classlabel].LIGHTS[lt].intensity // LIGHT INTENSITY
+        );
+      } else if (
+        IMAGES[taskscreen][classlabel].LIGHTS[lt].type === "AmbientLight"
+      ) {
+        light = new THREE.AmbientLight(
+          IMAGES[taskscreen][classlabel].LIGHTS[lt].color, // LIGHT COLOR
+          IMAGES[taskscreen][classlabel].LIGHTS[lt].intensity // LIGHT INTENSITY
+        );
+      }
+
+      light.name = classlabel + lt;
       scene[taskscreen].add(light);
       LIGHTS[taskscreen][classlabel][lt] = light;
 
@@ -414,6 +432,7 @@ async function addToScene(taskscreen) {
         // set texture
         if (child.material) {
           let material = new THREE.MeshPhysicalMaterial(materialparam);
+          child.material.metalness = 0;
 
           if (child.name == "Base") {
             material.map = child.material.map;

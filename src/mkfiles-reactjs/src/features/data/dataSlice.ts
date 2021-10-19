@@ -70,7 +70,10 @@ export const fetchFirestoreCollection = createAsyncThunk(
   async (collectionId: string) => {
     const querySnapshot = await getDocs(collection(db, collectionId));
     const firestoreDocs = querySnapshot.docs.map((doc: DocumentData) => {
-      return doc.data();
+      const returnDoc = doc.data();
+      returnDoc.id = doc.id;
+      console.log(doc.id);
+      return returnDoc;
     });
     return timestampToDate(firestoreDocs);
   }

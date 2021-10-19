@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+// import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 interface CounterState {
   value: number;
@@ -17,12 +17,12 @@ const counterSlice = createSlice({
     // [increment] this is possible because immer makes the
     // state object IMMUTABLE under the hood
     incremented(state) {
-      state.value++;
+      state.value += 1;
     },
 
     // [decrement]
     decremented(state) {
-      state.value--;
+      state.value -= 1;
     },
 
     // reset
