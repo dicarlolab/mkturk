@@ -4,7 +4,6 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
-// const FixStyleOnlyEntriesPlugin = require("webpack-fix-style-only-entries");
 
 module.exports = {
   mode: 'production',
@@ -17,7 +16,7 @@ module.exports = {
       cleanOnceBeforeBuildPatterns: ['**/*', '!mkfiles_rfid.js', '!mkfiles_extendKeys.js']
     }),
     new HtmlWebpackPlugin({
-      title: 'MkFiles',
+      title: 'MkFiles2',
       template: './src/index.html'
     }),
     new MiniCssExtractPlugin({
