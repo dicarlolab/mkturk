@@ -1,12 +1,10 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { isPlainObject, isFinite, isString, isArray, isNumber } from 'lodash';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { isPlainObject, isArray, isString, isNumber } from 'lodash';
 import {
   collection,
   getDocs,
   getFirestore,
-  QuerySnapshot,
   DocumentData,
-  QueryDocumentSnapshot,
   Timestamp,
 } from 'firebase/firestore';
 import { firebaseApp } from '../../Auth';
@@ -25,50 +23,56 @@ const initialState: DataState = {
   status: '',
 };
 
-function timestampToDate(dataArr: Array<any>) {
-  function _timestampToDate(elem: Timestamp, idx: number, arr: Array<any>) {
-    try {
-      arr[idx] = elem.toDate().toJSON();
-    } catch {}
+function timestampToDate(dataArr: Array<DocumentData>) {
+  function tttimestampToDate(elem: Timestamp) {
+    if (elem instanceof Timestamp) {
+      return elem.toDate().toJSON();
+    }
+    return elem;
   }
 
-  dataArr.forEach((data) => {
-    for (let key of Object.keys(data)) {
-      if (isArray(data[key])) {
-        data[key].forEach(_timestampToDate);
-      } else if (isPlainObject(data[key])) {
-        try {
-          data[key] = data[key].toDate().toJSON();
-          continue;
-        } catch {}
-
-        for (let key2 of Object.keys(data[key])) {
-          try {
-            data[key][key2] = data[key][key2].toDate().toJSON();
-          } catch {}
+  const dataArrProcessed = dataArr.map((data) => {
+    const dataProcessed = data;
+    Object.keys(dataProcessed).forEach((key) => {
+      if (isArray(dataProcessed[key])) {
+        // dataProcessed[key].forEach(tttimestampToDate);
+        dataProcessed[key] = dataProcessed[key].map(tttimestampToDate);
+      } else if (isPlainObject(dataProcessed[key])) {
+        if (dataProcessed[key] instanceof Timestamp) {
+          dataProcessed[key] = dataProcessed[key].toDate().toJSON();
+        } else {
+          Object.keys(dataProcessed[key]).forEach((key2) => {
+            if (dataProcessed[key][key2] instanceof Timestamp) {
+              dataProcessed[key][key2] = dataProcessed[key][key2]
+                .toDate()
+                .toJSON();
+            }
+          });
         }
-      } else if (!isString(data[key]) && !isNumber(data[key])) {
-        try {
-          data[key] = data[key].toDate().toJSON();
-        } catch {}
+      } else if (
+        !isString(dataProcessed[key]) &&
+        !isNumber(dataProcessed[key])
+      ) {
+        if (dataProcessed[key] instanceof Timestamp) {
+          dataProcessed[key] = dataProcessed[key].toDate().toJSON();
+        }
       }
-    }
+    });
+
+    return dataProcessed;
   });
 
-  return dataArr;
+  return dataArrProcessed;
 }
 
 export const fetchFirestoreCollection = createAsyncThunk(
   'firestore/fetchCollection',
   async (collectionId: string) => {
     const querySnapshot = await getDocs(collection(db, collectionId));
-    let processedQuerySnapshot: Array<any> = [];
-    querySnapshot.forEach((doc) => {
-      processedQuerySnapshot.push(doc.data());
+    const firestoreDocs = querySnapshot.docs.map((doc: DocumentData) => {
+      return doc.data();
     });
-
-    processedQuerySnapshot = timestampToDate(processedQuerySnapshot);
-    return processedQuerySnapshot;
+    return timestampToDate(firestoreDocs);
   }
 );
 

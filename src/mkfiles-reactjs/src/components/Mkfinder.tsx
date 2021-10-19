@@ -1,49 +1,82 @@
 import React, { useState, useEffect } from 'react';
-import 'react-tabulator/lib/styles.css';
-// import 'react-tabulator/lib/css/bootstrap/tabulator_bootstrap4.min.css';
-import 'react-tabulator/lib/css/tabulator.min.css';
-import { ReactTabulator } from 'react-tabulator';
-import '../util/storage';
-import { listStuff } from '../util/storage';
-import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { cloneDeep } from 'lodash';
+import { DocumentData } from 'firebase/firestore';
+import DataGrid, { Column } from 'react-data-grid';
+// import 'react-tabulator/lib/styles.css';
+// import 'react-tabulator/lib/css/tabulator.min.css';
+// import { ReactTabulator } from 'react-tabulator';
+// import TabulatorTables from 'tabulator-tables';
 
-function Mkfinder() {
+import { useAppSelector } from '../app/hooks';
+
+function Mkfinder(): JSX.Element {
   const firestoreData = useAppSelector((state) => state.data.list);
-  let tableRefs: any = null;
-  let firestoreDataPrime: any[] = [];
-  const [selectedName, setSelectedName] = useState('');
-  const [tableData, setTableData] = useState(firestoreDataPrime);
-  const [tableRef, setTableRef] = useState(tableRefs);
-
+  const firestoreLocation = useAppSelector((state) => state.data.collection);
+  // // let tableRefs: any = null;
+  // // const [selectedName, setSelectedName] = useState('');
+  const [tableData, setTableData] = useState([] as DocumentData[]);
+  const [tableColumns, setTableColumns] = useState([
+    {},
+  ] as unknown as readonly Column<DocumentData, unknown>[]);
+  // const [tableIndex, setTableIndex] = useState('');
+  // // const [tableRef, setTableRef] = useState(tableRefs);
   useEffect(() => {
-    console.time('clonedeep');
-    firestoreDataPrime = cloneDeep(firestoreData);
     setTableData(cloneDeep(firestoreData));
-    console.timeEnd('clonedeep');
-  }, [firestoreData]);
+    if (firestoreLocation === 'marmosets') {
+      const columns = [
+        {
+          key: 'name',
+          name: 'Name',
+        },
+        { key: 'sex', name: 'Sex' },
+      ];
+      setTableColumns(columns);
+    }
+  }, [firestoreData, firestoreLocation]);
 
-  const columns = [{ title: 'name', field: 'name' }];
+  return <DataGrid columns={tableColumns} rows={tableData} />;
 
-  const rowClick = (e: any, row: any) => {
-    console.log('ref table: ', tableRef);
-    console.log(`rowClick id: ${row.getData().name}`, row, e);
-    setSelectedName(row.getData().name);
-  };
+  // useEffect(() => {
+  //   setTableData(cloneDeep(firestoreData));
+  //   if (firestoreLocation === 'marmosets') {
+  //     const columns = [
+  //       {
+  //         title: "<input id='select-all' type='checkbox'/>",
+  //         headerSort: false,
+  //         width: 15,
+  //       },
+  //       { title: 'Name', field: 'name' },
+  //       { title: 'Sex', field: 'sex' },
+  //       { title: 'DOB', field: 'birthdate' },
+  //       { title: 'RFID', field: 'rfid' },
+  //     ];
+  //     const index = 'name';
+  //     setTableColumns(columns);
+  //     setTableIndex(index);
+  //   } else if (firestoreLocation === 'devices') {
+  //     const columns = [{ title: 'Model', field: 'model' }];
+  //     const index = 'model';
+  //     setTableColumns(columns);
+  //     setTableIndex(index);
+  //   }
+  // }, [firestoreData, firestoreLocation]);
 
-  return (
-    <ReactTabulator
-      ref={(ref) => {
-        setTableRef(ref);
-      }}
-      data={tableData}
-      columns={columns}
-      rowClick={rowClick}
-      index={'name'}
-      layout={'fitColumns'}
-      tooltips={true}
-    />
-  );
+  // return (
+  //   <ReactTabulator
+  //     // ref={(ref) => {
+  //     //   setTableRef(ref);
+  //     // }}
+
+  //     data={tableData}
+  //     columns={tableColumns}
+  //     // rowClick={rowClick}
+  //     index={tableIndex}
+  //     layout={'fitColumns'}
+  //     tooltips
+  //     selectable={1}
+  //     selectableRangeMode={'click'}
+  //   />
+  // );
 }
 
 export default Mkfinder;
