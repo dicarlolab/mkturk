@@ -9,6 +9,7 @@ import {
   FileNavbar,
   FileToolbar,
   setChonkyDefaults,
+  ChonkyActions,
 } from 'chonky';
 import { ChonkyIconFA } from 'chonky-icon-fontawesome';
 import { useAppSelector } from '../app/hooks';
@@ -41,7 +42,10 @@ function Mkfinder(): JSX.Element {
   }, [firestoreData, firestoreLocation]);
 
   return (
-    <FileBrowser files={tableData}>
+    <FileBrowser
+      files={tableData}
+      defaultFileViewActionId={ChonkyActions.EnableListView.id}
+    >
       <FileNavbar />
       <FileToolbar />
       <FileList />
