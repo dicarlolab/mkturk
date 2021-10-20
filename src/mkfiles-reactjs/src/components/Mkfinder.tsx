@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { cloneDeep } from 'lodash';
+// import { cloneDeep } from 'lodash';
 // import { DocumentData } from 'firebase/firestore';
 import {
   FileArray,
@@ -19,16 +19,19 @@ setChonkyDefaults({ iconComponent: ChonkyIconFA });
 function Mkfinder(): JSX.Element {
   const firestoreData = useAppSelector((state) => state.data.list);
   const firestoreLocation = useAppSelector((state) => state.data.collection);
+  const firestoreDataInfos = useAppSelector((state) => state.data.docsInfo);
   // // let tableRefs: any = null;
   // // const [selectedName, setSelectedName] = useState('');
-  const [tableData, setTableData] = useState([] as FileArray);
+  // const [tableData, setTableData] = useState([] as FileArray);
+  const [fileBrowserData, setFileBrowserData] = useState([] as FileArray);
   // const [tableColumns, setTableColumns] = useState([
   //   {},
   // ] as unknown as readonly Column<DocumentData, unknown>[]);
   // const [tableIndex, setTableIndex] = useState('');
   // // const [tableRef, setTableRef] = useState(tableRefs);
   useEffect(() => {
-    setTableData(cloneDeep(firestoreData) as FileArray);
+    // setTableData(cloneDeep(firestoreData) as FileArray);
+    setFileBrowserData(firestoreDataInfos);
     // if (firestoreLocation === 'marmosets') {
     //   const columns = [
     //     {
@@ -39,11 +42,11 @@ function Mkfinder(): JSX.Element {
     //   ];
     //   setTableColumns(columns);
     // }
-  }, [firestoreData, firestoreLocation]);
+  }, [firestoreData, firestoreLocation, firestoreDataInfos]);
 
   return (
     <FileBrowser
-      files={tableData}
+      files={fileBrowserData}
       defaultFileViewActionId={ChonkyActions.EnableListView.id}
     >
       <FileNavbar />
@@ -52,48 +55,6 @@ function Mkfinder(): JSX.Element {
       <FileContextMenu />
     </FileBrowser>
   );
-
-  // useEffect(() => {
-  //   setTableData(cloneDeep(firestoreData));
-  //   if (firestoreLocation === 'marmosets') {
-  //     const columns = [
-  //       {
-  //         title: "<input id='select-all' type='checkbox'/>",
-  //         headerSort: false,
-  //         width: 15,
-  //       },
-  //       { title: 'Name', field: 'name' },
-  //       { title: 'Sex', field: 'sex' },
-  //       { title: 'DOB', field: 'birthdate' },
-  //       { title: 'RFID', field: 'rfid' },
-  //     ];
-  //     const index = 'name';
-  //     setTableColumns(columns);
-  //     setTableIndex(index);
-  //   } else if (firestoreLocation === 'devices') {
-  //     const columns = [{ title: 'Model', field: 'model' }];
-  //     const index = 'model';
-  //     setTableColumns(columns);
-  //     setTableIndex(index);
-  //   }
-  // }, [firestoreData, firestoreLocation]);
-
-  // return (
-  //   <ReactTabulator
-  //     // ref={(ref) => {
-  //     //   setTableRef(ref);
-  //     // }}
-
-  //     data={tableData}
-  //     columns={tableColumns}
-  //     // rowClick={rowClick}
-  //     index={tableIndex}
-  //     layout={'fitColumns'}
-  //     tooltips
-  //     selectable={1}
-  //     selectableRangeMode={'click'}
-  //   />
-  // );
 }
 
 export default Mkfinder;
