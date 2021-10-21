@@ -13,36 +13,57 @@ async function automateTask(automator_data, trialhistory) {
   var current_stage = stageHash(TASK);
   var automator_eventstring = [];
 
-  for (var property in automator_data[i_current_stage]) {
-    if (
-      property == "CurrentAutomatorStageName" ||
-      property == "MinPercentCriterion" ||
-      property == "MinTrialsCriterion"
-    ) {
-      continue;
-    } //IF stage name or criteria, then these are stored in ENV not TASK
-    if (automator_data[i_current_stage].hasOwnProperty(property)) {
-      // Apparently a necessary 'if' statement, as explained in: http://stackoverflow.com/questions/8312459/iterate-through-object-properties
-      try {
-        if (
-          TASK[property].toString() !=
-          automator_data[i_current_stage][property].toString()
-        ) {
-          const automatorEventString = `WRITE NEW PARAMS: Discrepancy between TASK. ${property}=${TASK[property]} and automator_data[${i_current_stage}][${property}]=${automator_data}[${i_current_stage}]`;
-          automator_eventstring.push(automatorEventString);
-          console.log(automator_eventstring[automator_eventstring.length - 1]);
-          TASK[property] = automator_data[i_current_stage][property];
-          FLAGS.need2saveParameters = 1;
-        } //IF need to update TASK property to property in current automator stage
-      } catch (error) {
-        const automatorEventString = `WRITE NEW PARAMS: Discrepancy between TASK. ${property}=${TASK[property]} and automator_data[${i_current_stage}][${property}]=${automator_data}[${i_current_stage}]`;
-        automator_eventstring.push(automatorEventString);
-        console.log(automator_eventstring[automator_eventstring.length - 1]);
-        TASK[property] = automator_data[i_current_stage][property];
-        FLAGS.need2saveParameters = 1;
+  // This is essentially an union operation. If the same property exists
+  // in both TASK and automator_data[i_current_stage], then the property in
+  // TASK is replaced by the one in automator_data[i_current_stage]
+  const updatedTask = Object.fromEntries(
+    Object.entries(
+      Object.assign(TASK, automator_data[i_current_stage])
+    ).flatMap(([key, value]) => {
+      if (
+        key == 'CurrentAutomatorStageName' ||
+        key == 'MinPercentCriterion' ||
+        key == 'MinTrialsCriterion'
+      ) {
+        return [];
       }
-    } //IF
-  } //FOR property
+      return [[key, value]];
+    })
+  );
+
+  TASK = updatedTask;
+  FLAGS.need2saveParameters = 1;
+
+  // for (var property in automator_data[i_current_stage]) {
+  //   if (
+  //     property == 'CurrentAutomatorStageName' ||
+  //     property == 'MinPercentCriterion' ||
+  //     property == 'MinTrialsCriterion'
+  //   ) {
+  //     continue;
+  //   } //IF stage name or criteria, then these are stored in ENV not TASK
+  //   if (automator_data[i_current_stage].hasOwnProperty(property)) {
+  //     // Apparently a necessary 'if' statement, as explained in: http://stackoverflow.com/questions/8312459/iterate-through-object-properties
+  //     try {
+  //       if (
+  //         TASK[property].toString() !=
+  //         automator_data[i_current_stage][property].toString()
+  //       ) {
+  //         const automatorEventString = `WRITE NEW PARAMS: Discrepancy between TASK. ${property}=${TASK[property]} and automator_data[${i_current_stage}][${property}]=${automator_data}[${i_current_stage}]`;
+  //         automator_eventstring.push(automatorEventString);
+  //         console.log(automator_eventstring[automator_eventstring.length - 1]);
+  //         TASK[property] = automator_data[i_current_stage][property];
+  //         FLAGS.need2saveParameters = 1;
+  //       } //IF need to update TASK property to property in current automator stage
+  //     } catch (error) {
+  //       const automatorEventString = `WRITE NEW PARAMS: Discrepancy between TASK. ${property}=${TASK[property]} and automator_data[${i_current_stage}][${property}]=${automator_data}[${i_current_stage}]`;
+  //       automator_eventstring.push(automatorEventString);
+  //       console.log(automator_eventstring[automator_eventstring.length - 1]);
+  //       TASK[property] = automator_data[i_current_stage][property];
+  //       FLAGS.need2saveParameters = 1;
+  //     }
+  //   } //IF
+  // } //FOR property
 
   // ---------- CHECK IF STAGE TRANSITION CRITERIA HAS BEEN MET: ---------------------
   // Read transition criteria from automator_data
@@ -62,9 +83,9 @@ async function automateTask(automator_data, trialhistory) {
   ENV.StageNTrials = funcreturn[1];
 
   console.log(
-    "Performance history: " +
+    'Performance history: ' +
       ENV.StageNTrials +
-      " trials, pctcorrect=" +
+      ' trials, pctcorrect=' +
       ENV.StagePctCorrect
   );
 
@@ -81,7 +102,7 @@ async function automateTask(automator_data, trialhistory) {
       FLAGS.need2saveParameters = 1;
 
       automator_eventstring.push(
-        "COMPLETED FINAL STAGE, TURNING AUTOMATOR OFF"
+        'COMPLETED FINAL STAGE, TURNING AUTOMATOR OFF'
       );
       FLAGS.automatortext = updateHeadsUpDisplayAutomator(
         ENV.CurrentAutomatorStageName,
@@ -93,17 +114,17 @@ async function automateTask(automator_data, trialhistory) {
       );
       updateHeadsUpDisplay();
       console.log(
-        "With " +
+        'With ' +
           ENV.StagePctCorrect +
-          "% performance on n=" +
+          '% performance on n=' +
           ENV.StageNTrials +
-          ", subject completed the final stage " +
+          ', subject completed the final stage ' +
           i_current_stage +
-          " of " +
+          ' of ' +
           (automator_data.length - 1) +
-          " (zero indexing) of automator."
+          ' (zero indexing) of automator.'
       );
-      console.log("Turning automator OFF.");
+      console.log('Turning automator OFF.');
       if (ENV.MTurkWorkerId) {
         let mturkUser = {
           wid: ENV.MTurkWorkerId,
@@ -111,7 +132,7 @@ async function automateTask(automator_data, trialhistory) {
           hid: ENV.HITId,
         };
         let submitAssignmentResult = await submitAssignment(mturkUser);
-        if (submitAssignmentResult.data.status === "success") {
+        if (submitAssignmentResult.data.status === 'success') {
           window.location.replace(
             `https://mkturk.com/mturksurvey/?WID=${ENV.MTurkWorkerId}&AID=${ENV.AssignmentId}&HID=${ENV.HITId}`
           );
@@ -123,25 +144,25 @@ async function automateTask(automator_data, trialhistory) {
     // Otherwise, advance to the next stage.
     TASK.CurrentAutomatorStage = TASK.CurrentAutomatorStage + 1;
     automator_eventstring.push(
-      "SUBJECT ADVANCED TO STAGE " +
+      'SUBJECT ADVANCED TO STAGE ' +
         (i_current_stage + 1) +
-        " of " +
+        ' of ' +
         (automator_data.length - 1) +
-        " with " +
+        ' with ' +
         ENV.StagePctCorrect +
-        "% performance on n=" +
+        '% performance on n=' +
         ENV.StageNTrials
     );
     console.log(
-      "With " +
+      'With ' +
         ENV.StagePctCorrect +
-        "% performance on n=" +
+        '% performance on n=' +
         ENV.StageNTrials +
-        ", subject advanced to stage " +
+        ', subject advanced to stage ' +
         (i_current_stage + 1) +
-        " of " +
+        ' of ' +
         (automator_data.length - 1) +
-        " (zero indexing) of automator."
+        ' (zero indexing) of automator.'
     );
 
     // Reset tracking variables
@@ -150,9 +171,9 @@ async function automateTask(automator_data, trialhistory) {
     // Update TASK
     for (var property in automator_data[i_current_stage + 1]) {
       if (
-        property == "CurrentAutomatorStageName" ||
-        property == "MinPercentCriterion" ||
-        property == "MinTrialsCriterion"
+        property == 'CurrentAutomatorStageName' ||
+        property == 'MinPercentCriterion' ||
+        property == 'MinTrialsCriterion'
       ) {
         continue;
       } //IF stage name or criteria, these ENV variables don't need to be stored in TASK
@@ -169,7 +190,7 @@ async function automateTask(automator_data, trialhistory) {
               property +
               '" changed from ' +
               TASK[property] +
-              " to " +
+              ' to ' +
               automator_data[i_current_stage + 1][property]
           );
         } //IF need to update TASK property
@@ -193,17 +214,13 @@ async function automateTask(automator_data, trialhistory) {
 
 function stageHash(task) {
   // Returns a value that uniquely describes the automator and stage of the automator
-  var current_stage_hash_string = "";
+  let currentStageHashStr = '';
   if (task.Automator != 0) {
-    current_stage_hash_string =
-      task.AutomatorFilePath + "_stage" + task.CurrentAutomatorStage;
+    currentStageHashStr = `${task.AutomatorFilePath}_stage${task.CurrentAutomatorStage}`;
   } else {
-    current_stage_hash_string = "automator_off";
+    currentStageHashStr = 'automator_off';
   }
-
-  return current_stage_hash_string;
-
-  // Todo: decide whether to count trials which have TASK that is consistent with an automator stage, as being part of that stage
+  return currentStageHashStr;
 } //FUNCTION stageHash(task)
 
 async function readTrialHistoryFromFirebase(filepaths) {
@@ -213,7 +230,7 @@ async function readTrialHistoryFromFirebase(filepaths) {
   trialhistory.correct = [];
   trialhistory.response = [];
 
-  if (typeof filepaths == "string") {
+  if (typeof filepaths == 'string') {
     filepaths = [filepaths];
   }
 
@@ -249,9 +266,9 @@ async function readTrialHistoryFromFirebase(filepaths) {
     }
   }
   console.log(
-    "Read " + trialhistory.trainingstage.length + " past trials from ",
+    'Read ' + trialhistory.trainingstage.length + ' past trials from ',
     filepaths.length,
-    " datafiles."
+    ' datafiles.'
   );
   return trialhistory;
 } //FUNCTION readTrialHistoryFromFirebase(filepaths)
@@ -267,9 +284,9 @@ function computeRunningHistory(
   // be counted as being part of the automator? (nope, explicit is always better. -MLee. )
 
   if (history_trainingstage.length != history_corrects.length) {
-    console.log("trainingstage vec. length" + history_trainingstage.length);
-    console.log("corrects vec. length " + history_corrects.length);
-    throw "The history arrays are of different length. Check what went wrong; cannot compute performance history.";
+    console.log('trainingstage vec. length' + history_trainingstage.length);
+    console.log('corrects vec. length ' + history_corrects.length);
+    throw 'The history arrays are of different length. Check what went wrong; cannot compute performance history.';
   }
 
   // Returns: The at most current-mintrials trial which starts a contiguous sequence to current trial with the same trainingstage/automatorfilepath as the current state,
@@ -285,14 +302,14 @@ function computeRunningHistory(
       } else if (history_trainingstage.length - i > mintrials) {
         break;
       } else {
-        throw "Something went wrong";
+        throw 'Something went wrong';
       }
     } else if (history_trainingstage[i] != current_stage) {
       break;
     } else {
       console.log(history_trainingstage[i]);
       console.log(current_stage);
-      throw "Something went wrong 2";
+      throw 'Something went wrong 2';
     }
   } //FOR i trials
 
@@ -303,7 +320,7 @@ function computeRunningHistory(
       ndiscrepancy = ndiscrepancy + 1;
       console.log(history_trainingstage[i]);
       console.log(current_stage);
-      throw "Something went wrong 3";
+      throw 'Something went wrong 3';
     }
     ncountedtrials = ncountedtrials + 1;
   }

@@ -3,22 +3,22 @@
     parseQueryString: function (str) {
       var ret = Object.create(null);
 
-      if (typeof str !== "string") {
+      if (typeof str !== 'string') {
         return ret;
       }
 
-      str = str.trim().replace(/^(\?|#|&)/, "");
+      str = str.trim().replace(/^(\?|#|&)/, '');
 
       if (!str) {
         return ret;
       }
 
-      str.split("&").forEach(function (param) {
-        var parts = param.replace(/\+/g, " ").split("=");
+      str.split('&').forEach(function (param) {
+        var parts = param.replace(/\+/g, ' ').split('=');
         // Firefox (pre 40) decodes `%3D` to `=`
         // https://github.com/sindresorhus/query-string/pull/37
         var key = parts.shift();
-        var val = parts.length > 0 ? parts.join("=") : undefined;
+        var val = parts.length > 0 ? parts.join('=') : undefined;
 
         key = decodeURIComponent(key);
 
@@ -60,7 +60,7 @@ function shuffleArray(array) {
 
 // convert base64 to buffer array (from: http://stackoverflow.com.80bola.com/questions/27524283/save-image-to-dropbox-with-data-from-canvas?rq=1)
 function _base64ToArrayBuffer(base64) {
-  base64 = base64.split("data:image/png;base64,").join("");
+  base64 = base64.split('data:image/png;base64,').join('');
   var binary_string = window.atob(base64),
     len = binary_string.length,
     bytes = new Uint8Array(len),
@@ -97,11 +97,11 @@ Array.prototype.equals = function (array) {
   return true;
 };
 // Hide method from for-in loops
-Object.defineProperty(Array.prototype, "equals", { enumerable: false });
+Object.defineProperty(Array.prototype, 'equals', { enumerable: false });
 
 // Gets "filename.ext" from some /.../path/filename.ext
 function get_filename_from_pathstring(pathstring) {
-  var filename = pathstring.replace(/^.*[\\\/]/, "");
+  var filename = pathstring.replace(/^.*[\\\/]/, '');
   return filename;
 }
 
@@ -154,7 +154,7 @@ function shuffleArray(array) {
 
 // convert base64 to buffer array (from: http://stackoverflow.com.80bola.com/questions/27524283/save-image-to-dropbox-with-data-from-canvas?rq=1)
 function _base64ToArrayBuffer(base64) {
-  base64 = base64.split("data:image/png;base64,").join("");
+  base64 = base64.split('data:image/png;base64,').join('');
   var binary_string = window.atob(base64),
     len = binary_string.length,
     bytes = new Uint8Array(len),
@@ -194,34 +194,34 @@ async function playSound(idx) {
 }
 // Promise: dispense reward (through audio control)
 function dispenseReward() {
-  console.log("Legacy dispense reward");
+  console.log('Legacy dispense reward');
   return;
   return new Promise(function (resolve, reject) {
     audiocontext.resume();
     var oscillator = audiocontext.createOscillator();
     gainNode.gain.value = 1;
     if (TASK.Pump == 1) {
-      oscillator.type = "square"; //Square wave
+      oscillator.type = 'square'; //Square wave
       oscillator.frequency.value = 25; //frequency in hertz
     } //peristaltic (adafruit)
     else if (TASK.Pump == 2) {
-      oscillator.type = "square"; //Square wave
+      oscillator.type = 'square'; //Square wave
       oscillator.frequency.value = 0.1; //frequency in hertz
     } //submersible (TCS)
     else if (TASK.Pump == 3) {
-      oscillator.type = "square"; //Square wave
+      oscillator.type = 'square'; //Square wave
       oscillator.frequency.value = 10; //frequency in hertz
     } //diaphragm (TCS)
     else if (TASK.Pump == 4) {
-      oscillator.type = "square"; //Square wave
+      oscillator.type = 'square'; //Square wave
       oscillator.frequency.value = 0.1; //frequency in hertz
     } //piezoelectric (takasago)
     else if (TASK.Pump == 5) {
-      oscillator.type = "square";
+      oscillator.type = 'square';
       oscillator.frequency.value = 0.1;
     } //diaphragm new (TCS)
     else if (TASK.Pump == 6) {
-      oscillator.type = "square"; //Square wave
+      oscillator.type = 'square'; //Square wave
       oscillator.frequency.value = 0.1; //frequency in hertz
     } //piezoelectric 7ml/min (takasago)
     // oscillator.connect(audiocontext.destination); //Connect sound to output
@@ -238,7 +238,7 @@ function dispenseReward() {
     oscillator.start(currentTime);
     oscillator.stop(currentTime + ENV.RewardDuration);
     setTimeout(function () {
-      console.log("sound done");
+      console.log('sound done');
       resolve(1);
     }, ENV.RewardDuration * 1000);
   }).then();
@@ -247,7 +247,7 @@ function dispenseReward() {
 // Promise: choice time-out
 function choiceTimeOut(timeout) {
   return new Promise(function (resolve, reject) {
-    var timer_return = { type: "TimeOut", cxyt: [-1, -1, -1, -1] };
+    var timer_return = { type: 'TimeOut', cxyt: [-1, -1, -1, -1] };
     setTimeout(function () {
       clearTimeout(touchTimer);
       resolve(timer_return);
@@ -309,23 +309,23 @@ async function runPump(str) {
 
   if (FLAGS.runPump == 0) {
     FLAGS.runPump = 1;
-    if (str == "flush") {
+    if (str == 'flush') {
       dur = 5000; //milliseconds
       npulse = 12;
-    } else if (str == "trigger") {
+    } else if (str == 'trigger') {
       // dur = ENV.RewardDuration*1000 //milliseconds
       dur = 190; //50 pulse * 20 uL/pulse = 1 mL milk, 1.24 mL water
       npulse = 50;
     }
-    document.querySelector("button[id=pumpflush]").innerHTML = "Stop Pump";
-    document.querySelector("button[id=pumptrigger]").innerHTML = "Stop Pump";
+    document.querySelector('button[id=pumpflush]').innerHTML = 'Stop Pump';
+    document.querySelector('button[id=pumptrigger]').innerHTML = 'Stop Pump';
   } else if (FLAGS.runPump == 1) {
     //user pressed button again to stop pump
     FLAGS.runPump = 0;
-    port.statustext_connect = "!!!! USER STOPPED PUMP !!!!";
-    document.querySelector("button[id=pumpflush]").innerHTML = "Flush 1min";
-    document.querySelector("button[id=pumptrigger]").innerHTML =
-      "Calibrate 1mL milk";
+    port.statustext_connect = '!!!! USER STOPPED PUMP !!!!';
+    document.querySelector('button[id=pumpflush]').innerHTML = 'Flush 1min';
+    document.querySelector('button[id=pumptrigger]').innerHTML =
+      'Calibrate 1mL milk';
     updateHeadsUpDisplayDevices();
     return;
   }
@@ -336,10 +336,10 @@ async function runPump(str) {
       break; //no pump connected
     } else if (FLAGS.runPump == 0) {
       FLAGS.runPump = 0;
-      port.statustext_connect = "!!!! USER STOPPED PUMP !!!!";
-      document.querySelector("button[id=pumpflush]").innerHTML = "Flush 1min";
-      document.querySelector("button[id=pumptrigger]").innerHTML =
-        "Calibrate 1mL milk";
+      port.statustext_connect = '!!!! USER STOPPED PUMP !!!!';
+      document.querySelector('button[id=pumpflush]').innerHTML = 'Flush 1min';
+      document.querySelector('button[id=pumptrigger]').innerHTML =
+        'Calibrate 1mL milk';
       updateHeadsUpDisplayDevices();
       return; //pump was stopped by user
     } else if (FLAGS.runPump == 1 && ble.connected == true) {
@@ -355,43 +355,43 @@ async function runPump(str) {
 
       var endweight = blescale.weights[blescale.weights.length - 1];
       port.statustext_connect =
-        "***** Calibrating Pump " +
+        '***** Calibrating Pump ' +
         i +
-        "/" +
+        '/' +
         npulse +
-        " pulses, wt=" +
+        ' pulses, wt=' +
         Math.round([endweight - startweight] * 100) / 100 +
-        " grams";
+        ' grams';
       updateHeadsUpDisplayDevices();
     } //if usb pump
 
     await timeout(dur + 800);
-    console.log("pulse" + i);
+    console.log('pulse' + i);
   } //for i pulses
 
   if (port.connected == true) {
     port.statustext_connect =
-      "DONE RUNNING PUMP (" +
+      'DONE RUNNING PUMP (' +
       npulse +
-      " pulses @ " +
+      ' pulses @ ' +
       Math.round(dur) +
-      " ms/pulse)";
+      ' ms/pulse)';
     if (blescale.connected == true) {
       var endweight = blescale.weights[blescale.weights.length - 1];
-      port.statustext_connect = "!!!! DONE PUMP CALIBRATION !!!!";
+      port.statustext_connect = '!!!! DONE PUMP CALIBRATION !!!!';
       port.statustext_sent =
-        "!!!! Weight after " +
+        '!!!! Weight after ' +
         i +
-        " pulses @ " +
+        ' pulses @ ' +
         dur +
-        "ms = " +
+        'ms = ' +
         Math.round([endweight - startweight] * 100) / 100 +
-        "g vs (1, 1.24) for 100 pulse (milk,water) calibration";
+        'g vs (1, 1.24) for 100 pulse (milk,water) calibration';
     } //if blescale
     console.log(port.statustext_sent);
-    document.querySelector("button[id=pumpflush]").innerHTML = "Flush 1min";
-    document.querySelector("button[id=pumptrigger]").innerHTML =
-      "Calibrate 1mL milk";
+    document.querySelector('button[id=pumpflush]').innerHTML = 'Flush 1min';
+    document.querySelector('button[id=pumptrigger]').innerHTML =
+      'Calibrate 1mL milk';
     FLAGS.runPump = 0;
     updateHeadsUpDisplayDevices();
   } //if usb pump
@@ -403,7 +403,7 @@ function timeout(ms) {
 
 function objectomeImageNamesToLatentVars(imagefilepaths, imagelabels) {
   var images = {
-    ImageSetDir: "",
+    ImageSetDir: '',
     Nouns: [],
     Objects: [],
     BagNames: [],
@@ -420,17 +420,17 @@ function objectomeImageNamesToLatentVars(imagefilepaths, imagelabels) {
   };
 
   images.ImageSetDir =
-    imagefilepaths[0].slice(0, imagefilepaths[0].indexOf("objectome")) +
-    "objectome/";
+    imagefilepaths[0].slice(0, imagefilepaths[0].indexOf('objectome')) +
+    'objectome/';
 
   for (var i = 0; i <= imagefilepaths.length - 1; i++) {
     images.BagIdx[i] = imagelabels[i];
-    var strs = imagefilepaths[i].split("/"); //split path into words
+    var strs = imagefilepaths[i].split('/'); //split path into words
 
     // Noun, object model, image folder
     var findnext = 0;
     for (var j = 0; j <= strs.length - 1; j++) {
-      if (findnext == 0 && strs[j] == "objectome") {
+      if (findnext == 0 && strs[j] == 'objectome') {
         findnext++;
       } else if (findnext == 1) {
         images.Nouns[images.BagIdx[i]] = strs[j];
@@ -448,7 +448,7 @@ function objectomeImageNamesToLatentVars(imagefilepaths, imagelabels) {
 
     // Hash, ty, tz, rxy,rxz, ryz,scale
     var findnext = 0;
-    var paramstrs = strs[strs.length - 1].split("_");
+    var paramstrs = strs[strs.length - 1].split('_');
 
     // initialize to NaN in case meta not specified in filename
     object.ty[i] = NaN;
@@ -461,7 +461,7 @@ function objectomeImageNamesToLatentVars(imagefilepaths, imagelabels) {
     //remove file extension
     paramstrs[paramstrs.length - 1] = paramstrs[paramstrs.length - 1].slice(
       0,
-      paramstrs[paramstrs.length - 1].indexOf(".png")
+      paramstrs[paramstrs.length - 1].indexOf('.png')
     );
     for (var j = 0; j <= paramstrs.length - 1; j++) {
       if (findnext == 0 && paramstrs[j] == images.Nouns[images.BagIdx[i]]) {
@@ -470,39 +470,39 @@ function objectomeImageNamesToLatentVars(imagefilepaths, imagelabels) {
         images.HashesPrefix[i] = paramstrs[j].slice(0, 7); //first 8 characters of hash
         findnext++;
       } else if (findnext == 2) {
-        if (paramstrs[j].indexOf("ty") != -1) {
+        if (paramstrs[j].indexOf('ty') != -1) {
           object.ty[i] = Number(
-            paramstrs[j].slice(paramstrs[j].indexOf("ty") + 2)
+            paramstrs[j].slice(paramstrs[j].indexOf('ty') + 2)
           );
         }
 
-        if (paramstrs[j].indexOf("tz") != -1) {
+        if (paramstrs[j].indexOf('tz') != -1) {
           object.tz[i] = Number(
-            paramstrs[j].slice(paramstrs[j].indexOf("tz") + 2)
+            paramstrs[j].slice(paramstrs[j].indexOf('tz') + 2)
           );
         }
 
-        if (paramstrs[j].indexOf("rxy") != -1) {
+        if (paramstrs[j].indexOf('rxy') != -1) {
           object.rxy[i] = Number(
-            paramstrs[j].slice(paramstrs[j].indexOf("rxy") + 3)
+            paramstrs[j].slice(paramstrs[j].indexOf('rxy') + 3)
           );
         }
 
-        if (paramstrs[j].indexOf("rxz") != -1) {
+        if (paramstrs[j].indexOf('rxz') != -1) {
           object.rxz[i] = Number(
-            paramstrs[j].slice(paramstrs[j].indexOf("rxz") + 3)
+            paramstrs[j].slice(paramstrs[j].indexOf('rxz') + 3)
           );
         }
 
-        if (paramstrs[j].indexOf("ryz") != -1) {
+        if (paramstrs[j].indexOf('ryz') != -1) {
           object.ryz[i] = Number(
-            paramstrs[j].slice(paramstrs[j].indexOf("ryz") + 3)
+            paramstrs[j].slice(paramstrs[j].indexOf('ryz') + 3)
           );
         }
 
-        if (paramstrs[j].indexOf("s") != -1) {
+        if (paramstrs[j].indexOf('s') != -1) {
           object.scale[i] = Number(
-            paramstrs[j].slice(paramstrs[j].indexOf("s") + 1)
+            paramstrs[j].slice(paramstrs[j].indexOf('s') + 1)
           );
         }
       } //else latent vars
@@ -514,7 +514,7 @@ function objectomeImageNamesToLatentVars(imagefilepaths, imagelabels) {
 
 function objectomeSceneNamesToLatentVars(scenefilepaths, scenelabels, scenes) {
   var images = {
-    ImageSetDir: "",
+    ImageSetDir: '',
     Nouns: [],
     Objects: [],
     BagNames: [],
@@ -522,26 +522,26 @@ function objectomeSceneNamesToLatentVars(scenefilepaths, scenelabels, scenes) {
     ImageIdx: [],
   };
 
-  var imagecollection = "";
-  if (scenefilepaths[0].indexOf("objectome3d") > 0) {
-    imagecollection = "objectome3d";
-  } else if (scenefilepaths[0].indexOf("objectome") > 0) {
-    imagecollection = "objectome";
+  var imagecollection = '';
+  if (scenefilepaths[0].indexOf('objectome3d') > 0) {
+    imagecollection = 'objectome3d';
+  } else if (scenefilepaths[0].indexOf('objectome') > 0) {
+    imagecollection = 'objectome';
   } else {
-    imagecollection = "imagebags";
+    imagecollection = 'imagebags';
   }
 
   images.ImageSetDir =
     scenefilepaths[0].slice(0, scenefilepaths[0].indexOf(imagecollection)) +
     imagecollection +
-    "/";
+    '/';
 
   for (var i = 0; i <= scenefilepaths.length - 1; i++) {
     var nimages = Math.max(scenes[i].nimages, scenes[i].nbackgroundimages);
 
     images.BagIdx.push(...Array(nimages).fill(scenelabels[i])); //array of nimage labels
     images.ImageIdx.push(...Array(nimages).keys()); //1 to nimages
-    var strs = scenefilepaths[i].split("/"); //split path into words
+    var strs = scenefilepaths[i].split('/'); //split path into words
 
     // Noun, object model, image folder
     var findnext = 0;
@@ -568,8 +568,8 @@ function objectomeSceneNamesToLatentVars(scenefilepaths, scenelabels, scenes) {
 
 function getLongestArray(x) {
   var n = 0;
-  if (typeof x != "object") {
-    if (Array.isArray(x) == "array") {
+  if (typeof x != 'object') {
+    if (Array.isArray(x) == 'array') {
       var n_new = x.length;
     } else {
       n_new = 0;
@@ -578,11 +578,11 @@ function getLongestArray(x) {
   } //if not an enumerable object
   else {
     for (keys in x) {
-      if (keys != "baseVertexInd") {
+      if (keys != 'baseVertexInd') {
         if (Array.isArray(x[keys])) {
           var n_new = x[keys].length;
         } //IF array
-        else if (typeof x[keys] == "object") {
+        else if (typeof x[keys] == 'object') {
           var n_new = getLongestArray(x[keys]);
         } //ELSE !array
         else {
@@ -602,17 +602,17 @@ async function deviceDetect() {
   let navigator = window.navigator;
 
   // GPU INFO
-  let canvas = document.createElement("canvas");
+  let canvas = document.createElement('canvas');
   let gl, debugInfo, vendor, renderer;
 
   try {
-    gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
   } catch (e) {
-    console.error("WebGL Context Error:", e);
+    console.error('WebGL Context Error:', e);
   }
 
   if (gl) {
-    debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+    debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
     vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
     renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
   }
@@ -627,7 +627,7 @@ async function deviceDetect() {
    */
   let touchscreen = 0;
   if (
-    "ontouchstart" in window ||
+    'ontouchstart' in window ||
     window.TouchEvent ||
     (window.DoucumentTouch && document instanceof DoucmentTouch)
   ) {
@@ -638,15 +638,15 @@ async function deviceDetect() {
   let deviceInfo = await detectDevice(navigator.userAgent);
 
   if (deviceInfo.data.device == null) {
-    deviceInfo.data.device = { type: "", brand: "", model: "" };
+    deviceInfo.data.device = { type: '', brand: '', model: '' };
   }
 
   if (deviceInfo.data.client == null) {
-    deviceInfo.data.client = { name: "", version: "" };
+    deviceInfo.data.client = { name: '', version: '' };
   }
 
   if (deviceInfo.data.os == null) {
-    deviceInfo.data.os = { name: "", version: "" };
+    deviceInfo.data.os = { name: '', version: '' };
   }
 
   deviceInfo.data.gpu = {};
@@ -682,6 +682,6 @@ function connectHardwareButtonPromise() {
 
 function skipHardwareDevice(event) {
   event.preventDefault(); // prevents additional downstream call of click listener
-  localStorage.setItem("ConnectUSB", 0);
+  localStorage.setItem('ConnectUSB', 0);
   waitforClick.next(1);
 }
