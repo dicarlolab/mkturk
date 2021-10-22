@@ -11,7 +11,7 @@ async function automateTask(automator_data, trialhistory) {
 
   var i_current_stage = TASK.CurrentAutomatorStage;
   var current_stage = stageHash(TASK);
-  var automator_eventstring = [];
+  var automatorEvents = [];
 
   // This is essentially an union operation. If the same property exists
   // in both TASK and automator_data[i_current_stage], then the property in
@@ -20,6 +20,7 @@ async function automateTask(automator_data, trialhistory) {
     Object.entries(
       Object.assign(TASK, automator_data[i_current_stage])
     ).flatMap(([key, value]) => {
+      console.log('automator discrepency check');
       if (
         key == 'CurrentAutomatorStageName' ||
         key == 'MinPercentCriterion' ||
@@ -27,43 +28,23 @@ async function automateTask(automator_data, trialhistory) {
       ) {
         return [];
       }
+      try {
+        if (TASK[key].toString() !== value.toString()) {
+          const automatorEventStr = `WRITE NEW PARAMS: Discrepency between TASK[${key}] and AutomatorData[${key}]`;
+          automatorEvents.push(automatorEventStr);
+          console.log(automatorEvents[automatorEvents.length - 1]);
+          FLAGS.need2saveParameters = 1;
+        }
+      } catch {
+        const automatorEventStr = `WRITE NEW PARAMS: TASK did not have property ${key}`;
+        automatorEvents.push(automatorEventStr);
+        console.log(automatorEvents[automatorEvents.length - 1]);
+        FLAGS.need2saveParameters = 1;
+      }
       return [[key, value]];
     })
   );
-
   TASK = updatedTask;
-  FLAGS.need2saveParameters = 1;
-
-  // for (var property in automator_data[i_current_stage]) {
-  //   if (
-  //     property == 'CurrentAutomatorStageName' ||
-  //     property == 'MinPercentCriterion' ||
-  //     property == 'MinTrialsCriterion'
-  //   ) {
-  //     continue;
-  //   } //IF stage name or criteria, then these are stored in ENV not TASK
-  //   if (automator_data[i_current_stage].hasOwnProperty(property)) {
-  //     // Apparently a necessary 'if' statement, as explained in: http://stackoverflow.com/questions/8312459/iterate-through-object-properties
-  //     try {
-  //       if (
-  //         TASK[property].toString() !=
-  //         automator_data[i_current_stage][property].toString()
-  //       ) {
-  //         const automatorEventString = `WRITE NEW PARAMS: Discrepancy between TASK. ${property}=${TASK[property]} and automator_data[${i_current_stage}][${property}]=${automator_data}[${i_current_stage}]`;
-  //         automator_eventstring.push(automatorEventString);
-  //         console.log(automator_eventstring[automator_eventstring.length - 1]);
-  //         TASK[property] = automator_data[i_current_stage][property];
-  //         FLAGS.need2saveParameters = 1;
-  //       } //IF need to update TASK property to property in current automator stage
-  //     } catch (error) {
-  //       const automatorEventString = `WRITE NEW PARAMS: Discrepancy between TASK. ${property}=${TASK[property]} and automator_data[${i_current_stage}][${property}]=${automator_data}[${i_current_stage}]`;
-  //       automator_eventstring.push(automatorEventString);
-  //       console.log(automator_eventstring[automator_eventstring.length - 1]);
-  //       TASK[property] = automator_data[i_current_stage][property];
-  //       FLAGS.need2saveParameters = 1;
-  //     }
-  //   } //IF
-  // } //FOR property
 
   // ---------- CHECK IF STAGE TRANSITION CRITERIA HAS BEEN MET: ---------------------
   // Read transition criteria from automator_data
@@ -101,16 +82,14 @@ async function automateTask(automator_data, trialhistory) {
       TASK.Automator = 0;
       FLAGS.need2saveParameters = 1;
 
-      automator_eventstring.push(
-        'COMPLETED FINAL STAGE, TURNING AUTOMATOR OFF'
-      );
+      automatorEvents.push('COMPLETED FINAL STAGE, TURNING AUTOMATOR OFF');
       FLAGS.automatortext = updateHeadsUpDisplayAutomator(
         ENV.CurrentAutomatorStageName,
         ENV.StagePctCorrect,
         ENV.StageNTrials,
         ENV.MinPercentCriterion,
         ENV.MinTrialsCriterion,
-        automator_eventstring
+        automatorEvents
       );
       updateHeadsUpDisplay();
       console.log(
@@ -143,7 +122,7 @@ async function automateTask(automator_data, trialhistory) {
 
     // Otherwise, advance to the next stage.
     TASK.CurrentAutomatorStage = TASK.CurrentAutomatorStage + 1;
-    automator_eventstring.push(
+    automatorEvents.push(
       'SUBJECT ADVANCED TO STAGE ' +
         (i_current_stage + 1) +
         ' of ' +
@@ -169,35 +148,64 @@ async function automateTask(automator_data, trialhistory) {
     purgeTrackingVariables();
 
     // Update TASK
-    for (var property in automator_data[i_current_stage + 1]) {
-      if (
-        property == 'CurrentAutomatorStageName' ||
-        property == 'MinPercentCriterion' ||
-        property == 'MinTrialsCriterion'
-      ) {
-        continue;
-      } //IF stage name or criteria, these ENV variables don't need to be stored in TASK
 
-      if (automator_data[i_current_stage + 1].hasOwnProperty(property)) {
+    const updatedTaskTransition = Object.fromEntries(
+      Object.entries(
+        Object.assign(TASK, automator_data[i_current_stage + 1])
+      ).flatMap(([key, value]) => {
+        console.log('automator transition');
         if (
-          TASK[property].toString() !=
-          automator_data[i_current_stage + 1][property].toString()
+          key == 'CurrentAutomatorStageName' ||
+          key == 'MinPercentCriterion' ||
+          key == 'MinTrialsCriterion'
         ) {
-          TASK[property] = automator_data[i_current_stage + 1][property];
+          return [];
+        }
+        try {
+          if (TASK[key].toString() !== value.toString()) {
+            console.log(`Property ${key} changed`);
+          }
+        } catch {
+          console.log(`TASK did not have property ${key}`);
+        }
+        return [[key, value]];
+      })
+    );
 
-          console.log(
-            '"' +
-              property +
-              '" changed from ' +
-              TASK[property] +
-              ' to ' +
-              automator_data[i_current_stage + 1][property]
-          );
-        } //IF need to update TASK property
-      } //IF property
-    } //FOR property
+    TASK = updatedTaskTransition;
+
     FLAGS.need2saveParameters = 1;
     FLAGS.need2loadParameters = 1;
+
+    // for (var property in automator_data[i_current_stage + 1]) {
+    //   if (
+    //     property == 'CurrentAutomatorStageName' ||
+    //     property == 'MinPercentCriterion' ||
+    //     property == 'MinTrialsCriterion'
+    //   ) {
+    //     continue;
+    //   } //IF stage name or criteria, these ENV variables don't need to be stored in TASK
+
+    //   if (automator_data[i_current_stage + 1].hasOwnProperty(property)) {
+    //     if (
+    //       TASK[property].toString() !=
+    //       automator_data[i_current_stage + 1][property].toString()
+    //     ) {
+    //       TASK[property] = automator_data[i_current_stage + 1][property];
+
+    //       console.log(
+    //         '"' +
+    //           property +
+    //           '" changed from ' +
+    //           TASK[property] +
+    //           ' to ' +
+    //           automator_data[i_current_stage + 1][property]
+    //       );
+    //     } //IF need to update TASK property
+    //   } //IF property
+    // } //FOR property
+    // FLAGS.need2saveParameters = 1;
+    // FLAGS.need2loadParameters = 1;
   } //IF stage transition
 
   FLAGS.automatortext = updateHeadsUpDisplayAutomator(
@@ -206,7 +214,7 @@ async function automateTask(automator_data, trialhistory) {
     ENV.StageNTrials,
     ENV.MinPercentCriterion,
     ENV.MinTrialsCriterion,
-    automator_eventstring
+    automatorEvents
   );
   updateHeadsUpDisplay();
   return;

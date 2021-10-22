@@ -257,8 +257,6 @@ if (ENV.BatteryAPIAvailable) {
     ENV.ViewportPPI = ENV.ViewportPixels[1] / ENV.ScreenSizeInches[1]; //viewport pixels per inch
   } //IF
 
-  console.log('TASK NOW:', TASK);
-
   if (ENV.MTurkWorkerId || TASK.Agent == 'MTurkTest') {
     console.log('getting ppi');
     function binSearch(fn, min, max) {
@@ -368,39 +366,6 @@ if (ENV.BatteryAPIAvailable) {
   //================== (END) AWAIT LOAD SUBJECT PARAMS ==================//
 
   //====================== Connect USB ===========================//
-  // if ( ENV.WebUSBAvailable ){
-
-  // 	if (typeof(port.connected) == 'undefined' || port.connected == false){
-  // 		var event = {}
-  // 		event.type = "AutoConnect"
-  // 		await findUSBDevice(event)
-  // 	}
-
-  // 	if ( (typeof(port.connected) == 'undefined' || port.connected == false) &&
-  // 	     (QuickLoad.load == 0 || (QuickLoad.load == 1 && QuickLoad.connectusb == 1))){
-  // 		//=============== AWAIT CONNECT TO HARDWARE (via USB) ===============//
-  // 		port.connected = false
-  // 		document.querySelector("button[id=connectusb]").style.display = "block"
-  // 		document.querySelector("button[id=connectusb]").style.visibility = "visible"
-  // 		document.querySelector("button[id=nousb]").style.display = "block"
-  // 		document.querySelector("button[id=nousb]").style.visibility = "visible"
-
-  // 		await connectHardwareButtonPromise()
-  // 	} //IF !QuickLoad.load
-
-  // 	document.querySelector("button[id=connectusb]").style.display = "none"
-  // 	document.querySelector("button[id=nousb]").style.display = "none"
-  // }
-  // else {
-  // 	//skip usb device connection
-  // 	port={
-  // 	  statustext_connect: "",
-  // 	  statustext_sent: "",
-  // 	  statustext_received: "",
-  // 	  connected: false
-  // 	}
-  // }
-
   if (ENV.WebUSBAvailable) {
     if (typeof port.connected == 'undefined' || port.connected == false) {
       var event = {};
@@ -478,34 +443,39 @@ if (ENV.BatteryAPIAvailable) {
   } //IF !QuickLoad.load
   //================== (END) AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
 
-  // //======================== CHECK IF FIRST NEED TO SAVE OUT IMAGE BAGS ==========================//
-  // if (TASK.Agent != "SaveImages"){
-  //  var needsImageBag = []
-  //  var needsImageBagStr = ''
-  //  for (var i=0; i<=TASK.ImageBagsSample.length-1; i++){
-  // scenebag = TASK.ImageBagsSample[i]
-  // scenebag_dir = scenebag.slice(0,scenebag.lastIndexOf('/')+1)
-  // // var filelist = await getFileListRecursiveFirebase(scenebag_dir)
-  // var fileList = await storage.ref().child(scenebag_dir).listAll()
-  // needsImageBag[i] = 1
-  // for (var j=0; j<=fileList.prefixes.length-1; j++){
-  // 	var containsSceneBagName = fileList.prefixes[j].name.indexOf(scenebag)
-  // 	if (containsSceneBagName >= 0){
-  // 		needsImageBag[i] = 0
-  // 	}//IF found imagebag folder
-  // }//FOR j folders
-  // if (needsImageBag[i] == 1){
-  // 	needsImageBagStr = needsImageBagStr + "<br>"
-  // 					+ "Scene bag <b><i><font color=yellow>" + scenebag + "</font color></b></i> needs an image bag"
-  // }
-  //  }//FOR i scenebag files
-  //  if (needsImageBagStr != ''){
-  // var textobj = document.getElementById("headsuptext");
-  // textobj.innerHTML = needsImageBagStr + "<br><br><b><font color=red> !!! PLEASE SAVE OUT IMAGES FIRST, THEN RELOAD TASK !!! <font color></b>"
-  // return
-  //  }//IF needsImageBagStr
-  // }//IF !SaveImages
-  // //===================== (END) CHECK IF FIRST NEED TO SAVE OUT IMAGE BAGS =======================//
+  console.log('PPI BEFORE:', ENV.ViewportPPI);
+  if (ENV.MTurkWorkerId || TASK.Agent == 'MTurkTest') {
+    console.log('getting ppi');
+    function binSearch(fn, min, max) {
+      if (max < min) return -1;
+
+      let mid = (min + max) >>> 1;
+      if (0 < fn(mid)) {
+        if (mid == min || 0 >= fn(mid - 1)) {
+          return mid;
+        }
+        return binSearch(fn, min, mid - 1);
+      }
+      return binSearch(fn, mid + 1, max);
+    }
+
+    function findFirstPositive(fn) {
+      let start = 1;
+      while (0 >= fn(start)) start <<= 1;
+      return binSearch(fn, start >>> 1, start) | 0;
+    }
+
+    function findDPI(counter = 0) {
+      return findFirstPositive(
+        (x) => (++counter, matchMedia(`(max-resolution: ${x}dpi)`).matches)
+      );
+    }
+
+    ENV.ViewportPPI = findDPI();
+  }
+  console.log('PPI AFTER:', ENV.ViewportPPI);
+
+  console.log('TASK NOW:', TASK);
 
   // =================== LOAD MKMODELS IF SPECIES = MODEL =================//
   let mkm;
