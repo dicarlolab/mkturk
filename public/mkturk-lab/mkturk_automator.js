@@ -1,4 +1,4 @@
-async function automateTask(automator_data, trialhistory) {
+async function automateTask(automatorData, trialhistory) {
   // Input: automator array; trialhistory (.trainingstage, .correct), current_automator_stage
   // Globals: TASK.currentAutomatorStage (for reading); TASK.stuff (for writing to)
 
@@ -6,19 +6,20 @@ async function automateTask(automator_data, trialhistory) {
   // Set flags for updating params file, starting new datafile
 
   // IF THERE ARE DISCREPANCIES, SET TASK.STUFF TO AUTOMATOR DATA [ CURRENT_STAGE ]
-  // Check for consistency between automator_data[current_stage] and TASK.stuff:
-  // i_current_stage is the master; the ground truth for what TASK.stuff should be.
+  // Check for consistency between automatorData[currentStage] and TASK.stuff:
+  // currentStageIdx is the master; the ground truth for what TASK.stuff should be.
 
-  var i_current_stage = TASK.CurrentAutomatorStage;
-  var current_stage = stageHash(TASK);
-  var automatorEvents = [];
+  let currentStageIdx = TASK.CurrentAutomatorStage;
+  let currentStage = stageHash(TASK);
+  let automatorEvents = [];
 
   // This is essentially an union operation. If the same property exists
-  // in both TASK and automator_data[i_current_stage], then the property in
-  // TASK is replaced by the one in automator_data[i_current_stage]
+  // in both TASK and automatorData[currentStageIdx], then the property in
+  // TASK is replaced by the one in automatorData[currentStageIdx]
+  // discrepency check takes ~5 ms
   const updatedTask = Object.fromEntries(
     Object.entries(
-      Object.assign(TASK, automator_data[i_current_stage])
+      Object.assign({}, TASK, automatorData[currentStageIdx])
     ).flatMap(([key, value]) => {
       console.log('automator discrepency check');
       if (
@@ -30,13 +31,13 @@ async function automateTask(automator_data, trialhistory) {
       }
       try {
         if (TASK[key].toString() !== value.toString()) {
-          const automatorEventStr = `WRITE NEW PARAMS: Discrepency between TASK[${key}] and AutomatorData[${key}]`;
+          const automatorEventStr = `[AUTOMATOR] WRITE NEW PARAMS: Discrepency between TASK[${key}] and AutomatorData[${key}]`;
           automatorEvents.push(automatorEventStr);
           console.log(automatorEvents[automatorEvents.length - 1]);
           FLAGS.need2saveParameters = 1;
         }
       } catch {
-        const automatorEventStr = `WRITE NEW PARAMS: TASK did not have property ${key}`;
+        const automatorEventStr = `[AUTOMATOR] WRITE NEW PARAMS: TASK did not have property ${key}`;
         automatorEvents.push(automatorEventStr);
         console.log(automatorEvents[automatorEvents.length - 1]);
         FLAGS.need2saveParameters = 1;
@@ -47,27 +48,24 @@ async function automateTask(automator_data, trialhistory) {
   TASK = updatedTask;
 
   // ---------- CHECK IF STAGE TRANSITION CRITERIA HAS BEEN MET: ---------------------
-  // Read transition criteria from automator_data
-  ENV.MinPercentCriterion = automator_data[i_current_stage].MinPercentCriterion;
-  ENV.MinTrialsCriterion = automator_data[i_current_stage].MinTrialsCriterion;
+  // Read transition criteria from automatorData
+  ENV.MinPercentCriterion = automatorData[currentStageIdx].MinPercentCriterion;
+  ENV.MinTrialsCriterion = automatorData[currentStageIdx].MinTrialsCriterion;
   ENV.CurrentAutomatorStageName =
-    automator_data[i_current_stage].CurrentAutomatorStageName;
+    automatorData[currentStageIdx].CurrentAutomatorStageName;
 
   // Calculate current pctcorrect and ntrials
-  var funcreturn = computeRunningHistory(
+  const runningHistoryStats = computeRunningHistory(
     ENV.MinTrialsCriterion,
-    current_stage,
+    currentStage,
     trialhistory.trainingstage,
     trialhistory.correct
   );
-  ENV.StagePctCorrect = funcreturn[0];
-  ENV.StageNTrials = funcreturn[1];
+  ENV.StagePctCorrect = runningHistoryStats[0];
+  ENV.StageNTrials = runningHistoryStats[1];
 
   console.log(
-    'Performance history: ' +
-      ENV.StageNTrials +
-      ' trials, pctcorrect=' +
-      ENV.StagePctCorrect
+    `Performance history: ${ENV.StageNTrials} trials, pctcorrect=${ENV.StagePctCorrect}`
   );
 
   // ---------- CHANGE TASK.STUFF TO AUTOMATOR DATA [ NEXT_STAGE ] ----------------------
@@ -77,7 +75,7 @@ async function automateTask(automator_data, trialhistory) {
     ENV.StageNTrials >= ENV.MinTrialsCriterion
   ) {
     // If finished final stage of automator,
-    if (automator_data.length <= TASK.CurrentAutomatorStage + 1) {
+    if (automatorData.length <= TASK.CurrentAutomatorStage + 1) {
       // Stay in current stage settings, and turn automator off
       TASK.Automator = 0;
       FLAGS.need2saveParameters = 1;
@@ -98,9 +96,9 @@ async function automateTask(automator_data, trialhistory) {
           '% performance on n=' +
           ENV.StageNTrials +
           ', subject completed the final stage ' +
-          i_current_stage +
+          currentStageIdx +
           ' of ' +
-          (automator_data.length - 1) +
+          (automatorData.length - 1) +
           ' (zero indexing) of automator.'
       );
       console.log('Turning automator OFF.');
@@ -121,28 +119,15 @@ async function automateTask(automator_data, trialhistory) {
     } //IF finished final automator state
 
     // Otherwise, advance to the next stage.
-    TASK.CurrentAutomatorStage = TASK.CurrentAutomatorStage + 1;
-    automatorEvents.push(
-      'SUBJECT ADVANCED TO STAGE ' +
-        (i_current_stage + 1) +
-        ' of ' +
-        (automator_data.length - 1) +
-        ' with ' +
-        ENV.StagePctCorrect +
-        '% performance on n=' +
-        ENV.StageNTrials
-    );
-    console.log(
-      'With ' +
-        ENV.StagePctCorrect +
-        '% performance on n=' +
-        ENV.StageNTrials +
-        ', subject advanced to stage ' +
-        (i_current_stage + 1) +
-        ' of ' +
-        (automator_data.length - 1) +
-        ' (zero indexing) of automator.'
-    );
+    TASK.CurrentAutomatorStage += 1;
+    const automatorEventStr = `SUBJECT ADVACED TO STAGE ${
+      currentStageIdx + 1
+    } of ${automatorData.length - 1} with ${
+      ENV.StagePctCorrect
+    }% performance on n=${ENV.StageNTrials}`;
+
+    automatorEvents.push(automatorEventStr);
+    console.log(automatorEventStr);
 
     // Reset tracking variables
     purgeTrackingVariables();
@@ -151,7 +136,7 @@ async function automateTask(automator_data, trialhistory) {
 
     const updatedTaskTransition = Object.fromEntries(
       Object.entries(
-        Object.assign(TASK, automator_data[i_current_stage + 1])
+        Object.assign({}, TASK, automatorData[currentStageIdx + 1])
       ).flatMap(([key, value]) => {
         console.log('automator transition');
         if (
@@ -176,36 +161,6 @@ async function automateTask(automator_data, trialhistory) {
 
     FLAGS.need2saveParameters = 1;
     FLAGS.need2loadParameters = 1;
-
-    // for (var property in automator_data[i_current_stage + 1]) {
-    //   if (
-    //     property == 'CurrentAutomatorStageName' ||
-    //     property == 'MinPercentCriterion' ||
-    //     property == 'MinTrialsCriterion'
-    //   ) {
-    //     continue;
-    //   } //IF stage name or criteria, these ENV variables don't need to be stored in TASK
-
-    //   if (automator_data[i_current_stage + 1].hasOwnProperty(property)) {
-    //     if (
-    //       TASK[property].toString() !=
-    //       automator_data[i_current_stage + 1][property].toString()
-    //     ) {
-    //       TASK[property] = automator_data[i_current_stage + 1][property];
-
-    //       console.log(
-    //         '"' +
-    //           property +
-    //           '" changed from ' +
-    //           TASK[property] +
-    //           ' to ' +
-    //           automator_data[i_current_stage + 1][property]
-    //       );
-    //     } //IF need to update TASK property
-    //   } //IF property
-    // } //FOR property
-    // FLAGS.need2saveParameters = 1;
-    // FLAGS.need2loadParameters = 1;
   } //IF stage transition
 
   FLAGS.automatortext = updateHeadsUpDisplayAutomator(
@@ -218,7 +173,7 @@ async function automateTask(automator_data, trialhistory) {
   );
   updateHeadsUpDisplay();
   return;
-} //FUNCTION automateTask(automator_data,trialhistory)
+} //FUNCTION automateTask(automatorData,trialhistory)
 
 function stageHash(task) {
   // Returns a value that uniquely describes the automator and stage of the automator
@@ -228,6 +183,7 @@ function stageHash(task) {
   } else {
     currentStageHashStr = 'automator_off';
   }
+  console.log('[Automator] CurrentStageHashStr:', currentStageHashStr);
   return currentStageHashStr;
 } //FUNCTION stageHash(task)
 
@@ -248,86 +204,96 @@ async function readTrialHistoryFromFirebase(filepaths) {
 
   // Iterate over files and add relevant variables
   for (var i = 0; i < filepaths.length; i++) {
-    data = await loadTextfromFirebase(filepaths[i]);
+    const data = await loadTextfromFirebase(filepaths[i]);
 
-    var numTRIALs = data.TRIALEVENTS.Response.length;
+    let numTrials = data.TRIALEVENTS.Response.length;
     // Iterate over TRIALs
-    for (var i_trial = 0; i_trial < numTRIALs; i_trial++) {
+    for (let i_trial = 0; i_trial < numTrials; i_trial++) {
       //Correct/incorrect trial
-      var correct = Number(
+      const correct =
         data.TRIALEVENTS.Response[i_trial] ==
-          data.TRIALEVENTS.CorrectItem[i_trial]
-      );
+        data.TRIALEVENTS.CorrectItem[i_trial]
+          ? 1
+          : 0;
       trialhistory.correct.push(correct);
 
       //Response
-      var response = data.TRIALEVENTS.Response[i_trial];
+      const response = data.TRIALEVENTS.Response[i_trial];
       trialhistory.response.push(response);
 
       //Current automator stage
-      var current_stage = stageHash(data.TASK);
-      trialhistory.trainingstage.push(current_stage);
+      const currentStage = stageHash(data.TASK);
+      trialhistory.trainingstage.push(currentStage);
 
       //Start time (fixation dot appears) of trial
-      var starttime = data.TRIALEVENTS.StartTime[i_trial];
+      const starttime = data.TRIALEVENTS.StartTime[i_trial];
       trialhistory.starttime.push(starttime);
     }
   }
   console.log(
-    'Read ' + trialhistory.trainingstage.length + ' past trials from ',
-    filepaths.length,
-    ' datafiles.'
+    `Read ${trialhistory.trainingstage.length} past trials from ${filepaths.length} datafiles.`
   );
   return trialhistory;
 } //FUNCTION readTrialHistoryFromFirebase(filepaths)
 
 function computeRunningHistory(
-  mintrials,
-  current_stage,
-  history_trainingstage,
-  history_corrects
+  minTrials,
+  currentStage,
+  trainingStageHistory,
+  correctsHistory
 ) {
+  console.time('computeRunningHistory');
+  console.log(
+    'minTrials:',
+    minTrials,
+    'currentStage:',
+    currentStage,
+    'trainingStageHistory:',
+    trainingStageHistory,
+    'correctsHistory:',
+    correctsHistory
+  );
   // todo:
   // should trials that are performed with the automator off, but with the SAME settings as an automator stage,
   // be counted as being part of the automator? (nope, explicit is always better. -MLee. )
 
-  if (history_trainingstage.length != history_corrects.length) {
-    console.log('trainingstage vec. length' + history_trainingstage.length);
-    console.log('corrects vec. length ' + history_corrects.length);
+  if (trainingStageHistory.length != correctsHistory.length) {
+    console.log('trainingstage vec. length' + trainingStageHistory.length);
+    console.log('corrects vec. length ' + correctsHistory.length);
     throw 'The history arrays are of different length. Check what went wrong; cannot compute performance history.';
   }
 
-  // Returns: The at most current-mintrials trial which starts a contiguous sequence to current trial with the same trainingstage/automatorfilepath as the current state,
+  // Returns: The at most current-minTrials trial which starts a contiguous sequence to current trial with the same trainingstage/automatorfilepath as the current state,
   // trialhistory is assumed to include all trials except the current one
   // trialhistory is arranged in [oldest, ..., current-1] order
 
-  // Starting from the most recent trial, move backwards until you hit either 1) mintrials or 2) another automatorstage
-  var startingindex = history_trainingstage.length;
-  for (var i = history_trainingstage.length - 1; i >= 0; i--) {
-    if (history_trainingstage[i] == current_stage) {
-      if (history_trainingstage.length - i <= mintrials) {
+  // Starting from the most recent trial, move backwards until you hit either 1) minTrials or 2) another automatorstage
+  var startingindex = trainingStageHistory.length;
+  for (var i = trainingStageHistory.length - 1; i >= 0; i--) {
+    if (trainingStageHistory[i] == currentStage) {
+      if (trainingStageHistory.length - i <= minTrials) {
         startingindex = i;
-      } else if (history_trainingstage.length - i > mintrials) {
+      } else if (trainingStageHistory.length - i > minTrials) {
         break;
       } else {
         throw 'Something went wrong';
       }
-    } else if (history_trainingstage[i] != current_stage) {
+    } else if (trainingStageHistory[i] != currentStage) {
       break;
     } else {
-      console.log(history_trainingstage[i]);
-      console.log(current_stage);
+      console.log(trainingStageHistory[i]);
+      console.log(currentStage);
       throw 'Something went wrong 2';
     }
   } //FOR i trials
 
   var ndiscrepancy = 0;
   var ncountedtrials = 0;
-  for (var i = startingindex; i < history_trainingstage.length; i++) {
-    if (history_trainingstage[i] != current_stage) {
+  for (let i = startingindex; i < trainingStageHistory.length; i++) {
+    if (trainingStageHistory[i] != currentStage) {
       ndiscrepancy = ndiscrepancy + 1;
-      console.log(history_trainingstage[i]);
-      console.log(current_stage);
+      console.log(trainingStageHistory[i]);
+      console.log(currentStage);
       throw 'Something went wrong 3';
     }
     ncountedtrials = ncountedtrials + 1;
@@ -336,18 +302,19 @@ function computeRunningHistory(
   var ntrial = 0;
   var ncorrect = 0;
   var pctcorrect = NaN;
-  if (startingindex == history_corrects.length) {
+  if (startingindex == correctsHistory.length) {
     pctcorrect = 0;
     return [pctcorrect, ntrial];
   }
 
-  for (var i = startingindex; i < history_corrects.length; i++) {
-    if (history_corrects[i] == 1) {
+  for (let i = startingindex; i < correctsHistory.length; i++) {
+    if (correctsHistory[i] == 1) {
       ncorrect = ncorrect + 1;
     }
 
     ntrial++;
   }
   pctcorrect = (100 * ncorrect) / ntrial;
+  console.timeEnd('computeRunningHistory');
   return [pctcorrect, ntrial];
-} //FUNCTION computeRunningHistory(mintrials, current_stage, history_trainingstage, history_corrects)
+} //FUNCTION computeRunningHistory(minTrials, currentStage, trainingStageHistory, correctsHistory)

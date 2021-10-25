@@ -1305,12 +1305,18 @@ if (ENV.BatteryAPIAvailable) {
         await moviefinish_promise();
       }
 
-      CURRTRIAL.fixationtouchevent = touchhold_return.type;
-      CURRTRIAL.fixationxyt = [
-        touchhold_return.cxyt[1],
-        touchhold_return.cxyt[2],
-        touchhold_return.cxyt[3],
-      ];
+      try {
+        CURRTRIAL.fixationtouchevent = touchhold_return.type;
+        CURRTRIAL.fixationxyt = [
+          touchhold_return.cxyt[1],
+          touchhold_return.cxyt[2],
+          touchhold_return.cxyt[3],
+        ];
+      } catch (e) {
+        console.error('touchhold_return did not return properly:', e);
+        CURRTRIAL.fixationtouchevent = 'tbroken';
+        CURRTRIAL.fixationxyt = [-1, -1, -1];
+      }
 
       logEVENTS(
         'FixationTouchEvent',
