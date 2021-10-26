@@ -1,0 +1,53 @@
+{
+  "name": "liveplot3",
+  "version": "3.0.0",
+  "description": "Newer version of Liveplot",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "webpack --watch --config webpack.devel.config.js",
+    "watch": "webpack --watch",
+    "build": "webpack --config webpack.prod.config.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/issalab/mkturk.git"
+  },
+  "author": "Hector Cho",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/issalab/mkturk/issues"
+  },
+  "homepage": "https://github.com/issalab/mkturk#readme",
+  "devDependencies": {
+    "clean-webpack-plugin": "^3.0.0",
+    "css-loader": "^6.2.0",
+    "extract-text-webpack-plugin": "^3.0.2",
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^5.3.2",
+    "mini-css-extract-plugin": "^2.1.0",
+    "source-map-loader": "^3.0.0",
+    "style-loader": "^3.2.1",
+    "ts-loader": "^9.2.3",
+    "typescript": "^4.3.5",
+    "webpack": "^5.46.0",
+    "webpack-cli": "^4.7.2",
+    "webpack-fix-style-only-entries": "^0.6.1"
+  },
+  "dependencies": {
+    "@types/google.visualization": "0.0.67",
+    "@types/jsoneditor": "^8.6.1",
+    "@types/lodash": "^4.14.171",
+    "@types/lodash.clonedeep": "^4.5.6",
+    "@types/tabulator-tables": "^4.9.3",
+    "firebase": "^8.7.1",
+    "firebase-admin": "^9.11.0",
+    "highcharts": "^9.1.2",
+    "jsoneditor": "^9.5.2",
+    "lodash": "^4.17.21",
+    "lodash.clonedeep": "^4.5.0",
+    "package.json": "^2.0.1",
+    "tabulator-tables": "^4.9.3",
+    "tslib": "^2.3.0"
+  }
+}

@@ -19,6 +19,7 @@ function insertHandler(err: any, apiResp: any) {
     }
   }
 }
+
 interface fixationData {
   agent: string,
   timestamp: any,
@@ -41,6 +42,15 @@ interface displayTimesData {
   frame_num: Array<number>,
   t_desired: Array<number>,
   t_actual: Array<number>
+};
+
+interface touchData {
+  agent: string,
+  timestamp: any,
+  trial_num: number,
+  touch_x: number,
+  touch_y: number,
+  meta: number
 };
 
 interface MturkUserData {
@@ -102,31 +112,38 @@ const schema = {
     },
     {
       "name": "left_y",
-      "type": "FLOAT"
+      "type": "FLOAT",
+      "mode": "NULLABLE"
     },
     {
       "name": "left_aux_0",
-      "type": "FLOAT"
+      "type": "FLOAT",
+      "mode": "NULLABLE"
     },
     {
       "name": "left_aux_1",
-      "type": "FLOAT"
+      "type": "FLOAT",
+      "mode": "NULLABLE"
     },
     {
       "name": "right_x",
-      "type": "FLOAT"
+      "type": "FLOAT",
+      "mode": "NULLABLE"
     },
     {
       "name": "right_y",
-      "type": "FLOAT"
+      "type": "FLOAT",
+      "mode": "NULLABLE"
     },
     {
       "name": "right_aux_0",
-      "type": "FLOAT"
+      "type": "FLOAT",
+      "mode": "NULLABLE"
     },
     {
       "name": "right_aux_1",
-      "type": "FLOAT"
+      "type": "FLOAT",
+      "mode": "NULLABLE"
     }
   ]
 };
@@ -139,12 +156,55 @@ const createTableOptions = {
   }
 };
 
+export const bqInsertTouchData = functions.https.onCall((rows: touchData[]) => {
+  const bq = new BigQuery();
+  const dataset = bq.dataset('touchdata');
+  const table = dataset.table(rows[0].agent);
+  console.log('bqInsertTouchData rows received:', rows);
+
+  table.exists().then(async (existsData) => {
+    const exists = existsData[0];
+    if (exists) {
+      rows.forEach((row: any) => {
+        console.log('row:', row);
+        delete row.agent;
+        row.timestamp = new Date(row.timestamp);
+        for (let key in row) {
+          if (Number.isNaN(row[key])) {
+            row[key] = null;
+          }
+        }
+      });
+      table.insert(rows, {}, insertHandler);
+      return rows;
+    } else {
+      const [newTable] = await dataset.createTable(rows[0].agent, touchDataTableOptions);
+      console.log(`TouchData Table ${newTable.id} created with partitioning: `);
+      rows.forEach((row: any) => {
+        console.log('row', row);
+        delete row.agent;
+        row.timestamp = new Date(row.timestamp);
+        for (let key in row) {
+          if (Number.isNaN(row[key])) {
+            row[key] = null;
+          }
+        }
+      });
+      newTable.insert(rows, {}, insertHandler);
+      return rows;
+    }
+  }).catch(error => {
+    console.error("Exists function error:", error);
+  });
+});
+
 /* caller must guarantee that all rows belong to the same agent */
 export const bqInsertEyeData = functions.https.onCall((rows: fixationData[]) => {
   const bq = new BigQuery();
   const dataset = bq.dataset('eyedata');
   const table = dataset.table(rows[0].agent);
-  console.log("rows received");
+  console.log("bqinserteyedata rows received:", rows);
+  // console.log('bqinserteyedata AGENT:', rows[0].agent);
 
   table.exists().then(async (existsData) => {
     const exists = existsData[0];
@@ -153,10 +213,16 @@ export const bqInsertEyeData = functions.https.onCall((rows: fixationData[]) => 
         console.log('row', row);
         delete row.agent;
         row.timestamp = new Date(row.timestamp);
+        for (let key in row) {
+          if (Number.isNaN(row[key])) {
+            row[key] = null;
+          }
+        }
       });
       console.log('existing table entire rows:', rows);
       table.insert(rows, {}, insertHandler);
       console.log('exists table insert');
+      return;
     } else {
       const [newTable] = await dataset.createTable(rows[0].agent, createTableOptions);
       console.log(`Table ${newTable.id} created with partitioning: `);
@@ -165,10 +231,16 @@ export const bqInsertEyeData = functions.https.onCall((rows: fixationData[]) => 
         console.log('row', row);
         delete row.agent;
         row.timestamp = new Date(row.timestamp);
+        for (let key in row) {
+          if (Number.isNaN(row[key])) {
+            row[key] = null;
+          }
+        }
       });
       console.log('new table entire rows:', rows);
       newTable.insert(rows, {}, insertHandler);
       console.log('new table insert');
+      return;
     }
   }).catch(error => {
     console.error("Exists function error:", error);
@@ -347,7 +419,7 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
         );
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     return { status: 'error', message: error.message };
   }
 
@@ -443,7 +515,7 @@ export const processMturkUser = functions.https.onCall(async (data: MturkUserDat
           );
         });
     })
-  } catch (error) {
+  } catch (error: any) {
     return { status: 'error', message: error.message };
   }
 
@@ -477,6 +549,18 @@ export const sayHello = functions.https.onRequest((req, res) => {
   res.send({aid: aid, hid: hid, wid: wid});
   res.json({aid: aid, hid: hid, wid: wid});
   return;
+});
+
+export const testOnRequest = functions.https.onRequest((req, res) => {
+  let tmp;
+  tmp = 'testOnRequest';
+
+  res.send({tmp: tmp});
+  return;
+});
+
+export const testOnCall = functions.https.onCall(() => {
+  return 'testOnCall';
 });
 
 export const submitSurvey = functions.https.onCall(async (data: any) => {
@@ -550,7 +634,7 @@ export const submitSurvey = functions.https.onCall(async (data: any) => {
         '[submitSurvey] More than one document with the same workerId'
       );
     }
-  } catch (e) {
+  } catch (e: any) {
     return { status: 500, message: e.message };
   }
 
@@ -620,7 +704,7 @@ export const submitAssignment = functions.https.onCall(async (data: any) => {
         '[submitAssignment] More than one document with the same workerId'
       );
     }
-  } catch (error) {
+  } catch (error: any) {
     return { status: 'error', message: error.message };
   }
 });
@@ -663,10 +747,50 @@ const displayTimeTableOptions = {
   }
 };
 
+const touchDataSchema = {
+  'fields': [
+    {
+      'name': 'trial_num',
+      'type': 'INTEGER',
+      'mode': 'REQUIRED'
+    },
+    {
+      'name': 'timestamp',
+      'type': 'TIMESTAMP',
+      'mode': 'REQUIRED'
+    },
+    {
+      'name': 'touch_x',
+      'type': 'FLOAT',
+      'mode': 'NULLABLE'
+    },
+    {
+      'name': 'touch_y',
+      'type': 'FLOAT',
+      'mode': 'NULLABLE'
+    },
+    {
+      'name': 'meta',
+      'type': 'INTEGER',
+      'mode': 'NULLABLE'
+    }
+  ] 
+};
+
+const touchDataTableOptions = {
+  'schema': touchDataSchema,
+  'timePartitioning': {
+    'type': 'DAY',
+    'field': 'timestamp'
+  }
+};
+
 export const bqInsertDisplayTimes = functions.https.onCall((rows: displayTimesData[]) => {
   const bq = new BigQuery();
   const dataset = bq.dataset('displaytimedata');
   const table = dataset.table(rows[0].agent);
+  console.log('AGENT', rows[0].agent);
+  console.log('bqinsertdisplaytimes rows:', rows);
 
   table.exists().then(async (existsData) => {
     const exists = existsData[0];
@@ -674,6 +798,11 @@ export const bqInsertDisplayTimes = functions.https.onCall((rows: displayTimesDa
       rows.forEach((row: any) => {
         delete row.agent;
         row.timestamp = new Date(row.timestamp);
+        for (let key in row) {
+          if (Number.isNaN(row[key])) {
+            row[key] = null;
+          }
+        }
       });
       table.insert(rows, {}, insertHandler);
       console.log('Rows inserted to existing table');
@@ -684,7 +813,12 @@ export const bqInsertDisplayTimes = functions.https.onCall((rows: displayTimesDa
       rows.forEach((row: any) => {
         delete row.agent;
         row.timestamp = new Date(row.timestamp);
-      })
+        for (let key in row) {
+          if (Number.isNaN(row[key])) {
+            row[key] = null;
+          }
+        }
+      });
       newTable.insert(rows, {}, insertHandler);
       console.log('Row inserted to newly created table');
     }

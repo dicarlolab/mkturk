@@ -8,14 +8,15 @@
 
 <!-- =========== (begin) FIREBASE + FIRESTORE =========== -->
 <!--   Firebase App is always required and must be first -->
-<script src="https://www.gstatic.com/firebasejs/6.6.1/firebase.js"></script>
-<script src="https://www.gstatic.com/firebasejs/6.6.1/firebase-app.js"></script>
+<script src="/__/firebase/8.3.2/firebase-app.js"></script>
 
 <!-- Add additional services that you want to use -->
-<script src="https://www.gstatic.com/firebasejs/6.6.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/6.6.1/firebase-firestore.js"></script>
+<script src="/__/firebase/8.3.2/firebase-auth.js"></script>
+<script src="/__/firebase/8.3.2/firebase-firestore.js"></script>
 
 <script src=https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.3.0/math.min.js></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.3.0/jsoneditor.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.3.0/jsoneditor.min.css">
 <script type="text/javascript">
   // Initialize Firebase
   var config = {
@@ -66,6 +67,9 @@
 // choice bias
 // total # of rewards
 // touch accuracy
+
+let taskViewerEl;
+let taskViewer;
 
 //================== GOOGLE CHARTS LOADING (begin) ==================//
 // Asynchronous: Live plotting using google charts
@@ -121,39 +125,18 @@ function showTaskText(dayidx,agentidx){
 
   //add object metadata
   var task = DATA.task[STAT.lastfile[agentidx-1][dayidx]];
-  var imagesRef = db.collection(FIRESTORECOLLECTION.DATA).doc(task.Imagesdoc)
+  let taskRef = db.collection(FIRESTORECOLLECTION.DATA).doc(task.Taskdoc)
+  taskRef.get().then(doc => {
+    try {
+      taskViewer.get();
+      taskViewer.update(doc.data());
+    } catch {
+      taskViewerEl = document.querySelector('#tasktext-viewer');
 
-  imagesRef.get().then(
-    function(doc)
-    {
-      var taskname = ''
-      if (task.RewardStage == 0){
-        taskname = 'FIXATION'
-      }
-      else if (task.TestON > 0){
-        taskname = 'SD' + doc.data().TestNouns.length
-      }
-      else if (task.ObjectGridIndex.length == task.TestGridIndex.length)
-      {
-        taskname = 'SR' + task.ObjectGridIndex.length
-      }
-      else if (task.HideTestDistractors == 0){
-        taskname = 'M2S' + doc.data().TestNouns.length + ' R' + task.TestGridIndex.length
-      }
-
-      var textobj = document.getElementById("tasktext");
-      textobj.innerHTML = 
-      "<b>" + taskname + "</b>"
-      +"<br> <b>Sample nouns:</b> " + doc.data().SampleNouns + '  (' + doc.data().SampleBagNames + ')'
-      + "<br> <b>Test nouns:</b> " + doc.data().SampleNouns + '  (' + doc.data().TestBagNames + ')'
-      + "<br>"
-      + "<br> Sample object models: " + doc.data().SampleObjects
-      + "<br> Test object models: " + doc.data().TestObjects
-      + "<br><br>"
-      + JSON.stringify(task, function(a, b) {
-        return (Object.prototype.toString.call(b) === '[object Array]') ? JSON.stringify(b) : b;
-      }, 4)
-    })
+      taskViewer = new JSONEditor(taskViewerEl, {});
+      taskViewer.set(doc.data());
+    }
+  });
 }
 //================== GOOGLE CHARTS LOADING (end) ==================//
 
@@ -555,6 +538,7 @@ function updateDateChip(){
 <p></p>
 <div id="line_div"></div> <!--Div that will hold the line chart-->
 <div id="linetrial_div"></div> <!--Div that will hold the line chart-->
+<div id="tasktext-viewer"></div>
 <pre id="tasktext" style="position: absolute; left: 1px; width: 100%; font-size: 18px; color: black; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;"></pre>
 <script type="text/javascript">
 

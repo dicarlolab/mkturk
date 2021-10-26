@@ -33,7 +33,7 @@ ENV.AgentRFID = "XX"
 ENV.CurrentDate = new Date;
 ENV.CanvasRatio = 1
 ENV.DevicePixelRatio = 1
-ENV.ThreeJSRenderRatio = 3.5
+ENV.ThreeJSRenderRatio = 2
 ENV.FixationRadius = 0
 ENV.FixationWindowRadius = 0
 ENV.FixationColor = ''
@@ -54,6 +54,8 @@ ENV.MinPercentCriterion = -1
 ENV.MinTrialsCriterion = -1
 ENV.StagePctCorrect = -1
 ENV.StageNTrials = -1
+ENV.NRSVPMin = -1
+ENV.NRSVPMax = -1
 
 ENV.WebBluetoothAvailable = 0
 ENV.WebUSBAvailable = 0
@@ -62,6 +64,7 @@ ENV.OffscreenCanvasAvailable = 0
 
 
 ENV.UserAgent = window.navigator.userAgent
+ENV.WebAppUrl = window.location.href;
 ENV.DeviceType = ''
 ENV.DeviceBrand = ''
 ENV.DeviceName = ''
@@ -91,10 +94,13 @@ ENV.MTurkWorkerId = '';
 ENV.AssignmentId = '';
 ENV.HITId = '';
 
+ENV.StressTest = 0;
+
 //================ EYE GLOBALS ================//
 ENV.Eye = {}
 
 //Eye states
+ENV.Eye.TrackEye = 0;
 ENV.Eye.EventType = 'eyestart'
 ENV.Eye.timeOfLastGlanceInBB = -1
 ENV.Eye.BlinkGracePeriod = 200
@@ -109,7 +115,7 @@ ENV.Eye.NCalibPointsTest = 0
 ENV.Eye.CalibTrainMSE = []
 ENV.Eye.CalibTestMSE = []
 
-ENV.PhotodiodeSquareSizeInches = 0.75
+ENV.PhotodiodeSquareSizeInches = 1
 ENV.PhotodiodeSquareX = 0
 ENV.PhotodiodeSquareY = 0
 
@@ -137,11 +143,9 @@ FLAGS.runPump = 0
 FLAGS.firestorecreatedoc = 0
 FLAGS.firestorelastsavedtrial = 0
 FLAGS.firestoretimeron = 0
-FLAGS.stressTest = 0
 FLAGS.underlayGridPoints = 0
 FLAGS.RFIDGeneratorCreated = 0
 FLAGS.automatortext = ''
-FLAGS.trackeye = 0
 FLAGS.rtdbAgentNumConnections = null;
 
 var CANVAS = {}; 
@@ -245,6 +249,7 @@ EVENTS.reset_timeseries = function(){
 	this.timeseries.TSequenceActual = {}
 	this.timeseries.EyeData = {}
 	this.timeseries.Arduino = {}
+	this.timeseries.TouchData = {};
 
 	// Initialize battery value
 	if (ENV.BatteryAPIAvailable){

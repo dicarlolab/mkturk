@@ -8,7 +8,7 @@ if (typeof(navigator.usb) == "object"){ ENV.WebUSBAvailable = 1 }
 if (typeof(navigator.bluetooth) == "object"){ ENV.WebBluetoothAvailable = 1 }
 if (typeof(navigator.getBattery) == "function"){ ENV.BatteryAPIAvailable = 1 }
 if (typeof(OffscreenCanvas) == "function"){ ENV.OffscreenCanvasAvailable = 1 }
-// ENV.OffscreenCanvasAvailable = 0;
+ENV.OffscreenCanvasAvailable = 0;
 
 // Button callbacks for inline connection to arduino device
 document.querySelector("button[id=googlesignin]").style.display = "block";
@@ -151,11 +151,12 @@ if (ENV.BatteryAPIAvailable) {
 
 
 	//====================== Retrieve device's screen properties ===========================//
-	ENV.UserAgent = window.navigator.userAgent
-	ENV.DeviceScreenWidth = window.screen.width
-	ENV.DeviceScreenHeight = window.screen.height
+  ENV.WebAppUrl = window.location.href;
+	ENV.UserAgent = window.navigator.userAgent;
+	ENV.DeviceScreenWidth = window.screen.width;
+	ENV.DeviceScreenHeight = window.screen.height;
 
-	var deviceProperties = await deviceDetect()
+	var deviceProperties = await deviceDetect();
 	ENV.DeviceType = deviceProperties.data.device.type
 	ENV.DeviceBrand = deviceProperties.data.device.brand
 	ENV.DeviceName = deviceProperties.data.device.model
@@ -504,15 +505,15 @@ if (ENV.BatteryAPIAvailable) {
       }//IF SaveImages
 
       if (typeof(TASK.DragtoRespond) == 'undefined') {
-        if (FLAGS.trackeye == 0) { // IF touch, then only clicking
+        if (ENV.Eye.TrackEye == 0) { // IF touch, then only clicking
           TASK.DragtoRespond = 0; // click in box
-        } else if (FLAGS.trackeye != 0) { // ELSE IF eyetracker, allow dragging
+        } else if (ENV.Eye.TrackEye != 0) { // ELSE IF eyetracker, allow dragging
           TASK.DragtoRespond = 1; // drag into box
         }
       }
 
       //load previous calibration if available
-      if (FLAGS.trackeye > 0){ // IF trackeye
+      if (ENV.Eye.TrackEye > 0){ // IF trackeye
         //Calibration
         ENV.Eye.calibration = 0;
         ENV.Eye.CalibXTransform = [];
@@ -674,6 +675,10 @@ if (ENV.BatteryAPIAvailable) {
       CURRTRIAL.reset();
       EVENTS.reset_trialseries();
       EVENTS.reset_timeseries();
+
+	    if (typeof(TASK.Photodiode) == 'undefined') {
+	      TASK.Photodiode = 0;
+	    }
     } //IF need2loadParameters
 
     if (FLAGS.purge == 1) {
@@ -814,9 +819,17 @@ if (ENV.BatteryAPIAvailable) {
 
 
     //============ SELECT SAMPLE & TEST IMAGES ============//
+    if (typeof(TASK.NRSVP) != "undefined" && TASK.NRSVP > 0){
+    	ENV.NRSVPMax = TASK.NRSVP
+    	ENV.NRSVPMin = TASK.NRSVP
+
+    	if (typeof(TASK.NRSVPMax) != "undefined" && TASK.NRSVPMax > TASK.NRSVP){
+	    	ENV.NRSVPMax = TASK.NRSVPMax
+    	}//IF NRSVPMax
+    }//IF NRSVP
 
     let imgSeqLen = (
-      (typeof(TASK.NRSVP) == 'undefined' || TASK.NRSVP <= 0) ? 1 : TASK.NRSVP
+      (typeof(TASK.NRSVP) == 'undefined' || TASK.NRSVP <= 0) ? 1 : ENV.NRSVPMax
     );
 
     for (let i = 0; i < imgSeqLen; i++) {
@@ -884,9 +897,6 @@ if (ENV.BatteryAPIAvailable) {
       }
 
 
-      let blankdurationpre = (
-        (i == 0) ? Math.max(100, TASK.SampleOFF) : TASK.SampleOFF
-      );
 
       // Create Movie Sequence
       [movie_sequence, movie_tsequence, movie_framenum] = (
@@ -1127,7 +1137,7 @@ if (ENV.BatteryAPIAvailable) {
       }
 
       let touchhold_return; 
-      if (FLAGS.stressTest == 1) { //IF automated stress test
+      if (ENV.StressTest == 1) { //IF automated stress test
         if (TASK.Species == 'model') {
           
           // let ctx = mkm.cvs.getContext('2d');
@@ -1356,12 +1366,10 @@ if (ENV.BatteryAPIAvailable) {
         FLAGS.punishOutsideTouch = 1;
         FLAGS.waitingforTouches = 1;
         FLAGS.acquiredTouch = 1;
-        if (FLAGS.trackeye) {
+        if (ENV.Eye.TrackEye) {
           ENV.Eye.EventType = 'eyemove';
         }
-        
-        await port.writeSampleCommandTriggertoUSB('1');
-
+               
         let p1 = hold_promise(
           0,
           boundingBoxesSampleFixation,
@@ -1376,11 +1384,28 @@ if (ENV.BatteryAPIAvailable) {
           CURRTRIAL.sequenceindex,
           mkm
         );
+
+        if (port.connected && FLAGS.savedata) {
+          port.writeSampleCommandTriggertoUSB('1');
+        }
+
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
-        CURRTRIAL.samplestarttime_string = new Date().toJSON();
+        console.log('[SAMPLE START TIME LOGGED]:', Date.now());
+        CURRTRIAL.samplestarttime_string = (
+          new Date(
+            CURRTRIAL.samplestarttime
+            + ENV.CurrentDate.valueOf()
+          ).toJSON()
+        );
         let race_return = await Promise.race([p1, p2]);
         FLAGS.acquiredTouch = 0;
         FLAGS.waitingforTouches = 0;
+
+        //Determine number of clips fixated
+       	var nclipshown = CURRTRIAL.sequenceclip[frame.shown.lastIndexOf(1)]
+       	if (typeof(race_return.type) == 'undefined') {
+       		nclipshown++
+       	}//IF held until completeion, count all i clips; otw only count i-1
 
         if (FLAGS.movieplaying == 1) {
           // So that sample movie does not continue playing after fixation broken
@@ -1389,7 +1414,7 @@ if (ENV.BatteryAPIAvailable) {
           await moviefinish_promise();
         }
 
-        if (FLAGS.trackeye > 0) {
+        if (ENV.Eye.TrackEye > 0) {
           ENV.Eye.EventType = 'eyestart'; // Reset eye state
         }
 
@@ -1400,7 +1425,8 @@ if (ENV.BatteryAPIAvailable) {
             0,
             Date.now() - ENV.CurrentDate.valueOf(),
           ];
-        } else { // ELSE broke samplefixation
+        }
+        else { // ELSE broke samplefixation
           CURRTRIAL.samplefixationtouchevent = race_return.type;
           // Quick Fix for race_return.cxyt[1:4] returning undefined
           for (let i = 1; i < 4; i++) { 
@@ -1418,9 +1444,15 @@ if (ENV.BatteryAPIAvailable) {
         boundingBoxesChoice3D = { x: [], y: [] } // determined on the fly during display
         CURRTRIAL.samplefixationtouchevent = '';
         CURRTRIAL.samplefixationxyt = [];
+
+        if (port.connected && FLAGS.savedata) {
+          port.writeSampleCommandTriggertoUSB('1');
+        }
+
         CURRTRIAL.samplestarttime = Date.now() - ENV.CurrentDate.valueOf();
-        CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime).toJSON();
-        await port.writeSampleCommandTriggertoUSB('1');
+        console.log('[SAMPLE START TIME LOGGED [!RSVP]]:', Date.now());
+        CURRTRIAL.samplestarttime_string = new Date(CURRTRIAL.samplestarttime + ENV.CurrentDate.valueOf()).toJSON();
+        
         await displayTrial(
           CURRTRIAL.tsequence,
           CURRTRIAL.sequencegridindex,
@@ -1505,7 +1537,7 @@ if (ENV.BatteryAPIAvailable) {
 
       let race_return = { type: 'theld' };
       let currchoice;
-      if (FLAGS.stressTest == 1) {
+      if (ENV.StressTest == 1) {
         let nchoices = boundingBoxesChoice3D.x.length;
         let distractor_array;
         let x;
@@ -1675,7 +1707,7 @@ if (ENV.BatteryAPIAvailable) {
         ];
         FLAGS.waitingforTouches--
 
-      } else { // ELSE !FLAGS.stressTest
+      } else { // ELSE !ENV.StressTest
         if (TASK.NRSVP > 0) { // IF RSVP, skip choice
           CURRTRIAL.correctitem = 1;
           if (TASK.FixationWindowSizeInches <= 0) { // IF no fixation required
@@ -1684,7 +1716,7 @@ if (ENV.BatteryAPIAvailable) {
           } else { // fixation required
             race_return = { type: CURRTRIAL.samplefixationtouchevent };
 
-            if (CURRTRIAL.samplefixationtouchevent == 'theld') { // held samplefixation
+            if (CURRTRIAL.samplefixationtouchevent == 'theld' || nclipshown >= ENV.NRSVPMin) { // held samplefixation
               currchoice = 1;
             } else { // broke samplefixation
               currchoice = 0;
@@ -1750,7 +1782,22 @@ if (ENV.BatteryAPIAvailable) {
     //============ DETERMINE NUMBER OF REWARDS ============//
     if (TASK.RewardStage == 0 && samplereward == 0) {
       CURRTRIAL.nreward = -1; // skip reward/punish
-    } else if (
+    }
+    else if (ENV.NRSVPMin > 0 && ENV.NRSVPMax > 0 
+    		&& ENV.NRSVPMax > ENV.NRSVPMin
+    		 && TASK.RewardStage > 0){
+    	if (nclipshown < ENV.NRSVPMin){
+    		CURRTRIAL.nreward = 0
+    	}
+    	else {
+    		// exponential reward = 1*exp(a*(nseen - nmin)), where a = ln(rmax)/(nmax-nmin)
+    		CURRTRIAL.nreward = Math.exp(
+    			( Math.log1p(TASK.NRewardMax)/(ENV.NRSVPMax - ENV.NRSVPMin) ) * (nclipshown - ENV.NRSVPMin) )
+
+    		CURRTRIAL.nreward = Math.round(CURRTRIAL.nreward)
+    	}
+    }//IF NRSVP && reward based on nclips fixated before break
+    else if (
       CURRTRIAL.correct
       && (samplereward == -1 || TASK.RewardStage == 0)
     ) { // default behavior
@@ -1838,6 +1885,10 @@ if (ENV.BatteryAPIAvailable) {
           mkm
         );
 
+		CURRTRIAL.reinforcementtime = Date.now() - ENV.CurrentDate.valueOf();
+		logEVENTS("ReinforcementTime", CURRTRIAL.reinforcementtime, "trialseries")
+
+
         if (ble.connected == false && port.connected == false) {
           await Promise.all([p1]);
         } else if (ble.connected == true) {
@@ -1878,15 +1929,20 @@ if (ENV.BatteryAPIAvailable) {
       playSound(3);
 
       CURRTRIAL.reinforcementtime = Date.now() - ENV.CurrentDate.valueOf();
-			logEVENTS("ReinforcementTime", CURRTRIAL.reinforcementtime, "trialseries")
+			logEVENTS("ReinforcementTime", CURRTRIAL.reinforcementtime, "trialseries");
+      console.log('[REINFORCEMENT TIME LOGGED]:', Date.now());
       
       await Promise.all([p1, p2]);
     }
 
-    port.writeSampleCommandTriggertoUSB('0');
+    if (port.connected && FLAGS.savedata) {
+      port.writeSampleCommandTriggertoUSB('0');
+    }
+    
 
     // Log trial end time
     CURRTRIAL.endtime = Date.now() - ENV.CurrentDate.valueOf();
+    console.log('[END TIME LOGGED]:', Date.now());
 		logEVENTS("EndTime", CURRTRIAL.endtime, "trialseries")
 
     //============ (end) DELIVER REWARD/PUNISH ============//
@@ -1896,75 +1952,75 @@ if (ENV.BatteryAPIAvailable) {
 	  //================= HOUSEKEEPING =================//
     let ITIstart = performance.now();
 
-    if (FLAGS.savedata == 0) {
-      let photodiode = { t: [], v: [] };
+    // if (FLAGS.savedata == 0) {
+    //   let photodiode = { t: [], v: [] };
 
-      for (let q in EVENTS['timeseries']['Arduino']) { // FOR q Arduino events
-        let evt = EVENTS['timeseries']['Arduino'][q];
-        if (evt[0] != CURRTRIAL.num) {
-          continue;
-        }
+    //   for (let q in EVENTS['timeseries']['Arduino']) { // FOR q Arduino events
+    //     let evt = EVENTS['timeseries']['Arduino'][q];
+    //     if (evt[0] != CURRTRIAL.num) {
+    //       continue;
+    //     }
 
-        let tArduino = new Date(evt[1]).valueOf() - ENV.CurrentDate.valueOf();
+    //     let tArduino = new Date(evt[1]).valueOf() - ENV.CurrentDate.valueOf();
 
-        if (evt[2].indexOf('sa') == 0) { // IF sample command return
-          if (evt[2][2] == 1) {
-            let dSampleCommandOn = tArduino - EVENTS['trialseries']['SampleStartTime'];
-            console.log(`d_roundtrip_commandON=${dSampleCommandOn}`);
-          } else if (evt[2][2] == 0) {
-            let dSampleCommandOff = tArduino - EVENTS['trialseries']['EndTime'];
-            console.log(`d_roundtrip_commandOFF=${dSampleCommandOff}`);
-          }
+    //     if (evt[2].indexOf('sa') == 0) { // IF sample command return
+    //       if (evt[2][2] == 1) {
+    //         let dSampleCommandOn = tArduino - EVENTS['trialseries']['SampleStartTime'];
+    //         console.log(`d_roundtrip_commandON=${dSampleCommandOn}`);
+    //       } else if (evt[2][2] == 0) {
+    //         let dSampleCommandOff = tArduino - EVENTS['trialseries']['EndTime'];
+    //         console.log(`d_roundtrip_commandOFF=${dSampleCommandOff}`);
+    //       }
 
-        } else if (evt[2].indexOf('pu') == 0) {
-          console.log(`d_roundtrip_pumpON=${tArduino - EVENTS['trialseries']['ReinforcementTime']}`);
-        }
+    //     } else if (evt[2].indexOf('pu') == 0) {
+    //       console.log(`d_roundtrip_pumpON=${tArduino - EVENTS['trialseries']['ReinforcementTime']}`);
+    //     }
 
-        if (evt[2].indexOf('ph') == 0) {
-          photodiode.t.push(tArduino - EVENTS['trialseries']['SampleStartTime']); // measure re: sample start
-          photodiode.v.push(evt[2].slice(2, evt[2].length));
-        }
-      }
+    //     if (evt[2].indexOf('ph') == 0) {
+    //       photodiode.t.push(tArduino - EVENTS['trialseries']['SampleStartTime']); // measure re: sample start
+    //       photodiode.v.push(evt[2].slice(2, evt[2].length));
+    //     }
+    //   }
 
-      // IF photodiode vals
-      if (photodiode.t.length > 1) {
-        let tDisplay = {
-          d: [],
-          a: [],
-          p: [],
-          v: []
-        };
-        let dt = { software: [], hardware: [] };
-        let n = EVENTS['timeseries']['TSequenceDesired'][CURRTRIAL.num].length;
-        tDisplay.d = EVENTS['timeseries']['TSequenceDesired'][CURRTRIAL.num].slice(2, n);
-        tDisplay.a = EVENTS['timeseries']['TSequenceDesired'][CURRTRIAL.num].slice(2, n);
+    //   // IF photodiode vals
+    //   if (photodiode.t.length > 1) {
+    //     let tDisplay = {
+    //       d: [],
+    //       a: [],
+    //       p: [],
+    //       v: []
+    //     };
+    //     let dt = { software: [], hardware: [] };
+    //     let n = EVENTS['timeseries']['TSequenceDesired'][CURRTRIAL.num].length;
+    //     tDisplay.d = EVENTS['timeseries']['TSequenceDesired'][CURRTRIAL.num].slice(2, n);
+    //     tDisplay.a = EVENTS['timeseries']['TSequenceDesired'][CURRTRIAL.num].slice(2, n);
 
-        for (let i = tDisplay.d.length - 1; i >= 0; i--) { // backwards traversal
-          dt.software[i] = Math.round(tDisplay.a[i] - tDisplay.d[i]);
-          for (let j = 0; j < photodiode.t.length; j++) {
-            if (photodiode.t[j] > tDisplay.a[i]) {
-              tDisplay.p[i] = photodiode.t[j];
-              tDisplay.v[i] = photodiode.v[j];
-              dt.hardware[i] = Math.round(tDisplay.p[i] - tDisplay.a[i]);
-              photodiode.t[j] = -99999;
-              break;
-            }
-          }
-        }
+    //     for (let i = tDisplay.d.length - 1; i >= 0; i--) { // backwards traversal
+    //       dt.software[i] = Math.round(tDisplay.a[i] - tDisplay.d[i]);
+    //       for (let j = 0; j < photodiode.t.length; j++) {
+    //         if (photodiode.t[j] > tDisplay.a[i]) {
+    //           tDisplay.p[i] = photodiode.t[j];
+    //           tDisplay.v[i] = photodiode.v[j];
+    //           dt.hardware[i] = Math.round(tDisplay.p[i] - tDisplay.a[i]);
+    //           photodiode.t[j] = -99999;
+    //           break;
+    //         }
+    //       }
+    //     }
 
-        console.log(tDisplay.a);
-        console.log(tDisplay.p);
-        console.log(dt.software);
-        console.log(dt.hardware);
-        console.log(tdisplay.v);
-        console.log(CURRTRIAL.sequencetaskscreen);
-      }
+    //     console.log(tDisplay.a);
+    //     console.log(tDisplay.p);
+    //     console.log(dt.software);
+    //     console.log(dt.hardware);
+    //     console.log(tdisplay.v);
+    //     console.log(CURRTRIAL.sequencetaskscreen);
+    //   }
 
-      updateImageLoadingAndDisplayText(' '); // displays relevant timing information
-    }
+    //   updateImageLoadingAndDisplayText(' '); // displays relevant timing information
+    // }
 
     // Calibrate eye
-    if (FLAGS.trackeye > 0) { // IF track eye
+    if (ENV.Eye.TrackEye > 0) { // IF track eye
       /**
        * Can manually adjust params only when on practice screen
        * Can automatically calibrate when on test screen
@@ -2016,13 +2072,37 @@ if (ENV.BatteryAPIAvailable) {
             ENV.Eye.CalibType,
             ENV.Eye.NCalibPointsTrain,
             ENV.Eye.CalibTrainMSE,
-            NV.Eye.NCalibPointsTest,
+            ENV.Eye.NCalibPointsTest,
             ENV.Eye.CalibTestMSE
           );
         }
 
       }
-    }
+
+      if (typeof(EVENTS['timeseries']['EyeData'][0]) != "undefined"){
+        let intervalArr = [];
+        for (let i = 0; i < Object.keys(EVENTS['timeseries']['EyeData']).length; i++) {
+          if (EVENTS['timeseries']['EyeData'][i][0] == CURRTRIAL.num) {
+            intervalArr.push(EVENTS['timeseries']['EyeData'][i][1]);
+          }
+        }
+
+
+	      let firstTimestamp = new Date(intervalArr[0]);
+	      let lastIdx = Object.keys(intervalArr).length - 1;
+	      let lastTimestamp = new Date(
+	        intervalArr[lastIdx]
+	      );
+	      
+	      let interval = (
+	        (lastTimestamp.valueOf() - firstTimestamp.valueOf()) / lastIdx
+	      );      
+	      logEVENTS('EyetrackerSampleInterval', interval, 'trialseries');
+      }//IF defined
+      else{
+      	logEVENTS('EyetrackerSampleInterval', 0, 'trialseries');
+      }//ELSE
+    }//IF trackeye
     
     //clear tracker canvas at end of trial
     if (FLAGS.savedata == 0 || CURRTRIAL.num <= 1) { //IF practice screen
@@ -2052,16 +2132,29 @@ if (ENV.BatteryAPIAvailable) {
           pingFirestore() //every 10 seconds, will check for data updates to upload to firestore
         }//IF new firestore, kick off firestore database writes
 
-        // BigQuery Table
-        // Save display times asynchronously to BigQuery
-        if (CURRTRIAL.num == 0){
-          pingBigQueryDisplayTimesTable(); //uploads eyedata to bigquery every 10 seconds        
-        }//IF first trial, kick-off bigquery writes
+        // BigQuery Data Stream
+        if (CURRTRIAL.num == 0) {
+          if (ENV.Eye.TrackEye > 0) {
+            if (TASK.BQSaveEye === undefined || TASK.BQSaveEye > 0) {
+              // uploads eyedata to BigQuery every 10 seconds
+              console.log('BIGQUERY::START EYE TABLE');
+              pingBigQueryEyeTable();
+            }
+          } else {
+            if (TASK.BQSaveTouch === undefined || TASK.BQSaveTouch > 0) {
+              // uploads touch data to BigQuery every 10 seconds
+              console.log('BIGQUERY::START TOUCH TABLE');
+              pingBigQueryTouchTable();
+            }
+          }
 
-        // Save eye data asynchronously to BigQuery
-        if (FLAGS.trackeye > 0 && CURRTRIAL.num == 0) {
-          pingBigQueryEyeTable(); //uploads eyedata to bigquery every 10 seconds        
-        }//IF first trial, kick-off bigquery writes
+          if (TASK.BQSaveDisplayTimes === undefined || TASK.BQSaveDisplayTimes > 0) {
+            //uploads display times data to bigquery every 10 seconds
+            console.log('BIGQUERY::START DISPLAY TABLE');
+            pingBigQueryDisplayTimesTable();
+          }
+        }
+        
       }//IF not saving images, save data
     }//IF savedata
 

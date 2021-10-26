@@ -9,7 +9,7 @@
 
 **BackgroundColor2D:** specify the background color in hex (eg, #FFFFFF for white or #000000 for black). Not required in param file. If not provided, defaults to gray screen background (#7F7F7F)
 
-**CalibrateEye:** If >0, will calibrate for TASK.CalibrateEye number of trials for train & same number for test. Afte test, saves calibration in firestore collection "eyecalibrations." Requires FLAGS.trackeye>0.
+**CalibrateEye:** If >0, will calibrate for TASK.CalibrateEye number of trials for train & same number for test. Afte test, saves calibration in firestore collection "eyecalibrations." Requires ENV.Eye.TrackEye>0.
 
 *CheckRFID: Time in milliseconds over which at least one matching RFID read is required so that agent doesn't get kicked off of task. If there is a read within the last CheckRFID ms, task continues, otherwise agent is locked out at start of next trial. CheckRFID <= 0 turns off RFID checking.
 
@@ -76,6 +76,8 @@ Liquid: 1=water 2=water-condensed milk 3=marshmallow slurry (4/30mL)
 **NRewardMax:** Max number of rewards that can be given for a successful trial. This caps how much extra (bonus) reward subject can get for successful completion of consecutive trials. If nrewardmax=3, then subject can get up to 3x reward for completing 3*NConsecutiveHitsforBonus consecutive trials successfully, and then would get 3x reward after that until gets a trial wrong.
 
 **NRSVP:** Number of sample scene images to show in a single trial. Displayed at TASK.SampleON duration TASK.SampleOFF between each sample drawn according to TASK.SamplingStrategy. If TASK.NRSVP<=0, only a single sample scene render will be shown for that trial. If TASK.NRSVP>0, then no choice response is awaited & reward is automatically given at the end of the sequence.
+
+**NRSVPMax:** Exponentially more reward pulses given for longer fixations up to NRewardMax for fixating NRSVPMax images. No reward for <NRSVP clips fixated, one reward pulse for NRSVP clips viewed, and NRewardMax pulses given for NRSVPMax.  Trial-by-Trial bonus reward for consecutive hits will be ignored if this option is on to reward more images fixated within a trial. NRSVPMax is ignored if set less than NRSVP. See TSequenceActualClip in TRIALEVENTS if want to determine which clips were fixated (-1 is registered for clip times if broke fixation). See TRIALEVENTS[NReward] to determine how many reward pulses were delivered. NOTE: If want to use bonus rewards & NRewardMax in the traditional trial-by-trial sense, then set NRSVPMax < NRSVP so that only one reward is given per NRSVP images shown and bonus is enacted based on multiple consecutive trial hits.
 
 **NStickyResponse:** Number of times subject can choose the same location on the screen before force them out of it by placing the correct answer somewhere else (i.e. if they have response bias, then on the next trial, the correct choice is drawn somewhere away from that bias). Currently not implemented for same-different task or SR2
 
@@ -167,6 +169,8 @@ Eye.CalibTrainMSE: The train MSE for NCalibPointsTrain training points
 
 Eye.CalibTestMSE: The test MSE for NCalibPointsTest testing points
 
+Eye.TrackEye: 0 (not tracking eye) or 1 (tracking eye)
+
 FixationRadius: Radius of fixation image in pixels. This is not set by the user. Rather, user specifies FixationSizeInches, and then FixationRadius stores the actual pixel-based size in the json data file.
 
 FixationColor: color of fixation dot if image is not used
@@ -174,6 +178,10 @@ FixationColor: color of fixation dot if image is not used
 ImageHeightPixels: The height of the sample image in pixels. The image height is used as the unit for the vertical dimension.
 
 ImageWidthPixels: The width of the sample image in pixels. The image width is used as the unit for the horizontal dimension.
+
+NRSVPMin: set to be TASK.NRSVP. Guaranteed one reward if fixate for NRSVPMin images
+
+NRSVPMax: set to TASK.NRSVPMax (if present); otherwise, set to TASK.NRSVP. Bonus rewards are given in an exponential fashion for fixating up to TASK.NRSVPMax images.
 
 Ordered_Samplebag_Filenames: Names of the sample image bags. Each bag is treated as a separate label class
 
@@ -199,11 +207,15 @@ ScreenSizePixels: physical quantity, recorded # of pixels of screen (retrieved f
 
 Subject: Name of subject, chosen from pulldown menu at beginning of task.
 
+StressTest: 0 (regular run) or 1 (stress test run)
+
 UserAgent: info from window.navigator.UserAgent
 
 ViewportPixels: derived quantity computed as ENV.ViewportPixels = ENV.ScreenPhysicalPixels/ENV.DevicePixelRatio where ScreenPhysicalPixels is the screen spec retrieved from firestore, and DevicePixelRatio is from the scaling being used by the user as detected during the browser session
 
 ViewportPPI: derived quantity, equals ENV.ViewportPixels[0]/ENV.ScreenSizeInches[0], viewport pixels per inch (computed from first screen dimension)
+
+WebAppUrl: info from window.location.href to track whether mkturk ran from the tested build or beta/development build
 
 XGridCenter: The location of all grid points in pixels. Follows from user-specified NGridPoints and GridScale (e.g. to create a 3x3 grid with adjacent non-overlapping images, set NGridPoints=3, GridScale=1 and XGridCenters will be spaced by ImageWidthPixels)
 

@@ -16,24 +16,23 @@ async function initThreeJS(scenedata) {
     renderer.outputEncoding = THREE.sRGBEncoding;
 
     renderer.autoClear = false;
-    renderer.setPixelRatio(ENV.ThreeJSRenderRatio)
+    renderer.setPixelRatio(ENV.ThreeJSRenderRatio);
     document.body.append(renderer.domElement);
 
     renderer.domElement.style.width =  VISIBLECANVAS.clientWidth+ 'px'; //keeps CSS size unchanged
     renderer.domElement.style.height =  VISIBLECANVAS.clientHeight+ 'px'; //keeps CSS size unchanged
-
-    console.log(VISIBLECANVAS.clientWidth, VISIBLECANVAS.clientHeight);
 
     // init scene
     scene = {}
 
     for (const scenetype in scenedata){
         var indiv_scene = new THREE.Scene();
-        scene[scenetype] = indiv_scene
+        scene[scenetype] = indiv_scene;
     } // FOR n scenes
 }// FUNCTION initThreeJS
 
 async function addToScene(taskscreen){
+    // console.log('[taskscreen]',taskscreen);
 
     for (var classlabel = 0; classlabel<=IMAGES[taskscreen].length-1; classlabel++){
 
@@ -45,32 +44,60 @@ async function addToScene(taskscreen){
 
         //DEFAULTING TO CAMERA FOR FIRST CLASS'S SCENE
         CAMERAS[taskscreen][classlabel]= []
-        for (cam in IMAGES[taskscreen][classlabel].CAMERAS){
-            var originvec = new THREE.Vector3(0,0,0)
-            var unitvec = new THREE.Vector3(1,1,1)
+        for (cam in IMAGES[taskscreen][classlabel].CAMERAS) {
+            let originvec = new THREE.Vector3(0, 0, 0);
+            let unitvecX = new THREE.Vector3(1, 0, 0);
+            let unitvecY = new THREE.Vector3(0, 1, 0);
+            
 
-            cameraLookAtOriginByDefault = originvec.clone()
+            let cameraLookAtOriginByDefault = originvec.clone()
 
-                var camera = new THREE.PerspectiveCamera(IMAGES[taskscreen][classlabel].CAMERAS[cam].fieldOfVIEW,VISIBLECANVASWEBGL.width/VISIBLECANVASWEBGL.height,
-                                IMAGES[taskscreen][classlabel].CAMERAS[cam].near,IMAGES[taskscreen][classlabel].CAMERAS[cam].far)
+            var camera;
 
-               // var camera = new THREE.OrthographicCamera(VISIBLECANVASWEBGL.width/-2, VISIBLECANVASWEBGL.width/2, VISIBLECANVASWEBGL.height/2,VISIBLECANVASWEBGL.height/-2,
-                             //  IMAGES[taskscreen][classlabel].CAMERAS[cam].near,IMAGES[taskscreen][classlabel].CAMERAS[cam].far)
+            if (IMAGES[taskscreen][classlabel].CAMERAS[cam].type == 'PerspectiveCamera') {
+                camera = new THREE.PerspectiveCamera(
+                    IMAGES[taskscreen][classlabel].CAMERAS.fieldOfView,
+                    VISIBLECANVASWEBGL.width / VISIBLECANVASWEBGL.height,
+                    IMAGES[taskscreen][classlabel].CAMERAS[cam].near,
+                    IMAGES[taskscreen][classlabel].CAMERAS[cam].far
+                );
+            } else if (IMAGES[taskscreen][classlabel].CAMERAS[cam].type == 'OrthographicCamera') {
+                camera = new THREE.OrthographicCamera(
+                    VISIBLECANVASWEBGL.width / -2,
+                    VISIBLECANVASWEBGL.width / 2,
+                    VISIBLECANVASWEBGL.height / 2,
+                    VISIBLECANVASWEBGL.height / -2,
+                    IMAGES[taskscreen][classlabel].CAMERAS[cam].near,
+                    IMAGES[taskscreen][classlabel].CAMERAS[cam].far
+                );
+            }
+
+            let campos = [
+	            chooseArrayElement(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x,index,0),
+	            chooseArrayElement(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y,index,0),
+	            chooseArrayElement(IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z,index,0)
+	        ];
 
         // Do the math // when camera is positioned at (0,0,10) and looks at (0,0,0)
-                camera.position.set(0,0,10)
-                camera.lookAt(cameraLookAtOriginByDefault)
+                // camera.position.set(10,10,10)
+                // camera.lookAt(cameraLookAtOriginByDefault)
+                console.log('campos:', campos);
+                camera.position.set(campos[0], campos[1], campos[2]);
+                // camera.position.set(0, 0, 10);
+                camera.lookAt(cameraLookAtOriginByDefault);
                 camera.name = "cam"+classlabel
                 scene[taskscreen].add(camera)
+                // console.log('camera:', camera);
                 camera.updateMatrixWorld(); // FIX
                 camera.updateProjectionMatrix(); // FIX
 
                 // Given scene camera, find scaling 3D scene -> 2D canvas
                 var originscreen = toScreenPosition(originvec,camera)
-                var unitscreen = toScreenPosition(unitvec,camera)
-                var deltavec = [unitscreen.x - originscreen.x, unitscreen.y - originscreen.y]
+                var unitscreenX = toScreenPosition(unitvecX,camera);
+                var unitscreenY = toScreenPosition(unitvecY,camera)
+                var deltavec = [unitscreenX.x - originscreen.x, unitscreenY.y - originscreen.y]
+                
                 IMAGEMETA[taskscreen + "OriginScreenPixels"] = originscreen
-                // IMAGES[taskscreen].originscreenPixels = originscreen
                 IMAGEMETA[taskscreen + "THREEJStoPixels"] = Math.max.apply(null,deltavec)
                 IMAGEMETA[taskscreen + "THREEJStoInches"] = (IMAGEMETA[taskscreen+ "THREEJStoPixels"])/ENV.ViewportPPI
 
@@ -608,7 +635,8 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
 	            chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.x,index,0),
 	            chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.y,index,0),
 	            chooseArrayElement(IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS.z,index,0)
-	        ]
+	        ];
+            console.log('nextobjPosition:', nextobjPosition);
 	        if (Number.isInteger(movieframe)){
 	            nextobjPosition = [
 	                chooseArrayElement(nextobjPosition[0],movieframe,nextobjPosition[0].length-1),
@@ -718,18 +746,16 @@ function updateSingleFrame3D(taskscreen,classlabels,index,movieframe,gridindex){
 	return allBoundingBoxes
 }//FUNCTION updateSingleFrame3D
 
-function updateCameraSingleFrame(camera,cameraPosition,camTarget){
+function updateCameraSingleFrame(camera,cameraPosition,camTarget) {
     camera.position.set(cameraPosition[0],cameraPosition[1],cameraPosition[2])
     camera.lookAt(camTarget[0],camTarget[1],camTarget[2])
     camera.updateMatrixWorld( true );
     camera.updateProjectionMatrix(); // FIX
 }//FUNCTION updateCameraSingleFrame
 
-function updateLightSingleFrame(light,lightPosition,lightIntensity){
-    light.position.set(lightPosition[0],lightPosition[1],lightPosition[2])
+function updateLightSingleFrame(light, lightPosition, lightIntensity) {
+    light.position.set(lightPosition[0], lightPosition[1], lightPosition[2]);
     light.intensity = lightIntensity
-//     console.log('3js: light position change')
-//     console.log(lightPosition)
 }//FUNCTION updateLightSingleFrame
 
 function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objSize,objOpacity,objMorph,maxlength,camera,scenecenterX,scenecenterY){
@@ -767,6 +793,7 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
 
 //====TRANSLATION
     objects.position.set(objPosition[0],objPosition[1],objPosition[2])
+    console.log('objPosition:', objPosition[0],objPosition[1],objPosition[2]);
 
 //==== SCALE
     //set size from parameters file
@@ -787,7 +814,8 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
     }) //object.traverse (material)
 
 //==== BOUNDING BOX
-    var box = new THREE.BoxHelper(objects,0xff0000)
+    var box = new THREE.BoxHelper(objects,0xff0000);
+    box.update();
     if (FLAGS.savedata == 0){
         box.material.visible = true //show bounding boxes during practice
     }
@@ -796,29 +824,146 @@ function updateObjectSingleFrame(taskscreen,objects,objPosition,objRotation,objS
         box.material.transparent = true //hide the bounding boxes during testing
     }
     box.name = taskscreen
-	scene[taskscreen].add(box)
+	scene[taskscreen].add(box);
+
     var bbox = new THREE.Box3();
     bbox.setFromObject( box );
-    var bbdim = new THREE.Vector3();
 
-    twodcoord_max = toScreenPosition(bbox.max,camera,objects)
-    twodcoord_min = toScreenPosition(bbox.min,camera,objects)
+    console.log('BOX:', box);
+    console.log('OBJECTS:', objects);
+    let vertices2 = [];
+    let vertices = [
+        new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 0),
+        new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 1),
+        new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 2),
+        new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 3),
+        new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 4),
+        new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 5),
+        new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 6),
+        new THREE.Vector3().fromBufferAttribute(box.geometry.attributes.position, 7),
+    ];
+
+    vertices.forEach(vertex => {
+        // vertex.applyMatrix4(box.matrixWorld);
+        vertex.project(camera);
+        vertices2.push(new THREE.Vector2(vertex.x, vertex.y));
+    });
+
+    let minVec = vertices2[0].clone();
+    let maxVec = vertices2[0].clone();
+
+    for (let i = 0; i < vertices.length; i++) {
+        minVec.min(vertices[i]);
+        maxVec.max(vertices[i]);
+    }
+
+    minVec.x = (minVec.x + 1) / 2 * renderer.getContext().canvas.width;
+    minVec.y = (-minVec.y + 1) / 2 * renderer.getContext().canvas.height;
+    maxVec.x = (maxVec.x + 1) / 2 * renderer.getContext().canvas.width;
+    maxVec.y = (-maxVec.y + 1) / 2 * renderer.getContext().canvas.height;
 
     var boundingBox = {
-    	"x": [twodcoord_min.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x),
-            	twodcoord_max.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x)].sort(function(a, b){return a-b}),
-    	"y": [twodcoord_max.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y),
-				twodcoord_min.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y)].sort(function(a, b){return a-b})
+    	"x": [minVec.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x),
+            	maxVec.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x)].sort(function(a, b){return a-b}),
+    	"y": [maxVec.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y),
+				minVec.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y)].sort(function(a, b){return a-b})
     }
+
+    console.log('boundingBox:', boundingBox);
+
+    // twodcoord_max = toScreenPosition(bbox.max, camera, objects, taskscreen);
+    // twodcoord_min = toScreenPosition(bbox.min, camera, objects, taskscreen);
+
+    // var boundingBox = {
+    // 	"x": [twodcoord_min.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x),
+    //         	twodcoord_max.x + (scenecenterX - IMAGEMETA[taskscreen + "OriginScreenPixels"].x)].sort(function(a, b){return a-b}),
+    // 	"y": [twodcoord_max.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y),
+	// 			twodcoord_min.y + CANVAS.offsettop + (scenecenterY - IMAGEMETA[taskscreen + "OriginScreenPixels"].y)].sort(function(a, b){return a-b})
+    // }
 
     return [objPosition,objSize,boundingBox]
 }//FUNCTION updateObjectSingleFrame
+
+function vectorToScreen(vec, cam) {
+    vec.project(cam);
+    vec.x = (vec.x + 1) / 2 * renderer.getContext().canvas.width;
+    vec.y = (-vec.y + 1) / 2 * renderer.getContext().canvas.height;
+    return { x: vec.x, y: vec.y };
+}
+
+// function toScreenPosition(vector, camera, objects, taskscreen) {
+//     // camera.updateMatrixWorld();
+//     // camera.updateProjectionMatrix();
+
+//     let width = renderer.getContext().canvas.width;
+//     let height = renderer.getContext().canvas.height;
+
+//     console.log(width, height);
+
+//     if (camera.isOrthographicCamera) {
+//         if (objects) {
+            
+//             // let pos = new THREE.Vector3();
+//             // pos = pos.setFromMatrixPosition(objects.matrixWorld);
+//             // pos.project(camera);
+//             // vector.project(camera);
+//             vector.applyMatrix4(camera.matrixWorld);
+//             console.log('BEFORE:', taskscreen, 'vector', vector);
+//             vector.project(camera);
+//             // vector.x = (pos.x + 1) / 2;
+//             // vector.y = (-pos.y + 1) / 2;
+//             console.log(vector);
+//             vector.x = (vector.x + 1) / 2;
+//             vector.y = (-vector.y + 1) / 2;
+//             // vector.x = (vector.x - camera.left) / (camera.right - camera.left);
+//             // vector.y = 1 - ((vector.y - camera.bottom) / (camera.top - camera.bottom));
+//             // console.log('AFTER:', taskscreen, pos, vector);
+//             vector.x = vector.x * width;
+//             vector.y = vector.y * height;
+//             console.log('AFTER:', taskscreen, 'vector', vector);
+//         } else {
+
+//             console.log('toscreenpos camera:', camera);
+//             console.log('origin/unit after applying camera world coor:', vector);
+//             // vector.applyMatrix4(camera.matrixWorld);
+//             vector.project(camera);
+//             console.log('origin/unit after projecting to camera ndc:', vector);
+//             vector.x = (vector.x + 1) / 2;
+//             vector.y = (-vector.y + 1) / 2;
+//             // vector.x = (vector.x - camera.left) / (camera.right - camera.left);
+//             // vector.y = 1 - ((vector.y - camera.bottom) / (camera.top - camera.bottom));
+//             vector.x = vector.x * width;
+//             vector.y = vector.y * height;
+//         }
+//     } else {
+//         let vecMin = new THREE.Vector3(-1, -1, -1);
+//         let vecMax = new THREE.Vector3(1, 1, 1);
+//         vecMin.applyMatrix4(camera.matrixWorld);
+//         vecMax.applyMatrix4(camera.matrixWorld);
+//         console.log('vecMin:', vecMin, 'vecMax:', vecMax);
+//         console.log('toscreenpos camera:', camera);
+//         // vector.applyMatrix4(camera.matrixWorld);
+//         console.log('origin/unit after applying camera world coor:', vector);
+//         vector.project(camera);
+//         console.log('origin/unit after projecting to camera ndc:', vector);
+//         vector.x = (vector.x + 1) / 2;
+//         vector.y = (-vector.y + 1) / 2;
+//         vector.x = vector.x * width;
+//         vector.y = vector.y * height;
+//     }
+
+//     return {
+//         x: vector.x,
+//         y: vector.y
+//     };
+// };//FUNCTION toScreenPosition(vector,camera)
+
 
 function toScreenPosition(vector, camera){
 
     var widthHalf = 0.5*renderer.getContext().canvas.width;
     var heightHalf = 0.5*renderer.getContext().canvas.height;
-
+    // vector.applyMatrix4(camera.matrixWorld);
     vector.project(camera);
 
     vector.x = ( vector.x * widthHalf ) + widthHalf;

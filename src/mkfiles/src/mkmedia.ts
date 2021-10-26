@@ -1,6 +1,6 @@
-import firebase from "firebase/app";
-import "firebase/firestore";
-import "firebase/storage";
+import { getApp } from "firebase/app";
+import { getFirestore, doc, collection, setDoc, Timestamp } from "firebase/firestore";
+import { getStorage, StorageReference, getDownloadURL, ref, uploadBytes, deleteObject } from "firebase/storage";
 import JSONEditor from "jsoneditor";
 import Viewer from "viewerjs";
 import * as EditorParams from "./editor-params";
@@ -12,9 +12,9 @@ import { BufferGeometryLoader } from "three";
 import {ParseEngine} from './parser'
 
 
-type FileRef = firebase.storage.Reference;
-const db = firebase.firestore();
-const storage = firebase.storage();
+type FileRef = StorageReference;
+const db = getFirestore(getApp());
+const storage = getStorage(getApp());
 
 export class Mkeditor {
   public editorDivElement: HTMLDivElement;
@@ -34,6 +34,9 @@ export class Mkeditor {
   // public genSceneParamBtn: HTMLButtonElement;
   // private genSceneParamModal: HTMLDivElement;
   public genBtn: HTMLButtonElement;
+  public paramGenBtnBox: HTMLDivElement;
+
+  public expandBtn: HTMLButtonElement;
   public svSceneBtn: HTMLButtonElement;
   private pe: ParseEngine;
   private userEditedSceneParam: Object;
@@ -47,6 +50,7 @@ export class Mkeditor {
     this.editor = new JSONEditor(this.editorElement);
     this.updateBtn = document.querySelector("#update-btn") as HTMLButtonElement;
     this.btnBoxDiv = document.querySelector("#button-box") as HTMLDivElement;
+    this.paramGenBtnBox = document.querySelector('#param-gen-btn-box') as HTMLDivElement;
     this.makeActiveBtn = document.querySelector("#active-btn") as HTMLButtonElement;
     this.storeParamBtn 
       = document.querySelector('#store-param-btn') as HTMLButtonElement;
@@ -76,6 +80,7 @@ export class Mkeditor {
     
     
     this.genBtn = document.querySelector('#generate-btn') as HTMLButtonElement;
+    this.expandBtn = document.querySelector('#expand-btn') as HTMLButtonElement;
     this.svSceneBtn = document.querySelector('#save-scene-param-btn') as HTMLButtonElement;
     this.genBtnAction();
     this.svSceneBtnAction();
@@ -150,10 +155,10 @@ export class Mkeditor {
       this.fileNameInput.placeholder = String(this.activeFile.id);
     }
 
-    else if (loc === 'mkdailydatatest') {
-      this.activeFile = { loc: loc, id: file.agent };
-      this.fileNameInput.placeholder = String(this.activeFile.id);
-    }
+    // else if (loc === 'mkdailydatatest') {
+    //   this.activeFile = { loc: loc, id: file.agent };
+    //   this.fileNameInput.placeholder = String(this.activeFile.id);
+    // }
 
     else if (loc === "objects") {
       this.activeFile = { loc: loc, id: file.docname };
@@ -196,7 +201,7 @@ export class Mkeditor {
         'MinPercentCriterion', 'MinTrialsCriterion'
       ];
       const generalKeys = [
-        'DragtoRespond', 'CalibrateEye', 'NRSVP', 'SameDifferent',
+        'DragtoRespond', 'CalibrateEye', 'NRSVP', 'NRSVPMax', 'SameDifferent',
         'SamplingStrategy', 'NStickyResponse', 'NTrialsPerBagBlock'
       ];
       const gridKeys = [
@@ -349,11 +354,26 @@ export class Mkeditor {
       schema: EditorParams.taskParamSchema
     };
 
-    let fileUrl = await fileRef.getDownloadURL().catch(e => {
-      console.error("Error getting download URL", e);
-    });
-    let response = await fetch(fileUrl);
-    let file = await response.json();
+    // let fileUrl = await getDownloadURL(fileRef).catch(e => {
+    //   console.error('Error getting download URL:', e);
+    // });
+
+    // let response;
+    // let file;
+
+    let file = await getDownloadURL(fileRef)
+      .then(async (url: string) => {
+        let response = await fetch(url);
+        return await response.json();
+      }).catch((e: Error) => {
+        console.error('Error getting download URL:', e);
+      });
+
+    // let fileUrl = await fileRef.getDownloadURL().catch(e => {
+    //   console.error("Error getting download URL", e);
+    // });
+    // let response = await fetch(fileUrl);
+    // let file = await response.json();
 
     if (fileRef.fullPath.includes(sceneParamPath)) {
       if (fileRef.fullPath.includes('template')) {
@@ -365,17 +385,39 @@ export class Mkeditor {
         // this.genSceneParamBtn.style.display = 'none';
       }
     } else if (fileRef.fullPath.includes(taskParamPath)) {
+      console.log('FILEEEE:', file);
       this.fileDupBtn.style.display = 'inline-block';
-      options = taskParamOptions;
       let taskParamKeys = Object.keys(JSON.parse(JSON.stringify(EditorParams.taskParamSchema, null, 1)).properties);
-      let json = JSON.parse(JSON.stringify(file, taskParamKeys, 1));
-      let json2: any = {};
-      Object.keys(file).forEach(key => {
-        if (!(key in json)) {
-          json2[key] = file[key];
+      if (Array.isArray(file)) { // CASE: Automator
+        
+        for (let idx in file) {
+          let json = JSON.parse(JSON.stringify(file[idx], taskParamKeys, 1));
+          let json2: any = {};
+          Object.keys(file[idx]).forEach(key => {
+
+            if (!(key in json)) {
+              json2[key] = file[idx][key];
+            }
+          });
+          file[idx] = Object.assign(json, json2);
+          console.log('json:', json, 'json2:', json2);
         }
-      });
-      file = Object.assign(json, json2);
+
+        console.log('FILE AFTER PROCESSING:', file);
+
+      } else {
+        let json = JSON.parse(JSON.stringify(file, taskParamKeys, 1));
+        let json2: any = {};
+        Object.keys(file).forEach(key => {
+          if (!(key in json)) {
+            json2[key] = file[key];
+          }
+        });
+        console.log('json:', json, 'json2:', json2);
+        file = Object.assign(json, json2);
+      }
+      options = taskParamOptions;
+      
       // this.genSceneParamBtn.style.display = 'none';
     } else {
       this.fileDupBtn.style.display = 'none';
@@ -395,6 +437,7 @@ export class Mkeditor {
     
     this.fileDupBtn.addEventListener('click', (ev: Event) => {
       ev.preventDefault();
+      this.fileDupModal
       this.fileDupModal.showModal();
       let activeFileName = this.activeFile.id as FileRef;
       fileName.value = 'Copy of ' + activeFileName.name;
@@ -408,24 +451,38 @@ export class Mkeditor {
 
     this.fileDupModal.querySelector('.save')?.addEventListener('click', () => {
       let srcFileRef = this.activeFile.id as FileRef;
-      let dupFileRef = srcFileRef.parent?.child(fileName.value);
+      // let dupFileRef = srcFileRef.parent?.child(fileName.value);
+      let dupFileRef = ref(srcFileRef.parent!, fileName.value)
       let dupFile = new Blob([JSON.stringify(this.editor.get(), null, 1)]);
       let md = {
         contentType: 'application/json'
       };
 
-      dupFileRef?.put(dupFile, md).then(async (snapshot) => {
-        console.log('[DOCUMENT DUPLICATED]', snapshot);
+      uploadBytes(dupFileRef, dupFile, md).then(async (snapshot) => {
+        console.log('[DOCUMENT DUPLICATED]:', snapshot);
         alert('Document Duplicated');
         let fileDupEvent = new Event('storageFileChanged');
         this.fileNameInput.value = '';
-        this.displayStorageTextFile(dupFileRef!);
+        this.displayStorageTextFile(dupFileRef);
         document.dispatchEvent(fileDupEvent);
-      }).catch(e => {
+      }).catch((e: Error) => {
         console.error('[DOCUMENT DUPLICATE FAILED]:', e);
-        console.error('srcFile', srcFileRef, 'dupFile', dupFileRef);
-        alert('Document Dup Failed');
-      });
+        console.error('srcFile:', srcFileRef, 'destFile:', dupFileRef);
+        alert('Document Duplication Failed');
+      })
+
+      // dupFileRef?.put(dupFile, md).then(async (snapshot) => {
+      //   console.log('[DOCUMENT DUPLICATED]', snapshot);
+      //   alert('Document Duplicated');
+      //   let fileDupEvent = new Event('storageFileChanged');
+      //   this.fileNameInput.value = '';
+      //   this.displayStorageTextFile(dupFileRef!);
+      //   document.dispatchEvent(fileDupEvent);
+      // }).catch(e => {
+      //   console.error('[DOCUMENT DUPLICATE FAILED]:', e);
+      //   console.error('srcFile', srcFileRef, 'dupFile', dupFileRef);
+      //   alert('Document Dup Failed');
+      // });
 
       this.fileDupModal.close();
     });
@@ -550,25 +607,40 @@ export class Mkeditor {
     this.fileRenameBtn.addEventListener('click', (ev: Event) => {
       if (this.fileNameInput.value) {
         let oldFileRef = this.activeFile.id as FileRef;
-        let newFileRef = oldFileRef.parent?.child(this.fileNameInput.value);
+        let newFileRef = ref(oldFileRef.parent!, this.fileNameInput.value);
+        // let newFileRef = oldFileRef.parent?.child(this.fileNameInput.value);
         let newFile = new Blob([JSON.stringify(this.editor.get(), null, 1)]);
         let md = {
           contentType: 'application/json'
         };
 
-        newFileRef?.put(newFile, md).then(async (snapshot) => {
-          await oldFileRef.delete();
-          console.log('[DOCUMENT RENAMED]', snapshot);
+        uploadBytes(newFileRef, newFile, md).then(async (snapshot) => {
+          await deleteObject(oldFileRef);
+          console.log('[DOCUMENT RENAMED]:', snapshot);
           alert('Document Renamed');
           let renameEvent = new Event('storageFileChanged');
           this.fileNameInput.value = '';
           this.displayStorageTextFile(newFileRef!);
           document.dispatchEvent(renameEvent);
-        }).catch(e => {
+        }).catch((e: Error) => {
           console.error('[DOCUMENT RENAME FAILED]:', e);
           console.error('oldFile', oldFileRef, 'newFile', newFileRef);
           alert('Document Rename Failed');
-        });
+        })
+
+        // newFileRef?.put(newFile, md).then(async (snapshot) => {
+        //   await oldFileRef.delete();
+        //   console.log('[DOCUMENT RENAMED]', snapshot);
+        //   alert('Document Renamed');
+        //   let renameEvent = new Event('storageFileChanged');
+        //   this.fileNameInput.value = '';
+        //   this.displayStorageTextFile(newFileRef!);
+        //   document.dispatchEvent(renameEvent);
+        // }).catch(e => {
+        //   console.error('[DOCUMENT RENAME FAILED]:', e);
+        //   console.error('oldFile', oldFileRef, 'newFile', newFileRef);
+        //   alert('Document Rename Failed');
+        // });
         
 
       } else {
@@ -583,20 +655,35 @@ export class Mkeditor {
       ev.stopPropagation();
       let loc = this.activeFile.loc;
 
-      if (loc === "marmosets" || loc === "mkturkdata" || loc === "devices"
-        || loc === "mkscale" || loc === "eyecalibrations" || loc === 'mkdailydata'
-        || loc === "mkdailydatatest") {
+      if (
+        loc === "marmosets" || loc === "mkturkdata"
+        || loc === "devices" || loc === "mkscale"
+        || loc === "eyecalibrations" || loc === 'mkdailydata'
+      ) {
         // handle marmosets && mkturkdata
         let id = this.activeFile.id as string;
-        db.collection(loc).doc(id).set(
+
+        setDoc(
+          doc(db, loc, id),
           this.dateToTimestamp(this.editor.get())
         ).then(() => {
           console.log("[DOCUMENT UPDATED]:", id);
           alert("Document Updated");
-        }).catch(e => {
+        }).catch((e: Error) => {
           console.error("[DOCUMENT UPDATE FAILED]", "FILE:", id, "ERROR:", e);
           alert("Document Update Failed");
-        });
+        })
+
+
+        // db.collection(loc).doc(id).set(
+        //   this.dateToTimestamp(this.editor.get())
+        // ).then(() => {
+        //   console.log("[DOCUMENT UPDATED]:", id);
+        //   alert("Document Updated");
+        // }).catch(e => {
+        //   console.error("[DOCUMENT UPDATE FAILED]", "FILE:", id, "ERROR:", e);
+        //   alert("Document Update Failed");
+        // });
       }
 
       else if (this.activeFile.loc === "mkturkfiles") {
@@ -606,14 +693,28 @@ export class Mkeditor {
         let metadata = {
           contentType: "application/json"
         };
-        id.put(updatedFile, metadata).then(snapshot => {
+
+        uploadBytes(id, updatedFile, metadata).then(snapshot => {
+          console.log(this.editor.get());
           console.log("[DOCUMENT UPDATED]:", snapshot.metadata.name);
           alert("Document Updated");
           document.dispatchEvent(new Event('storageFileChanged'));
-        }).catch(e => {
+        }).catch((e: Error) => {
           console.error("[DOCUMENT UPDATE FAILED]", "FILE:", id, "ERROR:", e);
           alert("Document Update Failed");
         });
+
+
+
+        // id.put(updatedFile, metadata).then(snapshot => {
+        //   console.log(this.editor.get());
+        //   console.log("[DOCUMENT UPDATED]:", snapshot.metadata.name);
+        //   alert("Document Updated");
+        //   document.dispatchEvent(new Event('storageFileChanged'));
+        // }).catch(e => {
+        //   console.error("[DOCUMENT UPDATE FAILED]", "FILE:", id, "ERROR:", e);
+        //   alert("Document Update Failed");
+        // });
       }
 
       else {
@@ -627,21 +728,32 @@ export class Mkeditor {
       ev.preventDefault();
       ev.stopPropagation();
       console.log(this.activeFile);
-      let storageRef = storage.ref();
+      let storageRef = ref(storage);
       let file = this.editor.get();
       let fileName = "mkturkfiles/parameterfiles/subjects/" + file.Agent + "_params.json";
-      let fileRef = storageRef.child(fileName);
+      // let fileRef = storageRef.child(fileName);
+      let fileRef = ref(storageRef, fileName);
       file = new Blob([ JSON.stringify(file, null, 1) ]);
       let metadata = {
         contentType: "application/json"
       };
-      fileRef.put(file, metadata).then(snapshot => {
+
+      uploadBytes(fileRef, file, metadata).then(snapshot => {
         console.log("[PARAM MADE ACTIVE]:", snapshot.metadata.name);
         alert("Param Active");
-      }).catch(e => {
+      }).catch((e: Error) => {
         console.error("[PARAM ACTIVATION FAILED]", "FILE:", fileRef, "ERROR", e);
         alert("Param Activation Failed");
       });
+
+
+      // fileRef.put(file, metadata).then(snapshot => {
+      //   console.log("[PARAM MADE ACTIVE]:", snapshot.metadata.name);
+      //   alert("Param Active");
+      // }).catch(e => {
+      //   console.error("[PARAM ACTIVATION FAILED]", "FILE:", fileRef, "ERROR", e);
+      //   alert("Param Activation Failed");
+      // });
     });
   }
 
@@ -650,26 +762,37 @@ export class Mkeditor {
       ev.preventDefault();
       ev.stopPropagation();
       console.log(this.activeFile);
-      let storageRef = storage.ref();
+      // let storageRef = storage.ref();
+      let storageRef = ref(storage);
       let file = this.editor.get();
       let date = new Date();
       let fileName = 'mkturkfiles/parameterfiles/params_storage/'
         + file.Agent + "_params_" + date.toJSON().split('T')[0]
         + '.json';
       
-      let fileRef = storageRef.child(fileName);
+      // let fileRef = storageRef.child(fileName);
+      let fileRef = ref(storageRef, fileName);
+
       file = new Blob([ JSON.stringify(file, null, 1) ]);
       let metadata = {
         contentType: 'application/json'
       };
 
-      fileRef.put(file, metadata).then(snapshot => {
+      uploadBytes(fileRef, file, metadata).then(snapshot => {
         console.log('[PARAM STORED]:', snapshot.metadata.name);
         alert('Param stored');
-      }).catch(e => {
+      }).catch((e: Error) => {
         console.error('[PARAM STORAGE FAILED]', 'FILE:', fileRef, 'ERROR', e);
         alert('Param Storage Failed');
-      });
+      })
+
+      // fileRef.put(file, metadata).then(snapshot => {
+      //   console.log('[PARAM STORED]:', snapshot.metadata.name);
+      //   alert('Param stored');
+      // }).catch(e => {
+      //   console.error('[PARAM STORAGE FAILED]', 'FILE:', fileRef, 'ERROR', e);
+      //   alert('Param Storage Failed');
+      // });
     });
   }
 
@@ -677,7 +800,9 @@ export class Mkeditor {
     this.genBtn.addEventListener('click', (ev: Event) => {
       if (this.genBtn.value == 'generate') {
         this.userEditedSceneParam = this.editor.get();
-        this.generatedSceneParam = this.pe.generateParamObject(this.userEditedSceneParam);
+        this.generatedSceneParam = (
+          this.pe.generateParamObject(this.userEditedSceneParam, 'vectorize')
+        );
         this.editor.destroy();
         let options = {
           modes: ['tree' as 'tree', 'code' as 'code']
@@ -687,7 +812,7 @@ export class Mkeditor {
         this.genBtn.textContent = 'Revert';
         this.updateBtn.style.display = 'none';
         this.svSceneBtn.style.display = 'inline-block';
-        this.btnBoxDiv.style.gridTemplateAreas = '"gen-btn sv-scene-param-btn"';
+        this.btnBoxDiv.style.gridTemplateAreas = '"param-gen-btn-box sv-scene-param-btn"';
       } else if (this.genBtn.value == 'revert') {
         this.editor.destroy();
         this.generatedSceneParam = {};
@@ -696,10 +821,41 @@ export class Mkeditor {
         };
         this.editor = new JSONEditor(this.editorElement, options, this.userEditedSceneParam);
         this.genBtn.value = 'generate';
-        this.genBtn.textContent = 'Generate Param';
+        this.genBtn.textContent = 'Vectorize Param';
         this.svSceneBtn.style.display = 'none';
         this.updateBtn.style.display = 'inline-block';
-        this.btnBoxDiv.style.gridTemplateAreas = '"gen-btn update-btn"';
+        this.btnBoxDiv.style.gridTemplateAreas = '"param-gen-btn-box update-btn"';
+      }
+    });
+
+    this.expandBtn.addEventListener('click', (ev: Event) => {
+      if (this.expandBtn.value == 'expand') {
+        this.userEditedSceneParam = this.editor.get();
+        this.generatedSceneParam = (
+          this.pe.generateParamObject(this.userEditedSceneParam, 'expand')
+        );
+        this.editor.destroy();
+        let options = {
+          modes: ['tree' as 'tree', 'code' as 'code']
+        };
+        this.editor = new JSONEditor(this.editorElement, options, this.generatedSceneParam);
+        this.expandBtn.value = 'revert';
+        this.expandBtn.textContent = 'Revert';
+        this.updateBtn.style.display = 'none';
+        this.svSceneBtn.style.display = 'inline-block';
+        this.btnBoxDiv.style.gridTemplateAreas = '"param-gen-btn-box sv-scene-param-btn"';
+      } else if (this.expandBtn.value == 'revert') {
+        this.editor.destroy();
+        this.generatedSceneParam = {};
+        let options = {
+          modes: ['tree' as 'tree', 'code' as 'code']
+        };
+        this.editor = new JSONEditor(this.editorElement, options, this.userEditedSceneParam);
+        this.expandBtn.value = 'expand';
+        this.expandBtn.textContent = 'Expand Param';
+        this.svSceneBtn.style.display = 'none';
+        this.updateBtn.style.display = 'inline-block';
+        this.btnBoxDiv.style.gridTemplateAreas = '"param-gen-btn-box update-btn"';
       }
     });
   }
@@ -713,7 +869,7 @@ export class Mkeditor {
       modal.showModal();
       let activeFileName = this.activeFile.id as FileRef;
       let now = new Date();
-      modalFilename.value = now.toJSON().split('T')[0] + '_' + activeFileName.name;
+      modalFilename.value = now.toLocaleDateString('en-CA') + '_' + activeFileName.name;
       modalFilename.focus();
       modalFilename.select();
     });
@@ -724,22 +880,43 @@ export class Mkeditor {
 
     modal.querySelector('.sv')?.addEventListener('click', () => {
       let srcRef = this.activeFile.id as FileRef;
-      let destRef = srcRef.parent?.parent?.child('generatedParams').child(modalFilename.value);
+      // let destRef = srcRef.parent?.parent?.child('generatedParams').child(modalFilename.value);
+      let destRef = ref(srcRef.parent?.parent!, `generatedParams/${modalFilename.value}`);
+      let sceneSrcFileName = (
+        modalFilename.value.split('.')[0] + '_source.' + modalFilename.value.split('.')[1]
+      ); 
+      // let sceneSrcDestRef = srcRef.parent?.parent?.child('generatedParams').child(sceneSrcFileName);
+      let sceneSrcDestRef = ref(srcRef.parent?.parent!, `generatedParams/${sceneSrcFileName}`);
       let file = new Blob([JSON.stringify(this.generatedSceneParam, null, 1)]);
+      let sceneSrcFile = new Blob([JSON.stringify(this.userEditedSceneParam, null, 1)]);
       let md = {
         contentType: 'application/json'
       };
 
-      destRef?.put(file, md).then(async (sns) => {
+      uploadBytes(destRef, file, md).then(snapshot => {
         alert('Generated param file was saved');
         this.generatedSceneParam = {};
         this.userEditedSceneParam = {};
         this.displayStorageTextFile(srcRef);
-      }).catch(e => {
-        console.error('Param Generation Failed');
+      }).catch((e: Error) => {
+        console.error('Param Generation Failed:', e);
         alert('Generated param file was NOT saved');
       });
+
+      uploadBytes(sceneSrcDestRef, sceneSrcFile, md);
       modal.close();
+
+      // destRef?.put(file, md).then(async (sns) => {
+      //   alert('Generated param file was saved');
+      //   this.generatedSceneParam = {};
+      //   this.userEditedSceneParam = {};
+      //   this.displayStorageTextFile(srcRef);
+      // }).catch(e => {
+      //   console.error('Param Generation Failed');
+      //   alert('Generated param file was NOT saved');
+      // });
+      // sceneSrcDestRef?.put(sceneSrcFile, md);
+      // modal.close();
     });
   }
 
@@ -747,7 +924,7 @@ export class Mkeditor {
     function _dateToTimestamp(element: string, idx: number, arr: any[]) {
       let dt = new Date(element);
       if (!isNaN(Number(dt)) && dt instanceof Date && typeof element === "string") {
-        arr[idx] = firebase.firestore.Timestamp.fromDate(dt);
+        arr[idx] = Timestamp.fromDate(dt);
       }
     }
 
@@ -763,7 +940,7 @@ export class Mkeditor {
           let dt = new Date(data[key][key2]);
           if (!isNaN(Number(dt)) && dt instanceof Date && this.isString(data[key][key2])) {
             console.log("Dictionary " + "data[" + key + "]" + "=" + data[key]);
-            data[key][key2] = firebase.firestore.Timestamp.fromDate(dt);
+            data[key][key2] = Timestamp.fromDate(dt);
           }
         }
       }
@@ -773,7 +950,7 @@ export class Mkeditor {
         
         let dt = new Date(data[key]);
         if (!isNaN(Number(dt)) && dt instanceof Date) {
-          data[key] = firebase.firestore.Timestamp.fromDate(dt);
+          data[key] = Timestamp.fromDate(dt);
         }
       }
     }
@@ -837,7 +1014,7 @@ export class Mkthree {
    * @param {HTMLCanvasElement} canvas
    * @public
    */
-  public async displayMesh(meshRef: firebase.storage.Reference) {
+  public async displayMesh(meshRef: StorageReference) {
     console.time("displayMesh()");
 
     if (this.active) {
@@ -894,12 +1071,18 @@ export class Mkthree {
    * @returns {Promise}
    * @private
    */
-  private async loadMesh(meshRef: firebase.storage.Reference) {
+  private async loadMesh(meshRef: StorageReference) {
     
     try {
-      let meshUrl = await meshRef.getDownloadURL().catch(e => {
-        console.error("Error:", e);
-      });
+
+      let meshUrl = await getDownloadURL(meshRef).catch((e: Error) => {
+        console.error('Error:', e);
+      }) as string;
+
+
+      // let meshUrl = await meshRef.getDownloadURL().catch(e => {
+      //   console.error("Error:", e);
+      // });
 
       this.loader = new GLTFLoader();
 
@@ -988,9 +1171,12 @@ export class Mkimage {
     let img = document.createElement("img");
     let imgLabel = document.createElement("p");
     imgLabel.innerHTML = fileName;
-    await fileRef.getDownloadURL().then(url => {
+    // await fileRef.getDownloadURL().then(url => {
+    //   img.src = url;
+    // });
+    await getDownloadURL(fileRef).then(url => {
       img.src = url;
-    });
+    })
 
     imgDiv.appendChild(img);
     imgDiv.appendChild(imgLabel);
