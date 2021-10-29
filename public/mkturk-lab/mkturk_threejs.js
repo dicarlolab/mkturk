@@ -432,7 +432,6 @@ async function addToScene(taskscreen) {
         // set texture
         if (child.material) {
           let material = new THREE.MeshPhysicalMaterial(materialparam);
-          child.material.metalness = 0;
 
           if (child.name == 'Base') {
             material.map = child.material.map;
