@@ -40,13 +40,14 @@ module.exports = {
     rules: [
       {
         test: /\.css$/i,
-        use: [MiniCssExtractPlugin.loader, 'css-loader'],
+        use: ['style-loader', 'css-loader'],
         exclude: /node_modules/,
         include: [
           path.resolve(__dirname, 'src'),
           path.resolve(__dirname, 'node_modules/jsoneditor/dist'),
           path.resolve(__dirname, 'node_modules/bootstrap/dist/css'),
           path.resolve(__dirname, 'node_modules/tabulator-tables/dist/css'),
+          path.resolve(__dirname, 'node_modules/dat.gui/build'),
         ],
         sideEffects: true,
       },
