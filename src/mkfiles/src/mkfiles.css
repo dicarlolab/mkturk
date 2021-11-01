@@ -5,9 +5,10 @@
 
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  grid-template-areas: "qry-selector field-selector keyword-0 go"
-                       "x y keyword-1 plot"
-                       " . . keyword-2 ."; 
+  grid-template-areas:
+    'qry-selector field-selector keyword-0 go'
+    'x y keyword-1 plot'
+    ' . . keyword-2 .';
 }
 
 #qry-loc-selector {
@@ -60,9 +61,10 @@
 
   display: grid;
   grid-template-rows: 1fr 16fr 0.25fr;
-  grid-template-areas: "controls"
-                       "finder"
-                       "controls-2";
+  grid-template-areas:
+    'controls'
+    'finder'
+    'controls-2';
 
   max-height: inherit;
   height: 100%;
@@ -74,13 +76,13 @@
   grid-area: controls;
   border: solid 2px white;
 
-
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 0.5fr;
-  grid-template-areas: "back forward filter filter"
-                       "show-images n-img-slider n-img-slider n-img-slider"
-                       "path-name path-name path-name path-name";
+  grid-template-areas:
+    'back forward filter filter'
+    'show-images n-img-slider n-img-slider n-img-slider'
+    'path-name path-name path-name path-name';
   grid-gap: 4px;
   padding: 6px;
   padding-bottom: 0px;
@@ -91,7 +93,7 @@
 
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-areas: "upload download";
+  grid-template-areas: 'upload download';
 }
 
 #chart-div {
@@ -155,13 +157,14 @@
   z-index: 3;
   grid-column: 1;
   grid-row: 1;
-  
+
   display: grid;
 
   grid-template-rows: 0.125fr 10fr 0.25fr;
-  grid-template-areas: "file-name"
-                       "editor"
-                       "btn-box";
+  grid-template-areas:
+    'file-name'
+    'editor'
+    'btn-box';
 
   max-height: inherit;
   height: 100%;
@@ -186,7 +189,7 @@
   grid-area: btn-box;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-areas: "update-btn update-btn";
+  grid-template-areas: 'update-btn update-btn';
 }
 
 #update-btn {
@@ -229,7 +232,6 @@
   max-width: 100%;
   overflow-y: auto;
   background-color: white;
-
 }
 
 #image-canvas {
@@ -273,12 +275,23 @@
   word-wrap: break-word;
 }
 
-
-#three-canvas {
+/* #three-canvas {
   z-index: 1;
   grid-column: 1;
   grid-row: 1;
   display: block;
+} */
+
+#dat-gui-div {
+  z-index: 1;
+  grid-column: 1;
+  grid-row: 1;
+  display: block;
+}
+
+#dat-gui-div * {
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: normal;
 }
 
 .page-content > * {
@@ -334,7 +347,8 @@
   font-size: 15px;
 }
 
-.active, .collapsible:hover {
+.active,
+.collapsible:hover {
   background-color: #555;
 }
 
@@ -360,8 +374,9 @@
 .gen-scene-rule-box {
   display: grid;
   grid-template-rows: 1fr 4fr;
-  grid-template-areas: "table-controls"
-                       "rule-table";
+  grid-template-areas:
+    'table-controls'
+    'rule-table';
 }
 
 .rule-table {
@@ -382,51 +397,49 @@
   display: grid;
   grid-template-rows: repeat(1, 1fr);
   grid-template-columns: repeat(2, 1fr);
-  grid-template-areas: "add-rule-btn undo-edit-btn";
+  grid-template-areas: 'add-rule-btn undo-edit-btn';
 }
 
 .color-node-bio div.jsoneditor-field {
-  background-color: #C7CEEA;
+  background-color: #c7ceea;
 }
 
 .color-node-automator div.jsoneditor-field {
-  background-color: #FDF1ED;
+  background-color: #fdf1ed;
 }
 
 .color-node-general div.jsoneditor-field {
-  background-color: #E2F0CB;
+  background-color: #e2f0cb;
 }
 
 .color-node-grid div.jsoneditor-field {
-  background-color: #FFDAC1;
+  background-color: #ffdac1;
 }
 
 .color-node-fixation div.jsoneditor-field {
-  background-color: #FFB7B2;
+  background-color: #ffb7b2;
 }
 
 .color-node-fixation-config div.jsoneditor-field {
-  background-color: #FFFF99;
+  background-color: #ffff99;
 }
 
 .color-node-sample div.jsoneditor-field {
-  background-color: #FF9AA2;
+  background-color: #ff9aa2;
 }
 
 .color-node-test div.jsoneditor-field {
-  background-color: #DCF2DE;
+  background-color: #dcf2de;
 }
 
 .color-node-choice div.jsoneditor-field {
-  background-color:  #BDE8E7;
-  
+  background-color: #bde8e7;
 }
 
 .color-node-reward div.jsoneditor-field {
-  background-color: #B5EAD7;
+  background-color: #b5ead7;
 }
 
 .color-node-nuisance div.jsoneditor-field {
-  background-color: #FDE2E6;
+  background-color: #fde2e6;
 }
-
