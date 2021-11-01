@@ -21,8 +21,7 @@ import * as EditorParams from './editor-params';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { GUI } from 'three/examples/jsm/libs/dat.gui.module';
-// import { BufferGeometryLoader } from 'three';
+import { GUI } from 'dat.gui';
 import { ParseEngine } from './parser';
 
 type FileRef = StorageReference;
@@ -1243,6 +1242,14 @@ export class Mkthree {
       this.dirLightPos.y,
       this.dirLightPos.z
     );
+    const dirLightParams = {
+      x: 0,
+      y: 2,
+      z: 0,
+      color: '#ffffff',
+      intensity: 0.5,
+    };
+
     this.light = new THREE.AmbientLight(0x404040, 0.05); // (0x404040, 0.1)
     const ambientLightParams = {
       color: '#404040',
@@ -1269,15 +1276,17 @@ export class Mkthree {
       y: 0,
       z: 0,
     };
-    const objectFolder = this.datGui.addFolder('Object');
-    objectFolder.add(objectParams, 'x', -180, 180).onChange((val) => {
-      console.log('objectMeshSceneRotationX', val);
-      objectMesh.scene.rotation.x = THREE.MathUtils.degToRad(val);
-    });
-    objectFolder.add(objectParams, 'y', -180, 180).onChange((val) => {
+    const objectFolder = this.datGui.addFolder('Object Rotation');
+    objectFolder
+      .add(objectParams, 'x', -180, 180, 5)
+      .onChange((val) => {
+        objectMesh.scene.rotation.x = THREE.MathUtils.degToRad(val);
+      })
+      .listen();
+    objectFolder.add(objectParams, 'y', -180, 180, 5).onChange((val) => {
       objectMesh.scene.rotation.y = THREE.MathUtils.degToRad(val);
     });
-    objectFolder.add(objectParams, 'z', -180, 180).onChange((val) => {
+    objectFolder.add(objectParams, 'z', -180, 180, 5).onChange((val) => {
       objectMesh.scene.rotation.z = THREE.MathUtils.degToRad(val);
     });
     objectFolder.open();
@@ -1295,6 +1304,54 @@ export class Mkthree {
       });
     ambientLightFolder.open();
 
+    const dirLightFolder = this.datGui.addFolder('Directional Light');
+    dirLightFolder.addColor(dirLightParams, 'color').onFinishChange((val) => {
+      this.dirLight?.color.set(val);
+    });
+    dirLightFolder
+      .add(dirLightParams, 'intensity', 0, 1, 0.05)
+      .onChange((val: number) => {
+        if (this.dirLight) {
+          this.dirLight.intensity = val;
+        }
+      });
+    dirLightFolder
+      .add(dirLightParams, 'x', -10, 10, 1)
+      .onChange((val: number) => {
+        if (this.dirLight) {
+          this.dirLight.position.setX(val);
+        }
+      })
+      .name('xPos');
+
+    dirLightFolder
+      .add(dirLightParams, 'y', -10, 10, 1)
+      .onChange((val: number) => {
+        if (this.dirLight) {
+          this.dirLight.position.setY(val);
+        }
+      })
+      .name('yPos');
+
+    dirLightFolder
+      .add(dirLightParams, 'x', -10, 10, 1)
+      .onChange((val: number) => {
+        if (this.dirLight) {
+          this.dirLight.position.setZ(val);
+        }
+      })
+      .name('zPos');
+
+    dirLightFolder.open();
+
+    const controlFolder = this.datGui.addFolder('Controls');
+    let orbitControls: any = {};
+    orbitControls.resetControl = () => {
+      this.controls?.reset();
+    };
+
+    controlFolder.add(orbitControls, 'resetControl');
+
     // this.datGui
     //   .add(this.dirLight, 'intensity', 0, 1, 0.05)
     //   .name('DirectionalLight Intensity');
@@ -1302,8 +1359,8 @@ export class Mkthree {
       '#dat-container'
     ) as HTMLDivElement;
     containerrr.style.position = 'absolute';
-    containerrr.style.top = '0%';
-    containerrr.style.right = '0%';
+    containerrr.style.top = '0px';
+    containerrr.style.right = '0px';
     containerrr.appendChild(this.datGui.domElement);
     console.log('Dat Gui Dom:', this.datGui.domElement);
 
