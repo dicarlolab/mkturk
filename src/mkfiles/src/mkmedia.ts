@@ -37,14 +37,13 @@ export class Mkeditor {
   public btnBoxDiv: HTMLDivElement;
   public makeActiveBtn: HTMLButtonElement;
   public storeParamBtn: HTMLButtonElement;
+  public renderBtn: HTMLButtonElement;
   private activeFile: { loc: string; id: string | FileRef };
 
   public fileNameInput: HTMLInputElement;
   private fileRenameBtn: HTMLButtonElement;
   private fileDupBtn: HTMLButtonElement;
   private fileDupModal: HTMLDialogElement;
-  // public genSceneParamBtn: HTMLButtonElement;
-  // private genSceneParamModal: HTMLDivElement;
   public genBtn: HTMLButtonElement;
   public paramGenBtnBox: HTMLDivElement;
 
@@ -61,6 +60,7 @@ export class Mkeditor {
     this.editorElement = document.querySelector('#editor') as HTMLDivElement;
     this.editor = new JSONEditor(this.editorElement);
     this.updateBtn = document.querySelector('#update-btn') as HTMLButtonElement;
+    this.renderBtn = document.querySelector('#render-btn') as HTMLButtonElement;
     this.btnBoxDiv = document.querySelector('#button-box') as HTMLDivElement;
     this.paramGenBtnBox = document.querySelector(
       '#param-gen-btn-box'
@@ -73,6 +73,7 @@ export class Mkeditor {
     ) as HTMLButtonElement;
     this.activeFile = { loc: '', id: '' };
     this.updateBtnAction();
+    this.renderBtnAction();
     this.makeActiveBtnAction();
     this.storeParamBtnAction();
     this.fileNameInput = document.querySelector(
@@ -113,6 +114,10 @@ export class Mkeditor {
 
   public getActiveFile() {
     return this.activeFile;
+  }
+
+  public destoryEditor() {
+    this.editor.destroy();
   }
 
   public displayFirebaseTextFile(file: Object, loc: string) {
@@ -713,25 +718,14 @@ export class Mkeditor {
             console.error('oldFile', oldFileRef, 'newFile', newFileRef);
             alert('Document Rename Failed');
           });
-
-        // newFileRef?.put(newFile, md).then(async (snapshot) => {
-        //   await oldFileRef.delete();
-        //   console.log('[DOCUMENT RENAMED]', snapshot);
-        //   alert('Document Renamed');
-        //   let renameEvent = new Event('storageFileChanged');
-        //   this.fileNameInput.value = '';
-        //   this.displayStorageTextFile(newFileRef!);
-        //   document.dispatchEvent(renameEvent);
-        // }).catch(e => {
-        //   console.error('[DOCUMENT RENAME FAILED]:', e);
-        //   console.error('oldFile', oldFileRef, 'newFile', newFileRef);
-        //   alert('Document Rename Failed');
         // });
       } else {
         console.log('file name input field is null');
       }
     });
   }
+
+  private renderBtnAction() {}
 
   private updateBtnAction() {
     this.updateBtn.addEventListener('click' || 'pointerup', (ev: Event) => {
@@ -1147,6 +1141,58 @@ export class Mkthree {
     this.ccanvas.style.width = String(editorDiv.offsetWidth);
     this.ccanvas.style.height = String(editorDiv.offsetHeight);
     this.resizeCanvasAction();
+  }
+
+  public async renderCubeMap(cubeMapList: any) {
+    if (this.active) {
+      this.destroy();
+    }
+
+    this.renderer = new THREE.WebGLRenderer({
+      canvas: this.ccanvas,
+      antialias: true,
+    });
+
+    this.renderer.physicallyCorrectLights = true;
+    this.renderer.toneMapping = THREE.LinearToneMapping;
+    this.renderer.toneMappingExposure = 10;
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
+
+    // camera setup for cubemap defaults inside the cube
+    this.cameraPos = new THREE.Vector3(0, 0, 10);
+    this.camera = new THREE.PerspectiveCamera(
+      45,
+      this.ccanvas.width / this.ccanvas.height,
+      0.1,
+      2000
+    );
+    this.camera.position.set(
+      this.cameraPos.x,
+      this.cameraPos.y,
+      this.cameraPos.z
+    );
+
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.target.set(0, 0, 0);
+    this.controls.update();
+
+    this.dirLightPos = new THREE.Vector3(0, 2, 0);
+    this.dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    this.dirLight.position.set(
+      this.dirLightPos.x,
+      this.dirLightPos.y,
+      this.dirLightPos.z
+    );
+    this.light = new THREE.AmbientLight(0x404040, 0.05); // (0x404040, 0.1)
+    const ambientLightParams = {
+      color: '#404040',
+      intensity: 0.05,
+    };
+
+    this.scene = new THREE.Scene();
+    this.scene.add(this.camera);
+    this.scene.add(this.dirLight);
+    this.scene.add(this.light);
   }
 
   /**
