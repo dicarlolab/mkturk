@@ -308,15 +308,6 @@ if (ENV.BatteryAPIAvailable) {
   // GET PARAMFILE NAME
   var subjectlistobj = document.getElementById('subjectID_select');
 
-  // console.log('index.js subjectlist:', subjectlist);
-  // for (let i = subjectlist.length - 1; i >= 0; i--) {
-  //   console.log('subjectlist i:', i);
-  //   let opt = document.createElement('option');
-  //   opt.value = i;
-  //   opt.innerHTML = subjectlist[i];
-  //   subjectlistobj.appendChild(opt);
-  // }
-
   subjectlistobj.addEventListener('change', subjectlist_listener, false);
   subjectlistobj.style.visibility = 'visible';
 
@@ -363,6 +354,9 @@ if (ENV.BatteryAPIAvailable) {
       '_' +
       ENV.HITId +
       '_params.json';
+
+    document.querySelector('button[id=doneTestingTask]').innerText = 'Start';
+    ENV.WebUSBAvailable = 0;
   } else {
     ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + '_params.json';
   }
@@ -423,32 +417,54 @@ if (ENV.BatteryAPIAvailable) {
   }
 
   //================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
-  if (QuickLoad.load == 0) {
+  if (ENV.MTurkWorkerId) {
     updateStatusText(JSON.stringify(TASK, null, ' '));
-    document
-      .querySelector('p[id=headsuptext]')
-      .setAttribute('contentEditable', true);
     document.querySelector('button[id=doneEditingParams]').style.display =
       'block';
+    document.querySelector('button[id=doneEditingParams]').innerText =
+      'Continue';
     document.querySelector('button[id=doneEditingParams]').style.visibility =
       'visible';
-
     await editParamsPromise();
     document.querySelector('button[id=doneEditingParams]').style.display =
       'none';
     var textobj = document.getElementById('headsuptext');
     textobj.removeEventListener('touchend', headsuptext_listener);
     textobj.removeEventListener('mouseup', headsuptext_listener);
-    document
-      .querySelector('p[id=headsuptext]')
-      .setAttribute('contentEditable', false);
 
     if (FLAGS.need2saveParameters == 1) {
       var user_param_text = document.getElementById('headsuptext').innerHTML; //get new params
       await saveParameterTexttoFirebase(user_param_text); //write new params
       await loadParametersfromFirebase(ENV.ParamFileName); //then read them
     } //IF
-  } //IF !QuickLoad.load
+  } else {
+    if (QuickLoad.load == 0) {
+      updateStatusText(JSON.stringify(TASK, null, ' '));
+      document
+        .querySelector('p[id=headsuptext]')
+        .setAttribute('contentEditable', true);
+      document.querySelector('button[id=doneEditingParams]').style.display =
+        'block';
+      document.querySelector('button[id=doneEditingParams]').style.visibility =
+        'visible';
+
+      await editParamsPromise();
+      document.querySelector('button[id=doneEditingParams]').style.display =
+        'none';
+      var textobj = document.getElementById('headsuptext');
+      textobj.removeEventListener('touchend', headsuptext_listener);
+      textobj.removeEventListener('mouseup', headsuptext_listener);
+      document
+        .querySelector('p[id=headsuptext]')
+        .setAttribute('contentEditable', false);
+
+      if (FLAGS.need2saveParameters == 1) {
+        var user_param_text = document.getElementById('headsuptext').innerHTML; //get new params
+        await saveParameterTexttoFirebase(user_param_text); //write new params
+        await loadParametersfromFirebase(ENV.ParamFileName); //then read them
+      } //IF
+    } //IF !QuickLoad.load
+  }
   //================== (END) AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
 
   console.log('PPI BEFORE:', ENV.ViewportPPI);
