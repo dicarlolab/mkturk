@@ -59,7 +59,11 @@ function displayTrial(ti, gr, fr, sc, ob, id, mkm) {
           VISIBLECANVAS.getContext('2d').filter = defaultFilter;
           render2D(taskscreen, s, f, gr, fr, sc, ob, id, VISIBLECANVAS);
 
-          if (taskscreen == 'Touchfix' || taskscreen == 'Sample') {
+          if (
+            taskscreen == 'Touchfix' ||
+            taskscreen == 'Sample' ||
+            taskscreen == 'Blank'
+          ) {
             //Overlay fixation dot
             if (typeof gr[f] == 'number') {
               renderShape2D('FixationDot', gr[f], VISIBLECANVAS);
