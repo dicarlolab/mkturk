@@ -218,7 +218,7 @@ if (ENV.BatteryAPIAvailable) {
     screenSpecs.screenSizeInches < 0 &&
     ENV.DeviceType == 'smartphone'
   ) {
-    var screenSpecs = await queryDeviceonFirestore('pixel6');
+    var screenSpecs = await queryDeviceonFirestore('pixel 6');
     console.log(
       'Smartphone detected, defaulting to pixel6 phone for screen ppi'
     );
