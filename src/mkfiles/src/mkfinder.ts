@@ -11,7 +11,12 @@ import {
   getDownloadURL,
   getMetadata,
 } from 'firebase/storage';
-import { log } from 'mathjs';
+
+declare global {
+  interface HTMLElementEventMap {
+    onRenderRequest: CustomEvent;
+  }
+}
 
 const db = getFirestore();
 
@@ -64,6 +69,8 @@ export class Mkfinder {
     this.mki = new Mkimage();
     this.mke = new Mkeditor();
     this.mkc = new Mkchart();
+
+    this.renderBtnAction();
   }
 
   public listFirestoreDocs(dataArr: any[], database: string) {
@@ -71,13 +78,15 @@ export class Mkfinder {
   }
 
   private renderBtnAction() {
-    this.renderBtn.addEventListener(
-      'renderCubeMapRequest',
-      (evt: CustomEvent) => {
-        evt.target;
-        // this.mkt.renderCubeMap(evt.detail);
-      }
-    );
+    this.renderBtn.addEventListener('onRenderRequest', (evt: CustomEvent) => {
+      this.mkt.destroy();
+      this.mki.removeImages();
+
+      this.mkt.canvas.style.zIndex = '3';
+      this.mke.editorDivElement.style.zIndex = '2';
+      this.mki.imgCanvasDiv.style.zIndex = '1';
+      this.mkt.renderCubeMap(evt.detail);
+    });
   }
 
   private displayFirestoreTable(dataArr: any[], database: string) {

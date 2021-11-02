@@ -724,7 +724,20 @@ export class Mkeditor {
     });
   }
 
-  private renderBtnAction() {}
+  private renderBtnAction() {
+    this.renderBtn.addEventListener('click', (evt: Event) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      console.log(this.editor.get());
+      const renderRequest = new CustomEvent('onRenderRequest', {
+        detail: this.editor.get(),
+      });
+      this.renderBtn.dispatchEvent(renderRequest);
+    });
+    // const renderRequest = new CustomEvent('onRenderRequest', {
+    //   detail: this.editor.get(),
+    // });
+  }
 
   private updateBtnAction() {
     this.updateBtn.addEventListener('click' || 'pointerup', (ev: Event) => {
@@ -1153,8 +1166,6 @@ export class Mkthree {
     });
 
     this.renderer.physicallyCorrectLights = true;
-    this.renderer.toneMapping = THREE.LinearToneMapping;
-    this.renderer.toneMappingExposure = 10;
     this.renderer.outputEncoding = THREE.sRGBEncoding;
 
     // camera setup for cubemap defaults inside the cube
@@ -1176,7 +1187,7 @@ export class Mkthree {
     this.controls.update();
 
     this.dirLightPos = new THREE.Vector3(0, 2, 0);
-    this.dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    this.dirLight = new THREE.DirectionalLight(0xffffff, 0);
     this.dirLight.position.set(
       this.dirLightPos.x,
       this.dirLightPos.y,
@@ -1192,6 +1203,131 @@ export class Mkthree {
     this.scene.add(this.camera);
     this.scene.add(this.dirLight);
     this.scene.add(this.light);
+
+    // order: xright, xleft, ytop, ybottom, zfront, zback
+    const cubeMapURLs = [
+      await getDownloadURL(ref(storage, cubeMapList.xright)),
+      await getDownloadURL(ref(storage, cubeMapList.xleft)),
+      await getDownloadURL(ref(storage, cubeMapList.ytop)),
+      await getDownloadURL(ref(storage, cubeMapList.ybottom)),
+      await getDownloadURL(ref(storage, cubeMapList.zfront)),
+      await getDownloadURL(ref(storage, cubeMapList.zback)),
+    ];
+
+    const loader = new THREE.CubeTextureLoader();
+    const texture = loader.load(cubeMapURLs);
+
+    this.datGui = new GUI({ autoPlace: false });
+    const dirLightParams = {
+      x: 0,
+      y: 2,
+      z: 0,
+      color: '#ffffff',
+      intensity: 0,
+    };
+
+    const cameraPositionParams = {
+      x: 0,
+      y: 0,
+      z: 10,
+    };
+
+    const cameraPositionFolder = this.datGui.addFolder('Camera Position');
+    cameraPositionFolder
+      .add(cameraPositionParams, 'x', -10, 10, 1)
+      .onFinishChange((val) => {
+        this.camera?.position.setX(val);
+        this.controls?.update();
+      });
+    cameraPositionFolder
+      .add(cameraPositionParams, 'y', -10, 10, 1)
+      .onFinishChange((val) => {
+        this.camera?.position.setY(val);
+        this.controls?.update();
+      });
+    cameraPositionFolder
+      .add(cameraPositionParams, 'z', -10, 10, 1)
+      .onFinishChange((val) => {
+        this.camera?.position.setZ(val);
+        this.controls?.update();
+      });
+
+    const ambientLightFolder = this.datGui.addFolder('Ambient Light');
+    ambientLightFolder.addColor(ambientLightParams, 'color').onChange((val) => {
+      this.light?.color.set(val);
+    });
+    ambientLightFolder
+      .add(ambientLightParams, 'intensity', 0, 1, 0.05)
+      .onChange((val: number) => {
+        if (this.light) {
+          this.light.intensity = val;
+        }
+      });
+    ambientLightFolder.open();
+
+    const dirLightFolder = this.datGui.addFolder('Directional Light');
+    dirLightFolder.addColor(dirLightParams, 'color').onFinishChange((val) => {
+      this.dirLight?.color.set(val);
+    });
+    dirLightFolder
+      .add(dirLightParams, 'intensity', 0, 1, 0.05)
+      .onChange((val: number) => {
+        if (this.dirLight) {
+          this.dirLight.intensity = val;
+        }
+      });
+    dirLightFolder
+      .add(dirLightParams, 'x', -10, 10, 1)
+      .onChange((val: number) => {
+        if (this.dirLight) {
+          this.dirLight.position.setX(val);
+        }
+      })
+      .name('xPos');
+
+    dirLightFolder
+      .add(dirLightParams, 'y', -10, 10, 1)
+      .onChange((val: number) => {
+        if (this.dirLight) {
+          this.dirLight.position.setY(val);
+        }
+      })
+      .name('yPos');
+
+    dirLightFolder
+      .add(dirLightParams, 'x', -10, 10, 1)
+      .onChange((val: number) => {
+        if (this.dirLight) {
+          this.dirLight.position.setZ(val);
+        }
+      })
+      .name('zPos');
+
+    dirLightFolder.open();
+
+    const controlFolder = this.datGui.addFolder('Controls');
+    let orbitControls: any = {};
+    orbitControls.resetControl = () => {
+      this.controls?.reset();
+    };
+
+    controlFolder.add(orbitControls, 'resetControl');
+
+    // this.datGui
+    //   .add(this.dirLight, 'intensity', 0, 1, 0.05)
+    //   .name('DirectionalLight Intensity');
+    const containerrr = document.querySelector(
+      '#dat-container'
+    ) as HTMLDivElement;
+    containerrr.style.position = 'absolute';
+    containerrr.style.top = '0px';
+    containerrr.style.right = '0px';
+    containerrr.appendChild(this.datGui.domElement);
+    this.scene.background = texture;
+
+    requestAnimationFrame(this.animate.bind(this));
+    this.renderer.render(this.scene, this.camera);
+    this.active = true;
   }
 
   /**
@@ -1277,12 +1413,10 @@ export class Mkthree {
       z: 0,
     };
     const objectFolder = this.datGui.addFolder('Object Rotation');
-    objectFolder
-      .add(objectParams, 'x', -180, 180, 5)
-      .onChange((val) => {
-        objectMesh.scene.rotation.x = THREE.MathUtils.degToRad(val);
-      })
-      .listen();
+    objectFolder.add(objectParams, 'x', -180, 180, 5).onChange((val) => {
+      objectMesh.scene.rotation.x = THREE.MathUtils.degToRad(val);
+    });
+
     objectFolder.add(objectParams, 'y', -180, 180, 5).onChange((val) => {
       objectMesh.scene.rotation.y = THREE.MathUtils.degToRad(val);
     });
@@ -1362,7 +1496,6 @@ export class Mkthree {
     containerrr.style.top = '0px';
     containerrr.style.right = '0px';
     containerrr.appendChild(this.datGui.domElement);
-    console.log('Dat Gui Dom:', this.datGui.domElement);
 
     /* add loaded mesh to scene */
     this.scene.add(objectMesh.scene);
