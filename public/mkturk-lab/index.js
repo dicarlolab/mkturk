@@ -216,6 +216,14 @@ if (ENV.BatteryAPIAvailable) {
     );
   } else if (
     screenSpecs.screenSizeInches < 0 &&
+    ENV.DeviceType == 'smartphone'
+  ) {
+    var screenSpecs = await queryDeviceonFirestore('pixel6');
+    console.log(
+      'Smartphone detected, defaulting to pixel6 phone for screen ppi'
+    );
+  } else if (
+    screenSpecs.screenSizeInches < 0 &&
     (ENV.DeviceType == 'Not available' || ENV.DeviceType == '')
   ) {
     var screenSpecs = await queryDeviceonFirestore('pixel c'); //default to pixel c
