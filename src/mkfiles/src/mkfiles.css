@@ -196,6 +196,11 @@
   grid-area: update-btn;
 }
 
+#render-btn {
+  grid-area: render-btn;
+  display: none;
+}
+
 #active-btn {
   grid-area: active-btn;
   display: none;

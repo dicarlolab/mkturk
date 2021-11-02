@@ -36,14 +36,13 @@ export class Mkeditor {
   public btnBoxDiv: HTMLDivElement;
   public makeActiveBtn: HTMLButtonElement;
   public storeParamBtn: HTMLButtonElement;
+  public renderBtn: HTMLButtonElement;
   private activeFile: { loc: string; id: string | FileRef };
 
   public fileNameInput: HTMLInputElement;
   private fileRenameBtn: HTMLButtonElement;
   private fileDupBtn: HTMLButtonElement;
   private fileDupModal: HTMLDialogElement;
-  // public genSceneParamBtn: HTMLButtonElement;
-  // private genSceneParamModal: HTMLDivElement;
   public genBtn: HTMLButtonElement;
   public paramGenBtnBox: HTMLDivElement;
 
@@ -60,6 +59,7 @@ export class Mkeditor {
     this.editorElement = document.querySelector('#editor') as HTMLDivElement;
     this.editor = new JSONEditor(this.editorElement);
     this.updateBtn = document.querySelector('#update-btn') as HTMLButtonElement;
+    this.renderBtn = document.querySelector('#render-btn') as HTMLButtonElement;
     this.btnBoxDiv = document.querySelector('#button-box') as HTMLDivElement;
     this.paramGenBtnBox = document.querySelector(
       '#param-gen-btn-box'
@@ -72,6 +72,7 @@ export class Mkeditor {
     ) as HTMLButtonElement;
     this.activeFile = { loc: '', id: '' };
     this.updateBtnAction();
+    this.renderBtnAction();
     this.makeActiveBtnAction();
     this.storeParamBtnAction();
     this.fileNameInput = document.querySelector(
@@ -112,6 +113,10 @@ export class Mkeditor {
 
   public getActiveFile() {
     return this.activeFile;
+  }
+
+  public destoryEditor() {
+    this.editor.destroy();
   }
 
   public displayFirebaseTextFile(file: Object, loc: string) {
@@ -712,24 +717,26 @@ export class Mkeditor {
             console.error('oldFile', oldFileRef, 'newFile', newFileRef);
             alert('Document Rename Failed');
           });
-
-        // newFileRef?.put(newFile, md).then(async (snapshot) => {
-        //   await oldFileRef.delete();
-        //   console.log('[DOCUMENT RENAMED]', snapshot);
-        //   alert('Document Renamed');
-        //   let renameEvent = new Event('storageFileChanged');
-        //   this.fileNameInput.value = '';
-        //   this.displayStorageTextFile(newFileRef!);
-        //   document.dispatchEvent(renameEvent);
-        // }).catch(e => {
-        //   console.error('[DOCUMENT RENAME FAILED]:', e);
-        //   console.error('oldFile', oldFileRef, 'newFile', newFileRef);
-        //   alert('Document Rename Failed');
         // });
       } else {
         console.log('file name input field is null');
       }
     });
+  }
+
+  private renderBtnAction() {
+    this.renderBtn.addEventListener('click', (evt: Event) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      console.log(this.editor.get());
+      const renderRequest = new CustomEvent('onRenderRequest', {
+        detail: this.editor.get(),
+      });
+      this.renderBtn.dispatchEvent(renderRequest);
+    });
+    // const renderRequest = new CustomEvent('onRenderRequest', {
+    //   detail: this.editor.get(),
+    // });
   }
 
   private updateBtnAction() {
@@ -1148,6 +1155,181 @@ export class Mkthree {
     this.resizeCanvasAction();
   }
 
+  public async renderCubeMap(cubeMapList: any) {
+    if (this.active) {
+      this.destroy();
+    }
+
+    this.renderer = new THREE.WebGLRenderer({
+      canvas: this.ccanvas,
+      antialias: true,
+    });
+
+    this.renderer.physicallyCorrectLights = true;
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
+
+    // camera setup for cubemap defaults inside the cube
+    this.cameraPos = new THREE.Vector3(0, 0, 10);
+    this.camera = new THREE.PerspectiveCamera(
+      45,
+      this.ccanvas.width / this.ccanvas.height,
+      0.1,
+      2000
+    );
+    this.camera.position.set(
+      this.cameraPos.x,
+      this.cameraPos.y,
+      this.cameraPos.z
+    );
+
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.target.set(0, 0, 0);
+    this.controls.update();
+
+    this.dirLightPos = new THREE.Vector3(0, 2, 0);
+    this.dirLight = new THREE.DirectionalLight(0xffffff, 0);
+    this.dirLight.position.set(
+      this.dirLightPos.x,
+      this.dirLightPos.y,
+      this.dirLightPos.z
+    );
+    this.light = new THREE.AmbientLight(0x404040, 0.05); // (0x404040, 0.1)
+    const ambientLightParams = {
+      color: '#404040',
+      intensity: 0.05,
+    };
+
+    this.scene = new THREE.Scene();
+    this.scene.add(this.camera);
+    this.scene.add(this.dirLight);
+    this.scene.add(this.light);
+
+    // order: xright, xleft, ytop, ybottom, zfront, zback
+    const cubeMapURLs = [
+      await getDownloadURL(ref(storage, cubeMapList.xright)),
+      await getDownloadURL(ref(storage, cubeMapList.xleft)),
+      await getDownloadURL(ref(storage, cubeMapList.ytop)),
+      await getDownloadURL(ref(storage, cubeMapList.ybottom)),
+      await getDownloadURL(ref(storage, cubeMapList.zfront)),
+      await getDownloadURL(ref(storage, cubeMapList.zback)),
+    ];
+
+    const loader = new THREE.CubeTextureLoader();
+    const texture = loader.load(cubeMapURLs);
+
+    this.datGui = new GUI({ autoPlace: false });
+    const dirLightParams = {
+      x: 0,
+      y: 2,
+      z: 0,
+      color: '#ffffff',
+      intensity: 0,
+    };
+
+    const cameraPositionParams = {
+      x: 0,
+      y: 0,
+      z: 10,
+    };
+
+    const cameraPositionFolder = this.datGui.addFolder('Camera Position');
+    cameraPositionFolder
+      .add(cameraPositionParams, 'x', -10, 10, 1)
+      .onFinishChange((val) => {
+        this.camera?.position.setX(val);
+        this.controls?.update();
+      });
+    cameraPositionFolder
+      .add(cameraPositionParams, 'y', -10, 10, 1)
+      .onFinishChange((val) => {
+        this.camera?.position.setY(val);
+        this.controls?.update();
+      });
+    cameraPositionFolder
+      .add(cameraPositionParams, 'z', -10, 10, 1)
+      .onFinishChange((val) => {
+        this.camera?.position.setZ(val);
+        this.controls?.update();
+      });
+
+    const ambientLightFolder = this.datGui.addFolder('Ambient Light');
+    ambientLightFolder.addColor(ambientLightParams, 'color').onChange((val) => {
+      this.light?.color.set(val);
+    });
+    ambientLightFolder
+      .add(ambientLightParams, 'intensity', 0, 1, 0.05)
+      .onChange((val: number) => {
+        if (this.light) {
+          this.light.intensity = val;
+        }
+      });
+    ambientLightFolder.open();
+
+    const dirLightFolder = this.datGui.addFolder('Directional Light');
+    dirLightFolder.addColor(dirLightParams, 'color').onFinishChange((val) => {
+      this.dirLight?.color.set(val);
+    });
+    dirLightFolder
+      .add(dirLightParams, 'intensity', 0, 1, 0.05)
+      .onChange((val: number) => {
+        if (this.dirLight) {
+          this.dirLight.intensity = val;
+        }
+      });
+    dirLightFolder
+      .add(dirLightParams, 'x', -10, 10, 1)
+      .onChange((val: number) => {
+        if (this.dirLight) {
+          this.dirLight.position.setX(val);
+        }
+      })
+      .name('xPos');
+
+    dirLightFolder
+      .add(dirLightParams, 'y', -10, 10, 1)
+      .onChange((val: number) => {
+        if (this.dirLight) {
+          this.dirLight.position.setY(val);
+        }
+      })
+      .name('yPos');
+
+    dirLightFolder
+      .add(dirLightParams, 'x', -10, 10, 1)
+      .onChange((val: number) => {
+        if (this.dirLight) {
+          this.dirLight.position.setZ(val);
+        }
+      })
+      .name('zPos');
+
+    dirLightFolder.open();
+
+    const controlFolder = this.datGui.addFolder('Controls');
+    let orbitControls: any = {};
+    orbitControls.resetControl = () => {
+      this.controls?.reset();
+    };
+
+    controlFolder.add(orbitControls, 'resetControl');
+
+    // this.datGui
+    //   .add(this.dirLight, 'intensity', 0, 1, 0.05)
+    //   .name('DirectionalLight Intensity');
+    const containerrr = document.querySelector(
+      '#dat-container'
+    ) as HTMLDivElement;
+    containerrr.style.position = 'absolute';
+    containerrr.style.top = '0px';
+    containerrr.style.right = '0px';
+    containerrr.appendChild(this.datGui.domElement);
+    this.scene.background = texture;
+
+    requestAnimationFrame(this.animate.bind(this));
+    this.renderer.render(this.scene, this.camera);
+    this.active = true;
+  }
+
   /**
    * Public function to display mesh specified by filepath to a canvas
    * specified by canvas
@@ -1231,12 +1413,10 @@ export class Mkthree {
       z: 0,
     };
     const objectFolder = this.datGui.addFolder('Object Rotation');
-    objectFolder
-      .add(objectParams, 'x', -180, 180, 5)
-      .onChange((val) => {
-        objectMesh.scene.rotation.x = THREE.MathUtils.degToRad(val);
-      })
-      .listen();
+    objectFolder.add(objectParams, 'x', -180, 180, 5).onChange((val) => {
+      objectMesh.scene.rotation.x = THREE.MathUtils.degToRad(val);
+    });
+
     objectFolder.add(objectParams, 'y', -180, 180, 5).onChange((val) => {
       objectMesh.scene.rotation.y = THREE.MathUtils.degToRad(val);
     });
@@ -1316,7 +1496,6 @@ export class Mkthree {
     containerrr.style.top = '0px';
     containerrr.style.right = '0px';
     containerrr.appendChild(this.datGui.domElement);
-    console.log('Dat Gui Dom:', this.datGui.domElement);
 
     /* add loaded mesh to scene */
     this.scene.add(objectMesh.scene);
