@@ -928,6 +928,7 @@ function renderFixationWindow(
   var wd = (2 * fixationwindowradius) / canvasratio;
   var xcent = gridx[fixationgridindex] / canvasratio;
   var ycent = gridy[fixationgridindex] / canvasratio;
+  const context = canvasobj.getContext('2d');
   context.strokeStyle = 'yellow';
   context.strokeRect(xcent - wd / 2, ycent - wd / 2, wd, wd);
 
