@@ -431,9 +431,8 @@ async function addToScene(taskscreen) {
 
         // set texture
         if (child.material) {
-          let material = new THREE.MeshPhysicalMaterial(materialparam);
-
           if (child.name == 'Base') {
+            let material = new THREE.MeshPhysicalMaterial(materialparam);
             material.map = child.material.map;
             child.material = material;
             child.material.needsUpdate = true;
@@ -980,27 +979,39 @@ async function addToScene(taskscreen) {
        * cubeBackground is now affected by lighting
        */
 
-      let material;
+      let materialArray = [];
 
       if (
         IMAGES[taskscreen][classlabel].IMAGES.material !== undefined &&
         IMAGES[taskscreen][classlabel].IMAGES.material.type !=
           'MeshBasicMaterial'
       ) {
-        material = new THREE.MeshPhysicalMaterial({
-          map: new THREE.Texture(),
-          color: '',
-        });
+        for (let i = 0; i < 6; i++) {
+          materialArray.push(
+            new THREE.MeshPhysicalMaterial({
+              map: new THREE.Texture(),
+              color: '',
+            })
+          );
+        }
       } else {
-        material = new THREE.MeshBasicMaterial({
-          map: new THREE.Texture(),
-          color: '',
-        });
+        for (let i = 0; i < 6; i++) {
+          materialArray.push(
+            new THREE.MeshBasicMaterial({
+              map: new THREE.Texture(),
+              color: '',
+            })
+          );
+        }
       }
 
-      material = Array(6).fill(material);
+      transparentFace = new THREE.MeshBasicMaterial({
+        transparent: true,
+        opacity: 0,
+        side: THREE.BackSide,
+      });
 
-      let backgroundCube = new THREE.Mesh(boxGeometry, material);
+      let backgroundCube = new THREE.Mesh(boxGeometry, materialArray);
       backgroundCube.name = 'backgroundCube' + classlabel;
       backgroundCube.material.needsUpdate = true;
 
@@ -1850,56 +1861,15 @@ function updateImageSingleFrame(
   let textureOrder = [4, 5, 2, 3, 0, 1];
 
   if (cubeTexture != undefined) {
-    // var transparentFace = new THREE.MeshBasicMaterial({
-    //   transparent: true,
-    //   opacity: 0,
-    //   side: THREE.BackSide,
-    // });
-    // textureOrder.map(function (t, index) {
-    //   if ((cubeTexture[t] != "") & (typeof cubeTexture[t] != "undefined")) {
-    //     cubeTexture[t].wrapT = THREE.ClampToEdgeWrapping;
-    //     backgroundCube.material[index].map = cubeTexture[t];
-    //     backgroundCube.material[index].side = THREE.BackSide;
-    //   } else {
-    //     backgroundCube.material[index] = transparentFace;
-    //   }
-    // });
-
-    let materialArray = [];
-    for (let t of textureOrder) {
-      if (cubeTexture[t] == '' || cubeTexture[t] === undefined) {
-        if (backgroundCube.material[0].type == 'MeshPhysicalMaterial') {
-          materialArray.push(
-            new THREE.MeshPhysicalMaterial({ transparent: true, opacity: 0 })
-          );
-        } else {
-          materialArray.push(
-            new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })
-          );
-        }
-      } else {
+    textureOrder.map((t, idx) => {
+      if (cubeTexture[t] != '' && cubeTexture[t] !== undefined) {
         cubeTexture[t].wrapT = THREE.ClampToEdgeWrapping;
-        if (backgroundCube.material[0].type == 'MeshPhysicalMaterial') {
-          materialArray.push(
-            new THREE.MeshPhysicalMaterial({
-              map: cubeTexture[t],
-            })
-          );
-        } else {
-          materialArray.push(
-            new THREE.MeshBasicMaterial({
-              map: cubeTexture[t],
-            })
-          );
-        }
+        backgroundCube.material[idx].map = cubeTexture[t];
+        backgroundCube.material[idx].side = THREE.BackSide;
+      } else {
+        backgroundCube.material[idx] = transparentFace;
       }
-    }
-
-    for (let i = 0; i < 6; i++) {
-      materialArray[i].side = THREE.BackSide;
-    }
-
-    backgroundCube.material = materialArray;
+    });
 
     //backgroundCube size
     backgroundCube.scale.set(1, 1, 1);
