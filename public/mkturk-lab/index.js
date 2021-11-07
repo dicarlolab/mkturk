@@ -598,7 +598,7 @@ if (ENV.BatteryAPIAvailable) {
           // ELSE IF eyetracker, allow dragging
           TASK.DragtoRespond = 1; // drag into box
         }
-      }
+      }//IF TASK.DragtoRespond
 
       //load previous calibration if available
       if (ENV.Eye.TrackEye > 0) {
@@ -639,7 +639,7 @@ if (ENV.BatteryAPIAvailable) {
             ENV.Eye.NCalibPoints,
             ENV.Eye.CalibType
           );
-        }
+        }//IF ENV.Eye.CalibXTransform.length==0
 
         // will calibrate using TASK.CalibrateEye number of trials for train & same number for test
         if (TASK.CalibrateEye > 0) {
@@ -649,8 +649,8 @@ if (ENV.BatteryAPIAvailable) {
           ENV.Eye.NCalibPointsTest = 0;
           ENV.Eye.CalibTrainMSE = [];
           ENV.Eye.CalibTestMSE = [];
-        }
-      }
+        }//IF TASK.CalibrateEye
+      }//IF ENV.TrackEye
 
       //============= SET UP CANVAS =============//
       // Update canvas based on latest TASK state:
@@ -677,7 +677,8 @@ if (ENV.BatteryAPIAvailable) {
       //Determine task type
       if (TASK.RewardStage == 0) {
         ENV.Task = 'FIXATION';
-      } else if (TASK.RewardStage == 1) {
+      }//IF RewardStage==0
+      else if (TASK.RewardStage == 1) {
         // IF Task.RewardStage
         if (TASK.NRSVP > 0) {
           ENV.Task = 'RSVP';
@@ -694,7 +695,7 @@ if (ENV.BatteryAPIAvailable) {
           // Match-to-Sample
           ENV.Task = 'MTS';
         }
-      }
+      }//ELSEIF RewardStage==1
 
       //Size of Fixation screen circle or image
       ENV.FixationRadius = (TASK.FixationSizeInches / 2) * ENV.ViewportPPI;
@@ -743,7 +744,7 @@ if (ENV.BatteryAPIAvailable) {
       if (typeof TASK.Photodiode == 'undefined') {
         TASK.Photodiode = 0;
       }
-    } //IF need2loadParameters
+    } //IF FLAGS.need2loadParameters
 
     if (FLAGS.purge == 1) {
       purgeTrackingVariables();
@@ -786,7 +787,7 @@ if (ENV.BatteryAPIAvailable) {
         IMAGES.Test[i] = await loadTextfromFirebase(TASK.ImageBagsTest[i]);
       }
 
-      // find the longest scene param arry in IMAGES (ie # of trials)
+      // find the longest scene param array in IMAGES (ie # of stim)
       for (let i = 0; i < IMAGES.Sample.length; i++) {
         IMAGES.Sample[i].nimages = getLongestArray(IMAGES.Sample[i]);
         IMAGES.Test[i].nimages = getLongestArray(IMAGES.Test[i]);
@@ -890,7 +891,7 @@ if (ENV.BatteryAPIAvailable) {
         IMAGEMETA['Test' + testSceneMetaKeys[i]] =
           testSceneMeta[testSceneMetaKeys[i]];
       }
-    }
+    }//IF need2LoadScenes
 
     if (typeof TASK.BackgroundColor2D == 'undefined') {
       TASK.BackgroundColor2D = '#7F7F7F';
@@ -931,7 +932,7 @@ if (ENV.BatteryAPIAvailable) {
         CURRTRIAL.correctitem = x[4];
         samplereward = x[9];
       }
-    }
+    }//FOR imgSeqLen
 
     logEVENTS('Sample', CURRTRIAL.sampleindex_nonarray, 'trialseries');
     logEVENTS('Test', CURRTRIAL.testindices[0], 'trialseries');
@@ -2349,12 +2350,11 @@ if (ENV.BatteryAPIAvailable) {
               // uploads eyedata to BigQuery every 10 seconds
               pingBigQueryEyeTable();
             }
-          } else {
-            if (TASK.BQSaveTouch === undefined || TASK.BQSaveTouch > 0) {
+          }// IF trackeye
+          else if (TASK.BQSaveTouch === undefined || TASK.BQSaveTouch > 0) {
               // uploads touch data to BigQuery every 10 seconds
               pingBigQueryTouchTable();
-            }
-          }
+          }//IF BQsavetouch
 
           if (
             TASK.BQSaveDisplayTimes === undefined ||
