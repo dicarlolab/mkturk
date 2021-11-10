@@ -311,9 +311,17 @@ if (ENV.BatteryAPIAvailable) {
   subjectlistobj.addEventListener('change', subjectlist_listener, false);
   subjectlistobj.style.visibility = 'visible';
 
+  // if (ENV.MTurkWorkerId) {
+  //   document.querySelector('button[id=quickload]').style.display = 'none';
+  //   document.querySelector('button[id=quickload]').style.visibility = 'hidden';
+  //   document.querySelector('div[id=subjectID_div]').style.display = 'none';
+  //   document.querySelector('div[id=subjectID_div]').style.visibility = 'hidden';
+  // }
+
   if (localStorage.getItem('Agent') != null) {
     // IF agent stored locally, show quickload button
     QuickLoad.agent = localStorage.getItem('Agent');
+    console.log('QuickLoad.agent:', QuickLoad.agent);
     QuickLoad.connectusb = localStorage.getItem('ConnectUSB');
 
     if (QuickLoad.connectusb == null) {
@@ -417,28 +425,14 @@ if (ENV.BatteryAPIAvailable) {
   }
 
   //================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
+  // IF MTurkWorker, DoneEditingParam button is automatically pressed
   if (ENV.MTurkWorkerId) {
-    updateStatusText(JSON.stringify(TASK, null, ' '));
-    document.querySelector('button[id=doneEditingParams]').style.display =
-      'block';
-    document.querySelector('button[id=doneEditingParams]').innerText =
-      'Continue';
-    document.querySelector('button[id=doneEditingParams]').style.visibility =
-      'visible';
-    await editParamsPromise();
-    document.querySelector('button[id=doneEditingParams]').style.display =
-      'none';
-    var textobj = document.getElementById('headsuptext');
-    textobj.removeEventListener('touchend', headsuptext_listener);
-    textobj.removeEventListener('mouseup', headsuptext_listener);
-
-    if (FLAGS.need2saveParameters == 1) {
-      var user_param_text = document.getElementById('headsuptext').innerHTML; //get new params
-      await saveParameterTexttoFirebase(user_param_text); //write new params
-      await loadParametersfromFirebase(ENV.ParamFileName); //then read them
-    } //IF
+    document
+      .querySelector('button[id=doneEditingParams]')
+      .dispatchEvent(new Event('click'));
   } else {
     if (QuickLoad.load == 0) {
+      console.log('QuickLoad == 0');
       updateStatusText(JSON.stringify(TASK, null, ' '));
       document
         .querySelector('p[id=headsuptext]')
@@ -569,6 +563,13 @@ if (ENV.BatteryAPIAvailable) {
   EVENTS.trialnum = 0;
   FLAGS.savedata = 0; // test trials can be performed, but data won't be saved
 
+  // IF MTurkWorker, start in TRIAL mode
+  if (ENV.MTurkWorkerId) {
+    document
+      .querySelector('button[id=doneTestingTask]')
+      .dispatchEvent(new Event('pointerup'));
+  }
+
   // await mkmodels.loadFeatureExtractor('https://tfhub.dev/google/tfjs-model/imagenet/resnet_v2_50/feature_vector/3/default/1');
 
   // =========================================================================================================== //
@@ -598,7 +599,7 @@ if (ENV.BatteryAPIAvailable) {
           // ELSE IF eyetracker, allow dragging
           TASK.DragtoRespond = 1; // drag into box
         }
-      }//IF TASK.DragtoRespond
+      } //IF TASK.DragtoRespond
 
       //load previous calibration if available
       if (ENV.Eye.TrackEye > 0) {
@@ -639,7 +640,7 @@ if (ENV.BatteryAPIAvailable) {
             ENV.Eye.NCalibPoints,
             ENV.Eye.CalibType
           );
-        }//IF ENV.Eye.CalibXTransform.length==0
+        } //IF ENV.Eye.CalibXTransform.length==0
 
         // will calibrate using TASK.CalibrateEye number of trials for train & same number for test
         if (TASK.CalibrateEye > 0) {
@@ -649,8 +650,8 @@ if (ENV.BatteryAPIAvailable) {
           ENV.Eye.NCalibPointsTest = 0;
           ENV.Eye.CalibTrainMSE = [];
           ENV.Eye.CalibTestMSE = [];
-        }//IF TASK.CalibrateEye
-      }//IF ENV.TrackEye
+        } //IF TASK.CalibrateEye
+      } //IF ENV.TrackEye
 
       //============= SET UP CANVAS =============//
       // Update canvas based on latest TASK state:
@@ -677,7 +678,7 @@ if (ENV.BatteryAPIAvailable) {
       //Determine task type
       if (TASK.RewardStage == 0) {
         ENV.Task = 'FIXATION';
-      }//IF RewardStage==0
+      } //IF RewardStage==0
       else if (TASK.RewardStage == 1) {
         // IF Task.RewardStage
         if (TASK.NRSVP > 0) {
@@ -695,7 +696,7 @@ if (ENV.BatteryAPIAvailable) {
           // Match-to-Sample
           ENV.Task = 'MTS';
         }
-      }//ELSEIF RewardStage==1
+      } //ELSEIF RewardStage==1
 
       //Size of Fixation screen circle or image
       ENV.FixationRadius = (TASK.FixationSizeInches / 2) * ENV.ViewportPPI;
@@ -891,7 +892,7 @@ if (ENV.BatteryAPIAvailable) {
         IMAGEMETA['Test' + testSceneMetaKeys[i]] =
           testSceneMeta[testSceneMetaKeys[i]];
       }
-    }//IF need2LoadScenes
+    } //IF need2LoadScenes
 
     if (typeof TASK.BackgroundColor2D == 'undefined') {
       TASK.BackgroundColor2D = '#7F7F7F';
@@ -932,7 +933,7 @@ if (ENV.BatteryAPIAvailable) {
         CURRTRIAL.correctitem = x[4];
         samplereward = x[9];
       }
-    }//FOR imgSeqLen
+    } //FOR imgSeqLen
 
     logEVENTS('Sample', CURRTRIAL.sampleindex_nonarray, 'trialseries');
     logEVENTS('Test', CURRTRIAL.testindices[0], 'trialseries');
@@ -2350,11 +2351,11 @@ if (ENV.BatteryAPIAvailable) {
               // uploads eyedata to BigQuery every 10 seconds
               pingBigQueryEyeTable();
             }
-          }// IF trackeye
+          } // IF trackeye
           else if (TASK.BQSaveTouch === undefined || TASK.BQSaveTouch > 0) {
-              // uploads touch data to BigQuery every 10 seconds
-              pingBigQueryTouchTable();
-          }//IF BQsavetouch
+            // uploads touch data to BigQuery every 10 seconds
+            pingBigQueryTouchTable();
+          } //IF BQsavetouch
 
           if (
             TASK.BQSaveDisplayTimes === undefined ||
