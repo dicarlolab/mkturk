@@ -21,7 +21,6 @@ async function automateTask(automatorData, trialhistory) {
     Object.entries(
       Object.assign({}, TASK, automatorData[currentStageIdx])
     ).flatMap(([key, value]) => {
-      console.log('automator discrepency check');
       if (
         key == 'CurrentAutomatorStageName' ||
         key == 'MinPercentCriterion' ||
@@ -258,8 +257,8 @@ function computeRunningHistory(
   // be counted as being part of the automator? (nope, explicit is always better. -MLee. )
 
   if (trainingStageHistory.length != correctsHistory.length) {
-    console.log('trainingstage vec. length' + trainingStageHistory.length);
-    console.log('corrects vec. length ' + correctsHistory.length);
+    // console.log('trainingstage vec. length' + trainingStageHistory.length);
+    // console.log('corrects vec. length ' + correctsHistory.length);
     throw 'The history arrays are of different length. Check what went wrong; cannot compute performance history.';
   }
 
@@ -281,8 +280,8 @@ function computeRunningHistory(
     } else if (trainingStageHistory[i] != currentStage) {
       break;
     } else {
-      console.log(trainingStageHistory[i]);
-      console.log(currentStage);
+      // console.log(trainingStageHistory[i]);
+      // console.log(currentStage);
       throw 'Something went wrong 2';
     }
   } //FOR i trials
@@ -292,8 +291,8 @@ function computeRunningHistory(
   for (let i = startingindex; i < trainingStageHistory.length; i++) {
     if (trainingStageHistory[i] != currentStage) {
       ndiscrepancy = ndiscrepancy + 1;
-      console.log(trainingStageHistory[i]);
-      console.log(currentStage);
+      // console.log(trainingStageHistory[i]);
+      // console.log(currentStage);
       throw 'Something went wrong 3';
     }
     ncountedtrials = ncountedtrials + 1;

@@ -3,29 +3,75 @@ import { FileType, LiveplotDataType } from './types';
 import { Utils } from './utils';
 
 const colorMapJet = [
-  '#00008F','#00009F','#0000AF','#0000BF',
-  '#0000CF','#0000DF','#0000EF','#0000FF',
-  '#0010FF','#0020FF','#0030FF','#0040FF',
-  '#0050FF','#0060FF','#0070FF','#0080FF',
-  '#008FFF','#009FFF','#00AFFF','#00BFFF',
-  '#00CFFF','#00DFFF','#00EFFF','#00FFFF',
-  '#10FFEF','#20FFDF','#30FFCF','#40FFBF',
-  '#50FFAF','#60FF9F','#70FF8F','#80FF80',
-  '#8FFF70','#9FFF60','#AFFF50','#BFFF40',
-  '#CFFF30','#DFFF20','#EFFF10','#FFFF00',
-  '#FFEF00','#FFDF00','#FFCF00','#FFBF00',
-  '#FFAF00','#FF9F00','#FF8F00','#FF8000',
-  '#FF7000','#FF6000','#FF5000','#FF4000',
-  '#FF3000','#FF2000','#FF1000','#FF0000',
-  '#EF0000','#DF0000','#CF0000','#BF0000',
-  '#AF0000','#9F0000','#8F0000','#800000'
+  '#00008F',
+  '#00009F',
+  '#0000AF',
+  '#0000BF',
+  '#0000CF',
+  '#0000DF',
+  '#0000EF',
+  '#0000FF',
+  '#0010FF',
+  '#0020FF',
+  '#0030FF',
+  '#0040FF',
+  '#0050FF',
+  '#0060FF',
+  '#0070FF',
+  '#0080FF',
+  '#008FFF',
+  '#009FFF',
+  '#00AFFF',
+  '#00BFFF',
+  '#00CFFF',
+  '#00DFFF',
+  '#00EFFF',
+  '#00FFFF',
+  '#10FFEF',
+  '#20FFDF',
+  '#30FFCF',
+  '#40FFBF',
+  '#50FFAF',
+  '#60FF9F',
+  '#70FF8F',
+  '#80FF80',
+  '#8FFF70',
+  '#9FFF60',
+  '#AFFF50',
+  '#BFFF40',
+  '#CFFF30',
+  '#DFFF20',
+  '#EFFF10',
+  '#FFFF00',
+  '#FFEF00',
+  '#FFDF00',
+  '#FFCF00',
+  '#FFBF00',
+  '#FFAF00',
+  '#FF9F00',
+  '#FF8F00',
+  '#FF8000',
+  '#FF7000',
+  '#FF6000',
+  '#FF5000',
+  '#FF4000',
+  '#FF3000',
+  '#FF2000',
+  '#FF1000',
+  '#FF0000',
+  '#EF0000',
+  '#DF0000',
+  '#CF0000',
+  '#BF0000',
+  '#AF0000',
+  '#9F0000',
+  '#8F0000',
+  '#800000',
 ];
 
 const utils = new Utils();
 
-
 export class Charts {
-
   public elemObject: any;
   public perfDataTable: google.visualization.DataTable;
   public cumulDataTable: google.visualization.DataTable;
@@ -84,10 +130,8 @@ export class Charts {
   public objPerfPlot: google.visualization.ColumnChart;
   public objPerfPlotOptions: google.visualization.ColumnChartOptions;
 
-
   private vitals: any;
   private nTrials: number;
-
 
   constructor(elemObj: any) {
     this.elemObject = elemObj;
@@ -108,8 +152,8 @@ export class Charts {
       numReward: 0,
       rfidTag: '',
       rfidTime: 0,
-      tagCount: {}
-    }
+      tagCount: {},
+    };
   }
 
   public setupDataTables() {
@@ -123,7 +167,6 @@ export class Charts {
     this.objPerfDataTable = new google.visualization.DataTable();
     this.realtimeDataTable = new google.visualization.DataTable();
     this.rtData = {};
-
   }
 
   public async setupCharts() {
@@ -131,63 +174,57 @@ export class Charts {
     this.setupChartOptions();
     this.setupDataTables();
 
-    this.perfDashboard = (
-      new google.visualization.Dashboard(this.elemObject.perfDiv)
+    this.perfDashboard = new google.visualization.Dashboard(
+      this.elemObject.perfDiv
     );
-    this.perfPlot = (
-      new google.visualization.ChartWrapper(this.perfPlotConfig)
-    );
-    this.perfFilter = (
-      new google.visualization.ControlWrapper(this.perfFilterConfig)
+    this.perfPlot = new google.visualization.ChartWrapper(this.perfPlotConfig);
+    this.perfFilter = new google.visualization.ControlWrapper(
+      this.perfFilterConfig
     );
 
-    this.trialDashboard = (
-      new google.visualization.Dashboard(this.elemObject.trialDiv)
+    this.trialDashboard = new google.visualization.Dashboard(
+      this.elemObject.trialDiv
     );
-    this.trialPlot = (
-      new google.visualization.ChartWrapper(this.trialPlotConfig)
+    this.trialPlot = new google.visualization.ChartWrapper(
+      this.trialPlotConfig
     );
-    this.trialFilter = (
-      new google.visualization.ControlWrapper(this.trialFilterConfig)
+    this.trialFilter = new google.visualization.ControlWrapper(
+      this.trialFilterConfig
     );
 
-    this.healthDashboard = (
-      new google.visualization.Dashboard(this.elemObject.healthDiv)
+    this.healthDashboard = new google.visualization.Dashboard(
+      this.elemObject.healthDiv
     );
-    this.healthPlot = (
-      new google.visualization.ChartWrapper(this.healthPlotConfig)
+    this.healthPlot = new google.visualization.ChartWrapper(
+      this.healthPlotConfig
     );
-    this.healthFilter = (
-      new google.visualization.ControlWrapper(this.healthFilterConfig)
+    this.healthFilter = new google.visualization.ControlWrapper(
+      this.healthFilterConfig
     );
 
     this.perfDashboard.bind(this.perfFilter, this.perfPlot);
     this.trialDashboard.bind(this.trialFilter, this.trialPlot);
     this.healthDashboard.bind(this.healthFilter, this.healthPlot);
 
-    this.screenPlot = (
-      new google.visualization.ComboChart(this.elemObject.screenPlot)
+    this.screenPlot = new google.visualization.ComboChart(
+      this.elemObject.screenPlot
     );
     // this.realtimePlot = (
     //   new google.visualization.ChartWrapper(this.realtimePlotConfig)
     // );
-    this.rxnPlot = (
-      new google.visualization.Histogram(this.elemObject.rxnPlot)
+    this.rxnPlot = new google.visualization.Histogram(this.elemObject.rxnPlot);
+    this.rewardPlot = new google.visualization.ColumnChart(
+      this.elemObject.rewardPlot
     );
-    this.rewardPlot = (
-      new google.visualization.ColumnChart(this.elemObject.rewardPlot)
+    this.choicePlot = new google.visualization.ColumnChart(
+      this.elemObject.choicePlot
     );
-    this.choicePlot = (
-      new google.visualization.ColumnChart(this.elemObject.choicePlot)
+    this.objPerfPlot = new google.visualization.ColumnChart(
+      this.elemObject.objPerfPlot
     );
-    this.objPerfPlot = (
-      new google.visualization.ColumnChart(this.elemObject.objPerfPlot)
-    );
-
   }
 
   public setupChartOptions() {
-    
     this.perfPlotOptions = {
       width: this.elemObject.perfPlot.clientWidth,
       height: this.elemObject.perfPlot.clientHeight,
@@ -196,18 +233,18 @@ export class Charts {
       animation: {
         duration: 500,
         easing: 'linear',
-        startup: true
+        startup: true,
       },
       series: {
         0: { color: '#43459d' },
-        1: { color: '#e2431e' }
-      }
+        1: { color: '#e2431e' },
+      },
     };
 
     this.perfPlotConfig = {
       chartType: 'LineChart',
       containerId: 'performance-plot',
-      options: this.perfPlotOptions
+      options: this.perfPlotOptions,
     };
     this.perfFilterOptions = {
       filterColumnLabel: 'currentTrial',
@@ -219,28 +256,28 @@ export class Charts {
           vAxis: { title: '%', viewWindow: { min: 0, max: 1.0 } },
           width: this.elemObject.perfFilter.clientWidth,
           height: this.elemObject.perfFilter.clientHeight,
-          animation: { duration: 1000, easing: 'out' }
+          animation: { duration: 1000, easing: 'out' },
         },
         chartView: {
-          columns: [0, 1]
+          columns: [0, 1],
         },
-        minRangeSize: 2
-      }
+        minRangeSize: 2,
+      },
     };
     this.perfFilterConfig = {
       controlType: 'ChartRangeFilter',
       containerId: 'performance-filter',
       state: { range: { start: 0, end: 100 } },
-      options: this.perfFilterOptions 
+      options: this.perfFilterOptions,
     };
     this.trialPlotOptions = {
       width: this.elemObject.trialPlot.clientWidth,
       height: this.elemObject.trialPlot.clientHeight,
       areaOpacity: 0.5,
-      hAxis: { title: 'Time (h) '},
+      hAxis: { title: 'Time (h) ' },
       vAxes: {
         0: { title: 'Trial count' },
-        1: { title: 'RFID'}
+        1: { title: 'RFID' },
       },
       animation: {
         duration: 500,
@@ -249,13 +286,13 @@ export class Charts {
       series: {
         0: { targetAxisIndex: 0 },
         1: { targetAxisIndex: 0 },
-        2: { targetAxisIndex: 1 }
-      }
+        2: { targetAxisIndex: 1 },
+      },
     };
     this.trialPlotConfig = {
       chartType: 'AreaChart',
       containerId: 'trial-plot',
-      options: this.trialPlotOptions
+      options: this.trialPlotOptions,
     };
     this.trialFilterOptions = {
       filterColumnLabel: 'time',
@@ -266,23 +303,19 @@ export class Charts {
           vAxis: { title: '#' },
           width: this.elemObject.trialFilter.clientWidth,
           height: this.elemObject.trialFilter.clientHeight,
-          animation: { duration: 1000, easing: 'out' }
-        }
+          animation: { duration: 1000, easing: 'out' },
+        },
       },
       chartView: {
-        columns: [0, 1]
-      }
+        columns: [0, 1],
+      },
     };
     this.trialFilterConfig = {
       controlType: 'ChartRangeFilter',
       containerId: 'trial-filter',
       state: { range: { start: 0, end: 100 } },
-      options: this.trialFilterOptions
+      options: this.trialFilterOptions,
     };
-
-
-
-
 
     this.healthPlotOptions = {
       width: this.elemObject.healthPlot.clientWidth,
@@ -299,7 +332,7 @@ export class Charts {
     this.healthPlotConfig = {
       chartType: 'ScatterChart',
       containerId: 'health-plot',
-      options: this.healthPlotOptions
+      options: this.healthPlotOptions,
     };
     this.healthFilterOptions = {
       filterColumnLabel: 'trial',
@@ -312,38 +345,15 @@ export class Charts {
           width: this.elemObject.healthFilter.clientWidth,
           height: this.elemObject.healthFilter.clientHeight,
           // animation: { duration: 1000, easing: 'linear' }
-        }
-      }
+        },
+      },
     };
     this.healthFilterConfig = {
       controlType: 'ChartRangeFilter',
       containerId: 'health-filter',
       state: { range: { start: 0, end: 100 } },
-      options: this.healthFilterOptions 
+      options: this.healthFilterOptions,
     };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     // this.healthPlotOptions = {
     //   width: this.elemObject.healthPlot.clientWidth,
@@ -382,10 +392,9 @@ export class Charts {
     //   options: this.healthFilterOptions
     // };
 
-
     this.screenPlotOptions = {
       seriesType: 'scatter',
-      pointSize: 1
+      pointSize: 1,
     };
     this.rxnPlotOptions = {
       width: this.elemObject.rxnPlot.clientWidth,
@@ -394,9 +403,9 @@ export class Charts {
       animation: {
         duration: 500,
         easing: 'linear',
-        startup: true
+        startup: true,
       },
-      legend: { position: 'none' }
+      legend: { position: 'none' },
     };
     this.rewardPlotOptions = {
       width: this.elemObject.rewardPlot.clientWidth,
@@ -404,14 +413,14 @@ export class Charts {
       title: 'Amount of Reward',
       hAxis: { title: 'reward amount' },
       vAxis: { title: 'counts', minValue: 0, maxValue: 1 },
-      legend: { position: 'none' }
+      legend: { position: 'none' },
     };
     this.choicePlotOptions = {
       width: this.elemObject.choicePlot.clientWidth,
       height: this.elemObject.choicePlot.clientHeight,
-      hAxis: { title: 'Choice', },
+      hAxis: { title: 'Choice' },
       vAxis: { title: 'counts', minValue: 0, maxValue: 1 },
-      legend: { position: 'none' }
+      legend: { position: 'none' },
     };
     this.objPerfPlotOptions = {
       width: this.elemObject.objPerfPlot.clientWidth,
@@ -419,62 +428,79 @@ export class Charts {
       hAxis: { title: 'Objects' },
       vAxis: { title: 'counts', minValue: 0, maxValue: 1 },
       title: 'Object Performance',
-      legend: { position: 'none' }
+      legend: { position: 'none' },
     };
-
   }
 
   public initializeChartData(file: FileType, plotOptions: any) {
     // Remove rows and columns
     // console.log(this.perfDataTable);
-    this.perfDataTable
-      .removeRows(0, this.perfDataTable.getNumberOfRows());
-    this.perfDataTable
-      .removeColumns(0, this.perfDataTable.getNumberOfColumns());
+    this.perfDataTable.removeRows(0, this.perfDataTable.getNumberOfRows());
+    this.perfDataTable.removeColumns(
+      0,
+      this.perfDataTable.getNumberOfColumns()
+    );
 
-    this.cumulDataTable
-      .removeRows(0, this.cumulDataTable.getNumberOfRows());
-    this.cumulDataTable
-      .removeColumns(0, this.cumulDataTable.getNumberOfColumns());
+    this.cumulDataTable.removeRows(0, this.cumulDataTable.getNumberOfRows());
+    this.cumulDataTable.removeColumns(
+      0,
+      this.cumulDataTable.getNumberOfColumns()
+    );
 
-    this.healthDataTable
-      .removeRows(0, this.healthDataTable.getNumberOfRows());
-    this.healthDataTable
-      .removeColumns(0, this.healthDataTable.getNumberOfColumns());
+    this.healthDataTable.removeRows(0, this.healthDataTable.getNumberOfRows());
+    this.healthDataTable.removeColumns(
+      0,
+      this.healthDataTable.getNumberOfColumns()
+    );
 
-    this.xyPosDataTable
-      .removeRows(0, this.xyPosDataTable.getNumberOfRows());
-    this.xyPosDataTable
-      .removeColumns(0, this.xyPosDataTable.getNumberOfColumns());
+    this.xyPosDataTable.removeRows(0, this.xyPosDataTable.getNumberOfRows());
+    this.xyPosDataTable.removeColumns(
+      0,
+      this.xyPosDataTable.getNumberOfColumns()
+    );
 
-    this.realtimeDataTable
-      .removeRows(0, this.realtimeDataTable.getNumberOfRows());
-    this.realtimeDataTable
-      .removeColumns(0, this.realtimeDataTable.getNumberOfColumns());
+    this.realtimeDataTable.removeRows(
+      0,
+      this.realtimeDataTable.getNumberOfRows()
+    );
+    this.realtimeDataTable.removeColumns(
+      0,
+      this.realtimeDataTable.getNumberOfColumns()
+    );
     this.realtimePlotActive = false;
     this.realtimeRowDataAdded = false;
     this.rtData['test'] = [];
     this.rtData['choice'] = [];
 
-    this.rxnTimeDataTable
-      .removeRows(0, this.rxnTimeDataTable.getNumberOfRows());
-    this.rxnTimeDataTable
-      .removeColumns(0, this.rxnTimeDataTable.getNumberOfColumns());
+    this.rxnTimeDataTable.removeRows(
+      0,
+      this.rxnTimeDataTable.getNumberOfRows()
+    );
+    this.rxnTimeDataTable.removeColumns(
+      0,
+      this.rxnTimeDataTable.getNumberOfColumns()
+    );
 
-    this.rewardDataTable
-      .removeRows(0, this.rewardDataTable.getNumberOfRows());
-    this.rewardDataTable
-      .removeColumns(0, this.rewardDataTable.getNumberOfColumns());
+    this.rewardDataTable.removeRows(0, this.rewardDataTable.getNumberOfRows());
+    this.rewardDataTable.removeColumns(
+      0,
+      this.rewardDataTable.getNumberOfColumns()
+    );
 
-    this.choiceDataTable
-      .removeRows(0, this.choiceDataTable.getNumberOfRows());
-    this.choiceDataTable
-      .removeColumns(0, this.choiceDataTable.getNumberOfColumns());
+    this.choiceDataTable.removeRows(0, this.choiceDataTable.getNumberOfRows());
+    this.choiceDataTable.removeColumns(
+      0,
+      this.choiceDataTable.getNumberOfColumns()
+    );
 
-    this.objPerfDataTable
-      .removeRows(0, this.objPerfDataTable.getNumberOfRows());
-    this.objPerfDataTable
-      .removeColumns(0, this.objPerfDataTable.getNumberOfColumns());
+    this.objPerfDataTable.removeRows(
+      0,
+      this.objPerfDataTable.getNumberOfRows()
+    );
+    this.objPerfDataTable.removeColumns(
+      0,
+      this.objPerfDataTable.getNumberOfColumns()
+    );
 
     // Add columns
     this.perfDataTable.addColumn('number', 'currentTrial');
@@ -490,7 +516,7 @@ export class Charts {
     this.rxnTimeDataTable.addColumn('string', 'success');
     this.rxnTimeDataTable.addColumn('number', 'durationMS');
 
-    /** 
+    /**
      * xyPosDataTable Guide
      * 0: x
      * 1: y fix (box)
@@ -521,15 +547,14 @@ export class Charts {
       this.realtimeDataTable.addColumn('number', 'differentY');
     }
 
-
     this.xyPosDataTable.addColumn('number', 'Fix_Reward');
     this.xyPosDataTable.addColumn('number', 'Fix_Punish');
     this.xyPosDataTable.addColumn('number', 'Target_Reward');
     this.xyPosDataTable.addColumn('number', 'Target_Punish');
 
     this.realtimeDataTable.addColumn('number', 'curY');
-    this.realtimeDataTable.addColumn({'type': 'string', 'role': 'style'});
-    
+    this.realtimeDataTable.addColumn({ type: 'string', role: 'style' });
+
     this.rewardDataTable.addColumn('string', 'reard size');
     this.rewardDataTable.addColumn('number', 'nrewards');
 
@@ -546,7 +571,6 @@ export class Charts {
     this.healthDataTable.addColumn('number', 'eye interval');
 
     this.updatePlots(file, plotOptions);
-
   }
 
   public updatePlots(file: FileType, plotOptions: any) {
@@ -554,7 +578,7 @@ export class Charts {
     if (!_.isUndefined(file.data)) {
       fileData = file.data;
     } else {
-      throw 'file.data is Undefined'
+      throw 'file.data is Undefined';
     }
     console.log('plot updated');
     this.loadVitals(file);
@@ -580,7 +604,6 @@ export class Charts {
       this.drawRealtimePlot2(fileData);
       this.realtimePlotActive = true;
     }
-
   }
 
   private loadVitals(file: FileType) {
@@ -593,11 +616,11 @@ export class Charts {
 
     this.vitals.subject = data.Subject;
     this.vitals.trials = data.Response.length;
-    
+
     // Convert milliseconds to minutes
     let startTime = data.StartTime;
-    this.vitals.time = (
-      _.round(_.round(_.toNumber(_.last(startTime)) - startTime[0]) / 60000)
+    this.vitals.time = _.round(
+      _.round(_.toNumber(_.last(startTime)) - startTime[0]) / 60000
     );
 
     /**
@@ -612,9 +635,9 @@ export class Charts {
     let rfidTag = data.RFIDTag;
     if (!_.isUndefined(rfidTag) && _.size(rfidTag) > 0) {
       this.vitals.rfidTag = rfidTag[_.size(rfidTag) - 1][2];
-      this.vitals.rfidTime = (
-        new Date(rfidTag[_.size(rfidTag) - 1][1]).toLocaleTimeString('en-US')
-      );
+      this.vitals.rfidTime = new Date(
+        rfidTag[_.size(rfidTag) - 1][1]
+      ).toLocaleTimeString('en-US');
     } else {
       this.vitals.rfidTag = null;
       this.vitals.rfidTime = null;
@@ -643,8 +666,8 @@ export class Charts {
     let battery = data.Battery;
     if (!_.isUndefined(battery) && _.size(battery) > 0) {
       this.vitals.batteryLeft = _.round(battery[_.size(battery) - 1][2] * 100);
-      this.vitals.batteryUsed = (
-        _.round(battery[0][2] * 100 - this.vitals.batteryLeft)
+      this.vitals.batteryUsed = _.round(
+        battery[0][2] * 100 - this.vitals.batteryLeft
       );
     } else {
       this.vitals.batteryLeft = null;
@@ -658,55 +681,48 @@ export class Charts {
         numCorrect++;
       }
     }
-    
+
     this.vitals.numCorrect = numCorrect;
-    this.vitals.pctCorrect = (
-      _.round(100 * numCorrect / data.Response.length)
-    );
+    this.vitals.pctCorrect = _.round((100 * numCorrect) / data.Response.length);
 
     if (!_.isUndefined(data.NReward)) {
-      this.vitals.numReward = (
-        data.NReward.reduce((a: number, b: number) => { 
-          return a + b;
-        }, 0)
-      );
+      this.vitals.numReward = data.NReward.reduce((a: number, b: number) => {
+        return a + b;
+      }, 0);
     }
 
     this.vitals.rewardEstimate = 0;
     if (!_.isUndefined(data.RewardPer1000Trials)) {
-      this.vitals.rewardEstimate = (
-        _.round(data.RewardPer1000Trials * this.vitals.numReward / 1000)
+      this.vitals.rewardEstimate = _.round(
+        (data.RewardPer1000Trials * this.vitals.numReward) / 1000
       );
     }
-
   }
 
   private loadVitalsText(file: FileType) {
-    this.elemObject.perfVitals.innerHTML = (
-      `${this.vitals.subject}: ${this.vitals.pctCorrect}% (n = ${this.vitals.numCorrect} out of ${this.vitals.trials}, r=${this.vitals.numReward}=${this.vitals.rewardEstimate}mL, ${this.vitals.time} mins)` 
-    );
+    this.elemObject.perfVitals.innerHTML = `${this.vitals.subject}: ${this.vitals.pctCorrect}% (n = ${this.vitals.numCorrect} out of ${this.vitals.trials}, r=${this.vitals.numReward}=${this.vitals.rewardEstimate}mL, ${this.vitals.time} mins)`;
 
     // TODO: add this.vitals.tagCount data
-    this.elemObject.rfidVitals.innerHTML = (
-      `RFID: ${this.vitals.rfidTag} (${this.vitals.rfidTime})`
-    );
+    this.elemObject.rfidVitals.innerHTML = `RFID: ${this.vitals.rfidTag} (${this.vitals.rfidTime})`;
 
-    this.elemObject.batteryVitals.innerHTML = (
-      `Battery: ${this.vitals.batteryLeft}% (-${this.vitals.batteryUsed}%)`
-    );
+    this.elemObject.batteryVitals.innerHTML = `Battery: ${this.vitals.batteryLeft}% (-${this.vitals.batteryUsed}%)`;
 
-    this.elemObject.trialVitals.innerHTML = (
-      `Last Trial: ${file.dateSaved!.toLocaleTimeString('en-US')}`
-    );
+    this.elemObject.trialVitals.innerHTML = `Last Trial: ${file.dateSaved!.toLocaleTimeString(
+      'en-US'
+    )}`;
   }
 
   private loadTouchSDText() {
     try {
-      this.screenPlotOptions.title = `Touch Locations -- standard dev: \n Fixation: ${Math.round(this.vitals.stdevFix * 10) / 10} pixels`;
+      this.screenPlotOptions.title = `Touch Locations -- standard dev: \n Fixation: ${
+        Math.round(this.vitals.stdevFix * 10) / 10
+      } pixels`;
       for (let i = 0; i < this.vitals.stdevTest.length; i++) {
-        this.screenPlotOptions.title = this.screenPlotOptions.title + `\n Target ${i}: ${Math.round(this.vitals.stdevTest[i] * 10) / 10}`; 
+        this.screenPlotOptions.title =
+          this.screenPlotOptions.title +
+          `\n Target ${i}: ${Math.round(this.vitals.stdevTest[i] * 10) / 10}`;
       }
-    } catch(err) {
+    } catch (err) {
       console.error('Error loading touch SD text', err);
     }
   }
@@ -720,15 +736,13 @@ export class Charts {
       throw 'file.data is Undefined';
     }
 
-    this.perfDataTable.removeRows(
-      0, this.perfDataTable.getNumberOfRows()
+    this.perfDataTable.removeRows(0, this.perfDataTable.getNumberOfRows());
+    this.cumulDataTable.removeRows(0, this.cumulDataTable.getNumberOfRows());
+    this.rxnTimeDataTable.removeRows(
+      0,
+      this.rxnTimeDataTable.getNumberOfRows()
     );
-    this.cumulDataTable
-      .removeRows(0, this.cumulDataTable.getNumberOfRows());
-    this.rxnTimeDataTable
-      .removeRows(0, this.rxnTimeDataTable.getNumberOfRows());
-    this.xyPosDataTable
-      .removeRows(0, this.xyPosDataTable.getNumberOfRows());
+    this.xyPosDataTable.removeRows(0, this.xyPosDataTable.getNumberOfRows());
 
     // Create Data Table
     let xData = [];
@@ -766,28 +780,22 @@ export class Charts {
     for (let i = 0; i < data.NReward.length; i++) {
       if (data.RewardStage == 0) {
         rt[i] = data.FixationXYT[2][i] - data.StartTime[i];
-        this.rxnTimeDataTable.addRows(
-          [[file.data.FixationTouchEvent[i], rt[i]]]
-        );
+        this.rxnTimeDataTable.addRows([
+          [file.data.FixationTouchEvent[i], rt[i]],
+        ]);
       } else if (data.NRSVP > 0) {
         rt[i] = data.SampleFixationXYT[2][i] - data.SampleStartTime[i];
-        this.rxnTimeDataTable.addRows(
-          [[data.SampleFixationTouchEvent[i], rt[i]]]
-        );
+        this.rxnTimeDataTable.addRows([
+          [data.SampleFixationTouchEvent[i], rt[i]],
+        ]);
       } else {
         rt[i] = data.ResponseXYT[2][i] - data.SampleStartTime[i];
         if (data.Response[i] == -1) {
-          this.rxnTimeDataTable.addRows(
-            [['timeout', data.ChoiceTimeOut]]
-          );
+          this.rxnTimeDataTable.addRows([['timeout', data.ChoiceTimeOut]]);
         } else if (data.CorrectItem[i] == data.Response[i]) {
-          this.rxnTimeDataTable.addRows(
-            [['correct', rt[i]]]
-          );
+          this.rxnTimeDataTable.addRows([['correct', rt[i]]]);
         } else {
-          this.rxnTimeDataTable.addRows(
-            [['wrong', rt[i]]]
-          );
+          this.rxnTimeDataTable.addRows([['wrong', rt[i]]]);
         }
       }
     }
@@ -801,9 +809,9 @@ export class Charts {
      * of file.data.FixationXYT or file.data.ResponseXYT
      */
     if (
-      !_.isUndefined(data.ResponseXYT) 
-      && _.size(data.ResponseXYT) > 0
-      && _.size(file.data.ResponseXYT[0]) > 0
+      !_.isUndefined(data.ResponseXYT) &&
+      _.size(data.ResponseXYT) > 0 &&
+      _.size(file.data.ResponseXYT[0]) > 0
     ) {
       for (let i = 0; i < _.size(data.FixationXYT[0]) * 2; i += 2) {
         touchevent[i] = [];
@@ -838,10 +846,10 @@ export class Charts {
     let choiceWidth = this.getChoiceWidth(file.data);
     let choiceHeight = choiceWidth;
 
-    /** 
+    /**
      * NOTE for positioning elements:
      * grid x, y is offset || fixation & response x, y is not
-    */
+     */
 
     // FIXATION
     let numDisplayElems = 1;
@@ -851,40 +859,34 @@ export class Charts {
     let maxFixationGridIndex = _.max(file.data.FixationGridIndex);
     if (_.isNumber(maxFixationGridIndex)) {
       fixX = file.data.XGridCenter[maxFixationGridIndex];
-      fixY = (
-        file.data.ViewportPixels[1] 
-        - (file.data.YGridCenter[maxFixationGridIndex] + file.data.offsettop)
-      );
+      fixY =
+        file.data.ViewportPixels[1] -
+        (file.data.YGridCenter[maxFixationGridIndex] + file.data.offsettop);
       // console.log('fixY', fixY);
     } else {
       throw 'data.FixationGridIndex is not of type number[]';
     }
 
-    this.generateAndAddRowData(
-      this.xyPosDataTable,
-      numColumnXYPos,
-      { 0: fixX - fixationWidth / 2, 1: fixY - fixationHeight / 2 }
-    );
-    this.generateAndAddRowData(
-      this.xyPosDataTable,
-      numColumnXYPos,
-      { 0: fixX + fixationWidth / 2, 1: fixY - fixationHeight / 2}
-    );
-    this.generateAndAddRowData(
-      this.xyPosDataTable,
-      numColumnXYPos,
-      { 0: fixX + fixationWidth / 2, 1: fixY + fixationHeight / 2}
-    );
-    this.generateAndAddRowData(
-      this.xyPosDataTable,
-      numColumnXYPos,
-      { 0: fixX - fixationWidth / 2, 1: fixY + fixationHeight / 2}
-    );
-    this.generateAndAddRowData(
-      this.xyPosDataTable,
-      numColumnXYPos,
-      { 0: fixX - fixationWidth / 2, 1: fixY - fixationHeight / 2}
-    );
+    this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+      0: fixX - fixationWidth / 2,
+      1: fixY - fixationHeight / 2,
+    });
+    this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+      0: fixX + fixationWidth / 2,
+      1: fixY - fixationHeight / 2,
+    });
+    this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+      0: fixX + fixationWidth / 2,
+      1: fixY + fixationHeight / 2,
+    });
+    this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+      0: fixX - fixationWidth / 2,
+      1: fixY + fixationHeight / 2,
+    });
+    this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+      0: fixX - fixationWidth / 2,
+      1: fixY - fixationHeight / 2,
+    });
 
     if (!this.realtimeRowDataAdded && !this.realtimePlotActive) {
       console.log('realtime not active');
@@ -892,7 +894,7 @@ export class Charts {
         x: fixX,
         y: fixY,
         width: fixationWidth,
-        height: fixationHeight
+        height: fixationHeight,
       };
     }
 
@@ -905,10 +907,9 @@ export class Charts {
     if (data.RewardStage > 0) {
       if (_.isNumber(maxSampleGridIndex)) {
         sampleX = data.XGridCenter[maxSampleGridIndex];
-        sampleY = (
-          data.ViewportPixels[1]
-          - (data.YGridCenter[maxSampleGridIndex] + data.offsettop)
-        );
+        sampleY =
+          data.ViewportPixels[1] -
+          (data.YGridCenter[maxSampleGridIndex] + data.offsettop);
       } else {
         throw 'data.SampleGridIndex is not of type number[]';
       }
@@ -917,38 +918,33 @@ export class Charts {
       sampleY = fixY;
     }
 
-    this.generateAndAddRowData(
-      this.xyPosDataTable,
-      numColumnXYPos,
-      { 0: sampleX - sampleWidth / 2, 2: sampleY - sampleHeight / 2 }
-    );
-    this.generateAndAddRowData(
-      this.xyPosDataTable,
-      numColumnXYPos,
-      { 0: sampleX + sampleWidth / 2, 2: sampleY - sampleHeight/ 2 }
-    );
-    this.generateAndAddRowData(
-      this.xyPosDataTable,
-      numColumnXYPos,
-      { 0: sampleX + sampleWidth / 2, 2: sampleY + sampleHeight / 2 }
-    );
-    this.generateAndAddRowData(
-      this.xyPosDataTable,
-      numColumnXYPos,
-      { 0: sampleX - sampleWidth / 2, 2: sampleY + sampleHeight/ 2 }
-    );
-    this.generateAndAddRowData(
-      this.xyPosDataTable,
-      numColumnXYPos,
-      { 0: sampleX - sampleWidth / 2, 2: sampleY - sampleHeight / 2 }
-    );
+    this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+      0: sampleX - sampleWidth / 2,
+      2: sampleY - sampleHeight / 2,
+    });
+    this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+      0: sampleX + sampleWidth / 2,
+      2: sampleY - sampleHeight / 2,
+    });
+    this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+      0: sampleX + sampleWidth / 2,
+      2: sampleY + sampleHeight / 2,
+    });
+    this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+      0: sampleX - sampleWidth / 2,
+      2: sampleY + sampleHeight / 2,
+    });
+    this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+      0: sampleX - sampleWidth / 2,
+      2: sampleY - sampleHeight / 2,
+    });
 
     if (!this.realtimeRowDataAdded && !this.realtimePlotActive) {
       this.rtData['sample'] = {
         x: sampleX,
         y: sampleY,
         width: sampleWidth,
-        height: sampleHeight
+        height: sampleHeight,
       };
     }
 
@@ -967,68 +963,48 @@ export class Charts {
         if (data.NRSVP > 0) {
           testX.push(data.XGridCenter[maxSampleGridIndex as number]);
           testY.push(
-            data.ViewportPixels[1]
-            - (data.YGridCenter[maxSampleGridIndex as number] + data.offsettop)
+            data.ViewportPixels[1] -
+              (data.YGridCenter[maxSampleGridIndex as number] + data.offsettop)
           );
         } else {
           testX.push(data.XGridCenter[data.TestGridIndex[i]]);
           testY.push(
-            data.ViewportPixels[1]
-            - (data.YGridCenter[data.TestGridIndex[i]] + data.offsettop)
+            data.ViewportPixels[1] -
+              (data.YGridCenter[data.TestGridIndex[i]] + data.offsettop)
           );
         }
 
-        this.generateAndAddRowData(
-          this.xyPosDataTable,
-          numColumnXYPos,
-          { 
-            0: testX[i] - testWidth / 2,
-            [numDisplayElems]: testY[i] - testHeight / 2
-          }
-        );
-        this.generateAndAddRowData(
-          this.xyPosDataTable,
-          numColumnXYPos,
-          { 
-            0: testX[i] + testWidth / 2,
-            [numDisplayElems]: testY[i] - testHeight / 2
-          }
-        );
-        this.generateAndAddRowData(
-          this.xyPosDataTable,
-          numColumnXYPos,
-          { 
-            0: testX[i] + testWidth / 2,
-            [numDisplayElems]: testY[i] + testHeight / 2
-          }
-        );
-        this.generateAndAddRowData(
-          this.xyPosDataTable,
-          numColumnXYPos,
-          { 
-            0: testX[i] - testWidth / 2,
-            [numDisplayElems]: testY[i] + testHeight / 2
-          }
-        );
-        this.generateAndAddRowData(
-          this.xyPosDataTable,
-          numColumnXYPos,
-          { 
-            0: testX[i] - testWidth / 2,
-            [numDisplayElems]: testY[i] - testHeight / 2
-          }
-        );
+        this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+          0: testX[i] - testWidth / 2,
+          [numDisplayElems]: testY[i] - testHeight / 2,
+        });
+        this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+          0: testX[i] + testWidth / 2,
+          [numDisplayElems]: testY[i] - testHeight / 2,
+        });
+        this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+          0: testX[i] + testWidth / 2,
+          [numDisplayElems]: testY[i] + testHeight / 2,
+        });
+        this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+          0: testX[i] - testWidth / 2,
+          [numDisplayElems]: testY[i] + testHeight / 2,
+        });
+        this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+          0: testX[i] - testWidth / 2,
+          [numDisplayElems]: testY[i] - testHeight / 2,
+        });
 
         if (!this.realtimeRowDataAdded && !this.realtimePlotActive) {
           let tmp = {
-              x: testX[i],
-              y: testY[i],
-              width: testWidth,
-              height: testHeight
-          }
+            x: testX[i],
+            y: testY[i],
+            width: testWidth,
+            height: testHeight,
+          };
           this.rtData['test'].push(tmp);
         }
-      } 
+      }
     }
 
     // CHOICE:
@@ -1040,63 +1016,40 @@ export class Charts {
         numDisplayElems++;
         choiceX.push(data.XGridCenter[data.ChoiceGridIndex[i]]);
         choiceY.push(
-          data.ViewportPixels[1]
-          - (data.YGridCenter[data.ChoiceGridIndex[i]] + data.offsettop)
+          data.ViewportPixels[1] -
+            (data.YGridCenter[data.ChoiceGridIndex[i]] + data.offsettop)
         );
 
-        this.generateAndAddRowData(
-          this.xyPosDataTable,
-          numColumnXYPos,
-          {
-            0: choiceX[i] - choiceWidth / 2,
-            [numDisplayElems]: choiceY[i] - choiceHeight / 2
-          }
-        );
-        this.generateAndAddRowData(
-          this.xyPosDataTable,
-          numColumnXYPos,
-          {
-            0: choiceX[i] + choiceWidth / 2,
-            [numDisplayElems]: choiceY[i] - choiceHeight / 2
-          }
-        );
-        this.generateAndAddRowData(
-          this.xyPosDataTable,
-          numColumnXYPos,
-          {
-            0: choiceX[i] + choiceWidth / 2,
-            [numDisplayElems]: choiceY[i] + choiceHeight / 2
-          }
-        );
-        this.generateAndAddRowData(
-          this.xyPosDataTable,
-          numColumnXYPos,
-          {
-            0: choiceX[i] - choiceWidth / 2,
-            [numDisplayElems]: choiceY[i] + choiceHeight / 2
-          }
-        );
-        this.generateAndAddRowData(
-          this.xyPosDataTable,
-          numColumnXYPos,
-          {
-            0: choiceX[i] - choiceWidth / 2,
-            [numDisplayElems]: choiceY[i] - choiceHeight / 2
-          }
-        );
-        
+        this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+          0: choiceX[i] - choiceWidth / 2,
+          [numDisplayElems]: choiceY[i] - choiceHeight / 2,
+        });
+        this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+          0: choiceX[i] + choiceWidth / 2,
+          [numDisplayElems]: choiceY[i] - choiceHeight / 2,
+        });
+        this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+          0: choiceX[i] + choiceWidth / 2,
+          [numDisplayElems]: choiceY[i] + choiceHeight / 2,
+        });
+        this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+          0: choiceX[i] - choiceWidth / 2,
+          [numDisplayElems]: choiceY[i] + choiceHeight / 2,
+        });
+        this.generateAndAddRowData(this.xyPosDataTable, numColumnXYPos, {
+          0: choiceX[i] - choiceWidth / 2,
+          [numDisplayElems]: choiceY[i] - choiceHeight / 2,
+        });
+
         // realtime not active
         if (!this.realtimeRowDataAdded && !this.realtimePlotActive) {
-          this.rtData['choice'].push(
-            {
-              x: choiceX[i],
-              y: choiceY[i],
-              width: choiceWidth,
-              height: choiceHeight
-            }
-          );
+          this.rtData['choice'].push({
+            x: choiceX[i],
+            y: choiceY[i],
+            width: choiceWidth,
+            height: choiceHeight,
+          });
         }
-        
       }
     }
     this.realtimeRowDataAdded = true;
@@ -1136,7 +1089,7 @@ export class Charts {
         } else {
           let testXPosArr: number[] = [];
           let testYPosArr: number[] = [];
-          
+
           for (let j = 0; j < _.size(data.TestGridIndex); j++) {
             if (data.Response[yDataIndex] == j) {
               testXPosArr.push(xPos);
@@ -1169,49 +1122,60 @@ export class Charts {
       let distFixYPos = fixYPos.map((a: number) => {
         return Math.pow(Math.abs(a - meanFixYPos), 2);
       });
-      let stdevFix = distFixXPos.map((a: number, idx: number) => {
-        return Math.sqrt(a + distFixYPos[idx]);
-      }).reduce((a: number, b: number) => {
-        return a + b;
-      }, 0) / _.size(distFixXPos);
+      let stdevFix =
+        distFixXPos
+          .map((a: number, idx: number) => {
+            return Math.sqrt(a + distFixYPos[idx]);
+          })
+          .reduce((a: number, b: number) => {
+            return a + b;
+          }, 0) / _.size(distFixXPos);
       this.vitals.stdevFix = stdevFix;
 
       let stdevTest: number[] = [];
       for (let j = 0; j < _.size(data.TestGridIndex); j++) {
-        let allTestXPos = testXPos.map((a: number[]) => {
-          return a[j];
-        }).filter((a: number) => {
-          return a != 0;
-        });
+        let allTestXPos = testXPos
+          .map((a: number[]) => {
+            return a[j];
+          })
+          .filter((a: number) => {
+            return a != 0;
+          });
 
-        let meanTestXPos = allTestXPos.reduce((a: number, b: number) => {
-          return a + b;
-        }, 0) / _.size(allTestXPos);
+        let meanTestXPos =
+          allTestXPos.reduce((a: number, b: number) => {
+            return a + b;
+          }, 0) / _.size(allTestXPos);
 
         let distTestXPos = allTestXPos.map((a: number) => {
           return Math.pow(Math.abs(a - meanTestXPos), 2);
         });
 
-        let allTestYPos = testYPos.map((a: number[]) => {
-          return a[j];
-        }).filter((a: number) => {
-          return a != 0;
-        });
+        let allTestYPos = testYPos
+          .map((a: number[]) => {
+            return a[j];
+          })
+          .filter((a: number) => {
+            return a != 0;
+          });
 
-        let meanTestYPos = allTestYPos.reduce((a: number, b: number) => {
-          return a + b;
-        }, 0) / _.size(allTestYPos);
+        let meanTestYPos =
+          allTestYPos.reduce((a: number, b: number) => {
+            return a + b;
+          }, 0) / _.size(allTestYPos);
 
         let distTestYPos = allTestYPos.map((a: number) => {
           return Math.pow(Math.abs(a - meanTestYPos), 2);
         });
 
         stdevTest.push(
-          distTestXPos.map((a: number, i: number) => {
-            return Math.sqrt(a + distTestYPos[i]);
-          }).reduce((a: number, b: number) => {
-            return a + b;
-          }, 0) / _.size(allTestXPos)
+          distTestXPos
+            .map((a: number, i: number) => {
+              return Math.sqrt(a + distTestYPos[i]);
+            })
+            .reduce((a: number, b: number) => {
+              return a + b;
+            }, 0) / _.size(allTestXPos)
         );
       }
       this.vitals.stdevTest = stdevTest;
@@ -1223,9 +1187,9 @@ export class Charts {
     // Calculate timeEnd
     let timeEnd: number;
     if (
-      _.isUndefined(data.ResponseXYT)
-      || _.size(data.ResponseXYT) < 1
-      || _.isUndefined(data.ResponseXYT[2][_.size(data.ResponseXYT[2]) -1])
+      _.isUndefined(data.ResponseXYT) ||
+      _.size(data.ResponseXYT) < 1 ||
+      _.isUndefined(data.ResponseXYT[2][_.size(data.ResponseXYT[2]) - 1])
     ) {
       timeEnd = data.FixationXYT[2][_.size(data.FixationXYT[2]) - 1];
     } else {
@@ -1252,7 +1216,7 @@ export class Charts {
 
     // Adding rest of the data
     for (let i = 0; i < _.size(yData); i++) {
-      let timeFix = data.FixationXYT[2][i] // in milliseconds
+      let timeFix = data.FixationXYT[2][i]; // in milliseconds
       if (timeFix < 0) {
         continue;
       }
@@ -1261,14 +1225,16 @@ export class Charts {
       t.setTime(t.getTime() - (timeEnd - timeFix));
 
       this.perfDataTable.addRows([[xData[i], yDataSmall[i], yDataLarge[i]]]);
-      this.cumulDataTable.addRows([[t, numTotal[i], numCorrect[i], numRFID[i]]]);
+      this.cumulDataTable.addRows([
+        [t, numTotal[i], numCorrect[i], numRFID[i]],
+      ]);
     }
     this.formatDate(this.cumulDataTable, 0);
   }
 
   private generateAndAddRowData(
-    target: google.visualization.DataTable, 
-    numColumns: number, 
+    target: google.visualization.DataTable,
+    numColumns: number,
     data: Record<number, number | string>
   ) {
     // console.log('data', data);
@@ -1298,24 +1264,23 @@ export class Charts {
         console.error(
           'SampleScenes[0].IMAGES.sizeInches is not an array. Please fix!'
         );
-        sampleWidth = (
-          fileData.SampleScenes[0].IMAGES.sizeInches * fileData.ViewportPPI
-        );
+        sampleWidth =
+          fileData.SampleScenes[0].IMAGES.sizeInches * fileData.ViewportPPI;
       }
     } else {
       let firstKey = _.findKey(fileData.SampleScenes[0].OBJECTS);
       if (_.isString(firstKey)) {
-        let maxSizeInches = (
-          _.max(fileData.SampleScenes[0].OBJECTS[firstKey].sizeInches)
+        let maxSizeInches = _.max(
+          fileData.SampleScenes[0].OBJECTS[firstKey].sizeInches
         );
         if (_.isNumber(maxSizeInches)) {
           sampleWidth = maxSizeInches * fileData.ViewportPPI;
-        } 
+        }
       } else {
         console.error(
           'firstKey of SampleScenes[0].OBJECTS is not of type string'
         );
-      }  
+      }
     }
     return sampleWidth;
   }
@@ -1337,15 +1302,14 @@ export class Charts {
         console.error(
           'TestScenes[0].IMAGES.sizeInches is not an array. Please fix!'
         );
-        testWidth = (
-          fileData.TestScenes[0].IMAGES.sizeInches * fileData.ViewportPPI
-        );
+        testWidth =
+          fileData.TestScenes[0].IMAGES.sizeInches * fileData.ViewportPPI;
       }
     } else {
       let firstKey = _.findKey(fileData.TestScenes[0].OBJECTS);
       if (_.isString(firstKey)) {
-        let maxSizeInches = (
-          _.max(fileData.TestScenes[0].OBJECTS[firstKey].sizeInches)
+        let maxSizeInches = _.max(
+          fileData.TestScenes[0].OBJECTS[firstKey].sizeInches
         );
         if (_.isNumber(maxSizeInches)) {
           testWidth = maxSizeInches * fileData.ViewportPPI;
@@ -1377,10 +1341,7 @@ export class Charts {
 
   private getChoiceWidth(fileData: LiveplotDataType) {
     let choiceWidth = 0;
-    if (
-      !_.isUndefined(fileData.SameDifferent)
-      && fileData.SameDifferent > 0
-    ) {
+    if (!_.isUndefined(fileData.SameDifferent) && fileData.SameDifferent > 0) {
       choiceWidth = fileData.ChoiceSizeInches * fileData.ViewportPPI;
     }
     return choiceWidth;
@@ -1388,9 +1349,10 @@ export class Charts {
 
   private loadObjPerfData(data: LiveplotDataType) {
     this.objPerfDataTable.removeRows(
-      0, this.objPerfDataTable.getNumberOfRows()
+      0,
+      this.objPerfDataTable.getNumberOfRows()
     );
-  
+
     let lenSampleObj: number;
     if (data.RewardStage == 1) {
       let sampleObj = [];
@@ -1408,7 +1370,8 @@ export class Charts {
 
       let NDiffObjPerf = _.fill(Array(lenSampleObj), 0);
       let NDiffObj = _.fill(Array(lenSampleObj), 0);
-      for (let i = 0; i < _.size(data.Sample[0]); i++) { // For i trials
+      for (let i = 0; i < _.size(data.Sample[0]); i++) {
+        // For i trials
         for (let j = 0; j < lenSampleObj; j++) {
           // If sample was that object
           if (data.SampleBagIdx[data.Sample[0][i]] == j) {
@@ -1426,15 +1389,15 @@ export class Charts {
 
   private loadChoiceData(data: LiveplotDataType) {
     this.choiceDataTable.removeRows(0, this.choiceDataTable.getNumberOfRows());
-    
+
     if (data.RewardStage != 0) {
       // let possibleResp = _.fill(Array(_.size(data.ObjectGridIndex)), 0);
       let possibleResp = [];
-      
+
       if (
-        _.size(data.ObjectGridIndex) != 0
-        && (_.isUndefined(data.NTrialsPerBagBlock) 
-        || data.NTrialsPerBagBlock < 1000)
+        _.size(data.ObjectGridIndex) != 0 &&
+        (_.isUndefined(data.NTrialsPerBagBlock) ||
+          data.NTrialsPerBagBlock < 1000)
       ) {
         let objGridIndex = _.cloneDeep(data.ObjectGridIndex);
         objGridIndex.sort((a: number, b: number) => {
@@ -1444,9 +1407,10 @@ export class Charts {
         for (let i = 0; i < _.size(objGridIndex); i++) {
           // allind.push(_.findIndex(data.ObjectGridIndex, objGridIndex[i]));
           allind.push(data.ObjectGridIndex.indexOf(objGridIndex[i]));
-          this.choiceDataTable.addRow(
-            [data.ImageBagsSample[allind[i]].split('/')[5], 0]
-          );
+          this.choiceDataTable.addRow([
+            data.ImageBagsSample[allind[i]].split('/')[5],
+            0,
+          ]);
           possibleResp.push(i);
         }
       } else {
@@ -1518,7 +1482,9 @@ export class Charts {
       if (data.Response[i] == -1) {
         NDiffReward[0]++;
         this.rewardDataTable.setValue(
-          0, 1, NDiffReward[0] / _.size(data.NReward)
+          0,
+          1,
+          NDiffReward[0] / _.size(data.NReward)
         );
       } else {
         for (let j = 1; j < _.size(NRewardMax); j++) {
@@ -1526,7 +1492,9 @@ export class Charts {
             NDiffReward[j]++;
           }
           this.rewardDataTable.setValue(
-            j, 1, NDiffReward[j] / _.size(data.NReward)
+            j,
+            1,
+            NDiffReward[j] / _.size(data.NReward)
           );
         }
       }
@@ -1537,9 +1505,10 @@ export class Charts {
     // console.log('[loadHealthData::fileData]', data);
     this.healthDataTable.removeRows(0, this.healthDataTable.getNumberOfRows());
 
-    if (data.Eye.TrackEye > 0 && data.RewardStage > 0) { // EYETRACKING
+    if (data.Eye.TrackEye > 0 && data.RewardStage > 0) {
+      // EYETRACKING
       let lastIdx = Object.keys(data.TSequenceActualClip).length - 1;
-      
+
       for (let i = 0; i < data.TSequenceActualClip[lastIdx].length; i++) {
         let dt: any;
         let dt2: any;
@@ -1547,20 +1516,17 @@ export class Charts {
         if (data.TSequenceActualClip[lastIdx][i] < 0) {
           dt = null;
         } else {
-          dt = (
-            data.TSequenceActualClip[lastIdx][i]
-            - data.TSequenceDesiredClip[lastIdx][i]
-          );
+          dt =
+            data.TSequenceActualClip[lastIdx][i] -
+            data.TSequenceDesiredClip[lastIdx][i];
           dt = Math.abs(Math.round(dt));
         }
 
         if (data.TSequenceActualClip[1][i] < 0) {
           dt2 = null;
         } else {
-          dt2 = (
-            data.TSequenceActualClip[1][i]
-            - data.TSequenceDesiredClip[1][i]
-          );
+          dt2 =
+            data.TSequenceActualClip[1][i] - data.TSequenceDesiredClip[1][i];
           dt2 = Math.abs(Math.round(dt2));
         }
 
@@ -1580,45 +1546,37 @@ export class Charts {
         //   );
         //   dt2 = Math.abs(Math.round(dt2));
         // }
-        
+
         let sampleCmdInterval: any;
         if (
-          data.SampleCommandReturnTime[i] == null
-          || data.SampleCommandReturnTime[i] < 0
-          || data.SampleCommandReturnTime[i] === undefined
+          data.SampleCommandReturnTime[i] == null ||
+          data.SampleCommandReturnTime[i] < 0 ||
+          data.SampleCommandReturnTime[i] === undefined
         ) {
           sampleCmdInterval = null;
         } else {
-          sampleCmdInterval = (
-            data.SampleCommandReturnTime[i] - data.SampleStartTime[i]
-          );  
+          sampleCmdInterval =
+            data.SampleCommandReturnTime[i] - data.SampleStartTime[i];
         }
-        
-        this.healthDataTable.addRows(
-          [[i, sampleCmdInterval, dt, dt2, data.EyetrackerSampleInterval[i]]]
-        );
+
+        this.healthDataTable.addRows([
+          [i, sampleCmdInterval, dt, dt2, data.EyetrackerSampleInterval[i]],
+        ]);
       }
     } else if (data.Eye.TrackEye == 0 && data.RewardStage > 0) {
       let lastIdx = Object.keys(data.TSequenceActualClip).length - 1;
       for (let i = 0; i < data.TSequenceActualClip[lastIdx].length; i++) {
-        let dt = (
-          data.TSequenceActualClip[lastIdx][i]
-          - data.TSequenceDesiredClip[lastIdx][i]
-        );
+        let dt =
+          data.TSequenceActualClip[lastIdx][i] -
+          data.TSequenceDesiredClip[lastIdx][i];
         dt = Math.abs(Math.round(dt));
 
-        let dt2 = (
-          data.TSequenceActualClip[1][i]
-          - data.TSequenceDesiredClip[1][i]
-        );
+        let dt2 =
+          data.TSequenceActualClip[1][i] - data.TSequenceDesiredClip[1][i];
         dt2 = Math.abs(Math.round(dt2));
-        this.healthDataTable.addRows(
-          [[i, null, dt, dt2, null]]
-        );
-        
+        this.healthDataTable.addRows([[i, null, dt, dt2, null]]);
       }
     }
-
   }
 
   private drawPerformancePlot(file: FileType) {
@@ -1631,7 +1589,7 @@ export class Charts {
       if (numRows <= 100) {
         // expand window size automatically up to 100
         perfFilterState.range.start = 0;
-        perfFilterState.range.end = numRows; 
+        perfFilterState.range.end = numRows;
       } else {
         let dTrials = numRows - _.size(file.data?.FixationGridIndex);
         console.log('dtrials', dTrials);
@@ -1651,8 +1609,8 @@ export class Charts {
     this.perfFilter.setState({
       range: {
         start: perfFilterState.range.start,
-        end: perfFilterState.range.end
-      }
+        end: perfFilterState.range.end,
+      },
     });
     this.perfDashboard.draw(this.perfDataTable);
   }
@@ -1684,8 +1642,8 @@ export class Charts {
     this.healthFilter.setState({
       range: {
         start: healthFilterState.range.start,
-        end: healthFilterState.range.end
-      }
+        end: healthFilterState.range.end,
+      },
     });
     this.healthDashboard.draw(this.healthDataTable);
   }
@@ -1703,8 +1661,8 @@ export class Charts {
     this.trialFilter.setState({
       range: {
         start: trialFilterState.range.start,
-        end: trialFilterState.range.end
-      }
+        end: trialFilterState.range.end,
+      },
     });
     this.trialPlot.setOptions(this.trialPlotOptions);
     this.trialDashboard.draw(this.cumulDataTable);
@@ -1733,64 +1691,76 @@ export class Charts {
       width: data.workspace[2] * data.CanvasRatio,
       height: data.ViewportPixels[1] - data.offsettop,
       legend: {
-        position: 'top'
+        position: 'top',
       },
       hAxis: {
         title: 'X position (px)',
         viewWindow: {
           min: 0,
-          max: data.workspace[2] * data.CanvasRatio
-        }
+          max: data.workspace[2] * data.CanvasRatio,
+        },
       },
       vAxis: {
         title: 'Y position (px)',
         viewWindow: {
           min: 0,
-          max: data.ViewportPixels[1] - data.offsettop
-        }
-      }
+          max: data.ViewportPixels[1] - data.offsettop,
+        },
+      },
     };
     this.realtimePlotOptions.hAxis = {
       title: 'X position (px)',
       viewWindow: {
         min: 0,
-        max: data.workspace[2] * data.CanvasRatio
-      }
+        max: data.workspace[2] * data.CanvasRatio,
+      },
     };
     this.realtimePlotOptions.vAxis = {
       title: 'Y position (px)',
       viewWindow: {
         min: 0,
-        max: data.ViewportPixels[1] - data.offsettop
-      }
+        max: data.ViewportPixels[1] - data.offsettop,
+      },
     };
     let numCol = this.realtimeDataTable.getNumberOfColumns();
-    this.generateAndAddRowData(
-      this.realtimeDataTable,
-      numCol,
-      {0: 0, [numCol - 2]: 0}
-    );
+    this.generateAndAddRowData(this.realtimeDataTable, numCol, {
+      0: 0,
+      [numCol - 2]: 0,
+    });
     let numRows = this.realtimeDataTable.getNumberOfRows();
 
     this.realtimePlotConfig = {
       chartType: 'ComboChart',
       containerId: 'realtime-plot',
-      options: this.realtimePlotOptions
+      options: this.realtimePlotOptions,
     };
-    this.realtimePlot = (
-      new google.visualization.ChartWrapper(this.realtimePlotConfig)
+    this.realtimePlot = new google.visualization.ChartWrapper(
+      this.realtimePlotConfig
     );
     this.realtimePlot.setDataTable(this.realtimeDataTable);
     window.addEventListener('data_arrived', (evt: CustomEventInit) => {
       if (idx % 2 == 0) {
-        this.realtimeDataTable.setValue(numRows - 1, 0, Math.floor(evt.detail.x));
-        this.realtimeDataTable.setValue(numRows - 1, numCol - 2, Math.floor(evt.detail.y));
+        this.realtimeDataTable.setValue(
+          numRows - 1,
+          0,
+          Math.floor(evt.detail.x)
+        );
+        this.realtimeDataTable.setValue(
+          numRows - 1,
+          numCol - 2,
+          Math.floor(evt.detail.y)
+        );
         this.realtimePlot.draw();
       }
     });
   }
 
-  private drawStaticElements(cvs: HTMLCanvasElement, ctx: CanvasRenderingContext2D | null, data: LiveplotDataType, evt: CustomEventInit) {
+  private drawStaticElements(
+    cvs: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D | null,
+    data: LiveplotDataType,
+    evt: CustomEventInit
+  ) {
     if (ctx) {
       ctx.fillStyle = 'gray';
       ctx.fillRect(
@@ -1801,8 +1771,12 @@ export class Charts {
       );
 
       for (let idx in evt.detail.boundingBoxes) {
-        let width = evt.detail.boundingBoxes[idx]['x_1'] - evt.detail.boundingBoxes[idx]['x_0'];
-        let height = evt.detail.boundingBoxes[idx]['y_1'] - evt.detail.boundingBoxes[idx]['y_0'];
+        let width =
+          evt.detail.boundingBoxes[idx]['x_1'] -
+          evt.detail.boundingBoxes[idx]['x_0'];
+        let height =
+          evt.detail.boundingBoxes[idx]['y_1'] -
+          evt.detail.boundingBoxes[idx]['y_0'];
         ctx.beginPath();
         ctx.rect(
           _.floor(evt.detail.boundingBoxes[idx]['x_0']),
@@ -1812,14 +1786,12 @@ export class Charts {
         );
         ctx.stroke();
       }
-
-
     }
     // if (ctx) {
     //   ctx.fillStyle = 'gray';
     //   ctx.fillRect(
-    //     0, 
-    //     0, 
+    //     0,
+    //     0,
     //     data.workspace[2] * data.CanvasRatio,
     //     data.ViewportPixels[1] - data.offsettop
     //   );
@@ -1838,7 +1810,7 @@ export class Charts {
     //     );
     //     ctx.stroke();
     //   }
-    
+
     //   // Sample
     //   ctx.strokeStyle = '#000000'; // black
     //   ctx.beginPath();
@@ -1881,7 +1853,7 @@ export class Charts {
     //     ctx.strokeStyle = '#FFFF00'; // yellow
     //     ctx.strokeRect(
     //       this.rtData.fixation.x - _.floor(fixWinSz / 2 * data.ViewportPPI),
-    //       cvs.height 
+    //       cvs.height
     //       - (this.rtData.fixation.y + _.floor(fixWinSz / 2 * data.ViewportPPI)),
     //       _.floor(fixWinSz * data.ViewportPPI),
     //       _.floor(fixWinSz * data.ViewportPPI)
@@ -1890,14 +1862,12 @@ export class Charts {
     // }
   }
 
-
   private drawRealtimePlot2(data: LiveplotDataType) {
     let cvs = document.querySelector('#realtime-canvas') as HTMLCanvasElement;
     cvs.width = data.workspace[2] * data.CanvasRatio;
     cvs.height = data.ViewportPixels[1] - data.offsettop;
     let ctx = cvs.getContext('2d') as CanvasRenderingContext2D;
     window.addEventListener('data_arrived', (evt: CustomEventInit) => {
-
       if (evt.detail.meta == 2) {
         this.drawStaticElements(cvs, ctx, data, evt);
       }
@@ -1905,7 +1875,6 @@ export class Charts {
       if (evt.detail.meta == 1) {
         ctx.fillStyle = 'green';
       } else if (evt.detail.meta == 0) {
-
         ctx.fillStyle = 'red';
       }
 
@@ -1915,27 +1884,19 @@ export class Charts {
       ctx?.arc(x, y, 2, 0, Math.PI * 2, true);
       ctx?.fill();
     });
-
   }
 
   private drawScreenPlot(data: LiveplotDataType, screenActive: boolean) {
-
     this.screenPlotOptions.series = [];
     for (let i = 0; i < this.xyPosDataTable.getNumberOfColumns(); i++) {
       if (this.xyPosDataTable.getColumnLabel(i) == 'Fixation') {
         this.screenPlotOptions.series[i - 1] = { type: 'line', color: 'gray' };
       } else if (this.xyPosDataTable.getColumnLabel(i) == 'Sample') {
-        this.screenPlotOptions.series[i - 1] = (
-          { type: 'line', color: 'black' }
-        );
+        this.screenPlotOptions.series[i - 1] = { type: 'line', color: 'black' };
       } else if (this.xyPosDataTable.getColumnLabel(i) == 'Same') {
-        this.screenPlotOptions.series[i - 1] = (
-          { type: 'line', color: 'green' }
-        );
+        this.screenPlotOptions.series[i - 1] = { type: 'line', color: 'green' };
       } else if (this.xyPosDataTable.getColumnLabel(i) == 'Different') {
-        this.screenPlotOptions.series[i - 1] = (
-          { type: 'line', color: 'red' }
-        );
+        this.screenPlotOptions.series[i - 1] = { type: 'line', color: 'red' };
       } else if (this.xyPosDataTable.getColumnLabel(i) == 'Fix_Reward') {
         this.screenPlotOptions.series[i - 1] = { color: 'blue' };
       } else if (this.xyPosDataTable.getColumnLabel(i) == 'Fix_Punish') {
@@ -1945,9 +1906,7 @@ export class Charts {
       } else if (this.xyPosDataTable.getColumnLabel(i) == 'Target_Punish') {
         this.screenPlotOptions.series[i - 1] = { color: 'black' };
       } else if (this.xyPosDataTable.getColumnLabel(i).includes('Test')) {
-        this.screenPlotOptions.series[i - 1] = (
-          { type: 'line', color: 'black' }
-        );
+        this.screenPlotOptions.series[i - 1] = { type: 'line', color: 'black' };
       }
     }
 
@@ -1957,31 +1916,34 @@ export class Charts {
       title: 'X position (px)',
       viewWindow: {
         min: 0,
-        max: data.ViewportPixels[0]
-      }
+        max: data.ViewportPixels[0],
+      },
     };
     this.screenPlotOptions.vAxis = {
       title: 'Y position (px)',
       viewWindow: {
         min: 0,
-        max: data.ViewportPixels[1]
-      }
+        max: data.ViewportPixels[1],
+      },
     };
     if (!this.realtimePlotActive) {
       this.screenPlot.draw(this.xyPosDataTable, this.screenPlotOptions);
     }
   }
 
-  private formatDate(data: google.visualization.DataTable, colIdx: number): void {
+  private formatDate(
+    data: google.visualization.DataTable,
+    colIdx: number
+  ): void {
     let formatter = new google.visualization.DateFormat({
-      pattern: 'h aa'
+      pattern: 'h aa',
     });
     formatter.format(data, colIdx);
   }
 
   private formatNumber(data: google.visualization.DataTable, colIdx: number) {
     let formatter = new google.visualization.NumberFormat({
-      fractionDigits: 2
+      fractionDigits: 2,
     });
     formatter.format(data, colIdx);
   }
@@ -1994,6 +1956,4 @@ export class Charts {
     }
     formatter.format(data, colIdx);
   }
-
-
 }

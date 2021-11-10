@@ -1,17 +1,14 @@
-// Delete imports after developing. Solely for type checking pursposes.
-// import firebase from 'firebase/app';
-// import 'firebase/auth';
-// import 'firebase/storage';
-
 // Check Availability of APIs
-if (typeof navigator.usb == 'object') {
-  ENV.WebUSBAvailable = 1;
-}
-if (typeof navigator.bluetooth == 'object') {
-  ENV.WebBluetoothAvailable = 1;
-}
-if (typeof navigator.getBattery == 'function') {
-  ENV.BatteryAPIAvailable = 1;
+if (!ENV.MTurkWorkerId) {
+  if (typeof navigator.usb == 'object') {
+    ENV.WebUSBAvailable = 1;
+  }
+  if (typeof navigator.bluetooth == 'object') {
+    ENV.WebBluetoothAvailable = 1;
+  }
+  if (typeof navigator.getBattery == 'function') {
+    ENV.BatteryAPIAvailable = 1;
+  }
 }
 
 // Button callbacks for inline connection to arduino device
@@ -51,9 +48,13 @@ textobj.addEventListener('click', headsuptext_listener, false);
 //============= Initialize Audio & Battery Objects ==================//
 
 // Prevent window scrolling and bounce back effect
-// document.body.addEventListener('touchmove',function(event){
-// 	event.preventDefault();
-// }, {capture: false, passive:false});
+// document.body.addEventListener(
+//   'touchmove',
+//   function (event) {
+//     event.preventDefault();
+//   },
+//   { capture: false, passive: false }
+// );
 
 document.body.addEventListener(
   'touchmove',
@@ -258,15 +259,9 @@ if (ENV.BatteryAPIAvailable) {
   ENV.ViewportPixels[0] = ENV.ScreenPhysicalPixels[0] / ENV.DevicePixelRatio;
   ENV.ViewportPixels[1] = ENV.ScreenPhysicalPixels[1] / ENV.DevicePixelRatio;
 
-  //always compute PPI based on the larger dimension for consistency across portrait/landscape modes
-  if (ENV.ViewportPixels[0] >= ENV.ViewportPixels[1]) {
-    ENV.ViewportPPI = ENV.ViewportPixels[0] / ENV.ScreenSizeInches[0]; //viewport pixels per inch
-  } else {
-    ENV.ViewportPPI = ENV.ViewportPixels[1] / ENV.ScreenSizeInches[1]; //viewport pixels per inch
-  } //IF
-
+  // IF MTurkWorker we cannot pull device data from firestore/devices
+  // so calculate ENV.ViewportPPI on the fly
   if (ENV.MTurkWorkerId || TASK.Agent == 'MTurkTest') {
-    console.log('getting ppi');
     function binSearch(fn, min, max) {
       if (max < min) return -1;
 
@@ -293,6 +288,13 @@ if (ENV.BatteryAPIAvailable) {
     }
 
     ENV.ViewportPPI = findDPI();
+  } else {
+    //always compute PPI based on the larger dimension for consistency across portrait/landscape modes
+    if (ENV.ViewportPixels[0] >= ENV.ViewportPixels[1]) {
+      ENV.ViewportPPI = ENV.ViewportPixels[0] / ENV.ScreenSizeInches[0]; //viewport pixels per inch
+    } else {
+      ENV.ViewportPPI = ENV.ViewportPixels[1] / ENV.ScreenSizeInches[1]; //viewport pixels per inch
+    } //IF
   }
 
   updateHeadsUpDisplay();
@@ -310,13 +312,6 @@ if (ENV.BatteryAPIAvailable) {
 
   subjectlistobj.addEventListener('change', subjectlist_listener, false);
   subjectlistobj.style.visibility = 'visible';
-
-  // if (ENV.MTurkWorkerId) {
-  //   document.querySelector('button[id=quickload]').style.display = 'none';
-  //   document.querySelector('button[id=quickload]').style.visibility = 'hidden';
-  //   document.querySelector('div[id=subjectID_div]').style.display = 'none';
-  //   document.querySelector('div[id=subjectID_div]').style.visibility = 'hidden';
-  // }
 
   if (localStorage.getItem('Agent') != null) {
     // IF agent stored locally, show quickload button
@@ -363,8 +358,8 @@ if (ENV.BatteryAPIAvailable) {
       ENV.HITId +
       '_params.json';
 
-    document.querySelector('button[id=doneTestingTask]').innerText = 'Start';
-    ENV.WebUSBAvailable = 0;
+    // document.querySelector('button[id=doneTestingTask]').innerText = 'Start';
+    // ENV.WebUSBAvailable = 0;
   } else {
     ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + '_params.json';
   }
@@ -426,74 +421,96 @@ if (ENV.BatteryAPIAvailable) {
 
   //================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
   // IF MTurkWorker, DoneEditingParam button is automatically pressed
-  if (ENV.MTurkWorkerId) {
+  if (QuickLoad.load == 0) {
+    updateStatusText(JSON.stringify(TASK, null, ' '));
     document
-      .querySelector('button[id=doneEditingParams]')
-      .dispatchEvent(new Event('click'));
-  } else {
-    if (QuickLoad.load == 0) {
-      console.log('QuickLoad == 0');
-      updateStatusText(JSON.stringify(TASK, null, ' '));
-      document
-        .querySelector('p[id=headsuptext]')
-        .setAttribute('contentEditable', true);
-      document.querySelector('button[id=doneEditingParams]').style.display =
-        'block';
-      document.querySelector('button[id=doneEditingParams]').style.visibility =
-        'visible';
+      .querySelector('p[id=headsuptext]')
+      .setAttribute('contentEditable', true);
+    document.querySelector('button[id=doneEditingParams]').style.display =
+      'block';
+    document.querySelector('button[id=doneEditingParams]').style.visibility =
+      'visible';
 
-      await editParamsPromise();
-      document.querySelector('button[id=doneEditingParams]').style.display =
-        'none';
-      var textobj = document.getElementById('headsuptext');
-      textobj.removeEventListener('touchend', headsuptext_listener);
-      textobj.removeEventListener('mouseup', headsuptext_listener);
-      document
-        .querySelector('p[id=headsuptext]')
-        .setAttribute('contentEditable', false);
+    await editParamsPromise();
+    document.querySelector('button[id=doneEditingParams]').style.display =
+      'none';
+    var textobj = document.getElementById('headsuptext');
+    textobj.removeEventListener('touchend', headsuptext_listener);
+    textobj.removeEventListener('mouseup', headsuptext_listener);
+    document
+      .querySelector('p[id=headsuptext]')
+      .setAttribute('contentEditable', false);
 
-      if (FLAGS.need2saveParameters == 1) {
-        var user_param_text = document.getElementById('headsuptext').innerHTML; //get new params
-        await saveParameterTexttoFirebase(user_param_text); //write new params
-        await loadParametersfromFirebase(ENV.ParamFileName); //then read them
-      } //IF
-    } //IF !QuickLoad.load
-  }
+    if (FLAGS.need2saveParameters == 1) {
+      var user_param_text = document.getElementById('headsuptext').innerHTML; //get new params
+      await saveParameterTexttoFirebase(user_param_text); //write new params
+      await loadParametersfromFirebase(ENV.ParamFileName); //then read them
+    } //IF
+  } //IF !QuickLoad.load
+  // if (ENV.MTurkWorkerId) {
+  //   document
+  //     .querySelector('button[id=doneEditingParams]')
+  //     .dispatchEvent(new Event('click'));
+  // } else {
+  //   if (QuickLoad.load == 0) {
+  //     console.log('QuickLoad == 0');
+  //     updateStatusText(JSON.stringify(TASK, null, ' '));
+  //     document
+  //       .querySelector('p[id=headsuptext]')
+  //       .setAttribute('contentEditable', true);
+  //     document.querySelector('button[id=doneEditingParams]').style.display =
+  //       'block';
+  //     document.querySelector('button[id=doneEditingParams]').style.visibility =
+  //       'visible';
+
+  //     await editParamsPromise();
+  //     document.querySelector('button[id=doneEditingParams]').style.display =
+  //       'none';
+  //     var textobj = document.getElementById('headsuptext');
+  //     textobj.removeEventListener('touchend', headsuptext_listener);
+  //     textobj.removeEventListener('mouseup', headsuptext_listener);
+  //     document
+  //       .querySelector('p[id=headsuptext]')
+  //       .setAttribute('contentEditable', false);
+
+  //     if (FLAGS.need2saveParameters == 1) {
+  //       var user_param_text = document.getElementById('headsuptext').innerHTML; //get new params
+  //       await saveParameterTexttoFirebase(user_param_text); //write new params
+  //       await loadParametersfromFirebase(ENV.ParamFileName); //then read them
+  //     } //IF
+  //   } //IF !QuickLoad.load
+  // }
   //================== (END) AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
 
-  console.log('PPI BEFORE:', ENV.ViewportPPI);
-  if (ENV.MTurkWorkerId || TASK.Agent == 'MTurkTest') {
-    console.log('getting ppi');
-    function binSearch(fn, min, max) {
-      if (max < min) return -1;
+  // if (ENV.MTurkWorkerId || TASK.Agent == 'MTurkTest') {
+  //   console.log('getting ppi');
+  //   function binSearch(fn, min, max) {
+  //     if (max < min) return -1;
 
-      let mid = (min + max) >>> 1;
-      if (0 < fn(mid)) {
-        if (mid == min || 0 >= fn(mid - 1)) {
-          return mid;
-        }
-        return binSearch(fn, min, mid - 1);
-      }
-      return binSearch(fn, mid + 1, max);
-    }
+  //     let mid = (min + max) >>> 1;
+  //     if (0 < fn(mid)) {
+  //       if (mid == min || 0 >= fn(mid - 1)) {
+  //         return mid;
+  //       }
+  //       return binSearch(fn, min, mid - 1);
+  //     }
+  //     return binSearch(fn, mid + 1, max);
+  //   }
 
-    function findFirstPositive(fn) {
-      let start = 1;
-      while (0 >= fn(start)) start <<= 1;
-      return binSearch(fn, start >>> 1, start) | 0;
-    }
+  //   function findFirstPositive(fn) {
+  //     let start = 1;
+  //     while (0 >= fn(start)) start <<= 1;
+  //     return binSearch(fn, start >>> 1, start) | 0;
+  //   }
 
-    function findDPI(counter = 0) {
-      return findFirstPositive(
-        (x) => (++counter, matchMedia(`(max-resolution: ${x}dpi)`).matches)
-      );
-    }
+  //   function findDPI(counter = 0) {
+  //     return findFirstPositive(
+  //       (x) => (++counter, matchMedia(`(max-resolution: ${x}dpi)`).matches)
+  //     );
+  //   }
 
-    ENV.ViewportPPI = findDPI();
-  }
-  console.log('PPI AFTER:', ENV.ViewportPPI);
-
-  console.log('TASK NOW:', TASK);
+  //   ENV.ViewportPPI = findDPI();
+  // }
 
   // =================== LOAD MKMODELS IF SPECIES = MODEL =================//
   let mkm;
@@ -1980,7 +1997,7 @@ if (ENV.BatteryAPIAvailable) {
         // CURRTRIAL.nreward = Math.exp(
         // 	( Math.log1p(TASK.NRewardMax)/(ENV.NRSVPMax - ENV.NRSVPMin) ) * (nclipshown - ENV.NRSVPMin) )
         CURRTRIAL.nreward = Math.exp(
-          (Math.log1p(TASK.NRewardMax) / (ENV.NRSVPMax - ENV.NRSVPMin)) *
+          (Math.log1p(TASK.NRewardMax - 1) / (ENV.NRSVPMax - ENV.NRSVPMin)) *
             (nclipshown - ENV.NRSVPMin)
         );
 

@@ -358,7 +358,7 @@ function touchend_listener(event) {
 } //touchend_listener
 
 function doneEditingParams_listener(event) {
-  waitforClick.next(1);
+  editParamsWaitforClick.next(1);
   return;
 }
 function headsuptext_listener(event) {
@@ -438,6 +438,9 @@ function subjectIDPromise() {
   p = new Promise(function (resolve, reject) {
     resolveFunc = resolve;
     errFunc = reject;
+    if (ENV.MTurkWorkerId) {
+      resolveFunc(ENV.MTurkWorkerId);
+    }
   }).then(function (resolveval) {
     console.log('User selected agent ' + resolveval);
   });
@@ -463,6 +466,9 @@ function editParamsPromise() {
   p = new Promise(function (resolve, reject) {
     resolveFunc = resolve;
     errFunc = reject;
+    if (ENV.MTurkWorkerId) {
+      resolveFunc(ENV.MTurkWorkerId);
+    }
   }).then(function (resolveval) {
     console.log('User is done editing parameters.');
   });
@@ -473,8 +479,8 @@ function editParamsPromise() {
       resolveFunc(imclicked);
     }
   }
-  waitforClick = waitforclickGenerator(); // start async function
-  waitforClick.next(); //move out of default state
+  editParamsWaitforClick = waitforclickGenerator(); // start async function
+  editParamsWaitforClick.next(); //move out of default state
   return p;
 }
 

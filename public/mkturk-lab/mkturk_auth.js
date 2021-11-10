@@ -103,11 +103,11 @@ auth
   });
 
 auth.onAuthStateChanged((user) => {
-  console.log('user:', user);
+  // console.log('user:', user);
   if (user && Object.keys(mturkUserConfig).length) {
     user.getIdToken(true).then(async (idToken) => {
       mturkUserConfig.token = idToken;
-      console.log(`Auth Token: ${idToken}`);
+      // console.log(`Auth Token: ${idToken}`);
       await processMturkUser(mturkUserConfig)
         .then(async (res) => {
           console.log('res:', res);
@@ -119,21 +119,14 @@ auth.onAuthStateChanged((user) => {
             ENV.MTurkWorkerId = mturkUserConfig.wid;
             ENV.HITId = mturkUserConfig.hid;
             ENV.AssignmentId = mturkUserConfig.aid;
+            ENV.Subject = ENV.MTurkWorkerId;
             localStorage.setItem('Agent', ENV.MTurkWorkerId);
-            console.log('localStorage:', localStorage);
-            // subjectlist.push(ENV.MTurkWorkerId);
             DATA_SAVEPATH = `/mkturkfiles_mturk/userfiles/${ENV.MTurkWorkerId}/data/`;
             PARAM_DIRPATH = `/mkturkfiles_mturk/userfiles/${ENV.MTurkWorkerId}/params/`;
             FIRESTORECOLLECTION.DATA = 'mturkdata';
-            // let subjectlistobj = document.getElementById('subjectID_select');
-            let tag = document.createElement('script');
+            const tag = document.createElement('script');
             tag.src = 'index.js';
             document.getElementsByTagName('body')[0].appendChild(tag);
-            // subjectlist.style.display = 'none';
-            // let opt = document.createElement('option');
-            // opt.value = 0;
-            // opt.innerHTML = subjectlist[0];
-            // subjectlistobj.appendChild(opt);
           }
         })
         .catch((error) => {
@@ -161,7 +154,7 @@ auth.onAuthStateChanged((user) => {
           opt.innerHTML = subjectlist[i];
           subjectlistobj.appendChild(opt);
         }
-        let tag = document.createElement('script');
+        const tag = document.createElement('script');
         tag.src = 'index.js';
         document.getElementsByTagName('body')[0].appendChild(tag);
       })
