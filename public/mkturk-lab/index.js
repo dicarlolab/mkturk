@@ -205,7 +205,10 @@ if (ENV.BatteryAPIAvailable) {
   // if (TASK.DeviceConfig !== undefined) {
   // } else
 
-  if (screenSpecs.screenSizeInches < 0 && ENV.DeviceType == 'desktop') {
+  if (TASK.DeviceConfig !== undefined) {
+    var screenSpecs = await queryDeviceonFirestore(TASK.DeviceConfig);
+    console.log('DeviceConfig was configured in agent param file');
+  } else if (screenSpecs.screenSizeInches < 0 && ENV.DeviceType == 'desktop') {
     var screenSpecs = await queryDeviceonFirestore('32ul750'); //default to desktop monitor
     console.log(
       'Desktop detected, defaulting to LG 32ul750 monitor for screen ppi'
