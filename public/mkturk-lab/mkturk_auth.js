@@ -111,11 +111,14 @@ auth.onAuthStateChanged((user) => {
       await processMturkUser(mturkUserConfig)
         .then(async (res) => {
           console.log('res:', res);
-          if ((await res.data.message) == 'assignment entry already exists') {
-            console.log('window will close here');
-            // window.close();
-          }
-          if ((await res.data.status) == 'success') {
+          // if ((await res.data.message) == 'assignment entry already exists') {
+          //   console.log('window will close here');
+          //   // window.close();
+          // }
+          if (
+            (await res.data.status) == 'success' ||
+            (await res.data.message) == 'assignment entry already exists'
+          ) {
             ENV.MTurkWorkerId = mturkUserConfig.wid;
             ENV.HITId = mturkUserConfig.hid;
             ENV.AssignmentId = mturkUserConfig.aid;

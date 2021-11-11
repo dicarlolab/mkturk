@@ -54,6 +54,7 @@ const db = getFirestore(firebaseApp);
 const storage = getStorage(firebaseApp);
 const storageRef = ref(storage);
 const rootRef = ref(storageRef, 'mkturkfiles');
+const mturkRootRef = ref(storageRef, 'mkturkfiles_mturk');
 let isRoot = true;
 
 let mkq = new Mkquery();
@@ -305,15 +306,8 @@ qryLocSelc!.addEventListener('change', (ev) => {
 
       break;
 
-    // case "mkdailydatatest":
-    //   let retTest = mkq.decodeQuery(db.collection('mkdailydatatest'));
-    //   retTest.then(docs => {
-    //     mkf.listFirestoreDocs(docs, 'mkdailydatatest');
-    //   });
-
-    //   break;
-
     case 'mkturkfiles':
+      console.log('qryLocSelc change mkturkfiles');
       fs.style.visibility = 'hidden';
       ki0.style.visibility = 'hidden';
       ki1.style.visibility = 'hidden';
@@ -324,8 +318,26 @@ qryLocSelc!.addEventListener('change', (ev) => {
       plotBtn.style.visibility = 'hidden';
 
       removeElementsByClassName('field-options');
+      mkf.listStorageFiles(rootRef);
       if (isRoot) {
         mkf.listStorageFiles(rootRef);
+      }
+      break;
+
+    case 'mkturkfiles_mturk':
+      fs.style.visibility = 'hidden';
+      ki0.style.visibility = 'hidden';
+      ki1.style.visibility = 'hidden';
+      ki2.style.visibility = 'hidden';
+      goBtn.style.visibility = 'hidden';
+      plotX.style.visibility = 'hidden';
+      plotY.style.visibility = 'hidden';
+      plotBtn.style.visibility = 'hidden';
+
+      removeElementsByClassName('field-options');
+      mkf.listStorageFiles(mturkRootRef);
+      if (isRoot) {
+        mkf.listStorageFiles(mturkRootRef);
       }
       break;
 
@@ -346,6 +358,66 @@ qryLocSelc!.addEventListener('change', (ev) => {
       queryResult = mkq.decodeQuery(collection(db, 'devices'));
       queryResult.then((docs) => {
         mkf.listFirestoreDocs(docs, 'devices');
+      });
+
+      break;
+
+    case 'mturkhits':
+      fs.style.visibility = 'hidden';
+      ki0.style.visibility = 'hidden';
+      ki1.style.visibility = 'hidden';
+      ki2.style.visibility = 'hidden';
+      goBtn.style.visibility = 'hidden';
+      plotX.style.visibility = 'hidden';
+      plotY.style.visibility = 'hidden';
+      plotBtn.style.visibility = 'hidden';
+
+      resetPlaceholder();
+      removeElementsByClassName('field-options');
+
+      queryResult = mkq.decodeQuery(collection(db, 'mturkhits'));
+      queryResult.then((docs) => {
+        mkf.listFirestoreDocs(docs, 'mturkhits');
+      });
+
+      break;
+
+    case 'mturkusers':
+      fs.style.visibility = 'hidden';
+      ki0.style.visibility = 'hidden';
+      ki1.style.visibility = 'hidden';
+      ki2.style.visibility = 'hidden';
+      goBtn.style.visibility = 'hidden';
+      plotX.style.visibility = 'hidden';
+      plotY.style.visibility = 'hidden';
+      plotBtn.style.visibility = 'hidden';
+
+      resetPlaceholder();
+      removeElementsByClassName('field-options');
+
+      queryResult = mkq.decodeQuery(collection(db, 'mturkusers'));
+      queryResult.then((docs) => {
+        mkf.listFirestoreDocs(docs, 'mturkusers');
+      });
+
+      break;
+
+    case 'mturkdata':
+      fs.style.visibility = 'hidden';
+      ki0.style.visibility = 'hidden';
+      ki1.style.visibility = 'hidden';
+      ki2.style.visibility = 'hidden';
+      goBtn.style.visibility = 'hidden';
+      plotX.style.visibility = 'hidden';
+      plotY.style.visibility = 'hidden';
+      plotBtn.style.visibility = 'hidden';
+
+      resetPlaceholder();
+      removeElementsByClassName('field-options');
+
+      queryResult = mkq.decodeQuery(collection(db, 'mturkdata'));
+      queryResult.then((docs) => {
+        mkf.listFirestoreDocs(docs, 'mturkdata');
       });
 
       break;

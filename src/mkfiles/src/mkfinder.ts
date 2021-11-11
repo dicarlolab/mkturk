@@ -484,6 +484,162 @@ export class Mkfinder {
           });
         },
       });
+    } else if (database === 'mturkhits') {
+      this.finder.destroy();
+      this.pathName.innerText = 'mturkhits';
+      this.finder = new Tabulator('#finder', {
+        data: dataArr,
+        index: 'hitId',
+        layout: 'fitColumns',
+        initialSort: [{ column: 'hitId', dir: 'asc' }],
+        columns: [
+          {
+            title: "<input id='select-all' type='checkbox'/>",
+            width: 15,
+            headerSort: false,
+          },
+          { title: 'HIT ID', field: 'hitId' },
+        ],
+        selectable: true,
+        selectableRangeMode: 'click',
+        rowClick: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = '3';
+          this.mki.imgCanvasDiv.style.zIndex = '2';
+          this.mkt.canvas.style.zIndex = '1';
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+        },
+        rowTap: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = '3';
+          this.mki.imgCanvasDiv.style.zIndex = '2';
+          this.mkt.canvas.style.zIndex = '1';
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+        },
+        tableBuilt: () => {
+          /* selectAllBox function */
+          let selectAllBox = document.querySelector(
+            '#select-all'
+          ) as HTMLInputElement;
+          selectAllBox.addEventListener('change', (ev) => {
+            if (selectAllBox.checked == true) {
+              this.finder.selectRow();
+            } else {
+              this.finder.deselectRow();
+            }
+          });
+        },
+      });
+    } else if (database === 'mturkusers') {
+      this.finder.destroy();
+      this.pathName.innerText = 'mturkusers';
+      this.finder = new Tabulator('#finder', {
+        data: dataArr,
+        index: 'workerId',
+        layout: 'fitColumns',
+        initialSort: [{ column: 'workerId', dir: 'asc' }],
+        columns: [
+          {
+            title: "<input id='select-all' type='checkbox'/>",
+            width: 15,
+            headerSort: false,
+          },
+          { title: 'Worker ID', field: 'workerId' },
+        ],
+        selectable: true,
+        selectableRangeMode: 'click',
+        rowClick: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = '3';
+          this.mki.imgCanvasDiv.style.zIndex = '2';
+          this.mkt.canvas.style.zIndex = '1';
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+        },
+        rowTap: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = '3';
+          this.mki.imgCanvasDiv.style.zIndex = '2';
+          this.mkt.canvas.style.zIndex = '1';
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+        },
+        tableBuilt: () => {
+          /* selectAllBox function */
+          let selectAllBox = document.querySelector(
+            '#select-all'
+          ) as HTMLInputElement;
+          selectAllBox.addEventListener('change', (ev) => {
+            if (selectAllBox.checked == true) {
+              this.finder.selectRow();
+            } else {
+              this.finder.deselectRow();
+            }
+          });
+        },
+      });
+    } else if (database === 'mturkdata') {
+      this.finder.destroy();
+      this.pathName.innerText = 'mturkdata';
+      this.finder = new Tabulator('#finder', {
+        data: dataArr,
+        index: 'Docname',
+        layout: 'fitColumns',
+        initialSort: [{ column: 'Docname', dir: 'asc' }],
+        columns: [
+          {
+            title: "<input id='select-all' type='checkbox'/>",
+            width: 15,
+            headerSort: false,
+          },
+          { title: 'Docname', field: 'Docname' },
+        ],
+        selectable: true,
+        selectableRangeMode: 'click',
+        rowClick: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = '3';
+          this.mki.imgCanvasDiv.style.zIndex = '2';
+          this.mkt.canvas.style.zIndex = '1';
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+        },
+        rowTap: (event, row) => {
+          event.stopPropagation();
+          this.mkt.destroy();
+          this.mki.removeImages();
+
+          this.mke.editorDivElement.style.zIndex = '3';
+          this.mki.imgCanvasDiv.style.zIndex = '2';
+          this.mkt.canvas.style.zIndex = '1';
+          this.mke.displayFirebaseTextFile(row.getData(), database);
+        },
+        tableBuilt: () => {
+          /* selectAllBox function */
+          let selectAllBox = document.querySelector(
+            '#select-all'
+          ) as HTMLInputElement;
+          selectAllBox.addEventListener('change', (ev) => {
+            if (selectAllBox.checked == true) {
+              this.finder.selectRow();
+            } else {
+              this.finder.deselectRow();
+            }
+          });
+        },
+      });
     } else {
       console.error('Wrong or Invalid database trying to be tabularized');
     }
