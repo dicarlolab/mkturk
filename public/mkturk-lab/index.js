@@ -199,15 +199,23 @@ if (ENV.BatteryAPIAvailable) {
   ENV.DeviceOSVersion = deviceProperties.data.os.version;
   ENV.DeviceTouchscreen = deviceProperties.data.touchscreen;
 
+  let screenSpecs;
+
+  if (TASK.DeviceConfig !== undefined) {
+    screenSpecs = await queryDeviceonFirestore(TASK.DeviceConfig);
+  }
+
   var screenSpecs = await queryDeviceonFirestore(ENV.DeviceName);
 
   //if device not identified by deviceAPI or no matching firestore devices record found for an identified device
-  // if (TASK.DeviceConfig !== undefined) {
-  // } else
-
   if (TASK.DeviceConfig !== undefined) {
     var screenSpecs = await queryDeviceonFirestore(TASK.DeviceConfig);
     console.log('DeviceConfig was configured in agent param file');
+    if (TASK.DeviceConfig.FrameRateMovie === undefined) {
+      ENV.FrameRateMovie = 30;
+    } else {
+      ENV.FrameRateMovie = await estimatefps();
+    }
   } else if (screenSpecs.screenSizeInches < 0 && ENV.DeviceType == 'desktop') {
     var screenSpecs = await queryDeviceonFirestore('32ul750'); //default to desktop monitor
     console.log(
@@ -565,8 +573,8 @@ if (ENV.BatteryAPIAvailable) {
   updateStatusText('');
 
   //============= AWAIT ESTIMATE SCREEN REFRESH RATE =========//
-  var fps = await estimatefps();
-  ENV.FrameRateDisplay = fps;
+  // var fps = await estimatefps();
+  // ENV.FrameRateDisplay = fps;
   // ENV.FrameRateMovie = fps / 2;
 
   //========= Start in TEST mode =======//
