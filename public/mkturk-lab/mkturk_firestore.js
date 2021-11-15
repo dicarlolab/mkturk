@@ -158,22 +158,21 @@ async function queryDevice(deviceName) {
   if (querySnapshot.empty) {
     return deviceConfig;
   } else {
-    for (const doc in querySnapshot.docs) {
-      deviceConfig.screenSizeInches =
-        doc.data().screenSizeInches === undefined
-          ? [-1]
-          : doc.data().screenSizeInches;
-      deviceConfig.screenPhysicalPixels =
-        doc.data().screenPhysicalPixels === undefined
-          ? [-1]
-          : doc.data().screenPhysicalPixels;
-      deviceConfig.screenRatio =
-        doc.data().screenRatio === undefined ? -1 : doc.data().screenRatio;
-      deviceConfig.ppi = doc.data().ppi === undefined ? -1 : doc.data().ppi;
-      deviceConfig.frameRate =
-        doc.data().frameRate === undefined ? -1 : doc.data().frameRate;
-      return deviceConfig;
-    }
+    const doc = querySnapshot.docs[0];
+    deviceConfig.screenSizeInches =
+      doc.data().screenSizeInches === undefined
+        ? [-1]
+        : doc.data().screenSizeInches;
+    deviceConfig.screenPhysicalPixels =
+      doc.data().screenPhysicalPixels === undefined
+        ? [-1]
+        : doc.data().screenPhysicalPixels;
+    deviceConfig.screenRatio =
+      doc.data().screenRatio === undefined ? -1 : doc.data().screenRatio;
+    deviceConfig.ppi = doc.data().ppi === undefined ? -1 : doc.data().ppi;
+    deviceConfig.frameRate =
+      doc.data().frameRate === undefined ? -1 : doc.data().frameRate;
+    return deviceConfig;
   }
 }
 

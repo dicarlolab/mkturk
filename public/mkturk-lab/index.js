@@ -202,114 +202,142 @@ if (ENV.BatteryAPIAvailable) {
   let screenSpecs;
 
   if (TASK.DeviceConfig !== undefined) {
-    screenSpecs = await queryDeviceonFirestore(TASK.DeviceConfig);
+    screenSpecs = await queryDevice(TASK.DeviceConfig);
+    ENV.ScreenSizeInches = screenSpecs.screenSizeInches;
+    ENV.ScreenPhysicalPixels = screen.screenPhysicalPixels;
+    ENV.ScreenRatio = screenSpecs.screenRatio;
+    ENV.PhysicalPPI = screenSpecs.ppi;
+    ENV.FrameRateMovie =
+      screenSpecs.FrameRateMovie === -1 ? 30 : screenSpecs.frameRate;
+    ENV.ViewportPixels[0] = ENV.ScreenPhysicalPixels[0] / ENV.DevicePixelRatio;
+    ENV.ViewportPixels[1] = ENV.ScreenPhysicalPixels[1] / ENV.DevicePixelRatio;
+    if (ENV.DevicePixelRatio !== ENV.ScreenRatio) {
+      console.log(
+        'User is not running screen at native pixelratio which affects image scaling, will attempt to compensate'
+      );
+    }
+    //always compute PPI based on the larger dimension for consistency across portrait/landscape modes
+    if (ENV.ViewportPixels[0] >= ENV.ViewportPixels[1]) {
+      ENV.ViewportPPI = ENV.ViewportPixels[0] / ENV.ScreenSizeInches[0];
+    } else {
+      ENV.ViewportPPI = ENV.ViewportPixels[1] / ENV.ScreenSizeInches[1];
+    }
+  } else {
+    console.log(
+      'Device not detected in firestore/devices. Will attempt findDPI code for the optimal ViewportPPI'
+    );
+    ENV.ViewportPPI = findDPI();
   }
 
-  var screenSpecs = await queryDeviceonFirestore(ENV.DeviceName);
+  // var screenSpecs = await queryDeviceonFirestore(ENV.DeviceName);
 
   //if device not identified by deviceAPI or no matching firestore devices record found for an identified device
-  if (TASK.DeviceConfig !== undefined) {
-    var screenSpecs = await queryDeviceonFirestore(TASK.DeviceConfig);
-    console.log('DeviceConfig was configured in agent param file');
-    if (TASK.DeviceConfig.FrameRateMovie === undefined) {
-      ENV.FrameRateMovie = 30;
-    } else {
-      ENV.FrameRateMovie = await estimatefps();
-    }
-  } else if (screenSpecs.screenSizeInches < 0 && ENV.DeviceType == 'desktop') {
-    var screenSpecs = await queryDeviceonFirestore('32ul750'); //default to desktop monitor
-    console.log(
-      'Desktop detected, defaulting to LG 32ul750 monitor for screen ppi'
-    );
-  } else if (screenSpecs.screenSizeInches < 0 && ENV.DeviceType == 'tablet') {
-    var screenSpecs = await queryDeviceonFirestore('pixel c'); //default to pixel c
-    console.log('Tablet detected, defaulting to pixel c tablet for screen ppi');
-  } else if (screenSpecs.screenSizeInches < 0 && ENV.DeviceType == 'mobile') {
-    var screenSpecs = await queryDeviceonFirestore('pixel 4 xl'); //default to pixel 4 xl
-    console.log(
-      'Mobile detected, defaulting to pixel 4 xl phone for screen ppi'
-    );
-  } else if (
-    screenSpecs.screenSizeInches < 0 &&
-    ENV.DeviceType == 'smartphone'
-  ) {
-    var screenSpecs = await queryDeviceonFirestore('pixel 6');
-    console.log(
-      'Smartphone detected, defaulting to pixel6 phone for screen ppi'
-    );
-  } else if (
-    screenSpecs.screenSizeInches < 0 &&
-    (ENV.DeviceType == 'Not available' || ENV.DeviceType == '')
-  ) {
-    var screenSpecs = await queryDeviceonFirestore('pixel c'); //default to pixel c
-    console.log(
-      'Device type unidentified, defaulting to pixel c tablet for screen ppi'
-    );
-  }
+  // if (TASK.DeviceConfig !== undefined) {
+  //   var screenSpecs = await queryDeviceonFirestore(TASK.DeviceConfig);
+  //   console.log('DeviceConfig was configured in agent param file');
+  //   if (TASK.DeviceConfig.FrameRateMovie === undefined) {
+  //     ENV.FrameRateMovie = 30;
+  //   } else {
+  //     ENV.FrameRateMovie = await estimatefps();
+  //   }
+  // } else
+  // if (screenSpecs.screenSizeInches < 0 && ENV.DeviceType == 'desktop') {
+  //   screenSpecs = await queryDeviceonFirestore('32ul750'); //default to desktop monitor
+  //   console.log(
+  //     'Desktop detected, defaulting to LG 32ul750 monitor for screen ppi'
+  //   );
+  // } else if (screenSpecs.screenSizeInches < 0 && ENV.DeviceType == 'tablet') {
+  //   screenSpecs = await queryDeviceonFirestore('pixel c'); //default to pixel c
+  //   console.log('Tablet detected, defaulting to pixel c tablet for screen ppi');
+  // } else if (screenSpecs.screenSizeInches < 0 && ENV.DeviceType == 'mobile') {
+  //   screenSpecs = await queryDeviceonFirestore('pixel 4 xl'); //default to pixel 4 xl
+  //   console.log(
+  //     'Mobile detected, defaulting to pixel 4 xl phone for screen ppi'
+  //   );
+  // } else if (
+  //   screenSpecs.screenSizeInches < 0 &&
+  //   ENV.DeviceType == 'smartphone'
+  // ) {
+  //   screenSpecs = await queryDeviceonFirestore('pixel 6');
+  //   console.log(
+  //     'Smartphone detected, defaulting to pixel6 phone for screen ppi'
+  //   );
+  // } else if (
+  //   screenSpecs.screenSizeInches < 0 &&
+  //   (ENV.DeviceType == 'Not available' || ENV.DeviceType == '')
+  // ) {
+  //   screenSpecs = await queryDeviceonFirestore('pixel c'); //default to pixel c
+  //   console.log(
+  //     'Device type unidentified, defaulting to pixel c tablet for screen ppi'
+  //   );
+  // }
 
-  ENV.ScreenSizeInches = screenSpecs.screenSizeInches;
-  ENV.ScreenPhysicalPixels = screenSpecs.screenPhysicalPixels; //display pixels (<= physical screen pixels)
-  ENV.ScreenRatio = screenSpecs.screenRatio; //scaling from physical pixels to display pixels (retina display)
-  ENV.PhysicalPPI = screenSpecs.ppi; //physical device pixels per inch
+  // ENV.ScreenSizeInches = screenSpecs.screenSizeInches;
+  // ENV.ScreenPhysicalPixels = screenSpecs.screenPhysicalPixels; //display pixels (<= physical screen pixels)
+  // ENV.ScreenRatio = screenSpecs.screenRatio; //scaling from physical pixels to display pixels (retina display)
+  // ENV.PhysicalPPI = screenSpecs.ppi; //physical device pixels per inch
+  // // ENV.FrameRateMovie = (screenSpecs)
+  // ENV.FrameRateMovie =
+  //   screenSpecs2.FrameRateMovie === -1 ? 30 : screenSpecs2.FrameRateMovie;
 
-  if (window.innerWidth < window.innerHeight) {
-    ENV.ScreenSizeInches = [
-      ENV.ScreenSizeInches[1],
-      ENV.ScreenSizeInches[0],
-      ENV.ScreenSizeInches[2],
-    ];
-    ENV.ScreenPhysicalPixels = [
-      ENV.ScreenPhysicalPixels[1],
-      ENV.ScreenPhysicalPixels[0],
-    ];
-  } //IF PORTRAIT flip horizontal and vertical
+  // if (window.innerWidth < window.innerHeight) {
+  //   ENV.ScreenSizeInches = [
+  //     ENV.ScreenSizeInches[1],
+  //     ENV.ScreenSizeInches[0],
+  //     ENV.ScreenSizeInches[2],
+  //   ];
+  //   ENV.ScreenPhysicalPixels = [
+  //     ENV.ScreenPhysicalPixels[1],
+  //     ENV.ScreenPhysicalPixels[0],
+  //   ];
+  // } //IF PORTRAIT flip horizontal and vertical
 
-  if (ENV.DevicePixelRatio != ENV.ScreenRatio) {
-    console.log(
-      'User is not running screen at native pixelratio which affects image scaling, will attempt to compensate'
-    );
-  } //IF user not running screen at native scaling
+  // if (ENV.DevicePixelRatio != ENV.ScreenRatio) {
+  //   console.log(
+  //     'User is not running screen at native pixelratio which affects image scaling, will attempt to compensate'
+  //   );
+  // } //IF user not running screen at native scaling
 
-  ENV.ViewportPixels[0] = ENV.ScreenPhysicalPixels[0] / ENV.DevicePixelRatio;
-  ENV.ViewportPixels[1] = ENV.ScreenPhysicalPixels[1] / ENV.DevicePixelRatio;
+  // ENV.ViewportPixels[0] = ENV.ScreenPhysicalPixels[0] / ENV.DevicePixelRatio;
+  // ENV.ViewportPixels[1] = ENV.ScreenPhysicalPixels[1] / ENV.DevicePixelRatio;
 
   // IF MTurkWorker we cannot pull device data from firestore/devices
   // so calculate ENV.ViewportPPI on the fly
-  if (ENV.MTurkWorkerId || TASK.Agent == 'MTurkTest') {
-    function binSearch(fn, min, max) {
-      if (max < min) return -1;
+  // if (ENV.MTurkWorkerId || TASK.Agent == 'MTurkTest') {
+  //   function binSearch(fn, min, max) {
+  //     if (max < min) return -1;
 
-      let mid = (min + max) >>> 1;
-      if (0 < fn(mid)) {
-        if (mid == min || 0 >= fn(mid - 1)) {
-          return mid;
-        }
-        return binSearch(fn, min, mid - 1);
-      }
-      return binSearch(fn, mid + 1, max);
-    }
+  //     let mid = (min + max) >>> 1;
+  //     if (0 < fn(mid)) {
+  //       if (mid == min || 0 >= fn(mid - 1)) {
+  //         return mid;
+  //       }
+  //       return binSearch(fn, min, mid - 1);
+  //     }
+  //     return binSearch(fn, mid + 1, max);
+  //   }
 
-    function findFirstPositive(fn) {
-      let start = 1;
-      while (0 >= fn(start)) start <<= 1;
-      return binSearch(fn, start >>> 1, start) | 0;
-    }
+  //   function findFirstPositive(fn) {
+  //     let start = 1;
+  //     while (0 >= fn(start)) start <<= 1;
+  //     return binSearch(fn, start >>> 1, start) | 0;
+  //   }
 
-    function findDPI(counter = 0) {
-      return findFirstPositive(
-        (x) => (++counter, matchMedia(`(max-resolution: ${x}dpi)`).matches)
-      );
-    }
+  //   function findDPI(counter = 0) {
+  //     return findFirstPositive(
+  //       (x) => (++counter, matchMedia(`(max-resolution: ${x}dpi)`).matches)
+  //     );
+  //   }
 
-    ENV.ViewportPPI = findDPI();
-  } else {
-    //always compute PPI based on the larger dimension for consistency across portrait/landscape modes
-    if (ENV.ViewportPixels[0] >= ENV.ViewportPixels[1]) {
-      ENV.ViewportPPI = ENV.ViewportPixels[0] / ENV.ScreenSizeInches[0]; //viewport pixels per inch
-    } else {
-      ENV.ViewportPPI = ENV.ViewportPixels[1] / ENV.ScreenSizeInches[1]; //viewport pixels per inch
-    } //IF
-  }
+  //   ENV.ViewportPPI = findDPI();
+  // } else {
+  //   //always compute PPI based on the larger dimension for consistency across portrait/landscape modes
+  //   if (ENV.ViewportPixels[0] >= ENV.ViewportPixels[1]) {
+  //     ENV.ViewportPPI = ENV.ViewportPixels[0] / ENV.ScreenSizeInches[0]; //viewport pixels per inch
+  //   } else {
+  //     ENV.ViewportPPI = ENV.ViewportPixels[1] / ENV.ScreenSizeInches[1]; //viewport pixels per inch
+  //   } //IF
+  // }
 
   updateHeadsUpDisplay();
   //====================== (END) Retrieve device's screen properties ===========================//

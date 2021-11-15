@@ -655,6 +655,9 @@ export class Mkfinder {
     console.time('Timestamp Conversion');
     dataArr.forEach((data) => {
       for (let key of Object.keys(data)) {
+        console.log(
+          'timestampconv: data[key] = data[' + key + ']=' + data[key]
+        );
         if (Array.isArray(data[key])) {
           data[key].forEach(_timestampToDate);
         } else if (this.isDict(data[key])) {
@@ -672,7 +675,11 @@ export class Mkfinder {
               // console.log("Not Timestamp Object");
             }
           }
-        } else if (!this.isString(data[key]) && !this.isNumber(data[key])) {
+        } else if (
+          data[key] != null &&
+          !this.isString(data[key]) &&
+          !this.isNumber(data[key])
+        ) {
           try {
             data[key] = data[key].toDate().toJSON();
           } catch {

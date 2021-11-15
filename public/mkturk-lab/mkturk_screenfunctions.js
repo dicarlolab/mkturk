@@ -2438,3 +2438,28 @@ function updateFilterSingleFrame(
 
   return [objFilterstr, imgFilterstr];
 }
+
+function binSearch(fn, min, max) {
+  if (max < min) return -1;
+
+  let mid = (min + max) >>> 1;
+  if (0 < fn(mid)) {
+    if (mid == min || 0 >= fn(mid - 1)) {
+      return mid;
+    }
+    return binSearch(fn, min, mid - 1);
+  }
+  return binSearch(fn, mid + 1, max);
+}
+
+function findFirstPositive(fn) {
+  let start = 1;
+  while (0 >= fn(start)) start <<= 1;
+  return binSearch(fn, start >>> 1, start) | 0;
+}
+
+function findDPI(counter = 0) {
+  return findFirstPositive(
+    (x) => (++counter, matchMedia(`(max-resolution: ${x}dpi)`).matches)
+  );
+}

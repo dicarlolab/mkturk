@@ -182,7 +182,7 @@ function stageHash(task) {
   } else {
     currentStageHashStr = 'automator_off';
   }
-  console.log('[Automator] CurrentStageHashStr:', currentStageHashStr);
+  // console.log('[Automator] CurrentStageHashStr:', currentStageHashStr);
   return currentStageHashStr;
 } //FUNCTION stageHash(task)
 
@@ -241,17 +241,17 @@ function computeRunningHistory(
   trainingStageHistory,
   correctsHistory
 ) {
-  console.time('computeRunningHistory');
-  console.log(
-    'minTrials:',
-    minTrials,
-    'currentStage:',
-    currentStage,
-    'trainingStageHistory:',
-    trainingStageHistory,
-    'correctsHistory:',
-    correctsHistory
-  );
+  // console.time('computeRunningHistory');
+  // console.log(
+  //   'minTrials:',
+  //   minTrials,
+  //   'currentStage:',
+  //   currentStage,
+  //   'trainingStageHistory:',
+  //   trainingStageHistory,
+  //   'correctsHistory:',
+  //   correctsHistory
+  // );
   // todo:
   // should trials that are performed with the automator off, but with the SAME settings as an automator stage,
   // be counted as being part of the automator? (nope, explicit is always better. -MLee. )
@@ -314,6 +314,6 @@ function computeRunningHistory(
     ntrial++;
   }
   pctcorrect = (100 * ncorrect) / ntrial;
-  console.timeEnd('computeRunningHistory');
+  // console.timeEnd('computeRunningHistory');
   return [pctcorrect, ntrial];
 } //FUNCTION computeRunningHistory(minTrials, currentStage, trainingStageHistory, correctsHistory)
