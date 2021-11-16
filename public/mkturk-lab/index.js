@@ -200,34 +200,43 @@ if (ENV.BatteryAPIAvailable) {
   ENV.DeviceTouchscreen = deviceProperties.data.touchscreen;
 
   let screenSpecs;
+  ENV.FrameRateMovie = 30;
+  const fps = await estimatefps();
+  ENV.FrameRateDisplay = fps;
 
-  if (TASK.DeviceConfig !== undefined) {
-    screenSpecs = await queryDevice(TASK.DeviceConfig);
-    ENV.ScreenSizeInches = screenSpecs.screenSizeInches;
-    ENV.ScreenPhysicalPixels = screen.screenPhysicalPixels;
-    ENV.ScreenRatio = screenSpecs.screenRatio;
-    ENV.PhysicalPPI = screenSpecs.ppi;
-    ENV.FrameRateMovie =
-      screenSpecs.FrameRateMovie === -1 ? 30 : screenSpecs.frameRate;
-    ENV.ViewportPixels[0] = ENV.ScreenPhysicalPixels[0] / ENV.DevicePixelRatio;
-    ENV.ViewportPixels[1] = ENV.ScreenPhysicalPixels[1] / ENV.DevicePixelRatio;
-    if (ENV.DevicePixelRatio !== ENV.ScreenRatio) {
-      console.log(
-        'User is not running screen at native pixelratio which affects image scaling, will attempt to compensate'
-      );
-    }
-    //always compute PPI based on the larger dimension for consistency across portrait/landscape modes
-    if (ENV.ViewportPixels[0] >= ENV.ViewportPixels[1]) {
-      ENV.ViewportPPI = ENV.ViewportPixels[0] / ENV.ScreenSizeInches[0];
-    } else {
-      ENV.ViewportPPI = ENV.ViewportPixels[1] / ENV.ScreenSizeInches[1];
-    }
-  } else {
-    console.log(
-      'Device not detected in firestore/devices. Will attempt findDPI code for the optimal ViewportPPI'
-    );
-    ENV.ViewportPPI = findDPI();
-  }
+  // if (TASK.DeviceConfig !== undefined) {
+  //   screenSpecs = await queryDevice(TASK.DeviceConfig);
+  //   ENV.ScreenSizeInches = screenSpecs.screenSizeInches;
+  //   ENV.ScreenPhysicalPixels = screen.screenPhysicalPixels;
+  //   ENV.ScreenRatio = screenSpecs.screenRatio;
+  //   ENV.PhysicalPPI = screenSpecs.ppi;
+  //   ENV.FrameRateMovie =
+  //     screenSpecs.frameRateMovie === -1 ? 30 : screenSpecs.frameRateMovie;
+  //   ENV.ViewportPixels[0] = ENV.ScreenPhysicalPixels[0] / ENV.DevicePixelRatio;
+  //   ENV.ViewportPixels[1] = ENV.ScreenPhysicalPixels[1] / ENV.DevicePixelRatio;
+  //   if (ENV.DevicePixelRatio !== ENV.ScreenRatio) {
+  //     console.log(
+  //       'User is not running screen at native pixelratio which affects image scaling, will attempt to compensate'
+  //     );
+  //   }
+  //   //always compute PPI based on the larger dimension for consistency across portrait/landscape modes
+  //   if (ENV.ViewportPixels[0] >= ENV.ViewportPixels[1]) {
+  //     ENV.ViewportPPI = ENV.ViewportPixels[0] / ENV.ScreenSizeInches[0];
+  //   } else {
+  //     ENV.ViewportPPI = ENV.ViewportPixels[1] / ENV.ScreenSizeInches[1];
+  //   }
+  // } else {
+  //   console.log(
+  //     'Device not detected in firestore/devices. Will attempt findDPI code for the optimal ViewportPPI'
+  //   );
+  //   ENV.ViewportPPI = findDPI();
+  // }
+
+  // if (ENV.FrameRateMovie > ENV.FrameRateDisplay) {
+  //   console.error(
+  //     'Movie is animating at a higher frame rate than display refresh rate'
+  //   );
+  // }
 
   // var screenSpecs = await queryDeviceonFirestore(ENV.DeviceName);
 
@@ -406,6 +415,40 @@ if (ENV.BatteryAPIAvailable) {
     ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + '_params.json';
   }
   await loadParametersfromFirebase(ENV.ParamFileName);
+
+  if (TASK.DeviceConfig !== undefined) {
+    screenSpecs = await queryDevice(TASK.DeviceConfig);
+    ENV.ScreenSizeInches = screenSpecs.screenSizeInches;
+    ENV.ScreenPhysicalPixels = screenSpecs.screenPhysicalPixels;
+    ENV.ScreenRatio = screenSpecs.screenRatio;
+    ENV.PhysicalPPI = screenSpecs.ppi;
+    ENV.FrameRateMovie =
+      screenSpecs.frameRateMovie === -1 ? 30 : screenSpecs.frameRateMovie;
+    ENV.ViewportPixels[0] = ENV.ScreenPhysicalPixels[0] / ENV.DevicePixelRatio;
+    ENV.ViewportPixels[1] = ENV.ScreenPhysicalPixels[1] / ENV.DevicePixelRatio;
+    if (ENV.DevicePixelRatio !== ENV.ScreenRatio) {
+      console.log(
+        'User is not running screen at native pixelratio which affects image scaling, will attempt to compensate'
+      );
+    }
+    //always compute PPI based on the larger dimension for consistency across portrait/landscape modes
+    if (ENV.ViewportPixels[0] >= ENV.ViewportPixels[1]) {
+      ENV.ViewportPPI = ENV.ViewportPixels[0] / ENV.ScreenSizeInches[0];
+    } else {
+      ENV.ViewportPPI = ENV.ViewportPixels[1] / ENV.ScreenSizeInches[1];
+    }
+  } else {
+    console.log(
+      'Device not detected in firestore/devices. Will attempt findDPI code for the optimal ViewportPPI'
+    );
+    ENV.ViewportPPI = findDPI();
+  }
+
+  if (ENV.FrameRateMovie > ENV.FrameRateDisplay) {
+    console.error(
+      'Movie is animating at a higher frame rate than display refresh rate'
+    );
+  }
 
   let rtdbAgentRef = rtdb.ref('agents/' + ENV.Subject);
   let rtdbAgentConnectionRef = rtdb.ref(`agents/${ENV.Subject}/numConnections`);
@@ -603,7 +646,6 @@ if (ENV.BatteryAPIAvailable) {
   //============= AWAIT ESTIMATE SCREEN REFRESH RATE =========//
   // var fps = await estimatefps();
   // ENV.FrameRateDisplay = fps;
-  // ENV.FrameRateMovie = fps / 2;
 
   //========= Start in TEST mode =======//
   document.querySelector('button[id=googlesignin]').style.display = 'none'; //if do style.visibility=hidden, element will still occupy space

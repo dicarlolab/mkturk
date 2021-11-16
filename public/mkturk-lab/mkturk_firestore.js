@@ -145,14 +145,14 @@ async function queryRFIDTagonFirestore(tag) {
 async function queryDevice(deviceName) {
   const query = await db
     .collection(FIRESTORECOLLECTION.DEVICES)
-    .where('model', '==', deviceName.toLowerCase());
+    .where('docname', '==', deviceName.toLowerCase());
   const querySnapshot = await query.get();
   const deviceConfig = {
     screenSizeInches: [-1],
     screenPhysicalPixels: [-1],
     screenRatio: -1,
     ppi: -1,
-    frameRate: -1,
+    frameRateMovie: -1,
   };
 
   if (querySnapshot.empty) {
@@ -170,8 +170,8 @@ async function queryDevice(deviceName) {
     deviceConfig.screenRatio =
       doc.data().screenRatio === undefined ? -1 : doc.data().screenRatio;
     deviceConfig.ppi = doc.data().ppi === undefined ? -1 : doc.data().ppi;
-    deviceConfig.frameRate =
-      doc.data().frameRate === undefined ? -1 : doc.data().frameRate;
+    deviceConfig.frameRateMovie =
+      doc.data().frameRateMovie === undefined ? -1 : doc.data().frameRateMovie;
     return deviceConfig;
   }
 }
