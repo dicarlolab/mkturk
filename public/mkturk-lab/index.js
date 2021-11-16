@@ -417,13 +417,31 @@ if (ENV.BatteryAPIAvailable) {
   await loadParametersfromFirebase(ENV.ParamFileName);
 
   if (TASK.DeviceConfig !== undefined) {
-    screenSpecs = await queryDevice(TASK.DeviceConfig);
+    screenSpecs = await queryDevice(TASK.DeviceConfig, 'docname');
+    if (screenSpecs.isEmpty) {
+      console.error(
+        `TASK.DeviceConfig was defined but no record of ${TASK.DeviceConfig} was found in firestore/devices. All downstream code is no longer guaranteed to work`
+      );
+    }
     ENV.ScreenSizeInches = screenSpecs.screenSizeInches;
     ENV.ScreenPhysicalPixels = screenSpecs.screenPhysicalPixels;
     ENV.ScreenRatio = screenSpecs.screenRatio;
     ENV.PhysicalPPI = screenSpecs.ppi;
     ENV.FrameRateMovie =
       screenSpecs.frameRateMovie === -1 ? 30 : screenSpecs.frameRateMovie;
+    // IF PORTRAIT flip horizontal and vertical
+    if (window.innerWidth < window.innerHeight) {
+      ENV.ScreenSizeInches = [
+        ENV.ScreenSizeInches[1],
+        ENV.ScreenSizeInches[0],
+        ENV.ScreenSizeInches[2],
+      ];
+
+      ENV.ScreenPhysicalPixels = [
+        ENV.ScreenPhysicalPixels[1],
+        ENV.ScreenPhysicalPixels[0],
+      ];
+    }
     ENV.ViewportPixels[0] = ENV.ScreenPhysicalPixels[0] / ENV.DevicePixelRatio;
     ENV.ViewportPixels[1] = ENV.ScreenPhysicalPixels[1] / ENV.DevicePixelRatio;
     if (ENV.DevicePixelRatio !== ENV.ScreenRatio) {
@@ -438,10 +456,42 @@ if (ENV.BatteryAPIAvailable) {
       ENV.ViewportPPI = ENV.ViewportPixels[1] / ENV.ScreenSizeInches[1];
     }
   } else {
-    console.log(
-      'Device not detected in firestore/devices. Will attempt findDPI code for the optimal ViewportPPI'
-    );
-    ENV.ViewportPPI = findDPI();
+    screenSpecs = await queryDevice(ENV.DeviceName, 'model');
+    if (!screenSpecs.isEmpty) {
+      ENV.ScreenSizeInches = screenSpecs.screenSizeInches;
+      ENV.ScreenPhysicalPixels = screenSpecs.screenPhysicalPixels;
+      ENV.ScreenRatio = screenSpecs.screenRatio;
+      ENV.PhysicalPPI = screenSpecs.ppi;
+      ENV.FrameRateMovie =
+        screenSpecs.frameRateMovie === -1 ? 30 : screenSpecs.frameRateMovie;
+      if (window.innerWidth < window.innerHeight) {
+        ENV.ScreenSizeInches = [
+          ENV.ScreenSizeInches[1],
+          ENV.ScreenSizeInches[0],
+          ENV.ScreenSizeInches[2],
+        ];
+
+        ENV.ScreenPhysicalPixels = [
+          ENV.ScreenPhysicalPixels[1],
+          ENV.ScreenPhysicalPixels[0],
+        ];
+      }
+      ENV.ViewportPixels[0] =
+        ENV.ScreenPhysicalPixels[0] / ENV.DevicePixelRatio;
+      ENV.ViewportPixels[1] =
+        ENV.ScreenPhysicalPixels[1] / ENV.DevicePixelRatio;
+      //always compute PPI based on the larger dimension for consistency across portrait/landscape modes
+      if (ENV.ViewportPixels[0] >= ENV.ViewportPixels[1]) {
+        ENV.ViewportPPI = ENV.ViewportPixels[0] / ENV.ScreenSizeInches[0];
+      } else {
+        ENV.ViewportPPI = ENV.ViewportPixels[1] / ENV.ScreenSizeInches[1];
+      }
+    } else {
+      console.log(
+        'Device not detected in firestore/devices. Will attempt findDPI code for the optimal ViewportPPI'
+      );
+      ENV.ViewportPPI = findDPI();
+    }
   }
 
   if (ENV.FrameRateMovie > ENV.FrameRateDisplay) {

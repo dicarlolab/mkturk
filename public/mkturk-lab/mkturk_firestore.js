@@ -142,17 +142,18 @@ async function queryRFIDTagonFirestore(tag) {
   }); //.then
 } //FUNCTION queryRFIDTagonFirestore
 
-async function queryDevice(deviceName) {
+async function queryDevice(deviceName, queryField) {
   const query = await db
     .collection(FIRESTORECOLLECTION.DEVICES)
-    .where('docname', '==', deviceName.toLowerCase());
+    .where(queryField, '==', deviceName.toLowerCase());
   const querySnapshot = await query.get();
   const deviceConfig = {
-    screenSizeInches: [-1],
-    screenPhysicalPixels: [-1],
+    screenSizeInches: [-1, -1, -1],
+    screenPhysicalPixels: [-1, -1],
     screenRatio: -1,
     ppi: -1,
     frameRateMovie: -1,
+    isEmpty: true,
   };
 
   if (querySnapshot.empty) {
@@ -172,6 +173,7 @@ async function queryDevice(deviceName) {
     deviceConfig.ppi = doc.data().ppi === undefined ? -1 : doc.data().ppi;
     deviceConfig.frameRateMovie =
       doc.data().frameRateMovie === undefined ? -1 : doc.data().frameRateMovie;
+    deviceConfig.isEmpty = false;
     return deviceConfig;
   }
 }
