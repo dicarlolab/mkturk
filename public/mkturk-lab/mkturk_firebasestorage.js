@@ -464,7 +464,6 @@ async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS) {
         RFIDTag: EVENTS["timeseries"]["RFIDTag"],
         Weight: EVENTS["timeseries"]["Weight"],
         // 'Arduino': EVENTS['timeseries']['Arduino'],
-        TSequenceActual: EVENTS["timeseries"]["TSequenceActual"],
       },
       CLASSIFIERSTATS: EVENTS["trainseries"],
     };
@@ -481,7 +480,6 @@ async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS) {
         RFIDTag: EVENTS["timeseries"]["RFIDTag"],
         Weight: EVENTS["timeseries"]["Weight"],
         // 'Arduino': EVENTS['timeseries']['Arduino'],
-        TSequenceActual: EVENTS["timeseries"]["TSequenceActual"],
       },
     };
   }

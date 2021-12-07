@@ -137,7 +137,7 @@ surveyForm.addEventListener('submit', async (evt: Event) => {
       alert(`There was an error: ${response.data.message}`);
     }
 
-  } catch (error) {
+  } catch (error: Error) {
     console.error(error);
     alert(error.message);
   }

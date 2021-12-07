@@ -154,7 +154,7 @@ function saveDisplayTimestoBigQuery() {
 
 	console.log("BIGQUERY: Upload DisplayTimes");
 
-	//reset eye event accumulation in mkturk (reduce memory load)
+	//reset display event accumulation in mkturk (reduce memory load)
 	EVENTS[eventtype][eventname0] = {};
 	EVENTS[eventtype][eventname1] = {};
 	EVENTS[eventtype][eventname2] = {};

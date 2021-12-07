@@ -7,6 +7,7 @@ import {
   DocumentData,
   Timestamp,
 } from 'firebase/firestore';
+import { FileArray, FileData } from 'chonky';
 import { firebaseApp } from '../../Auth';
 
 const db = getFirestore(firebaseApp);
@@ -15,12 +16,14 @@ interface DataState {
   list: Array<DocumentData>;
   collection: string;
   status: string;
+  docsInfo: FileArray;
 }
 
 const initialState: DataState = {
   list: [],
   collection: '',
   status: '',
+  docsInfo: [],
 };
 
 function timestampToDate(dataArr: Array<DocumentData>) {
@@ -70,12 +73,31 @@ export const fetchFirestoreCollection = createAsyncThunk(
   async (collectionId: string) => {
     const querySnapshot = await getDocs(collection(db, collectionId));
     const firestoreDocs = querySnapshot.docs.map((doc: DocumentData) => {
-      const returnDoc = doc.data();
-      returnDoc.id = doc.id;
-      console.log(doc.id);
-      return returnDoc;
+      return doc.data();
     });
-    return timestampToDate(firestoreDocs);
+    const firestoreDocsInfo: FileArray = querySnapshot.docs.map(
+      (doc: DocumentData) => {
+        let info: FileData = { id: '', name: '', icon: '', color: '' };
+        if (collectionId === 'marmosets') {
+          info = {
+            id: doc.id,
+            name: doc.data().name,
+          };
+        } else if (collectionId === 'devices') {
+          info = {
+            id: doc.id,
+            name: doc.data().model,
+          };
+        }
+        info.icon = 'file';
+        info.color = 'orange';
+        return info;
+      }
+    );
+    return {
+      list: timestampToDate(firestoreDocs),
+      docsInfo: firestoreDocsInfo,
+    };
   }
 );
 
@@ -93,8 +115,8 @@ const dataSlice = createSlice({
     // When Firestore responds with data,
     // fetchFirestoreCollection.fulfilled is fired
     builder.addCase(fetchFirestoreCollection.fulfilled, (state, action) => {
-      console.log('hi');
-      state.list = action.payload;
+      state.list = action.payload.list;
+      state.docsInfo = action.payload.docsInfo;
       state.collection = action.meta.arg;
       state.status = 'success';
       // action.payload.forEach((doc) => {

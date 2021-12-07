@@ -2,7 +2,6 @@ import Navbar from 'react-bootstrap/Navbar';
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import 'bootstrap/dist/css/bootstrap.min.css';
-
 import React from 'react';
 import { useAppDispatch } from '../app/hooks';
 import { fetchFirestoreCollection } from '../features/data/dataSlice';
@@ -11,7 +10,6 @@ function MkfilesNavbar(): JSX.Element {
   const dispatch = useAppDispatch();
 
   function handleClick(location: string) {
-    console.log('HI FROM NAVBAR:', location);
     if (location.includes('firestore')) {
       const collectionId = location.split('/')[1];
       dispatch(fetchFirestoreCollection(collectionId));
