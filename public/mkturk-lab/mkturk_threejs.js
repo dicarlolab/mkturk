@@ -20,9 +20,9 @@ async function initThreeJS(sceneData) {
   document.body.append(renderer.domElement);
 
   renderer.domElement.style.width =
-    VISIBLECANVASWEBGL.width / TASK.THREEJSRenderRatio + 'px';
+    VISIBLECANVASWEBGL.width / TASK.THREEJSRenderRatio + "px";
   renderer.domElement.style.height =
-    VISIBLECANVASWEBGL.height / TASK.THREEJSRenderRatio + 'px';
+    VISIBLECANVASWEBGL.height / TASK.THREEJSRenderRatio + "px";
 
   console.log(VISIBLECANVAS.clientWidth, VISIBLECANVAS.clientHeight);
 
@@ -49,12 +49,12 @@ async function addToScene(taskscreen) {
   defaultcamera.position.set(0, 0, TASK.THREEJScameraZDist);
   defaultcamera.lookAt(0, 0, 0);
   defaultcamera.updateMatrixWorld();
-  defaultcamera.name = 'defaultcam';
+  defaultcamera.name = "defaultcam";
 
   var unitvec = new THREE.Vector3(1, 0, 0);
 
   var unitvec2d = toScreenPosition(unitvec, defaultcamera);
-  IMAGEMETA['THREEJStoPixels'] = unitvec2d.x - renderer.domElement.width / 2;
+  IMAGEMETA["THREEJStoPixels"] = unitvec2d.x - renderer.domElement.width / 2;
 
   let framerate = ENV.FrameRateMovie;
 
@@ -74,7 +74,7 @@ async function addToScene(taskscreen) {
       var camera;
 
       if (
-        IMAGES[taskscreen][classlabel].CAMERAS[cam].type == 'PerspectiveCamera'
+        IMAGES[taskscreen][classlabel].CAMERAS[cam].type == "PerspectiveCamera"
       ) {
         camera = new THREE.PerspectiveCamera(
           TASK.THREEJScameraFOV,
@@ -83,7 +83,7 @@ async function addToScene(taskscreen) {
           IMAGES[taskscreen][classlabel].CAMERAS[cam].far
         );
       } else if (
-        IMAGES[taskscreen][classlabel].CAMERAS[cam].type == 'OrthographicCamera'
+        IMAGES[taskscreen][classlabel].CAMERAS[cam].type == "OrthographicCamera"
       ) {
         camera = new THREE.OrthographicCamera(
           VISIBLECANVASWEBGL.width / (ENV.ViewportPPI / ENV.CanvasRatio) / -2,
@@ -97,6 +97,12 @@ async function addToScene(taskscreen) {
 
       camera.name = `cam${classlabel}`;
       scene[taskscreen].add(camera);
+
+      if (taskscreen == "Sample" || taskscreen == "Test") {
+        FLAGS.movieper[taskscreen][classlabel] = Array(
+          IMAGES[taskscreen][classlabel].nimages
+        ).fill(0);
+      }
 
       for (let i = 0; i < IMAGES[taskscreen][classlabel].nimages; i++) {
         let durationMS = chooseArrayElement(
@@ -113,10 +119,13 @@ async function addToScene(taskscreen) {
           IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[i] =
             interpParam(
               IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[i],
-              'continuous',
+              "continuous",
               durationMS,
               framerate
             );
+
+          FLAGS.movieper[taskscreen][classlabel][i] =
+            IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[i].length;
           var cameraFirstposition_x =
             IMAGES[taskscreen][classlabel].CAMERAS[cam].position.x[0][0];
         } else {
@@ -133,10 +142,13 @@ async function addToScene(taskscreen) {
           IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y[i] =
             interpParam(
               IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y[i],
-              'continuous',
+              "continuous",
               durationMS,
               framerate
             );
+
+          FLAGS.movieper[taskscreen][classlabel][i] =
+            IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y[i].length;
           var cameraFirstposition_y =
             IMAGES[taskscreen][classlabel].CAMERAS[cam].position.y[0][0];
         } else {
@@ -152,10 +164,14 @@ async function addToScene(taskscreen) {
           IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z[i] =
             interpParam(
               IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z[i],
-              'continuous',
+              "continuous",
               durationMS,
               framerate
             );
+
+          FLAGS.movieper[taskscreen][classlabel][i] =
+            IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z[i].length;
+
           var cameraFirstposition_z =
             IMAGES[taskscreen][classlabel].CAMERAS[cam].position.z[0][0];
         } else {
@@ -193,7 +209,7 @@ async function addToScene(taskscreen) {
           IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.x[i] =
             interpParam(
               IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.x[i],
-              'continuous',
+              "continuous",
               durationMS,
               framerate
             );
@@ -219,7 +235,7 @@ async function addToScene(taskscreen) {
           IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.y[i] =
             interpParam(
               IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.y[i],
-              'continuous',
+              "continuous",
               durationMS,
               framerate
             );
@@ -245,7 +261,7 @@ async function addToScene(taskscreen) {
           IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.z[i] =
             interpParam(
               IMAGES[taskscreen][classlabel].CAMERAS[cam].targetTHREEJS.z[i],
-              'continuous',
+              "continuous",
               durationMS,
               framerate
             );
@@ -281,12 +297,6 @@ async function addToScene(taskscreen) {
       CAMERAS[taskscreen][classlabel][cam] = camera;
     } //FOR cam in cameras
 
-    if (taskscreen == 'Sample' || taskscreen == 'Test') {
-      FLAGS.movieper[taskscreen][classlabel] = Array(
-        IMAGES[taskscreen][classlabel].nimages
-      ).fill(0);
-    }
-
     //==== LIGHTS
     LIGHTS[taskscreen][classlabel] = [];
     for (let lt in IMAGES[taskscreen][classlabel].LIGHTS) {
@@ -300,14 +310,14 @@ async function addToScene(taskscreen) {
 
       let light;
       if (
-        IMAGES[taskscreen][classlabel].LIGHTS[lt].type === 'DirectionalLight'
+        IMAGES[taskscreen][classlabel].LIGHTS[lt].type === "DirectionalLight"
       ) {
         light = new THREE.DirectionalLight(
           Number(IMAGES[taskscreen][classlabel].LIGHTS[lt].color), // LIGHT COLOR
           IMAGES[taskscreen][classlabel].LIGHTS[lt].intensity // LIGHT INTENSITY
         );
       } else if (
-        IMAGES[taskscreen][classlabel].LIGHTS[lt].type === 'AmbientLight'
+        IMAGES[taskscreen][classlabel].LIGHTS[lt].type === "AmbientLight"
       ) {
         light = new THREE.AmbientLight(
           IMAGES[taskscreen][classlabel].LIGHTS[lt].color, // LIGHT COLOR
@@ -320,7 +330,7 @@ async function addToScene(taskscreen) {
       LIGHTS[taskscreen][classlabel][lt] = light;
 
       // Expand movie frames if lighting varies over time
-      if (taskscreen == 'Sample' || taskscreen == 'Test') {
+      if (taskscreen == "Sample" || taskscreen == "Test") {
         for (let i = 0; i < IMAGES[taskscreen][classlabel].nimages; i++) {
           let durationMS = chooseArrayElement(
             IMAGES[taskscreen][classlabel].durationMS,
@@ -339,7 +349,7 @@ async function addToScene(taskscreen) {
             IMAGES[taskscreen][classlabel].LIGHTS[lt].position.x[i] =
               interpParam(
                 IMAGES[taskscreen][classlabel].LIGHTS[lt].position.x[i],
-                'continuous',
+                "continuous",
                 durationMS,
                 framerate
               );
@@ -356,7 +366,7 @@ async function addToScene(taskscreen) {
             IMAGES[taskscreen][classlabel].LIGHTS[lt].position.y[i] =
               interpParam(
                 IMAGES[taskscreen][classlabel].LIGHTS[lt].position.y[i],
-                'continuous',
+                "continuous",
                 durationMS,
                 framerate
               );
@@ -373,7 +383,7 @@ async function addToScene(taskscreen) {
             IMAGES[taskscreen][classlabel].LIGHTS[lt].position.z[i] =
               interpParam(
                 IMAGES[taskscreen][classlabel].LIGHTS[lt].position.z[i],
-                'continuous',
+                "continuous",
                 durationMS,
                 framerate
               );
@@ -390,7 +400,7 @@ async function addToScene(taskscreen) {
             IMAGES[taskscreen][classlabel].LIGHTS[lt].intensity[i] =
               interpParam(
                 IMAGES[taskscreen][classlabel].LIGHTS[lt].intensity[i],
-                'continuous',
+                "continuous",
                 durationMS,
                 framerate
               );
@@ -405,7 +415,7 @@ async function addToScene(taskscreen) {
           ) {
             IMAGES[taskscreen][classlabel].LIGHTS[lt].visible[i] = interpParam(
               IMAGES[taskscreen][classlabel].LIGHTS[lt].visible[i],
-              'binary',
+              "binary",
               durationMS,
               framerate
             );
@@ -425,20 +435,20 @@ async function addToScene(taskscreen) {
 
       let meshpartnames = [];
       objects.traverse((child) => {
-        if (child.name != 'Scene') {
+        if (child.name != "Scene") {
           meshpartnames.push(child.name); // store in case of morph later
         }
 
         // set texture
         if (child.material) {
-          if (child.name == 'Base') {
+          if (child.name == "Base") {
             let material = new THREE.MeshPhysicalMaterial(materialparam);
             material.map = child.material.map;
             child.material = material;
             child.material.needsUpdate = true;
           } // IF 'Base' Mesh
 
-          if (child.name == 'Eyeriris' || child.name == 'Eyeliris') {
+          if (child.name == "Eyeriris" || child.name == "Eyeliris") {
             child.renderOrder = 1;
           }
 
@@ -503,7 +513,7 @@ async function addToScene(taskscreen) {
 
       // Expand movie frames if object latent variables vary over time
 
-      if (taskscreen == 'Sample' || taskscreen == 'Test') {
+      if (taskscreen == "Sample" || taskscreen == "Test") {
         for (let i = 0; i < IMAGES[taskscreen][classlabel].nimages; i++) {
           let durationMS = chooseArrayElement(
             IMAGES[taskscreen][classlabel].durationMS,
@@ -529,7 +539,7 @@ async function addToScene(taskscreen) {
                 IMAGES[taskscreen][classlabel].OBJECTS[obj].positionTHREEJS[
                   key
                 ][i],
-                'continuous',
+                "continuous",
                 durationMS,
                 framerate
               );
@@ -558,7 +568,7 @@ async function addToScene(taskscreen) {
                 IMAGES[taskscreen][classlabel].OBJECTS[obj].rotationDegrees[
                   key
                 ][i],
-                'continuous',
+                "continuous",
                 durationMS,
                 framerate
               );
@@ -579,7 +589,7 @@ async function addToScene(taskscreen) {
             IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS[i] =
               interpParam(
                 IMAGES[taskscreen][classlabel].OBJECTS[obj].sizeTHREEJS[i],
-                'continuous',
+                "continuous",
                 durationMS,
                 framerate
               );
@@ -596,7 +606,7 @@ async function addToScene(taskscreen) {
             IMAGES[taskscreen][classlabel].OBJECTS[obj].visible[i] =
               interpParam(
                 IMAGES[taskscreen][classlabel].OBJECTS[obj].visible[i],
-                'binary',
+                "binary",
                 durationMS,
                 framerate
               );
@@ -614,7 +624,7 @@ async function addToScene(taskscreen) {
             IMAGES[taskscreen][classlabel].OBJECTS[obj].material.opacity[i] =
               interpParam(
                 IMAGES[taskscreen][classlabel].OBJECTS[obj].material.opacity[i],
-                'continuous',
+                "continuous",
                 durationMS,
                 framerate
               );
@@ -648,7 +658,7 @@ async function addToScene(taskscreen) {
                 )
               );
 
-              if (meshpartnames[m] == 'Base') {
+              if (meshpartnames[m] == "Base") {
                 IMAGES[taskscreen][classlabel].OBJECTS[obj].originmesh[
                   meshpartnames[m]
                 ].normal = math.matrix(
@@ -714,7 +724,7 @@ async function addToScene(taskscreen) {
               let morphTargetIdx = math.setDistinct(morphTime);
               morphTime = interpParam(
                 morphTime,
-                'continuous',
+                "continuous",
                 durationMS,
                 framerate
               );
@@ -814,7 +824,7 @@ async function addToScene(taskscreen) {
                     );
 
                     if (
-                      meshpartnames[m] == 'Base' &&
+                      meshpartnames[m] == "Base" &&
                       IMAGES[taskscreen][classlabel].OBJECTS[obj]
                         .baseVertexInd !== undefined &&
                       IMAGES[taskscreen][classlabel].OBJECTS[obj]
@@ -945,7 +955,7 @@ async function addToScene(taskscreen) {
      */
 
     if (IMAGES[taskscreen][classlabel].OBJECTFILTERS !== undefined) {
-      if (taskscreen == 'Sample' || taskscreen == 'Test') {
+      if (taskscreen == "Sample" || taskscreen == "Test") {
         for (let i = 0; i < IMAGES[taskscreen][classlabel].nimages; i++) {
           for (let key in IMAGES[taskscreen][classlabel].OBJECTFILTERS) {
             if (
@@ -957,7 +967,7 @@ async function addToScene(taskscreen) {
               IMAGES[taskscreen][classlabel].OBJECTFILTERS[key][i] =
                 interpParam(
                   IMAGES[taskscreen][classlabel].OBJECTFILTERS[key][i],
-                  'continuous',
+                  "continuous",
                   durationMS,
                   framerate
                 );
@@ -971,7 +981,7 @@ async function addToScene(taskscreen) {
     } // IF OBJECTFILTERS exist
 
     //BACKGROUND 2D IMAGE
-    if (taskscreen == 'Sample' || taskscreen == 'Test') {
+    if (taskscreen == "Sample" || taskscreen == "Test") {
       var boxGeometry = new THREE.BoxGeometry(1, 1, 1);
 
       /**
@@ -984,13 +994,13 @@ async function addToScene(taskscreen) {
       if (
         IMAGES[taskscreen][classlabel].IMAGES.material !== undefined &&
         IMAGES[taskscreen][classlabel].IMAGES.material.type !=
-          'MeshBasicMaterial'
+          "MeshBasicMaterial"
       ) {
         for (let i = 0; i < 6; i++) {
           materialArray.push(
             new THREE.MeshPhysicalMaterial({
               map: new THREE.Texture(),
-              color: '',
+              color: "",
             })
           );
         }
@@ -999,7 +1009,7 @@ async function addToScene(taskscreen) {
           materialArray.push(
             new THREE.MeshBasicMaterial({
               map: new THREE.Texture(),
-              color: '',
+              color: "",
             })
           );
         }
@@ -1012,13 +1022,13 @@ async function addToScene(taskscreen) {
       });
 
       let backgroundCube = new THREE.Mesh(boxGeometry, materialArray);
-      backgroundCube.name = 'backgroundCube' + classlabel;
+      backgroundCube.name = "backgroundCube" + classlabel;
       backgroundCube.material.needsUpdate = true;
 
       scene[taskscreen].add(backgroundCube);
 
       let box = new THREE.BoxHelper(backgroundCube, 0xff0000);
-      box.name = backgroundCube.name + 'boxhelper';
+      box.name = backgroundCube.name + "boxhelper";
       box.material.needsUpdate = true;
       scene[taskscreen].add(box);
 
@@ -1051,7 +1061,7 @@ async function addToScene(taskscreen) {
 
         IMAGES[taskscreen][classlabel].IMAGES.imageidx[i] = interpParam(
           imgIdx,
-          'binary',
+          "binary",
           durationMS,
           framerate
         );
@@ -1061,7 +1071,7 @@ async function addToScene(taskscreen) {
           j < IMAGES[taskscreen][classlabel].IMAGES.imageidx[i].length;
           j++
         ) {
-          if (IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j] !== '') {
+          if (IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j] !== "") {
             IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j] = Math.round(
               IMAGES[taskscreen][classlabel].IMAGES.imageidx[i][j]
             );
@@ -1082,7 +1092,7 @@ async function addToScene(taskscreen) {
           if (Array.isArray(IMAGES[taskscreen][classlabel].IMAGES.visible[i])) {
             IMAGES[taskscreen][classlabel].IMAGES.visible[i] = interpParam(
               IMAGES[taskscreen][classlabel].IMAGES.visible[i],
-              'binary',
+              "binary",
               durationMS,
               framerate
             );
@@ -1109,7 +1119,7 @@ async function addToScene(taskscreen) {
             ) {
               IMAGES[taskscreen][classlabel].IMAGEFILTERS[key][i] = interpParam(
                 IMAGES[taskscreen][classlabel].IMAGEFILTERS[key][i],
-                'continuous',
+                "continuous",
                 durationMS,
                 framerate
               );
@@ -1124,8 +1134,8 @@ async function addToScene(taskscreen) {
   } //FOR classlabels
 
   //==== GridCenters in 3JS (==> POSSIBLE CAMERA OFFSETS FOR SAMPLE,TEST,CHOICE "ROOMS")
-  IMAGEMETA[taskscreen + 'XGridCenterTHREEJS'] = [];
-  IMAGEMETA[taskscreen + 'YGridCenterTHREEJS'] = [];
+  IMAGEMETA[taskscreen + "XGridCenterTHREEJS"] = [];
+  IMAGEMETA[taskscreen + "YGridCenterTHREEJS"] = [];
 
   // FOR each grid index
   for (let gridIdx = 0; gridIdx < ENV.XGridCenter.length; gridIdx++) {
@@ -1134,8 +1144,8 @@ async function addToScene(taskscreen) {
       ENV.YGridCenter[gridIdx],
       taskscreen
     );
-    IMAGEMETA[taskscreen + 'XGridCenterTHREEJS'][gridIdx] = funcreturn[0];
-    IMAGEMETA[taskscreen + 'YGridCenterTHREEJS'][gridIdx] = funcreturn[1];
+    IMAGEMETA[taskscreen + "XGridCenterTHREEJS"][gridIdx] = funcreturn[0];
+    IMAGEMETA[taskscreen + "YGridCenterTHREEJS"][gridIdx] = funcreturn[1];
   }
 } //FUNCTION addToScene(taskscreen)
 
@@ -1148,12 +1158,12 @@ function updateSingleFrame3D(
   cubeTexture
 ) {
   //==== TURN OFF ALL ITEMS
-  for (let sceneElem in scene[taskscreen]['children']) {
-    scene[taskscreen]['children'][sceneElem].visible = false;
+  for (let sceneElem in scene[taskscreen]["children"]) {
+    scene[taskscreen]["children"][sceneElem].visible = false;
 
     // REMOVE BoxHelper
-    if (scene[taskscreen]['children'][sceneElem].type == 'LineSegments') {
-      scene[taskscreen].remove(scene[taskscreen]['children'][sceneElem]);
+    if (scene[taskscreen]["children"][sceneElem].type == "LineSegments") {
+      scene[taskscreen].remove(scene[taskscreen]["children"][sceneElem]);
     }
   } // FOR sceneElements
 
@@ -1161,7 +1171,7 @@ function updateSingleFrame3D(
   var allBoundingBoxes = [];
   var crop = [];
   var allBoundingBoxCubes = [];
-  if (typeof classlabels == 'number') {
+  if (typeof classlabels == "number") {
     classlabels = [classlabels];
   }
   for (var i = 0; i <= classlabels.length - 1; i++) {
@@ -1181,7 +1191,7 @@ function updateSingleFrame3D(
 
     //======= CAMERAS
     for (var cam in IMAGES[taskscreen][classlabel].CAMERAS) {
-      var camera = scene[taskscreen].getObjectByName('cam' + classlabel);
+      var camera = scene[taskscreen].getObjectByName("cam" + classlabel);
       var nextvisible = chooseArrayElement(
         IMAGES[taskscreen][classlabel].CAMERAS[cam].visible,
         index,
@@ -1551,7 +1561,7 @@ function updateSingleFrame3D(
         }
       } //IF morph
 
-      var camera = scene[taskscreen].getObjectByName('cam' + classlabel);
+      var camera = scene[taskscreen].getObjectByName("cam" + classlabel);
 
       if (nextvisible == 1) {
         objects.visible = true;
@@ -1563,7 +1573,7 @@ function updateSingleFrame3D(
       var scenecenterY = ENV.YGridCenter[gridindex];
 
       var box = scene[taskscreen].getObjectByName(
-        obj + '_' + taskscreen + '_' + classlabel + '_' + 'boxhelper'
+        obj + "_" + taskscreen + "_" + classlabel + "_" + "boxhelper"
       );
       var [objPosition, objSize, boundingBox] = updateObjectSingleFrame(
         taskscreen,
@@ -1598,7 +1608,7 @@ function updateSingleFrame3D(
     } //IF get movieframe
 
     var backgroundCube = scene[taskscreen].getObjectByName(
-      'backgroundCube' + classlabel
+      "backgroundCube" + classlabel
     );
     //BACKGROUND VISIBILITY
 
@@ -1676,7 +1686,7 @@ function updateObjectSingleFrame(
       objects
         .getObjectByName(keys)
         .geometry.setAttribute(
-          'position',
+          "position",
           new THREE.BufferAttribute(
             new Float32Array(objMorph[keys].position._data),
             3
@@ -1689,7 +1699,7 @@ function updateObjectSingleFrame(
         objects
           .getObjectByName(keys)
           .geometry.setAttribute(
-            'normal',
+            "normal",
             new THREE.BufferAttribute(
               new Float32Array(objMorph[keys].normal._data),
               3
@@ -1862,7 +1872,7 @@ function updateImageSingleFrame(
 
   if (cubeTexture != undefined) {
     textureOrder.map((t, idx) => {
-      if (cubeTexture[t] != '' && cubeTexture[t] !== undefined) {
+      if (cubeTexture[t] != "" && cubeTexture[t] !== undefined) {
         cubeTexture[t].wrapT = THREE.ClampToEdgeWrapping;
         backgroundCube.material[idx].map = cubeTexture[t];
         backgroundCube.material[idx].side = THREE.BackSide;
@@ -2036,8 +2046,8 @@ function toTHREEJSOffset(x, y, taskscreen) {
   var ydisp = heightHalf - y;
 
   return [
-    xdisp / IMAGEMETA['THREEJStoPixels'],
-    ydisp / IMAGEMETA['THREEJStoPixels'],
+    xdisp / IMAGEMETA["THREEJStoPixels"],
+    ydisp / IMAGEMETA["THREEJStoPixels"],
   ];
 } //FUNCTION toTHREEJSOffset
 
@@ -2056,7 +2066,7 @@ function createMovieSeq(
       movie_tseq[movie_tseq.length - 1] + 1000 / framerate;
     movie_sequence = [
       Array(movie_tseq.length - 1).fill(taskscreen),
-      'Blank',
+      "Blank",
     ].flat();
 
     //Add preceding SampleOFF (which is sampleframe0 ON) & Shift Sample frame OFF times by preceding SampleOFF [ON, OFF .... OFF ]
@@ -2084,10 +2094,10 @@ function createMovieSeq(
 function interpParam(vec, type, durationMS, framerate) {
   var dur = durationMS / 1000; //convert to seconds
   var tseq = range(0, dur, Math.round(1000 / framerate) / 1000);
-  var vec_flattened = Array(tseq.length).fill('');
+  var vec_flattened = Array(tseq.length).fill("");
 
-  if (vec.every((val) => val !== '')) {
-    if (type == 'binary') {
+  if (vec.every((val) => val !== "")) {
+    if (type == "binary") {
       vec[vec.length] = 0;
     } //pad to get correct # of segments for step variables
     var nseg = vec.length - 1;
@@ -2098,7 +2108,7 @@ function interpParam(vec, type, durationMS, framerate) {
       for (var i = 0; i <= nseg; i++) {
         var p1 = [(i * dur) / nseg, vec[i]];
         var p2 = [((i + 1) * dur) / nseg, vec[i + 1]]; //line
-        if (type == 'binary') {
+        if (type == "binary") {
           p2 = [((i + 1) * dur) / nseg, vec[i]]; //constant
         } //ELSEIF binary
         var [slope, intercept] = findLinEqwithTwopts(p1, p2);
@@ -2116,7 +2126,7 @@ function interpParam(vec, type, durationMS, framerate) {
       vec_flattened[vec_flattened.length - 1] = vec[vec.length - 1];
     }
 
-    if (type == 'binary') {
+    if (type == "binary") {
       vec_flattened[vec_flattened.length - 1] = vec[vec.length - 2];
     }
   }
@@ -2130,7 +2140,7 @@ function range(start, end, step = 1) {
 
   // Throw an error if any of the first 3 arguments is not a finite number.
   if (!allNumbers) {
-    throw new TypeError('range() expects only finite numbers as arguments.');
+    throw new TypeError("range() expects only finite numbers as arguments.");
   }
   // The length is incremented by 1 after Math.floor().
   // This ensures that the end number is listed if it falls within the range.
