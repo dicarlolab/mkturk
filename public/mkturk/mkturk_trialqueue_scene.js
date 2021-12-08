@@ -169,7 +169,7 @@ async generate_trials(n_trials){
 				}//FOR i sample images
 			}//ELSE interleaved, sample all categories
 		}//Need to make a new bucket
-
+		
 		// Draw one (1) sample image from current samplebucket
 		var sample_index = this.selectSampleImage(this.samplebucket, this.samplingStrategy)
 		var sample_scenebag_label = this.samplebag_labels[sample_index]; 
@@ -260,7 +260,9 @@ async get_next_trial(){
 	while(true){
 		if (FLAGS.stickyresponse >= TASK.NStickyResponse
 			&& TASK.NStickyResponse > 0
-			&& test_correctIndex == EVENTS['trialseries']['Response'][CURRTRIAL.num-1])
+			&& test_correctIndex == EVENTS['trialseries']['Response'][CURRTRIAL.num-1]
+			&& TASK.SamplingStrategy !="sequential"
+			&& TASK.Agent !="SaveImages")
 		{
 			if (this.sampleq.filename.length == 0){
 				// console.log("Reached end of trial queue... generating one more in this.get_next_trial")

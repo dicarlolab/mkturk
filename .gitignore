@@ -12,3 +12,4 @@ Icon*
 tmp/
 .yarn/
 .yarnrc.yml
+public/mkfiles

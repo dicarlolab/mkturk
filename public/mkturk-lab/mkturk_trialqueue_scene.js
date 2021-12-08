@@ -262,7 +262,9 @@ async get_next_trial(){
 	while(true){
 		if (FLAGS.stickyresponse >= TASK.NStickyResponse
 			&& TASK.NStickyResponse > 0
-			&& test_correctIndex == EVENTS['trialseries']['Response'][CURRTRIAL.num-1])
+			&& test_correctIndex == EVENTS['trialseries']['Response'][CURRTRIAL.num-1]
+			&& TASK.SamplingStrategy !="sequential"
+			&& TASK.Agent !="SaveImages")
 		{
 			if (this.sampleq.filename.length == 0){
 				// console.log("Reached end of trial queue... generating one more in this.get_next_trial")
