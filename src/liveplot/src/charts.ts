@@ -69,6 +69,24 @@ const colorMapJet = [
   '#800000',
 ];
 
+const rtColorMap = [
+  '#ffe100',
+  '#ffc300',
+  '#ffa500',
+  '#ff6e00',
+  '#ff3700',
+  '#ff0000',
+  '#d5002b',
+  '#aa0055',
+  '#800080',
+  '#5500aa',
+  '#2b00d5',
+  '#0000ff',
+  '#002baa',
+  '#005555',
+  '#008000',
+];
+
 const utils = new Utils();
 
 export class Charts {
@@ -117,6 +135,8 @@ export class Charts {
   public realtimePlotActive: boolean;
   public realtimeRowDataAdded: boolean;
   public rtData: any;
+  public prevCoord: any;
+  public prevColorIdx: number;
 
   public rxnPlot: google.visualization.Histogram;
   public rxnPlotOptions: google.visualization.HistogramOptions;
@@ -154,6 +174,9 @@ export class Charts {
       rfidTime: 0,
       tagCount: {},
     };
+
+    this.prevCoord = { x: 0, y: 0 };
+    this.prevColorIdx = 0;
   }
 
   public setupDataTables() {
@@ -600,7 +623,7 @@ export class Charts {
     let streamActive = plotOptions.streamActive;
     this.drawScreenPlot(fileData, streamActive);
     if (streamActive && !this.realtimePlotActive) {
-      // console.log('hello');
+      console.log('hello');
       this.drawRealtimePlot2(fileData);
       this.realtimePlotActive = true;
     }
@@ -1728,76 +1751,76 @@ export class Charts {
     this.rewardPlot.draw(this.rewardDataTable, this.rewardPlotOptions);
   }
 
-  private drawRealtimePlot(data: LiveplotDataType) {
-    let idx = 0;
-    this.realtimePlotOptions = {
-      seriesType: 'scatter',
-      width: data.workspace[2] * data.CanvasRatio,
-      height: data.ViewportPixels[1] - data.offsettop,
-      legend: {
-        position: 'top',
-      },
-      hAxis: {
-        title: 'X position (px)',
-        viewWindow: {
-          min: 0,
-          max: data.workspace[2] * data.CanvasRatio,
-        },
-      },
-      vAxis: {
-        title: 'Y position (px)',
-        viewWindow: {
-          min: 0,
-          max: data.ViewportPixels[1] - data.offsettop,
-        },
-      },
-    };
-    this.realtimePlotOptions.hAxis = {
-      title: 'X position (px)',
-      viewWindow: {
-        min: 0,
-        max: data.workspace[2] * data.CanvasRatio,
-      },
-    };
-    this.realtimePlotOptions.vAxis = {
-      title: 'Y position (px)',
-      viewWindow: {
-        min: 0,
-        max: data.ViewportPixels[1] - data.offsettop,
-      },
-    };
-    let numCol = this.realtimeDataTable.getNumberOfColumns();
-    this.generateAndAddRowData(this.realtimeDataTable, numCol, {
-      0: 0,
-      [numCol - 2]: 0,
-    });
-    let numRows = this.realtimeDataTable.getNumberOfRows();
+  // private drawRealtimePlot(data: LiveplotDataType) {
+  //   let idx = 0;
+  //   this.realtimePlotOptions = {
+  //     seriesType: 'scatter',
+  //     width: data.workspace[2] * data.CanvasRatio,
+  //     height: data.ViewportPixels[1] - data.offsettop,
+  //     legend: {
+  //       position: 'top',
+  //     },
+  //     hAxis: {
+  //       title: 'X position (px)',
+  //       viewWindow: {
+  //         min: 0,
+  //         max: data.workspace[2] * data.CanvasRatio,
+  //       },
+  //     },
+  //     vAxis: {
+  //       title: 'Y position (px)',
+  //       viewWindow: {
+  //         min: 0,
+  //         max: data.ViewportPixels[1] - data.offsettop,
+  //       },
+  //     },
+  //   };
+  //   this.realtimePlotOptions.hAxis = {
+  //     title: 'X position (px)',
+  //     viewWindow: {
+  //       min: 0,
+  //       max: data.workspace[2] * data.CanvasRatio,
+  //     },
+  //   };
+  //   this.realtimePlotOptions.vAxis = {
+  //     title: 'Y position (px)',
+  //     viewWindow: {
+  //       min: 0,
+  //       max: data.ViewportPixels[1] - data.offsettop,
+  //     },
+  //   };
+  //   let numCol = this.realtimeDataTable.getNumberOfColumns();
+  //   this.generateAndAddRowData(this.realtimeDataTable, numCol, {
+  //     0: 0,
+  //     [numCol - 2]: 0,
+  //   });
+  //   let numRows = this.realtimeDataTable.getNumberOfRows();
 
-    this.realtimePlotConfig = {
-      chartType: 'ComboChart',
-      containerId: 'realtime-plot',
-      options: this.realtimePlotOptions,
-    };
-    this.realtimePlot = new google.visualization.ChartWrapper(
-      this.realtimePlotConfig
-    );
-    this.realtimePlot.setDataTable(this.realtimeDataTable);
-    window.addEventListener('data_arrived', (evt: CustomEventInit) => {
-      if (idx % 2 == 0) {
-        this.realtimeDataTable.setValue(
-          numRows - 1,
-          0,
-          Math.floor(evt.detail.x)
-        );
-        this.realtimeDataTable.setValue(
-          numRows - 1,
-          numCol - 2,
-          Math.floor(evt.detail.y)
-        );
-        this.realtimePlot.draw();
-      }
-    });
-  }
+  //   this.realtimePlotConfig = {
+  //     chartType: 'ComboChart',
+  //     containerId: 'realtime-plot',
+  //     options: this.realtimePlotOptions,
+  //   };
+  //   this.realtimePlot = new google.visualization.ChartWrapper(
+  //     this.realtimePlotConfig
+  //   );
+  //   this.realtimePlot.setDataTable(this.realtimeDataTable);
+  //   window.addEventListener('data_arrived', (evt: CustomEventInit) => {
+  //     if (idx % 2 == 0) {
+  //       this.realtimeDataTable.setValue(
+  //         numRows - 1,
+  //         0,
+  //         Math.floor(evt.detail.x)
+  //       );
+  //       this.realtimeDataTable.setValue(
+  //         numRows - 1,
+  //         numCol - 2,
+  //         Math.floor(evt.detail.y)
+  //       );
+  //       this.realtimePlot.draw();
+  //     }
+  //   });
+  // }
 
   private drawStaticElements(
     cvs: HTMLCanvasElement,
@@ -1831,79 +1854,6 @@ export class Charts {
         ctx.stroke();
       }
     }
-    // if (ctx) {
-    //   ctx.fillStyle = 'gray';
-    //   ctx.fillRect(
-    //     0,
-    //     0,
-    //     data.workspace[2] * data.CanvasRatio,
-    //     data.ViewportPixels[1] - data.offsettop
-    //   );
-
-    //   // Fixation
-    //   if (data.FixationUsesSample < 1) {
-    //     ctx.strokeStyle = '#0000FF';
-    //     ctx.beginPath();
-    //     ctx.arc(
-    //       this.rtData.fixation.x,
-    //       cvs.height - this.rtData.fixation.y,
-    //       this.rtData.fixation.width / 2,
-    //       0,
-    //       Math.PI * 2,
-    //       true
-    //     );
-    //     ctx.stroke();
-    //   }
-
-    //   // Sample
-    //   ctx.strokeStyle = '#000000'; // black
-    //   ctx.beginPath();
-    //   ctx.rect(
-    //     this.rtData.sample.x - this.rtData.sample.width / 2,
-    //     cvs.height - (this.rtData.sample.y + this.rtData.sample.height / 2),
-    //     this.rtData.sample.width,
-    //     this.rtData.sample.height
-    //   );
-    //   ctx.stroke();
-
-    //   // Test
-    //   for (let i = 0; i < _.size(this.rtData['test']); i++) {
-    //     console.log('test');
-    //     ctx.beginPath();
-    //     ctx.rect(
-    //       this.rtData['test'][i].x - this.rtData['test'][i].width / 2,
-    //       cvs.height - (this.rtData['test'][i].y + this.rtData['test'][i].height / 2),
-    //       this.rtData['test'][i].width,
-    //       this.rtData['test'][i].height
-    //     );
-    //     ctx.stroke();
-    //   }
-
-    //   // Choice
-    //   for (let i = 0; i < _.size(this.rtData['choice']); i++) {
-    //     ctx.beginPath();
-    //     ctx.rect(
-    //       this.rtData['choice'][i].x - this.rtData['choice'][i].width / 2,
-    //       cvs.height - (this.rtData['choice'][i].y + this.rtData['choice'][i].height / 2),
-    //       this.rtData['choice'][i].width,
-    //       this.rtData['choice'][i].height
-    //     );
-    //     ctx.stroke();
-    //   }
-
-    //   let fixWinSz = data.FixationWindowSizeInches;
-
-    //   if (_.isNumber(fixWinSz) && fixWinSz > 0) {
-    //     ctx.strokeStyle = '#FFFF00'; // yellow
-    //     ctx.strokeRect(
-    //       this.rtData.fixation.x - _.floor(fixWinSz / 2 * data.ViewportPPI),
-    //       cvs.height
-    //       - (this.rtData.fixation.y + _.floor(fixWinSz / 2 * data.ViewportPPI)),
-    //       _.floor(fixWinSz * data.ViewportPPI),
-    //       _.floor(fixWinSz * data.ViewportPPI)
-    //     );
-    //   }
-    // }
   }
 
   private drawRealtimePlot2(data: LiveplotDataType) {
@@ -1911,22 +1861,50 @@ export class Charts {
     cvs.width = data.workspace[2] * data.CanvasRatio;
     cvs.height = data.ViewportPixels[1] - data.offsettop;
     let ctx = cvs.getContext('2d') as CanvasRenderingContext2D;
+    const longerAxis = cvs.width > cvs.height ? cvs.width : cvs.height;
+
+    // const realtimeOnData =
     window.addEventListener('data_arrived', (evt: CustomEventInit) => {
+      console.log('LONGER AXIS:', longerAxis);
       if (evt.detail.meta == 2) {
         this.drawStaticElements(cvs, ctx, data, evt);
       }
 
-      if (evt.detail.meta == 1) {
-        ctx.fillStyle = 'green';
-      } else if (evt.detail.meta == 0) {
-        ctx.fillStyle = 'red';
-      }
+      if (evt.detail.meta == 1 || evt.detail.meta == 0) {
+        const x = _.floor(evt.detail.x);
+        const y = _.floor(cvs.height - evt.detail.y);
+        console.log('X:', x, 'Y:', y);
+        const xQuantity = x - this.prevCoord.x;
+        const xSquared = Math.pow(xQuantity, 2);
+        const yQuantity = y - this.prevCoord.y;
+        const ySquared = Math.pow(yQuantity, 2);
+        const dist = Math.sqrt(xSquared + ySquared);
+        console.log('DIST:', dist);
+        console.log('xQuantity:', xQuantity, 'yQuantity:', yQuantity);
+        console.log('xSquared:', xSquared, 'ySquared:', ySquared);
+        console.log(
+          'prevCoordX:',
+          this.prevCoord.x,
+          'prevCoordY:',
+          this.prevCoord.y
+        );
 
-      ctx?.beginPath();
-      let x = _.floor(evt.detail.x);
-      let y = _.floor(cvs.height - evt.detail.y);
-      ctx?.arc(x, y, 2, 0, Math.PI * 2, true);
-      ctx?.fill();
+        if (dist > longerAxis * 0.015) {
+          if (this.prevColorIdx == 14) {
+            this.prevColorIdx = 0;
+          } else {
+            this.prevColorIdx++;
+          }
+        }
+
+        ctx.fillStyle = rtColorMap[this.prevColorIdx];
+        ctx?.beginPath();
+        ctx?.arc(x, y, 2, 0, Math.PI * 2, true);
+        ctx?.fill();
+
+        this.prevCoord.x = x;
+        this.prevCoord.y = y;
+      }
     });
   }
 
