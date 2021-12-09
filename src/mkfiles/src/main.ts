@@ -43,7 +43,11 @@ getRedirectResult(auth).then((result) => {
       'is signed in'
     );
   } else if (auth.currentUser) {
-    console.log('Sign-In Redirect Result, USER:', 'is signed in');
+    console.log(
+      'Sign-In Redirect Result, USER:',
+      auth.currentUser,
+      'is signed in'
+    );
   } else {
     signInWithRedirect(auth, provider);
   }

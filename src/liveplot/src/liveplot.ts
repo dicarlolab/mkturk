@@ -14,14 +14,15 @@ const storage = firebase.storage();
 const storageRef = storage.ref();
 const rtdb = firebase.database();
 
-const DATA_PATH = 'mkturkfiles/datafiles/'
+const DATA_PATH = 'mkturkfiles/datafiles/';
 const DATA_REF = storageRef.child(DATA_PATH);
 const PARAM_PATH = 'mkturkfiles/parameterfiles/subjects/';
 const PARAM_REF = storageRef.child(PARAM_PATH);
 const AGENTS_REF = rtdb.ref('agents/');
-const utils = new Utils;
+const utils = new Utils();
 
 export class Liveplot {
+  public wkr: Worker;
   public file: FileType;
   public elemObjs: any;
   public editor: JSONEditor;
@@ -30,6 +31,12 @@ export class Liveplot {
   public agentClientRef: firebase.database.Reference;
 
   constructor(elemObj: any) {
+    this.wkr = new Worker('worker.js');
+    this.wkr.postMessage({ msg: 'hello to worker' });
+    this.wkr.onmessage = (evt: MessageEvent) => {
+      console.log('message arrived');
+      console.log(evt.data);
+    };
     this.elemObjs = elemObj;
     this.file = {
       path: DATA_PATH,
@@ -53,7 +60,7 @@ export class Liveplot {
       if (this.streamActive) {
         let agent = this.file.data?.Agent!;
         rtdb.ref(`data/${agent}`).off();
-        this.agentClientRef.remove(err => {
+        this.agentClientRef.remove((err) => {
           if (err) {
             console.error(`Error Removing agentClientRef: ${err}`);
           }
@@ -80,7 +87,7 @@ export class Liveplot {
       if (this.streamActive) {
         realtimeBtn.innerHTML = 'Request Realtime Stream';
         rtdb.ref(`data/${agent}`).off();
-        this.agentClientRef.remove(err => {
+        this.agentClientRef.remove((err) => {
           if (err) {
             console.error(`Error Removing agentClientRef: ${err}`);
           }
@@ -93,13 +100,11 @@ export class Liveplot {
         this.agentClientRef = rtdb.ref(`agents/${agent}/${agentClientKey}`);
         if (_.isString(agentClientKey)) {
           rtdb.ref(`agents/${agent}`).update({
-            [agentClientKey]: true
+            [agentClientKey]: true,
           });
         }
-        rtdb.ref(`data/${agent}`).on('value', snap => {
-          let event = (
-            new CustomEvent('data_arrived', { detail: snap.val() })
-          );
+        rtdb.ref(`data/${agent}`).on('value', (snap) => {
+          let event = new CustomEvent('data_arrived', { detail: snap.val() });
           window.dispatchEvent(event);
         });
         this.streamActive = true;
@@ -139,18 +144,14 @@ export class Liveplot {
       this.file.fileChanged = true;
       let rawStorageFile = await utils.getStorageFile(this.file.name);
       // console.log('rawFile', rawStorageFile);
-      
-      this.processData(rawStorageFile);
 
+      this.processData(rawStorageFile);
     } catch (error) {
       console.error('ERROR #file-list:', error);
     }
-
-
   }
 
   private flattenData(data: any) {
-
     let tmp: any = {};
 
     for (let outerKey in data) {
@@ -167,8 +168,9 @@ export class Liveplot {
   }
 
   private async processData(data: any) {
-
+    console.time('this.flattenData');
     this.file.data = this.flattenData(data);
+    console.timeEnd('this.flattenData');
     this.loadDataToEditor(this.file.data);
     // console.log(this.file.data);
 
@@ -183,12 +185,14 @@ export class Liveplot {
     // );
 
     if (this.file.fileChanged) {
-      this.charts.initializeChartData(this.file, {streamActive: this.streamActive});
+      this.charts.initializeChartData(this.file, {
+        streamActive: this.streamActive,
+      });
       this.checkFileStatus();
       this.file.fileChanged = false;
       this.file.dataChanged = false;
     } else if (this.file.dataChanged) {
-      this.charts.updatePlots(this.file, {streamActive: this.streamActive});
+      this.charts.updatePlots(this.file, { streamActive: this.streamActive });
       this.file.dataChanged = false;
       this.checkFileStatus();
     }
@@ -215,7 +219,7 @@ export class Liveplot {
         this.file.dateSaved = new Date(metadata.updated);
         console.log(this.file.dateSaved);
         this.file.dataChanged = true;
-        console.log('File was updated ver=' + this.file.ver)
+        console.log('File was updated ver=' + this.file.ver);
       } else {
         this.file.dataChanged = false;
       }
@@ -226,13 +230,12 @@ export class Liveplot {
         this.processData(rawStorageFile);
       } else {
         setTimeout(() => {
-          this.checkFileStatus()
+          this.checkFileStatus();
         }, 1000);
       }
     } catch (error) {
       console.error('checkFileStatus Error:', error);
     }
     return false; // why needed
-  } 
-
+  }
 }
