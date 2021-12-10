@@ -1,9 +1,3 @@
-// const functions = firebase.functions();
-// let listAllUsers = functions.httpsCallable('listAllUsers');
-// let userList = listAllUsers();
-// console.log('userList', userList);
-// userList.then(stuff => {
-//   console.log('stuff', stuff);
-// }).catch(e => {
-//   console.error('e', e);
-// });
+import { initializeApp } from 'firebase/app';
+import './modals.css';
+import 'bootstrap/dist/css/bootstrap.min.css';

@@ -1,0 +1,19 @@
+asset vendors-node_modules_bootstrap_dist_css_bootstrap_min_css.bundle.js 2.02 MiB [emitted] (id hint: vendors)
+asset main.bundle.js 51.1 KiB [emitted] (name: main)
+asset index.html 14.5 KiB [emitted]
+Entrypoint main 2.07 MiB = vendors-node_modules_bootstrap_dist_css_bootstrap_min_css.bundle.js 2.02 MiB main.bundle.js 51.1 KiB
+runtime modules 3.35 KiB 6 modules
+cacheable modules 778 KiB
+  asset modules 4.4 KiB 16 modules
+  javascript modules 773 KiB
+    modules by path ./node_modules/ 770 KiB
+      modules by path ./node_modules/style-loader/dist/runtime/*.js 5.75 KiB 6 modules
+      modules by path ./node_modules/css-loader/dist/runtime/*.js 3.52 KiB 3 modules
+      modules by path ./node_modules/bootstrap/dist/css/*.css 761 KiB
+        ./node_modules/bootstrap/dist/css/bootstrap.min.css 1.07 KiB [built] [code generated]
+        ./node_modules/css-loader/dist/cjs.js!./node_modules/bootstrap/dist/css/bootstrap.min.css 760 KiB [built] [code generated]
+    modules by path ./src/ 3.49 KiB
+      ./src/main.ts 151 bytes [built] [code generated]
+      ./src/modals.css 1.12 KiB [built] [code generated]
+      ./node_modules/css-loader/dist/cjs.js!./src/modals.css 2.22 KiB [built] [code generated]
+webpack 5.65.0 compiled successfully in 2194 ms
