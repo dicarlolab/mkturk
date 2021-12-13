@@ -7,6 +7,8 @@ module.exports = {
   mode: 'development',
   entry: {
     main: [path.resolve(__dirname, 'src/main.ts')],
+    admin: [path.resolve(__dirname, 'src/admin/main.ts')],
+    user: [path.resolve(__dirname, 'src/user/main.ts')],
   },
   plugins: [
     new CleanWebpackPlugin({
@@ -15,6 +17,17 @@ module.exports = {
     new HtmlWebpackPlugin({
       title: 'MkUsers',
       template: './src/index.html',
+      chunks: ['main'],
+    }),
+    new HtmlWebpackPlugin({
+      title: 'MkUsers Admin',
+      template: './src/admin/index.html',
+      chunks: ['admin'],
+    }),
+    new HtmlWebpackPlugin({
+      title: 'MkUsers User',
+      template: './src/user/index.html',
+      chunks: ['user'],
     }),
   ],
   output: {

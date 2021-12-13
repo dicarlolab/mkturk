@@ -1,10 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.bqInsertDisplayTimes = exports.submitAssignment = exports.submitSurvey = exports.testOnCall = exports.testOnRequest = exports.sayHello = exports.listAllUsers = exports.copyParamFile = exports.processMturkUser = exports.isMturkUser = exports.isLabMember = exports.detectDevice = exports.bqListDatasets = exports.listTables = exports.bqQuery = exports.bqInsertEyeData = exports.bqInsertTouchData = void 0;
+exports.bqInsertDisplayTimes = exports.submitAssignment = exports.submitSurvey = exports.testOnCall = exports.testOnRequest = exports.sayHello = exports.listAllUsers = exports.copyParamFile = exports.processMturkUser = exports.isMturkUser = exports.createTokenOnServer = exports.isLabMember = exports.detectDevice = exports.bqListDatasets = exports.listTables = exports.bqQuery = exports.bqInsertEyeData = exports.bqInsertTouchData = void 0;
 const functions = require("firebase-functions");
 const bigquery_1 = require("@google-cloud/bigquery");
 const DeviceDetector = require("device-detector-js");
 const admin = require("firebase-admin");
+// const cors = require('cors')({ origin: true });
 admin.initializeApp();
 // // Start writing Firebase Functions
 // // https://firebase.google.com/docs/functions/typescript
@@ -20,83 +21,80 @@ function insertHandler(err, apiResp) {
         }
     }
 }
-;
-;
-;
-;
-;
 const schema = {
-    "fields": [
+    fields: [
         {
-            "name": "timestamp",
-            "type": "TIMESTAMP",
-            "mode": "REQUIRED"
+            name: 'timestamp',
+            type: 'TIMESTAMP',
+            mode: 'REQUIRED',
         },
         {
-            "name": "trial_num",
-            "type": "INTEGER",
-            "mode": "REQUIRED"
+            name: 'trial_num',
+            type: 'INTEGER',
+            mode: 'REQUIRED',
         },
         {
-            "name": "num_eyes",
-            "type": "INTEGER",
-            "mode": "REQUIRED"
+            name: 'num_eyes',
+            type: 'INTEGER',
+            mode: 'REQUIRED',
         },
         {
-            "name": "left_x",
-            "type": "FLOAT",
-            "mode": "NULLABLE"
+            name: 'left_x',
+            type: 'FLOAT',
+            mode: 'NULLABLE',
         },
         {
-            "name": "left_y",
-            "type": "FLOAT",
-            "mode": "NULLABLE"
+            name: 'left_y',
+            type: 'FLOAT',
+            mode: 'NULLABLE',
         },
         {
-            "name": "left_aux_0",
-            "type": "FLOAT",
-            "mode": "NULLABLE"
+            name: 'left_aux_0',
+            type: 'FLOAT',
+            mode: 'NULLABLE',
         },
         {
-            "name": "left_aux_1",
-            "type": "FLOAT",
-            "mode": "NULLABLE"
+            name: 'left_aux_1',
+            type: 'FLOAT',
+            mode: 'NULLABLE',
         },
         {
-            "name": "right_x",
-            "type": "FLOAT",
-            "mode": "NULLABLE"
+            name: 'right_x',
+            type: 'FLOAT',
+            mode: 'NULLABLE',
         },
         {
-            "name": "right_y",
-            "type": "FLOAT",
-            "mode": "NULLABLE"
+            name: 'right_y',
+            type: 'FLOAT',
+            mode: 'NULLABLE',
         },
         {
-            "name": "right_aux_0",
-            "type": "FLOAT",
-            "mode": "NULLABLE"
+            name: 'right_aux_0',
+            type: 'FLOAT',
+            mode: 'NULLABLE',
         },
         {
-            "name": "right_aux_1",
-            "type": "FLOAT",
-            "mode": "NULLABLE"
-        }
-    ]
+            name: 'right_aux_1',
+            type: 'FLOAT',
+            mode: 'NULLABLE',
+        },
+    ],
 };
 const createTableOptions = {
-    "schema": schema,
-    "timePartitioning": {
-        "type": "DAY",
-        "field": "timestamp"
-    }
+    schema: schema,
+    timePartitioning: {
+        type: 'DAY',
+        field: 'timestamp',
+    },
 };
 exports.bqInsertTouchData = functions.https.onCall((rows) => {
     const bq = new bigquery_1.BigQuery();
     const dataset = bq.dataset('touchdata');
     const table = dataset.table(rows[0].agent);
     console.log('bqInsertTouchData rows received:', rows);
-    table.exists().then(async (existsData) => {
+    table
+        .exists()
+        .then(async (existsData) => {
         const exists = existsData[0];
         if (exists) {
             rows.forEach((row) => {
@@ -128,8 +126,9 @@ exports.bqInsertTouchData = functions.https.onCall((rows) => {
             newTable.insert(rows, {}, insertHandler);
             return rows;
         }
-    }).catch(error => {
-        console.error("Exists function error:", error);
+    })
+        .catch((error) => {
+        console.error('Exists function error:', error);
     });
 });
 /* caller must guarantee that all rows belong to the same agent */
@@ -137,9 +136,11 @@ exports.bqInsertEyeData = functions.https.onCall((rows) => {
     const bq = new bigquery_1.BigQuery();
     const dataset = bq.dataset('eyedata');
     const table = dataset.table(rows[0].agent);
-    console.log("bqinserteyedata rows received:", rows);
+    console.log('bqinserteyedata rows received:', rows);
     // console.log('bqinserteyedata AGENT:', rows[0].agent);
-    table.exists().then(async (existsData) => {
+    table
+        .exists()
+        .then(async (existsData) => {
         const exists = existsData[0];
         if (exists) {
             rows.forEach((row) => {
@@ -176,15 +177,16 @@ exports.bqInsertEyeData = functions.https.onCall((rows) => {
             console.log('new table insert');
             return;
         }
-    }).catch(error => {
-        console.error("Exists function error:", error);
+    })
+        .catch((error) => {
+        console.error('Exists function error:', error);
     });
 });
 exports.bqQuery = functions.https.onCall(async (query) => {
     const bq = new bigquery_1.BigQuery();
     const options = {
         query: query,
-        location: 'US'
+        location: 'US',
     };
     const [rows] = await bq.query(options);
     return rows;
@@ -194,7 +196,7 @@ exports.listTables = functions.https.onCall(async (userDataset) => {
     const dataset = bq.dataset(userDataset);
     const tables = await dataset.getTables();
     const arr = [];
-    tables[0].forEach(table => {
+    tables[0].forEach((table) => {
         arr.push(table.metadata);
     });
     return arr;
@@ -203,7 +205,7 @@ exports.bqListDatasets = functions.https.onCall(async () => {
     const bq = new bigquery_1.BigQuery();
     const [datasets] = await bq.getDatasets();
     const arr = [];
-    datasets.forEach(dataset => {
+    datasets.forEach((dataset) => {
         arr.push(dataset.id);
     });
     return arr;
@@ -221,13 +223,78 @@ exports.detectDevice = functions.https.onCall((userAgent) => {
     });
 });
 exports.isLabMember = functions.https.onCall(async (idToken) => {
-    return admin.auth().verifyIdToken(idToken).then((decodedToken) => {
+    return admin
+        .auth()
+        .verifyIdToken(idToken)
+        .then((decodedToken) => {
         console.log('isLabMember?', decodedToken.labMember);
         return decodedToken.labMember;
-    }).catch((e) => {
+    })
+        .catch((e) => {
         console.error('Error decoding idToken', e);
     });
 });
+exports.createTokenOnServer = functions.https.onCall((data, context) => {
+    console.log('data:', data);
+    return 'hi';
+});
+// export const createTokenOnServer = functions.https.onCall(
+//   async (idToken: string, context) => {
+//     return admin
+//       .auth()
+//       .verifyIdToken(idToken)
+//       .then((decodedToken) => {
+//         if (decodedToken.labMember) {
+//           const db = admin.firestore();
+//           return db
+//             .collection('labmembers')
+//             .where('uid', '==', decodedToken.uid)
+//             .get()
+//             .then(async (querySnapshot) => {
+//               const docs = querySnapshot.docs;
+//               if (docs.length !== 1) {
+//                 return {
+//                   result: 'error',
+//                   clientToken: '',
+//                   message: 'more than one user has the same uid',
+//                 };
+//               } else {
+//                 const clientToken = await admin
+//                   .auth()
+//                   .createCustomToken(decodedToken.uid);
+//                 return db
+//                   .collection('labmembers')
+//                   .doc(docs[0].id)
+//                   .update({ clientToken: clientToken })
+//                   .then(() => {
+//                     return {
+//                       result: 'success',
+//                       clientToken: clientToken,
+//                       message: 'clientToken created',
+//                     };
+//                   })
+//                   .catch((error) => {
+//                     return {
+//                       result: 'error',
+//                       clientToken: '',
+//                       message: error,
+//                     };
+//                   });
+//               }
+//             });
+//         } else {
+//           return {
+//             result: 'error',
+//             clientToken: '',
+//             message: 'user is not a lab member',
+//           };
+//         }
+//       })
+//       .catch((error) => {
+//         return { result: 'error', clientToken: '', message: error };
+//       });
+//   }
+// );
 exports.isMturkUser = functions.https.onCall(async (idToken) => {
     try {
         let decodedToken = await admin.auth().verifyIdToken(idToken);
@@ -243,14 +310,15 @@ exports.processMturkUser = functions.https.onCall(async (data) => {
             super(message);
             // see: typescriptlang.org/docs/handbook/release-notes/typescript-2-2.html
             Object.setPrototypeOf(this, new.target.prototype); // restore prototype chain
-            this.name = ProcessMTurkUserError.name; // stack traces display correctly now 
+            this.name = ProcessMTurkUserError.name; // stack traces display correctly now
         }
     }
     const firestore = admin.firestore();
     const bucket = admin.storage().bucket();
     let decodedToken;
     try {
-        decodedToken = await admin.auth()
+        decodedToken = await admin
+            .auth()
             .verifyIdToken(data.token)
             .then((tkn) => {
             console.log('[verifyIdToken] Decode Success');
@@ -261,16 +329,19 @@ exports.processMturkUser = functions.https.onCall(async (data) => {
         console.error('[verifyIdToken] Decode Error:', e);
         return { status: 'error', message: `[verifyIdToken] Decode Error: ${e}` };
     }
-    let mturkUsersQuerySnapshot = await firestore.collection('mturkusers')
+    let mturkUsersQuerySnapshot = await firestore
+        .collection('mturkusers')
         .where('uid', '==', decodedToken.uid)
         .get();
     // user creation OR existing user update
     try {
-        if (mturkUsersQuerySnapshot.empty) { // new user
-            admin.auth()
+        if (mturkUsersQuerySnapshot.empty) {
+            // new user
+            admin
+                .auth()
                 .setCustomUserClaims(decodedToken.uid, { wid: data.wid })
                 .then(() => console.log('[setCustomUserClaims] Add Claim (wid) Success'))
-                .catch(e => {
+                .catch((e) => {
                 console.error('[setCustomUserClaims] Add Claim (wid) Error:', e);
                 throw new ProcessMTurkUserError(`[setCustomUserClaims] Add Claim (wid) Error: ${e}`);
             });
@@ -278,48 +349,54 @@ exports.processMturkUser = functions.https.onCall(async (data) => {
                 assignmentId: data.aid,
                 hitId: data.hid,
                 // task: data.task,
-                startTime: admin.firestore.Timestamp.fromDate(new Date())
+                startTime: admin.firestore.Timestamp.fromDate(new Date()),
             };
             let userData = {
                 workerId: data.wid,
                 uid: decodedToken.uid,
-                assignmentList: [assignmentEntry]
+                assignmentList: [assignmentEntry],
             };
-            firestore.collection('mturkusers')
+            firestore
+                .collection('mturkusers')
                 .doc(data.wid)
                 .set(userData)
                 .then(() => console.log('[mturkusers] New User Created'))
-                .catch(e => {
+                .catch((e) => {
                 console.error('[mturkusers] User Creation Error:', e);
                 throw new ProcessMTurkUserError(`[mturkusers] User Creation Error: ${e}`);
             });
         }
-        else { // existing user
+        else {
+            // existing user
             let docs = mturkUsersQuerySnapshot.docs;
             if (docs.length == 1 && docs[0].data().workerId == data.wid) {
                 let assignmentEntry = {
                     assignmentId: data.aid,
                     hitId: data.hid,
                     // task: data.task,
-                    startTime: admin.firestore.Timestamp.fromDate(new Date())
+                    startTime: admin.firestore.Timestamp.fromDate(new Date()),
                 };
                 let mturkUser = docs[0].data();
                 let assignmentList = mturkUser.assignmentList;
                 let lastEntry = assignmentList[assignmentList.length - 1];
-                if (lastEntry.assignmentId !== data.aid
-                    && lastEntry.hitId !== data.hid) {
+                if (lastEntry.assignmentId !== data.aid &&
+                    lastEntry.hitId !== data.hid) {
                     assignmentList.push(assignmentEntry);
-                    firestore.collection('mturkusers')
+                    firestore
+                        .collection('mturkusers')
                         .doc(decodedToken.wid)
                         .set(mturkUser)
                         .then(() => console.log('[mturkusers] Existing User Entry Updated'))
-                        .catch(e => {
+                        .catch((e) => {
                         console.error('[mturkusers] Existing User Entry Update Error:', e);
                         throw new ProcessMTurkUserError(`[mturkusers] Existing User Entry Update Error: ${e}`);
                     });
                 }
                 else {
-                    return { status: 'error', message: 'assignment entry already exists' };
+                    return {
+                        status: 'error',
+                        message: 'assignment entry already exists',
+                    };
                 }
             }
             else {
@@ -334,35 +411,38 @@ exports.processMturkUser = functions.https.onCall(async (data) => {
         hitId: data.hid,
         // task: data.task,
         path: `mkturkfiles/paramterfiles/mturk_params/${data.hid}.json`,
-        workerIds: [data.wid]
+        workerIds: [data.wid],
     };
     // register HIT data & setup ${wid}_params.json
     try {
-        let hitSnapshot = await firestore.collection('mturkhits')
+        let hitSnapshot = await firestore
+            .collection('mturkhits')
             .where('hitId', '==', data.hid)
             .get();
         if (hitSnapshot.empty) {
-            firestore.collection('mturkhits')
+            firestore
+                .collection('mturkhits')
                 .doc(data.hid)
                 .set(mturkhit)
                 .then(() => {
                 console.log('[mturkhits] Created a new HIT entry');
                 console.log('[mturkhits] Registration Success');
             })
-                .catch(e => {
+                .catch((e) => {
                 console.error('[mturkhits] Registration Error:', e);
                 throw new ProcessMTurkUserError(`[mturkhits] Registration Error: ${e}`);
             });
         }
         else {
             let docs = hitSnapshot.docs;
-            firestore.collection('mturkhits')
+            firestore
+                .collection('mturkhits')
                 .doc(docs[0].id)
                 .update({
-                workerIds: admin.firestore.FieldValue.arrayUnion(data.wid)
+                workerIds: admin.firestore.FieldValue.arrayUnion(data.wid),
             })
                 .then(() => console.log('[mturkhits] Registration Success'))
-                .catch(e => {
+                .catch((e) => {
                 console.error('[mturkhits] Existing HIT Registration Error:', e);
                 throw new ProcessMTurkUserError(`[mturkhits] Existing HIT Registration Error: ${e}`);
             });
@@ -380,29 +460,31 @@ exports.processMturkUser = functions.https.onCall(async (data) => {
         //     );
         //   });
         const paramfilePath = `mkturkfiles/parameterfiles/mturk_params/${data.hid}_params.json`;
-        const paramFile = await bucket.file(paramfilePath)
+        const paramFile = await bucket
+            .file(paramfilePath)
             .download()
-            .then(value => {
+            .then((value) => {
             let tmp = JSON.parse(value[0].toString('utf8'));
             tmp.Agent = data.wid;
             tmp.AssignmentId = data.aid;
             tmp.HITId = data.hid;
             return tmp;
         })
-            .catch(e => {
+            .catch((e) => {
             console.error('[paramfile] Find Param File Error:', e);
             throw new ProcessMTurkUserError(`[paramfile] Find Param File Error: ${e}`);
         });
         const destArr = [
             // `mkturkfiles/parameterfiles/subjects/${data.wid}_params.json`,
             // `user_files/${data.wid}/${data.wid}_${data.hid}_${data.aid}params.json`,
-            `mkturkfiles_mturk/userfiles/${data.wid}/params/${data.wid}_${data.aid}_${data.hid}_params.json`
+            `mkturkfiles_mturk/userfiles/${data.wid}/params/${data.wid}_${data.aid}_${data.hid}_params.json`,
         ];
         destArr.forEach(async (dest) => {
-            bucket.file(dest)
+            bucket
+                .file(dest)
                 .save(JSON.stringify(paramFile, null, 2))
                 .then(() => console.log(`[mturkuser=${data.wid}] Params Copy Success`))
-                .catch(e => {
+                .catch((e) => {
                 console.error(`[mturkuser=${data.wid}] Params Copy Error: ${e}`);
                 throw new ProcessMTurkUserError(`[mturkuser=${data.wid}] Params Copy Error: ${e}`);
             });
@@ -417,15 +499,19 @@ exports.copyParamFile = functions.https.onCall(async () => {
     const storage = admin.storage().bucket('mkturk-mturk');
     const file = storage.file('mkturkfiles/parameterfiles/params_storage/m2s_wrench_camel.json');
     await file.copy('mkturkfiles/parameterfiles/subjects/Hectoro_params.json');
-    const fileData = await file.download().then(data => {
+    const fileData = await file.download().then((data) => {
         return JSON.parse(data[0].toString('utf8'));
     });
     return fileData;
 });
 exports.listAllUsers = functions.https.onCall(() => {
-    return admin.auth().listUsers(1000).then((listUserResult) => {
+    return admin
+        .auth()
+        .listUsers(1000)
+        .then((listUserResult) => {
         return listUserResult;
-    }).catch((e) => {
+    })
+        .catch((e) => {
         console.error('Error listing users', e);
     });
 });
@@ -458,7 +544,8 @@ exports.submitSurvey = functions.https.onCall(async (data) => {
     }
     const firestore = admin.firestore();
     const bucket = admin.storage().bucket();
-    let userSnapshot = await firestore.collection('mturkusers')
+    let userSnapshot = await firestore
+        .collection('mturkusers')
         .where('workerId', '==', data.wid)
         .get();
     try {
@@ -480,18 +567,21 @@ exports.submitSurvey = functions.https.onCall(async (data) => {
                     console.error('[submitSurvey] HITId Mismatch');
                     throw new SubmitSurveyError('[submitSurvey] HITId Mismatch');
                 }
-                lastEntry.surveySubmitTime = admin.firestore.Timestamp.fromDate(surveySubmitTime);
-                const surveyFilePath = (`mkturkfiles_mturk/userfiles/${data.wid}/surveys/${data.wid}_${data.aid}_${data.hid}.json`);
-                return await bucket.file(surveyFilePath)
+                lastEntry.surveySubmitTime =
+                    admin.firestore.Timestamp.fromDate(surveySubmitTime);
+                const surveyFilePath = `mkturkfiles_mturk/userfiles/${data.wid}/surveys/${data.wid}_${data.aid}_${data.hid}.json`;
+                return await bucket
+                    .file(surveyFilePath)
                     .save(JSON.stringify(data.survey, null, 2))
                     .then(async () => {
-                    const mturkuserUpdated = await firestore.collection('mturkusers')
+                    const mturkuserUpdated = await firestore
+                        .collection('mturkusers')
                         .doc(data.wid)
                         .set(mturkUser)
                         .then(() => {
                         return 200;
                     })
-                        .catch(e => {
+                        .catch((e) => {
                         return 500;
                     });
                     if (mturkuserUpdated === 200) {
@@ -501,7 +591,8 @@ exports.submitSurvey = functions.https.onCall(async (data) => {
                         // throw new SubmitSurveyError(`mturkuser=${data.wid}'s entry could not be set`);
                         return { status: 500, message: 'Error' };
                     }
-                }).catch(e => {
+                })
+                    .catch((e) => {
                     console.error('[submitSurvey] Error:', e);
                     throw new SubmitSurveyError(`mturkuser=${data.wid}'s entry could not be set`);
                 });
@@ -521,11 +612,12 @@ exports.submitAssignment = functions.https.onCall(async (data) => {
             super(message);
             // see: typescriptlang.org/docs/handbook/release-notes/typescript-2-2.html
             Object.setPrototypeOf(this, new.target.prototype); // restore prototype chain
-            this.name = SubmitAssignmentError.name; // stack traces display correctly now 
+            this.name = SubmitAssignmentError.name; // stack traces display correctly now
         }
     }
     const firestore = admin.firestore();
-    let userSnapshot = await firestore.collection('mturkusers')
+    let userSnapshot = await firestore
+        .collection('mturkusers')
         .where('workerId', '==', data.wid)
         .get();
     try {
@@ -547,18 +639,17 @@ exports.submitAssignment = functions.https.onCall(async (data) => {
                     console.error('[submitAssignment] HITId Mismatch');
                     throw new SubmitAssignmentError('[submitAssignment] HITId Mismatch');
                 }
-                lastEntry.submitCode = Math.random()
-                    .toString(36)
-                    .substr(2);
+                lastEntry.submitCode = Math.random().toString(36).substr(2);
                 lastEntry.submitTime = admin.firestore.Timestamp.fromDate(submitTime);
-                return await firestore.collection('mturkusers')
+                return await firestore
+                    .collection('mturkusers')
                     .doc(data.wid)
                     .set(mturkUser)
                     .then(() => {
                     console.log('[submitAssignment] assignment submission success');
                     return { status: 'success', message: `${lastEntry.submitCode}` };
                 })
-                    .catch(e => {
+                    .catch((e) => {
                     console.error('[submitAssignment] set() error');
                     throw new SubmitAssignmentError('[submitAssignment] set() error');
                 });
@@ -572,76 +663,76 @@ exports.submitAssignment = functions.https.onCall(async (data) => {
     }
 });
 const displayTimeSchema = {
-    'fields': [
+    fields: [
         {
-            'name': 'timestamp',
-            'type': 'TIMESTAMP',
-            'mode': 'REQUIRED'
+            name: 'timestamp',
+            type: 'TIMESTAMP',
+            mode: 'REQUIRED',
         },
         {
-            'name': 'trial_num',
-            'type': 'INTEGER',
-            'mode': 'REQUIRED'
+            name: 'trial_num',
+            type: 'INTEGER',
+            mode: 'REQUIRED',
         },
         {
-            'name': 'frame_num',
-            'type': 'INTEGER',
-            'mode': 'REPEATED'
+            name: 'frame_num',
+            type: 'INTEGER',
+            mode: 'REPEATED',
         },
         {
-            'name': 't_desired',
-            'type': 'FLOAT',
-            'mode': 'REPEATED'
+            name: 't_desired',
+            type: 'FLOAT',
+            mode: 'REPEATED',
         },
         {
-            'name': 't_actual',
-            'type': 'FLOAT',
-            'mode': 'REPEATED'
-        }
-    ]
+            name: 't_actual',
+            type: 'FLOAT',
+            mode: 'REPEATED',
+        },
+    ],
 };
 const displayTimeTableOptions = {
-    'schema': displayTimeSchema,
-    'timePartitioning': {
-        'type': 'DAY',
-        'field': 'timestamp'
-    }
+    schema: displayTimeSchema,
+    timePartitioning: {
+        type: 'DAY',
+        field: 'timestamp',
+    },
 };
 const touchDataSchema = {
-    'fields': [
+    fields: [
         {
-            'name': 'trial_num',
-            'type': 'INTEGER',
-            'mode': 'REQUIRED'
+            name: 'trial_num',
+            type: 'INTEGER',
+            mode: 'REQUIRED',
         },
         {
-            'name': 'timestamp',
-            'type': 'TIMESTAMP',
-            'mode': 'REQUIRED'
+            name: 'timestamp',
+            type: 'TIMESTAMP',
+            mode: 'REQUIRED',
         },
         {
-            'name': 'touch_x',
-            'type': 'FLOAT',
-            'mode': 'NULLABLE'
+            name: 'touch_x',
+            type: 'FLOAT',
+            mode: 'NULLABLE',
         },
         {
-            'name': 'touch_y',
-            'type': 'FLOAT',
-            'mode': 'NULLABLE'
+            name: 'touch_y',
+            type: 'FLOAT',
+            mode: 'NULLABLE',
         },
         {
-            'name': 'meta',
-            'type': 'INTEGER',
-            'mode': 'NULLABLE'
-        }
-    ]
+            name: 'meta',
+            type: 'INTEGER',
+            mode: 'NULLABLE',
+        },
+    ],
 };
 const touchDataTableOptions = {
-    'schema': touchDataSchema,
-    'timePartitioning': {
-        'type': 'DAY',
-        'field': 'timestamp'
-    }
+    schema: touchDataSchema,
+    timePartitioning: {
+        type: 'DAY',
+        field: 'timestamp',
+    },
 };
 exports.bqInsertDisplayTimes = functions.https.onCall((rows) => {
     const bq = new bigquery_1.BigQuery();
@@ -649,7 +740,9 @@ exports.bqInsertDisplayTimes = functions.https.onCall((rows) => {
     const table = dataset.table(rows[0].agent);
     console.log('AGENT', rows[0].agent);
     console.log('bqinsertdisplaytimes rows:', rows);
-    table.exists().then(async (existsData) => {
+    table
+        .exists()
+        .then(async (existsData) => {
         const exists = existsData[0];
         if (exists) {
             rows.forEach((row) => {
@@ -680,7 +773,8 @@ exports.bqInsertDisplayTimes = functions.https.onCall((rows) => {
             newTable.insert(rows, {}, insertHandler);
             console.log('Row inserted to newly created table');
         }
-    }).catch(error => {
+    })
+        .catch((error) => {
         console.log('Exists function error:', error);
     });
 });
