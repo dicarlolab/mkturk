@@ -416,6 +416,12 @@ if (ENV.BatteryAPIAvailable) {
   }
   await loadParametersfromFirebase(ENV.ParamFileName);
 
+  if (TASK.Agent == 'SaveImages') {
+    FLAGS.DirHandle = await window.showDirectoryPicker();
+    FLAGS.SaveImagesCvs = document.querySelector('#save-images-canvas');
+    FLAGS.SaveImagesCtx = FLAGS.SaveImagesCvs.getContext('2d');
+  }
+
   if (TASK.DeviceConfig !== undefined) {
     screenSpecs = await queryDevice(TASK.DeviceConfig, 'docname');
     if (screenSpecs.isEmpty) {
@@ -740,6 +746,7 @@ if (ENV.BatteryAPIAvailable) {
         console.log(
           'Automatically using sequential sampling since SAVE IMAGES was specified.'
         );
+        // FLAGS.DirHandle = await window.showDirectoryPicker();
       } //IF SaveImages
 
       if (typeof TASK.DragtoRespond == 'undefined') {
@@ -2485,38 +2492,36 @@ if (ENV.BatteryAPIAvailable) {
       //   await automateTask(automator_data, trialhistory);
       // }
 
-      if (TASK.Agent != 'SaveImages') {
-        // Cloud Storage: Save data asynchronously to json
-        saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS);
+      // Cloud Storage: Save data asynchronously to json
+      saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS);
 
-        // Firestore Database: Save data asynchronously to database
-        if (FLAGS.createnewfirestore == 1) {
-          saveBehaviorDatatoFirestore(TASK, ENV, CANVAS); //write once
-          pingFirestore(); //every 10 seconds, will check for data updates to upload to firestore
-        } //IF new firestore, kick off firestore database writes
+      // Firestore Database: Save data asynchronously to database
+      if (FLAGS.createnewfirestore == 1) {
+        saveBehaviorDatatoFirestore(TASK, ENV, CANVAS); //write once
+        pingFirestore(); //every 10 seconds, will check for data updates to upload to firestore
+      } //IF new firestore, kick off firestore database writes
 
-        // BigQuery Data Stream
-        if (CURRTRIAL.num == 0) {
-          if (ENV.Eye.TrackEye > 0) {
-            if (TASK.BQSaveEye === undefined || TASK.BQSaveEye > 0) {
-              // uploads eyedata to BigQuery every 10 seconds
-              pingBigQueryEyeTable();
-            }
-          } // IF trackeye
-          else if (TASK.BQSaveTouch === undefined || TASK.BQSaveTouch > 0) {
-            // uploads touch data to BigQuery every 10 seconds
-            pingBigQueryTouchTable();
-          } //IF BQsavetouch
-
-          if (
-            TASK.BQSaveDisplayTimes === undefined ||
-            TASK.BQSaveDisplayTimes > 0
-          ) {
-            //uploads display times data to bigquery every 10 seconds
-            pingBigQueryDisplayTimesTable();
+      // BigQuery Data Stream
+      if (CURRTRIAL.num == 0) {
+        if (ENV.Eye.TrackEye > 0) {
+          if (TASK.BQSaveEye === undefined || TASK.BQSaveEye > 0) {
+            // uploads eyedata to BigQuery every 10 seconds
+            pingBigQueryEyeTable();
           }
+        } // IF trackeye
+        else if (TASK.BQSaveTouch === undefined || TASK.BQSaveTouch > 0) {
+          // uploads touch data to BigQuery every 10 seconds
+          pingBigQueryTouchTable();
+        } //IF BQsavetouch
+
+        if (
+          TASK.BQSaveDisplayTimes === undefined ||
+          TASK.BQSaveDisplayTimes > 0
+        ) {
+          //uploads display times data to bigquery every 10 seconds
+          pingBigQueryDisplayTimesTable();
         }
-      } //IF not saving images, save data
+      }
     } //IF savedata
 
     if (FLAGS.need2saveParameters == 1) {

@@ -30,7 +30,7 @@ function displayTrial(ti, gr, fr, sc, ob, id, mkm) {
 
     if (timestamp - start > ti[frame.current]) {
       //----- RENDER ALL ELEMENTS
-      renderShape2D("Blank", [-1], VISIBLECANVAS);
+      renderShape2D('Blank', [-1], VISIBLECANVAS);
 
       if (frame.current <= frame.shown.length - 1) {
         //Skip rendering if already did last frame and just waiting for it to show
@@ -46,7 +46,7 @@ function displayTrial(ti, gr, fr, sc, ob, id, mkm) {
           //------------------- DISPLAY THE FRAME 2D ---------------------//
 
           //------------------- DISPLAY THE FRAME 3D ---------------------//
-          if (taskscreen == "Sample" || taskscreen == "Test") {
+          if (taskscreen == 'Sample' || taskscreen == 'Test') {
             render3D(taskscreen, s, f, gr, fr, sc, ob, id);
           } //IF sample || test
           else {
@@ -55,25 +55,25 @@ function displayTrial(ti, gr, fr, sc, ob, id, mkm) {
 
           //RENDER 2D directly onscreen
           const defaultFilter =
-            "blur(0px) brightness(100%) contrast(100%) grayscale(0%) hue-rotate(0deg) invert(0%) opacity(100%) saturate(100%) sepia(0%)";
-          VISIBLECANVAS.getContext("2d").filter = defaultFilter;
+            'blur(0px) brightness(100%) contrast(100%) grayscale(0%) hue-rotate(0deg) invert(0%) opacity(100%) saturate(100%) sepia(0%)';
+          VISIBLECANVAS.getContext('2d').filter = defaultFilter;
           render2D(taskscreen, s, f, gr, fr, sc, ob, id, VISIBLECANVAS);
 
           if (
-            taskscreen == "Touchfix" ||
-            taskscreen == "Sample" ||
-            taskscreen == "Blank"
+            taskscreen == 'Touchfix' ||
+            taskscreen == 'Sample' ||
+            taskscreen == 'Blank'
           ) {
             //Overlay fixation dot
-            if (typeof gr[f] == "number") {
-              renderShape2D("FixationDot", gr[f], VISIBLECANVAS);
+            if (typeof gr[f] == 'number') {
+              renderShape2D('FixationDot', gr[f], VISIBLECANVAS);
             } else {
-              renderShape2D("FixationDot", gr[f][0], VISIBLECANVAS);
+              renderShape2D('FixationDot', gr[f][0], VISIBLECANVAS);
             }
 
             if (port.connected && TASK.Photodiode > 0) {
               renderShape2D(
-                "PhotodiodeSquare",
+                'PhotodiodeSquare',
                 [ENV.PhotodiodeSquareX, ENV.PhotodiodeSquareY],
                 VISIBLECANVAS
               );
@@ -94,8 +94,8 @@ function displayTrial(ti, gr, fr, sc, ob, id, mkm) {
         //----- MkModel Logic
         if (lenArgs == 7 && mkm) {
           if (TASK.SameDifferent > 0) {
-            if (taskscreen == "Sample" && !mkm.hasSampleFeatures) {
-              let ctx = mkm.cvs.getContext("2d");
+            if (taskscreen == 'Sample' && !mkm.hasSampleFeatures) {
+              let ctx = mkm.cvs.getContext('2d');
               ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
               let label = CURRTRIAL.sample_scenebag_label[0][0];
               let params = {
@@ -165,16 +165,16 @@ function displayTrial(ti, gr, fr, sc, ob, id, mkm) {
                 mkm.dataObj.yTest.push(oneHotIdx);
               }
               // mkm.cvs SANITY CHECK CODE
-              let mkmodelsRef = storageRef.child("mkturkfiles/mkmodels/");
+              let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
               let cvsData = mkm.cvs.toDataURL();
               let path = `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${
                 CURRTRIAL.num
               }_sample.png`;
-              mkmodelsRef.child(path).putString(cvsData, "data_url");
+              mkmodelsRef.child(path).putString(cvsData, 'data_url');
               // ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
               mkm.hasSampleFeatures = true;
-            } else if (taskscreen == "Test" && !mkm.hasTestFeatures) {
-              let ctx = mkm.cvs.getContext("2d");
+            } else if (taskscreen == 'Test' && !mkm.hasTestFeatures) {
+              let ctx = mkm.cvs.getContext('2d');
               ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
               let label = CURRTRIAL.test_scenebag_labels[0][0];
               let params = {
@@ -243,16 +243,16 @@ function displayTrial(ti, gr, fr, sc, ob, id, mkm) {
               }
 
               // mkm.cvs SANITY CHECK HERE
-              let mkmodelsRef = storageRef.child("mkturkfiles/mkmodels/");
+              let mkmodelsRef = storageRef.child('mkturkfiles/mkmodels/');
               let cvsData = mkm.cvs.toDataURL();
               let path = `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${
                 CURRTRIAL.num
               }_test.png`;
-              mkmodelsRef.child(path).putString(cvsData, "data_url");
+              mkmodelsRef.child(path).putString(cvsData, 'data_url');
               // ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
               mkm.hasTestFeatures = true;
             } else if (
-              taskscreen == "Choice" &&
+              taskscreen == 'Choice' &&
               mkm.hasSampleFeatures &&
               mkm.hasTestFeatures
             ) {
@@ -260,8 +260,8 @@ function displayTrial(ti, gr, fr, sc, ob, id, mkm) {
               mkm.hasTestFeatures = false;
             }
           } else {
-            if (taskscreen == "Sample" && !mkm.hasSampleFeatures) {
-              let ctx = mkm.cvs.getContext("2d");
+            if (taskscreen == 'Sample' && !mkm.hasSampleFeatures) {
+              let ctx = mkm.cvs.getContext('2d');
               ctx.clearRect(0, 0, mkm.cvs.width, mkm.cvs.height);
               let label = CURRTRIAL.sample_scenebag_label[0][0];
               let params = {
@@ -276,11 +276,11 @@ function displayTrial(ti, gr, fr, sc, ob, id, mkm) {
               };
 
               // let mkmBoundingBox = mkm.getMkModelBoundingBox(params);
-              let camName = Object.keys(IMAGES["Sample"][label].CAMERAS)[0];
+              let camName = Object.keys(IMAGES['Sample'][label].CAMERAS)[0];
 
-              let cam = CAMERAS["Sample"][label][camName];
+              let cam = CAMERAS['Sample'][label][camName];
 
-              let img = IMAGES["Sample"][label];
+              let img = IMAGES['Sample'][label];
               let fov = (cam.fov * Math.PI) / 180;
               let heightThreeJS =
                 2 *
@@ -307,7 +307,7 @@ function displayTrial(ti, gr, fr, sc, ob, id, mkm) {
                 ENV.YGridCenter[CURRTRIAL.samplegridindex] * 2 - srcHeight / 2;
               let sw = srcHeight;
               let sh = sw;
-              console.log("sx:", sx, "sy:", sy, "sw:", sw, "sh:", sh);
+              console.log('sx:', sx, 'sy:', sy, 'sw:', sw, 'sh:', sh);
               ctx.drawImage(VISIBLECANVAS, sx, sy, sw, sh, 0, 0, 224, 224);
 
               if (
@@ -321,9 +321,9 @@ function displayTrial(ti, gr, fr, sc, ob, id, mkm) {
                 }.png`;
                 // let modelCvs = mkm.cvs.toDataURL();
                 storageRef
-                  .child("mkturkfiles/mkmodels/")
+                  .child('mkturkfiles/mkmodels/')
                   .child(path)
-                  .putString(mkm.cvs.toDataURL(), "data_url");
+                  .putString(mkm.cvs.toDataURL(), 'data_url');
               }
               // let path = `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample.png`;
               // let pathWebgl = `${TASK.Agent}/${ENV.CurrentDate.toJSON()}/${CURRTRIAL.num}_sample_webgl.png`;
@@ -335,19 +335,19 @@ function displayTrial(ti, gr, fr, sc, ob, id, mkm) {
               // console.log(mkm.featureExtractor);
               let hello = mkm.featureExtractor.execute(
                 mkm.normalizePixelValues(mkm.cvs),
-                "module_apply_default/resnet_v2_50/block4/unit_3/bottleneck_v2/conv2/Relu"
+                'module_apply_default/resnet_v2_50/block4/unit_3/bottleneck_v2/conv2/Relu'
               );
-              console.log("last conv:", hello);
+              console.log('last conv:', hello);
               let featureVec = mkm.featureExtractor.execute(
                 mkm.normalizePixelValues(mkm.cvs),
                 mkm.ouputNode
               );
-              console.log("featureVec:", featureVec);
-              console.log("mkm.outputNode:", mkm.outputNode);
+              console.log('featureVec:', featureVec);
+              console.log('mkm.outputNode:', mkm.outputNode);
 
               featureVec = featureVec.reshape(mkm.inputShape);
               if (CURRTRIAL.num < TASK.ModelConfig.trainIdx) {
-                console.log("CURRTRIAL.num:", CURRTRIAL.num);
+                console.log('CURRTRIAL.num:', CURRTRIAL.num);
                 mkm.dataObj.xTrain.push(featureVec);
                 let oneHotIdx = mkm.getOneHotIdx(CURRTRIAL.correctitem);
                 mkm.dataObj.yTrainLabels.push(oneHotIdx);
@@ -367,7 +367,7 @@ function displayTrial(ti, gr, fr, sc, ob, id, mkm) {
               // mkmodelsRef.child(path).putString(cvsData, 'data_url');
               // ctx2.clearRect(0, 0, EYETRACKERCANVAS.width, EYETRACKERCANVAS.height);
               mkm.hasSampleFeatures = true;
-            } else if (taskscreen != "Sample" && mkm.hasSampleFeatures) {
+            } else if (taskscreen != 'Sample' && mkm.hasSampleFeatures) {
               mkm.hasSampleFeatures = false;
             }
           }
@@ -378,15 +378,15 @@ function displayTrial(ti, gr, fr, sc, ob, id, mkm) {
         updated3d = 0;
         if (FLAGS.movieplaying == 0) {
           FLAGS.movieplaying = 1;
-          if (typeof waitforMovieStart != "undefined") {
+          if (typeof waitforMovieStart != 'undefined') {
             waitforMovieStart.next();
           }
         } //IF movieplaying
 
         //----- (3) Save Out Images
         if (
-          (taskscreen0 == "Sample" || taskscreen0 == "Test") &&
-          TASK.Agent == "SaveImages" &&
+          (taskscreen0 == 'Sample' || taskscreen0 == 'Test') &&
+          TASK.Agent == 'SaveImages' &&
           FLAGS.savedata == 1
         ) {
           if (
@@ -427,7 +427,7 @@ function displayTrial(ti, gr, fr, sc, ob, id, mkm) {
     } //IF frames left to show
     else {
       FLAGS.movieplaying = 0;
-      if (typeof waitforMovieFinish != "undefined") {
+      if (typeof waitforMovieFinish != 'undefined') {
         waitforMovieFinish.next();
       }
       resolveFunc(CURRTRIAL.tsequenceactual);
@@ -443,9 +443,9 @@ function displayTrial(ti, gr, fr, sc, ob, id, mkm) {
 function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
   f = frame.frames[frame.current][s];
   //var taskscreen = sc[f].charAt(0).toUpperCase() + sc[f].slice(1)
-  if (taskscreen == "Sample") {
+  if (taskscreen == 'Sample') {
     var ims = [CURRTRIAL.sampleimage[CURRTRIAL.sequenceclip[f]][fr[f]]]; //fr[f] frame within clip
-  } else if (taskscreen == "Test") {
+  } else if (taskscreen == 'Test') {
     var clip = 0;
     var ims = CURRTRIAL.testimages[clip][fr[f]];
   }
@@ -473,9 +473,9 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 
     if (
       s == 0 &&
-      typeof boundingBox != "undefined" &&
-      typeof boundingBox[ob[f][j]] != "undefined" &&
-      typeof boundingBox[ob[f][j]][0] != "undefined"
+      typeof boundingBox != 'undefined' &&
+      typeof boundingBox[ob[f][j]] != 'undefined' &&
+      typeof boundingBox[ob[f][j]][0] != 'undefined'
     ) {
       boundingBoxesChoice3JS.x[j] = boundingBox[ob[f][j]][0].x;
       boundingBoxesChoice3JS.y[j] = boundingBox[ob[f][j]][0].y;
@@ -505,9 +505,9 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
       }
 
       if (
-        typeof boundingBoxCube != "undefined" &&
-        typeof boundingBoxCube[ob[f][j]] != "undefined" &&
-        typeof boundingBoxCube[ob[f][j]][0] != "undefined"
+        typeof boundingBoxCube != 'undefined' &&
+        typeof boundingBoxCube[ob[f][j]] != 'undefined' &&
+        typeof boundingBoxCube[ob[f][j]][0] != 'undefined'
       ) {
         boundingBoxesChoice3JS.x[j] = [
           Math.min(
@@ -533,7 +533,7 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
       updated3d = 1;
     } //IF first screen
 
-    var camera = scene[taskscreen].getObjectByName("cam" + ob[f][j]);
+    var camera = scene[taskscreen].getObjectByName('cam' + ob[f][j]);
 
     // render in THREEJS
     renderer.render(scene[taskscreen], camera); //takes >1ms, do before the fast 2D swap (<1ms)
@@ -577,7 +577,7 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 
     // console.log(taskscreen,objFilterSingleFrame)
 
-    VISIBLECANVAS.getContext("2d").filter = objFilterSingleFrame;
+    VISIBLECANVAS.getContext('2d').filter = objFilterSingleFrame;
 
     // 3D Canvas coordinates
     var sx = renderer.domElement.width / 2;
@@ -586,7 +586,7 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
       var swidth = renderer.domElement.width;
       var sheight = renderer.domElement.height;
     } else {
-      var swidth = IMAGEMETA["THREEJStoPixels"] * crop[ob[f][j]][0];
+      var swidth = IMAGEMETA['THREEJStoPixels'] * crop[ob[f][j]][0];
       var sheight = swidth;
     }
     sx = sx - swidth / 2;
@@ -610,17 +610,41 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
     // mkm.boundingBoxVisibleCanvas = [left, top, swidth_2d, sheight_2d];
 
     // Transfer 3D Canvas to 2D Canvas
-    VISIBLECANVAS.getContext("2d").drawImage(
-      renderer.domElement,
-      sx,
-      sy,
-      swidth,
-      sheight,
-      left,
-      top,
-      swidth_2d,
-      sheight_2d
-    );
+    if (TASK.Agent == 'SaveImages') {
+      console.log(
+        sx,
+        sy,
+        swidth,
+        sheight,
+        VISIBLECANVAS.width,
+        VISIBLECANVAS.height
+      );
+
+      VISIBLECANVAS.getContext('2d').drawImage(
+        renderer.domElement,
+        sx,
+        sy,
+        swidth,
+        sheight,
+        0,
+        0,
+        VISIBLECANVAS.width,
+        VISIBLECANVAS.height
+      );
+    } else {
+      VISIBLECANVAS.getContext('2d').drawImage(
+        renderer.domElement,
+        sx,
+        sy,
+        swidth,
+        sheight,
+        left,
+        top,
+        swidth_2d,
+        sheight_2d
+      );
+    }
+
     // update bounding boxes if crop bounding box is smaller than the boundingbox
     if (
       s == 0 &&
@@ -661,11 +685,11 @@ async function render2D(taskscreen, s, f, gr, fr, sc, ob, id, canvasobj) {
     id[f] != id[f - 1] ||
     fr[f] != fr[f - 1]
   ) {
-    if (taskscreen == "Sample" || taskscreen == "Test") {
+    if (taskscreen == 'Sample' || taskscreen == 'Test') {
     } //IF 2D image
     else {
       var boundingBox = renderShape2D(taskscreen, gr[f], canvasobj);
-      if (s == 0 && taskscreen == "Choice") {
+      if (s == 0 && taskscreen == 'Choice') {
         boundingBoxesChoice2D = boundingBox;
       }
       updated2d = 1;
@@ -675,10 +699,10 @@ async function render2D(taskscreen, s, f, gr, fr, sc, ob, id, canvasobj) {
 
 function renderShape2D(sc, gr, canvasobj) {
   switch (sc) {
-    case "Blank":
+    case 'Blank':
       renderBlank(canvasobj, TASK.BackgroundColor2D);
       break;
-    case "Touchfix":
+    case 'Touchfix':
       if (TASK.SameDifferent <= 0) {
         bufferFixationUsingDot(
           ENV.FixationColor,
@@ -696,7 +720,7 @@ function renderShape2D(sc, gr, canvasobj) {
         );
       } //IF same-different
       break;
-    case "FixationDot":
+    case 'FixationDot':
       if (ENV.FixationDotRadius > 0) {
         renderSquareOnCanvas(
           ENV.FixationDotColor,
@@ -720,24 +744,24 @@ function renderShape2D(sc, gr, canvasobj) {
         );
       } //IF !savedata, overlay fixation window
       break;
-    case "PhotodiodeSquare":
+    case 'PhotodiodeSquare':
       if (Math.round(frame.current / 2) == frame.current / 2) {
-        renderSquareOnCanvas("white", gr, ENV.PhotodiodeSquareWidth, canvasobj);
+        renderSquareOnCanvas('white', gr, ENV.PhotodiodeSquareWidth, canvasobj);
       } //IF even frame, draw white square
       else {
-        renderSquareOnCanvas("black", gr, ENV.PhotodiodeSquareWidth, canvasobj);
+        renderSquareOnCanvas('black', gr, ENV.PhotodiodeSquareWidth, canvasobj);
       } //ELSE go back to blank
-    case "Choice":
+    case 'Choice':
       return bufferChoiceUsingCircleSquare(
         ENV.ChoiceColor,
         ENV.ChoiceRadius,
         gr,
         canvasobj
       );
-    case "Reward":
+    case 'Reward':
       renderReward(canvasobj);
       break;
-    case "Punish":
+    case 'Punish':
       renderPunish(canvasobj);
       break;
     default:
@@ -787,7 +811,7 @@ function bufferChoiceUsingCircleSquare(
 
 // Dot render using gridindex
 function renderDotOnCanvas(color, gridindex, dot_pixelradius, canvasobj) {
-  var context = canvasobj.getContext("2d");
+  var context = canvasobj.getContext('2d');
 
   // Draw fixation dot
   if (Array.isArray(gridindex)) {
@@ -834,7 +858,7 @@ function getFixationWindowBoundingBox(gridindex, rad) {
 
 function renderSquareOnCanvas(color, gridindex, square_pixelwidth, canvasobj) {
   // Draw Square
-  var context = canvasobj.getContext("2d");
+  var context = canvasobj.getContext('2d');
 
   if (Array.isArray(gridindex)) {
     var xcent = gridindex[0] / ENV.CanvasRatio;
@@ -874,7 +898,7 @@ function renderTriangleOnCanvas(
   canvasobj
 ) {
   // Draw Triangle
-  var context = canvasobj.getContext("2d");
+  var context = canvasobj.getContext('2d');
   var wd = square_pixelwidth / ENV.CanvasRatio;
   var xcent = ENV.XGridCenter[gridindex] / ENV.CanvasRatio;
   var ycent = ENV.YGridCenter[gridindex] / ENV.CanvasRatio;
@@ -911,7 +935,7 @@ function renderTriangleOnCanvas(
 } //FUNCTION renderTriangleOnCanvas
 
 function renderBlank(canvasobj, bkgdcolor) {
-  var context = canvasobj.getContext("2d");
+  var context = canvasobj.getContext('2d');
   context.fillStyle = bkgdcolor;
   context.clearRect(0, 0, canvasobj.width, canvasobj.height);
 } //FUNCTION renderBlank
@@ -928,8 +952,8 @@ function renderFixationWindow(
   var wd = (2 * fixationwindowradius) / canvasratio;
   var xcent = gridx[fixationgridindex] / canvasratio;
   var ycent = gridy[fixationgridindex] / canvasratio;
-  const context = canvasobj.getContext("2d");
-  context.strokeStyle = "yellow";
+  const context = canvasobj.getContext('2d');
+  context.strokeStyle = 'yellow';
   context.strokeRect(xcent - wd / 2, ycent - wd / 2, wd, wd);
 
   var displaycoord = [
@@ -953,8 +977,8 @@ function renderBlankWithGridMarkers(
   canvasratio,
   canvasobj
 ) {
-  var outofbounds_str = "";
-  var context = canvasobj.getContext("2d");
+  var outofbounds_str = '';
+  var context = canvasobj.getContext('2d');
 
   //Display grid (red)
   for (var i = 0; i <= gridx.length - 1; i++) {
@@ -967,7 +991,7 @@ function renderBlankWithGridMarkers(
       0 * Math.PI,
       2 * Math.PI
     );
-    context.fillStyle = "red";
+    context.fillStyle = 'red';
     context.fill();
 
     var displaycoord = [
@@ -979,7 +1003,7 @@ function renderBlankWithGridMarkers(
     var outofbounds = checkDisplayBounds(displaycoord);
     if (outofbounds == 1) {
       outofbounds_str =
-        outofbounds_str + "<br>" + "gridpoint" + i + " is out of bounds";
+        outofbounds_str + '<br>' + 'gridpoint' + i + ' is out of bounds';
     }
     displayGridCoordinate(i, [gridx[i], gridy[i]], canvasobj);
   }
@@ -988,7 +1012,7 @@ function renderBlankWithGridMarkers(
   var wd = (2 * fixationradius) / ENV.CanvasRatio;
   var xcent = gridx[fixationgridindex] / ENV.CanvasRatio;
   var ycent = gridy[fixationgridindex] / ENV.CanvasRatio;
-  context.strokeStyle = "white";
+  context.strokeStyle = 'white';
   context.strokeRect(xcent - wd / 2, ycent - wd / 2, wd, wd);
 
   var displaycoord = [
@@ -1000,7 +1024,7 @@ function renderBlankWithGridMarkers(
   var outofbounds = checkDisplayBounds(displaycoord);
   if (outofbounds == 1) {
     outofbounds_str =
-      outofbounds_str + "<br>" + "Fixation dot is out of bounds";
+      outofbounds_str + '<br>' + 'Fixation dot is out of bounds';
   }
   displayPhysicalSize(displaycoord, canvasobj);
 
@@ -1010,7 +1034,7 @@ function renderBlankWithGridMarkers(
       var wd = (2 * choiceradius) / ENV.CanvasRatio;
       var xcent = gridx[choicegridindex[i]] / ENV.CanvasRatio;
       var ycent = gridy[choicegridindex[i]] / ENV.CanvasRatio;
-      context.strokeStyle = "red";
+      context.strokeStyle = 'red';
       context.strokeRect(xcent - wd / 2, ycent - wd / 2, wd, wd);
 
       var displaycoord = [
@@ -1022,7 +1046,7 @@ function renderBlankWithGridMarkers(
       var outofbounds = checkDisplayBounds(displaycoord);
       if (outofbounds == 1) {
         outofbounds_str =
-          outofbounds_str + "<br>" + "Choice Image" + i + " is out of bounds";
+          outofbounds_str + '<br>' + 'Choice Image' + i + ' is out of bounds';
       }
       displayPhysicalSize(displaycoord, canvasobj);
     }
@@ -1031,19 +1055,19 @@ function renderBlankWithGridMarkers(
   if (VISIBLECANVASWEBGL.width > 4096 || VISIBLECANVASWEBGL.height > 4096) {
     outofbounds_str =
       outofbounds_str +
-      "Canvas may be too large for webgl limit of 4096 pixels in either dimension -- 3d rendering may not be accurate! Consider using a smaller display size.";
+      'Canvas may be too large for webgl limit of 4096 pixels in either dimension -- 3d rendering may not be accurate! Consider using a smaller display size.';
   }
 
-  if (outofbounds_str == "") {
-    outofbounds_str = "All display elements are fully visible";
+  if (outofbounds_str == '') {
+    outofbounds_str = 'All display elements are fully visible';
   }
 
   displayoutofboundsstr = outofbounds_str;
 } //FUNCTION renderBlankwithGridMarkers
 
 function renderReward(canvasobj) {
-  var context = canvasobj.getContext("2d");
-  context.fillStyle = "green";
+  var context = canvasobj.getContext('2d');
+  context.fillStyle = 'green';
   context.fillRect(
     xcanvascenter / ENV.CanvasRatio - 200 / ENV.CanvasRatio,
     ycanvascenter / ENV.CanvasRatio - 200 / ENV.CanvasRatio,
@@ -1053,8 +1077,8 @@ function renderReward(canvasobj) {
 } //FUNCTION renderReward
 
 function renderPunish(canvasobj) {
-  var context = canvasobj.getContext("2d");
-  context.fillStyle = "#3c3c3c";
+  var context = canvasobj.getContext('2d');
+  context.fillStyle = '#3c3c3c';
   context.fillRect(
     xcanvascenter / ENV.CanvasRatio - 200 / ENV.CanvasRatio,
     ycanvascenter / ENV.CanvasRatio - 200 / ENV.CanvasRatio,
@@ -1073,10 +1097,10 @@ async function bufferFixationUsingImage(
   // 	var context=canvasobj.getContext('2d');
   // 	context.clearRect(0,0,canvasobj.width,canvasobj.height);
 
-  boundingBoxesFixation["x"] = [];
-  boundingBoxesFixation["y"] = [];
+  boundingBoxesFixation['x'] = [];
+  boundingBoxesFixation['y'] = [];
 
-  if (typeof image != "undefined") {
+  if (typeof image != 'undefined') {
     funcreturn = await renderImageOnCanvas(
       image,
       gridindex,
@@ -1095,8 +1119,8 @@ async function bufferFixationUsingDot(
   dot_pixelradius,
   canvasobj
 ) {
-  boundingBoxesFixation["x"] = [];
-  boundingBoxesFixation["y"] = [];
+  boundingBoxesFixation['x'] = [];
+  boundingBoxesFixation['y'] = [];
 
   funcreturn = renderDotOnCanvas(color, gridindex, dot_pixelradius, canvasobj);
   boundingBoxesFixation.x.push(funcreturn[0]);
@@ -1109,8 +1133,8 @@ async function bufferFixationUsingTriangle(
   dot_pixelradius,
   canvasobj
 ) {
-  boundingBoxesFixation["x"] = [];
-  boundingBoxesFixation["y"] = [];
+  boundingBoxesFixation['x'] = [];
+  boundingBoxesFixation['y'] = [];
 
   funcreturn = renderTriangleOnCanvas(
     color,
@@ -1135,14 +1159,14 @@ function checkDisplayBounds(displayobject_coord) {
   return outofbounds;
 }
 function setupImageLoadingText() {
-  var textobj = document.getElementById("imageloadingtext");
-  textobj.style.top = CANVAS.offsettop + "px";
-  textobj.innerHTML = "";
+  var textobj = document.getElementById('imageloadingtext');
+  textobj.style.top = CANVAS.offsettop + 'px';
+  textobj.innerHTML = '';
   setupCanvasListeners(textobj);
 }
 
 function updateImageLoadingAndDisplayText(str) {
-  var textobj = document.getElementById("imageloadingtext");
+  var textobj = document.getElementById('imageloadingtext');
 
   //DISPLAY TIMING: Software check for frame drops
   var dt = [];
@@ -1158,70 +1182,70 @@ function updateImageLoadingAndDisplayText(str) {
   textobj.innerHTML =
     str +
     imageloadingtimestr +
-    "<br>" +
+    '<br>' +
     displayoutofboundsstr +
-    "<br>" +
+    '<br>' +
     0.01 * Math.round(100 * ENV.FrameRateDisplay) +
-    "Hz " +
-    " (" +
+    'Hz ' +
+    ' (' +
     0.1 * Math.round(10000 / ENV.FrameRateDisplay) +
-    "ms res) display" +
-    " --- " +
+    'ms res) display' +
+    ' --- ' +
     0.01 * Math.round(100 * ENV.FrameRateMovie) +
-    "Hz scene update" +
-    "<br>" +
-    "<font color=red> mean(t_actual - t_desired) = " +
+    'Hz scene update' +
+    '<br>' +
+    '<font color=red> mean(t_actual - t_desired) = ' +
     Math.round(u_dt) +
-    " ms" +
-    "  (min=" +
+    ' ms' +
+    '  (min=' +
     Math.round(Math.min(...dt)) +
-    ", max=" +
+    ', max=' +
     Math.round(Math.max(...dt)) +
-    ") </font>" +
-    "<br>" +
-    "software desired - software actual" +
+    ') </font>' +
+    '<br>' +
+    'software desired - software actual' +
     dt +
-    "<br><br>" +
-    "roundtrip command" +
-    +"<br>" +
-    "roundtrip reward" +
-    +"<br><br>" +
-    "softwared desired - software actual" +
-    "<br><br>" +
-    "softwared actual - photodiode actual" +
-    "<br>" +
+    '<br><br>' +
+    'roundtrip command' +
+    +'<br>' +
+    'roundtrip reward' +
+    +'<br><br>' +
+    'softwared desired - software actual' +
+    '<br><br>' +
+    'softwared actual - photodiode actual' +
+    '<br>' +
     eyedataratestr;
 }
 
 function displayPhysicalSize(displayobject_coord, canvasobj) {
-  var visible_ctxt = canvasobj.getContext("2d");
-  visible_ctxt.textBaseline = "hanging";
-  visible_ctxt.fillStyle = "white";
-  visible_ctxt.font = "16px Verdana";
+  var visible_ctxt = canvasobj.getContext('2d');
+  visible_ctxt.textBaseline = 'hanging';
+  visible_ctxt.fillStyle = 'white';
+  visible_ctxt.font = '16px Verdana';
   visible_ctxt.fillText(
     Math.round(
       (100 * (displayobject_coord[2] - displayobject_coord[0])) /
         ENV.ViewportPPI
     ) /
       100 +
-      " x " +
+      ' x ' +
       Math.round(
         (100 * (displayobject_coord[3] - displayobject_coord[1])) /
           ENV.ViewportPPI
       ) /
         100 +
-      " in",
+      ' in',
     displayobject_coord[0] / ENV.CanvasRatio,
     (displayobject_coord[1] - 16) / ENV.CanvasRatio
   );
 }
 
 function displayGridCoordinate(idx, xycoord, canvasobj) {
-  var visible_ctxt = canvasobj.getContext("2d");
-  visible_ctxt.textAlign = "center";
-  visible_ctxt.textBaseline = "middle";
-  visible_ctxt.fillStyle = "white";
-  visible_ctxt.font = "20px Verdana";
+  var visible_ctxt = canvasobj.getContext('2d');
+  visible_ctxt.textAlign = 'center';
+  visible_ctxt.textBaseline = 'middle';
+  visible_ctxt.fillStyle = 'white';
+  visible_ctxt.font = '20px Verdana';
   visible_ctxt.fillText(
     idx,
     xycoord[0] / ENV.CanvasRatio,
@@ -1258,9 +1282,9 @@ async function saveScreenshot(
   //---- upload screenshot to firebase
   //sample image will be uploaded to the appropriate folder in the scene
 
-  if (taskscreen == "Sample") {
+  if (taskscreen == 'Sample') {
     var currtrial_samplepath = TASK.ImageBagsSample[objectlabel];
-  } else if (taskscreen == "Test") {
+  } else if (taskscreen == 'Test') {
     var currtrial_samplepath =
       TASK.ImageBagsSample[CURRTRIAL.sample_scenebag_label];
   }
@@ -1268,83 +1292,95 @@ async function saveScreenshot(
   var currtrial_parampath = ENV.ParamFileName;
 
   //path to scene folder
-  var ind_start = currtrial_samplepath.lastIndexOf("/");
-  var ind_end = currtrial_samplepath.indexOf(".js");
+  var ind_start = currtrial_samplepath.lastIndexOf('/');
+  var ind_end = currtrial_samplepath.indexOf('.js');
   var scenefolder = currtrial_samplepath.substring(0, ind_end);
 
   //paramfolder name
-  var ind_start = currtrial_parampath.lastIndexOf("/");
-  var ind_end = currtrial_parampath.indexOf(".json");
+  var ind_start = currtrial_parampath.lastIndexOf('/');
+  var ind_end = currtrial_parampath.indexOf('.json');
   var paramfolder = currtrial_parampath.substring(ind_start + 1, ind_end);
 
   //date
-  var ind_start = currtrial_date.lastIndexOf("/");
-  var ind_end = currtrial_date.indexOf("T");
+  var ind_start = currtrial_date.lastIndexOf('/');
+  var ind_end = currtrial_date.indexOf('T');
   var date = currtrial_date.substring(ind_start + 1, ind_end);
 
   var storage_path =
     scenefolder +
-    "_scene_" +
+    '_scene_' +
     date +
-    "_" +
+    '_' +
     paramfolder +
-    "_" +
+    '_' +
     ENV.DeviceName +
-    "_device";
+    '_device';
 
   if (canvasobj.width > 4096 || canvasobj.height > 4096) {
     console.log(
-      "Canvas may be too large for webgl limit of 4096 pixels in either dimension -- Image Saving may not be accurate! Consider using a smaller display size."
+      'Canvas may be too large for webgl limit of 4096 pixels in either dimension -- Image Saving may not be accurate! Consider using a smaller display size.'
     );
   }
 
-  currtrial = String(currtrial).padStart(3, "0");
-  framenum = String(framenum).padStart(3, "0");
+  currtrial = String(currtrial).padStart(3, '0');
+  framenum = String(framenum).padStart(3, '0');
   var fullpath =
     storage_path +
-    "/" +
+    '/' +
     canvasobj.id +
-    "_" +
-    "trialnum" +
+    '_' +
+    'trialnum' +
     currtrial +
-    "_" +
+    '_' +
     taskscreen +
-    "_" +
-    "framenum" +
+    '_' +
+    'framenum' +
     framenum;
 
   if (objectlabel.length > 1) {
     for (var i = 0; i <= objectlabel.length - 1; i++) {
       fullpath =
         fullpath +
-        "_" +
-        "label" +
+        '_' +
+        'label' +
         objectlabel[i] +
-        "_" +
-        "index" +
+        '_' +
+        'index' +
         objectind[i];
     } //FOR i objects
   } else {
     fullpath =
-      fullpath + "_" + "label" + objectlabel + "_" + "index" + objectind;
+      fullpath + '_' + 'label' + objectlabel + '_' + 'index' + objectind;
   }
-  fullpath_mesh = fullpath + ".glb";
-  fullpath = fullpath + ".png";
+  fullpath_mesh = fullpath + '.glb';
+  fullpath = fullpath + '.png';
 
-  canvasobj.toBlob(function (blob) {
-    try {
-      var response = storage.ref().child(fullpath).put(blob);
-      console.log("saved image: " + fullpath);
-      console.log(
-        "FIREBASE: Successful image file upload. Size:" +
-          Math.round(response.blob_.size_ / 1000) +
-          "kb"
-      );
-    } catch (error) {
-      //TRY
-      console.log(error);
-    }
-  }); //.toBlob function
+  // canvasobj.toBlob(function (blob) {
+  //   try {
+  //     var response = storage.ref().child(fullpath).put(blob);
+  //     console.log("saved image: " + fullpath);
+  //     console.log(
+  //       "FIREBASE: Successful image file upload. Size:" +
+  //         Math.round(response.blob_.size_ / 1000) +
+  //         "kb"
+  //     );
+  //   } catch (error) {
+  //     //TRY
+  //     console.log(error);
+  //   }
+  // }); //.toBlob function
+  let imgFileName = fullpath.split('/')[4];
+
+  // FLAGS.SaveImagesCtx.drawImage(canvasobj, 0, 0, 768, 819);
+  canvasobj.toBlob(async (blob) => {
+    let imgFileHandle = await FLAGS.DirHandle.getFileHandle(imgFileName, {
+      create: true,
+    });
+    // console.log('imgFileHandle:', imgFileHandle);
+    let writableStream = await imgFileHandle.createWritable();
+    await writableStream.write(blob);
+    await writableStream.close();
+  });
 
   // save mesh if morph
   let objToSave = Object.keys(
@@ -1374,10 +1410,10 @@ async function saveScreenshot(
           });
         });
 
-        let meshBlob = new Blob([glb], { type: "application/octet-stream" });
+        let meshBlob = new Blob([glb], { type: 'application/octet-stream' });
         storage.ref().child(fullpath_mesh).put(meshBlob);
       } catch (error) {
-        console.log("[ERROR SAVING MORPHED MESH]:", error);
+        console.log('[ERROR SAVING MORPHED MESH]:', error);
       }
     }
   }
@@ -1390,9 +1426,9 @@ async function saveMeshGLB(
   objectlabel,
   objectind
 ) {
-  if (taskscreen == "Sample") {
+  if (taskscreen == 'Sample') {
     var currtrial_samplepath = TASK.ImageBagsSample[objectlabel];
-  } else if (taskscreen == "Test") {
+  } else if (taskscreen == 'Test') {
     var currtrial_samplepath =
       TASK.ImageBagsSample[CURRTRIAL.sample_scenebag_label];
   }
@@ -1400,38 +1436,38 @@ async function saveMeshGLB(
   var currtrial_parampath = ENV.ParamFileName;
 
   //path to scene folder
-  var ind_start = currtrial_samplepath.lastIndexOf("/");
-  var ind_end = currtrial_samplepath.indexOf(".js");
+  var ind_start = currtrial_samplepath.lastIndexOf('/');
+  var ind_end = currtrial_samplepath.indexOf('.js');
   var scenefolder = currtrial_samplepath.substring(0, ind_end);
 
   //paramfolder name
-  var ind_start = currtrial_parampath.lastIndexOf("/");
-  var ind_end = currtrial_parampath.indexOf(".json");
+  var ind_start = currtrial_parampath.lastIndexOf('/');
+  var ind_end = currtrial_parampath.indexOf('.json');
   var paramfolder = currtrial_parampath.substring(ind_start + 1, ind_end);
 
   //date
-  var ind_start = currtrial_date.lastIndexOf("/");
-  var ind_end = currtrial_date.indexOf("T");
+  var ind_start = currtrial_date.lastIndexOf('/');
+  var ind_end = currtrial_date.indexOf('T');
   var date = currtrial_date.substring(ind_start + 1, ind_end);
 
   var storage_path =
     scenefolder +
-    "_scene_" +
+    '_scene_' +
     date +
-    "_" +
+    '_' +
     paramfolder +
-    "_" +
+    '_' +
     ENV.DeviceName +
-    "_device";
+    '_device';
   // save mesh to gltf file if morph
-  if (taskscreen == "Sample") {
+  if (taskscreen == 'Sample') {
     let objToSave = Object.keys(
       IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS
     )[0];
     if (
       typeof IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[
         objToSave
-      ].morphTargetDelta != "undefined"
+      ].morphTargetDelta != 'undefined'
     ) {
       if (
         IMAGES[taskscreen][CURRTRIAL.sample_scenebag_label[0]].OBJECTS[
@@ -1449,7 +1485,7 @@ async function saveMeshGLB(
             truncateDrawRange: false,
           })
         );
-        const blob = new Blob([glb], { type: "model/gltf-binary" });
+        const blob = new Blob([glb], { type: 'model/gltf-binary' });
         storage.ref().child(fullpath).put(blob);
       }
     }
@@ -1492,16 +1528,16 @@ function estimatefps() {
 function appendTest(teston) {
   var t0 = CURRTRIAL.tsequence[CURRTRIAL.tsequence.length - 1];
   if (TASK.SameDifferent <= 0) {
-    var seq = ["test"];
+    var seq = ['test'];
     var tseq = [t0];
   } //IF SR or MTS, show test
   else if (TASK.SameDifferent > 0) {
     if (TASK.TestOFF > 0) {
-      var seq = ["test", "blank", "choice"];
+      var seq = ['test', 'blank', 'choice'];
       var tseq = [t0, t0 + teston, t0 + teston + TASK.TestOFF];
     } //ELSEIF TestOFF
     else if (TASK.TestOFF <= 0) {
-      var seq = ["test", "choice"];
+      var seq = ['test', 'choice'];
       var tseq = [t0, t0 + teston];
     } //ELSEIF no TestOFF
   } //IF SD, show test & choice
@@ -1511,96 +1547,96 @@ function appendTest(teston) {
 //================== CANVAS SETUP ==================//
 function refreshCanvasSettings(TASK) {
   // Adjust location of CANVAS based on species-specific setup
-  if (typeof TASK.HeadsupDisplayFraction != "undefined") {
+  if (typeof TASK.HeadsupDisplayFraction != 'undefined') {
     CANVAS.headsupfraction = TASK.HeadsupDisplayFraction;
   } //IF headsupdisplayfraction specified
   else {
-    if (TASK.Species == "macaque" || TASK.Species == "human") {
+    if (TASK.Species == 'macaque' || TASK.Species == 'human') {
       CANVAS.headsupfraction = 0;
-    } else if (TASK.Species == "marmoset" || TASK.Species == "model") {
+    } else if (TASK.Species == 'marmoset' || TASK.Species == 'model') {
       CANVAS.headsupfraction = 1 / 3 - 0.06;
     }
   }
 
   if (CANVAS.headsupfraction == 0) {
-    var textobj = document.getElementById("headsuptext");
-    textobj.innerHTML = "";
-    var textobj = document.getElementById("headsuptextdevices");
-    textobj.innerHTML = "";
+    var textobj = document.getElementById('headsuptext');
+    textobj.innerHTML = '';
+    var textobj = document.getElementById('headsuptextdevices');
+    textobj.innerHTML = '';
   }
 } //refreshCanvasSettings
 
 function writeTextonBlankCanvas(textstr, x, y) {
   var blank_canvasobj = CANVAS.obj.blank;
-  var visible_ctxt = blank_canvasobj.getContext("2d");
-  visible_ctxt.textBaseline = "hanging";
-  visible_ctxt.fillStyle = "white";
-  visible_ctxt.font = "18px Verdana";
+  var visible_ctxt = blank_canvasobj.getContext('2d');
+  visible_ctxt.textBaseline = 'hanging';
+  visible_ctxt.fillStyle = 'white';
+  visible_ctxt.font = '18px Verdana';
   visible_ctxt.fillText(textstr, x, y);
 }
 
 function updateStatusText(text) {
-  var textobj = document.getElementById("headsuptext");
+  var textobj = document.getElementById('headsuptext');
   textobj.innerHTML = text;
 }
 
 function setupCanvasHeadsUp() {
-  canvasobj = document.getElementById("canvasheadsup");
+  canvasobj = document.getElementById('canvasheadsup');
   canvasobj.width = document.body.clientWidth;
   canvasobj.height = Math.round(
     document.body.clientHeight * CANVAS.headsupfraction
   );
   CANVAS.offsettop = canvasobj.height;
   if (CANVAS.headsupfraction == 0) {
-    canvasobj.style.display = "none";
+    canvasobj.style.display = 'none';
 
     //hide buttons for triggering pump
-    document.querySelector("button[id=pumpflush]").style.display = "none"; //if do style.visibility=hidden, element will still occupy space
-    document.querySelector("button[id=pumptrigger]").style.display = "none"; //if do style.visibility=hidden, element will still occupy space
+    document.querySelector('button[id=pumpflush]').style.display = 'none'; //if do style.visibility=hidden, element will still occupy space
+    document.querySelector('button[id=pumptrigger]').style.display = 'none'; //if do style.visibility=hidden, element will still occupy space
 
-    document.getElementById("headsuptext").style.display = "none";
-    document.getElementById("headsuptextdevices").style.display = "none";
+    document.getElementById('headsuptext').style.display = 'none';
+    document.getElementById('headsuptextdevices').style.display = 'none';
   } else {
-    canvasobj.style.display = "block";
+    canvasobj.style.display = 'block';
 
-    document.getElementById("headsuptext").style.height =
-      100 * CANVAS.headsupfraction + "%";
-    document.getElementById("headsuptextdevices").style.height =
-      100 * CANVAS.headsupfraction + "%";
+    document.getElementById('headsuptext').style.height =
+      100 * CANVAS.headsupfraction + '%';
+    document.getElementById('headsuptextdevices').style.height =
+      100 * CANVAS.headsupfraction + '%';
 
     //show buttons for triggering pump
-    document.querySelector("button[id=pumpflush]").style.display = "block";
-    document.querySelector("button[id=pumpflush]").style.visibility = "visible";
-    document.querySelector("button[id=pumptrigger]").style.display = "block";
-    document.querySelector("button[id=pumptrigger]").style.visibility =
-      "visible";
-    document.querySelector("button[id=connectblescale]").style.display =
-      "block";
-    document.querySelector("button[id=connectblescale]").style.visibility =
-      "visible";
+    document.querySelector('button[id=pumpflush]').style.display = 'block';
+    document.querySelector('button[id=pumpflush]').style.visibility = 'visible';
+    document.querySelector('button[id=pumptrigger]').style.display = 'block';
+    document.querySelector('button[id=pumptrigger]').style.visibility =
+      'visible';
+    document.querySelector('button[id=connectblescale]').style.display =
+      'block';
+    document.querySelector('button[id=connectblescale]').style.visibility =
+      'visible';
 
-    document.querySelector("button[id=pumpflush]").addEventListener(
-      "pointerup",
+    document.querySelector('button[id=pumpflush]').addEventListener(
+      'pointerup',
       function () {
         event.preventDefault();
-        runPump("flush");
+        runPump('flush');
       },
       false
     );
-    document.querySelector("button[id=pumptrigger]").addEventListener(
-      "pointerup",
+    document.querySelector('button[id=pumptrigger]').addEventListener(
+      'pointerup',
       function () {
         event.preventDefault();
-        runPump("trigger");
+        runPump('trigger');
       },
       false
     );
   }
-  var context = canvasobj.getContext("2d");
+  var context = canvasobj.getContext('2d');
 
-  context.fillStyle = "#202020";
+  context.fillStyle = '#202020';
   context.fillRect(0, 0, canvasobj.width, canvasobj.height);
-  canvasobj.addEventListener("touchstart", touchstart_listener, false);
+  canvasobj.addEventListener('touchstart', touchstart_listener, false);
 }
 function setupCanvas(canvasobj) {
   if (canvasobj == VISIBLECANVASWEBGL) {
@@ -1616,21 +1652,29 @@ function setupCanvas(canvasobj) {
       (windowHeight - CANVAS.offsettop) / 2 +
       CANVAS.offsettop -
       canvasobj.height / 2 +
-      "px";
+      'px';
     canvasobj.style.left =
       (windowWidth - CANVAS.offsetleft) / 2 +
       CANVAS.offsetleft -
       canvasobj.width / 2 +
-      "px";
-    canvasobj.style.margin = "0 auto";
-    canvasobj.style.display = "block"; //visible
+      'px';
+    canvasobj.style.margin = '0 auto';
+    canvasobj.style.display = 'block'; //visible
   } else {
-    canvasobj.style.top = CANVAS.offsettop + "px";
-    canvasobj.style.left = CANVAS.offsetleft + "px";
+    canvasobj.style.top = CANVAS.offsettop + 'px';
+    canvasobj.style.left = CANVAS.offsetleft + 'px';
     canvasobj.width = windowWidth - CANVAS.offsetleft;
     canvasobj.height = windowHeight - CANVAS.offsettop;
-    canvasobj.style.margin = "0 auto";
-    canvasobj.style.display = "block"; //visible
+    canvasobj.style.margin = '0 auto';
+    canvasobj.style.display = 'block'; //visible
+    if (
+      TASK.Agent == 'SaveImages' &&
+      TASK.SaveImagesResolution !== undefined &&
+      canvasobj == VISIBLECANVAS
+    ) {
+      canvasobj.width = TASK.SaveImagesResolution;
+      canvasobj.height = TASK.SaveImagesResolution;
+    }
   }
   // center in page
 
@@ -1644,33 +1688,33 @@ function setupEyeTrackerCanvas() {
   EYETRACKERCANVAS.width = VISIBLECANVAS.width; //mimic VISIBLECANVAS
   EYETRACKERCANVAS.height = VISIBLECANVAS.height; //mimic VISIBLECANVAS
 
-  EYETRACKERCANVAS.style.margin = "0 auto";
-  EYETRACKERCANVAS.style.display = "visible";
+  EYETRACKERCANVAS.style.margin = '0 auto';
+  EYETRACKERCANVAS.style.display = 'visible';
 
   setupCanvasListeners(EYETRACKERCANVAS);
 }
 
 function setupCanvasListeners(canvasobj) {
   // assign listeners
-  canvasobj.addEventListener("touchstart", touchstart_listener, {
+  canvasobj.addEventListener('touchstart', touchstart_listener, {
     capture: false,
     passive: false,
   }); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
-  canvasobj.addEventListener("touchmove", touchmove_listener, {
+  canvasobj.addEventListener('touchmove', touchmove_listener, {
     passive: false,
   }); // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
-  canvasobj.addEventListener("touchend", touchend_listener, {
+  canvasobj.addEventListener('touchend', touchend_listener, {
     capture: false,
     passive: false,
   });
-  canvasobj.addEventListener("mousedown", touchstart_listener, {
+  canvasobj.addEventListener('mousedown', touchstart_listener, {
     capture: false,
     passive: false,
   }); // handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
-  canvasobj.addEventListener("mousemove", touchmove_listener, {
+  canvasobj.addEventListener('mousemove', touchmove_listener, {
     passive: false,
   }); // based on console suggestion: Consider marking event handler as 'passive' to make the page more responive. https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
-  canvasobj.addEventListener("mouseup", touchend_listener, {
+  canvasobj.addEventListener('mouseup', touchend_listener, {
     capture: false,
     passive: false,
   });
@@ -1680,14 +1724,23 @@ function setupCanvasListeners(canvasobj) {
 // from http://www.html5rocks.com/en/tutorials/canvas/hidpi/#disqus_thread
 function scaleCanvasforHiDPI(canvasobj) {
   if (ENV.DevicePixelRatio !== backingStoreRatio) {
-    context = canvasobj.getContext("2d");
-    var oldWidth = canvasobj.width;
-    var oldHeight = canvasobj.height;
-    canvasobj.width = oldWidth / ENV.CanvasRatio;
-    canvasobj.height = oldHeight / ENV.CanvasRatio;
-    canvasobj.style.width = windowWidth - CANVAS.offsetleft + "px";
-    canvasobj.style.height = windowHeight - CANVAS.offsettop + "px";
-    canvasobj.style.margin = "0 auto";
+    if (
+      TASK.Agent == 'SaveImages' &&
+      TASK.SaveImagesResolution !== undefined &&
+      canvasobj == VISIBLECANVAS
+    ) {
+      canvasobj.style.width = canvasobj.width + 'px';
+      canvasobj.style.height = canvasobj.height + 'px';
+      canvasobj.style.margin = '0 auto';
+    } else {
+      const oldWidth = canvasobj.width;
+      const oldHeight = canvasobj.height;
+      canvasobj.width = oldWidth / ENV.CanvasRatio;
+      canvasobj.height = oldHeight / ENV.CanvasRatio;
+      canvasobj.style.width = windowWidth - CANVAS.offsetleft + 'px';
+      canvasobj.style.height = windowHeight - CANVAS.offsettop + 'px';
+      canvasobj.style.margin = '0 auto';
+    }
   }
 }
 
@@ -1696,281 +1749,281 @@ function updateHeadsUpDisplay() {
     return;
   }
 
-  var textobj = document.getElementById("headsuptext");
+  var textobj = document.getElementById('headsuptext');
 
   // Overall performance
   var ncorrect = 0;
   var nreward = 0;
 
-  if (TASK.Species == "model") {
+  if (TASK.Species == 'model') {
     if (CURRTRIAL.num > TASK.ModelConfig.trainIdx) {
       for (
         let i = TASK.ModelConfig.trainIdx + 1;
-        i < EVENTS["trialseries"]["Response"].length;
+        i < EVENTS['trialseries']['Response'].length;
         i++
       ) {
         if (
-          EVENTS["trialseries"]["Response"][i] ==
-          EVENTS["trialseries"]["CorrectItem"][i]
+          EVENTS['trialseries']['Response'][i] ==
+          EVENTS['trialseries']['CorrectItem'][i]
         ) {
           ncorrect = ncorrect + 1;
           let len =
-            EVENTS["trialseries"]["Response"].length -
+            EVENTS['trialseries']['Response'].length -
             TASK.ModelConfig.trainIdx;
           var pctcorrect = Math.round((100 * ncorrect) / len);
         }
       }
     }
   } else {
-    for (var i = 0; i <= EVENTS["trialseries"]["Response"].length - 1; i++) {
+    for (var i = 0; i <= EVENTS['trialseries']['Response'].length - 1; i++) {
       if (
-        EVENTS["trialseries"]["Response"][i] ==
-        EVENTS["trialseries"]["CorrectItem"][i]
+        EVENTS['trialseries']['Response'][i] ==
+        EVENTS['trialseries']['CorrectItem'][i]
       ) {
         ncorrect = ncorrect + 1;
-        nreward = nreward + EVENTS["trialseries"]["NReward"][i];
+        nreward = nreward + EVENTS['trialseries']['NReward'][i];
         var pctcorrect = Math.round(
-          (100 * ncorrect) / EVENTS["trialseries"]["Response"].length
+          (100 * ncorrect) / EVENTS['trialseries']['Response'].length
         );
       }
     } //FOR i trials
   }
 
   // Task type
-  var task1 = "";
-  var task2 = "";
+  var task1 = '';
+  var task2 = '';
   if (TASK.RewardStage == 0) {
-    task1 = "Fixation";
+    task1 = 'Fixation';
   } else if (TASK.RewardStage == 1) {
-    task1 = TASK.TestGridIndex.length + "-way AFC:";
-    task2 = TASK.ImageBagsTest.length + "-categories in pool";
+    task1 = TASK.TestGridIndex.length + '-way AFC:';
+    task2 = TASK.ImageBagsTest.length + '-categories in pool';
   }
   if (CANVAS.headsupfraction > 0) {
-    if (TASK.Species == "model") {
+    if (TASK.Species == 'model') {
       if (CURRTRIAL.num < TASK.ModelConfig.trainIdx - 1) {
         // console.log('screenfunc:', EVENTS['trialseries']['Response'].length, CURRTRIAL.num, TASK.ModelConfig.trainIdx);
-        let tmp = EVENTS["trialseries"]["Response"].length;
+        let tmp = EVENTS['trialseries']['Response'].length;
         let tmp2 = CURRTRIAL.num + 2;
         textobj.innerHTML =
-          "User: " +
+          'User: ' +
           ENV.ResearcherDisplayName +
-          ", " +
+          ', ' +
           ENV.ResearcherEmail +
-          "<br>" +
-          "Agent: " +
+          '<br>' +
+          'Agent: ' +
           ENV.Subject +
-          ", <font color=green><b>" +
-          "TRAINING</b></font> " +
-          "(" +
+          ', <font color=green><b>' +
+          'TRAINING</b></font> ' +
+          '(' +
           tmp2 +
-          " of " +
+          ' of ' +
           TASK.ModelConfig.trainIdx +
-          ")" +
-          "<br>" +
+          ')' +
+          '<br>' +
           task1 +
-          "<br>" +
+          '<br>' +
           task2 +
-          "<br>" +
-          "<br>" +
-          "last trial @ " +
-          CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") +
-          "<br>" +
-          "last saved to firebase @ " +
-          CURRTRIAL.lastFirebaseSave.toLocaleTimeString("en-US");
+          '<br>' +
+          '<br>' +
+          'last trial @ ' +
+          CURRTRIAL.lastTrialCompleted.toLocaleTimeString('en-US') +
+          '<br>' +
+          'last saved to firebase @ ' +
+          CURRTRIAL.lastFirebaseSave.toLocaleTimeString('en-US');
       } else {
         textobj.innerHTML =
-          "User: " +
+          'User: ' +
           ENV.ResearcherDisplayName +
-          ", " +
+          ', ' +
           ENV.ResearcherEmail +
-          "<br>" +
-          "Agent: " +
+          '<br>' +
+          'Agent: ' +
           ENV.Subject +
-          ", <font color=green><b>" +
+          ', <font color=green><b>' +
           pctcorrect +
-          "%</b></font> " +
-          "(" +
+          '%</b></font> ' +
+          '(' +
           ncorrect +
-          " of " +
-          (EVENTS["trialseries"]["Response"].length -
+          ' of ' +
+          (EVENTS['trialseries']['Response'].length -
             TASK.ModelConfig.trainIdx) +
-          " trials)" +
-          "<br>" +
+          ' trials)' +
+          '<br>' +
           task1 +
-          "<br>" +
+          '<br>' +
           task2 +
-          "<br>" +
-          "<br>" +
-          "last trial @ " +
-          CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") +
-          "<br>" +
-          "last saved to firebase @ " +
-          CURRTRIAL.lastFirebaseSave.toLocaleTimeString("en-US");
+          '<br>' +
+          '<br>' +
+          'last trial @ ' +
+          CURRTRIAL.lastTrialCompleted.toLocaleTimeString('en-US') +
+          '<br>' +
+          'last saved to firebase @ ' +
+          CURRTRIAL.lastFirebaseSave.toLocaleTimeString('en-US');
       }
     } else {
       textobj.innerHTML =
-        "User: " +
+        'User: ' +
         ENV.ResearcherDisplayName +
-        ", " +
+        ', ' +
         ENV.ResearcherEmail +
-        "<br>" +
-        "Agent: " +
+        '<br>' +
+        'Agent: ' +
         ENV.Subject +
-        ", <font color=green><b>" +
+        ', <font color=green><b>' +
         pctcorrect +
-        "%</b></font> " +
-        "(" +
+        '%</b></font> ' +
+        '(' +
         ncorrect +
-        " of " +
-        EVENTS["trialseries"]["Response"].length +
-        " trials)" +
-        "<br>" +
-        "NRewards=" +
+        ' of ' +
+        EVENTS['trialseries']['Response'].length +
+        ' trials)' +
+        '<br>' +
+        'NRewards=' +
         nreward +
-        ", <font color=green><b>" +
+        ', <font color=green><b>' +
         Math.round((TASK.RewardPer1000Trials * nreward) / 1000) +
-        "mL</b></font> (" +
+        'mL</b></font> (' +
         Math.round(TASK.RewardPer1000Trials) +
-        " mL per 1000)" +
-        "<br> " +
+        ' mL per 1000)' +
+        '<br> ' +
         task1 +
-        "<br>" +
+        '<br>' +
         task2 +
-        "<br>" +
-        "<br>" +
-        "last trial @ " +
-        CURRTRIAL.lastTrialCompleted.toLocaleTimeString("en-US") +
-        "<br>" +
-        "last saved to firebase @ " +
-        CURRTRIAL.lastFirebaseSave.toLocaleTimeString("en-US");
+        '<br>' +
+        '<br>' +
+        'last trial @ ' +
+        CURRTRIAL.lastTrialCompleted.toLocaleTimeString('en-US') +
+        '<br>' +
+        'last saved to firebase @ ' +
+        CURRTRIAL.lastFirebaseSave.toLocaleTimeString('en-US');
     }
 
     if (FLAGS.RFIDGeneratorCreated == 1) {
       textobj.innerHTML =
         textobj.innerHTML +
-        "<br>" +
-        "<font color = red>" +
-        "PAUSED: waiting for RFID read!!" +
-        "<br></font>";
+        '<br>' +
+        '<font color = red>' +
+        'PAUSED: waiting for RFID read!!' +
+        '<br></font>';
     }
     if (TASK.CheckRFID > 0 && port.connected == false) {
       textobj.innerHTML =
         textobj.innerHTML +
-        "<br>" +
-        "<font color = red>" +
-        "WARNING: USB device not connected to check RFID!!" +
-        "<br></font>";
+        '<br>' +
+        '<font color = red>' +
+        'WARNING: USB device not connected to check RFID!!' +
+        '<br></font>';
     }
-    if (typeof FLAGS.automatortext != "undefined") {
-      textobj.innerHTML = textobj.innerHTML + "<br><br>" + FLAGS.automatortext;
+    if (typeof FLAGS.automatortext != 'undefined') {
+      textobj.innerHTML = textobj.innerHTML + '<br><br>' + FLAGS.automatortext;
     }
   } //IF headsupfraction > 0
   else if (CANVAS.headsupfraction == 0) {
-    textobj.innerHTML = ""; //port.statustext_connect + blescale.statustext_connect
+    textobj.innerHTML = ''; //port.statustext_connect + blescale.statustext_connect
   } else if (isNaN(CANVAS.headsupfraction)) {
     //before task params load
     if (ENV.ScreenRatio == -1) {
       var firestoreRecordFound =
-        "<font color = red> DEVICE RECORD NOT FOUND! </font>";
-      var screenRatioMatchesDPR = "";
+        '<font color = red> DEVICE RECORD NOT FOUND! </font>';
+      var screenRatioMatchesDPR = '';
     } else {
       var firestoreRecordFound =
-        "<font color = green> DEVICE RECORD FOUND </font>";
+        '<font color = green> DEVICE RECORD FOUND </font>';
       if (ENV.ScreenRatio != ENV.DevicePixelRatio) {
         var screenRatioMatchesDPR =
-          "Detected DevicePixelRatio <font color = red>DOES NOT match record </font>";
+          'Detected DevicePixelRatio <font color = red>DOES NOT match record </font>';
       } else {
         var screenRatioMatchesDPR =
-          "Detected DevicePixelRatio <font color = green>MATCHES record </font>";
+          'Detected DevicePixelRatio <font color = green>MATCHES record </font>';
       }
     }
     textobj.innerHTML =
-      "User: " +
+      'User: ' +
       ENV.ResearcherDisplayName +
-      ", " +
+      ', ' +
       ENV.ResearcherEmail +
-      "<br>" +
-      "No trials performed" +
-      "<br>" +
-      "<br><b>" +
+      '<br>' +
+      'No trials performed' +
+      '<br>' +
+      '<br><b>' +
       firestoreRecordFound +
-      " for " +
+      ' for ' +
       ENV.DeviceName.toLowerCase() +
-      "</b>" +
-      "<br>" +
-      "Screen Size = " +
+      '</b>' +
+      '<br>' +
+      'Screen Size = ' +
       ENV.ScreenSizeInches[2] +
-      "in (" +
+      'in (' +
       ENV.ViewportPixels +
-      "px; " +
+      'px; ' +
       ENV.ScreenRatio +
-      "x" +
-      ")" +
-      "<br>" +
+      'x' +
+      ')' +
+      '<br>' +
       screenRatioMatchesDPR +
-      "<br>" +
-      "<br>" +
-      "Device brand,name,type: " +
+      '<br>' +
+      '<br>' +
+      'Device brand,name,type: ' +
       ENV.DeviceBrand +
-      ", " +
-      "<u><font color = green>" +
+      ', ' +
+      '<u><font color = green>' +
       ENV.DeviceName +
-      "</font></u>" +
-      ", " +
+      '</font></u>' +
+      ', ' +
       ENV.DeviceType +
-      "<br>" +
-      "Screen: " +
+      '<br>' +
+      'Screen: ' +
       ENV.DeviceScreenWidth +
-      "x" +
+      'x' +
       ENV.DeviceScreenHeight +
-      " pixels" +
-      "<br>" +
-      "TouchScreen: " +
+      ' pixels' +
+      '<br>' +
+      'TouchScreen: ' +
       ENV.DeviceTouchScreen +
-      "<br>" +
-      "GPU: " +
+      '<br>' +
+      'GPU: ' +
       ENV.DeviceGPU +
-      "<br>" +
-      "OS name,codename,ver: " +
+      '<br>' +
+      'OS name,codename,ver: ' +
       ENV.DeviceOSName +
-      ", " +
-      "<u><font color = green>" +
+      ', ' +
+      '<u><font color = green>' +
       ENV.DeviceOSCodeName +
-      "</font></u>" +
-      ", " +
+      '</font></u>' +
+      ', ' +
       ENV.DeviceOSVersion +
-      "<br>" +
-      "Browser: " +
-      "<u><font color = green>" +
+      '<br>' +
+      'Browser: ' +
+      '<u><font color = green>' +
       ENV.DeviceBrowserName +
-      "</font></u>" +
-      " v" +
+      '</font></u>' +
+      ' v' +
       ENV.DeviceBrowserVersion;
   } //ELSE IF isnan
 } //FUNCTION updateHeadsUpDisplay
 
 function updateHeadsUpDisplayDevices() {
-  var textobj = document.getElementById("headsuptextdevices");
+  var textobj = document.getElementById('headsuptextdevices');
   if (CANVAS.headsupfraction > 0) {
     textobj.innerHTML =
-      "<font color=red><b>" +
+      '<font color=red><b>' +
       ble.statustext +
       port.statustext_connect +
-      "<br></font>" +
-      "<font color=green><b>" +
+      '<br></font>' +
+      '<font color=green><b>' +
       port.statustext_sent +
-      "<br></font>" +
-      "<font color=blue><b>" +
+      '<br></font>' +
+      '<font color=blue><b>' +
       port.statustext_received +
-      "<br></font>" +
-      "<font color=red><b>" +
+      '<br></font>' +
+      '<font color=red><b>' +
       blescale.statustext_connect +
-      "<br></font>" +
-      "<font color=blue><b>" +
+      '<br></font>' +
+      '<font color=blue><b>' +
       blescale.statustext_received +
-      "<br></font>";
+      '<br></font>';
   } else if (CANVAS.headsupfraction == 0) {
-    textobj.innerHTML = ""; //port.statustext_connect + blescale.statustext_connect
+    textobj.innerHTML = ''; //port.statustext_connect + blescale.statustext_connect
   } else if (isNaN(CANVAS.headsupfraction)) {
     //before task params load
     textobj.innerHTML = port.statustext_connect + blescale.statustext_connect;
@@ -1987,30 +2040,30 @@ function updateHeadsUpDisplayAutomator(
 ) {
   if (CANVAS.headsupfraction > 0) {
     var textstr =
-      "Automator: " +
-      "<font color=red><b>" +
+      'Automator: ' +
+      '<font color=red><b>' +
       TASK.Automator +
-      "</b></font>" +
-      ", <font color=white><b>" +
-      "Stage=" +
+      '</b></font>' +
+      ', <font color=white><b>' +
+      'Stage=' +
       currentautomatorstagename +
       TASK.CurrentAutomatorStage +
-      "</b></font>" +
-      "<br> Performance: " +
-      "<font color=green><b>" +
+      '</b></font>' +
+      '<br> Performance: ' +
+      '<font color=green><b>' +
       Math.round(pctcorrect) +
-      "%, last " +
+      '%, last ' +
       ntrials +
-      " trials</b></font> " +
-      "(min: " +
+      ' trials</b></font> ' +
+      '(min: ' +
       minpctcorrect +
-      "%, " +
+      '%, ' +
       mintrials +
-      " trials)" +
-      "<br>" +
+      ' trials)' +
+      '<br>' +
       eventstring;
   } else if (CANVAS.headsupfraction == 0) {
-    var textstr = "";
+    var textstr = '';
   }
   return textstr;
 } //FUNCTION update
@@ -2073,7 +2126,7 @@ function updateFilterSingleFrame(
     saturate: 100,
     sepia: 0,
   };
-  if (typeof IMAGES[taskscreen][classlabel].OBJECTFILTERS != "undefined") {
+  if (typeof IMAGES[taskscreen][classlabel].OBJECTFILTERS != 'undefined') {
     var nextblur = chooseArrayElement(
       IMAGES[taskscreen][classlabel].OBJECTFILTERS.blur,
       index,
@@ -2082,7 +2135,7 @@ function updateFilterSingleFrame(
     if (Number.isInteger(movieframe) && nextblur != undefined) {
       nextblur = chooseArrayElement(nextblur, movieframe, nextblur.length - 1);
     }
-    if (nextblur != "" && nextblur != undefined) {
+    if (nextblur != '' && nextblur != undefined) {
       objFilterSingleFrame.blur = nextblur;
     }
 
@@ -2099,7 +2152,7 @@ function updateFilterSingleFrame(
       );
     }
 
-    if (nextbrightness != "" && nextbrightness != undefined) {
+    if (nextbrightness != '' && nextbrightness != undefined) {
       objFilterSingleFrame.brightness = nextbrightness;
     }
 
@@ -2116,7 +2169,7 @@ function updateFilterSingleFrame(
       );
     }
 
-    if (nextcontrast != "" && nextcontrast != undefined) {
+    if (nextcontrast != '' && nextcontrast != undefined) {
       objFilterSingleFrame.contrast = nextcontrast;
     }
 
@@ -2133,7 +2186,7 @@ function updateFilterSingleFrame(
       );
     }
 
-    if (nextgrayscale != "" && nextgrayscale != undefined) {
+    if (nextgrayscale != '' && nextgrayscale != undefined) {
       objFilterSingleFrame.grayscale = nextgrayscale;
     }
 
@@ -2150,7 +2203,7 @@ function updateFilterSingleFrame(
       );
     }
 
-    if (nexthuerotate != "" && nexthuerotate != undefined) {
+    if (nexthuerotate != '' && nexthuerotate != undefined) {
       objFilterSingleFrame.huerotate = nexthuerotate;
     }
 
@@ -2166,7 +2219,7 @@ function updateFilterSingleFrame(
         nextinvert.length - 1
       );
     }
-    if (nextinvert != "" && nextinvert != undefined) {
+    if (nextinvert != '' && nextinvert != undefined) {
       objFilterSingleFrame.invert = nextinvert;
     }
 
@@ -2182,7 +2235,7 @@ function updateFilterSingleFrame(
         nextopacity.length - 1
       );
     }
-    if (nextopacity != "" && nextopacity != undefined) {
+    if (nextopacity != '' && nextopacity != undefined) {
       objFilterSingleFrame.opacity = nextopacity;
     }
     var nextsaturate = chooseArrayElement(
@@ -2198,7 +2251,7 @@ function updateFilterSingleFrame(
       );
     }
 
-    if (nextsaturate != "" && nextsaturate != undefined) {
+    if (nextsaturate != '' && nextsaturate != undefined) {
       objFilterSingleFrame.saturate = nextsaturate;
     }
 
@@ -2215,38 +2268,38 @@ function updateFilterSingleFrame(
       );
     }
 
-    if (nextsepia != "" && nextsepia != undefined) {
+    if (nextsepia != '' && nextsepia != undefined) {
       objFilterSingleFrame.sepia = nextsepia;
     }
   } //IF OBJECTFILTERS defined
   var objFilterstr =
-    "blur(" +
+    'blur(' +
     objFilterSingleFrame.blur +
-    "px) " +
-    "brightness(" +
+    'px) ' +
+    'brightness(' +
     objFilterSingleFrame.brightness +
-    "%) " +
-    "contrast(" +
+    '%) ' +
+    'contrast(' +
     objFilterSingleFrame.contrast +
-    "%) " +
-    "grayscale(" +
+    '%) ' +
+    'grayscale(' +
     objFilterSingleFrame.grayscale +
-    "%) " +
-    "hue-rotate(" +
+    '%) ' +
+    'hue-rotate(' +
     objFilterSingleFrame.huerotate +
-    "deg) " +
-    "invert(" +
+    'deg) ' +
+    'invert(' +
     objFilterSingleFrame.invert +
-    "%) " +
-    "opacity(" +
+    '%) ' +
+    'opacity(' +
     objFilterSingleFrame.opacity +
-    "%) " +
-    "saturate(" +
+    '%) ' +
+    'saturate(' +
     objFilterSingleFrame.saturate +
-    "%) " +
-    "sepia(" +
+    '%) ' +
+    'sepia(' +
     objFilterSingleFrame.sepia +
-    "%)";
+    '%)';
 
   //===== 2D IMAGE FILTERS
   var imgFilterSingleFrame = {
@@ -2261,7 +2314,7 @@ function updateFilterSingleFrame(
     sepia: 0,
   };
 
-  if (typeof IMAGES[taskscreen][classlabel].IMAGEFILTERS != "undefined") {
+  if (typeof IMAGES[taskscreen][classlabel].IMAGEFILTERS != 'undefined') {
     var nextblur = chooseArrayElement(
       IMAGES[taskscreen][classlabel].IMAGEFILTERS.blur,
       index,
@@ -2270,7 +2323,7 @@ function updateFilterSingleFrame(
     if (Number.isInteger(movieframe) && nextblur != undefined) {
       nextblur = chooseArrayElement(nextblur, movieframe, nextblur.length - 1);
     }
-    if (nextblur != "" && nextblur != undefined) {
+    if (nextblur != '' && nextblur != undefined) {
       imgFilterSingleFrame.blur = nextblur;
     }
 
@@ -2287,7 +2340,7 @@ function updateFilterSingleFrame(
       );
     }
 
-    if (nextbrightness != "" && nextbrightness != undefined) {
+    if (nextbrightness != '' && nextbrightness != undefined) {
       imgFilterSingleFrame.brightness = nextbrightness;
     }
 
@@ -2304,7 +2357,7 @@ function updateFilterSingleFrame(
       );
     }
 
-    if (nextcontrast != "" && nextcontrast != undefined) {
+    if (nextcontrast != '' && nextcontrast != undefined) {
       imgFilterSingleFrame.contrast = nextcontrast;
     }
 
@@ -2321,7 +2374,7 @@ function updateFilterSingleFrame(
       );
     }
 
-    if (nextgrayscale != "" && nextgrayscale != undefined) {
+    if (nextgrayscale != '' && nextgrayscale != undefined) {
       imgFilterSingleFrame.grayscale = nextgrayscale;
     }
 
@@ -2338,7 +2391,7 @@ function updateFilterSingleFrame(
       );
     }
 
-    if (nexthuerotate != "" && nexthuerotate != undefined) {
+    if (nexthuerotate != '' && nexthuerotate != undefined) {
       imgFilterSingleFrame.huerotate = nexthuerotate;
     }
 
@@ -2354,7 +2407,7 @@ function updateFilterSingleFrame(
         nextinvert.length - 1
       );
     }
-    if (nextinvert != "" && nextinvert != undefined) {
+    if (nextinvert != '' && nextinvert != undefined) {
       imgFilterSingleFrame.invert = nextinvert;
     }
 
@@ -2370,7 +2423,7 @@ function updateFilterSingleFrame(
         nextopacity.length - 1
       );
     }
-    if (nextopacity != "" && nextopacity != undefined) {
+    if (nextopacity != '' && nextopacity != undefined) {
       imgFilterSingleFrame.opacity = nextopacity;
     }
     var nextsaturate = chooseArrayElement(
@@ -2386,7 +2439,7 @@ function updateFilterSingleFrame(
       );
     }
 
-    if (nextsaturate != "" && nextsaturate != undefined) {
+    if (nextsaturate != '' && nextsaturate != undefined) {
       imgFilterSingleFrame.saturate = nextsaturate;
     }
 
@@ -2403,38 +2456,38 @@ function updateFilterSingleFrame(
       );
     }
 
-    if (nextsepia != "" && nextsepia != undefined) {
+    if (nextsepia != '' && nextsepia != undefined) {
       imgFilterSingleFrame.sepia = nextsepia;
     }
   } //IF IMAGEFILTERS defined
   var imgFilterstr =
-    "blur(" +
+    'blur(' +
     imgFilterSingleFrame.blur +
-    "px) " +
-    "brightness(" +
+    'px) ' +
+    'brightness(' +
     imgFilterSingleFrame.brightness +
-    "%) " +
-    "contrast(" +
+    '%) ' +
+    'contrast(' +
     imgFilterSingleFrame.contrast +
-    "%) " +
-    "grayscale(" +
+    '%) ' +
+    'grayscale(' +
     imgFilterSingleFrame.grayscale +
-    "%) " +
-    "hue-rotate(" +
+    '%) ' +
+    'hue-rotate(' +
     imgFilterSingleFrame.huerotate +
-    "deg) " +
-    "invert(" +
+    'deg) ' +
+    'invert(' +
     imgFilterSingleFrame.invert +
-    "%) " +
-    "opacity(" +
+    '%) ' +
+    'opacity(' +
     imgFilterSingleFrame.opacity +
-    "%) " +
-    "saturate(" +
+    '%) ' +
+    'saturate(' +
     imgFilterSingleFrame.saturate +
-    "%) " +
-    "sepia(" +
+    '%) ' +
+    'sepia(' +
     imgFilterSingleFrame.sepia +
-    "%)";
+    '%)';
 
   return [objFilterstr, imgFilterstr];
 }
