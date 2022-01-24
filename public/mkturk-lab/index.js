@@ -418,6 +418,34 @@ if (ENV.BatteryAPIAvailable) {
 
   if (TASK.Agent == 'SaveImages') {
     FLAGS.DirHandle = await window.showDirectoryPicker();
+    TASK.ImageBagsSample.forEach(async (sceneFilePath) => {
+      console.log('HI');
+      let sceneFileName = sceneFilePath.split('/').slice(-1)[0];
+      let sceneFileDir = sceneFilePath
+        .split('/')
+        .slice(-1)[0]
+        .split('.json')[0];
+      let subDirHandle = await FLAGS.DirHandle.getDirectoryHandle(
+        sceneFileDir,
+        {
+          create: true,
+        }
+      );
+      let sceneFileHandle = await subDirHandle.getFileHandle(sceneFileName, {
+        create: true,
+      });
+
+      let wrStream = await sceneFileHandle.createWritable();
+      let sceneFileRef = storage.ref().child(sceneFilePath);
+      sceneFileRef.getDownloadURL().then(async (url) => {
+        console.log('hi');
+        let response = await fetch(url);
+        let blob = await response.blob();
+
+        await wrStream.write(blob);
+        await wrStream.close();
+      });
+    });
     FLAGS.SaveImagesCvs = document.querySelector('#save-images-canvas');
     FLAGS.SaveImagesCtx = FLAGS.SaveImagesCvs.getContext('2d');
   }

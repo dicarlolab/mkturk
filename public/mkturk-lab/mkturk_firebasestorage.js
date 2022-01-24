@@ -46,10 +46,10 @@ async function loadMeshfromFirebase(meshfile_path) {
       .getDownloadURL()
       .catch((error) => console.log(error));
 
-    var strs = meshfile_path.split(".");
+    var strs = meshfile_path.split('.');
     var ext = strs[1];
 
-    if (ext == "gltf" || ext == "glb") {
+    if (ext == 'gltf' || ext == 'glb') {
       var loader = new THREE.GLTFLoader();
 
       return new Promise(function (resolve, reject) {
@@ -62,7 +62,7 @@ async function loadMeshfromFirebase(meshfile_path) {
         } //catch
       }); //promise
     } //gltf loader
-    else if (ext == "obj") {
+    else if (ext == 'obj') {
       var loader = new THREE.OBJLoader();
 
       return new Promise(function (resolve, reject) {
@@ -83,7 +83,7 @@ async function loadMeshfromFirebase(meshfile_path) {
 async function loadMeshArrayfromFirebase(meshfile_pathlist) {
   try {
     var object_requests = meshfile_pathlist.map(loadMeshfromFirebase);
-    console.log("FIREBASE: buffering " + meshfile_pathlist.length + " objects");
+    console.log('FIREBASE: buffering ' + meshfile_pathlist.length + ' objects');
     var tstart = performance.now();
     var object_array = await Promise.all(object_requests)
       .catch(function (error) {
@@ -112,13 +112,13 @@ async function getFileListRecursiveFirebase(dir, ext) {
   var files = [];
   for (const item of fileList.prefixes) {
     var subfileList = await getFileListRecursiveFirebase(
-      dir + item.name + "/",
+      dir + item.name + '/',
       ext
     );
     files = [...files, ...subfileList];
   }
   for (i = 0; i <= fileList.items.length - 1; i++) {
-    if (typeof ext == "string") {
+    if (typeof ext == 'string') {
       if (fileList.items[i].name.endsWith(ext)) {
         files.push(dir + fileList.items[i].name);
       } //if correct file extension
@@ -143,7 +143,7 @@ async function getFileListFirebase(dir) {
     availableFolders.push(folderList.prefixes[i].name);
   }
 
-  var cubeSides = ["zfront", "zback", "ytop", "ybottom", "xright", "xleft"];
+  var cubeSides = ['zfront', 'zback', 'ytop', 'ybottom', 'xright', 'xleft'];
 
   // get the maximum number of files across folders
 
@@ -153,7 +153,7 @@ async function getFileListFirebase(dir) {
     if (availableFolders.includes(side)) {
       var subfileList = await storage
         .ref()
-        .child(dir + side + "/")
+        .child(dir + side + '/')
         .listAll();
       var subfiles = [];
       for (var i = 0; i <= subfileList.items.length - 1; i++) {
@@ -170,14 +170,14 @@ async function getFileListFirebase(dir) {
 
   for (var j = 0; j < max_num_files; j++) {
     // change index to a string
-    files[j] = ["", "", "", "", "", ""];
+    files[j] = ['', '', '', '', '', ''];
 
     for (var side of cubeSides) {
       var subfiles = allfiles[cubeSides.indexOf(side)];
       if (subfiles.length > 0 && subfiles[j] != null) {
-        files[j][cubeSides.indexOf(side)] = dir + side + "/" + subfiles[j];
+        files[j][cubeSides.indexOf(side)] = dir + side + '/' + subfiles[j];
       } else {
-        files[j][cubeSides.indexOf(side)] = "";
+        files[j][cubeSides.indexOf(side)] = '';
       }
     }
   }
@@ -216,24 +216,24 @@ async function loadImageArrayfromFirebase(imagepathlist) {
 
     if (imagepathlist.length > MAX_TOTAL_REQUESTS) {
       throw (
-        "Under the Firebase Cloud Storage API, cannot load more than " +
+        'Under the Firebase Cloud Storage API, cannot load more than ' +
         MAX_TOTAL_REQUESTS +
-        " images at a short time period. You have requested " +
+        ' images at a short time period. You have requested ' +
         imagepathlist.length +
-        ". Consider using an image loading strategy that reduces the request rate on Google Cloud Storage."
+        '. Consider using an image loading strategy that reduces the request rate on Google Cloud Storage.'
       );
       return;
     }
 
     if (imagepathlist.length > MAX_SIMULTANEOUS_REQUESTS) {
       console.log(
-        "FIREBASE: Chunking your " +
+        'FIREBASE: Chunking your ' +
           imagepathlist.length +
-          " image requests into " +
+          ' image requests into ' +
           Math.ceil(imagepathlist.length / MAX_SIMULTANEOUS_REQUESTS) +
-          " chunks of (up to) " +
+          ' chunks of (up to) ' +
           MAX_SIMULTANEOUS_REQUESTS +
-          " each. "
+          ' each. '
       );
       var image_array = [];
 
@@ -261,7 +261,7 @@ async function loadImageArrayfromFirebase(imagepathlist) {
       for (var i = 0; i < 3; i++) {
         var image_requests = imagepathlist.map(loadImagefromFirebase);
 
-        console.log("FIREBASE: Buffering " + imagepathlist.length + " images");
+        console.log('FIREBASE: Buffering ' + imagepathlist.length + ' images');
         var tstart = performance.now();
         var image_array = await Promise.all(image_requests)
           .catch(function (error) {
@@ -271,7 +271,7 @@ async function loadImageArrayfromFirebase(imagepathlist) {
 
         var load_success = 1;
         for (var j = 0; j < image_array.length; j++) {
-          if (image_array[j].src == "failed") {
+          if (image_array[j].src == 'failed') {
             load_success = 0;
           }
         }
@@ -280,15 +280,15 @@ async function loadImageArrayfromFirebase(imagepathlist) {
           imageloadingtimestr =
             imageloadingtimestr +
             image_array.length +
-            " images in " +
+            ' images in ' +
             Math.round((100 * (performance.now() - tstart)) / 1000) / 100 +
-            " seconds, ";
-          updateImageLoadingAndDisplayText(" ");
+            ' seconds, ';
+          updateImageLoadingAndDisplayText(' ');
           break;
         } else if (load_success <= 0) {
           await timeout(i * 250);
           console.log(
-            "FIREBASE: RETRYING IMAGE LOAD for " + i + "th time!!!!!"
+            'FIREBASE: RETRYING IMAGE LOAD for ' + i + 'th time!!!!!'
           );
         }
       } //for 3 retry attempts
@@ -311,13 +311,13 @@ async function checkParameterFileStatusFirebase() {
       updateEventDataonFirestore(EVENTS);
 
       console.log(
-        "FIREBASE: Parameter file on disk was changed. New rev =" +
+        'FIREBASE: Parameter file on disk was changed. New rev =' +
           ENV.ParamFileRev
       );
     } //if file updated
   } catch (error) {
     //try
-    console.log("FIREBASE getmeta: " + error);
+    console.log('FIREBASE getmeta: ' + error);
   } //catch
 }
 
@@ -327,12 +327,12 @@ async function loadParametersfromFirebase(paramfile_path) {
     data = await loadTextfromFirebase(paramfile_path);
     TASK = {};
     TASK = data;
-    if (TASK.Species == "model") {
+    if (TASK.Species == 'model') {
       TASK.PunishTimeOut = 0;
     }
     await loadAgentRFIDfromFirestore(ENV.Subject, TASK.Species);
 
-    if (typeof TASK.ImageRewardList != "undefined") {
+    if (typeof TASK.ImageRewardList != 'undefined') {
       for (var i = 0; i <= TASK.ImageRewardList.length - 1; i++) {
         var data = await loadTextfromFirebase(TASK.ImageRewardList[i]);
         for (var j = 0; j <= data.ImageRewardList.length / 2 - 1; j++) {
@@ -343,7 +343,7 @@ async function loadParametersfromFirebase(paramfile_path) {
     }
 
     var filemeta = await getFileMetadataFirebase(paramfile_path);
-    ENV.ParamFileName = "/" + filemeta.fullPath;
+    ENV.ParamFileName = '/' + filemeta.fullPath;
     ENV.ParamFileRev = filemeta.generation;
     ENV.ParamFileDate = new Date(filemeta.updated);
 
@@ -366,10 +366,10 @@ async function saveParameterTexttoFirebase(parameter_text) {
 
     while (!success && i < max_retries) {
       try {
-        var blob = new Blob([datastr], { type: "application/json" });
+        var blob = new Blob([datastr], { type: 'application/json' });
 
         // Create file metadata including the content type
-        var metadata = { contentType: "application/json" };
+        var metadata = { contentType: 'application/json' };
 
         // Upload the file and metadata
         var response = await storage
@@ -378,16 +378,16 @@ async function saveParameterTexttoFirebase(parameter_text) {
           .put(blob, metadata);
         CURRTRIAL.lastFirebaseSave = new Date(response.metadata.timeCreated);
         console.log(
-          "FIREBASE: Save TaskParams. Size:" +
+          'FIREBASE: Save TaskParams. Size:' +
             Math.round(response.totalBytes / 1000) +
-            "kb"
+            'kb'
         );
       } catch (error) {
         console.log(error);
         console.log(
-          "FIREBASE: Trying to write in " +
+          'FIREBASE: Trying to write in ' +
             timeout_seed * i +
-            "ms...on try " +
+            'ms...on try ' +
             i
         );
         sleep(timeout_seed * i);
@@ -406,7 +406,7 @@ async function saveParameterTexttoFirebase(parameter_text) {
     if (ENV.ParamFileRev != filemeta.generation) {
       ENV.ParamFileRev = filemeta.generation;
       ENV.ParamFileDate = new Date(filemeta.updated);
-      console.log("FIREBASE: Update TaskParams. Rev=" + ENV.ParamFileRev);
+      console.log('FIREBASE: Update TaskParams. Rev=' + ENV.ParamFileRev);
     } //if
   } catch (error) {
     //try
@@ -417,11 +417,11 @@ async function saveParameterTexttoFirebase(parameter_text) {
 //------------- SAVE PARAMS FROM OBJECT --------------//
 async function saveParameterstoFirebase() {
   try {
-    var datastr = JSON.stringify(TASK, null, " ");
-    var blob = new Blob([datastr], { type: "application/json" });
+    var datastr = JSON.stringify(TASK, null, ' ');
+    var blob = new Blob([datastr], { type: 'application/json' });
 
     // Create file metadata including the content type
-    var metadata = { contentType: "application/json" };
+    var metadata = { contentType: 'application/json' };
 
     // Upload the file and metadata
     var response = await storage
@@ -435,11 +435,11 @@ async function saveParameterstoFirebase() {
     } //if filemeta
 
     console.log(
-      "FIREBASE: TASK written to disk as " +
+      'FIREBASE: TASK written to disk as ' +
         ENV.ParamFileName +
-        ". Size: " +
+        '. Size: ' +
         Math.round(response.totalBytes / 1000) +
-        "kb"
+        'kb'
     );
     return 0; //need2saveParameters
   } catch (error) {
@@ -451,22 +451,51 @@ async function saveParameterstoFirebase() {
 //------------- SAVE DATA --------------//
 async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS) {
   let dataObj;
-  if (TASK.Species == "model" && Object.keys(EVENTS).includes("trainseries")) {
+  if (TASK.Species == 'model' && Object.keys(EVENTS).includes('trainseries')) {
     dataObj = {
       TASK: TASK,
       ENV: ENV,
       CANVAS: CANVAS,
       SCENEMETA: IMAGEMETA,
       SCENES: { SampleScenes: IMAGES.Sample, TestScenes: IMAGES.Test },
-      TRIALEVENTS: EVENTS["trialseries"],
+      TRIALEVENTS: EVENTS['trialseries'],
       TIMEEVENTS: {
-        Battery: EVENTS["timeseries"]["Battery"],
-        RFIDTag: EVENTS["timeseries"]["RFIDTag"],
-        Weight: EVENTS["timeseries"]["Weight"],
+        Battery: EVENTS['timeseries']['Battery'],
+        RFIDTag: EVENTS['timeseries']['RFIDTag'],
+        Weight: EVENTS['timeseries']['Weight'],
         // 'Arduino': EVENTS['timeseries']['Arduino'],
       },
-      CLASSIFIERSTATS: EVENTS["trainseries"],
+      CLASSIFIERSTATS: EVENTS['trainseries'],
     };
+  } else if (TASK.Agent == 'SaveImages') {
+    dataObj = {
+      TASK: TASK,
+      ENV: ENV,
+      CANVAS: CANVAS,
+      SCENEMETA: IMAGEMETA,
+      SCENES: { SampleScenes: IMAGES.Sample, TestScenes: IMAGES.Test },
+      TRIALEVENTS: EVENTS['trialseries'],
+      TIMEEVENTS: {
+        Battery: EVENTS['timeseries']['Battery'],
+        RFIDTag: EVENTS['timeseries']['RFIDTag'],
+        Weight: EVENTS['timeseries']['Weight'],
+        // 'Arduino': EVENTS['timeseries']['Arduino'],
+      },
+    };
+    let dataFileName = ENV.DataFileName.split('/')
+      .slice(-1)[0]
+      .replaceAll(':', '_');
+    console.log(dataFileName);
+    let dataFileHandle = await FLAGS.DirHandle.getFileHandle(dataFileName, {
+      create: true,
+    });
+
+    let wrStream = await dataFileHandle.createWritable();
+    let blob = new Blob([JSON.stringify(dataObj)], {
+      type: 'application/json',
+    });
+    await wrStream.write(blob);
+    await wrStream.close();
   } else {
     dataObj = {
       TASK: TASK,
@@ -474,21 +503,21 @@ async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS) {
       CANVAS: CANVAS,
       SCENEMETA: IMAGEMETA,
       SCENES: { SampleScenes: IMAGES.Sample, TestScenes: IMAGES.Test },
-      TRIALEVENTS: EVENTS["trialseries"],
+      TRIALEVENTS: EVENTS['trialseries'],
       TIMEEVENTS: {
-        Battery: EVENTS["timeseries"]["Battery"],
-        RFIDTag: EVENTS["timeseries"]["RFIDTag"],
-        Weight: EVENTS["timeseries"]["Weight"],
+        Battery: EVENTS['timeseries']['Battery'],
+        RFIDTag: EVENTS['timeseries']['RFIDTag'],
+        Weight: EVENTS['timeseries']['Weight'],
         // 'Arduino': EVENTS['timeseries']['Arduino'],
       },
     };
   }
 
   // let datastr = JSON.stringify(dataObj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
-  let blob = new Blob([JSON.stringify(dataObj)], { type: "application/json" });
+  let blob = new Blob([JSON.stringify(dataObj)], { type: 'application/json' });
 
   // Create file metadata including the content type
-  let metadata = { contentType: "application/json" };
+  let metadata = { contentType: 'application/json' };
 
   // Upload the file and metadata
   let response = await storage
@@ -497,7 +526,7 @@ async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS) {
     .put(blob, metadata);
   CURRTRIAL.lastFirebaseSave = new Date(response.metadata.updated);
   console.log(
-    "FIREBASE: Save Data, " + Math.round(response.totalBytes / 1000) + "kb"
+    'FIREBASE: Save Data, ' + Math.round(response.totalBytes / 1000) + 'kb'
   );
 } //UploadToFirebase
 
@@ -505,7 +534,7 @@ async function saveBehaviorDatatoFirebase(TASK, ENV, CANVAS, EVENTS) {
 function loadSoundfromFirebase(src, idx) {
   return new Promise(async function (resolve, reject) {
     try {
-      var fileRef = storage.ref().child(SOUND_FILEPREFIX + src + ".wav");
+      var fileRef = storage.ref().child(SOUND_FILEPREFIX + src + '.wav');
       url = await fileRef.getDownloadURL();
       response = await fetch(url);
       fileBlob = await response.blob();
@@ -534,7 +563,7 @@ function loadSoundfromFirebase(src, idx) {
     } catch (error) {
       //try
       console.error(error);
-      reject("reject");
+      reject('reject');
     } //catch
   }); //promise
 } //loadSoundfromFirebase
@@ -548,7 +577,7 @@ async function getMostRecentBehavioralFilePathsFromFirebase(
   var file_list = [];
   try {
     // TODO: add code for reading huge folders -- (see getImageListDropboxRecursive)
-    response = await getFileListRecursiveFirebase(save_directory, ".json");
+    response = await getFileListRecursiveFirebase(save_directory, '.json');
 
     var q2 = 0;
     for (var q = 0; q <= response.length - 1; q++) {

@@ -611,14 +611,14 @@ function render3D(taskscreen, s, f, gr, fr, sc, ob, id) {
 
     // Transfer 3D Canvas to 2D Canvas
     if (TASK.Agent == 'SaveImages') {
-      console.log(
-        sx,
-        sy,
-        swidth,
-        sheight,
-        VISIBLECANVAS.width,
-        VISIBLECANVAS.height
-      );
+      // console.log(
+      //   sx,
+      //   sy,
+      //   swidth,
+      //   sheight,
+      //   VISIBLECANVAS.width,
+      //   VISIBLECANVAS.height
+      // );
 
       VISIBLECANVAS.getContext('2d').drawImage(
         renderer.domElement,
@@ -1316,6 +1316,8 @@ async function saveScreenshot(
     ENV.DeviceName +
     '_device';
 
+  console.log('scenefolder:', scenefolder);
+
   if (canvasobj.width > 4096 || canvasobj.height > 4096) {
     console.log(
       'Canvas may be too large for webgl limit of 4096 pixels in either dimension -- Image Saving may not be accurate! Consider using a smaller display size.'
@@ -1336,6 +1338,8 @@ async function saveScreenshot(
     '_' +
     'framenum' +
     framenum;
+
+  // console.log('storage_path:', storage_path);
 
   if (objectlabel.length > 1) {
     for (var i = 0; i <= objectlabel.length - 1; i++) {
@@ -1370,13 +1374,18 @@ async function saveScreenshot(
   //   }
   // }); //.toBlob function
   let imgFileName = fullpath.split('/')[4];
+  let dirNameSplit = scenefolder.split('/');
+  let dirName = dirNameSplit[dirNameSplit.length - 1];
+  // console.log('dirname:', dirName);
 
-  // FLAGS.SaveImagesCtx.drawImage(canvasobj, 0, 0, 768, 819);
   canvasobj.toBlob(async (blob) => {
-    let imgFileHandle = await FLAGS.DirHandle.getFileHandle(imgFileName, {
+    let subDirHandle = await FLAGS.DirHandle.getDirectoryHandle(dirName, {
+      create: false,
+    });
+    let imgFileHandle = await subDirHandle.getFileHandle(imgFileName, {
       create: true,
     });
-    // console.log('imgFileHandle:', imgFileHandle);
+
     let writableStream = await imgFileHandle.createWritable();
     await writableStream.write(blob);
     await writableStream.close();
